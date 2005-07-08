@@ -24,6 +24,11 @@ AC_PROG_LIBTOOL
 # Checks for library functions.
 
 # Other checks
+NIH_COMPILER_WARNINGS
+NIH_COMPILER_OPTIMISATIONS
+NIH_COMPILER_COVERAGE
+NIH_LINKER_OPTIMISATIONS
+NIH_LINKER_VERSION_SCRIPT
 
 AC_CONFIG_FILES([ Makefile m4/Makefile po/Makefile.in intl/Makefile
 		  nih/Makefile ])

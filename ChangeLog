@@ -1,4 +1,19 @@
 2005-07-09  Scott James Remnant  <scott@netsplit.com>
 
+	* m4/compiler.m4 (NIH_COMPILER_WARNINGS): Macro to add -Wall,
+	-Werror and -pedantic to CFLAGS and CXXFLAGS if using gcc or g++.
+	(NIH_COMPILER_OPTIMISATIONS): Macro to remove any optimisation
+	arguments from CFLAGS and CXXFLAGS and replace them with -O0 to
+	override any default level.
+	(NIH_COMPILER_COVERAGE): Macro to add compiler coverage testing
+	arguments to CFLAGS and CXXFLAGS.
+	* m4/linker.m4 (NIH_LINKER_OPTIMISATIONS): Macro to add -Wl,-O1
+	to LDFLAGS to increase the optimisation of the linker hash tables.
+	(NIH_LINKER_VERSION_SCRIPT): Macro to test for the right argument
+	to pass a version script to the linker and define
+	HAVE_VERSION_SCRIPT and VERSION_SCRIPT_ARG.
+	* m4/Makefile.am (dist_pkgdata_DATA): Ship macros.
+	* configure.ac: Use new macros.
+
 	* ChangeLog: Initial project infrastructure created.
 

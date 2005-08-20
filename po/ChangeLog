@@ -1,0 +1,8 @@
+2005-08-21  Scott James Remnant  <scott@netsplit.com>
+
+	* LINGUAS: Created file to hold language list once we have some
+	translations.
+	* POTFILES.in: Created file to hold list of source files which
+	contain translations.
+	* Makevars: Created file from Makevars.template and filled in fields.
+	* ChangeLog: Initial gettext infrastructure from gettext 0.14.5.

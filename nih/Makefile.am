@@ -11,6 +11,11 @@ libnih_la_SOURCES =
 
 libnih_la_LDFLAGS = \
 	-version-info 0:0:0
+if HAVE_VERSION_SCRIPT_ARG
+libnih_la_LDFLAGS += @VERSION_SCRIPT_ARG@=$(srcdir)/libnih.ver
+endif
+
+EXTRA_DIST = libnih.ver
 
 
 pkginclude_HEADERS =

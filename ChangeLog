@@ -1,3 +1,11 @@
+2005-08-21  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/libnih.ver: Add simple "everything beginning nih_* is global"
+	version script.
+	* nih/Makefile.am (libnih_la_LDFLAGS): Use the version script
+	if we can pass an argument to do that to the linker.
+	(EXTRA_DIST): Distribute the version script.
+
 2005-07-09  Scott James Remnant  <scott@netsplit.com>
 
 	* m4/compiler.m4 (NIH_COMPILER_WARNINGS): Macro to add -Wall,

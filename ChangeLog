@@ -1,5 +1,19 @@
 2005-08-21  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/list.c: Add code for generic circular doubly-linked lists.
+	* nih/list.h: Prototypes and macros.
+	* nih/macros.h: Some generic macros.
+	* nih/libnih.h: Header to import everything.
+	* nih/tests/test_list.c: Test-cases for linked-list code.
+	* nih/Makefile.am (libnih_la_SOURCES): Link list.c in.
+	(nihincludedir): Define directory to contain header files to be
+	$includedir/nih.
+	(include_HEADERS): Install libnih.h into the main include directory.
+	(nihinclude_HEADERS): Install header files.
+	(TESTS): Build and run the list test-cases.
+	(test_list_SOURCES, test_list_LDADD): Identify the test sources and
+	objects it needs.
+
 	* nih/libnih.ver: Add simple "everything beginning nih_* is global"
 	version script.
 	* nih/Makefile.am (libnih_la_LDFLAGS): Use the version script

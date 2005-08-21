@@ -7,7 +7,8 @@ INCLUDES = -I$(top_srcdir)/intl
 
 lib_LTLIBRARIES = libnih.la
 
-libnih_la_SOURCES =
+libnih_la_SOURCES = \
+	list.c
 
 libnih_la_LDFLAGS = \
 	-version-info 0:0:0
@@ -18,12 +19,22 @@ endif
 EXTRA_DIST = libnih.ver
 
 
-pkginclude_HEADERS =
+include_HEADERS = \
+	libnih.h
+
+nihincludedir = $(includedir)/nih
+nihinclude_HEADERS = \
+	macros.h \
+	list.h
 
 
-TESTS =
+TESTS = \
+	test_list
 
 check_PROGRAMS = $(TESTS)
+
+test_list_SOURCES = tests/test_list.c
+test_list_LDADD = list.o
 
 
 clean-local:

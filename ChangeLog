@@ -1,3 +1,20 @@
+2005-08-28  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/list.c (nih_list_init): Add new function for dealing with
+	statically allocated list entries, and initialising them.
+	(nih_list_new): Use nih_list_init() to initialise the list.
+	(nih_list_new): Use nih_list_init() to re-initialise the list
+	to a single-member.
+	* nih/list.h: Add prototype for nih_list_init.
+	(NihListIter): Remove the iterator structure, it turns
+	out to be harder work to try and use lists in an "all nodes are
+	interesting" manner; so we'll iterate them normally instead.
+	(NIH_LIST_FIRST, NIH_LIST_LAST): Remove iterator test functions.
+	(NIH_LIST_PREV, NIH_LIST_NEXT): Remove iterator change functions.
+	* nih/tests/test_list.c: Use NULL for nih_list_new in all functions.
+	(test_init): New test case for nih_list_init().
+	(test_iterator): Removed iterator tests.
+
 2005-08-21  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/list.c: Add code for generic circular doubly-linked lists.

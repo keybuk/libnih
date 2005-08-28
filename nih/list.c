@@ -32,12 +32,30 @@
 
 
 /**
+ * nih_list_init:
+ * @entry: entry to be initialised.
+ *
+ * Initialise an already allocated list entry, once done it can be used
+ * as the start of a new list or added to an existing list.
+ */
+void
+nih_list_init (NihList *entry)
+{
+	/* FIXME check entry is not NULL */
+
+	entry->prev = entry->next = entry;
+}
+
+/**
  * nih_list_new:
  * @data: data to attach to the new entry.
  *
  * Allocates a new list entry and sets the data member to @data.  The new
- * list entry can be used as the start of a new single-entry list or added
- * to an existing list.
+ * entry can be used as the start of a new list or added to an existing
+ * list.
+ *
+ * Ordinarily when allocating a new list, rather than an entry, @data
+ * would be %NULL.
  *
  * Returns: the new list entry..
  */
@@ -48,7 +66,8 @@ nih_list_new (void *data)
 
 	/* FIXME use nih_alloc */
 	entry = malloc (sizeof (NihList));
-	entry->prev = entry->next = entry;
+	nih_list_init (entry);
+
 	entry->data = data;
 
 	return entry;
@@ -59,11 +78,11 @@ nih_list_new (void *data)
  * @entry: entry to be removed.
  *
  * Removes @entry from its containing list.  The entry is not freed, but
- * is instead converted into a single-entry list that can be used as the
- * start of a new list or inserted into another one (though there's no
- * need to call remove first if you want to do that).
+ * is instead returned so that it can be added to another list (though
+ * there's no need to call d_list_remove() first if you wanted to do that)
+ * or used as the start of a new list.
  *
- * Returns: @entry, as a new single-entry list.
+ * Returns: @entry as a lone entry.
  */
 NihList *
 nih_list_remove (NihList *entry)
@@ -73,7 +92,7 @@ nih_list_remove (NihList *entry)
 	entry->prev->next = entry->next;
 	entry->next->prev = entry->prev;
 
-	entry->prev = entry->next = entry;
+	nih_list_init (entry);
 
 	return entry;
 }

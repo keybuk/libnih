@@ -29,9 +29,20 @@
  * @next: next entry in the list,
  * @data: pointer to data attached to the entry.
  *
- * This structure is used for each entry in the list, and as the "first"
- * and "last" entries point to each other, can be used to refer to any
- * entry in the list.
+ * This structure is used both to refer to a linked list and to refer
+ * to an individual entry in the list.  The list is circular so the @next
+ * pointer of the last entry points to the first, and the @prev pointer
+ * of the first entry points to the last.  An empty list simply has the
+ * @prev and @next pointers pointing to itself.
+ *
+ * The list can be iterated with code like:
+ * | NihList *iter;
+ * |
+ * | for (iter = list->next; iter != list; iter = iter->next)
+ * |         printf ("%s\n", (char *)iter->data);
+ *
+ * This visits all of the entries except the one being used to refer to the
+ * list.
  */
 typedef struct nih_list_entry {
 	struct nih_list_entry *prev, *next;
@@ -70,81 +81,9 @@ typedef struct nih_list_entry {
 							   nih_list_new (data))
 
 
-/**
- * NihListIter:
- *
- * Opaque type used to iterate a list; must be initialised to %NULL before
- * use.  You should not use this as anything other than an argument to the
- * iteration macros, and should not rely on its content or type.
- *
- * Example:
- * | NihListIter  iter = NULL;
- * | NihList     *e;
- * |
- * | for (e = list; !NIH_LIST_LAST (list, iter); e = NIH_LIST_NEXT (list, iter))
- * |         printf ("%s\n", e->data);
- *
- * Every entry in the list is visited, including the entry given to refer
- * to the list.  If you don't want to visit that entry, you don't need to
- * use the iterator macros and can instead use code like:
- * | for (e = list->next; e != list; e = e->next)
- */
-typedef NihList * NihListIter;
-
-/**
- * NIH_LIST_FIRST:
- * @list: list being iterated,
- * @iter: list iterator.
- *
- * Macro to return whether the entry currently being visited by the
- * iterator @iter is the first one in the list.
- *
- * Returns: %TRUE if the entry is the first, %FALSE otherwise.
- */
-#define NIH_LIST_FIRST(list, iter) ((iter) == NULL)
-
-/**
- * NIH_LIST_LAST:
- * @list: list being iterated,
- * @iter: list iterator.
- *
- * Macro to return whether every entry in the list has been visited by
- * the iterator @iter.
- *
- * If this macro returns true, the iterator is reset to %NULL so it can be
- * used again without requiring reinitialisation.
- *
- * Returns: %TRUE if list has been completely iterated, %FALSE otherwise.
- */
-#define NIH_LIST_LAST(list, iter) ((iter) == (list) \
-				 ? (iter) = NULL, TRUE : FALSE)
-
-/**
- * NIH_LIST_PREV:
- * @list: list being iterated,
- * @iter: list iterator.
- *
- * Macro to advance an iterator onto the previous entry in the list, used
- * when iterating a list in reverse or just going back on yourself.
- *
- * Returns: the previous entry.
- */
-#define NIH_LIST_PREV(list, iter) ((iter) = (iter) ? (iter)->prev : (list)->prev)
-
-/**
- * NIH_LIST_NEXT:
- * @list: list being iterated,
- * @iter: list iterator.
- *
- * Macro to advance an iterator onto the next entry in the list.
- *
- * Returns: the next entry.
- */
-#define NIH_LIST_NEXT(list, iter) ((iter) = (iter) ? (iter)->next : (list)->next)
-
-
 NIH_BEGIN_EXTERN
 
+void     nih_list_init      (NihList *entry);
 NihList *nih_list_new       (void *data);
 NihList *nih_list_remove    (NihList *entry);
 void     nih_list_free      (NihList *entry);

@@ -29,6 +29,30 @@
 
 
 static int
+test_init (void)
+{
+	NihList entry;
+	int     ret = 0;
+
+	printf ("Testing nih_list_init()\n");
+	nih_list_init (&entry);
+
+	/* Previous pointer should point back to itself */
+	if (entry.prev != &entry) {
+		printf ("FAIL: prev pointer set incorrectly.\n");
+		ret = 1;
+	}
+
+	/* Next pointer should point back to itself */
+	if (entry.next != &entry) {
+		printf ("FAIL: next pointer set incorrectly.\n");
+		ret = 1;
+	}
+
+	return ret;
+}
+
+static int
 test_new (void)
 {
 	static char *data = "some data";
@@ -68,7 +92,7 @@ test_add (void)
 
 	printf ("Testing nih_list_add()\n");
 
-	list = nih_list_new ("list head");
+	list = nih_list_new (NULL);
 	entry1 = nih_list_new ("entry 1");
 	entry2 = nih_list_new ("entry 2");
 
@@ -187,7 +211,7 @@ test_add (void)
 
 
 	printf ("...with entry from other list\n");
-	ptr = nih_list_new ("another list");
+	ptr = nih_list_new (NULL);
 	nih_list_add (ptr, entry2);
 
 	/* The entry should be removed from the old list, so the
@@ -250,7 +274,7 @@ test_add_after (void)
 
 	printf ("Testing nih_list_add_after()\n");
 
-	list = nih_list_new ("list head");
+	list = nih_list_new (NULL);
 	entry1 = nih_list_new ("entry 1");
 	entry2 = nih_list_new ("entry 2");
 
@@ -369,7 +393,7 @@ test_add_after (void)
 
 
 	printf ("...with entry from other list\n");
-	ptr = nih_list_new ("another list");
+	ptr = nih_list_new (NULL);
 	nih_list_add_after (ptr, entry1);
 
 	/* The entry should be removed from the old list, so the
@@ -429,7 +453,7 @@ test_remove (void)
 	NihList *list, *entry, *tail, *ptr;
 	int      ret = 0;
 
-	list = nih_list_new ("a list");
+	list = nih_list_new (NULL);
 	entry = nih_list_add_new (list, "entry 1");
 	tail = nih_list_add_new (list, "entry 2");
 
@@ -481,176 +505,6 @@ test_remove (void)
 	return ret;
 }
 
-static int
-test_iterator (void)
-{
-	NihListIter  iter = NULL;
-	NihList     *list, *entry1, *entry2, *ptr;
-	int          ret = 0;
-
-	printf ("Testing NihList iterators\n");
-	list = nih_list_new ("a list");
-	entry1 = nih_list_add_new (list, "entry 1");
-	entry2 = nih_list_add_new (list, "entry 2");
-
-	printf ("...forwards\n");
-
-	/* Check that NIH_LIST_FIRST is true */
-	if (!NIH_LIST_FIRST (list, iter)) {
-		printf ("FAIL: NIH_LIST_FIRST incorrect for first entry.\n");
-		ret = 1;
-	}
-
-	/* Check that NIH_LIST_LAST is false */
-	if (NIH_LIST_LAST (list, iter)) {
-		printf ("FAIL: NIH_LIST_LAST incorrect for first entry.\n");
-		ret = 1;
-	}
-
-	/* Advancing the list should give us the middle entry */
-	ptr = NIH_LIST_NEXT (list, iter);
-	if (ptr != entry1) {
-		printf ("FAIL: NIH_LIST_NEXT didn't give second entry.\n");
-		ret = 1;
-	}
-
-	/* Check that NIH_LIST_FIRST is false */
-	if (NIH_LIST_FIRST (list, iter)) {
-		printf ("FAIL: NIH_LIST_FIRST incorrect for second entry.\n");
-		ret = 1;
-	}
-
-	/* Check that NIH_LIST_LAST is false */
-	if (NIH_LIST_LAST (list, iter)) {
-		printf ("FAIL: NIH_LIST_LAST incorrect for second entry.\n");
-		ret = 1;
-	}
-
-	/* Advancing the list again should give us the third entry */
-	ptr = NIH_LIST_NEXT (list, iter);
-	if (ptr != entry2) {
-		printf ("FAIL: NIH_LIST_NEXT didn't give third entry.\n");
-		ret = 1;
-	}
-
-	/* Check that NIH_LIST_FIRST is false */
-	if (NIH_LIST_FIRST (list, iter)) {
-		printf ("FAIL: NIH_LIST_FIRST incorrect for third entry.\n");
-		ret = 1;
-	}
-
-	/* Check that NIH_LIST_LAST is false */
-	if (NIH_LIST_LAST (list, iter)) {
-		printf ("FAIL: NIH_LIST_LAST incorrect for third entry.\n");
-		ret = 1;
-	}
-
-	/* Advancing again should return the first entry again */
-	ptr = NIH_LIST_NEXT (list, iter);
-	if (ptr != list) {
-		printf ("FAIL: NIH_LIST_NEXT didn't give first entry again.\n");
-		ret = 1;
-	}
-
-	/* Check that NIH_LIST_FIRST is false */
-	if (NIH_LIST_FIRST (list, iter)) {
-		printf ("FAIL: NIH_LIST_FIRST incorrect for end of list.\n");
-		ret = 1;
-	}
-
-	/* Check that NIH_LIST_LAST is true */
-	if (!NIH_LIST_LAST (list, iter)) {
-		printf ("FAIL: NIH_LIST_LAST incorrect for end of list.\n");
-		ret = 1;
-	}
-
-	/* Check that the iterator was reset */
-	if (iter != NULL) {
-		printf ("FAIL: iterator wasn't reset to NULL.\n");
-		ret = 1;
-	}
-
-
-	printf ("...backwards\n");
-
-	/* Check that NIH_LIST_FIRST is true */
-	if (!NIH_LIST_FIRST (list, iter)) {
-		printf ("FAIL: NIH_LIST_FIRST incorrect for first entry.\n");
-		ret = 1;
-	}
-
-	/* Check that NIH_LIST_LAST is false */
-	if (NIH_LIST_LAST (list, iter)) {
-		printf ("FAIL: NIH_LIST_LAST incorrect for first entry.\n");
-		ret = 1;
-	}
-
-	/* Advancing the list should give us the third entry */
-	ptr = NIH_LIST_PREV (list, iter);
-	if (ptr != entry2) {
-		printf ("FAIL: NIH_LIST_PREV didn't give third entry.\n");
-		ret = 1;
-	}
-
-	/* Check that NIH_LIST_FIRST is false */
-	if (NIH_LIST_FIRST (list, iter)) {
-		printf ("FAIL: NIH_LIST_FIRST incorrect for third entry.\n");
-		ret = 1;
-	}
-
-	/* Check that NIH_LIST_LAST is false */
-	if (NIH_LIST_LAST (list, iter)) {
-		printf ("FAIL: NIH_LIST_LAST incorrect for third entry.\n");
-		ret = 1;
-	}
-
-	/* Advancing the list again should give us the second entry */
-	ptr = NIH_LIST_PREV (list, iter);
-	if (ptr != entry1) {
-		printf ("FAIL: NIH_LIST_PREV didn't give second entry.\n");
-		ret = 1;
-	}
-
-	/* Check that NIH_LIST_FIRST is false */
-	if (NIH_LIST_FIRST (list, iter)) {
-		printf ("FAIL: NIH_LIST_FIRST incorrect for second entry.\n");
-		ret = 1;
-	}
-
-	/* Check that NIH_LIST_LAST is false */
-	if (NIH_LIST_LAST (list, iter)) {
-		printf ("FAIL: NIH_LIST_LAST incorrect for second entry.\n");
-		ret = 1;
-	}
-
-	/* Advancing again should return the first entry again */
-	ptr = NIH_LIST_PREV (list, iter);
-	if (ptr != list) {
-		printf ("FAIL: NIH_LIST_PREV didn't give first entry again.\n");
-		ret = 1;
-	}
-
-	/* Check that NIH_LIST_FIRST is false */
-	if (NIH_LIST_FIRST (list, iter)) {
-		printf ("FAIL: NIH_LIST_FIRST incorrect for end of list.\n");
-		ret = 1;
-	}
-
-	/* Check that NIH_LIST_LAST is true */
-	if (!NIH_LIST_LAST (list, iter)) {
-		printf ("FAIL: NIH_LIST_LAST incorrect for end of list.\n");
-		ret = 1;
-	}
-
-	/* Check that the iterator was reset */
-	if (iter != NULL) {
-		printf ("FAIL: iterator wasn't reset to NULL.\n");
-		ret = 1;
-	}
-
-	return ret;
-}
-
 
 int
 main (int   argc,
@@ -658,12 +512,12 @@ main (int   argc,
 {
 	int ret = 0;
 
+	ret |= test_init ();
 	ret |= test_new ();
 	ret |= test_add ();
 	ret |= test_add_after ();
 	ret |= test_remove ();
 	/* FIXME test_free once we've got nih_alloc destructors */
-	ret |= test_iterator ();
 
 	return ret;
 }

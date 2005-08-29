@@ -8,6 +8,7 @@ INCLUDES = -I$(top_srcdir)/intl
 lib_LTLIBRARIES = libnih.la
 
 libnih_la_SOURCES = \
+	alloc.c \
 	list.c
 
 libnih_la_LDFLAGS = \
@@ -25,13 +26,18 @@ include_HEADERS = \
 nihincludedir = $(includedir)/nih
 nihinclude_HEADERS = \
 	macros.h \
+	alloc.h \
 	list.h
 
 
 TESTS = \
+	test_alloc \
 	test_list
 
 check_PROGRAMS = $(TESTS)
+
+test_alloc_SOURCES = tests/test_alloc.c
+test_alloc_LDADD = alloc.o list.o
 
 test_list_SOURCES = tests/test_list.c
 test_list_LDADD = list.o

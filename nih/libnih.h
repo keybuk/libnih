@@ -21,6 +21,7 @@
 #define NIH_LIBNIH_H
 
 #include <nih/macros.h>
+#include <nih/alloc.h>
 #include <nih/list.h>
 
 #endif /* NIH_LIBNIH_H */

@@ -1,3 +1,19 @@
+2005-08-29  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/alloc.c: Implement a heirarchial allocator in a similar
+	style to halloc and talloc, but designed never to return data to
+	the system and re-use it instead.
+	* nih/alloc.h: Prototypes and macros for allocator.
+	* nih/libnih.h: Include allocator header.
+	* nih/tests/test_alloc.c: Test-cases for allocator.
+	* nih/macros.h (MIN, MAX): Define MIN and MAC macros if not already
+	available.
+	* nih/Makefile.am (libnih_la_SOURCES): Compile and link alloc.c
+	(nihinclude_HEADERS): Install alloc.h
+	(TESTS): Build and run the allocator test-cases.
+	(test_alloc_SOURCES, alloc_list_LDADD): Identify the test sources and
+	objects it needs.
+
 2005-08-28  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/list.c (nih_list_init): Add new function for dealing with

@@ -47,4 +47,12 @@
 # define TRUE (!FALSE)
 #endif /* TRUE */
 
+/* Define MIN and MAX if we haven't got them */
+#ifndef MIN
+# define MIN(_a, _b) ((_a) > (_b) ? (_b) : (_a))
+#endif /* MIN */
+#ifndef MAX
+# define MAX(_a, _b) ((_a) > (_b) ? (_a) : (_b))
+#endif /* MAX */
+
 #endif /* NIH_MACROS_H */

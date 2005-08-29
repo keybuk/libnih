@@ -34,7 +34,7 @@
 
 /**
  * NihAllocCtx:
- * @entry: entry within containing list,
+ * @entry: list header,
  * @parent: parent context, when freed we will be,
  * @children: child blocks that will be freed when we are,
  * @name: arbitrary string name for the context,
@@ -118,10 +118,10 @@ static NihList *unused_pool[2];
 static void
 nih_alloc_init (void)
 {
-	used_pool = nih_list_new (NULL);
+	used_pool = nih_list_new ();
 
-	unused_pool[0] = nih_list_new (NULL);
-	unused_pool[1] = nih_list_new (NULL);
+	unused_pool[0] = nih_list_new ();
+	unused_pool[1] = nih_list_new ();
 }
 
 /**
@@ -185,10 +185,7 @@ nih_alloc_new (void *      parent,
 	ctx->size = size;
 
 	nih_list_init (&ctx->entry);
-	ctx->entry.data = ctx;
-
-	nih_list_init ((NihList *)&ctx->children);
-
+	nih_list_init (&ctx->children);
 
 	return nih_alloc_set (ctx, parent, name);
 }
@@ -220,9 +217,11 @@ nih_alloc_named (void *      parent,
 		nih_alloc_init ();
 
 	if (size <= NIH_ALLOC_SMALLEST) {
-		if (unused_pool[0]->next != unused_pool[0])
-			return nih_alloc_set (unused_pool[0]->next->data,
-					      parent, name);
+		if (unused_pool[0]->next != unused_pool[0]) {
+			NihAllocCtx *ctx = (NihAllocCtx *)unused_pool[0]->next;
+
+			return nih_alloc_set (ctx, parent, name);
+		}
 	} else {
 		NihList     *iter;
 		NihAllocCtx *best = NULL;
@@ -230,12 +229,11 @@ nih_alloc_named (void *      parent,
 
 		for (iter = unused_pool[1]->next; iter != unused_pool[1];
 		     iter = iter->next) {
-			NihAllocCtx *ctx = iter->data;
+			NihAllocCtx *ctx = (NihAllocCtx *)iter;
 			int          diff;
 
 			diff = ctx->size - size;
-			if ((diff >= 0) &&
-			    ((best_diff == 0) || (diff < best_diff)))
+			if ((diff >= 0) && ((diff < best_diff) || !best))
 				best = ctx;
 		}
 
@@ -260,18 +258,18 @@ int
 nih_free (void *ptr)
 {
 	NihAllocCtx *ctx;
-	NihList     *c;
+	NihList     *iter;
 	int          ret = 0;
 
 	/* FIXME check that ptr is not NULL */
 	ctx = NIH_ALLOC_CTX (ptr);
 
-	c = ctx->children.next;
-	while (c != &ctx->children) {
+	iter = ctx->children.next;
+	while (iter != &ctx->children) {
 		void *ptr;
 
-		ptr = NIH_ALLOC_PTR (c);
-		c = c->next;
+		ptr = NIH_ALLOC_PTR (iter);
+		iter = iter->next;
 
 		ret = nih_free (ptr);
 	}
@@ -364,7 +362,7 @@ nih_alloc_return_unused (int large)
 	while (iter != unused_pool[large]) {
 		void *ptr;
 
-		ptr = NIH_ALLOC_PTR (iter->data);
+		ptr = NIH_ALLOC_PTR (iter);
 		iter = iter->next;
 
 		nih_free (ptr);

@@ -51,7 +51,7 @@ test_alloc (void)
 
 	/* Name should still be retrievable */
 	if (nih_alloc_name (ptr1)[0] == 'x') {
-		printf ("FAIL: name of first block incorrect.\n");
+		printf ("BAD: name of first block incorrect.\n");
 		ret = 1;
 	}
 
@@ -63,7 +63,7 @@ test_alloc (void)
 
 	/* Name should still be retrievable */
 	if (nih_alloc_name (ptr2)[0] == 'x') {
-		printf ("FAIL: name of second block incorrect.\n");
+		printf ("BAD: name of second block incorrect.\n");
 		ret = 1;
 	}
 
@@ -73,13 +73,13 @@ test_alloc (void)
 
 	/* Destructor of child should have been called */
 	if (! was_called) {
-		printf ("FAIL: child destructor was not called.\n");
+		printf ("BAD: child destructor was not called.\n");
 		ret = 1;
 	}
 
 	/* nih_free should return destructor return value of child */
 	if (free_ret != 2) {
-		printf ("FAIL: return value of nih_free() not correct.\n");
+		printf ("BAD: return value of nih_free() not correct.\n");
 		ret = 1;
 	}
 
@@ -93,7 +93,7 @@ test_alloc (void)
 
 	/* Pointer should be the same as the last one */
 	if (ptr2 != ptr1) {
-		printf ("FAIL: small pointers differed.\n");
+		printf ("BAD: small pointers differed.\n");
 		ret = 1;
 	}
 
@@ -107,7 +107,7 @@ test_alloc (void)
 
 	/* Pointer should be the same as the last one */
 	if (ptr2 != ptr1) {
-		printf ("FAIL: large pointers differed.\n");
+		printf ("BAD: large pointers differed.\n");
 		ret = 1;
 	}
 
@@ -127,7 +127,7 @@ test_alloc (void)
 
 	/* Pointer should be the smaller one */
 	if (ptr1 != ptr2) {
-		printf ("FAIL: pointer wasn't smallest available.\n");
+		printf ("BAD: pointer wasn't smallest available.\n");
 		ret = 1;
 	}
 
@@ -141,7 +141,7 @@ test_alloc (void)
 
 	/* Pointer should not be the too-small one */
 	if (ptr2 == ptr1) {
-		printf ("FAIL: pointer was too small.\n");
+		printf ("BAD: pointer was too small.\n");
 		ret = 1;
 	}
 
@@ -161,7 +161,7 @@ test_alloc_set_name (void)
 
 	/* Name should now be changed */
 	if (strcmp (nih_alloc_name (ptr), "different name")) {
-		printf ("FAIL: name was not changed.\n");
+		printf ("BAD: name was not changed.\n");
 		ret = 1;
 	}
 

@@ -1,5 +1,14 @@
 2005-08-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (nih_alloc_init): No need to pass NULL to nih_list_new.
+	(nih_alloc_new): No need to initialise data member of NihList structs
+	or cast children member.
+	(nih_alloc_named): Can cast NihList directly to NihAllocCtx now,
+	simplify difference test.
+	(nih_free): Use iter as variable name for clarity.
+	(nih_alloc_return_unused): Cast NihList directly to NihAllocCtx.
+	* nih/tests/test_alloc.c: Output "BAD:" instead of "FAIL:"
+
 	* nih/list.h (NihList): Remove data pointer, it'll save us 4 bytes
 	where we want to make lists of structures that are always in lists.
 	(NihListEntry): Define new structure for those still wanting data

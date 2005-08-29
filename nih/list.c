@@ -50,23 +50,39 @@ nih_list_init (NihList *entry)
  * nih_list_new:
  * @data: data to attach to the new entry.
  *
- * Allocates a new list entry and sets the data member to @data.  The new
- * entry can be used as the start of a new list or added to an existing
- * list.
+ * Allocates a new list structure, usually used as the start of a new
+ * list.  You may prefer to allocate the DList structure statically and
+ * use d_list_init() to initialise it instead.
  *
- * Ordinarily when allocating a new list, rather than an entry, @data
- * would be %NULL.
+ * Returns: the new list entry.
+ */
+NihList *
+nih_list_new (void)
+{
+	NihList *list;
+
+	list = malloc (sizeof (NihList));
+	nih_list_init (list);
+
+	return list;
+}
+
+/**
+ * nih_list_entry_new:
+ *
+ * Allocates a new list entry and sets the data member to @data, the new
+ * entry can be added to any existing list.
  *
  * Returns: the new list entry..
  */
-NihList *
-nih_list_new (void *data)
+NihListEntry *
+nih_list_entry_new (void *data)
 {
-	NihList *entry;
+	NihListEntry *entry;
 
 	/* FIXME use nih_alloc */
-	entry = malloc (sizeof (NihList));
-	nih_list_init (entry);
+	entry = malloc (sizeof (NihListEntry));
+	nih_list_init ((NihList *)entry);
 
 	entry->data = data;
 

@@ -1,5 +1,21 @@
 2005-08-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/list.h (NihList): Remove data pointer, it'll save us 4 bytes
+	where we want to make lists of structures that are always in lists.
+	(NihListEntry): Define new structure for those still wanting data
+	pointers.
+	(nih_list_add_new, nih_list_add_new_after): Use nih_list_entry_new.
+	* nih/list.c (nih_list_new): Remove argument and don't initialise
+	data pointer, this simply allocates and initialises the two-pointer
+	structure.
+	(nih_list_entry_new): New function to allocate and initialise an
+	NihListEntry structure.
+	* nih/tests/test_list.c: Output "BAD:" instead of "FAIL:"
+	(test_new): Test without data pointer.
+	(test_entry_new): Test with data pointer.
+	(test_add, test_add_after, test_remove): Mix and cast NihList and
+	NihListEntry properly.
+
 	* nih/alloc.c: Implement a heirarchial allocator in a similar
 	style to halloc and talloc, but designed never to return data to
 	the system and re-use it instead.

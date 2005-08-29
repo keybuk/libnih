@@ -1,5 +1,9 @@
 2005-08-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (NIH_ALLOC_SMALLEST): Set to the size of the
+	NihAllocCtx structure shifted left twice; this will divide evenly
+	into a page.
+
 	* nih/alloc.c (nih_alloc_init): No need to pass NULL to nih_list_new.
 	(nih_alloc_new): No need to initialise data member of NihList structs
 	or cast children member.

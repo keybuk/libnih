@@ -107,7 +107,7 @@ static NihList *unused_pool[2];
  * Anything larger is allocated as the desired size, or best-fit from the
  * second @unused_pool.
  */
-#define NIH_ALLOC_SMALLEST 64 /* FIXME find a real value */
+#define NIH_ALLOC_SMALLEST (sizeof (NihAllocCtx) << 2)
 
 
 /**

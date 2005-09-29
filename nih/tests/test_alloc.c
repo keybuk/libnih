@@ -165,7 +165,7 @@ test_alloc_set_name (void)
 		ret = 1;
 	}
 
-	return 0;
+	return ret;
 }
 
 

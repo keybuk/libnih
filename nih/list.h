@@ -34,7 +34,7 @@
  * The list is circular so the @next pointer of the last entry points to
  * the first, and the @prev pointer of the first entry points to the last.
  * An empty list simply has the @prev and @next pointers pointing to itself.
- */
+ **/
 typedef struct nih_list {
 	struct nih_list *prev, *next;
 } NihList;
@@ -47,7 +47,7 @@ typedef struct nih_list {
  *
  * This structure can be used in place of DList to create lists of pointers
  * to data of your own choosing.
- */
+ **/
 typedef struct nih_list_entry {
 	struct nih_list *prev, *next;
 
@@ -66,7 +66,7 @@ typedef struct nih_list_entry {
  * in @entry being appended to the list.
  *
  * Returns: the new entry.
- */
+ **/
 #define nih_list_add_new(list, data) \
 	((NihListEntry *)nih_list_add ((list), (NihList *)nih_list_entry_new (data)))
 
@@ -81,7 +81,7 @@ typedef struct nih_list_entry {
  * has no data, this results in @entry being pushed onto a stack under it.
  *
  * Returns: the new entry.
- */
+ **/
 #define nih_list_add_new_after(list, data) \
 	((NihListEntry *)nih_list_add_after ((list), \
 					     (NihList *)nih_list_entry_new (data)))

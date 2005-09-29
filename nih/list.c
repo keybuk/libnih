@@ -37,7 +37,7 @@
  *
  * Initialise an already allocated list entry, once done it can be used
  * as the start of a new list or added to an existing list.
- */
+ **/
 void
 nih_list_init (NihList *entry)
 {
@@ -55,7 +55,7 @@ nih_list_init (NihList *entry)
  * use d_list_init() to initialise it instead.
  *
  * Returns: the new list entry.
- */
+ **/
 NihList *
 nih_list_new (void)
 {
@@ -74,7 +74,7 @@ nih_list_new (void)
  * entry can be added to any existing list.
  *
  * Returns: the new list entry..
- */
+ **/
 NihListEntry *
 nih_list_entry_new (void *data)
 {
@@ -99,7 +99,7 @@ nih_list_entry_new (void *data)
  * or used as the start of a new list.
  *
  * Returns: @entry as a lone entry.
- */
+ **/
 NihList *
 nih_list_remove (NihList *entry)
 {
@@ -123,7 +123,7 @@ nih_list_remove (NihList *entry)
  * You must take care of freeing the data attached to the entry yourself
  * by either freeing it before calling this function or allocating it using
  * the list entry as the context.
- */
+ **/
 void
 nih_list_free (NihList *entry)
 {
@@ -150,7 +150,7 @@ nih_list_free (NihList *entry)
  * a list.
  *
  * Returns: @entry which is now a member of the same list as @list.
- */
+ **/
 NihList *
 nih_list_add (NihList *list,
 	      NihList *entry)
@@ -182,7 +182,7 @@ nih_list_add (NihList *list,
  * a list.
  *
  * Returns: @entry which is now a member of the same list as @list.
- */
+ **/
 NihList *
 nih_list_add_after (NihList *list,
 		    NihList *entry)

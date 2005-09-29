@@ -44,7 +44,7 @@
  * This structure is placed before all allocations in memory and is used
  * to build up a tree of them.  When an allocation is freed, all children
  * are also freed and any destructors are called.
- */
+ **/
 typedef struct nih_alloc_ctx {
 	NihList               entry;
 
@@ -64,7 +64,7 @@ typedef struct nih_alloc_ctx {
  * block of memory beyond it.
  *
  * Returns: pointer to #NihAllocCtx structure.
- */
+ **/
 #define NIH_ALLOC_CTX(ptr) ((NihAllocCtx *)(ptr) - 1)
 
 /**
@@ -75,7 +75,7 @@ typedef struct nih_alloc_ctx {
  * #NihAllocCtx structure in front of it.
  *
  * Returns: pointer to block of memory.
- */
+ **/
 #define NIH_ALLOC_PTR(ctx) ((void *)((NihAllocCtx *)(ctx) + 1))
 
 
@@ -84,7 +84,7 @@ typedef struct nih_alloc_ctx {
  *
  * Pool of #NihAllocCtx structures that are currently in use and don't have
  * any @parent set; those that do are held in their parents children list.
- */
+ **/
 static NihList *used_pool;
 
 /**
@@ -93,7 +93,7 @@ static NihList *used_pool;
  * Pools of #NihAllocCtx structures that are not currently in use.
  * The first list are for blocks of %NIH_ALLOC_SMALLEST in size (used for
  * anything smaller), the second is for blocks that are larger than this.
- */
+ **/
 static NihList *unused_pool[2];
 
 
@@ -106,7 +106,7 @@ static NihList *unused_pool[2];
  *
  * Anything larger is allocated as the desired size, or best-fit from the
  * second @unused_pool.
- */
+ **/
 #define NIH_ALLOC_SMALLEST (sizeof (NihAllocCtx) << 2)
 
 
@@ -114,7 +114,7 @@ static NihList *unused_pool[2];
  * nih_alloc_init:
  *
  * Initialise the global lists.
- */
+ **/
 static void
 nih_alloc_init (void)
 {
@@ -134,7 +134,7 @@ nih_alloc_init (void)
  * data given.
  *
  * Returns: pointer to the block beyond it.
- */
+ **/
 static void *
 nih_alloc_set (NihAllocCtx * ctx,
 	       void *      parent,
@@ -167,7 +167,7 @@ nih_alloc_set (NihAllocCtx * ctx,
  * just want one for some reason.
  *
  * Returns: newly allocated block.
- */
+ **/
 void *
 nih_alloc_new (void *      parent,
 	       size_t      size,
@@ -207,7 +207,7 @@ nih_alloc_new (void *      parent,
  * the nih_alloc_set_destructor function.
  *
  * Returns: requested memory block.
- */
+ **/
 void *
 nih_alloc_named (void *      parent,
 		 size_t      size,
@@ -253,7 +253,7 @@ nih_alloc_named (void *      parent,
  * and any destructors called.
  *
  * Returns: return value from destructor, or 0.
- */
+ **/
 int
 nih_free (void *ptr)
 {
@@ -294,7 +294,7 @@ nih_free (void *ptr)
  *
  * Sets the name of the block to @name, which should be a string that will
  * last at least as long as the block as it is not copied.
- */
+ **/
 void
 nih_alloc_set_name (void       *ptr,
 		    const char *name)
@@ -318,7 +318,7 @@ nih_alloc_set_name (void       *ptr,
  * directly or as a result as a parent being freed.  The block will be
  * passed as a pointer to the destructor, and the destructor may return
  * a value which will be the return value of the nih_free() function.
- */
+ **/
 void
 nih_alloc_set_destructor (void               *ptr,
 			  NihAllocDestructor  destructor)
@@ -335,7 +335,7 @@ nih_alloc_set_destructor (void               *ptr,
  * @ptr: pointer to block.
  *
  * Returns: the name associated with the block.
- */
+ **/
 const char *
 nih_alloc_name (void *ptr)
 {
@@ -352,7 +352,7 @@ nih_alloc_name (void *ptr)
  * @large: 1 to return large blocks, 0 to return small.
  *
  * Return unused blocks to the operating system (or, at least, the libc).
- */
+ **/
 void
 nih_alloc_return_unused (int large)
 {

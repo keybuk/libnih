@@ -32,7 +32,7 @@
  *
  * This can be used, for example, to close a file descriptor when the
  * structure for it is being closed.
- */
+ **/
 typedef int (*NihAllocDestructor) (void *);
 
 
@@ -57,7 +57,7 @@ typedef int (*NihAllocDestructor) (void *);
  * the d_alloc_set_destructor function.
  *
  * Returns: requested memory block.
- */
+ **/
 #define nih_alloc(parent, type) nih_alloc_named(parent, sizeof (type), \
 					    __FILE__ ":" LINE_STRING " " #type)
 
@@ -76,23 +76,22 @@ typedef int (*NihAllocDestructor) (void *);
  * the d_alloc_set_destructor function.
  *
  * Returns: requested memory block.
- */
+ **/
 #define nih_alloc_size(parent, size) nih_alloc_named(parent, size, \
 						 __FILE__ ":" LINE_STRING)
 
 
 NIH_BEGIN_EXTERN
 
-void *      nih_alloc_new (void *parent, size_t size, const char *name);
-void *      nih_alloc_named (void *parent, size_t size, const char *name);
-int         nih_free (void *ptr);
+void *      nih_alloc_new            (void *parent, size_t size, const char *name);
+void *      nih_alloc_named          (void *parent, size_t size, const char *name);
+int         nih_free                 (void *ptr);
 
-void        nih_alloc_set_name (void *ptr, const char *name);
+void        nih_alloc_set_name       (void *ptr, const char *name);
 void        nih_alloc_set_destructor (void *ptr, NihAllocDestructor destructor);
-const char *nih_alloc_name (void *ptr);
+const char *nih_alloc_name           (void *ptr);
 
-void        nih_alloc_return_unused (int large);
-
+void        nih_alloc_return_unused  (int large);
 
 NIH_END_EXTERN
 

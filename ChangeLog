@@ -1,3 +1,11 @@
+2005-09-29  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/alloc.c, nih/alloc.h, nih/list.c, nih/list.h: Fix docstring
+	terminators to be **/ not */.
+	* nih/alloc.h: Align function parameters.
+	* nih/tests/test_alloc.c (test_alloc_set_name): Fix to return
+	ret and not zero all the time.
+
 2005-08-29  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/alloc.c (NIH_ALLOC_SMALLEST): Set to the size of the

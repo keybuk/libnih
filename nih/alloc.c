@@ -2,7 +2,7 @@
  *
  * alloc.c - hierarchial allocator
  *
- * Copyright © 2005 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -136,9 +136,9 @@ nih_alloc_init (void)
  * Returns: pointer to the block beyond it.
  **/
 static void *
-nih_alloc_set (NihAllocCtx * ctx,
-	       void *      parent,
-	       const char *name)
+nih_alloc_set (NihAllocCtx *ctx,
+	       void        *parent,
+	       const char  *name)
 {
 	if (parent) {
 		ctx->parent = NIH_ALLOC_CTX (parent);
@@ -169,7 +169,7 @@ nih_alloc_set (NihAllocCtx * ctx,
  * Returns: newly allocated block.
  **/
 void *
-nih_alloc_new (void *      parent,
+nih_alloc_new (void       *parent,
 	       size_t      size,
 	       const char *name)
 {
@@ -209,7 +209,7 @@ nih_alloc_new (void *      parent,
  * Returns: requested memory block.
  **/
 void *
-nih_alloc_named (void *      parent,
+nih_alloc_named (void       *parent,
 		 size_t      size,
 		 const char *name)
 {

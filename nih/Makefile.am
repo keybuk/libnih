@@ -11,6 +11,7 @@ libnih_la_SOURCES = \
 	alloc.c \
 	list.c
 
+
 libnih_la_LDFLAGS = \
 	-version-info 0:0:0
 if HAVE_VERSION_SCRIPT_ARG

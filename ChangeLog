@@ -1,3 +1,11 @@
+2006-03-03  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/alloc.c, nih/alloc.h, nih/list.c, nih/list.h: Formatting fixes,
+	correct erroneous references to d_* functions and D* structures.
+	* nih/list.h: Correct docstring for nih_list_new and nih_list_entry_new
+	functions so that @data is described for the right one.
+	* nih/Makefile.am: Add blank line between SOURCES and LDFLAGS.
+
 2005-09-29  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/alloc.c, nih/alloc.h, nih/list.c, nih/list.h: Fix docstring

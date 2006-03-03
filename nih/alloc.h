@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2005 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -54,12 +54,13 @@ typedef int (*NihAllocDestructor) (void *);
  * block which will be used as the parent for this block.  When @parent
  * is freed, the returned block will be freed too.  If you have clean-up
  * that would need to be run, you can assign a destructor function using
- * the d_alloc_set_destructor function.
+ * the nih_alloc_set_destructor function.
  *
  * Returns: requested memory block.
  **/
-#define nih_alloc(parent, type) nih_alloc_named(parent, sizeof (type), \
-					    __FILE__ ":" LINE_STRING " " #type)
+#define nih_alloc(parent, type) \
+	nih_alloc_named(parent, sizeof (type), \
+			__FILE__ ":" LINE_STRING " " #type)
 
 /**
  * nih_alloc_size:
@@ -73,12 +74,13 @@ typedef int (*NihAllocDestructor) (void *);
  * block which will be used as the parent for this block.  When @parent
  * is freed, the returned block will be freed too.  If you have clean-up
  * that would need to be run, you can assign a destructor function using
- * the d_alloc_set_destructor function.
+ * the nih_alloc_set_destructor function.
  *
  * Returns: requested memory block.
  **/
-#define nih_alloc_size(parent, size) nih_alloc_named(parent, size, \
-						 __FILE__ ":" LINE_STRING)
+#define nih_alloc_size(parent, size) \
+	nih_alloc_named(parent, size, \
+			__FILE__ ":" LINE_STRING)
 
 
 NIH_BEGIN_EXTERN

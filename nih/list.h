@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2005 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ typedef struct nih_list {
  * @next: next entry in the list,
  * @data: pointer to data attached to the entry.
  *
- * This structure can be used in place of DList to create lists of pointers
+ * This structure can be used in place of NihList to create lists of pointers
  * to data of your own choosing.
  **/
 typedef struct nih_list_entry {
@@ -68,7 +68,8 @@ typedef struct nih_list_entry {
  * Returns: the new entry.
  **/
 #define nih_list_add_new(list, data) \
-	((NihListEntry *)nih_list_add ((list), (NihList *)nih_list_entry_new (data)))
+	((NihListEntry *)nih_list_add ((list), \
+				       (NihList *)nih_list_entry_new (data)))
 
 /**
  * nih_list_add_new_after:

@@ -2,7 +2,7 @@
  *
  * list.c - generic circular doubly-linked list implementation
  *
- * Copyright © 2005 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,11 +48,10 @@ nih_list_init (NihList *entry)
 
 /**
  * nih_list_new:
- * @data: data to attach to the new entry.
  *
  * Allocates a new list structure, usually used as the start of a new
- * list.  You may prefer to allocate the DList structure statically and
- * use d_list_init() to initialise it instead.
+ * list.  You may prefer to allocate the NihList structure statically and
+ * use nih_list_init() to initialise it instead.
  *
  * Returns: the new list entry.
  **/
@@ -69,6 +68,7 @@ nih_list_new (void)
 
 /**
  * nih_list_entry_new:
+ * @data: data to attach to the new entry.
  *
  * Allocates a new list entry and sets the data member to @data, the new
  * entry can be added to any existing list.
@@ -95,7 +95,7 @@ nih_list_entry_new (void *data)
  *
  * Removes @entry from its containing list.  The entry is not freed, but
  * is instead returned so that it can be added to another list (though
- * there's no need to call d_list_remove() first if you wanted to do that)
+ * there's no need to call nih_list_remove() first if you wanted to do that)
  * or used as the start of a new list.
  *
  * Returns: @entry as a lone entry.

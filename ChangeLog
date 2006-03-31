@@ -1,3 +1,9 @@
+2006-03-31  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/alloc.c, nih/alloc.h, nih/list.c, nih/list.h, nih/macros.h,
+	nih/libnih.h, nih/tests/test_alloc.c,
+	nih/tests/test_list.c: Update FSF address in GPL header.
+
 2006-03-03  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/alloc.c, nih/alloc.h, nih/list.c, nih/list.h: Formatting fixes,

@@ -55,4 +55,9 @@
 # define MAX(_a, _b) ((_a) > (_b) ? (_a) : (_b))
 #endif /* MAX */
 
+
+/* Hack to turn numeric macros into a string */
+#define _STRINGIFY_AGAIN(_s) #_s
+#define NIH_STRINGIFY(_s)    _STRINGIFY_AGAIN(-s)
+
 #endif /* NIH_MACROS_H */

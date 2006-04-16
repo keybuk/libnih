@@ -36,12 +36,6 @@
 typedef int (*NihAllocDestructor) (void *);
 
 
-/* Hack to let us stringyfy __LINE__ */
-#define _STRINGYFY(_s)       #_s
-#define _STRINGYFY_AGAIN(_s) _STRINGYFY(_s)
-#define LINE_STRING          _STRINGYFY_AGAIN(__LINE__)
-
-
 /**
  * nih_alloc:
  * @parent: parent block for new allocation,
@@ -60,7 +54,7 @@ typedef int (*NihAllocDestructor) (void *);
  **/
 #define nih_alloc(parent, type) \
 	nih_alloc_named(parent, sizeof (type), \
-			__FILE__ ":" LINE_STRING " " #type)
+			__FILE__ ":" NIH_STRINGIFY(__LINE__) " " #type)
 
 /**
  * nih_alloc_size:
@@ -80,7 +74,7 @@ typedef int (*NihAllocDestructor) (void *);
  **/
 #define nih_alloc_size(parent, size) \
 	nih_alloc_named(parent, size,
-			__FILE__ ":" LINE_STRING)
+			__FILE__ ":" NIH_STRINGIFY(__LINE__))
 
 
 NIH_BEGIN_EXTERN

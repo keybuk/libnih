@@ -1,5 +1,8 @@
 2006-04-16  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/list.c, nih/list.h: Fix docstrings to use references where
+	useful.  Split functions into blocks separated by a newline.
+
 	* nih/alloc.h: Update and fix formatting.
 	(NihAllocDestructor): Rename to NihDestructor.
 	* nih/alloc.c (nih_alloc_init): Make safe against repeated calls.

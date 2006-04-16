@@ -45,7 +45,7 @@ typedef struct nih_list {
  * @next: next entry in the list,
  * @data: pointer to data attached to the entry.
  *
- * This structure can be used in place of NihList to create lists of pointers
+ * This structure can be used in place of #NihList to create lists of pointers
  * to data of your own choosing.
  **/
 typedef struct nih_list_entry {
@@ -60,7 +60,7 @@ typedef struct nih_list_entry {
  * @list: entry in the destination list,
  * @data: data to attach to the new entry.
  *
- * Allocates a new list entry, sets the data member to @data and then
+ * Allocates a new #NihListEntry, sets the data member to @data and then
  * adds it to a new list immediately before the @list entry.  If @list
  * is the pointer you are using to refer to the list itself, this results
  * in @entry being appended to the list.
@@ -76,7 +76,7 @@ typedef struct nih_list_entry {
  * @list: entry in the destination list,
  * @data: data to attach to the new entry.
  *
- * Allocates a new list entry, sets the data member to @data and then
+ * Allocates a new #NihListEntry, sets the data member to @data and then
  * adds it to a new list immediately after the @list entry.  If @list
  * is the pointer you are using to refer to the list itself and that entry
  * has no data, this results in @entry being pushed onto a stack under it.
@@ -93,8 +93,10 @@ NIH_BEGIN_EXTERN
 void          nih_list_init      (NihList *entry);
 NihList *     nih_list_new       (void);
 NihListEntry *nih_list_entry_new (void *data);
+
 NihList *     nih_list_remove    (NihList *entry);
 void          nih_list_free      (NihList *entry);
+
 NihList *     nih_list_add       (NihList *list, NihList *entry);
 NihList *     nih_list_add_after (NihList *list, NihList *entry);
 

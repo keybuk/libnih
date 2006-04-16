@@ -50,8 +50,8 @@ nih_list_init (NihList *entry)
  * nih_list_new:
  *
  * Allocates a new list structure, usually used as the start of a new
- * list.  You may prefer to allocate the NihList structure statically and
- * use nih_list_init() to initialise it instead.
+ * list.  You may prefer to allocate the #NihList structure statically and
+ * use #nih_list_init to initialise it instead.
  *
  * Returns: the new list entry.
  **/
@@ -60,6 +60,7 @@ nih_list_new (void)
 {
 	NihList *list;
 
+	/* FIXME use nih_alloc */
 	list = malloc (sizeof (NihList));
 	nih_list_init (list);
 
@@ -89,13 +90,14 @@ nih_list_entry_new (void *data)
 	return entry;
 }
 
+
 /**
  * nih_list_remove:
  * @entry: entry to be removed.
  *
  * Removes @entry from its containing list.  The entry is not freed, but
  * is instead returned so that it can be added to another list (though
- * there's no need to call nih_list_remove() first if you wanted to do that)
+ * there's no need to call #nih_list_remove first if you wanted to do that)
  * or used as the start of a new list.
  *
  * Returns: @entry as a lone entry.
@@ -135,6 +137,7 @@ nih_list_free (NihList *entry)
 	free (entry);
 }
 
+
 /**
  * nih_list_add:
  * @list: entry in the destination list,
@@ -145,7 +148,7 @@ nih_list_free (NihList *entry)
  * in @entry being appended to the list.
  *
  * If @entry is already in another list it is removed so there is no need
- * to call nih_list_remove() before this function.  There is also no
+ * to call #nih_list_remove before this function.  There is also no
  * requirement that the lists be different, so this can be used to reorder
  * a list.
  *
@@ -177,7 +180,7 @@ nih_list_add (NihList *list,
  * has no data, this results in @entry being pushed onto a stack under it.
  *
  * If @entry is already in another list it is removed so there is no need
- * to call nih_list_remove() before this function.  There is also no
+ * to call #nih_list_remove before this function.  There is also no
  * requirement that the lists be different, so this can be used to reorder
  * a list.
  *

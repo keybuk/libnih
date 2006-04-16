@@ -1,5 +1,19 @@
 2006-04-16  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.h: Update and fix formatting.
+	(NihAllocDestructor): Rename to NihDestructor.
+	* nih/alloc.c (nih_alloc_init): Make safe against repeated calls.
+	(nih_alloc_set_allocator): New function to set the default allocator,
+	overriding any set already.
+	(nih_alloc_set_destructor): Update type of destructor argument..
+	(NihAllocCtx): Update type of destructor member.
+	* nih/tests/test_alloc.c (my_realloc): Wrapper around realloc so
+	we can check custom allocators are called properly.
+	(test_alloc_using): Test allocation with a custom allocator.
+	(test_free): Check that the block is freed using the allocator,
+	also update destructor checking.
+	(test_set_allocator): Test new allocator is used.
+
 	* nih/alloc.c (nih_alloc_using): New one-shot function to use a given
 	realloc-style function to make a named block of memory of a given size.
 	(nih_alloc_named): Replace with a thin-wrapper around nih_alloc_using

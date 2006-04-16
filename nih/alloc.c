@@ -56,7 +56,7 @@ typedef struct nih_alloc_ctx {
 	size_t                size;
 
 	NihAllocator          allocator;
-	NihAllocDestructor    destructor;
+	NihDestructor         destructor;
 } NihAllocCtx;
 
 /**
@@ -98,7 +98,28 @@ static NihAllocator allocator = NULL;
 static void
 nih_alloc_init (void)
 {
-	allocator = realloc;
+	if (! allocator)
+		allocator = realloc;
+}
+
+/**
+ * nih_alloc_set_allocator:
+ * @allocator: new default allocator function.
+ *
+ * Sets the function that will be used to allocate memory for all further
+ * blocks requested and return it to the system.  The behaviour of the
+ * function should be the same of that as the standard #realloc function.
+ *
+ * This function should generally only be used in the initialisation
+ * portion of your program, and should not be used to switch allocators
+ * temporarily.  Use #nih_alloc_using to allocate a block with an
+ * alternate allocator.
+ **/
+void
+nih_alloc_set_allocator (NihAllocator new_allocator)
+{
+	/* FIXME check allocator is not NULL */
+	allocator = new_allocator;
 }
 
 
@@ -254,8 +275,8 @@ nih_alloc_set_name (void       *ptr,
  * a value which will be the return value of the #nih_free function.
  **/
 void
-nih_alloc_set_destructor (void               *ptr,
-			  NihAllocDestructor  destructor)
+nih_alloc_set_destructor (void          *ptr,
+			  NihDestructor  destructor)
 {
 	NihAllocCtx *ctx;
 

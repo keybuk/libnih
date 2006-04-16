@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <nih/alloc.h>
 
@@ -79,6 +80,34 @@ test_alloc_named (void)
 	/* Parent should be ptr1 */
 	if (nih_alloc_parent (ptr2) != ptr1) {
 		printf ("BAD: parent of second block incorrect.\n");
+		ret = 1;
+	}
+
+	return ret;
+}
+
+static int last_size = 0;
+
+static void *
+my_realloc (void *ptr, size_t size)
+{
+	last_size = size;
+	return realloc (ptr, size);
+}
+
+int
+test_alloc_using (void)
+{
+	void *ptr;
+	int   ret = 0;
+
+	printf ("Testing nih_alloc_using()\n");
+	ptr = nih_alloc_using (my_realloc, NULL, 8096, "ptr1");
+	memset (ptr, 'x', 8096);
+
+	/* Realloc function should have been passed the size */
+	if (last_size < 8096) {
+		printf ("BAD: realloc not called with correct size.\n");
 		ret = 1;
 	}
 
@@ -220,11 +249,18 @@ test_free (void)
 
 	printf ("Testing nih_free()\n");
 
-	printf ("...with single context\n");
-	ptr1 = nih_alloc (NULL, 10);
+	printf ("...with no parent\n");
+	ptr1 = nih_alloc_using (my_realloc, NULL, 10, "test");
 	nih_alloc_set_destructor (ptr1, destructor_called);
+	last_size = -1;
 	was_called = 0;
 	free_ret = nih_free (ptr1);
+
+	/* Allocator function should have been called with zero size */
+	if (last_size != 0) {
+		printf ("BAD: allocator was not called.\n");
+		ret = 1;
+	}
 
 	/* Destructor should have been called */
 	if (! was_called) {
@@ -239,12 +275,19 @@ test_free (void)
 	}
 
 
-	printf ("...with parent and child\n");
+	printf ("...with destructor on child\n");
 	ptr1 = nih_alloc (NULL, 10);
-	ptr2 = nih_alloc (ptr1, 10);
+	ptr2 = nih_alloc_using (my_realloc, ptr1, 10, "child");
 	nih_alloc_set_destructor (ptr2, destructor_called);
+	last_size = -1;
 	was_called = 0;
 	free_ret = nih_free (ptr1);
+
+	/* Allocator of child should have been called with zero size */
+	if (last_size != 0) {
+		printf ("BAD: child allocator was not called.\n");
+		ret = 1;
+	}
 
 	/* Destructor of child should have been called */
 	if (! was_called) {
@@ -259,10 +302,10 @@ test_free (void)
 	}
 
 
-	printf ("...with parent and child both with destructors\n");
-	ptr1 = nih_alloc (NULL, 10);
-	nih_alloc_set_destructor (ptr1, destructor_called);
+	printf ("...with child and destructors\n");
+	ptr1 = nih_alloc (NULL, 10); 
 	ptr2 = nih_alloc (ptr1, 10);
+	nih_alloc_set_destructor (ptr1, destructor_called);
 	nih_alloc_set_destructor (ptr2, child_destructor_called);
 	was_called = 0;
 	free_ret = nih_free (ptr1);
@@ -301,6 +344,29 @@ test_set_name (void)
 	return ret;
 }
 
+int
+test_set_allocator (void)
+{
+	void *ptr;
+	int   ret = 0;
+
+	printf ("Testing nih_alloc_set_allocator()\n");
+	nih_alloc_set_allocator (my_realloc);
+
+	last_size = 0;
+	ptr = nih_alloc (NULL, 10);
+
+	/* Allocator should have been called */
+	if (last_size < 10) {
+		printf ("BAD: allocator was not called.\n");
+		ret = 1;
+	}
+
+	nih_alloc_set_allocator (realloc);
+
+	return ret;
+}
+
 
 int main (int   argc,
 	  char *argv[])
@@ -308,10 +374,12 @@ int main (int   argc,
 	int ret = 0;
 
 	ret |= test_alloc_named ();
+	ret |= test_alloc_using ();
 	ret |= test_new ();
 	ret |= test_alloc ();
 	ret |= test_free ();
 	ret |= test_set_name ();
+	ret |= test_set_allocator ();
 
 	return ret;
 }

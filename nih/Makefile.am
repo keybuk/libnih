@@ -41,7 +41,7 @@ test_alloc_SOURCES = tests/test_alloc.c
 test_alloc_LDADD = alloc.o list.o
 
 test_list_SOURCES = tests/test_list.c
-test_list_LDADD = list.o
+test_list_LDADD = alloc.o list.o
 
 
 clean-local:

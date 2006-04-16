@@ -1,5 +1,17 @@
 2006-04-16  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/list.c (nih_list_new, nih_list_entry_new): Call nih_new rather
+	than malloc so the list can be a context for data members.
+	(nih_list_free): Call nih_free rather than free.
+	* nih/tests/test_list.c: Test cases should not be static.
+	(test_new, test_entry_new): Check the new object was allocated using
+	our nih_alloc function.
+	(test_remove): Test a second removal.
+	(destructor_called): Function to test whether destructor was called.
+	(test_free): Test now that we can use an NihDestructor.
+	* nih/Makefile.am (test_list_LDADD): Link alloc.o now that lists
+	depend on the allocator.
+
 	* nih/list.c, nih/list.h: Fix docstrings to use references where
 	useful.  Split functions into blocks separated by a newline.
 

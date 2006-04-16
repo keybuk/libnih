@@ -27,6 +27,7 @@
 #include <stdlib.h>
 
 #include <nih/macros.h>
+#include <nih/alloc.h>
 
 #include "list.h"
 
@@ -53,6 +54,9 @@ nih_list_init (NihList *entry)
  * list.  You may prefer to allocate the #NihList structure statically and
  * use #nih_list_init to initialise it instead.
  *
+ * The structure is allocated using #nih_alloc so can be used as a context
+ * to other allocations.
+ *
  * Returns: the new list entry.
  **/
 NihList *
@@ -60,8 +64,7 @@ nih_list_new (void)
 {
 	NihList *list;
 
-	/* FIXME use nih_alloc */
-	list = malloc (sizeof (NihList));
+	list = nih_new (NULL, NihList);
 	nih_list_init (list);
 
 	return list;
@@ -74,6 +77,9 @@ nih_list_new (void)
  * Allocates a new list entry and sets the data member to @data, the new
  * entry can be added to any existing list.
  *
+ * The structure is allocated using #nih_alloc so can be used as a context
+ * to other allocations.
+ *
  * Returns: the new list entry..
  **/
 NihListEntry *
@@ -81,8 +87,7 @@ nih_list_entry_new (void *data)
 {
 	NihListEntry *entry;
 
-	/* FIXME use nih_alloc */
-	entry = malloc (sizeof (NihListEntry));
+	entry = nih_new (NULL, NihListEntry);
 	nih_list_init ((NihList *)entry);
 
 	entry->data = data;
@@ -120,7 +125,7 @@ nih_list_remove (NihList *entry)
  * @entry: entry to be removed and freed.
  *
  * Removes @entry from its containing list and frees the memory allocated
- * for it.
+ * for it.  @entry must have been previously allocated using #nih_alloc.
  *
  * You must take care of freeing the data attached to the entry yourself
  * by either freeing it before calling this function or allocating it using
@@ -133,8 +138,7 @@ nih_list_free (NihList *entry)
 
 	nih_list_remove (entry);
 
-	/* FIXME nih_free */
-	free (entry);
+	nih_free (entry);
 }
 
 

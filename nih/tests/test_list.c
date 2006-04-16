@@ -24,11 +24,13 @@
 #endif /* HAVE_CONFIG_H */
 
 #include <stdio.h>
+#include <string.h>
 
+#include <nih/alloc.h>
 #include <nih/list.h>
 
 
-static int
+int
 test_init (void)
 {
 	NihList entry;
@@ -52,7 +54,7 @@ test_init (void)
 	return ret;
 }
 
-static int
+int
 test_new (void)
 {
 	NihList *list;
@@ -73,10 +75,16 @@ test_new (void)
 		ret = 1;
 	}
 
+	/* Should have been allocated using nih_alloc */
+	if (! strstr (nih_alloc_name (list), "list.c")) {
+		printf ("BAD: nih_alloc was not used.\n");
+		ret = 1;
+	}
+
 	return ret;
 }
 
-static int
+int
 test_entry_new (void)
 {
 	static char  *data = "some data";
@@ -104,10 +112,16 @@ test_entry_new (void)
 		ret = 1;
 	}
 
+	/* Should have been allocated using nih_alloc */
+	if (! strstr (nih_alloc_name (entry), "list.c")) {
+		printf ("BAD: nih_alloc was not used.\n");
+		ret = 1;
+	}
+
 	return ret;
 }
 
-static int
+int
 test_add (void)
 {
 	static char  *data = "new data";
@@ -290,7 +304,7 @@ test_add (void)
 	return ret;
 }
 
-static int
+int
 test_add_after (void)
 {
 	static char  *data = "new entry";
@@ -473,7 +487,7 @@ test_add_after (void)
 	return ret;
 }
 
-static int
+int
 test_remove (void)
 {
 	NihList      *list, *ptr;
@@ -532,6 +546,76 @@ test_remove (void)
 	return ret;
 }
 
+static int was_called;
+
+static int
+destructor_called (void *ptr)
+{
+	was_called++;
+
+	return 0;
+}
+
+static int
+test_free (void)
+{
+	NihList      *list;
+	NihListEntry *entry, *tail;
+	int           ret = 0;
+
+	list = nih_list_new ();
+	entry = nih_list_add_new (list, "entry 1");
+	tail = nih_list_add_new (list, "entry 2");
+
+	printf ("Testing nih_list_free()\n");
+	nih_alloc_set_destructor (entry, destructor_called);
+	nih_list_free ((NihList *)entry);
+
+	/* Destructor should have been called */
+	if (! was_called) {
+		printf ("BAD: destructor was not called.\n");
+		ret = 1;
+	}
+
+	/* The previous pointer should point back to itself */
+	if (entry->prev != (NihList *)entry) {
+		printf ("BAD: prev pointer set incorrectly.\n");
+		ret = 1;
+	}
+
+	/* The next pointer should point back to itself */
+	if (entry->next != (NihList *)entry) {
+		printf ("BAD: next pointer set incorrectly.\n");
+		ret = 1;
+	}
+
+	/* Head entry's next pointer should point to the tail entry */
+	if (list->next != (NihList *)tail) {
+		printf ("BAD: head next pointer set incorrectly.\n");
+		ret = 1;
+	}
+
+	/* Head entry's previous pointer should still point to the tail */
+	if (list->prev != (NihList *)tail) {
+		printf ("BAD: head prev pointer changed.\n");
+		ret = 1;
+	}
+
+	/* Tail entry's next pointer should still point to the head */
+	if (tail->next != list) {
+		printf ("BAD: tail next pointer changed.\n");
+		ret = 1;
+	}
+
+	/* Tail entry's previous pointer should point to the head entry */
+	if (tail->prev != list) {
+		printf ("BAD: tail next pointer set incorrectly.\n");
+		ret = 1;
+	}
+
+	return ret;
+}
+
 
 int
 main (int   argc,
@@ -545,7 +629,7 @@ main (int   argc,
 	ret |= test_add ();
 	ret |= test_add_after ();
 	ret |= test_remove ();
-	/* FIXME test_free once we've got nih_alloc destructors */
+	ret |= test_free ();
 
 	return ret;
 }

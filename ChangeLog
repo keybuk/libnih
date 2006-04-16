@@ -1,5 +1,31 @@
 2006-04-16  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (nih_alloc_using): New one-shot function to use a given
+	realloc-style function to make a named block of memory of a given size.
+	(nih_alloc_named): Replace with a thin-wrapper around nih_alloc_using
+	that passes in the default allocator.
+	(NihAllocCtx): Add new allocator member to store the allocator used,
+	so we free with the right one.
+	(nih_alloc_init): Set the default allocator to realloc().  Drop
+	pool initialisation code.
+	(nih_free): Call the context's original allocator with zero size.
+	(used_pool, unused_pool, NIH_ALLOC_SMALLEST): Remove, these really
+	belong in distinct memory handling code.
+	(nih_alloc_set, nih_alloc_new): Drop functions only needed if we're
+	doing our own memory management.
+	(nih_alloc_size, nih_alloc_parent): Add a couple of useful functions.
+	* nih/alloc.h (NihAllocator): Typedef for allocator function prototype.
+	(nih_alloc): Rename to nih_new.
+	(nih_alloc_size): Rename to nih_alloc.
+	* nih/tests/test_alloc.c (test_alloc_named, test_new, test_alloc): Test
+	behaviour of standard functions with and without parents.
+	(destructor_called): Allow it to be called multiple times, change
+	to static to enforce modularity.
+	(child_destructor_called): Another function for testing multiple
+	destructors.
+	(test_free): Test nih_free using alloc destructors.
+	(test_alloc_set_name): Rename to just test_set_name for consistency.
+
 	* nih/macros.h (NIH_STRINGIFY): Generic hack to turn a numeric
 	macro into a string.
 	* nih/alloc.h (nih_alloc, nih_alloc_size): Use generic NIH_STRINGIFY

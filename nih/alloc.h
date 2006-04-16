@@ -24,9 +24,18 @@
 
 
 /**
+ * NihAllocator:
+ *
+ * An allocator is a function that can be used to both allocate memory
+ * and return it to the system (or cache it, etc.)  The behaviour should
+ * be the same of that as the standard #realloc function.
+ **/
+typedef void *(*NihAllocator) (void *, size_t);
+
+/**
  * NihAllocDestructor:
  *
- * A destructor is a function that can be associated with a NihAllocCtx
+ * A destructor is a function that can be associated with a #NihAllocCtx
  * and is called when the block is freed; the pointer given is that of
  * the block being freed.
  *
@@ -37,7 +46,7 @@ typedef int (*NihAllocDestructor) (void *);
 
 
 /**
- * nih_alloc:
+ * nih_new:
  * @parent: parent block for new allocation,
  * @type: type of data to store.
  *
@@ -48,16 +57,16 @@ typedef int (*NihAllocDestructor) (void *);
  * block which will be used as the parent for this block.  When @parent
  * is freed, the returned block will be freed too.  If you have clean-up
  * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor function.
+ * the #nih_alloc_set_destructor function.
  *
  * Returns: requested memory block.
  **/
-#define nih_alloc(parent, type) \
+#define nih_new(parent, type) \
 	nih_alloc_named(parent, sizeof (type), \
 			__FILE__ ":" NIH_STRINGIFY(__LINE__) " " #type)
 
 /**
- * nih_alloc_size:
+ * nih_alloc:
  * @parent: parent block for new allocation,
  * @size: size of block to allocate.
  *
@@ -68,26 +77,30 @@ typedef int (*NihAllocDestructor) (void *);
  * block which will be used as the parent for this block.  When @parent
  * is freed, the returned block will be freed too.  If you have clean-up
  * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor function.
+ * the #nih_alloc_set_destructor function.
  *
  * Returns: requested memory block.
  **/
-#define nih_alloc_size(parent, size) \
-	nih_alloc_named(parent, size,
+#define nih_alloc(parent, size) \
+	nih_alloc_named(parent, size, \
 			__FILE__ ":" NIH_STRINGIFY(__LINE__))
 
 
 NIH_BEGIN_EXTERN
 
-void *      nih_alloc_new            (void *parent, size_t size, const char *name);
-void *      nih_alloc_named          (void *parent, size_t size, const char *name);
-int         nih_free                 (void *ptr);
+void *nih_alloc_named                (void *parent, size_t size,
+				      const char *name);
+void *nih_alloc_using                (NihAllocator allocator, void *parent,
+				      size_t size, const char *name);
 
-void        nih_alloc_set_name       (void *ptr, const char *name);
-void        nih_alloc_set_destructor (void *ptr, NihAllocDestructor destructor);
+int nih_free                         (void *ptr);
+
+void nih_alloc_set_name              (void *ptr, const char *name);
+void nih_alloc_set_destructor        (void *ptr, NihAllocDestructor destructor);
+
 const char *nih_alloc_name           (void *ptr);
-
-void        nih_alloc_return_unused  (int large);
+size_t      nih_alloc_size           (void *ptr);
+void *	    nih_alloc_parent         (void *ptr);
 
 NIH_END_EXTERN
 

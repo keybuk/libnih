@@ -99,7 +99,7 @@ static void
 nih_alloc_init (void)
 {
 	if (! allocator)
-		allocator = realloc;
+		nih_alloc_set_allocator (realloc);
 }
 
 /**

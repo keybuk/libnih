@@ -56,6 +56,16 @@ typedef struct nih_list_entry {
 
 
 /**
+ * NIH_LIST_EMPTY:
+ * @list: entry in the list to check.
+ *
+ * Checks whether the given list is empty.
+ *
+ * Returns: TRUE if empty, FALSE otherwise.
+ **/
+#define NIH_LIST_EMPTY(list) ((list)->prev == (list)->next)
+
+/**
  * nih_list_add_new:
  * @list: entry in the destination list,
  * @data: data to attach to the new entry.

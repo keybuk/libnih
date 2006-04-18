@@ -488,6 +488,37 @@ test_add_after (void)
 }
 
 int
+test_empty (void)
+{
+	NihList      *list;
+	NihListEntry *entry;
+	int           ret = 0;
+
+	printf ("Testing NIH_LIST_EMPTY()\n");
+
+	printf ("...with empty list\n");
+	list = nih_list_new ();
+
+	/* The list should be empty */
+	if (! NIH_LIST_EMPTY (list)) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+
+	printf ("...with non-empty list\n");
+	entry = nih_list_add_new (list, "entry 1");
+
+	/* The list should not be empty */
+	if (! NIH_LIST_EMPTY (list)) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	return ret;
+}
+
+int
 test_remove (void)
 {
 	NihList      *list, *ptr;
@@ -628,6 +659,7 @@ main (int   argc,
 	ret |= test_entry_new ();
 	ret |= test_add ();
 	ret |= test_add_after ();
+	ret |= test_empty ();
 	ret |= test_remove ();
 	ret |= test_free ();
 

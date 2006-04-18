@@ -1,3 +1,12 @@
+2006-04-18  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/alloc.c (nih_alloc_init): Call nih_alloc_set_allocator.
+	* nih/alloc.h (NihDestructor): Clarify docstring to not refer
+	to internal structures.
+	* nih/list.h (NIH_LIST_EMPTY): Add convenience macro for this
+	common operation.
+	* nih/tests/test_list.c (test_empty): Test the new macro.
+
 2006-04-16  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/list.c (nih_list_new, nih_list_entry_new): Call nih_new rather

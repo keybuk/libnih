@@ -35,9 +35,9 @@ typedef void *(*NihAllocator) (void *, size_t);
 /**
  * NihDestructor:
  *
- * A destructor is a function that can be associated with a #NihAllocCtx
- * and is called when the block is freed; the pointer given is that of
- * the block being freed.
+ * A destructor is a function that can be associated with an allocated
+ * block of memory and is called when the block is freed; the pointer
+ * given is that of the block being freed.
  *
  * This can be used, for example, to close a file descriptor when the
  * structure for it is being closed.

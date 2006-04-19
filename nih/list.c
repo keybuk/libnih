@@ -70,31 +70,6 @@ nih_list_new (void)
 	return list;
 }
 
-/**
- * nih_list_entry_new:
- * @data: data to attach to the new entry.
- *
- * Allocates a new list entry and sets the data member to @data, the new
- * entry can be added to any existing list.
- *
- * The structure is allocated using #nih_alloc so can be used as a context
- * to other allocations.
- *
- * Returns: the new list entry..
- **/
-NihListEntry *
-nih_list_entry_new (void *data)
-{
-	NihListEntry *entry;
-
-	entry = nih_new (NULL, NihListEntry);
-	nih_list_init ((NihList *)entry);
-
-	entry->data = data;
-
-	return entry;
-}
-
 
 /**
  * nih_list_remove:

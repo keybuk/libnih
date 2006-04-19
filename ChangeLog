@@ -1,3 +1,23 @@
+2006-04-19  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/list.c (nih_list_entry_new): Removed.  This makes the list
+	code more focussed and generic, but also we'll nearly always want
+	the data member to be an nih_alloc child of the list, rather than
+	the other way around!
+	* nih/list.h (NihListEntry, nih_list_add_new,
+	nih_list_add_new_after): Likewise, remove the structure and helper
+	macros; if we find ourselves wanting this, we can put it in a new
+	file and just make it polymorphic like we plan for hashes.
+	* nih/tests/test_list.c: Replace all uses of NihListEntry with plain
+	NihList, we never checked the data members anyway.
+	(test_entry_new): Remove test case.
+	(test_add): Remove test of nih_list_add_new macro.
+	(test_add_after): Remove test of nih_list_add_new_after macro.
+	(test_empty): Check macro works with any list entry.
+	(test_remove): Test removal of the last list entry, and removal
+	on an already empty list.
+	(test_free): Don't check the pointers of a block we've just freed!
+
 2006-04-18  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/alloc.c (nih_alloc_init): Call nih_alloc_set_allocator.

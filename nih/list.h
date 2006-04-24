@@ -44,7 +44,8 @@ typedef struct nih_list {
  * NIH_LIST_EMPTY:
  * @list: entry in the list to check.
  *
- * Checks whether the given list is empty.
+ * Checks whether the given list is empty by comparing the next and
+ * previous pointers for equality.
  *
  * Returns: TRUE if empty, FALSE otherwise.
  **/

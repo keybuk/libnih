@@ -1,0 +1,22 @@
+allocator/slab module
+restore list_entry code somewhere else
+
+hash:
+- custom hash functions (FMV as default?)
+- add duplicate/replace/error
+- polymorphic with list if possible
+- use list for bucket chains, therefore nih_hash_remove/free are just casts
+  around the same list functions
+
+string table:
+- as hash, but massively optimised for tables of strings
+
+tree? (binary and n-ary)
+
+assertion-style functions
+
+option parsing
+main loop
+timers
+easier select/poll
+error/exception handling

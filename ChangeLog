@@ -1,3 +1,8 @@
+2006-04-24  Scott James Remnant  <scott@netsplit.com>
+
+	* TODO: Add TODO file.
+	* nih/list.h (NIH_LIST_EMPTY): Document what this actually does.
+
 2006-04-19  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/list.c (nih_list_entry_new): Removed.  This makes the list

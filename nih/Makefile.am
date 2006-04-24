@@ -2,7 +2,7 @@
 
 localedir = $(datadir)/locale
 DEFS = -DLOCALEDIR="\"$(localedir)\""
-INCLUDES = -I$(top_srcdir)/intl
+INCLUDES = -I$(top_srcdir)/intl -I$(top_srcdir)
 
 
 lib_LTLIBRARIES = libnih.la

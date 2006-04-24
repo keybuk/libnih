@@ -2,5 +2,5 @@
 
 aclocaldir = $(datadir)/aclocal
 dist_aclocal_DATA = \
-	compiler.m4
+	compiler.m4 \
 	linker.m4

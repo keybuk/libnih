@@ -1,5 +1,9 @@
 2006-04-24  Scott James Remnant  <scott@netsplit.com>
 
+	* m4/Makefile.am (dist_aclocal_DATA): Add missing \
+	* nih/Makefile.am (INCLUDES): Include top_srcdir otherwise we
+	can't be built out of tree.
+
 	* m4/Makefile.am (dist_aclocal_DATA): Install the m4 files into
 	the aclocal directory, not a package specific one.
 	* m4/compiler.m4, m4/linker.m4: Fix closing comment style.

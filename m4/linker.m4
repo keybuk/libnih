@@ -2,7 +2,7 @@
 #
 # linker.m4 - autoconf macros for linker settings
 #
-# Copyright © 2005 Scott James Remnant <scott@netsplit.com>.
+# Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -36,7 +36,7 @@ AC_DEFUN([NIH_LINKER_OPTIMISATIONS],
 else
 	[LDFLAGS="$LDFLAGS -Wl,-O1"]
 fi], [LDFLAGS="$LDFLAGS -Wl,-O1"])dnl
-]) # NIH_LINKER_OPTIMISATIONS
+])# NIH_LINKER_OPTIMISATIONS
 
 # NIH_LINKER_VERSION_SCRIPT
 # ------------------
@@ -72,4 +72,4 @@ if test -z "$VERSION_SCRIPT_ARG"; then
 	AC_MSG_RESULT([unknown])
 fi
 ])dnl
-]) # NIH_LINKER_VERSION_SCRIPT
+])# NIH_LINKER_VERSION_SCRIPT

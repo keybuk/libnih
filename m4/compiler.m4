@@ -2,7 +2,7 @@
 #
 # compiler.m4 - autoconf macros for compiler settings
 #
-# Copyright © 2005 Scott James Remnant <scott@netsplit.com>.
+# Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -40,7 +40,7 @@ AC_DEFUN([NIH_COMPILER_WARNINGS],
 		CXXFLAGS="-Wall -Werror -pedantic $CXXFLAGS"
 	fi
 fi])dnl
-]) # NIH_COMPILER_WARNINGS
+])# NIH_COMPILER_WARNINGS
 
 # NIH_COMPILER_OPTIMISATIONS
 # --------------------------
@@ -53,7 +53,7 @@ AC_DEFUN([NIH_COMPILER_OPTIMISATIONS],
 	[CFLAGS=`echo "$CFLAGS" | sed -e "s/ -O[1-9]*\b/ -O0/g"`]
 	[CXXFLAGS=`echo "$CXXFLAGS" | sed -e "s/ -O[1-9]*\b/ -O0/g"`]
 fi])dnl
-]) # NIH_COMPILER_OPTIMISATIONS
+])# NIH_COMPILER_OPTIMISATIONS
 
 # NIH_COMPILER_COVERAGE
 # ----------------------

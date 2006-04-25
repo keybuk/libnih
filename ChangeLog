@@ -1,5 +1,10 @@
 2006-04-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (nih_alloc_using): Return NULL if the allocation
+	fails.
+	* nih/list.c (nih_list_new): Also return NULL if the allocation
+	fails.
+
 	* nih/alloc.c (nih_alloc_set_allocator, nih_alloc_using,
 	nih_free, nih_alloc_set_name, nih_alloc_set_destructor,
 	nih_alloc_name, nih_alloc_size, nih_alloc_parent): Use assert

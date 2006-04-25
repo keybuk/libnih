@@ -142,7 +142,7 @@ nih_alloc_set_allocator (NihAllocator new_allocator)
  * that would need to be run, you can assign a destructor function using
  * the #nih_alloc_set_destructor function.
  *
- * Returns: requested memory block.
+ * Returns: requested memory block or NULL if allocation fails.
  **/
 void *
 nih_alloc_using (NihAllocator  allocator,
@@ -155,7 +155,8 @@ nih_alloc_using (NihAllocator  allocator,
 	assert (allocator != NULL);
 
 	ctx = allocator (NULL, sizeof (NihAllocCtx) + size);
-	/* FIXME allocator might break */
+	if (! ctx)
+		return NULL;
 
 	nih_list_init (&ctx->entry);
 	nih_list_init (&ctx->children);

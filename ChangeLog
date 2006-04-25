@@ -1,3 +1,15 @@
+2006-04-25  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/alloc.c (nih_alloc_set_allocator, nih_alloc_using,
+	nih_free, nih_alloc_set_name, nih_alloc_set_destructor,
+	nih_alloc_name, nih_alloc_size, nih_alloc_parent): Use assert
+	to uncover programming errors.
+	* nih/list.c (nih_list_init, nih_list_remove, nih_list_free,
+	nih_list_add, nih_list_add_after): Use assert to uncover
+	programming errors.
+	(nih_list_new): Comment that nih_new may return NULL and we need
+	to make sure we catch that.
+
 2006-04-24  Scott James Remnant  <scott@netsplit.com>
 
 	* m4/Makefile.am (dist_aclocal_DATA): Add missing \

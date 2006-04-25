@@ -25,6 +25,7 @@
 
 
 #include <stdlib.h>
+#include <assert.h>
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
@@ -42,7 +43,7 @@
 void
 nih_list_init (NihList *entry)
 {
-	/* FIXME check entry is not NULL */
+	assert (entry != NULL);
 
 	entry->prev = entry->next = entry;
 }
@@ -65,6 +66,8 @@ nih_list_new (void)
 	NihList *list;
 
 	list = nih_new (NULL, NihList);
+	/* FIXME list may be NULL */
+
 	nih_list_init (list);
 
 	return list;
@@ -85,7 +88,7 @@ nih_list_new (void)
 NihList *
 nih_list_remove (NihList *entry)
 {
-	/* FIXME assert entry is not NULL */
+	assert (entry != NULL);
 
 	entry->prev->next = entry->next;
 	entry->next->prev = entry->prev;
@@ -109,7 +112,7 @@ nih_list_remove (NihList *entry)
 void
 nih_list_free (NihList *entry)
 {
-	/* FIXME assert entry is not NULL */
+	assert (entry != NULL);
 
 	nih_list_remove (entry);
 
@@ -137,7 +140,8 @@ NihList *
 nih_list_add (NihList *list,
 	      NihList *entry)
 {
-	/* FIXME assert list and entry are not NULL */
+	assert (list != NULL);
+	assert (entry != NULL);
 
 	nih_list_remove (entry);
 
@@ -169,7 +173,8 @@ NihList *
 nih_list_add_after (NihList *list,
 		    NihList *entry)
 {
-	/* FIXME assert list and entry are not NULL */
+	assert (list != NULL);
+	assert (entry != NULL);
 
 	nih_list_remove (entry);
 

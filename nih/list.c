@@ -58,7 +58,7 @@ nih_list_init (NihList *entry)
  * The structure is allocated using #nih_alloc so can be used as a context
  * to other allocations.
  *
- * Returns: the new list entry or NULL if the allocation failed.
+ * Returns: the new list entry or %NULL if the allocation failed.
  **/
 NihList *
 nih_list_new (void)

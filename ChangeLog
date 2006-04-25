@@ -1,5 +1,12 @@
 2006-04-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/list.c (nih_list_new): Fix formatting of docstring.
+	* nih/alloc.c (nih_alloc_using, nih_alloc_parent): Fix formatting
+	of docstring.
+	(nih_alloc_named): Fix docstring to mention NULL can be returned.
+	* nih/tests/test_alloc.c, nih/tests/test_list.c: Add missing blank
+	line before includes.
+
 	* nih/alloc.c (nih_alloc_using): Return NULL if the allocation
 	fails.
 	* nih/list.c (nih_list_new): Also return NULL if the allocation

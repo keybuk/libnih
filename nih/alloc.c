@@ -142,7 +142,7 @@ nih_alloc_set_allocator (NihAllocator new_allocator)
  * that would need to be run, you can assign a destructor function using
  * the #nih_alloc_set_destructor function.
  *
- * Returns: requested memory block or NULL if allocation fails.
+ * Returns: requested memory block or %NULL if allocation fails.
  **/
 void *
 nih_alloc_using (NihAllocator  allocator,
@@ -194,7 +194,7 @@ nih_alloc_using (NihAllocator  allocator,
  * that would need to be run, you can assign a destructor function using
  * the #nih_alloc_set_destructor function.
  *
- * Returns: requested memory block.
+ * Returns: requested memory block or %NULL if allocation fails.
  **/
 void *
 nih_alloc_named (void       *parent,
@@ -332,7 +332,7 @@ nih_alloc_size (void *ptr)
  * nih_alloc_parent:
  * @ptr: pointer to block.
  *
- * Returns: the parent block or NULL if none.
+ * Returns: the parent block or %NULL if none.
  **/
 void *
 nih_alloc_parent (void *ptr)

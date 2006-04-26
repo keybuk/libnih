@@ -23,5 +23,6 @@
 #include <nih/macros.h>
 #include <nih/alloc.h>
 #include <nih/list.h>
+#include <nih/hash.h>
 
 #endif /* NIH_LIBNIH_H */

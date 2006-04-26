@@ -9,7 +9,8 @@ lib_LTLIBRARIES = libnih.la
 
 libnih_la_SOURCES = \
 	alloc.c \
-	list.c
+	list.c \
+	hash.c
 
 
 libnih_la_LDFLAGS = \
@@ -28,12 +29,14 @@ nihincludedir = $(includedir)/nih
 nihinclude_HEADERS = \
 	macros.h \
 	alloc.h \
-	list.h
+	list.h \
+	hash.h
 
 
 TESTS = \
 	test_alloc \
-	test_list
+	test_list \
+	test_hash
 
 check_PROGRAMS = $(TESTS)
 
@@ -42,6 +45,9 @@ test_alloc_LDADD = alloc.o list.o
 
 test_list_SOURCES = tests/test_list.c
 test_list_LDADD = alloc.o list.o
+
+test_hash_SOURCES = tests/test_hash.c
+test_hash_LDADD = alloc.o list.o hash.o
 
 
 clean-local:

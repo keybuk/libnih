@@ -1,5 +1,17 @@
 2006-04-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/hash.c: Add code for FNV hash tables that uses NihList for
+	the actual bins so is largely polymorphic.
+	* nih/hash.h: Prototypes, macros and structures.
+	* nih/macros.h: Include stdint.h as well, we use that a lot.
+	* nih/libnih.h: Include hash.h
+	* nih/tests/test_hash.c: Test cases for new hash table code.
+	* nih/Makefile.am (libnih_la_SOURCES): Build and link hash.c
+	(nihinclude_HEADERS): Install hash.h
+	(TESTS): Build and run hash table test-cases.
+	(test_hash_SOURCES, test_hash_LDADD): Code for hash table tests.
+	* TODO: Update.
+
 	* nih/tests/test_list.c (test_empty): Fix faulty test case that
 	actually proved one-entry lists were showing up as empty!
 	* nih/list.h (NIH_LIST_EMPTY): Compare the next and previous pointers

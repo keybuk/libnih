@@ -22,6 +22,7 @@
 
 /* Get standard definitions from C library */
 #include <stddef.h>
+#include <stdint.h>
 
 
 /* Allow headers to be imported from C++, marking as C. */

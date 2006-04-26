@@ -1,5 +1,10 @@
 2006-04-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_list.c (test_empty): Fix faulty test case that
+	actually proved one-entry lists were showing up as empty!
+	* nih/list.h (NIH_LIST_EMPTY): Compare the next and previous pointers
+	against the list pointer itself!
+
 	* nih/list.c (nih_list_cut): Add an inline function that does the
 	job of nih_list_remove without calling nih_list_init afterwards.
 	(nih_list_remove): Call nih_list_cut rather than modifying pointers.

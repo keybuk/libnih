@@ -402,13 +402,13 @@ test_empty (void)
 	nih_list_add (list, entry);
 
 	/* The list should not be empty */
-	if (! NIH_LIST_EMPTY (list)) {
+	if (NIH_LIST_EMPTY (list)) {
 		printf ("BAD: return value wasn't what we expected.\n");
 		ret = 1;
 	}
 
 	/* Check that's true for the entry too */
-	if (! NIH_LIST_EMPTY (entry)) {
+	if (NIH_LIST_EMPTY (entry)) {
 		printf ("BAD: return value wasn't what we expected.\n");
 		ret = 1;
 	}

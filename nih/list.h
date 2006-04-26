@@ -49,7 +49,8 @@ typedef struct nih_list {
  *
  * Returns: TRUE if empty, FALSE otherwise.
  **/
-#define NIH_LIST_EMPTY(list) ((list)->prev == (list)->next)
+#define NIH_LIST_EMPTY(list) (((list)->prev == (list)) \
+			      && ((list)->next) == (list))
 
 
 NIH_BEGIN_EXTERN

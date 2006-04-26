@@ -75,6 +75,26 @@ nih_list_new (void)
 
 
 /**
+ * nih_list_cut:
+ * @entry: entry to be removed.
+ *
+ * Removes @entry from its containing list, but does not alter @entry
+ * itself; care should be taken to set the pointers immediately after.
+ *
+ * Returns: @entry unmodified.
+ **/
+static inline NihList *
+nih_list_cut (NihList *entry)
+{
+	assert (entry != NULL);
+
+	entry->prev->next = entry->next;
+	entry->next->prev = entry->prev;
+
+	return entry;
+}
+
+/**
  * nih_list_remove:
  * @entry: entry to be removed.
  *
@@ -90,9 +110,7 @@ nih_list_remove (NihList *entry)
 {
 	assert (entry != NULL);
 
-	entry->prev->next = entry->next;
-	entry->next->prev = entry->prev;
-
+	nih_list_cut (entry);
 	nih_list_init (entry);
 
 	return entry;
@@ -114,8 +132,7 @@ nih_list_free (NihList *entry)
 {
 	assert (entry != NULL);
 
-	nih_list_remove (entry);
-
+	nih_list_cut (entry);
 	nih_free (entry);
 }
 
@@ -143,7 +160,7 @@ nih_list_add (NihList *list,
 	assert (list != NULL);
 	assert (entry != NULL);
 
-	nih_list_remove (entry);
+	nih_list_cut (entry);
 
 	entry->prev = list->prev;
 	list->prev->next = entry;
@@ -176,7 +193,7 @@ nih_list_add_after (NihList *list,
 	assert (list != NULL);
 	assert (entry != NULL);
 
-	nih_list_remove (entry);
+	nih_list_cut (entry);
 
 	entry->next = list->next;
 	list->next->prev = entry;

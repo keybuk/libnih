@@ -1,3 +1,13 @@
+2006-04-26  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/list.c (nih_list_cut): Add an inline function that does the
+	job of nih_list_remove without calling nih_list_init afterwards.
+	(nih_list_remove): Call nih_list_cut rather than modifying pointers.
+	(nih_list_free): Use nih_list_cut for efficiency, no point fixing
+	the pointers if we're just going to free it.
+	(nih_list_add, nih_list_add_after): Use nih_list_cut as the pointers
+	get modified afterwards anyway, more efficient this way.
+
 2006-04-25  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/list.c: Remove unnecessary include of stdlib.h

@@ -36,5 +36,5 @@ po/*.sin
 po/*.header
 po/Rules-quot
 po/stamp-po
-po/live-f1.pot
+po/libnih.pot
 nih/test_*

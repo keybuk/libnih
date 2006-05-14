@@ -5,6 +5,9 @@ string table:
 - as hash, but massively optimised for tables of strings
 
 tree? (binary and n-ary)
+- can this be done using NihList for the children nodes of the tree
+  a little ineffeficient for binary, though
+- need a comparison function
 
 option parsing
 main loop

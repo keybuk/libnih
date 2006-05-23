@@ -1,3 +1,19 @@
+2006-05-23  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/main.c: Add code for the various little functions that we
+	usually call from main().
+	* nih/main.h: Prototypes and macros.
+	* nih/libnih.h: Include main.h
+	* nih/Makefile.am (libnih_la_SOURCES): Build and link main.c
+	(nihinclude_HEADERS): Install main.h
+	(TESTS): Build and run main test-cases
+	(test_main_SOURCES, test_main_LDADD): Code for main tests.
+	* m4/misc.m4 (AC_COPYRIGHT): Wraps the Autoconf AC_COPYRIGHT macro
+	but also defines PACKAGE_COPYRIGHT
+	* m4/compiler.m4: Temporary hack to make sure misc.m4 gets dragged
+	in as aclocal doesn't notice it, will go away once we get something
+	that aclocal will notice.
+
 2006-04-26  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/hash.c: Add code for FNV hash tables that uses NihList for

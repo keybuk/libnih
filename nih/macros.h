@@ -61,4 +61,6 @@
 #define _STRINGIFY_AGAIN(_s) #_s
 #define NIH_STRINGIFY(_s)    _STRINGIFY_AGAIN(-s)
 
+#define _(str) (str)
+
 #endif /* NIH_MACROS_H */

@@ -24,5 +24,6 @@
 #include <nih/alloc.h>
 #include <nih/list.h>
 #include <nih/hash.h>
+#include <nih/main.h>
 
 #endif /* NIH_LIBNIH_H */

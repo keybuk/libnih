@@ -24,6 +24,10 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
+# Ensure that misc.m4 is included
+m4_ifndef([_NIH_AC_COPYRIGHT], [m4_include([m4/misc.m4])])
+
+
 # NIH_COMPILER_WARNINGS
 # ---------------------
 # Add configure option to enable additional compiler warnings and treat

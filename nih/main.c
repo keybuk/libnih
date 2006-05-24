@@ -89,7 +89,7 @@ nih_main_init_full (const char *argv0,
  * a string in the form "program (package version)" if they differ or
  * "program version" if they match.
  *
- * Returns: constant string.
+ * Returns: internal copy of the string.
  **/
 const char *
 nih_main_package_string (void)

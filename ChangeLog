@@ -1,3 +1,7 @@
+2006-05-24  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/main.c (nih_main_package_string): Clarify documentation.
+
 2006-05-23  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/main.c: Add code for the various little functions that we

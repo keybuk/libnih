@@ -25,6 +25,7 @@
 
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
@@ -96,7 +97,14 @@ nih_main_init_full (const char *argv0,
 	assert (package != NULL);
 	assert (version != NULL);
 
-	program_name = argv0;
+	/* Only take the basename of argv0 */
+	program_name = strrchr (argv0, '/');
+	if (program_name) {
+		program_name++;
+	} else {
+		program_name = argv0;
+	}
+
 	package_name = package;
 	package_version = version;
 
@@ -120,20 +128,27 @@ nih_main_init_full (const char *argv0,
 const char *
 nih_main_package_string (void)
 {
-	static char  package_string[81] = "\0";
-	const char  *ptr;
+	static char *package_string = NULL;
+	size_t       len;
 
 	assert (program_name != NULL);
 
-	ptr = strrchr (program_name, '/');
-	ptr = ptr ? ptr + 1 : program_name;
+	if (strcmp (program_name, package_name)) {
+		len = snprintf (NULL, 0, "%s (%s %s)",
+				program_name, package_name, package_version);
 
-	if (strcmp (ptr, package_name)) {
-		snprintf (package_string, sizeof (package_string),
-			  "%s (%s %s)", ptr, package_name, package_version);
+		package_string = realloc (package_string, len + 1);
+
+		snprintf (package_string, len + 1, "%s (%s %s)",
+			  program_name, package_name, package_version);
 	} else {
-		snprintf (package_string, sizeof (package_string),
-			  "%s %s", package_name, package_version);
+		len = snprintf (NULL, 0, "%s %s",
+				package_name, package_version);
+
+		package_string = realloc (package_string, len + 1);
+
+		snprintf (package_string, len + 1, "%s %s",
+			  package_name, package_version);
 	}
 
 	return package_string;

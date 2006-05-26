@@ -1,5 +1,13 @@
 2006-05-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/main.c (nih_main_init_full): Only take the basename of
+	the program name, not the full path.
+	(nih_main_package_string): Use an allocated piece of memory rather
+	than some on the stack, with C99-style snprintf to do the right thing
+	with it.
+	* nih/tests/test_main.c (test_init): Include check for basename.
+	(test_package_string): Drop tests involving basename here.
+
 	* m4/compiler.m4 (NIH_TRY_C99): Macro that tries compiling
 	some code full of C99 features.
 	(NIH_C_C99): Use the above macro to determine whether the compiler

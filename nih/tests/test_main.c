@@ -105,6 +105,16 @@ test_init (void)
 		ret = 1;
 	}
 
+	printf ("...with full program path\n");
+	nih_main_init_full ("/usr/bin/argv0", "package", "version",
+			    "bugreport", "copyright");
+
+	/* Program name should be basename */
+	if (strcmp (program_name, "argv0")) {
+		printf ("BAD: program_name set incorrectly.\n");
+		ret = 1;
+	}
+
 
 	printf ("Testing nih_main_init()\n");
 	nih_main_init ("argv[0]");
@@ -139,6 +149,7 @@ test_init (void)
 		ret = 1;
 	}
 
+
 	return ret;
 }
 
@@ -163,28 +174,6 @@ test_package_string (void)
 
 
 	printf("...with different program and package names\n");
-	package_name = "wibble";
-	str = nih_main_package_string ();
-
-	if (strcmp (str, "test (wibble 1.0)")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
-
-
-	printf ("...with full path to program and equivalent package name\n");
-	program_name = "/usr/bin/test";
-	package_name = "test";
-	str = nih_main_package_string ();
-
-	if (strcmp (str, "test 1.0")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
-
-
-	printf ("...with full path to program and different package name\n");
-	program_name = "/usr/bin/test";
 	package_name = "wibble";
 	str = nih_main_package_string ();
 

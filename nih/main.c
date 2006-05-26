@@ -31,19 +31,45 @@
 #include "main.h"
 
 
-/* Program name, taken from argv[0] */
+/**
+ * program_name:
+ *
+ * The name of the program, taken from the argument array with the directory
+ * name portion stripped.
+ **/
 const char *program_name = NULL;
 
-/* Package name, taken from configure */
+/**
+ * package_name:
+ *
+ * The name of the overall package, usually set to the autoconf PACKAGE_NAME
+ * macro.  This should be used in preference.
+ **/
 const char *package_name = NULL;
 
-/* Package version, taken from configure */
+/**
+ * package_version:
+ *
+ * The version of the overall package, thus also the version of the program.
+ * Usually set to the autoconf PACKAGE_VERSION macro.  This should be used
+ * in preference.
+ **/
 const char *package_version = NULL;
 
-/* Package copyright, taken from configure */
+/**
+ * package_copyright:
+ *
+ * The copyright message for the package, taken from the autoconf
+ * AC_COPYRIGHT macro.
+ **/
 const char *package_copyright = NULL;
 
-/* Package bug report address, taken from configure */
+/**
+ * package_bugreport:
+ *
+ * The e-mail address to report bugs on the package to, taken from the
+ * autoconf PACKAGE_BUGREPORT macro.
+ **/
 const char *package_bugreport = NULL;
 
 

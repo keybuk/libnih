@@ -1,5 +1,8 @@
 2006-05-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/main.h: Drop comments for global variables.
+	* nih/main.c: Provide proper docstrings for them here.
+
 	* nih/alloc.c (nih_alloc_init): Drop this function, instead just
 	initialise the static variable directly.
 	(nih_alloc_set_allocator): Correct parameter name in docstring,

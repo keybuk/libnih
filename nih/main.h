@@ -41,19 +41,10 @@
 
 NIH_BEGIN_EXTERN
 
-/* Program name, taken from argv[0] */
 const char *program_name;
-
-/* Package name, taken from configure */
 const char *package_name;
-
-/* Package version, taken from configure */
 const char *package_version;
-
-/* Package copyright, taken from configure */
 const char *package_copyright;
-
-/* Package bug report address, taken from configure */
 const char *package_bugreport;
 
 

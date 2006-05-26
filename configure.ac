@@ -20,6 +20,7 @@ AC_PROG_LIBTOOL
 # Checks for header files.
 
 # Checks for typedefs, structures, and compiler characteristics.
+NIH_C_C99
 
 # Checks for library functions.
 

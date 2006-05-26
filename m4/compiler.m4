@@ -75,3 +75,61 @@ AC_DEFUN([NIH_COMPILER_COVERAGE],
 	fi
 fi])dnl
 ])# NIH_COMPILER_COVERAGE
+
+# NIH_TRY_C99([ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])
+# -----------------------------------------------------
+# Try compiling some C99 code to see whether it works.
+AC_DEFUN([NIH_TRY_C99],
+[AC_TRY_COMPILE([
+#include <stdio.h>
+#include <stdbool.h>
+#include <inttypes.h>
+
+
+/* Variadic macro arguments */
+#define variadic_macro(foo, ...) printf(foo, __VA_ARGS__)
+],
+[
+	/* Compound initialisers */
+	struct { int a, b; } foo = { .a = 1, .b = 2 };
+
+	/* Boolean type */
+	bool bar = false;
+
+	/* Specific size type */
+	uint32_t baz = 0;
+
+	/* C99-style for-loop declarations */
+	for (int i = 0; i < 10; i++)
+		continue;
+
+	/* Magic __func__ variable */
+	printf("%s", __func__);
+], [$1], [$2])dnl
+])# NIH_TRY_C99
+
+# NIH_C_C99
+# ----------
+# Check whether the compiler can do C99, adding a compiler flag if
+# necessary.
+AC_DEFUN([NIH_C_C99],
+[AC_CACHE_CHECK([whether compiler supports C99 features], [nih_cv_c99],
+	[NIH_TRY_C99([nih_cv_c99=yes], [nih_cv_c99=no])])
+AS_IF([test "x$nih_cv_c99" = "xyes"],
+	[AC_DEFINE([HAVE_C99], 1, [Define to 1 if the compiler supports C99.])],
+	[AC_CACHE_CHECK([what argument makes compiler support C99 features],
+		[nih_cv_c99_arg],
+		[nih_cv_c99_arg=none
+		 nih_save_CC="$CC"
+		 for arg in "-std=gnu99" "-std=c99" "-c99"; do
+		    CC="$nih_save_CC $arg"
+		    NIH_TRY_C99([nih_arg_worked=yes], [nih_arg_worked=no])
+		    CC="$nih_save_CC"
+
+		    AS_IF([test "x$nih_arg_worked" = "xyes"],
+			  [nih_cv_c99_arg="$arg"; break])
+		 done])
+	 AS_IF([test "x$nih_cv_c99_arg" != "xnone"],
+	       [CC="$CC $nih_cv_c99_arg"
+		AC_DEFINE([HAVE_C99], 1)])])[]dnl
+])# NIH_C_C99

@@ -50,6 +50,10 @@
 #define FNV_OFFSET_BASIS 2166136261UL
 
 
+/* Prototypes for static functions */
+static uint32_t fnv_hash (const char *key);
+
+
 /**
  * primes:
  *

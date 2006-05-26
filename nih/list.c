@@ -32,6 +32,10 @@
 #include "list.h"
 
 
+/* Prototypes for static functions */
+static inline NihList *nih_list_cut (NihList *entry);
+
+
 /**
  * nih_list_init:
  * @entry: entry to be initialised.

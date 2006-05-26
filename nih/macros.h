@@ -61,6 +61,13 @@
 #define _STRINGIFY_AGAIN(_s) #_s
 #define NIH_STRINGIFY(_s)    _STRINGIFY_AGAIN(-s)
 
-#define _(str) (str)
+/* Make gettext friendlier */
+#if HAVE_GETTEXT
+# define _(_str)  gettext (_str)
+# define N_(_str) gettext_noop (_str)
+#else
+# define _(_str)  (_str)
+# define N_(_str) (_str)
+#endif
 
 #endif /* NIH_MACROS_H */

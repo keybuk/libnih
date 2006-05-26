@@ -1,5 +1,8 @@
 2006-05-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/macros.h (_, N_): Define gettext-wrapper macros if
+	HAVE_GETTEXT, otherwise define them to just expand to their string.
+
 	* nih/main.h: Drop comments for global variables.
 	* nih/main.c: Provide proper docstrings for them here.
 

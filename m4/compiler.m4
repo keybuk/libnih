@@ -38,10 +38,10 @@ AC_DEFUN([NIH_COMPILER_WARNINGS],
 	               [Enable additional compiler warnings]),
 [if test "x$enable_compiler_warnings" = "xyes"; then
 	if test "x$GCC" = "xyes"; then
-                CFLAGS="-Wall -Werror -pedantic $CFLAGS"
+                CFLAGS="-Wall -Werror $CFLAGS"
         fi
 	if test "x$GXX" = "xyes"; then
-		CXXFLAGS="-Wall -Werror -pedantic $CXXFLAGS"
+		CXXFLAGS="-Wall -Werror $CXXFLAGS"
 	fi
 fi])dnl
 ])# NIH_COMPILER_WARNINGS

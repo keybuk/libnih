@@ -25,5 +25,6 @@
 #include <nih/list.h>
 #include <nih/hash.h>
 #include <nih/main.h>
+#include <nih/logging.h>
 
 #endif /* NIH_LIBNIH_H */

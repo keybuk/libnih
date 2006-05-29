@@ -174,7 +174,7 @@ test_package_string (void)
 	}
 
 
-	printf("...with different program and package names\n");
+	printf ("...with different program and package names\n");
 	package_name = "wibble";
 	str = nih_main_package_string ();
 

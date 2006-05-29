@@ -1,5 +1,16 @@
 2006-05-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/logging.c: Code for formatting log messages and filtering
+	based on priority.
+	* nih/logging.h: Prototypes and macros.
+	* nih/libnih.h: Include logging.h
+	* nih/tests/test_logging.c: Logging test cases.
+	* nih/Makefile.am (libnih_la_SOURCES): Build and link logging.c
+	(nihinclude_HEADERS): Install logging.h
+	(TESTS): Build and run logging test cases.
+	(test_logging_SOURCES, test_logging_LDADD): Binary for logging
+	test cases.
+
 	* nih/tests/test_main.c (test_package_string, test_suggest_help,
 	test_version): Add missing comments before tests.
 	(test_suggest_help, test_version): Close the duplicated stdout/stderr

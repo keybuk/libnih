@@ -91,9 +91,13 @@ NIH_BEGIN_EXTERN
 void        nih_alloc_set_allocator  (NihAllocator new_allocator);
 
 void *      nih_alloc_named          (void *parent, size_t size,
-				      const char *name);
+				      const char *name)
+                                     __attribute__((warn_unused_result,
+						    malloc));
 void *      nih_alloc_using          (NihAllocator allocator, void *parent,
-				      size_t size, const char *name);
+				      size_t size, const char *name)
+                                     __attribute__((warn_unused_result,
+						    malloc));
 
 int         nih_free                 (void *ptr);
 

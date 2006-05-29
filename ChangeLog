@@ -1,3 +1,8 @@
+2006-05-29  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/alloc.h: Declare nih_alloc_named and nih_alloc_using with
+	the warn_unused_result and malloc attributes.
+
 2006-05-27  Scott James Remnant  <scott@netsplit.com>
 
 	* m4/compiler.m4 (NIH_COMPILER_WARNINGS): Drop -pedantic as we

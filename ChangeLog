@@ -1,5 +1,7 @@
 2006-05-29  Scott James Remnant  <scott@netsplit.com>
 
+	* TODO: Update.
+
 	* nih/logging.c: Code for formatting log messages and filtering
 	based on priority.
 	* nih/logging.h: Prototypes and macros.

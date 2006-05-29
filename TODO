@@ -14,4 +14,3 @@ main loop
 timers
 easier select/poll
 error/exception handling
-message logging, esp. debug

@@ -1,5 +1,16 @@
 2006-05-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (nih_alloc_init): Restore this function, it's better
+	style to keep variables in shared libraries as zero.
+	(nih_alloc_named): Call nih_alloc_init once more.
+	* nih/logging.h: Reorder such that NONE is the lowest value.
+	* nih/logging.c (min_priority): Rename to max_priority and set value
+	to NIH_LOG_NONE (zero).
+	(nih_log_init): Initialise the default logger and priority.
+	(nih_log_set_priority): Assert priority is greater than NONE.
+	(nih_log_message): Initialise the logging if necessary.
+	(nih_logger_printf): Check priority with <=
+
 	* TODO: Update.
 
 	* nih/logging.c: Code for formatting log messages and filtering

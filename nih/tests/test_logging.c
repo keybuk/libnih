@@ -52,6 +52,7 @@ test_set_logger (void)
 	int ret = 0;
 
 	printf ("Testing nih_log_set_logger()\n");
+	nih_log_set_priority (NIH_LOG_WARN);
 	nih_log_set_logger (my_logger);
 
 	last_priority = NIH_LOG_NONE;
@@ -105,7 +106,7 @@ test_log_message (void)
 	last_priority = NIH_LOG_NONE;
 	last_message = NULL;
 
-	printf ("...with message of high enough priority\n");
+	printf ("...with message of low enough priority\n");
 
 	err = nih_log_message (NIH_LOG_FATAL, "message with %s %d formatting",
 			       "some", 20);
@@ -131,7 +132,7 @@ test_log_message (void)
 
 	printf ("...with message of insufficient priority\n");
 
-	err = nih_log_message (NIH_LOG_DEBUG, "not high enough");
+	err = nih_log_message (NIH_LOG_DEBUG, "not low enough");
 
 	/* A positive error code should be returned */
 	if (err <= 0) {
@@ -294,7 +295,7 @@ test_logger_printf (void)
 	oldstdout = dup (STDOUT_FILENO);
 	oldstderr = dup (STDERR_FILENO);
 
-	printf ("...with low-priority message\n");
+	printf ("...with high-priority message\n");
 	dup2 (fileno (output), STDOUT_FILENO);
 	err = nih_log_message (NIH_LOG_DEBUG, "message with %s %d formatting",
 			       "some", 20);
@@ -326,7 +327,7 @@ test_logger_printf (void)
 	ftruncate (fileno (output), 0);
 
 
-	printf ("...with high-priority message\n");
+	printf ("...with low-priority message\n");
 	dup2 (fileno (output), STDERR_FILENO);
 	err = nih_log_message (NIH_LOG_FATAL, "%s message %d formatted",
 			       "error", -1);

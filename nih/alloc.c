@@ -88,8 +88,20 @@ typedef struct nih_alloc_ctx {
  *
  * Function used to allocate and free memory for the majority of blocks.
  **/
-static NihAllocator allocator = realloc;
+static NihAllocator allocator = NULL;
 
+
+/**
+ * nih_alloc_init:
+ *
+ * Initialise the default allocator.
+ **/
+static void
+nih_alloc_init (void)
+{
+	if (! allocator)
+		nih_alloc_set_allocator (realloc);
+}
 
 /**
  * nih_alloc_set_allocator:
@@ -189,6 +201,9 @@ nih_alloc_named (void       *parent,
 		 size_t      size,
 		 const char *name)
 {
+	if (! allocator)
+		nih_alloc_init ();
+
 	return nih_alloc_using (allocator, parent, size, name);
 }
 

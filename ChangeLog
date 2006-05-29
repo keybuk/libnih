@@ -1,5 +1,10 @@
 2006-05-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_main.c (test_package_string, test_suggest_help,
+	test_version): Add missing comments before tests.
+	(test_suggest_help, test_version): Close the duplicated stdout/stderr
+	before leaving the test.
+
 	* nih/alloc.h: Declare nih_alloc_named and nih_alloc_using with
 	the warn_unused_result and malloc attributes.
 

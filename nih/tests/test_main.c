@@ -167,6 +167,7 @@ test_package_string (void)
 	printf ("...with same program and package names\n");
 	str = nih_main_package_string ();
 
+	/* String should be just package name and version */
 	if (strcmp (str, "test 1.0")) {
 		printf ("BAD: return value wasn't what we expected.\n");
 		ret = 1;
@@ -177,6 +178,7 @@ test_package_string (void)
 	package_name = "wibble";
 	str = nih_main_package_string ();
 
+	/* String should be program name as well as package name and version */
 	if (strcmp (str, "test (wibble 1.0)")) {
 		printf ("BAD: return value wasn't what we expected.\n");
 		ret = 1;
@@ -193,7 +195,6 @@ test_suggest_help (void)
 	int   oldstderr, ret = 0;
 
 	printf ("Testing nih_main_suggest_help\n");
-
 	program_name = "test";
 
 	output = tmpfile ();
@@ -204,19 +205,22 @@ test_suggest_help (void)
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
-	fgets (text, sizeof (text), output);
 
+	/* Output should be message with program name and newline */
+	fgets (text, sizeof (text), output);
 	if (strcmp (text, "Try `test --help' for more information.\n")) {
 		printf ("BAD: output wasn't what we expected.\n");
 		ret = 1;
 	}
 
+	/* Should be no more output */
 	if (fgets (text, sizeof (text), output)) {
 		printf ("BAD: more output than we expected.\n");
 		ret = 1;
 	}
 
 	fclose (output);
+	close (oldstderr);
 
 	return ret;
 }
@@ -229,7 +233,6 @@ test_version (void)
 	int   oldstdout, ret = 0;
 
 	printf ("Testing nih_main_version\n");
-
 	program_name = "test";
 	package_name = "wibble";
 	package_version = "1.0";
@@ -244,42 +247,49 @@ test_version (void)
 
 	rewind (output);
 
+	/* First line of output should be package string */
 	fgets (text, sizeof (text), output);
 	if (strcmp (text, "test (wibble 1.0)\n")) {
 		printf ("BAD: package line wasn't what we expected.\n");
 		ret = 1;
 	}
 
+	/* Second line of output should be copyright message */
 	fgets (text, sizeof (text), output);
 	if (strcmp (text, "Copyright Message\n")) {
 		printf ("BAD: copyright line wasn't what we expected.\n");
 		ret = 1;
 	}
 
+	/* Third line of output should be a blank line */
 	fgets (text, sizeof (text), output);
 	if (strcmp (text, "\n")) {
 		printf ("BAD: output wasn't what we expected.\n");
 		ret = 1;
 	}
 
+	/* Fourth line should be start of GPL preamble */
 	fgets (text, sizeof (text), output);
 	if (strncmp (text, "This is free software;", 22)) {
 		printf ("BAD: first licence line wasn't what we expected.\n");
 		ret = 1;
 	}
 
+	/* Fifth line should be GPL preamble */
 	fgets (text, sizeof (text), output);
 	if (strncmp (text, "warranty; not even for", 22)) {
 		printf ("BAD: second licence line wasn't what we expected.\n");
 		ret = 1;
 	}
 
+	/* Should be no more output */
 	if (fgets (text, sizeof (text), output)) {
 		printf ("BAD: more output than we expected.\n");
 		ret = 1;
 	}
 
 	fclose (output);
+	close (oldstdout);
 
 	return ret;
 }

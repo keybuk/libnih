@@ -47,19 +47,24 @@ TESTS = \
 check_PROGRAMS = $(TESTS)
 
 test_alloc_SOURCES = tests/test_alloc.c
-test_alloc_LDADD = alloc.o list.o
+test_alloc_LDFLAGS = -static
+test_alloc_LDADD = libnih.la
 
 test_list_SOURCES = tests/test_list.c
-test_list_LDADD = alloc.o list.o
+test_list_LDFLAGS = -static
+test_list_LDADD = libnih.la
 
 test_hash_SOURCES = tests/test_hash.c
-test_hash_LDADD = alloc.o list.o hash.o
+test_hash_LDFLAGS = -static
+test_hash_LDADD = libnih.la
 
 test_main_SOURCES = tests/test_main.c
-test_main_LDADD = main.o
+test_main_LDFLAGS = -static
+test_main_LDADD = libnih.la
 
 test_logging_SOURCES = tests/test_logging.c
-test_logging_LDADD = logging.o
+test_logging_LDFLAGS = -static
+test_logging_LDADD = libnih.la
 
 
 clean-local:

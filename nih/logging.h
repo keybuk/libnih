@@ -20,6 +20,8 @@
 #ifndef NIH_LOGGING_H
 #define NIH_LOGGING_H
 
+#include <stdlib.h>
+
 #include <nih/macros.h>
 
 
@@ -105,6 +107,21 @@ typedef int (*NihLogger) (NihLogLevel, const char *);
 #define nih_debug(format, ...) \
 	nih_log_message (NIH_LOG_DEBUG, "%s: " format, \
 	                 __FUNCTION__, ##__VA_ARGS__)
+
+/**
+ * nih_assert:
+ * @expr: expression to check.
+ *
+ * Outputs a fatal error message and terminates the process if @expr is
+ * false.
+ **/
+#define nih_assert(expr) \
+	if (NIH_LIKELY(expr)) ; \
+	else { \
+		nih_fatal ("%s:%d: Assertion failed in %s: %s", \
+			   __FILE__, __LINE__, __FUNCTION__, #expr); \
+		abort (); \
+	}
 
 
 NIH_BEGIN_EXTERN

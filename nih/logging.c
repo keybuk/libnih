@@ -28,7 +28,6 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 #include <nih/main.h>
 
@@ -73,7 +72,7 @@ nih_log_init (void)
 void
 nih_log_set_logger (NihLogger new_logger)
 {
-	assert (new_logger != NULL);
+	nih_assert (new_logger != NULL);
 
 	logger = new_logger;
 }
@@ -88,7 +87,7 @@ nih_log_set_logger (NihLogger new_logger)
 void
 nih_log_set_priority (NihLogLevel new_priority)
 {
-	assert (new_priority > NIH_LOG_NONE);
+	nih_assert (new_priority > NIH_LOG_NONE);
 
 	max_priority = new_priority;
 }
@@ -116,7 +115,7 @@ nih_log_message (NihLogLevel  priority,
 	size_t       len;
 	va_list      args;
 
-	assert (format != NULL);
+	nih_assert (format != NULL);
 
 	if (! max_priority)
 		nih_log_init ();
@@ -157,7 +156,7 @@ nih_logger_printf (NihLogLevel  priority,
 	FILE       *stream;
 	size_t      idx;
 
-	assert (message != NULL);
+	nih_assert (message != NULL);
 
 	/* Follow GNU conventions and don't put a space between the program
 	 * name and message if the message is of the form "something: message"

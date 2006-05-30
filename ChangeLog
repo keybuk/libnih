@@ -1,5 +1,15 @@
 2006-05-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/logging.h (nih_assert): Assertion macro that uses our logging
+	rather than stderr.
+	* nih/alloc.c, nih/hash.c, nih/list.c, nih/logging.c, nih/main.c:
+	Use nih_assert rather than assert.
+	* nih/Makefile.am (test_alloc_LDFLAGS, test_list_LDFLAGS,
+	test_hash_LDFLAGS, test_main_LDFLAGS, test_logging_LDFLAGS): Link
+	libraries statically.
+	(test_alloc_LDADD, test_list_LDADD, test_hash_LDADD,
+	test_main_LDADD, test_logging_LDADD): Just link to the library.
+
 	* nih/macros.h (NIH_STRINGIFY): Correct typo (-s -> _s)
 	(NIH_LIKELY, NIH_UNLIKELY): Add branch prediction macros.
 

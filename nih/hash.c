@@ -25,9 +25,9 @@
 
 
 #include <string.h>
-#include <assert.h>
 
 #include <nih/macros.h>
+#include <nih/logging.h>
 #include <nih/alloc.h>
 
 #include "hash.h"
@@ -91,7 +91,7 @@ fnv_hash (const char *key)
 {
 	register uint32_t hash = FNV_OFFSET_BASIS;
 
-	assert (key != NULL);
+	nih_assert (key != NULL);
 
 	while (*key) {
 		hash *= FNV_PRIME;
@@ -127,7 +127,7 @@ nih_hash_new (size_t         entries,
 	NihHash *hash;
 	size_t   i;
 
-	assert (key_function != NULL);
+	nih_assert (key_function != NULL);
 
 	hash = nih_new (NULL, NihHash);
 	if (! hash)
@@ -179,8 +179,8 @@ nih_hash_add (NihHash *hash,
 	const char *key;
 	NihList    *bin;
 
-	assert (hash != NULL);
-	assert (entry != NULL);
+	nih_assert (hash != NULL);
+	nih_assert (entry != NULL);
 
 	key = hash->key_function (entry);
 	bin = &hash->bins[fnv_hash (key) % hash->size];
@@ -215,8 +215,8 @@ nih_hash_add_unique (NihHash *hash,
 	const char *key;
 	NihList    *bin, *iter;
 
-	assert (hash != NULL);
-	assert (entry != NULL);
+	nih_assert (hash != NULL);
+	nih_assert (entry != NULL);
 
 	key = hash->key_function (entry);
 	bin = &hash->bins[fnv_hash (key) % hash->size];
@@ -259,8 +259,8 @@ nih_hash_replace (NihHash *hash,
 	const char *key;
 	NihList    *bin, *iter, *ret = NULL;
 
-	assert (hash != NULL);
-	assert (entry != NULL);
+	nih_assert (hash != NULL);
+	nih_assert (entry != NULL);
 
 	key = hash->key_function (entry);
 	bin = &hash->bins[fnv_hash (key) % hash->size];
@@ -299,8 +299,8 @@ nih_hash_search (NihHash    *hash,
 {
 	NihList *bin, *iter;
 
-	assert (hash != NULL);
-	assert (key != NULL);
+	nih_assert (hash != NULL);
+	nih_assert (key != NULL);
 
 	bin = &hash->bins[fnv_hash (key) % hash->size];
 	for (iter = bin->next; iter != bin; iter = iter->next) {

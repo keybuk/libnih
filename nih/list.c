@@ -24,9 +24,8 @@
 #endif /* HAVE_CONFIG_H */
 
 
-#include <assert.h>
-
 #include <nih/macros.h>
+#include <nih/logging.h>
 #include <nih/alloc.h>
 
 #include "list.h"
@@ -46,7 +45,7 @@ static inline NihList *nih_list_cut (NihList *entry);
 void
 nih_list_init (NihList *entry)
 {
-	assert (entry != NULL);
+	nih_assert (entry != NULL);
 
 	entry->prev = entry->next = entry;
 }
@@ -90,7 +89,7 @@ nih_list_new (void)
 static inline NihList *
 nih_list_cut (NihList *entry)
 {
-	assert (entry != NULL);
+	nih_assert (entry != NULL);
 
 	entry->prev->next = entry->next;
 	entry->next->prev = entry->prev;
@@ -112,7 +111,7 @@ nih_list_cut (NihList *entry)
 NihList *
 nih_list_remove (NihList *entry)
 {
-	assert (entry != NULL);
+	nih_assert (entry != NULL);
 
 	nih_list_cut (entry);
 	nih_list_init (entry);
@@ -134,7 +133,7 @@ nih_list_remove (NihList *entry)
 void
 nih_list_free (NihList *entry)
 {
-	assert (entry != NULL);
+	nih_assert (entry != NULL);
 
 	nih_list_cut (entry);
 	nih_free (entry);
@@ -161,8 +160,8 @@ NihList *
 nih_list_add (NihList *list,
 	      NihList *entry)
 {
-	assert (list != NULL);
-	assert (entry != NULL);
+	nih_assert (list != NULL);
+	nih_assert (entry != NULL);
 
 	nih_list_cut (entry);
 
@@ -194,8 +193,8 @@ NihList *
 nih_list_add_after (NihList *list,
 		    NihList *entry)
 {
-	assert (list != NULL);
-	assert (entry != NULL);
+	nih_assert (list != NULL);
+	nih_assert (entry != NULL);
 
 	nih_list_cut (entry);
 

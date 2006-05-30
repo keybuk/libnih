@@ -25,9 +25,9 @@
 
 
 #include <stdlib.h>
-#include <assert.h>
 
 #include <nih/macros.h>
+#include <nih/logging.h>
 #include <nih/list.h>
 
 #include "alloc.h"
@@ -119,7 +119,7 @@ nih_alloc_init (void)
 void
 nih_alloc_set_allocator (NihAllocator new_allocator)
 {
-	assert (new_allocator != NULL);
+	nih_assert (new_allocator != NULL);
 
 	allocator = new_allocator;
 }
@@ -152,7 +152,7 @@ nih_alloc_using (NihAllocator  allocator,
 {
 	NihAllocCtx *ctx;
 
-	assert (allocator != NULL);
+	nih_assert (allocator != NULL);
 
 	ctx = allocator (NULL, sizeof (NihAllocCtx) + size);
 	if (! ctx)
@@ -225,7 +225,7 @@ nih_free (void *ptr)
 	NihList     *iter;
 	int          ret = 0;
 
-	assert (ptr != NULL);
+	nih_assert (ptr != NULL);
 
 	ctx = NIH_ALLOC_CTX (ptr);
 
@@ -262,7 +262,7 @@ nih_alloc_set_name (void       *ptr,
 {
 	NihAllocCtx *ctx;
 
-	assert (ptr != NULL);
+	nih_assert (ptr != NULL);
 
 	ctx = NIH_ALLOC_CTX (ptr);
 	ctx->name = name;
@@ -287,7 +287,7 @@ nih_alloc_set_destructor (void          *ptr,
 {
 	NihAllocCtx *ctx;
 
-	assert (ptr != NULL);
+	nih_assert (ptr != NULL);
 
 	ctx = NIH_ALLOC_CTX (ptr);
 	ctx->destructor = destructor;
@@ -305,7 +305,7 @@ nih_alloc_name (void *ptr)
 {
 	NihAllocCtx *ctx;
 
-	assert (ptr != NULL);
+	nih_assert (ptr != NULL);
 
 	ctx = NIH_ALLOC_CTX (ptr);
 	return ctx->name;
@@ -322,7 +322,7 @@ nih_alloc_size (void *ptr)
 {
 	NihAllocCtx *ctx;
 
-	assert (ptr != NULL);
+	nih_assert (ptr != NULL);
 
 	ctx = NIH_ALLOC_CTX (ptr);
 	return ctx->size;
@@ -339,7 +339,7 @@ nih_alloc_parent (void *ptr)
 {
 	NihAllocCtx *ctx;
 
-	assert (ptr != NULL);
+	nih_assert (ptr != NULL);
 
 	ctx = NIH_ALLOC_CTX (ptr);
 	if (ctx->parent) {

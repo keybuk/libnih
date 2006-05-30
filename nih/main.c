@@ -27,7 +27,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
+
+#include <nih/macros.h>
+#include <nih/logging.h>
 
 #include "main.h"
 
@@ -93,9 +95,9 @@ nih_main_init_full (const char *argv0,
 		    const char *bugreport,
 		    const char *copyright)
 {
-	assert (argv0 != NULL);
-	assert (package != NULL);
-	assert (version != NULL);
+	nih_assert (argv0 != NULL);
+	nih_assert (package != NULL);
+	nih_assert (version != NULL);
 
 	/* Only take the basename of argv0 */
 	program_name = strrchr (argv0, '/');
@@ -131,7 +133,7 @@ nih_main_package_string (void)
 	static char *package_string = NULL;
 	size_t       len;
 
-	assert (program_name != NULL);
+	nih_assert (program_name != NULL);
 
 	if (strcmp (program_name, package_name)) {
 		len = snprintf (NULL, 0, "%s (%s %s)",
@@ -162,7 +164,7 @@ nih_main_package_string (void)
 void
 nih_main_suggest_help (void)
 {
-	assert (program_name != NULL);
+	nih_assert (program_name != NULL);
 
 	fprintf (stderr, _("Try `%s --help' for more information.\n"),
 		 program_name);
@@ -176,7 +178,7 @@ nih_main_suggest_help (void)
 void
 nih_main_version (void)
 {
-	assert (program_name != NULL);
+	nih_assert (program_name != NULL);
 
 	printf ("%s\n", nih_main_package_string ());
 	if (package_copyright)

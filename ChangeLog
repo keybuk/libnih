@@ -1,3 +1,8 @@
+2006-05-30  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/macros.h (NIH_STRINGIFY): Correct typo (-s -> _s)
+	(NIH_LIKELY, NIH_UNLIKELY): Add branch prediction macros.
+
 2006-05-29  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/alloc.c (nih_alloc_init): Restore this function, it's better

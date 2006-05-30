@@ -59,7 +59,12 @@
 
 /* Hack to turn numeric macros into a string */
 #define _STRINGIFY_AGAIN(_s) #_s
-#define NIH_STRINGIFY(_s)    _STRINGIFY_AGAIN(-s)
+#define NIH_STRINGIFY(_s)    _STRINGIFY_AGAIN(_s)
+
+/* Branch prediction */
+#define NIH_LIKELY(_e)   __builtin_expect ((_e) ? TRUE : FALSE, TRUE)
+#define NIH_UNLIKELY(_e) __builtin_expect ((_e) ? TRUE : FALSE, FALSE)
+
 
 /* Make gettext friendlier */
 #if HAVE_GETTEXT

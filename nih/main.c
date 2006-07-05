@@ -138,16 +138,24 @@ nih_main_package_string (void)
 	if (strcmp (program_name, package_name)) {
 		len = snprintf (NULL, 0, "%s (%s %s)",
 				program_name, package_name, package_version);
+		if (len < 0)
+			return program_name;
 
 		package_string = realloc (package_string, len + 1);
+		if (! package_string)
+			return program_name;
 
 		snprintf (package_string, len + 1, "%s (%s %s)",
 			  program_name, package_name, package_version);
 	} else {
 		len = snprintf (NULL, 0, "%s %s",
 				package_name, package_version);
+		if (len < 0)
+			return package_name;
 
 		package_string = realloc (package_string, len + 1);
+		if (! package_string)
+			return package_name;
 
 		snprintf (package_string, len + 1, "%s %s",
 			  package_name, package_version);

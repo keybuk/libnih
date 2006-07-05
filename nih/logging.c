@@ -111,9 +111,10 @@ int
 nih_log_message (NihLogLevel  priority,
 		 const char  *format, ...)
 {
-	static char *message = NULL;
-	size_t       len;
-	va_list      args;
+	char    *message = NULL;
+	size_t   len;
+	va_list  args;
+	int      ret;
 
 	nih_assert (format != NULL);
 
@@ -127,14 +128,23 @@ nih_log_message (NihLogLevel  priority,
 
 	/* Find out how long the string will be */
 	len = vsnprintf (NULL, 0, format, args);
+	if (len < 0)
+		return -1;
 
-	/* Adjust the buffer size to match and make the formatted string */
-	message = realloc (message, len + 1);
+	/* Allocate space for the formatted string */
+	message = malloc (len + 1);
+	if (! message)
+		return -1;
+
+	/* Make the string */
 	vsnprintf (message, len + 1, format, args);
-
 	va_end (args);
 
-	return logger (priority, message);
+	/* Output the message */
+	ret = logger (priority, message);
+	free (message);
+
+	return ret;
 }
 
 /**

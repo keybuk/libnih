@@ -1,3 +1,11 @@
+2006-07-05  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/logging.c (nih_log_message): Don't use a static variable
+	for no apparent reason, just free afterwards.  Catch vsnprintf and
+	malloc failing.
+	* nih/main.c (nih_main_package_string): Catch snprintf and realloc
+	failing here too.
+
 2006-05-30  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/logging.h (nih_assert): Assertion macro that uses our logging

@@ -1,5 +1,9 @@
 2006-07-05  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/logging.c (nih_log_message): Don't bother catching
+	vsnprintf's return value, C99 doesn't allow it to fail.
+	* nih/main.c (nih_main_package_string): Likewise for here.
+
 	* nih/logging.c (nih_log_message): Don't use a static variable
 	for no apparent reason, just free afterwards.  Catch vsnprintf and
 	malloc failing.

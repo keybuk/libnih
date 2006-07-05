@@ -126,12 +126,8 @@ nih_log_message (NihLogLevel  priority,
 
 	va_start (args, format);
 
-	/* Find out how long the string will be */
-	len = vsnprintf (NULL, 0, format, args);
-	if (len < 0)
-		return -1;
-
 	/* Allocate space for the formatted string */
+	len = vsnprintf (NULL, 0, format, args);
 	message = malloc (len + 1);
 	if (! message)
 		return -1;

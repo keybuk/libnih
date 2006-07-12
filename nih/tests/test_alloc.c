@@ -369,8 +369,9 @@ test_set_allocator (void)
 }
 
 
-int main (int   argc,
-	  char *argv[])
+int
+main (int   argc,
+      char *argv[])
 {
 	int ret = 0;
 

@@ -1,5 +1,7 @@
 2006-07-12  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_alloc.c (main): Formatting fix.
+
 	* nih/strutil.c (nih_sprintf): Function to wrap sprintf, allocating
 	the necessary space using nih_alloc first.
 	(nih_vsprintf): Function to wrap vsprintf, allocating the necessary

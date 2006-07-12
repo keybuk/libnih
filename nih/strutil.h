@@ -17,15 +17,24 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef NIH_LIBNIH_H
-#define NIH_LIBNIH_H
+#ifndef NIH_STRUTIL_H
+#define NIH_STRUTIL_H
+
+#include <stdarg.h>
 
 #include <nih/macros.h>
-#include <nih/alloc.h>
-#include <nih/strutil.h>
-#include <nih/list.h>
-#include <nih/hash.h>
-#include <nih/main.h>
-#include <nih/logging.h>
 
-#endif /* NIH_LIBNIH_H */
+
+NIH_BEGIN_EXTERN
+
+char *nih_sprintf  (void *parent, const char *format, ...)
+                   __attribute__((format (printf, 2, 3),
+				  warn_unused_result, malloc));
+
+char *nih_vsprintf (void *parent, const char *format, va_list args)
+                   __attribute__ ((format (printf, 2, 0),
+				   warn_unused_result, malloc));
+
+NIH_END_EXTERN
+
+#endif /* NIH_STRUTIL_H */

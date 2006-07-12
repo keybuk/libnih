@@ -9,6 +9,7 @@ lib_LTLIBRARIES = libnih.la
 
 libnih_la_SOURCES = \
 	alloc.c \
+	strutil.c \
 	list.c \
 	hash.c \
 	main.c \
@@ -31,6 +32,7 @@ nihincludedir = $(includedir)/nih
 nihinclude_HEADERS = \
 	macros.h \
 	alloc.h \
+	strutil.h \
 	list.h \
 	hash.h \
 	main.h \
@@ -39,6 +41,7 @@ nihinclude_HEADERS = \
 
 TESTS = \
 	test_alloc \
+	test_strutil \
 	test_list \
 	test_hash \
 	test_main \
@@ -49,6 +52,10 @@ check_PROGRAMS = $(TESTS)
 test_alloc_SOURCES = tests/test_alloc.c
 test_alloc_LDFLAGS = -static
 test_alloc_LDADD = libnih.la
+
+test_strutil_SOURCES = tests/test_strutil.c
+test_strutil_LDFLAGS = -static
+test_strutil_LDADD = libnih.la
 
 test_list_SOURCES = tests/test_list.c
 test_list_LDFLAGS = -static

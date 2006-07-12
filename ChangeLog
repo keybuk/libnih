@@ -1,3 +1,17 @@
+2006-07-12  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/strutil.c (nih_sprintf): Function to wrap sprintf, allocating
+	the necessary space using nih_alloc first.
+	(nih_vsprintf): Function to wrap vsprintf, allocating the necessary
+	space using nih_alloc first.
+	* nih/strutil.h: Prototypes.
+	* nih/libnih.h: Include strutil.h
+	* nih/Makefile.am (libnih_la_SOURCES): Build and link strutil.c
+	(nihinclude_HEADERS): Install strutil.h
+	(TESTS): Build and run strutil test cases
+	(test_strutil_SOURCES, test_strutil_LDFLAGS,
+	test_strutil_LDADD): Binary for strutil test cases.
+
 2006-07-05  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/logging.c (nih_log_message): Don't bother catching

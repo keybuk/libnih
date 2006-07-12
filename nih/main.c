@@ -25,10 +25,11 @@
 
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <nih/macros.h>
+#include <nih/alloc.h>
+#include <nih/strutil.h>
 #include <nih/logging.h>
 
 #include "main.h"
@@ -131,31 +132,22 @@ const char *
 nih_main_package_string (void)
 {
 	static char *package_string = NULL;
-	size_t       len;
 
 	nih_assert (program_name != NULL);
 
+	if (package_string)
+		nih_free (package_string);
+
 	if (strcmp (program_name, package_name)) {
-		len = snprintf (NULL, 0, "%s (%s %s)",
-				program_name, package_name, package_version);
-
-		package_string = realloc (package_string, len + 1);
-		if (! package_string)
-			return program_name;
-
-		snprintf (package_string, len + 1, "%s (%s %s)",
-			  program_name, package_name, package_version);
+		package_string = nih_sprintf (NULL, "%s (%s %s)", program_name,
+					      package_name, package_version);
 	} else {
-		len = snprintf (NULL, 0, "%s %s",
-				package_name, package_version);
-
-		package_string = realloc (package_string, len + 1);
-		if (! package_string)
-			return package_name;
-
-		snprintf (package_string, len + 1, "%s %s",
-			  package_name, package_version);
+		package_string = nih_sprintf (NULL, "%s %s", package_name,
+					      package_version);
 	}
+
+	if (! package_string)
+		return program_name;
 
 	return package_string;
 }

@@ -117,8 +117,7 @@ typedef int (*NihLogger) (NihLogLevel, const char *);
  * false.
  **/
 #define nih_assert(expr) \
-	if (NIH_LIKELY(expr)) ; \
-	else { \
+	if (! NIH_LIKELY(expr)) { \
 		nih_fatal ("%s:%d: Assertion failed in %s: %s", \
 			   __FILE__, __LINE__, __FUNCTION__, #expr); \
 		abort (); \

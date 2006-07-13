@@ -1,5 +1,11 @@
 2006-07-13  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (nih_realloc): Implement a function that reallocates
+	a block of memory with the original allocator.
+	(nih_alloc_init): Don't double-check the allocator.
+	* nih/alloc.h: Update.
+	* nih/tests/test_alloc.c (test_realloc): Check behaviour of realloc.
+
 	* nih/alloc.c (NihAllocCtx): Drop the name pointer, we never used
 	that anyway.
 	(nih_alloc_using): Drop name parameter.

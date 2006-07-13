@@ -104,6 +104,56 @@ test_alloc_using (void)
 }
 
 int
+test_realloc (void)
+{
+	void *ptr1, *ptr2;
+	int   ret = 0;
+
+	printf ("Testing nih_realloc()\n");
+
+	printf ("...with no parent\n");
+	ptr1 = nih_alloc (NULL, 4096);
+	memset (ptr1, 'x', 4096);
+
+	ptr1 = nih_realloc (ptr1, NULL, 8096);
+	memset (ptr1, 'x', 8096);
+
+	/* Size should be correct */
+	if (nih_alloc_size (ptr1) != 8096) {
+		printf ("BAD: size of first block incorrect.\n");
+		ret = 1;
+	}
+
+	/* Parent should be none */
+	if (nih_alloc_parent (ptr1) != NULL) {
+		printf ("BAD: parent of first block incorrect.\n");
+		ret = 1;
+	}
+
+
+	printf ("...with a parent\n");
+	ptr2 = nih_alloc (ptr1, 5);
+	memset (ptr2, 'x', 5);
+
+	ptr2 = nih_realloc (ptr2, ptr1, 10);
+	memset (ptr2, 'x', 10);
+
+	/* Size should be correct */
+	if (nih_alloc_size (ptr2) != 10) {
+		printf ("BAD: size of first block incorrect.\n");
+		ret = 1;
+	}
+
+	/* Parent should be ptr1 */
+	if (nih_alloc_parent (ptr2) != ptr1) {
+		printf ("BAD: parent of second block incorrect.\n");
+		ret = 1;
+	}
+
+	return ret;
+}
+
+int
 test_new (void)
 {
 	void *ptr1, *ptr2;
@@ -280,6 +330,7 @@ main (int   argc,
 
 	ret |= test_alloc ();
 	ret |= test_alloc_using ();
+	ret |= test_realloc ();
 	ret |= test_new ();
 	ret |= test_free ();
 	ret |= test_set_allocator ();

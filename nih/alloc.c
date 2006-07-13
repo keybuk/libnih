@@ -36,9 +36,9 @@
 /**
  * NihAllocCtx:
  * @entry: list header,
+ * @size: size of requested allocation,
  * @parent: parent context, when freed we will be,
  * @children: child blocks that will be freed when we are,
- * @size: size of requested allocation,
  * @allocator: function to call to return memory,
  * @destructor: function to be called when freed.
  *
@@ -48,11 +48,10 @@
  **/
 typedef struct nih_alloc_ctx {
 	NihList               entry;
+	size_t                size;
 
 	struct nih_alloc_ctx *parent;
 	NihList               children;
-
-	size_t                size;
 
 	NihAllocator          allocator;
 	NihDestructor         destructor;
@@ -97,8 +96,7 @@ static NihAllocator allocator = NULL;
 static void
 nih_alloc_init (void)
 {
-	if (! allocator)
-		nih_alloc_set_allocator (realloc);
+	nih_alloc_set_allocator (realloc);
 }
 
 /**
@@ -153,10 +151,10 @@ nih_alloc_using (NihAllocator  allocator,
 	if (! ctx)
 		return NULL;
 
+	ctx->size = size;
+
 	nih_list_init (&ctx->entry);
 	nih_list_init (&ctx->children);
-
-	ctx->size = size;
 
 	ctx->allocator = allocator;
 	ctx->destructor = NULL;
@@ -198,6 +196,57 @@ nih_alloc (void   *parent,
 	return nih_alloc_using (allocator, parent, size);
 }
 
+/**
+ * nih_realloc:
+ * @ptr: block to reallocate or %NULL,
+ * @parent: parent block of allocation,
+ * @size: size of new block.
+ *
+ * Adjusts the size of the block of memory allocated for @ptr to be at
+ * least @size bytes and returns the new pointer.  If @ptr is %NULL then
+ * this is equivalent to %nih_alloc.
+ *
+ * If @parent is not %NULL, it must be the same object as the parent to
+ * @ptr, unless that is also %NULL in which case it should be a pointer to
+ * another block which will be used as the parent for the newly allocated
+ * block.  When @parent is freed, the returned block will be freed too.
+ * If you have clean-up that would need to be run, you can assign a
+ * destructor function using the #nih_alloc_set_destructor function.
+ *
+ * Returns: reallocated block or %NULL if reallocation fails.
+ **/
+void *
+nih_realloc (void   *ptr,
+	     void   *parent,
+	     size_t  size)
+{
+	NihAllocCtx *ctx;
+
+	if (! ptr)
+		return nih_alloc (parent, size);
+
+	ctx = NIH_ALLOC_CTX (ptr);
+
+	if (parent)
+		nih_assert (ctx->parent == NIH_ALLOC_CTX (parent));
+
+	/* We don't need to remove ourselves from the parent's children
+	 * list because that happens implicitly when we add again -- and
+	 * we want to be safe from the allocator returning NULL.
+	 */
+
+	ctx = ctx->allocator (ctx, sizeof (NihAllocCtx) + size);
+	if (! ctx)
+		return NULL;
+
+	ctx->size = size;
+
+	if (ctx->parent)
+		nih_list_add (&ctx->parent->children, &ctx->entry);
+
+	return NIH_ALLOC_PTR (ctx);
+}
+
 
 /**
  * nih_free:
@@ -232,6 +281,8 @@ nih_free (void *ptr)
 
 	if (ctx->destructor)
 		ret = ctx->destructor (ptr);
+
+	/* FIXME bug!  we never call nih_list_remove */
 
 	ctx->allocator (ctx, 0);
 

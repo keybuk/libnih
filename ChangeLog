@@ -1,5 +1,17 @@
 2006-07-13  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (NihAllocCtx): Drop the name pointer, we never used
+	that anyway.
+	(nih_alloc_using): Drop name parameter.
+	(nih_alloc_named): Rename to nih_alloc.
+	(nih_alloc_set_name): Drop this function.
+	(nih_alloc_name): And this one.
+	* nih/alloc.h (nih_new): Simplify.
+	(nih_alloc): Drop entirely now it's unneeded.
+	* nih/tests/test_alloc.c: Update.
+	* nih/tests/test_list.c (test_new): Test using nih_alloc_size
+	rather than nih_alloc_name.
+
 	* nih/logging.h: Put the log priorities back in ascending order,
 	but use the zero to mean "unknown".  Fix up the descriptions to be
 	a little more consistent.

@@ -61,50 +61,25 @@ typedef int (*NihDestructor) (void *);
  *
  * Returns: requested memory block.
  **/
-#define nih_new(parent, type) \
-	nih_alloc_named(parent, sizeof (type), \
-			__FILE__ ":" NIH_STRINGIFY(__LINE__) " " #type)
-
-/**
- * nih_alloc:
- * @parent: parent block for new allocation,
- * @size: size of block to allocate.
- *
- * Allocates a block of memory of at least @size bytes and returns a
- * pointer to it.
- *
- * If @parent is not %NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the #nih_alloc_set_destructor function.
- *
- * Returns: requested memory block.
- **/
-#define nih_alloc(parent, size) \
-	nih_alloc_named(parent, size, \
-			__FILE__ ":" NIH_STRINGIFY(__LINE__))
+#define nih_new(parent, type) nih_alloc(parent, sizeof (type))
 
 
 NIH_BEGIN_EXTERN
 
 void        nih_alloc_set_allocator  (NihAllocator new_allocator);
 
-void *      nih_alloc_named          (void *parent, size_t size,
-				      const char *name)
+void *      nih_alloc                (void *parent, size_t size)
                                      __attribute__((warn_unused_result,
 						    malloc));
 void *      nih_alloc_using          (NihAllocator allocator, void *parent,
-				      size_t size, const char *name)
+				      size_t size)
                                      __attribute__((warn_unused_result,
 						    malloc));
 
 int         nih_free                 (void *ptr);
 
-void        nih_alloc_set_name       (void *ptr, const char *name);
 void        nih_alloc_set_destructor (void *ptr, NihDestructor destructor);
 
-const char *nih_alloc_name           (void *ptr);
 size_t      nih_alloc_size           (void *ptr);
 void *      nih_alloc_parent         (void *ptr);
 

@@ -32,22 +32,16 @@
 
 
 int
-test_alloc_named (void)
+test_alloc (void)
 {
 	void *ptr1, *ptr2;
 	int   ret = 0;
 
-	printf ("Testing nih_alloc_named()\n");
+	printf ("Testing nih_alloc()\n");
 
 	printf ("...with no parent\n");
-	ptr1 = nih_alloc_named (NULL, 8096, "ptr1");
+	ptr1 = nih_alloc (NULL, 8096);
 	memset (ptr1, 'x', 8096);
-
-	/* Name should be correct */
-	if (strcmp (nih_alloc_name (ptr1), "ptr1")) {
-		printf ("BAD: name of first block incorrect.\n");
-		ret = 1;
-	}
 
 	/* Size should be correct */
 	if (nih_alloc_size (ptr1) != 8096) {
@@ -63,14 +57,8 @@ test_alloc_named (void)
 
 
 	printf ("...with a parent\n");
-	ptr2 = nih_alloc_named (ptr1, 10, "ptr2");
+	ptr2 = nih_alloc (ptr1, 10);
 	memset (ptr2, 'x', 10);
-
-	/* Name should be correct */
-	if (strcmp (nih_alloc_name (ptr2), "ptr2")) {
-		printf ("BAD: name of second block incorrect.\n");
-		ret = 1;
-	}
 
 	/* Size should be correct */
 	if (nih_alloc_size (ptr2) != 10) {
@@ -103,7 +91,7 @@ test_alloc_using (void)
 	int   ret = 0;
 
 	printf ("Testing nih_alloc_using()\n");
-	ptr = nih_alloc_using (my_realloc, NULL, 8096, "ptr1");
+	ptr = nih_alloc_using (my_realloc, NULL, 8096);
 	memset (ptr, 'x', 8096);
 
 	/* Realloc function should have been passed the size */
@@ -126,12 +114,6 @@ test_new (void)
 	printf ("...with no parent\n");
 	ptr1 = nih_new (NULL, int);
 
-	/* Name should be automatically generated */
-	if (! strstr (nih_alloc_name (ptr1), "test_alloc.c")) {
-		printf ("BAD: name of first block incorrect.\n");
-		ret = 1;
-	}
-
 	/* Size should be size of passed type */
 	if (nih_alloc_size (ptr1) != sizeof (int)) {
 		printf ("BAD: size of first block incorrect.\n");
@@ -148,68 +130,8 @@ test_new (void)
 	printf ("...with parent\n");
 	ptr2 = nih_new (ptr1, char);
 
-	/* Name should be automatically generated */
-	if (! strstr (nih_alloc_name (ptr2), "test_alloc.c")) {
-		printf ("BAD: name of second block incorrect.\n");
-		ret = 1;
-	}
-
 	/* Size should be size of passed type */
 	if (nih_alloc_size (ptr2) != sizeof (char)) {
-		printf ("BAD: size of second block incorrect.\n");
-		ret = 1;
-	}
-
-	/* Parent should be none */
-	if (nih_alloc_parent (ptr2) != ptr1) {
-		printf ("BAD: parent of second block incorrect.\n");
-		ret = 1;
-	}
-
-	return ret;
-}
-
-int
-test_alloc (void)
-{
-	void *ptr1, *ptr2;
-	int   ret = 0;
-
-	printf ("Testing nih_alloc()\n");
-
-	printf ("...with no parent\n");
-	ptr1 = nih_alloc (NULL, 8096);
-
-	/* Name should be automatically generated */
-	if (! strstr (nih_alloc_name (ptr1), "test_alloc.c")) {
-		printf ("BAD: name of first block incorrect.\n");
-		ret = 1;
-	}
-
-	/* Size should be correct */
-	if (nih_alloc_size (ptr1) != 8096) {
-		printf ("BAD: size of first block incorrect.\n");
-		ret = 1;
-	}
-
-	/* Parent should be none */
-	if (nih_alloc_parent (ptr1) != NULL) {
-		printf ("BAD: parent of first block incorrect.\n");
-		ret = 1;
-	}
-
-
-	printf ("...with parent\n");
-	ptr2 = nih_alloc (ptr1, 10);
-
-	/* Name should be automatically generated */
-	if (! strstr (nih_alloc_name (ptr2), "test_alloc.c")) {
-		printf ("BAD: name of second block incorrect.\n");
-		ret = 1;
-	}
-
-	/* Size should be correct */
-	if (nih_alloc_size (ptr2) != 10) {
 		printf ("BAD: size of second block incorrect.\n");
 		ret = 1;
 	}
@@ -251,7 +173,7 @@ test_free (void)
 	printf ("Testing nih_free()\n");
 
 	printf ("...with no parent\n");
-	ptr1 = nih_alloc_using (my_realloc, NULL, 10, "test");
+	ptr1 = nih_alloc_using (my_realloc, NULL, 10);
 	nih_alloc_set_destructor (ptr1, destructor_called);
 	last_size = -1;
 	was_called = 0;
@@ -278,7 +200,7 @@ test_free (void)
 
 	printf ("...with destructor on child\n");
 	ptr1 = nih_alloc (NULL, 10);
-	ptr2 = nih_alloc_using (my_realloc, ptr1, 10, "child");
+	ptr2 = nih_alloc_using (my_realloc, ptr1, 10);
 	nih_alloc_set_destructor (ptr2, destructor_called);
 	last_size = -1;
 	was_called = 0;
@@ -327,25 +249,6 @@ test_free (void)
 }
 
 int
-test_set_name (void)
-{
-	void *ptr;
-	int   ret = 0;
-
-	printf ("Testing nih_alloc_set_name()\n");
-	ptr = nih_alloc_named (NULL, 10, "small");
-	nih_alloc_set_name (ptr, "different name");
-
-	/* Name should now be changed */
-	if (strcmp (nih_alloc_name (ptr), "different name")) {
-		printf ("BAD: name was not changed.\n");
-		ret = 1;
-	}
-
-	return ret;
-}
-
-int
 test_set_allocator (void)
 {
 	void *ptr;
@@ -375,12 +278,10 @@ main (int   argc,
 {
 	int ret = 0;
 
-	ret |= test_alloc_named ();
+	ret |= test_alloc ();
 	ret |= test_alloc_using ();
 	ret |= test_new ();
-	ret |= test_alloc ();
 	ret |= test_free ();
-	ret |= test_set_name ();
 	ret |= test_set_allocator ();
 
 	return ret;

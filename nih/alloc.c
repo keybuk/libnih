@@ -38,7 +38,6 @@
  * @entry: list header,
  * @parent: parent context, when freed we will be,
  * @children: child blocks that will be freed when we are,
- * @name: arbitrary string name for the context,
  * @size: size of requested allocation,
  * @allocator: function to call to return memory,
  * @destructor: function to be called when freed.
@@ -53,7 +52,6 @@ typedef struct nih_alloc_ctx {
 	struct nih_alloc_ctx *parent;
 	NihList               children;
 
-	const char           *name;
 	size_t                size;
 
 	NihAllocator          allocator;
@@ -129,12 +127,10 @@ nih_alloc_set_allocator (NihAllocator new_allocator)
  * nih_alloc_using:
  * @allocator: allocator to use for this block,
  * @parent: parent block of allocation,
- * @size: size of requested block,
- * @name: name to assign to block.
+ * @size: size of requested block.
  *
  * Allocates a block of memory of at least @size bytes with the @allocator
- * function and returns a pointer to it.  The block will be assigned the
- * descriptive name of @name.
+ * function and returns a pointer to it.
  *
  * If @parent is not %NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
@@ -147,8 +143,7 @@ nih_alloc_set_allocator (NihAllocator new_allocator)
 void *
 nih_alloc_using (NihAllocator  allocator,
 		 void         *parent,
-		 size_t        size,
-		 const char   *name)
+		 size_t        size)
 {
 	NihAllocCtx *ctx;
 
@@ -161,7 +156,6 @@ nih_alloc_using (NihAllocator  allocator,
 	nih_list_init (&ctx->entry);
 	nih_list_init (&ctx->children);
 
-	ctx->name = name;
 	ctx->size = size;
 
 	ctx->allocator = allocator;
@@ -179,14 +173,12 @@ nih_alloc_using (NihAllocator  allocator,
 }
 
 /**
- * nih_alloc_named:
+ * nih_alloc:
  * @parent: parent block of allocation,
- * @size: size of requested block,
- * @name: name to assign to block.
+ * @size: size of requested block.
  *
  * Allocates a block of memory of at least @size bytes and returns
- * a pointer to it.  The block will be assigned the descriptive name
- * of @name.
+ * a pointer to it.
  *
  * If @parent is not %NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
@@ -197,14 +189,13 @@ nih_alloc_using (NihAllocator  allocator,
  * Returns: requested memory block or %NULL if allocation fails.
  **/
 void *
-nih_alloc_named (void       *parent,
-		 size_t      size,
-		 const char *name)
+nih_alloc (void   *parent,
+	   size_t  size)
 {
 	if (! allocator)
 		nih_alloc_init ();
 
-	return nih_alloc_using (allocator, parent, size, name);
+	return nih_alloc_using (allocator, parent, size);
 }
 
 
@@ -247,27 +238,6 @@ nih_free (void *ptr)
 	return ret;
 }
 
-
-/**
- * nih_alloc_set_name:
- * @ptr: pointer to block,
- * @name: name to set.
- *
- * Sets the name of the block to @name, which should be a string that will
- * last at least as long as the block as it is not copied.
- **/
-void
-nih_alloc_set_name (void       *ptr,
-		    const char *name)
-{
-	NihAllocCtx *ctx;
-
-	nih_assert (ptr != NULL);
-
-	ctx = NIH_ALLOC_CTX (ptr);
-	ctx->name = name;
-}
-
 /**
  * nih_alloc_set_destructor:
  * @ptr: pointer to block,
@@ -293,23 +263,6 @@ nih_alloc_set_destructor (void          *ptr,
 	ctx->destructor = destructor;
 }
 
-
-/**
- * nih_alloc_name:
- * @ptr: pointer to block.
- *
- * Returns: the name associated with the block.
- **/
-const char *
-nih_alloc_name (void *ptr)
-{
-	NihAllocCtx *ctx;
-
-	nih_assert (ptr != NULL);
-
-	ctx = NIH_ALLOC_CTX (ptr);
-	return ctx->name;
-}
 
 /**
  * nih_alloc_size:

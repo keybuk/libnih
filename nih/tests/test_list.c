@@ -77,7 +77,7 @@ test_new (void)
 	}
 
 	/* Should have been allocated using nih_alloc */
-	if (! strstr (nih_alloc_name (list), "list.c")) {
+	if (nih_alloc_size (list) != sizeof (NihList)) {
 		printf ("BAD: nih_alloc was not used.\n");
 		ret = 1;
 	}

@@ -1,5 +1,17 @@
 2006-07-13  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/logging.h: Put the log priorities back in ascending order,
+	but use the zero to mean "unknown".  Fix up the descriptions to be
+	a little more consistent.
+	* nih/logging.c: Rename max_priority back to min_priority so it
+	all makes more sense again.
+	(nih_log_init): Warning is the default minimum priority to show.
+	(nih_log_set_priority): Set minimum priority.
+	(nih_log_message): Discard messages below the minimum priority.
+	(nih_logger_printf): Use stderr when priority is greater than or
+	equal to warning.
+	* nih/tests/test_logging.c: Update to match.
+
 	* nih/logging.c (nih_log_message): Use nih_vsprintf which makes the
 	function not core dump (always good, that).
 

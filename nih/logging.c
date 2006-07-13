@@ -44,12 +44,12 @@
 static NihLogger logger = NULL;
 
 /**
- * max_priority:
+ * min_priority:
  *
- * Highest priority of log messages that will be given to the logger by
+ * Lowest priority of log messages that will be given to the logger by
  * default.
  **/
-static NihLogLevel max_priority = NIH_LOG_NONE;
+static NihLogLevel min_priority = NIH_LOG_UNKNOWN;
 
 
 /**
@@ -61,7 +61,8 @@ static void
 nih_log_init (void)
 {
 	logger = nih_logger_printf;
-	max_priority = NIH_LOG_WARN;
+
+	min_priority = NIH_LOG_WARN;
 }
 
 /**
@@ -81,17 +82,17 @@ nih_log_set_logger (NihLogger new_logger)
 
 /**
  * nih_log_set_priority:
- * @new_priority: new maximum priority.
+ * @new_priority: new minimum priority.
  *
- * Sets the maximum priority of log messages to be given to the logger
- * function, any messages above this will be discarded.
+ * Sets the minimum priority of log messages to be given to the logger
+ * function, any messages below this will be discarded.
  **/
 void
 nih_log_set_priority (NihLogLevel new_priority)
 {
-	nih_assert (new_priority > NIH_LOG_NONE);
+	nih_assert (new_priority > NIH_LOG_UNKNOWN);
 
-	max_priority = new_priority;
+	min_priority = new_priority;
 }
 
 
@@ -101,13 +102,13 @@ nih_log_set_priority (NihLogLevel new_priority)
  * @format: printf-style format string.
  *
  * Outputs a message constructed from @format and the rest of the arguments
- * by passing it to the logger function if @priority is not higher than
- * the maximum priority.
+ * by passing it to the logger function if @priority is not lower than
+ * the minimum priority.
  *
  * The message should not be newline-terminated.
  *
  * Returns: zero if successful, positive value if message was discarded due
- * to being above the maximum priority and negative value if the logger failed.
+ * to being below the minimum priority and negative value if the logger failed.
  **/
 int
 nih_log_message (NihLogLevel  priority,
@@ -120,10 +121,10 @@ nih_log_message (NihLogLevel  priority,
 
 	nih_assert (format != NULL);
 
-	if (! max_priority)
+	if (! min_priority)
 		nih_log_init ();
 
-	if (priority > max_priority)
+	if (priority < min_priority)
 		return 1;
 
 	va_start (args, format);
@@ -175,7 +176,7 @@ nih_logger_printf (NihLogLevel  priority,
 	/* Warnings and errors belong on stderr, information and debug on
 	 * stdout
 	 */
-	if (priority <= NIH_LOG_WARN) {
+	if (priority >= NIH_LOG_WARN) {
 		stream = stderr;
 	} else {
 		stream = stdout;

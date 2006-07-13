@@ -32,12 +32,12 @@
  * message and to filter messages below a particular severity.
  **/
 typedef enum {
-	NIH_LOG_NONE,
-	NIH_LOG_FATAL,
-	NIH_LOG_ERROR,
-	NIH_LOG_WARN,
+	NIH_LOG_UNKNOWN,
+	NIH_LOG_DEBUG,
 	NIH_LOG_INFO,
-	NIH_LOG_DEBUG
+	NIH_LOG_WARN,
+	NIH_LOG_ERROR,
+	NIH_LOG_FATAL
 } NihLogLevel;
 
 /**
@@ -56,25 +56,26 @@ typedef int (*NihLogger) (NihLogLevel, const char *);
 
 
 /**
- * nih_fatal:
+ * nih_debug:
  * @format: printf-style format string.
  *
- * Outputs a fatal error message that caused the software to cease
- * functioning.  Always shown.
+ * Outputs a debugging message, including the name of the function that
+ * generated it.  Almost never shown, except when debugging information is
+ * required.
  **/
-#define nih_fatal(format, ...) \
-	nih_log_message (NIH_LOG_FATAL, format, ##__VA_ARGS__)
+#define nih_debug(format, ...) \
+	nih_log_message (NIH_LOG_DEBUG, "%s: " format, \
+	                 __FUNCTION__, ##__VA_ARGS__)
 
 /**
- * nih_error:
+ * nih_info:
  * @format: printf-style format string.
  *
- * Outputs an error message, one that the software may be able to recover
- * from but that has caused an operation to fail.  These are shown in all
- * but the most quiet of operation modes.
+ * Outputs a message that is purely informational, usually not shown unless
+ * the user wants verbose operation.
  **/
-#define nih_error(format, ...) \
-	nih_log_message (NIH_LOG_ERROR, format, ##__VA_ARGS__)
+#define nih_info(format, ...) \
+	nih_log_message (NIH_LOG_INFO, format, ##__VA_ARGS__)
 
 /**
  * nih_warn:
@@ -88,25 +89,25 @@ typedef int (*NihLogger) (NihLogLevel, const char *);
 	nih_log_message (NIH_LOG_WARN, format, ##__VA_ARGS__)
 
 /**
- * nih_info:
+ * nih_error:
  * @format: printf-style format string.
  *
- * Outputs a message that is purely informational, usually not shown unless
- * the user wants extremely verbose operation.
+ * Outputs an error message, one that the software may be able to recover
+ * from but that has caused an operation to fail.  These are shown in all
+ * but the most quiet of operation modes.
  **/
-#define nih_info(format, ...) \
-	nih_log_message (NIH_LOG_INFO, format, ##__VA_ARGS__)
+#define nih_error(format, ...) \
+	nih_log_message (NIH_LOG_ERROR, format, ##__VA_ARGS__)
 
 /**
- * nih_debug:
+ * nih_fatal:
  * @format: printf-style format string.
  *
- * Outputs a debugging message, including the name of the function that
- * generated it, if the verbosity is high enough.
+ * Outputs a fatal error message that caused the software to cease
+ * functioning.  Always shown.
  **/
-#define nih_debug(format, ...) \
-	nih_log_message (NIH_LOG_DEBUG, "%s: " format, \
-	                 __FUNCTION__, ##__VA_ARGS__)
+#define nih_fatal(format, ...) \
+	nih_log_message (NIH_LOG_FATAL, format, ##__VA_ARGS__)
 
 /**
  * nih_assert:

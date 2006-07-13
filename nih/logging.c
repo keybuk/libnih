@@ -29,6 +29,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <nih/alloc.h>
+#include <nih/strutil.h>
 #include <nih/main.h>
 
 #include "logging.h"
@@ -109,10 +111,10 @@ nih_log_set_priority (NihLogLevel new_priority)
  **/
 int
 nih_log_message (NihLogLevel  priority,
-		 const char  *format, ...)
+		 const char  *format,
+		 ...)
 {
 	char    *message = NULL;
-	size_t   len;
 	va_list  args;
 	int      ret;
 
@@ -126,19 +128,15 @@ nih_log_message (NihLogLevel  priority,
 
 	va_start (args, format);
 
-	/* Allocate space for the formatted string */
-	len = vsnprintf (NULL, 0, format, args);
-	message = malloc (len + 1);
+	message = nih_vsprintf (NULL, format, args);
 	if (! message)
 		return -1;
 
-	/* Make the string */
-	vsnprintf (message, len + 1, format, args);
 	va_end (args);
 
 	/* Output the message */
 	ret = logger (priority, message);
-	free (message);
+	nih_free (message);
 
 	return ret;
 }

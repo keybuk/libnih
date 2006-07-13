@@ -1,5 +1,7 @@
 2006-07-13  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (nih_free): Remove the entry from the parent's list.
+
 	* nih/logging.h (nih_assert): Reexpress to avoid polluting if
 	statements without an else.
 

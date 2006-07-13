@@ -282,7 +282,7 @@ nih_free (void *ptr)
 	if (ctx->destructor)
 		ret = ctx->destructor (ptr);
 
-	/* FIXME bug!  we never call nih_list_remove */
+	nih_list_remove (&ctx->entry);
 
 	ctx->allocator (ctx, 0);
 

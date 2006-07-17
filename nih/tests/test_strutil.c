@@ -158,6 +158,159 @@ test_vsprintf (void)
 	return ret;
 }
 
+int
+test_strdup (void)
+{
+	char *str1, *str2;
+	int   ret = 0;
+
+	printf ("Testing nih_strdup()\n");
+
+	printf ("...with no parent\n");
+	str1 = nih_strdup (NULL, "this is a test");
+
+	/* Returned value should be correct */
+	if (strcmp (str1, "this is a test")) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Size should be correct */
+	if (nih_alloc_size (str1) != strlen ("this is a test") + 1) {
+		printf ("BAD: size incorrect.\n");
+		ret = 1;
+	}
+
+	/* Parent should be none */
+	if (nih_alloc_parent (str1) != NULL) {
+		printf ("BAD: parent incorrect.\n");
+		ret = 1;
+	}
+
+
+	printf ("...with a parent\n");
+	str2 = nih_strdup (str1, "another test string");
+
+	/* Returned value should be correct */
+	if (strcmp (str2, "another test string")) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Size should be correct */
+	if (nih_alloc_size (str2) != strlen ("another test string") + 1) {
+		printf ("BAD: size incorrect.\n");
+		ret = 1;
+	}
+
+	/* Parent should be first string */
+	if (nih_alloc_parent (str2) != str1) {
+		printf ("BAD: parent incorrect.\n");
+		ret = 1;
+	}
+
+	return ret;
+}
+
+int
+test_strndup (void)
+{
+	char *str1, *str2, *str;
+	int   ret = 0;
+
+	printf ("Testing nih_strndup()\n");
+
+	printf ("...with no parent\n");
+	str1 = nih_strndup (NULL, "this is a test", strlen("this is a test"));
+
+	/* Returned value should be correct */
+	if (strcmp (str1, "this is a test")) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Size should be correct */
+	if (nih_alloc_size (str1) != strlen ("this is a test") + 1) {
+		printf ("BAD: size incorrect.\n");
+		ret = 1;
+	}
+
+	/* Parent should be none */
+	if (nih_alloc_parent (str1) != NULL) {
+		printf ("BAD: parent incorrect.\n");
+		ret = 1;
+	}
+
+
+	printf ("...with a parent\n");
+	str2 = nih_strndup (str1, "another test string",
+			    strlen("another test string"));
+
+	/* Returned value should be correct */
+	if (strcmp (str2, "another test string")) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Size should be correct */
+	if (nih_alloc_size (str2) != strlen ("another test string") + 1) {
+		printf ("BAD: size incorrect.\n");
+		ret = 1;
+	}
+
+	/* Parent should be first string */
+	if (nih_alloc_parent (str2) != str1) {
+		printf ("BAD: parent incorrect.\n");
+		ret = 1;
+	}
+
+
+	printf ("...with smaller length than string\n");
+	str = nih_strndup (NULL, "something to test with", 9);
+
+	/* Returned value should be correct */
+	if (strcmp (str, "something")) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Size should be correct */
+	if (nih_alloc_size (str) != 10) {
+		printf ("BAD: size incorrect.\n");
+		ret = 1;
+	}
+
+	/* Parent should be none */
+	if (nih_alloc_parent (str) != NULL) {
+		printf ("BAD: parent incorrect.\n");
+		ret = 1;
+	}
+
+
+	printf ("...with larger length than string\n");
+	str = nih_strndup (NULL, "small string", 20);
+
+	/* Returned value should be correct */
+	if (strcmp (str, "small string")) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Size should be correct */
+	if (nih_alloc_size (str) != 21) {
+		printf ("BAD: size incorrect.\n");
+		ret = 1;
+	}
+
+	/* Parent should be none */
+	if (nih_alloc_parent (str) != NULL) {
+		printf ("BAD: parent incorrect.\n");
+		ret = 1;
+	}
+
+	return ret;
+}
+
 
 int
 main (int   argc,
@@ -167,6 +320,8 @@ main (int   argc,
 
 	ret |= test_sprintf ();
 	ret |= test_vsprintf ();
+	ret |= test_strdup ();
+	ret |= test_strndup ();
 
 	return ret;
 }

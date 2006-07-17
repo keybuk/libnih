@@ -26,6 +26,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
@@ -101,4 +102,67 @@ nih_vsprintf (void       *parent,
 	vsnprintf (str, len + 1, format, args_copy);
 
 	return str;
+}
+
+
+/**
+ * nih_strdup:
+ * @parent: parent block of allocation,
+ * @str: string to duplicate.
+ *
+ * Allocates enough memory to store a duplicate of @str and writes a
+ * copy of the string to it.
+ *
+ * If @parent is not %NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned block will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the #nih_alloc_set_destructor function.
+ *
+ * Returns: duplicated string or %NULL if allocation fails.
+ **/
+char *
+nih_strdup (void       *parent,
+	    const char *str)
+{
+	size_t len;
+
+	len = strlen (str);
+
+	return nih_strndup (parent, str, len);
+}
+
+/**
+ * nih_strndup:
+ * @parent: parent block of allocation,
+ * @str: string to duplicate,
+ * @len: length of string to duplicate.
+ *
+ * Allocates enough memory to store up to @len bytes of @str, or if @str
+ * is shorter, @len bytes.  A copy of the string is written to this
+ * block with a NUL byte appended.
+ *
+ * If @parent is not %NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned block will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the #nih_alloc_set_destructor function.
+ *
+ * Returns: duplicated string or %NULL if allocation fails.
+ **/
+char *
+nih_strndup (void       *parent,
+	     const char *str,
+	     size_t      len)
+{
+	char *dup;
+
+	dup = nih_alloc (parent, len + 1);
+	if (! str)
+		return NULL;
+
+	memset (dup, '\0', len + 1);
+	strncpy (dup, str, len);
+
+	return dup;
 }

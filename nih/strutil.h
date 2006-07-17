@@ -35,6 +35,12 @@ char *nih_vsprintf (void *parent, const char *format, va_list args)
                    __attribute__ ((format (printf, 2, 0),
 				   warn_unused_result, malloc));
 
+char *nih_strdup   (void *parent, const char *str)
+                   __attribute__ ((warn_unused_result, malloc));
+
+char *nih_strndup  (void *parent, const char *str, size_t len)
+                   __attribute__ ((warn_unused_result, malloc));
+
 NIH_END_EXTERN
 
 #endif /* NIH_STRUTIL_H */

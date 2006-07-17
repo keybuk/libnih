@@ -1,3 +1,10 @@
+2006-07-17  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/strutil.c (nih_strdup): Implement an nih_alloc-based strdup.
+	(nih_strdup): and strndup.
+	* nih/strutil.h: Update.
+	* nih/tests/test_strutil.c: Test new functions.
+
 2006-07-13  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/alloc.c (nih_free): Remove the entry from the parent's list.

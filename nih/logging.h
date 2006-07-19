@@ -130,7 +130,7 @@ void nih_log_set_logger   (NihLogger new_logger);
 void nih_log_set_priority (NihLogLevel new_priority);
 
 int  nih_log_message      (NihLogLevel priority, const char *format, ...)
-                          __attribute__ ((format (printf, 2, 3)));
+	__attribute__ ((format (printf, 2, 3)));
 
 int  nih_logger_printf    (NihLogLevel priority, const char *message);
 

@@ -1,3 +1,8 @@
+2006-07-19  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/alloc.h, nih/logging.h, nih/strutil.h: Reformat attribute
+	declarations to not upset emacs indentation.
+
 2006-07-17  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/strutil.c (nih_strdup): Implement an nih_alloc-based strdup.

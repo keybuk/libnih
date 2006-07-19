@@ -69,13 +69,14 @@ NIH_BEGIN_EXTERN
 void   nih_alloc_set_allocator  (NihAllocator new_allocator);
 
 void * nih_alloc                (void *parent, size_t size)
-                                __attribute__((warn_unused_result, malloc));
+	__attribute__ ((warn_unused_result, malloc));
+
 void * nih_alloc_using          (NihAllocator allocator, void *parent,
 				 size_t size)
-                                __attribute__((warn_unused_result, malloc));
+	__attribute__ ((warn_unused_result, malloc));
 
 void * nih_realloc              (void *ptr, void *parent, size_t size)
-                                __attribute__((warn_unused_result, malloc));
+	__attribute__ ((warn_unused_result, malloc));
 
 int    nih_free                 (void *ptr);
 

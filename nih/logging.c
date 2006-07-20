@@ -30,7 +30,7 @@
 #include <string.h>
 
 #include <nih/alloc.h>
-#include <nih/strutil.h>
+#include <nih/string.h>
 #include <nih/main.h>
 
 #include "logging.h"

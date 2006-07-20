@@ -22,7 +22,7 @@
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
-#include <nih/strutil.h>
+#include <nih/string.h>
 #include <nih/list.h>
 #include <nih/hash.h>
 #include <nih/main.h>

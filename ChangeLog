@@ -1,5 +1,8 @@
 2006-07-20  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/libnih.h, nih/logging.c, nih/main.c: Update to include
+	string.h not strutil.h
+
 	* nih/strutil.c: Renamed to nih/string.c
 	* nih/strutil.h: Renamed to nih/string.h
 	* nih/tests/test_strutil.c: Renamed to nih/tests/test_string.h

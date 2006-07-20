@@ -140,7 +140,7 @@ nih_alloc_set_allocator (NihAllocator new_allocator)
  **/
 void *
 nih_alloc_using (NihAllocator  allocator,
-		 void         *parent,
+		 const void   *parent,
 		 size_t        size)
 {
 	NihAllocCtx *ctx;
@@ -187,8 +187,8 @@ nih_alloc_using (NihAllocator  allocator,
  * Returns: requested memory block or %NULL if allocation fails.
  **/
 void *
-nih_alloc (void   *parent,
-	   size_t  size)
+nih_alloc (const void *parent,
+	   size_t      size)
 {
 	if (! allocator)
 		nih_alloc_init ();
@@ -216,9 +216,9 @@ nih_alloc (void   *parent,
  * Returns: reallocated block or %NULL if reallocation fails.
  **/
 void *
-nih_realloc (void   *ptr,
-	     void   *parent,
-	     size_t  size)
+nih_realloc (void       *ptr,
+	     const void *parent,
+	     size_t      size)
 {
 	NihAllocCtx *ctx;
 
@@ -322,7 +322,7 @@ nih_alloc_set_destructor (void          *ptr,
  * Returns: the size of the allocated block, excluding the context.
  **/
 size_t
-nih_alloc_size (void *ptr)
+nih_alloc_size (const void *ptr)
 {
 	NihAllocCtx *ctx;
 
@@ -339,7 +339,7 @@ nih_alloc_size (void *ptr)
  * Returns: the parent block or %NULL if none.
  **/
 void *
-nih_alloc_parent (void *ptr)
+nih_alloc_parent (const void *ptr)
 {
 	NihAllocCtx *ctx;
 

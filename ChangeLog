@@ -1,5 +1,10 @@
 2006-07-20  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (nih_alloc_using, nih_alloc, nih_realloc,
+	nih_alloc_size, nih_alloc_parent): Make various argument pointers
+	const.
+	* nih/alloc.h: Update.
+
 	* nih/libnih.h, nih/logging.c, nih/main.c: Update to include
 	string.h not strutil.h
 

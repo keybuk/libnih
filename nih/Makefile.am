@@ -15,7 +15,8 @@ libnih_la_SOURCES = \
 	list.c \
 	hash.c \
 	main.c \
-	logging.c
+	logging.c \
+	error.c
 
 
 libnih_la_LDFLAGS = \
@@ -38,7 +39,9 @@ nihinclude_HEADERS = \
 	list.h \
 	hash.h \
 	main.h \
-	logging.h
+	logging.h \
+	error.h \
+	errors.h
 
 
 TESTS = \
@@ -47,7 +50,8 @@ TESTS = \
 	test_list \
 	test_hash \
 	test_main \
-	test_logging
+	test_logging \
+	test_error
 
 check_PROGRAMS = $(TESTS)
 
@@ -74,6 +78,10 @@ test_main_LDADD = libnih.la
 test_logging_SOURCES = tests/test_logging.c
 test_logging_LDFLAGS = -static
 test_logging_LDADD = libnih.la
+
+test_error_SOURCES = tests/test_error.c
+test_error_LDFLAGS = -static
+test_error_LDADD = libnih.la
 
 
 clean-local:

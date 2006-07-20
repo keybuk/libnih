@@ -1,5 +1,16 @@
 2006-07-20  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/error.c: Error handling code.
+	* nih/error.h: Structures, macros and prototypes.
+	* nih/errors.h: Error enum and message definitions.
+	* nih/libnih.h: Include error.h and errors.h
+	* nih/tests/test_error.c: Error handling test cases.
+	* nih/Makefile.am (libnih_la_SOURCES): Build and link error.h
+	(nihinclude_HEADERS): Install error.h
+	(TESTS): Build and run error handling test cases.
+	(test_error_SOURCES, test_error_LDFLAGS, test_error_LDADD): Binary
+	for error handling test cases.
+
 	* nih/macros.h (NIH_MUST, NIH_MUST_NOT): Add handy macros to spin
 	until we get a true or false value from an assignment.  Usually
 	used around a call to memory allocation functions that we can't

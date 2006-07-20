@@ -17,16 +17,27 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef NIH_LIBNIH_H
-#define NIH_LIBNIH_H
+#ifndef NIH_ERRORS_H
+#define NIH_ERRORS_H
 
-#include <nih/macros.h>
-#include <nih/alloc.h>
-#include <nih/string.h>
-#include <nih/list.h>
-#include <nih/hash.h>
-#include <nih/main.h>
-#include <nih/logging.h>
 #include <nih/error.h>
 
-#endif /* NIH_LIBNIH_H */
+
+/* Allocated error numbers */
+enum {
+	/* 0x0000 thru 0xFFFF reserved for errno */
+	NIH_ERROR_ERRNO_START = 0x0000L,
+
+	/* 0x10000 thru 0x1FFFF reserved for libnih */
+	NIH_ERROR_LIBNIH_START = 0x10000L,
+
+	/* 0x20000 thru 0x2FFFF reserved for applications */
+	NIH_ERROR_APPLICATION_START = 0x20000L,
+
+	/* 0x30000 upwards for other libraries */
+	NIH_ERROR_LIBRARY_START = 0x30000L
+};
+
+/* Error strings for defined messages */
+
+#endif /* NIH_ERRORS_H */

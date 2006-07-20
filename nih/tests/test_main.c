@@ -160,9 +160,7 @@ test_package_string (void)
 	int         ret = 0;
 
 	printf ("Testing nih_package_string()\n");
-	program_name = "test";
-	package_name = "test";
-	package_version = "1.0";
+	nih_main_init_full ("test", "test", "1.0", "bugreport", "copyright");
 
 	printf ("...with same program and package names\n");
 	str = nih_main_package_string ();
@@ -175,7 +173,7 @@ test_package_string (void)
 
 
 	printf ("...with different program and package names\n");
-	package_name = "wibble";
+	nih_main_init_full ("test", "wibble", "1.0", "bugreport", "copyright");
 	str = nih_main_package_string ();
 
 	/* String should be program name as well as package name and version */

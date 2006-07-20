@@ -1,5 +1,11 @@
 2006-07-20  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/main.c (nih_main_package_string): Change package_string
+	to be a module-level static so it can be reset by a call to
+	nih_main_init_full.  Always return if not NULL.
+	* nih/tests/test_main.c (test_package_string): Call nih_main_init_full
+	instead of futzing with variables so the static string is reset.
+
 	* nih/alloc.c (nih_alloc_using, nih_alloc, nih_realloc,
 	nih_alloc_size, nih_alloc_parent): Make various argument pointers
 	const.

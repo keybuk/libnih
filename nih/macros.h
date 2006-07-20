@@ -65,6 +65,10 @@
 #define NIH_LIKELY(_e)   __builtin_expect ((_e) ? TRUE : FALSE, TRUE)
 #define NIH_UNLIKELY(_e) __builtin_expect ((_e) ? TRUE : FALSE, FALSE)
 
+/* Force a true or false value, _e must be an assignment expression */
+#define NIH_MUST(_e)     while (! (_e))
+#define NIH_MUST_NOT(_e) while ((_e))
+
 
 /* Make gettext friendlier */
 #if HAVE_GETTEXT

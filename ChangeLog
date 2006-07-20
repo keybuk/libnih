@@ -1,5 +1,10 @@
 2006-07-20  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/macros.h (NIH_MUST, NIH_MUST_NOT): Add handy macros to spin
+	until we get a true or false value from an assignment.  Usually
+	used around a call to memory allocation functions that we can't
+	deal with failing.
+
 	* nih/main.c (nih_main_package_string): Change package_string
 	to be a module-level static so it can be reset by a call to
 	nih_main_init_full.  Always return if not NULL.

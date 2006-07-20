@@ -313,6 +313,27 @@ test_strndup (void)
 
 
 int
+test_strv_free (void)
+{
+	char **strv;
+	int    ret = 0;
+
+	printf ("Testing nih_strv_free()\n");
+	strv = malloc (sizeof (char *) * 5);
+	strv[0] = strdup ("This");
+	strv[1] = strdup ("is");
+	strv[2] = strdup ("a");
+	strv[3] = strdup ("test");
+	strv[4] = NULL;
+
+	/* If it doesn't crash, it's a pass */
+	nih_strv_free (strv);
+
+	return ret;
+}
+
+
+int
 main (int   argc,
       char *argv[])
 {
@@ -322,6 +343,7 @@ main (int   argc,
 	ret |= test_vsprintf ();
 	ret |= test_strdup ();
 	ret |= test_strndup ();
+	ret |= test_strv_free ();
 
 	return ret;
 }

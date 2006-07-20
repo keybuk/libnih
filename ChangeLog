@@ -1,5 +1,10 @@
 2006-07-20  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/string.c (nih_strv_free): Add a function to free an array
+	of strings.
+	* nih/string.h: Update.
+	* nih/tests/test_string.c (test_strv_free): Test the function.
+
 	* nih/error.c: Error handling code.
 	* nih/error.h: Structures, macros and prototypes.
 	* nih/errors.h: Error enum and message definitions.

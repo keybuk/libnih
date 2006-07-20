@@ -26,6 +26,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <nih/macros.h>
@@ -165,4 +166,25 @@ nih_strndup (void       *parent,
 	strncpy (dup, str, len);
 
 	return dup;
+}
+
+
+/**
+ * nih_strv_free:
+ * @strv: array of strings:
+ *
+ * Free the given array of strings which should NOT have been allocated
+ * using #nih_alloc (as you could just free the parent array if you used
+ * that).
+ *
+ * The last member of the array should be NULL, and the array itself is
+ * not freed.
+ **/
+void
+nih_strv_free (char **strv)
+{
+	register char **s;
+
+	for (s = strv; *s; s++)
+		free (*s);
 }

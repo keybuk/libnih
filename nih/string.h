@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef NIH_STRUTIL_H
-#define NIH_STRUTIL_H
+#ifndef NIH_STRING_H
+#define NIH_STRING_H
 
 #include <stdarg.h>
 
@@ -41,4 +41,4 @@ char *nih_strndup  (void *parent, const char *str, size_t len)
 
 NIH_END_EXTERN
 
-#endif /* NIH_STRUTIL_H */
+#endif /* NIH_STRING_H */

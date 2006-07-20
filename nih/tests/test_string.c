@@ -1,6 +1,6 @@
 /* libnih
  *
- * test_strutil.c - test suite for nih/strutil.c
+ * test_string.c - test suite for nih/string.c
  *
  * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
  *
@@ -30,7 +30,7 @@
 #include <stdlib.h>
 
 #include <nih/alloc.h>
-#include <nih/strutil.h>
+#include <nih/string.h>
 
 
 int

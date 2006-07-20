@@ -1,3 +1,13 @@
+2006-07-20  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/strutil.c: Renamed to nih/string.c
+	* nih/strutil.h: Renamed to nih/string.h
+	* nih/tests/test_strutil.c: Renamed to nih/tests/test_string.h
+	* nih/Makefile.am (DEFAULT_INCLUDES): Override to stop automake doing
+	silly things like putting -I. in the pre-processor flags.
+	(libnih_la_SOURCES, nihinclude_HEADERS, TESTS,
+	test_string_SOURCES, test_string_LDFLAGS, test_string_LDADD): Update.
+
 2006-07-19  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/alloc.h, nih/logging.h, nih/strutil.h: Reformat attribute

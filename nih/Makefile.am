@@ -1,15 +1,17 @@
 ## Process this file with automake to produce Makefile.in
 
+DEFAULT_INCLUDES = -I$(top_builddir) -I$(top_srcdir)
+
 localedir = $(datadir)/locale
 DEFS = -DLOCALEDIR="\"$(localedir)\""
-INCLUDES = -I$(top_srcdir)/intl -I$(top_srcdir)
+INCLUDES = -I$(top_srcdir)/intl
 
 
 lib_LTLIBRARIES = libnih.la
 
 libnih_la_SOURCES = \
 	alloc.c \
-	strutil.c \
+	string.c \
 	list.c \
 	hash.c \
 	main.c \
@@ -32,7 +34,7 @@ nihincludedir = $(includedir)/nih
 nihinclude_HEADERS = \
 	macros.h \
 	alloc.h \
-	strutil.h \
+	string.h \
 	list.h \
 	hash.h \
 	main.h \
@@ -41,7 +43,7 @@ nihinclude_HEADERS = \
 
 TESTS = \
 	test_alloc \
-	test_strutil \
+	test_string \
 	test_list \
 	test_hash \
 	test_main \
@@ -53,9 +55,9 @@ test_alloc_SOURCES = tests/test_alloc.c
 test_alloc_LDFLAGS = -static
 test_alloc_LDADD = libnih.la
 
-test_strutil_SOURCES = tests/test_strutil.c
-test_strutil_LDFLAGS = -static
-test_strutil_LDADD = libnih.la
+test_string_SOURCES = tests/test_string.c
+test_string_LDFLAGS = -static
+test_string_LDADD = libnih.la
 
 test_list_SOURCES = tests/test_list.c
 test_list_LDFLAGS = -static

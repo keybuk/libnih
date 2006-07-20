@@ -1,6 +1,6 @@
 /* libnih
  *
- * strutil.c - useful string utility functions
+ * string.c - useful string utility functions
  *
  * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
  *
@@ -31,7 +31,7 @@
 #include <nih/macros.h>
 #include <nih/alloc.h>
 
-#include "strutil.h"
+#include "string.h"
 
 
 /**

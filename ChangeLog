@@ -1,5 +1,8 @@
 2006-07-27  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (nih_alloc_init): Make inline and check value first.
+	(nih_alloc): Unconditionally call nih_alloc_init.
+
 	* nih/logging.c (nih_log_init): Use the proper functions to
 	initialise details, check values first; also make inline.
 	(nih_log_message): Unconditionally call nih_log_init.

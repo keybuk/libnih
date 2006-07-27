@@ -93,10 +93,11 @@ static NihAllocator allocator = NULL;
  *
  * Initialise the default allocator.
  **/
-static void
+static inline void
 nih_alloc_init (void)
 {
-	nih_alloc_set_allocator (realloc);
+	if (! allocator)
+		nih_alloc_set_allocator (realloc);
 }
 
 /**
@@ -190,8 +191,7 @@ void *
 nih_alloc (const void *parent,
 	   size_t      size)
 {
-	if (! allocator)
-		nih_alloc_init ();
+	nih_alloc_init ();
 
 	return nih_alloc_using (allocator, parent, size);
 }

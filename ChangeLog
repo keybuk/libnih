@@ -1,5 +1,8 @@
 2006-07-27  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/hash.c (nih_hash_add_unique, nih_hash_replace,
+	nih_hash_search): Use new list iteration macros.
+
 	* nih/list.h (NIH_LIST_FOREACH): New macro that expands to the usual
 	list iteration for loop, prevents mistakes.
 	(NIH_LIST_FOREACH_SAFE): Macro that does the same as above, but also

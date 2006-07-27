@@ -213,7 +213,7 @@ nih_hash_add_unique (NihHash *hash,
 		     NihList *entry)
 {
 	const char *key;
-	NihList    *bin, *iter;
+	NihList    *bin;
 
 	nih_assert (hash != NULL);
 	nih_assert (entry != NULL);
@@ -221,7 +221,7 @@ nih_hash_add_unique (NihHash *hash,
 	key = hash->key_function (entry);
 	bin = &hash->bins[fnv_hash (key) % hash->size];
 
-	for (iter = bin->next; iter != bin; iter = iter->next) {
+	NIH_LIST_FOREACH (bin, iter) {
 		if (! strcmp (key, hash->key_function (iter)))
 			return NULL;
 	}
@@ -257,7 +257,7 @@ nih_hash_replace (NihHash *hash,
 		  NihList *entry)
 {
 	const char *key;
-	NihList    *bin, *iter, *ret = NULL;
+	NihList    *bin, *ret = NULL;
 
 	nih_assert (hash != NULL);
 	nih_assert (entry != NULL);
@@ -265,7 +265,7 @@ nih_hash_replace (NihHash *hash,
 	key = hash->key_function (entry);
 	bin = &hash->bins[fnv_hash (key) % hash->size];
 
-	for (iter = bin->next; iter != bin; iter = iter->next) {
+	NIH_LIST_FOREACH (bin, iter) {
 		if (! strcmp (key, hash->key_function (iter))) {
 			ret = nih_list_remove (iter);
 			break;
@@ -297,13 +297,13 @@ nih_hash_search (NihHash    *hash,
 		 const char *key,
 		 NihList    *entry)
 {
-	NihList *bin, *iter;
+	NihList *bin;
 
 	nih_assert (hash != NULL);
 	nih_assert (key != NULL);
 
 	bin = &hash->bins[fnv_hash (key) % hash->size];
-	for (iter = bin->next; iter != bin; iter = iter->next) {
+	NIH_LIST_FOREACH (bin, iter) {
 		if (iter == entry) {
 			entry = NULL;
 			continue;

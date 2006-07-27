@@ -57,12 +57,13 @@ static NihLogLevel min_priority = NIH_LOG_UNKNOWN;
  *
  * Initialise the default logger and priority.
  **/
-static void
+static inline void
 nih_log_init (void)
 {
-	logger = nih_logger_printf;
-
-	min_priority = NIH_LOG_WARN;
+	if (! logger)
+		nih_log_set_logger (nih_logger_printf);
+	if (! min_priority)
+		nih_log_set_priority (NIH_LOG_WARN);
 }
 
 /**
@@ -121,8 +122,7 @@ nih_log_message (NihLogLevel  priority,
 
 	nih_assert (format != NULL);
 
-	if (! min_priority)
-		nih_log_init ();
+	nih_log_init ();
 
 	if (priority < min_priority)
 		return 1;

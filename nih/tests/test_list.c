@@ -417,6 +417,78 @@ test_empty (void)
 }
 
 int
+test_foreach (void)
+{
+	NihList *list, *entry[3];
+	int      i, ret = 0;
+
+	printf ("Testing NIH_LIST_FOREACH()\n");
+	list = nih_list_new ();
+	entry[0] = nih_list_add (list, nih_list_new ());
+	entry[1] = nih_list_add (list, nih_list_new ());
+	entry[2] = nih_list_add (list, nih_list_new ());
+
+	/* Perform a test iteration */
+	i = 0;
+	NIH_LIST_FOREACH (list, iter) {
+		if (i > 2) {
+			printf ("BAD: more iterations than expected.\n");
+			ret = 1;
+			break;
+		}
+
+		if (iter != entry[i]) {
+			printf ("BAD: iteration not entry we expected.\n");
+			ret = 1;
+		}
+
+		i++;
+	}
+
+	return ret;
+}
+
+int
+test_foreach_safe (void)
+{
+	NihList *list, *entry[3];
+	int      i, ret = 0;
+
+	printf ("Testing NIH_LIST_FOREACH_SAFE()\n");
+	list = nih_list_new ();
+	entry[0] = nih_list_add (list, nih_list_new ());
+	entry[1] = nih_list_add (list, nih_list_new ());
+	entry[2] = nih_list_add (list, nih_list_new ());
+
+	/* Perform a test iteration */
+	i = 0;
+	NIH_LIST_FOREACH_SAFE (list, iter) {
+		if (i > 2) {
+			printf ("BAD: more iterations than expected.\n");
+			ret = 1;
+			break;
+		}
+
+		if (iter != entry[i]) {
+			printf ("BAD: iteration not entry we expected.\n");
+			ret = 1;
+		}
+
+		nih_list_remove (entry[i]);
+
+		i++;
+	}
+
+	/* List should be empty */
+	if (! NIH_LIST_EMPTY (list)) {
+		printf ("BAD: list not empty.\n");
+		ret = 1;
+	}
+
+	return ret;
+}
+
+int
 test_remove (void)
 {
 	NihList *list, *entry, *tail, *ptr;
@@ -600,6 +672,8 @@ main (int   argc,
 	ret |= test_add ();
 	ret |= test_add_after ();
 	ret |= test_empty ();
+	ret |= test_foreach ();
+	ret |= test_foreach_safe ();
 	ret |= test_remove ();
 	ret |= test_free ();
 

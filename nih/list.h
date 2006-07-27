@@ -52,6 +52,42 @@ typedef struct nih_list {
 #define NIH_LIST_EMPTY(list) (((list)->prev == (list)) \
 			      && ((list)->next) == (list))
 
+/**
+ * NIH_LIST_FOREACH:
+ * @list: entry in the list to iterate,
+ * @iter: name of iterator variable.
+ *
+ * Expands to a for statement that iterates over each entry in @list
+ * except @list itself, setting @iter to each entry for the block within
+ * the loop.
+ *
+ * If you wish to modify the list, e.g. remove entries, use
+ * #NIH_LIST_FOREACH_SAFE instead.
+ **/
+#define NIH_LIST_FOREACH(list, iter) \
+	for (NihList *iter = (list)->next; iter != (list); iter = iter->next)
+
+/**
+ * NIH_LIST_FOREACH_SAFE:
+ * @list: entry in the list to iterate,
+ * @iter: name of iterator variable.
+ *
+ * Expands to a for statement that iterates over each entry in @list
+ * except @list itself, setting @iter to each entry for the block within
+ * the loop.
+ *
+ * The iteration is performed safely by caching the next entry in @list
+ * in another variable (named _@iter); this means that @iter can be removed
+ * from the list, added to a different list, or entries added before or
+ * after it.
+ *
+ * Note that if you wish an entry added after @iter to be visited, you
+ * would need to use #NIH_LIST_FOREACH instead, as this would skip it.
+ **/
+#define NIH_LIST_FOREACH_SAFE(list, iter) \
+	for (NihList *iter = (list)->next, *_##iter = iter->next; \
+	     iter != (list); iter = _##iter, _##iter = _##iter->next)
+
 
 NIH_BEGIN_EXTERN
 

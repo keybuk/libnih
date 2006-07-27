@@ -1,5 +1,13 @@
 2006-07-27  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/list.h (NIH_LIST_FOREACH): New macro that expands to the usual
+	list iteration for loop, prevents mistakes.
+	(NIH_LIST_FOREACH_SAFE): Macro that does the same as above, but also
+	includes a "next" variable to allow safe iteration; especially useful
+	to prevent us getting this wrong!
+	* nih/tests/test_list.c (test_foreach, test_foreach_safe): Add test
+	cases for iteration.
+
 	* nih/error.c (nih_error_init): Make inline and check value first.
 	(nih_error_raise, nih_error_raise_printf, nih_error_raise_again,
 	nih_error_push_context): Unconditionally call nih_error_init.

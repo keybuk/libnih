@@ -1,5 +1,7 @@
 2006-07-27  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (nih_free): Use new safe list iteration macro.
+
 	* nih/hash.c (nih_hash_add_unique, nih_hash_replace,
 	nih_hash_search): Use new list iteration macros.
 

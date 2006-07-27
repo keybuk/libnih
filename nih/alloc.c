@@ -262,20 +262,16 @@ int
 nih_free (void *ptr)
 {
 	NihAllocCtx *ctx;
-	NihList     *iter;
 	int          ret = 0;
 
 	nih_assert (ptr != NULL);
 
 	ctx = NIH_ALLOC_CTX (ptr);
 
-	iter = ctx->children.next;
-	while (iter != &ctx->children) {
+	NIH_LIST_FOREACH_SAFE (&ctx->children, iter) {
 		void *ptr;
 
 		ptr = NIH_ALLOC_PTR (iter);
-		iter = iter->next;
-
 		ret = nih_free (ptr);
 	}
 

@@ -1,5 +1,8 @@
 2006-07-27  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/Makefile.am (DEFS): Append to the default DEFS list, rather
+	than overriding, otherwise we lose HAVE_CONFIG_H
+
 	* nih/macros.h: Check for ENABLE_NLS instead of HAVE_GETTEXT and
 	include libintl.h if defined as well.
 

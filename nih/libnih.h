@@ -25,6 +25,7 @@
 #include <nih/string.h>
 #include <nih/list.h>
 #include <nih/hash.h>
+#include <nih/timer.h>
 #include <nih/main.h>
 #include <nih/logging.h>
 #include <nih/error.h>

@@ -14,6 +14,7 @@ libnih_la_SOURCES = \
 	string.c \
 	list.c \
 	hash.c \
+	timer.c \
 	main.c \
 	logging.c \
 	error.c
@@ -38,6 +39,7 @@ nihinclude_HEADERS = \
 	string.h \
 	list.h \
 	hash.h \
+	timer.h \
 	main.h \
 	logging.h \
 	error.h \
@@ -49,6 +51,7 @@ TESTS = \
 	test_string \
 	test_list \
 	test_hash \
+	test_timer \
 	test_main \
 	test_logging \
 	test_error
@@ -70,6 +73,10 @@ test_list_LDADD = libnih.la
 test_hash_SOURCES = tests/test_hash.c
 test_hash_LDFLAGS = -static
 test_hash_LDADD = libnih.la
+
+test_timer_SOURCES = tests/test_timer.c
+test_timer_LDFLAGS = -static
+test_timer_LDADD = libnih.la
 
 test_main_SOURCES = tests/test_main.c
 test_main_LDFLAGS = -static

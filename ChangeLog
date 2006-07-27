@@ -1,5 +1,17 @@
 2006-07-27  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/timer.c: Code for timeouts, periodic and scheduled timers,
+	note that the actual scheduling part of scheduled timers it not
+	implemented yet (we need to think a bit more about it)
+	* nih/timer.h: Structures, macros and prototypes.
+	* nih/libnih.h: Include timer.h
+	* nih/tests/test_timer.c: Test cases for timer code.
+	* nih/Makefile.am (libnih_la_SOURCES): Build and link timer.c
+	(nihinclude_HEADERS): Install timer.h
+	(TESTS): Build and run timer test cases
+	(test_timer_SOURCES, test_timer_LDFLAGS, test_timer_LDADD): Details
+	for timer test case binary.
+
 	* nih/alloc.c (nih_free): Use new safe list iteration macro.
 
 	* nih/hash.c (nih_hash_add_unique, nih_hash_replace,

@@ -83,12 +83,14 @@ static __thread NihList *context_stack = NULL;
  *
  * Initialise the context stack.
  **/
-static void
+static inline void
 nih_error_init (void)
 {
-	NIH_MUST (context_stack = nih_list_new ());
+	if (! context_stack) {
+		NIH_MUST (context_stack = nih_list_new ());
 
-	nih_error_push_context ();
+		nih_error_push_context ();
+	}
 }
 
 
@@ -113,8 +115,7 @@ nih_error_raise (int         number,
 	nih_assert (number > 0);
 	nih_assert (message != NULL);
 
-	if (! context_stack)
-		nih_error_init ();
+	nih_error_init ();
 
 	NIH_MUST (error = nih_new (CURRENT_CONTEXT, NihError));
 
@@ -147,8 +148,7 @@ nih_error_raise_printf (int         number,
 	nih_assert (number > 0);
 	nih_assert (format != NULL);
 
-	if (! context_stack)
-		nih_error_init ();
+	nih_error_init ();
 
 	NIH_MUST (error = nih_new (CURRENT_CONTEXT, NihError));
 
@@ -201,8 +201,7 @@ nih_error_raise_again (NihError *error)
 	nih_assert (error->number > 0);
 	nih_assert (error->message != NULL);
 
-	if (! context_stack)
-		nih_error_init ();
+	nih_error_init ();
 
 	if (CURRENT_CONTEXT->error)
 		nih_error_clear ();
@@ -270,8 +269,7 @@ nih_error_push_context (void)
 {
 	NihErrorCtx *new_context;
 
-	if (! context_stack)
-		nih_error_init ();
+	nih_error_init ();
 
 	NIH_MUST (new_context = nih_new (context_stack, NihErrorCtx));
 

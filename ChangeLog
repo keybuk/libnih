@@ -1,5 +1,9 @@
 2006-07-27  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/error.c (nih_error_init): Make inline and check value first.
+	(nih_error_raise, nih_error_raise_printf, nih_error_raise_again,
+	nih_error_push_context): Unconditionally call nih_error_init.
+
 	* nih/alloc.c (nih_alloc_init): Make inline and check value first.
 	(nih_alloc): Unconditionally call nih_alloc_init.
 

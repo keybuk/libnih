@@ -71,7 +71,8 @@
 
 
 /* Make gettext friendlier */
-#if HAVE_GETTEXT
+#if ENABLE_NLS
+# include <libintl.h>
 # define _(_str)  gettext (_str)
 # define N_(_str) gettext_noop (_str)
 #else

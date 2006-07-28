@@ -23,6 +23,8 @@
 #include <nih/macros.h>
 #include <nih/list.h>
 
+#include <signal.h>
+
 
 /**
  * NihSignalCb:

@@ -1,5 +1,7 @@
 2006-07-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/signal.h: Include the system signal.h for ease of use.
+
 	* nih/signal.c: Code for handling signals inside the main loop,
 	rather than trying to fit delicate code in a signal handler; and
 	for making it generally easier to handle signals.

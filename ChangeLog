@@ -1,5 +1,7 @@
 2006-07-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_timer.c (test_poll): Free entry after testing.
+
 	* nih/child.c (nih_child_poll): When the reaper is for a particular
 	process, be sure to remove it from the list.
 	* nih/tests/test_child.c (test_poll): Test for that.

@@ -389,6 +389,8 @@ test_poll (void)
 		ret = 1;
 	}
 
+	nih_list_free (&timer2->entry);
+
 	return ret;
 }
 

@@ -1,5 +1,13 @@
 2006-07-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/main.c (nih_main_loop): Implement a main loop by calling
+	various other functions in the right manner.
+	(nih_main_loop_exit): Function to break the main loop.
+	* nih/main.h: Update.
+	* nih/tests/test_main.c (test_main_loop): Add a trivial test case
+	for the main loop, it's damned difficult to test, but at least this
+	ensures the bases are touched.
+
 	* nih/signal.c (nih_signal_poll): Add missing call to
 	nih_signal_init()
 	* nih/child.c (nih_child_poll): Add missing call to nih_child_init()

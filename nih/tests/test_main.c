@@ -28,6 +28,7 @@
 #include <unistd.h>
 
 #include <nih/main.h>
+#include <nih/timer.h>
 
 
 int
@@ -293,6 +294,31 @@ test_version (void)
 }
 
 
+static void
+my_timeout (void *data, NihTimer *timer)
+{
+	nih_main_loop_exit (42);
+}
+
+int
+test_main_loop (void)
+{
+	int ret = 0, retval;
+
+	printf ("Testing nih_main_loop()\n");
+	nih_timer_add_timeout (1, my_timeout, NULL);
+	retval = nih_main_loop ();
+
+	/* Return value should be that injected by the timer */
+	if (retval != 42) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	return ret;
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -303,6 +329,7 @@ main (int   argc,
 	ret |= test_package_string ();
 	ret |= test_suggest_help ();
 	ret |= test_version ();
+	ret |= test_main_loop ();
 
 	return ret;
 }

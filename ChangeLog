@@ -1,3 +1,16 @@
+2006-07-28  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/signal.c: Code for handling signals inside the main loop,
+	rather than trying to fit delicate code in a signal handler; and
+	for making it generally easier to handle signals.
+	* nih/signal.h: Typedefs and prototypes.
+	* nih/libnih.h: Include signal.h
+	* nih/Makefile.am (libnih_la_SOURCES): Build and link signal.c
+	(nihinclude_HEADERS): Install signal.h
+	(TESTS): Build and run signal test cases
+	(test_signal_SOURCES, test_signal_LDFLAGS, test_signal_LDADD): Details
+	for signal test case binary.
+
 2006-07-27  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/timer.c: Code for timeouts, periodic and scheduled timers,

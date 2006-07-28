@@ -1,5 +1,16 @@
 2006-07-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/child.c: Simple bit of code to wait for children to
+	terminate and dispatch the reaper functions for them.
+	* nih/child.h: Typedefs, structures and prototypes.
+	* nih/libnih.h: Include child.h
+	* nih/tests/test_child.c: Test cases for child handling code.
+	* nih/Makefile.am (libnih_la_SOURCES): Build and link child.c
+	(nihinclude_HEADERS): Install child.h
+	(TESTS): Build and run child test cases
+	(test_child_SOURCES, test_child_LDFLAGS, test_child_LDADD): Details
+	for child test case binary.
+
 	* nih/timer.c (nih_timer_add_timeout, nih_timer_add_periodic,
 	nih_timer_add_scheduled): Change argument order so that the time
 	information is first, to match signal functions.

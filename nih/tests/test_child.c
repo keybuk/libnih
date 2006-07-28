@@ -134,6 +134,16 @@ test_add_watch (void)
 	return ret;
 }
 
+static int destroyed = 0;
+
+static int
+my_destructor (void *ptr)
+{
+	destroyed = 1;
+
+	return 0;
+}
+
 int
 test_poll (void)
 {
@@ -155,9 +165,12 @@ test_poll (void)
 
 
 	watch1 = nih_child_add_watch (-1, my_reaper, &ret);
+	nih_alloc_set_destructor (watch1, my_destructor);
 	watch2 = nih_child_add_watch (pid, my_reaper, &pid);
+	nih_alloc_set_destructor (watch2, my_destructor);
 
 	reaper_called = 0;
+	destroyed = 0;
 	last_data = NULL;
 	last_pid = 0;
 	last_status = 0;
@@ -184,6 +197,12 @@ test_poll (void)
 		ret = 1;
 	}
 
+	/* Second watcher should have been destroyed */
+	if (! destroyed) {
+		printf ("BAD: watcher wasn't destroyed.\n");
+		ret = 1;
+	}
+
 
 	pid = fork ();
 	if (pid == 0) {
@@ -196,6 +215,7 @@ test_poll (void)
 	assert (pid >= 0);
 
 	reaper_called = 0;
+	destroyed = 0;
 	last_data = NULL;
 	last_pid = 0;
 	last_status = 0;
@@ -225,6 +245,12 @@ test_poll (void)
 	/* Data should have been the data pointer of the first one */
 	if (last_data != &ret) {
 		printf ("BAD: last data wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Watcher should not have been destroyed */
+	if (destroyed) {
+		printf ("BAD: watcher destroyed unexpectedly.\n");
 		ret = 1;
 	}
 

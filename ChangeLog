@@ -1,5 +1,9 @@
 2006-07-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/child.c (nih_child_poll): When the reaper is for a particular
+	process, be sure to remove it from the list.
+	* nih/tests/test_child.c (test_poll): Test for that.
+	
 	* nih/child.c: Simple bit of code to wait for children to
 	terminate and dispatch the reaper functions for them.
 	* nih/child.h: Typedefs, structures and prototypes.

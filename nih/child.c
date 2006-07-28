@@ -31,7 +31,6 @@
 #include <nih/alloc.h>
 #include <nih/list.h>
 #include <nih/logging.h>
-#include <nih/error.h>
 
 #include "child.h"
 
@@ -125,6 +124,9 @@ nih_child_poll (void)
 				continue;
 
 			watch->reaper (watch->data, pid, status);
+
+			if (watch->pid != -1)
+				nih_list_free (&watch->entry);
 		}
 	}
 }

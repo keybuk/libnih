@@ -246,6 +246,8 @@ nih_signal_poll (void)
 {
 	int s;
 
+	nih_signal_init ();
+
 	NIH_LIST_FOREACH_SAFE (signals, iter) {
 		NihSignal *signal = (NihSignal *)iter;
 

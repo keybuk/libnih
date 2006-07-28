@@ -119,6 +119,8 @@ nih_io_poll_fds (struct pollfd **ufds,
 	nih_assert (ufds != NULL);
 	nih_assert (nfds != NULL);
 
+	nih_io_init ();
+
 	*ufds = NULL;
 	*nfds = 0;
 
@@ -160,6 +162,8 @@ nih_io_handle_fds (const struct pollfd *ufds,
 {
 	nih_assert (ufds != NULL);
 	nih_assert (nfds > 0);
+
+	nih_io_init ();
 
 	NIH_LIST_FOREACH_SAFE (io_watches, iter) {
 		NihIoWatch *watch = (NihIoWatch *)iter;

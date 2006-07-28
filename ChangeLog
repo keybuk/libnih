@@ -1,5 +1,11 @@
 2006-07-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/signal.c (nih_signal_poll): Add missing call to
+	nih_signal_init()
+	* nih/child.c (nih_child_poll): Add missing call to nih_child_init()
+	* nih/io.c (nih_io_poll_fds, nih_io_handle_fds): Add missing calls
+	to nih_io_init()
+
 	* nih/io.c: Code for watching file descriptors and sockets for
 	events through poll(), but not actually the poll() call itself.
 	* nih/io.h: Typedefs, structures and prototypes.

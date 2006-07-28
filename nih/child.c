@@ -116,6 +116,8 @@ nih_child_poll (void)
 	pid_t pid;
 	int   status;
 
+	nih_child_init ();
+
 	while ((pid = waitpid (-1, &status, WNOHANG)) > 0) {
 		NIH_LIST_FOREACH_SAFE (child_watches, iter) {
 			NihChildWatch *watch = (NihChildWatch *)iter;

@@ -1,5 +1,11 @@
 2006-07-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/timer.c (nih_timer_add_timeout, nih_timer_add_periodic,
+	nih_timer_add_scheduled): Change argument order so that the time
+	information is first, to match signal functions.
+	* nih/timer.h: Update.
+	* nih/tests/test_timer.c: Update.
+
 	* nih/signal.h: Include the system signal.h for ease of use.
 
 	* nih/signal.c: Code for handling signals inside the main loop,

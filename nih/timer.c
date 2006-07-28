@@ -60,9 +60,9 @@ nih_timer_init (void)
 
 /**
  * nih_timer_add_timeout:
+ * @timeout: seconds to wait before triggering,
  * @callback: function to be called,
- * @data: pointer to pass to function as first argument,
- * @timeout: seconds to wait before triggering.
+ * @data: pointer to pass to function as first argument.
  *
  * Arranges for the @callback function to be called in @timeout seconds
  * time, or the soonest period thereafter.  A timer may be called
@@ -74,9 +74,9 @@ nih_timer_init (void)
  * Returns: the new timer information, or %NULL if insufficient memory.
  **/
 NihTimer *
-nih_timer_add_timeout (NihTimerCb  callback,
-		       void       *data,
-		       time_t      timeout)
+nih_timer_add_timeout (time_t      timeout,
+		       NihTimerCb  callback,
+		       void       *data)
 {
 	NihTimer *timer;
 
@@ -105,9 +105,9 @@ nih_timer_add_timeout (NihTimerCb  callback,
 
 /**
  * nih_timer_add_periodic:
+ * @period: number of seconds between calls,
  * @callback: function to be called,
- * @data: pointer to pass to function as first argument,
- * @period: number of seconds between calls.
+ * @data: pointer to pass to function as first argument.
  *
  * Arranges for the @callback function to be called every @period seconds,
  * or the soonest time thereafter.
@@ -118,9 +118,9 @@ nih_timer_add_timeout (NihTimerCb  callback,
  * Returns: the new timer information, or %NULL if insufficient memory.
  **/
 NihTimer *
-nih_timer_add_periodic (NihTimerCb  callback,
-			void       *data,
-			time_t      period)
+nih_timer_add_periodic (time_t      period,
+			NihTimerCb  callback,
+			void       *data)
 {
 	NihTimer *timer;
 
@@ -150,9 +150,9 @@ nih_timer_add_periodic (NihTimerCb  callback,
 
 /**
  * nih_timer_add_scheduled:
+ * @schedule: trigger schedule,
  * @callback: function to be called,
- * @data: pointer to pass to function as first argument,
- * @schedule: trigger schedule..
+ * @data: pointer to pass to function as first argument.
  *
  * Arranges for the @callback function to be called based on the @schedule
  * given.
@@ -163,9 +163,9 @@ nih_timer_add_periodic (NihTimerCb  callback,
  * Returns: the new timer information, or %NULL if insufficient memory.
  **/
 NihTimer *
-nih_timer_add_scheduled (NihTimerCb        callback,
-			 void             *data,
-			 NihTimerSchedule *schedule)
+nih_timer_add_scheduled (NihTimerSchedule *schedule,
+			 NihTimerCb        callback,
+			 void             *data)
 {
 	NihTimer *timer;
 

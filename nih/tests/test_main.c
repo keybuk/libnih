@@ -297,6 +297,7 @@ test_version (void)
 static void
 my_timeout (void *data, NihTimer *timer)
 {
+	nih_main_term_signal (NULL, NULL);
 	nih_main_loop_exit (42);
 }
 

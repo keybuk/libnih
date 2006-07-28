@@ -314,3 +314,19 @@ nih_main_loop_exit (int status)
 	exit_status = status;
 	exit_loop = TRUE;
 }
+
+
+/**
+ * nih_main_term_signal:
+ * @data: ignored,
+ * @signal: ignored.
+ *
+ * Signal callback that instructs the main loop to exit with a normal
+ * exit status, usually registered for SIGTERM and SIGINT for non-daemons.
+ **/
+void
+nih_main_term_signal (void      *data,
+		      NihSignal *signal)
+{
+	nih_main_loop_exit (0);
+}

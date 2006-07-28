@@ -21,6 +21,7 @@
 #define NIH_MAIN_H
 
 #include <nih/macros.h>
+#include <nih/signal.h>
 
 
 /**
@@ -60,6 +61,8 @@ void        nih_main_version        (void);
 
 int         nih_main_loop           (void);
 void        nih_main_loop_exit      (int status);
+
+void        nih_main_term_signal    (void *data, NihSignal *signal);
 
 NIH_END_EXTERN
 

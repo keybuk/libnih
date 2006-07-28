@@ -1,5 +1,10 @@
 2006-07-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/main.c (nih_main_term_signal): Handy signal callback.
+	* nih/main.h: Update.
+	* nih/tests/test_main.c (my_timeout): Cheat and ensure the latest
+	exit status is used.
+
 	* nih/main.c (nih_main_loop): Implement a main loop by calling
 	various other functions in the right manner.
 	(nih_main_loop_exit): Function to break the main loop.

@@ -95,7 +95,8 @@ nih_signal_set_handler (int    signum,
 	nih_assert (handler != NULL);
 
 	act.sa_handler = handler;
-	act.sa_flags = SA_RESTART;
+	if (signum != SIGALRM)
+		act.sa_flags = SA_RESTART;
 	sigemptyset (&act.sa_mask);
 
 	if (sigaction (signum, &act, NULL) < 0)
@@ -124,7 +125,8 @@ nih_signal_set_default (int signum)
 	nih_signal_init ();
 
 	act.sa_handler = SIG_DFL;
-	act.sa_flags = SA_RESTART;
+	if (signum != SIGALRM)
+		act.sa_flags = SA_RESTART;
 	sigemptyset (&act.sa_mask);
 
 	if (sigaction (signum, &act, NULL) < 0)
@@ -153,7 +155,8 @@ nih_signal_set_ignore (int signum)
 	nih_signal_init ();
 
 	act.sa_handler = SIG_IGN;
-	act.sa_flags = SA_RESTART;
+	if (signum != SIGALRM)
+		act.sa_flags = SA_RESTART;
 	sigemptyset (&act.sa_mask);
 
 	if (sigaction (signum, &act, NULL) < 0)

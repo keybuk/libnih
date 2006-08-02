@@ -1,5 +1,8 @@
 2006-08-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/signal.c (nih_signal_set_handler, nih_signal_set_default)
+	(nih_signal_set_ignore): don't set SA_RESTART for SIGALRM.
+
 	* nih/signal.c (nih_signal_set_handler, nih_signal_set_default,
 	nih_signal_set_ignore): use nih_return_system_error to make the
 	code rather cleaner.

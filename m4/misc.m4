@@ -38,5 +38,3 @@ m4_ifndef([NIH_PACKAGE_COPYRIGHT], [m4_bmatch([$1], [
 	AC_DEFINE([PACKAGE_COPYRIGHT], [NIH_PACKAGE_COPYRIGHT],
 		  [Define to the copyright message of this package.])])])dnl
 ])# AC_COPYRIGHT
-
-AC_DEFUN([NIH_FORCE_MISC], [])

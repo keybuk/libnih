@@ -1,5 +1,8 @@
 2006-08-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nihify (libnih_dir): Add useful script for symlinking into source
+	trees until we intend to get released.
+
 	* HACKING: Correct typo (our -> out)
 
 2006-07-28  Scott James Remnant  <scott@netsplit.com>

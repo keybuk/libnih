@@ -1,5 +1,9 @@
 2006-08-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/error.c (nih_error_raise_system): Be a lot more careful in
+	this function!  Save the value of errno in case we overwrite it
+	and call nih_error_init()
+
 	* nih/signal.c (nih_signal_set_handler): Add the SA_NOCLDSTOP
 	signal for SIGCHLD.
 

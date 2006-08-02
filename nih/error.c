@@ -172,15 +172,20 @@ void
 nih_error_raise_system (void)
 {
 	NihError *error;
+	int       saved_errno;
 
 	nih_assert (errno > 0);
+	saved_errno = errno;
+
+	nih_error_init ();
 
 	NIH_MUST (error = nih_new (CURRENT_CONTEXT, NihError));
 
-	error->number = errno;
-	NIH_MUST (error->message = nih_strdup (error, strerror (errno)));
+	error->number = saved_errno;
+	NIH_MUST (error->message = nih_strdup (error, strerror (saved_errno)));
 
 	nih_error_raise_again (error);
+	errno = saved_errno;
 }
 
 /**

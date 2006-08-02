@@ -65,6 +65,7 @@ NIH_BEGIN_EXTERN
 int        nih_signal_set_handler  (int signum, void (*handler)(int));
 int        nih_signal_set_default  (int signum);
 int        nih_signal_set_ignore   (int signum);
+void       nih_signal_reset        (void);
 
 NihSignal *nih_signal_add_callback (int signum, NihSignalCb callback,
 				    void *data);

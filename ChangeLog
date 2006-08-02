@@ -1,5 +1,13 @@
 2006-08-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/signal.c (nih_signal_set_handler, nih_signal_set_default) 
+	(nih_signal_set_ignore): Reset sa_flags so that we don't pass
+	uninitialised data for SIGALRM.
+	(nih_signal_reset): Add function to reset signals back to their
+	default state.
+	* nih/signal.h: Update.
+	* nih/tests/test_signal.c (test_reset): Add test case.
+
 	* nih/error.c (nih_error_raise_system): Be a lot more careful in
 	this function!  Save the value of errno in case we overwrite it
 	and call nih_error_init()

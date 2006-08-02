@@ -95,8 +95,9 @@ nih_signal_set_handler (int    signum,
 	nih_assert (handler != NULL);
 
 	act.sa_handler = handler;
+	act.sa_flags = 0;
 	if (signum != SIGALRM)
-		act.sa_flags = SA_RESTART;
+		act.sa_flags |= SA_RESTART;
 	if (signum == SIGCHLD)
 		act.sa_flags |= SA_NOCLDSTOP;
 	sigemptyset (&act.sa_mask);
@@ -127,8 +128,9 @@ nih_signal_set_default (int signum)
 	nih_signal_init ();
 
 	act.sa_handler = SIG_DFL;
+	act.sa_flags = 0;
 	if (signum != SIGALRM)
-		act.sa_flags = SA_RESTART;
+		act.sa_flags |= SA_RESTART;
 	sigemptyset (&act.sa_mask);
 
 	if (sigaction (signum, &act, NULL) < 0)
@@ -157,14 +159,31 @@ nih_signal_set_ignore (int signum)
 	nih_signal_init ();
 
 	act.sa_handler = SIG_IGN;
+	act.sa_flags = 0;
 	if (signum != SIGALRM)
-		act.sa_flags = SA_RESTART;
+		act.sa_flags |= SA_RESTART;
 	sigemptyset (&act.sa_mask);
 
 	if (sigaction (signum, &act, NULL) < 0)
 		nih_return_system_error (-1);
 
 	return 0;
+}
+
+/**
+ * nih_signal_reset:
+ *
+ * Resets all signals to their default handling, errors are ignored as
+ * there's no real way to deal with them.
+ **/
+void
+nih_signal_reset (void)
+{
+	int i;
+
+	for (i = 1; i < NUM_SIGNALS; i++)
+		if (nih_signal_set_default (i) < 0)
+			nih_free (nih_error_get ());
 }
 
 

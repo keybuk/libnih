@@ -178,6 +178,49 @@ test_set_ignore (void)
 	return ret;
 }
 
+int
+test_reset (void)
+{
+	struct sigaction act;
+	int              ret = 0, i;
+
+	printf ("Testing nih_signal_reset()\n");
+	nih_signal_set_ignore (SIGTERM);
+	nih_signal_reset ();
+
+	/* Check installed signal action */
+	assert (sigaction (SIGTERM, NULL, &act) == 0);
+
+	/* Handler should be the default */
+	if (act.sa_handler != SIG_DFL) {
+		printf ("BAD: signal handler set incorrectly.\n");
+		ret = 1;
+	}
+
+	/* Flags should contain SA_RESTART */
+	if (! (act.sa_flags & SA_RESTART)) {
+		printf ("BAD: signal flags set incorrectly.\n");
+		ret = 1;
+	}
+
+	/* Flags should not contain SA_RESETHAND */
+	if (act.sa_flags & SA_RESETHAND) {
+		printf ("BAD: signal flags set incorrectly.\n");
+		ret = 1;
+	}
+
+	/* Mask should be empty */
+	for (i = 1; i < 32; i++) {
+		if (sigismember (&act.sa_mask, i)) {
+			printf ("BAD: signal mask not empty set.\n");
+			ret = 1;
+			break;
+		}
+	}
+
+	return ret;
+}
+
 
 static int callback_called = 0;
 static void *last_data;
@@ -316,6 +359,7 @@ main (int   argc,
 	ret |= test_set_handler ();
 	ret |= test_set_default ();
 	ret |= test_set_ignore ();
+	ret |= test_reset ();
 	ret |= test_add_callback ();
 	ret |= test_poll ();
 

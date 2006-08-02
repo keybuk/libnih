@@ -3,8 +3,8 @@
 	* nih/signal.c (nih_signal_set_handler, nih_signal_set_default)
 	(nih_signal_set_ignore): don't set SA_RESTART for SIGALRM.
 
-	* nih/signal.c (nih_signal_set_handler, nih_signal_set_default,
-	nih_signal_set_ignore): use nih_return_system_error to make the
+	* nih/signal.c (nih_signal_set_handler, nih_signal_set_default)
+	(nih_signal_set_ignore): use nih_return_system_error to make the
 	code rather cleaner.
 
 	* nih/error.h (nih_return_error): Add missing doc for retval
@@ -84,8 +84,8 @@
 	(test_child_SOURCES, test_child_LDFLAGS, test_child_LDADD): Details
 	for child test case binary.
 
-	* nih/timer.c (nih_timer_add_timeout, nih_timer_add_periodic,
-	nih_timer_add_scheduled): Change argument order so that the time
+	* nih/timer.c (nih_timer_add_timeout, nih_timer_add_periodic)
+	(nih_timer_add_scheduled): Change argument order so that the time
 	information is first, to match signal functions.
 	* nih/timer.h: Update.
 	* nih/tests/test_timer.c: Update.
@@ -119,8 +119,8 @@
 
 	* nih/alloc.c (nih_free): Use new safe list iteration macro.
 
-	* nih/hash.c (nih_hash_add_unique, nih_hash_replace,
-	nih_hash_search): Use new list iteration macros.
+	* nih/hash.c (nih_hash_add_unique, nih_hash_replace)
+	(nih_hash_search): Use new list iteration macros.
 
 	* nih/list.h (NIH_LIST_FOREACH): New macro that expands to the usual
 	list iteration for loop, prevents mistakes.
@@ -131,8 +131,8 @@
 	cases for iteration.
 
 	* nih/error.c (nih_error_init): Make inline and check value first.
-	(nih_error_raise, nih_error_raise_printf, nih_error_raise_again,
-	nih_error_push_context): Unconditionally call nih_error_init.
+	(nih_error_raise, nih_error_raise_printf, nih_error_raise_again)
+	(nih_error_push_context): Unconditionally call nih_error_init.
 
 	* nih/alloc.c (nih_alloc_init): Make inline and check value first.
 	(nih_alloc): Unconditionally call nih_alloc_init.
@@ -176,8 +176,8 @@
 	* nih/tests/test_main.c (test_package_string): Call nih_main_init_full
 	instead of futzing with variables so the static string is reset.
 
-	* nih/alloc.c (nih_alloc_using, nih_alloc, nih_realloc,
-	nih_alloc_size, nih_alloc_parent): Make various argument pointers
+	* nih/alloc.c (nih_alloc_using, nih_alloc, nih_realloc)
+	(nih_alloc_size, nih_alloc_parent): Make various argument pointers
 	const.
 	* nih/alloc.h: Update.
 
@@ -189,8 +189,8 @@
 	* nih/tests/test_strutil.c: Renamed to nih/tests/test_string.h
 	* nih/Makefile.am (DEFAULT_INCLUDES): Override to stop automake doing
 	silly things like putting -I. in the pre-processor flags.
-	(libnih_la_SOURCES, nihinclude_HEADERS, TESTS,
-	test_string_SOURCES, test_string_LDFLAGS, test_string_LDADD): Update.
+	(libnih_la_SOURCES, nihinclude_HEADERS, TESTS)
+	(test_string_SOURCES, test_string_LDFLAGS, test_string_LDADD): Update.
 
 2006-07-19  Scott James Remnant  <scott@netsplit.com>
 
@@ -260,8 +260,8 @@
 	* nih/Makefile.am (libnih_la_SOURCES): Build and link strutil.c
 	(nihinclude_HEADERS): Install strutil.h
 	(TESTS): Build and run strutil test cases
-	(test_strutil_SOURCES, test_strutil_LDFLAGS,
-	test_strutil_LDADD): Binary for strutil test cases.
+	(test_strutil_SOURCES, test_strutil_LDFLAGS)
+	(test_strutil_LDADD): Binary for strutil test cases.
 
 2006-07-05  Scott James Remnant  <scott@netsplit.com>
 
@@ -281,11 +281,11 @@
 	rather than stderr.
 	* nih/alloc.c, nih/hash.c, nih/list.c, nih/logging.c, nih/main.c:
 	Use nih_assert rather than assert.
-	* nih/Makefile.am (test_alloc_LDFLAGS, test_list_LDFLAGS,
-	test_hash_LDFLAGS, test_main_LDFLAGS, test_logging_LDFLAGS): Link
+	* nih/Makefile.am (test_alloc_LDFLAGS, test_list_LDFLAGS)
+	(test_hash_LDFLAGS, test_main_LDFLAGS, test_logging_LDFLAGS): Link
 	libraries statically.
-	(test_alloc_LDADD, test_list_LDADD, test_hash_LDADD,
-	test_main_LDADD, test_logging_LDADD): Just link to the library.
+	(test_alloc_LDADD, test_list_LDADD, test_hash_LDADD)
+	(test_main_LDADD, test_logging_LDADD): Just link to the library.
 
 	* nih/macros.h (NIH_STRINGIFY): Correct typo (-s -> _s)
 	(NIH_LIKELY, NIH_UNLIKELY): Add branch prediction macros.
@@ -316,8 +316,8 @@
 	(test_logging_SOURCES, test_logging_LDADD): Binary for logging
 	test cases.
 
-	* nih/tests/test_main.c (test_package_string, test_suggest_help,
-	test_version): Add missing comments before tests.
+	* nih/tests/test_main.c (test_package_string, test_suggest_help)
+	(test_version): Add missing comments before tests.
 	(test_suggest_help, test_version): Close the duplicated stdout/stderr
 	before leaving the test.
 
@@ -422,12 +422,12 @@
 	* nih/list.c (nih_list_new): Also return NULL if the allocation
 	fails.
 
-	* nih/alloc.c (nih_alloc_set_allocator, nih_alloc_using,
-	nih_free, nih_alloc_set_name, nih_alloc_set_destructor,
-	nih_alloc_name, nih_alloc_size, nih_alloc_parent): Use assert
+	* nih/alloc.c (nih_alloc_set_allocator, nih_alloc_using)
+	(nih_free, nih_alloc_set_name, nih_alloc_set_destructor)
+	(nih_alloc_name, nih_alloc_size, nih_alloc_parent): Use assert
 	to uncover programming errors.
-	* nih/list.c (nih_list_init, nih_list_remove, nih_list_free,
-	nih_list_add, nih_list_add_after): Use assert to uncover
+	* nih/list.c (nih_list_init, nih_list_remove, nih_list_free)
+	(nih_list_add, nih_list_add_after): Use assert to uncover
 	programming errors.
 	(nih_list_new): Comment that nih_new may return NULL and we need
 	to make sure we catch that.
@@ -451,8 +451,8 @@
 	code more focussed and generic, but also we'll nearly always want
 	the data member to be an nih_alloc child of the list, rather than
 	the other way around!
-	* nih/list.h (NihListEntry, nih_list_add_new,
-	nih_list_add_new_after): Likewise, remove the structure and helper
+	* nih/list.h (NihListEntry, nih_list_add_new)
+	(nih_list_add_new_after): Likewise, remove the structure and helper
 	macros; if we find ourselves wanting this, we can put it in a new
 	file and just make it polymorphic like we plan for hashes.
 	* nih/tests/test_list.c: Replace all uses of NihListEntry with plain

@@ -10,7 +10,3 @@ tree? (binary and n-ary)
 - need a comparison function
 
 option parsing
-main loop
-timers
-easier select/poll
-error/exception handling

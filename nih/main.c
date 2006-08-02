@@ -229,22 +229,8 @@ nih_main_version (void)
 int
 nih_main_loop (void)
 {
-	sigset_t blocked_set;
-
-	/* We want SIGCHLD to interrupt our call to poll() so we deal
-	 * with the child as quickly as possible; however we don't want
-	 * it to interrupt other more important syscalls we may be stuck
-	 * in (by default, anyway).
-	 */
-	sigemptyset (&blocked_set);
-	sigaddset (&blocked_set, SIGCHLD);
-	sigprocmask (SIG_BLOCK, &blocked_set, NULL);
-
-	/* Set a handler for SIGCHLD so that it can interrupt syscalls
-	 * when not blocked
-	 */
+	/* Set a handler for SIGCHLD so that it can interrupt syscalls */
 	nih_signal_set_handler (SIGCHLD, nih_signal_handler);
-
 
 	while (! exit_loop) {
 		NihTimer      *next_timer;
@@ -272,10 +258,8 @@ nih_main_loop (void)
 				timeout = 1000;
 		}
 
-		/* Do the poll, and let it be interrupted by a child signal */
-		sigprocmask (SIG_UNBLOCK, &blocked_set, NULL);
+		/* Do the poll */
 		ret = poll (ufds, nfds, timeout);
-		sigprocmask (SIG_BLOCK, &blocked_set, NULL);
 
 		/* Deal with polled events */
 		if (ret > 0)
@@ -290,9 +274,6 @@ nih_main_loop (void)
 		/* Deal with timers */
 		nih_timer_poll ();
 	}
-
-	/* Politely put the signals back how we found them */
-	sigprocmask (SIG_UNBLOCK, &blocked_set, NULL);
 
 	exit_loop = 0;
 	return exit_status;

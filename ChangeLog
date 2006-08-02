@@ -1,5 +1,10 @@
 2006-08-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/main.c (nih_main_loop): Drop the code that masked out the
+	child signal, it was inherently racy and there's no particular
+	reason to do it anyway since we use SA_RESTART in signal.c for
+	most things.
+
 	* nih/signal.c (nih_signal_set_handler, nih_signal_set_default)
 	(nih_signal_set_ignore): don't set SA_RESTART for SIGALRM.
 

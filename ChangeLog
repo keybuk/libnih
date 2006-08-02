@@ -1,3 +1,7 @@
+2006-08-02  Scott James Remnant  <scott@netsplit.com>
+
+	* HACKING: Correct typo (our -> out)
+
 2006-07-28  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/main.c (nih_main_term_signal): Handy signal callback.

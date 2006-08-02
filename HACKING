@@ -30,7 +30,7 @@ installed.
 	* GNU Libtool 1.5.22
 	* GNU Gettext 0.14.5
 
-After checking our libnih from Bazaar-NG you will need to use these
+After checking out libnih from Bazaar-NG you will need to use these
 tools to generate the build files.  The correct way to do this is to
 simply run ‘autoreconf -i’ from the top-level source directory.
 

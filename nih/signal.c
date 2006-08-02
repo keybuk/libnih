@@ -97,6 +97,8 @@ nih_signal_set_handler (int    signum,
 	act.sa_handler = handler;
 	if (signum != SIGALRM)
 		act.sa_flags = SA_RESTART;
+	if (signum == SIGCHLD)
+		act.sa_flags |= SA_NOCLDSTOP;
 	sigemptyset (&act.sa_mask);
 
 	if (sigaction (signum, &act, NULL) < 0)

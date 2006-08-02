@@ -1,5 +1,13 @@
 2006-08-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/child.c (nih_child_poll): Convert to use waitid() so that
+	we can obtain the information about the dead child without reaping
+	it until we're done processing; useful because it means /proc/$PID
+	and the child itself is still around during the handlers.
+	* nih/child.h (NihReaper): Gains a new third argument that indicates
+	whether the child exited normally or was killed.
+	* nih/tests/test_child.c (test_poll): Update.
+
 	* nihify: Add a few useful sanity checks so that it works with
 	relative paths and already-nihified directories.
 

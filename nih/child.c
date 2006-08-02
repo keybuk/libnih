@@ -104,7 +104,7 @@ nih_child_add_watch (pid_t      pid,
 /**
  * nih_child_poll:
  *
- * Repeatedly call #waitpid until there are no children waiting to be
+ * Repeatedly call #waitid until there are no children waiting to be
  * reaped.  For each child that has terminated, the list of child watches
  * is iterated and the reaper function for appropriate entries called.
  *
@@ -113,22 +113,35 @@ nih_child_add_watch (pid_t      pid,
 void
 nih_child_poll (void)
 {
-	pid_t pid;
-	int   status;
+	siginfo_t info;
 
 	nih_child_init ();
 
-	while ((pid = waitpid (-1, &status, WNOHANG)) > 0) {
+	info.si_pid = 0;
+	while (waitid (P_ALL, 0, &info, WEXITED | WNOHANG | WNOWAIT) == 0) {
+		pid_t pid;
+		int   killed, status;
+
+		pid = info.si_pid;
+		if (! pid)
+			break;
+
+		killed = info.si_code == CLD_KILLED ? TRUE : FALSE;
+		status = info.si_status;
+
 		NIH_LIST_FOREACH_SAFE (child_watches, iter) {
 			NihChildWatch *watch = (NihChildWatch *)iter;
 
 			if ((watch->pid != pid) && (watch->pid != -1))
 				continue;
 
-			watch->reaper (watch->data, pid, status);
+			watch->reaper (watch->data, pid, killed, status);
 
 			if (watch->pid != -1)
 				nih_list_free (&watch->entry);
 		}
+
+		/* Reap the child */
+		waitid (P_PID, pid, &info, WEXITED);
 	}
 }

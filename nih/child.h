@@ -32,9 +32,11 @@
  *
  * A reaper is a function called once a child process has terminated
  * and its status obtained.  It is called with the process id of the
- * terminated child and its status.
+ * terminated child, whether the child was killed and its exit status,
+ * if the third argument is true then the last argument is the signal that
+ * killed it rather than the exit status.
  **/
-typedef void (*NihReaper) (void *, pid_t, int);
+typedef void (*NihReaper) (void *, pid_t, int, int);
 
 /**
  * NihChildWatch:

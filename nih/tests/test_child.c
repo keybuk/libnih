@@ -39,16 +39,19 @@
 static int reaper_called = 0;
 static void *last_data = NULL;
 static pid_t last_pid;
+static int last_killed = FALSE;
 static int last_status;
 
 static void
 my_reaper (void  *data,
 	   pid_t  pid,
+	   int    killed,
 	   int    status)
 {
 	reaper_called++;
 	last_data = data;
 	last_pid = pid;
+	last_killed = killed;
 	last_status = status;
 }
 
@@ -173,6 +176,7 @@ test_poll (void)
 	destroyed = 0;
 	last_data = NULL;
 	last_pid = 0;
+	last_killed = FALSE;
 	last_status = 0;
 	assert (kill (pid, SIGTERM) == 0);
 	usleep (1000); /* Urgh */
@@ -190,9 +194,14 @@ test_poll (void)
 		ret = 1;
 	}
 
+	/* Killed should have been TRUE */
+	if (last_killed != TRUE) {
+		printf ("BAD: last killed wasn't what we expected.\n");
+		ret = 1;
+	}
+
 	/* Status should have been passed */
-	if ((! WIFSIGNALED (last_status))
-	    || (WTERMSIG (last_status) != SIGTERM)) {
+	if (last_status != SIGTERM) {
 		printf ("BAD: last status wasn't what we expected.\n");
 		ret = 1;
 	}
@@ -218,6 +227,7 @@ test_poll (void)
 	destroyed = 0;
 	last_data = NULL;
 	last_pid = 0;
+	last_killed = FALSE;
 	last_status = 0;
 	assert (kill (pid, SIGTERM) == 0);
 	usleep (1000); /* Urgh */
@@ -235,9 +245,14 @@ test_poll (void)
 		ret = 1;
 	}
 
+	/* Killed should have been TRUE */
+	if (last_killed != TRUE) {
+		printf ("BAD: last killed wasn't what we expected.\n");
+		ret = 1;
+	}
+
 	/* Status should have been passed */
-	if ((! WIFSIGNALED (last_status))
-	    || (WTERMSIG (last_status) != SIGTERM)) {
+	if (last_status != SIGTERM) {
 		printf ("BAD: last status wasn't what we expected.\n");
 		ret = 1;
 	}

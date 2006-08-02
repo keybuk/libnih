@@ -98,10 +98,8 @@ nih_signal_set_handler (int    signum,
 	act.sa_flags = SA_RESTART;
 	sigemptyset (&act.sa_mask);
 
-	if (sigaction (signum, &act, NULL) < 0) {
-		nih_error_raise_system ();
-		return -1;
-	}
+	if (sigaction (signum, &act, NULL) < 0)
+		nih_return_system_error (-1);
 
 	return 0;
 }
@@ -129,10 +127,8 @@ nih_signal_set_default (int signum)
 	act.sa_flags = SA_RESTART;
 	sigemptyset (&act.sa_mask);
 
-	if (sigaction (signum, &act, NULL) < 0) {
-		nih_error_raise_system ();
-		return -1;
-	}
+	if (sigaction (signum, &act, NULL) < 0)
+		nih_return_system_error (-1);
 
 	return 0;
 }
@@ -160,10 +156,8 @@ nih_signal_set_ignore (int signum)
 	act.sa_flags = SA_RESTART;
 	sigemptyset (&act.sa_mask);
 
-	if (sigaction (signum, &act, NULL) < 0) {
-		nih_error_raise_system ();
-		return -1;
-	}
+	if (sigaction (signum, &act, NULL) < 0)
+		nih_return_system_error (-1);
 
 	return 0;
 }

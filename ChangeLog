@@ -1,5 +1,14 @@
 2006-08-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/signal.c (nih_signal_set_handler, nih_signal_set_default,
+	nih_signal_set_ignore): use nih_return_system_error to make the
+	code rather cleaner.
+
+	* nih/error.h (nih_return_error): Add missing doc for retval
+	(nih_return_system_error): Add additional useful function.
+	* nih/tests/test_error.c (test_return_system_error): Add test
+	case for the new macro.
+
 	* nih/child.c (nih_child_poll): Convert to use waitid() so that
 	we can obtain the information about the dead child without reaping
 	it until we're done processing; useful because it means /proc/$PID

@@ -1,5 +1,8 @@
 2006-08-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nihify: Add a few useful sanity checks so that it works with
+	relative paths and already-nihified directories.
+
 	* m4/misc.m4: Remove older force code.
 
 	* TODO: Updated.
@@ -7,8 +10,8 @@
 	* m4/Makefile.am (dist_aclocal_DATA): Distribute misc.m4, long
 	missed.
 
-	* nihify (libnih_dir): Add useful script for symlinking into source
-	trees until we intend to get released.
+	* nihify: Add useful script for symlinking into source trees until
+	we intend to get released.
 
 	* HACKING: Correct typo (our -> out)
 

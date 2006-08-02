@@ -6,29 +6,34 @@ libnih_dir="$(dirname "$0")"
 src_dir="$PWD"
 
 if [ "$1" = "--help" ] || [ "$#" -gt 1 ]; then
-	echo "Usage: nihify [DIR]" 1>&2
-	echo "Create symlinks in DIR to libnih components" 1>&2
-	echo 1>&2
-	echo "If DIR is not specified, the current directory is used" 1>&2
-	exit 1
+    echo "Usage: nihify [DIR]" 1>&2
+    echo "Create symlinks in DIR to libnih components" 1>&2
+    echo 1>&2
+    echo "If DIR is not specified, the current directory is used" 1>&2
+    exit 1
 fi
 
 if [ -n "$1" ]; then
-	src_dir="$1"
+    src_dir="$1"
 fi
 
 if [ "$libnih_dir" = "$src_dir" ] || [ -f "$src_dir/nihify" ]; then
-	echo "nihify must be run from the source you wish to symlink into" 1>&2
-	exit 1
+    echo "nihify must be run from the source you wish to symlink into" 1>&2
+    exit 1
 fi
 
 if [ ! -f "$src_dir/configure.ac" ]; then
-	echo "directory ($src_dir) missing configure.ac" 1>&2
-	exit 1
+    echo "directory ($src_dir) missing configure.ac" 1>&2
+    exit 1
 fi
 
+libnih_dir="$(cd "$libnih_dir" && pwd)"
+src_dir="$(cd "$src_dir" && pwd)"
 
 for SYMLINK in nih m4/compiler.m4 m4/linker.m4 m4/misc.m4; do
-	echo "Creating symlink to $SYMLINK"
-	ln -sf "$libnih_dir/$SYMLINK" "$src_dir/$SYMLINK"
+    [ -e "$libnih_dir/$SYMLINK" ]
+    [ ! -L "$src_dir/$SYMLINK" ] || rm "$src_dir/$SYMLINK"
+
+    echo "Creating symlink to $SYMLINK"
+    ln -s "$libnih_dir/$SYMLINK" "$src_dir/$SYMLINK"
 done

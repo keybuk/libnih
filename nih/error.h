@@ -47,6 +47,7 @@ typedef struct nih_error_info {
 
 /**
  * nih_return_error:
+ * @retval: return value for function,
  * @number: numeric identifier,
  * @message: human-readable message.
  *
@@ -59,6 +60,20 @@ typedef struct nih_error_info {
  **/
 #define nih_return_error(retval, number,  message) \
 	do { nih_error_raise (number, message); return retval; } while (0)
+
+/**
+ * nih_return_system_error:
+ * @retval: return value for function.
+ *
+ * Raises an error with details taken from the current value of %errno,
+ * if an unhandled error already exists then an error message is emmitted
+ * through the logging system; you should try to avoid this.
+ *
+ * Will return from the current function with @retval, which may be left
+ * empty to return from a void function.
+ **/
+#define nih_return_system_error(retval) \
+	do { nih_error_raise_system (); return retval; } while (0)
 
 
 NIH_BEGIN_EXTERN

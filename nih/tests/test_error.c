@@ -241,6 +241,44 @@ test_return_error (void)
 	return ret;
 }
 
+static int
+call_return_system_error (int retval)
+{
+	nih_return_system_error (retval);
+}
+
+int
+test_return_system_error (void)
+{
+	NihError *error;
+	int       ret = 0, retval;
+
+	printf ("Testing nih_return_system_error()\n");
+	errno = ENOENT;
+	retval = call_return_system_error (-1);
+	error = nih_error_get ();
+
+	/* Return value should be first argument */
+	if (retval != -1) {
+		printf ("BAD: return value was not correct.\n");
+		ret = 1;
+	}
+
+	/* Error number should be what we set */
+	if (error->number != ENOENT) {
+		printf ("BAD: error number incorrect.\n");
+		ret = 1;
+	}
+
+	/* Error message should be from strerror */
+	if (strcmp (error->message, "No such file or directory")) {
+		printf ("BAD: error message incorrect.\n");
+		ret = 1;
+	}
+
+	return ret;
+}
+
 
 int
 test_push_context (void)
@@ -284,6 +322,7 @@ main (int   argc,
 	ret |= test_raise_system ();
 	ret |= test_raise_again ();
 	ret |= test_return_error ();
+	ret |= test_return_system_error ();
 	ret |= test_push_context();
 
 	return ret;

@@ -65,7 +65,7 @@ struct nih_io_watch {
 
 NIH_BEGIN_EXTERN
 
-NihIoWatch *nih_io_add_watch  (int fd, short events,
+NihIoWatch *nih_io_add_watch  (void *parent, int fd, short events,
 			       NihIoCb callback, void *data);
 
 int         nih_io_poll_fds   (struct pollfd **ufds, nfds_t *nfds);

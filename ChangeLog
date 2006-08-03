@@ -1,5 +1,10 @@
 2006-08-03  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.c (nih_io_add_watch): And once more, with feeling; takes
+	a parent for the watch.
+	* nih/io.h: Update.
+	* nih/tests/test_io.c: Update.
+
 	* nih/signal.c (nih_signal_add_callback): Give this the same treatment,
 	it takes the parent for the signal callback.
 	* nih/signal.h: Update.

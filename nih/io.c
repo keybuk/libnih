@@ -55,6 +55,7 @@ nih_io_init (void)
 
 /**
  * nih_io_add_watch:
+ * @parent: parent of watch,
  * @fd: file descriptor or socket to watch,
  * @events: events to watch for,
  * @callback: function to call when @events occur on @fd,
@@ -64,13 +65,17 @@ nih_io_init (void)
  * occur on the socket, @callback will be called.  @events is the standard
  * list of #poll events.
  *
- * This is the simplest form of watch and satisfies most purposes.  The watch
- * may be removed by calling #nih_list_remove on the structure returned.
+ * This is the simplest form of watch and satisfies most purposes.
+ *
+ * The watch structure is allocated using #nih_alloc and stored in a linked
+ * list, a default destructor is set that removes the watch from the list.
+ * Removal of the watch can be performed by freeing it.
  *
  * Returns: the watch structure, or %NULL if insufficient memory.
  **/
 NihIoWatch *
-nih_io_add_watch (int      fd,
+nih_io_add_watch (void    *parent,
+		  int      fd,
 		  short    events,
 		  NihIoCb  callback,
 		  void    *data)
@@ -83,11 +88,12 @@ nih_io_add_watch (int      fd,
 
 	nih_io_init ();
 
-	watch = nih_new (io_watches, NihIoWatch);
+	watch = nih_new (parent, NihIoWatch);
 	if (! watch)
 		return NULL;
 
 	nih_list_init (&watch->entry);
+	nih_alloc_set_destructor (watch, (NihDestructor)nih_list_destructor);
 
 	watch->fd = fd;
 	watch->events = events;

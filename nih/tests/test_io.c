@@ -54,7 +54,7 @@ test_add_watch (void)
 
 	printf ("Testing nih_io_add_watch()\n");
 	assert (pipe (fds) == 0);
-	watch = nih_io_add_watch (fds[0], POLLIN, my_callback, &ret);
+	watch = nih_io_add_watch (NULL, fds[0], POLLIN, my_callback, &ret);
 
 	/* File descriptor should be that given */
 	if (watch->fd != fds[0]) {
@@ -99,9 +99,9 @@ test_poll_fds (void)
 
 	printf ("Testing nih_io_poll_fds()\n");
 	assert (pipe (fds) == 0);
-	watch1 = nih_io_add_watch (fds[0], POLLIN, my_callback, &ret);
-	watch2 = nih_io_add_watch (fds[1], POLLOUT, my_callback, &ret);
-	watch3 = nih_io_add_watch (fds[0], POLLERR, my_callback, &ret);
+	watch1 = nih_io_add_watch (NULL, fds[0], POLLIN, my_callback, &ret);
+	watch2 = nih_io_add_watch (NULL, fds[1], POLLOUT, my_callback, &ret);
+	watch3 = nih_io_add_watch (NULL, fds[0], POLLERR, my_callback, &ret);
 
 	ufds = NULL;
 	nfds = 0;
@@ -199,9 +199,9 @@ test_handle_fds (void)
 
 	printf ("Testing nih_io_poll_fds()\n");
 	assert (pipe (fds) == 0);
-	watch1 = nih_io_add_watch (fds[0], POLLIN, my_callback, &ret);
-	watch2 = nih_io_add_watch (fds[1], POLLOUT, my_callback, &ret);
-	watch3 = nih_io_add_watch (fds[0], POLLERR, my_callback, &ret);
+	watch1 = nih_io_add_watch (NULL, fds[0], POLLIN, my_callback, &ret);
+	watch2 = nih_io_add_watch (NULL, fds[1], POLLOUT, my_callback, &ret);
+	watch3 = nih_io_add_watch (NULL, fds[0], POLLERR, my_callback, &ret);
 
 	ufds = NULL;
 	nfds = 0;

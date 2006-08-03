@@ -60,6 +60,7 @@ nih_timer_init (void)
 
 /**
  * nih_timer_add_timeout:
+ * @parent: parent of timer,
  * @timeout: seconds to wait before triggering,
  * @callback: function to be called,
  * @data: pointer to pass to function as first argument.
@@ -68,13 +69,15 @@ nih_timer_init (void)
  * time, or the soonest period thereafter.  A timer may be called
  * immediately by passing zero or a non-negative number as @timeout.
  *
- * The timer may be cancelled by calling #nih_list_remove on the returned
- * structure.
+ * The timer structure is allocated using #nih_alloc and stored in a linked
+ * list, a default destructor is set that removes the timer from the list.
+ * Cancellation of the timer can be performed by freeing it.
  *
  * Returns: the new timer information, or %NULL if insufficient memory.
  **/
 NihTimer *
-nih_timer_add_timeout (time_t      timeout,
+nih_timer_add_timeout (void       *parent,
+		       time_t      timeout,
 		       NihTimerCb  callback,
 		       void       *data)
 {
@@ -84,11 +87,12 @@ nih_timer_add_timeout (time_t      timeout,
 
 	nih_timer_init ();
 
-	timer = nih_new (timers, NihTimer);
+	timer = nih_new (parent, NihTimer);
 	if (! timer)
 		return NULL;
 
 	nih_list_init (&timer->entry);
+	nih_alloc_set_destructor (timer, (NihDestructor)nih_list_destructor);
 
 	timer->type = NIH_TIMER_TIMEOUT;
 	timer->timeout = timeout;
@@ -105,6 +109,7 @@ nih_timer_add_timeout (time_t      timeout,
 
 /**
  * nih_timer_add_periodic:
+ * @parent: parent of timer,
  * @period: number of seconds between calls,
  * @callback: function to be called,
  * @data: pointer to pass to function as first argument.
@@ -112,13 +117,15 @@ nih_timer_add_timeout (time_t      timeout,
  * Arranges for the @callback function to be called every @period seconds,
  * or the soonest time thereafter.
  *
- * The timer may be cancelled by calling #nih_list_remove on the returned
- * structure.
+ * The timer structure is allocated using #nih_alloc and stored in a linked
+ * list, a default destructor is set that removes the timer from the list.
+ * Cancellation of the timer can be performed by freeing it.
  *
  * Returns: the new timer information, or %NULL if insufficient memory.
  **/
 NihTimer *
-nih_timer_add_periodic (time_t      period,
+nih_timer_add_periodic (void       *parent,
+			time_t      period,
 			NihTimerCb  callback,
 			void       *data)
 {
@@ -129,11 +136,12 @@ nih_timer_add_periodic (time_t      period,
 
 	nih_timer_init ();
 
-	timer = nih_new (timers, NihTimer);
+	timer = nih_new (parent, NihTimer);
 	if (! timer)
 		return NULL;
 
 	nih_list_init (&timer->entry);
+	nih_alloc_set_destructor (timer, (NihDestructor)nih_list_destructor);
 
 	timer->type = NIH_TIMER_PERIODIC;
 	timer->period = period;
@@ -150,6 +158,7 @@ nih_timer_add_periodic (time_t      period,
 
 /**
  * nih_timer_add_scheduled:
+ * @parent: parent of timer,
  * @schedule: trigger schedule,
  * @callback: function to be called,
  * @data: pointer to pass to function as first argument.
@@ -157,13 +166,15 @@ nih_timer_add_periodic (time_t      period,
  * Arranges for the @callback function to be called based on the @schedule
  * given.
  *
- * The timer may be cancelled by calling #nih_list_remove on the returned
- * structure.
+ * The timer structure is allocated using #nih_alloc and stored in a linked
+ * list, a default destructor is set that removes the timer from the list.
+ * Cancellation of the timer can be performed by freeing it.
  *
  * Returns: the new timer information, or %NULL if insufficient memory.
  **/
 NihTimer *
-nih_timer_add_scheduled (NihTimerSchedule *schedule,
+nih_timer_add_scheduled (void             *parent,
+			 NihTimerSchedule *schedule,
 			 NihTimerCb        callback,
 			 void             *data)
 {
@@ -174,11 +185,12 @@ nih_timer_add_scheduled (NihTimerSchedule *schedule,
 
 	nih_timer_init ();
 
-	timer = nih_new (timers, NihTimer);
+	timer = nih_new (parent, NihTimer);
 	if (! timer)
 		return NULL;
 
 	nih_list_init (&timer->entry);
+	nih_alloc_set_destructor (timer, (NihDestructor)nih_list_destructor);
 
 	timer->type = NIH_TIMER_SCHEDULED;
 	memcpy (&timer->schedule, schedule, sizeof (NihTimerSchedule));

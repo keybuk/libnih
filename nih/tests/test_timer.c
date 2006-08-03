@@ -52,7 +52,7 @@ test_add_timeout (void)
 
 	printf ("Testing nih_timer_add_timeout()\n");
 	t1 = time (NULL);
-	timer = nih_timer_add_timeout (10, my_callback, &t1);
+	timer = nih_timer_add_timeout (NULL, 10, my_callback, &t1);
 	t2 = time (NULL);
 
 	/* Timer should be a timeout one */
@@ -119,7 +119,7 @@ test_add_periodic (void)
 
 	printf ("Testing nih_timer_add_periodic()\n");
 	t1 = time (NULL);
-	timer = nih_timer_add_periodic (25, my_callback, &t1);
+	timer = nih_timer_add_periodic (NULL, 25, my_callback, &t1);
 	t2 = time (NULL);
 
 	/* Timer should be a periodic one */
@@ -189,7 +189,7 @@ test_add_scheduled (void)
 
 	printf ("Testing nih_timer_add_scheduled()\n");
 	t1 = time (NULL);
-	timer = nih_timer_add_scheduled (&schedule, my_callback, &t1);
+	timer = nih_timer_add_scheduled (NULL, &schedule, my_callback, &t1);
 	t2 = time (NULL);
 
 	/* Timer should be a scheduled one */
@@ -255,9 +255,9 @@ test_next_due (void)
 	int       ret = 0;
 
 	printf ("Testing nih_timer_next_due()\n");
-	timer1 = nih_timer_add_timeout (10, my_callback, &ret);
-	timer2 = nih_timer_add_timeout (5, my_callback, &ret);
-	timer3 = nih_timer_add_timeout (15, my_callback, &ret);
+	timer1 = nih_timer_add_timeout (NULL, 10, my_callback, &ret);
+	timer2 = nih_timer_add_timeout (NULL, 5, my_callback, &ret);
+	timer3 = nih_timer_add_timeout (NULL, 15, my_callback, &ret);
 
 	/* First timer due should be the second timer */
 	ptr = nih_timer_next_due ();
@@ -311,8 +311,8 @@ test_poll (void)
 	int       ret = 0;
 
 	printf ("Testing nih_timer_poll()\n");
-	timer1 = nih_timer_add_timeout (10, my_callback, &t1);
-	timer2 = nih_timer_add_periodic (20, my_callback, &t2);
+	timer1 = nih_timer_add_timeout (NULL, 10, my_callback, &t1);
+	timer2 = nih_timer_add_periodic (NULL, 20, my_callback, &t2);
 
 	nih_alloc_set_destructor (timer1, my_destructor);
 	nih_alloc_set_destructor (timer2, my_destructor);

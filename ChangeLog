@@ -1,5 +1,13 @@
 2006-08-03  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/timer.c (nih_timer_add_timeout, nih_timer_add_periodic) 
+	(nih_timer_add_scheduled): Use nih_alloc properly by taking a parent
+	for the timer object and setting a destructor on it so that it's
+	automatically removed when the parent is freed.
+	* nih/timer.h: Update.
+	* nih/tests/test_timer.c: Update function calls.
+	* nih/tests/test_main.c (test_main_loop): Update also.
+
 	* nih/list.c (nih_list_destructor): Add a destructor function that
 	just cuts the entry out of the list in preperation for being freed.
 	* nih/list.h: Update.

@@ -307,7 +307,7 @@ test_main_loop (void)
 	int ret = 0, retval;
 
 	printf ("Testing nih_main_loop()\n");
-	nih_timer_add_timeout (1, my_timeout, NULL);
+	nih_timer_add_timeout (NULL, 1, my_timeout, NULL);
 	retval = nih_main_loop ();
 
 	/* Return value should be that injected by the timer */

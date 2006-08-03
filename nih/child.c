@@ -59,6 +59,7 @@ nih_child_init (void)
 
 /**
  * nih_child_add_watch:
+ * @parent: parent of watch,
  * @pid: process id to watch or -1,
  * @reaper: function to call on termination,
  * @data: pointer to pass to @reaper.
@@ -67,13 +68,15 @@ nih_child_init (void)
  * #nih_child_poll if the process with id @pid terminates.  If @pid is -1
  * then @reaper is called for all children.
  *
- * The watch may be removed by calling #nih_list_remove on the returned
- * structure.
+ * The watch structure is allocated using #nih_alloc and stored in a linked
+ * list, a default destructor is set that removes the watch from the list.
+ * Removal of the watch can be performed by freeing it.
  *
  * Returns: the watch information, or %NULL if insufficient memory.
  **/
 NihChildWatch *
-nih_child_add_watch (pid_t      pid,
+nih_child_add_watch (void      *parent,
+		     pid_t      pid,
 		     NihReaper  reaper,
 		     void      *data)
 {
@@ -84,11 +87,12 @@ nih_child_add_watch (pid_t      pid,
 
 	nih_child_init ();
 
-	watch = nih_new (child_watches, NihChildWatch);
+	watch = nih_new (parent, NihChildWatch);
 	if (! watch)
 		return NULL;
 
 	nih_list_init (&watch->entry);
+	nih_alloc_set_destructor (watch, (NihDestructor)nih_list_destructor);
 
 	watch->pid = pid;
 

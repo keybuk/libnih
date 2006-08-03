@@ -1,5 +1,9 @@
 2006-08-03  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/child.c (nih_child_add_watch): Also takes a parent now.
+	* nih/child.h: Update.
+	* nih/tests/test_child.c: Update.
+
 	* nih/io.c (nih_io_add_watch): And once more, with feeling; takes
 	a parent for the watch.
 	* nih/io.h: Update.

@@ -64,7 +64,7 @@ test_add_watch (void)
 	printf ("Testing nih_child_add_watch()\n");
 
 	printf ("...with pid\n");
-	watch = nih_child_add_watch (getpid (), my_reaper, &ret);
+	watch = nih_child_add_watch (NULL, getpid (), my_reaper, &ret);
 
 	/* Process id should be that given */
 	if (watch->pid != getpid ()) {
@@ -100,7 +100,7 @@ test_add_watch (void)
 
 
 	printf ("...with -1 for pid\n");
-	watch = nih_child_add_watch (-1, my_reaper, &ret);
+	watch = nih_child_add_watch (NULL, -1, my_reaper, &ret);
 
 	/* Process id should be -1 */
 	if (watch->pid != -1) {
@@ -167,9 +167,9 @@ test_poll (void)
 	assert (pid >= 0);
 
 
-	watch1 = nih_child_add_watch (-1, my_reaper, &ret);
+	watch1 = nih_child_add_watch (NULL, -1, my_reaper, &ret);
 	nih_alloc_set_destructor (watch1, my_destructor);
-	watch2 = nih_child_add_watch (pid, my_reaper, &pid);
+	watch2 = nih_child_add_watch (NULL, pid, my_reaper, &pid);
 	nih_alloc_set_destructor (watch2, my_destructor);
 
 	reaper_called = 0;

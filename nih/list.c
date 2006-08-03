@@ -120,6 +120,26 @@ nih_list_remove (NihList *entry)
 }
 
 /**
+ * nih_list_destructor:
+ * @entry: entry to be removed.
+ *
+ * Removes @entry from its containing list, intended to be used as an
+ * #nih_alloc destructor so that the list item is automatically removed if
+ * it is freed.
+ *
+ * Returns: zero.
+ **/
+int
+nih_list_destructor (NihList *entry)
+{
+	nih_assert (entry != NULL);
+
+	nih_list_cut (entry);
+
+	return 0;
+}
+
+/**
  * nih_list_free:
  * @entry: entry to be removed and freed.
  *

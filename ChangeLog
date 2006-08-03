@@ -1,5 +1,11 @@
 2006-08-03  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/list.c (nih_list_destructor): Add a destructor function that
+	just cuts the entry out of the list in preperation for being freed.
+	* nih/list.h: Update.
+	* nih/tests/test_list.c (test_destructor): Test the behaviour of
+	the new function.
+
 	* nih/tests/test_error.c: Include fixes.
 
 2006-08-02  Scott James Remnant  <scott@netsplit.com>

@@ -91,14 +91,15 @@ typedef struct nih_list {
 
 NIH_BEGIN_EXTERN
 
-void          nih_list_init      (NihList *entry);
-NihList *     nih_list_new       (void);
+void          nih_list_init       (NihList *entry);
+NihList *     nih_list_new        (void);
 
-NihList *     nih_list_remove    (NihList *entry);
-void          nih_list_free      (NihList *entry);
+NihList *     nih_list_remove     (NihList *entry);
+int           nih_list_destructor (NihList *entry);
+void          nih_list_free       (NihList *entry);
 
-NihList *     nih_list_add       (NihList *list, NihList *entry);
-NihList *     nih_list_add_after (NihList *list, NihList *entry);
+NihList *     nih_list_add        (NihList *list, NihList *entry);
+NihList *     nih_list_add_after  (NihList *list, NihList *entry);
 
 NIH_END_EXTERN
 

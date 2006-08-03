@@ -603,6 +603,51 @@ test_remove (void)
 	return ret;
 }
 
+int
+test_destructor (void)
+{
+	NihList *list, *entry, *tail;
+	int      ret = 0, retval;
+
+	printf ("Testing nih_list_destructor()\n");
+	list = nih_list_new ();
+	entry = nih_list_add (list, nih_list_new ());
+	tail = nih_list_add (list, nih_list_new ());
+	retval = nih_list_destructor (entry);
+
+	/* Zero should be returned */
+	if (retval != 0) {
+		printf ("BAD: return value is not what we expected.\n");
+		ret = 1;
+	}
+
+	/* Head entry's next pointer should point to the tail entry */
+	if (list->next != tail) {
+		printf ("BAD: head next pointer set incorrectly.\n");
+		ret = 1;
+	}
+
+	/* Head entry's previous pointer should still point to the tail */
+	if (list->prev != tail) {
+		printf ("BAD: head prev pointer changed.\n");
+		ret = 1;
+	}
+
+	/* Tail entry's next pointer should still point to the head */
+	if (tail->next != list) {
+		printf ("BAD: tail next pointer changed.\n");
+		ret = 1;
+	}
+
+	/* Tail entry's previous pointer should point to the head entry */
+	if (tail->prev != list) {
+		printf ("BAD: tail next pointer set incorrectly.\n");
+		ret = 1;
+	}
+
+	return ret;
+}
+
 static int was_called;
 
 static int
@@ -675,6 +720,7 @@ main (int   argc,
 	ret |= test_foreach ();
 	ret |= test_foreach_safe ();
 	ret |= test_remove ();
+	ret |= test_destructor ();
 	ret |= test_free ();
 
 	return ret;

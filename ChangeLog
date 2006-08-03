@@ -1,5 +1,10 @@
 2006-08-03  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/signal.c (nih_signal_add_callback): Give this the same treatment,
+	it takes the parent for the signal callback.
+	* nih/signal.h: Update.
+	* nih/tests/test_signal.c: Update.
+
 	* nih/timer.c (nih_timer_add_timeout, nih_timer_add_periodic) 
 	(nih_timer_add_scheduled): Use nih_alloc properly by taking a parent
 	for the timer object and setting a destructor on it so that it's

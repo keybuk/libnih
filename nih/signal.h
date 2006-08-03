@@ -67,8 +67,8 @@ int        nih_signal_set_default  (int signum);
 int        nih_signal_set_ignore   (int signum);
 void       nih_signal_reset        (void);
 
-NihSignal *nih_signal_add_callback (int signum, NihSignalCb callback,
-				    void *data);
+NihSignal *nih_signal_add_callback (void *parent, int signum,
+				    NihSignalCb callback, void *data);
 
 void       nih_signal_handler      (int signum);
 void       nih_signal_poll         (void);

@@ -189,6 +189,7 @@ nih_signal_reset (void)
 
 /**
  * nih_signal_add_callback:
+ * @parent: parent of callback,
  * @signum: signal number to catch,
  * @callback: function to call,
  * @data: pointer to pass to @callback.
@@ -197,13 +198,15 @@ nih_signal_reset (void)
  * #nih_signal_poll if the @signum signal was raised.  The signal must first
  * have been set to #nih_signal_handler using #nih_signal_set_handler,
  *
- * The callback may be removed by calling #nih_list_remove on the returned
- * structure.
+ * The callback structure is allocated using #nih_alloc and stored in a linked
+ * list, a default destructor is set that removes the callback from the list.
+ * Removal of the callback can be performed by freeing it.
  *
  * Returns: the signal information, or %NULL if insufficient memory.
  **/
 NihSignal *
-nih_signal_add_callback (int          signum,
+nih_signal_add_callback (void        *parent,
+			 int          signum,
 			 NihSignalCb  callback,
 			 void        *data)
 {
@@ -215,11 +218,12 @@ nih_signal_add_callback (int          signum,
 
 	nih_signal_init ();
 
-	signal = nih_new (signals, NihSignal);
+	signal = nih_new (parent, NihSignal);
 	if (! signal)
 		return NULL;
 
 	nih_list_init (&signal->entry);
+	nih_alloc_set_destructor (signal, (NihDestructor)nih_list_destructor);
 
 	signal->signum = signum;
 

@@ -241,7 +241,7 @@ test_add_callback (void)
 	int        ret = 0;
 
 	printf ("Testing nih_signal_add_callback()\n");
-	signal = nih_signal_add_callback (SIGUSR1, my_callback, &ret);
+	signal = nih_signal_add_callback (NULL, SIGUSR1, my_callback, &ret);
 
 	/* Signal number should be number given */
 	if (signal->signum != SIGUSR1) {
@@ -285,8 +285,8 @@ test_poll (void)
 	int        ret = 0;
 
 	printf ("Testing nih_signal_poll()\n");
-	signal1 = nih_signal_add_callback (SIGUSR1, my_callback, &ret);
-	signal2 = nih_signal_add_callback (SIGUSR2, my_callback, &ret);
+	signal1 = nih_signal_add_callback (NULL, SIGUSR1, my_callback, &ret);
+	signal2 = nih_signal_add_callback (NULL, SIGUSR2, my_callback, &ret);
 
 	callback_called = 0;
 	last_data = NULL;

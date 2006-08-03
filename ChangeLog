@@ -1,3 +1,7 @@
+2006-08-03  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/tests/test_error.c: Include fixes.
+
 2006-08-02  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/signal.c (nih_signal_set_handler, nih_signal_set_default) 

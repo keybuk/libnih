@@ -22,6 +22,8 @@
 
 #include <nih/error.h>
 
+#include <errno.h>
+
 
 /* Allocated error numbers */
 enum {

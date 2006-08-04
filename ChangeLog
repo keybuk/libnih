@@ -1,3 +1,7 @@
+2006-08-04  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/errors.h: Include errno.h for helpfulness.
+
 2006-08-03  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/child.c (nih_child_add_watch): Also takes a parent now.

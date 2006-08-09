@@ -178,6 +178,7 @@ test_poll (void)
 	last_pid = 0;
 	last_killed = FALSE;
 	last_status = 0;
+	usleep (1000); /* Urgh */
 	assert (kill (pid, SIGTERM) == 0);
 	usleep (1000); /* Urgh */
 	nih_child_poll ();
@@ -229,6 +230,7 @@ test_poll (void)
 	last_pid = 0;
 	last_killed = FALSE;
 	last_status = 0;
+	usleep (1000); /* Urgh */
 	assert (kill (pid, SIGTERM) == 0);
 	usleep (1000); /* Urgh */
 	nih_child_poll ();

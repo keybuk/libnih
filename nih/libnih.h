@@ -32,5 +32,6 @@
 #include <nih/main.h>
 #include <nih/logging.h>
 #include <nih/error.h>
+#include <nih/errors.h>
 
 #endif /* NIH_LIBNIH_H */

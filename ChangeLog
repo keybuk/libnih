@@ -1,3 +1,7 @@
+2006-08-09  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/libnih.h: Include errors.h
+
 2006-08-04  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/errors.h: Include errno.h for helpfulness.

@@ -313,6 +313,99 @@ test_strndup (void)
 
 
 int
+test_str_split (void)
+{
+	char **array;
+	int    ret = 0, i;
+
+	printf ("Testing nih_str_split()\n");
+
+	printf ("...with no repeat\n");
+	array = nih_str_split (NULL, "this is  a\ttest", " \t", FALSE);
+
+	/* Check elements; crash means a fail */
+	if (strcmp (array[0], "this")
+	    || strcmp (array[1], "is")
+	    || strcmp (array[2], "")
+	    || strcmp (array[3], "a")
+	    || strcmp (array[4], "test")) {
+		printf ("BAD: array element wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Last element should be NULL */
+	if (array[5] != NULL) {
+		printf ("BAD: last array element wasn't NULL.\n");
+		ret = 1;
+	}
+
+	/* Should have been allocated with nih_alloc */
+	if (nih_alloc_size (array) != sizeof (char *) * 6) {
+		printf ("BAD: nih_alloc was not used.\n");
+		ret = 1;
+	}
+
+	/* Strings should have been allocated as children of parent */
+	for (i = 0; i < 5; i++) {
+		if (nih_alloc_parent (array[i]) != array) {
+			printf ("BAD: nih_alloc of string not parent.\n");
+			ret = 1;
+		}
+	}
+
+
+	printf ("...with repeat\n");
+	array = nih_str_split (NULL, "this is  a\ttest", " \t", TRUE);
+
+	/* Check elements; crash means a fail */
+	if (strcmp (array[0], "this")
+	    || strcmp (array[1], "is")
+	    || strcmp (array[2], "a")
+	    || strcmp (array[3], "test")) {
+		printf ("BAD: array element wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Last element should be NULL */
+	if (array[4] != NULL) {
+		printf ("BAD: last array element wasn't NULL.\n");
+		ret = 1;
+	}
+
+	/* Should have been allocated with nih_alloc */
+	if (nih_alloc_size (array) != sizeof (char *) * 5) {
+		printf ("BAD: nih_alloc was not used.\n");
+		ret = 1;
+	}
+
+	/* Strings should have been allocated as children of parent */
+	for (i = 0; i < 4; i++) {
+		if (nih_alloc_parent (array[i]) != array) {
+			printf ("BAD: nih_alloc of string not parent.\n");
+			ret = 1;
+		}
+	}
+
+
+	printf ("...with empty string\n");
+	array = nih_str_split (NULL, "", " ", FALSE);
+
+	/* Only element should be NULL */
+	if (array[0] != NULL) {
+		printf ("BAD: last array element wasn't NULL.\n");
+		ret = 1;
+	}
+
+	/* Should have been allocated with nih_alloc */
+	if (nih_alloc_size (array) != sizeof (char *) * 1) {
+		printf ("BAD: nih_alloc was not used.\n");
+		ret = 1;
+	}
+
+	return ret;
+}
+
+int
 test_strv_free (void)
 {
 	char **strv;
@@ -343,6 +436,7 @@ main (int   argc,
 	ret |= test_vsprintf ();
 	ret |= test_strdup ();
 	ret |= test_strndup ();
+	ret |= test_str_split ();
 	ret |= test_strv_free ();
 
 	return ret;

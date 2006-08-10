@@ -170,6 +170,71 @@ nih_strndup (void       *parent,
 
 
 /**
+ * nih_str_split:
+ * @parent: parent of returned array,
+ * @str: string to split,
+ * @delim: characters to split on,
+ * @repeat: allow repeated characters.
+ *
+ * Splits @str into an array of strings by separating on any character in
+ * @delim; if @repeat is true then sequences of @delim are ignored, otherwise
+ * they result in empty strings in the returned array.
+ *
+ * The last element in the array is always NULL.
+ *
+ * The individual strings are allocated using #nih_alloc so you may just use
+ * #nih_free on the returned array and must NOT use #nih_strv_free.
+ *
+ * Returns: allocated array or %NULL if allocation fails.
+ **/
+char **
+nih_str_split (void       *parent,
+	       const char *str,
+	       const char *delim,
+	       int         repeat)
+{
+	char **array;
+	int    i;
+
+	i = 0;
+	array = nih_alloc (parent, sizeof (char *) * (i + 1));
+	array[0] = NULL;
+
+	while (*str) {
+		const char  *ptr;
+		char       **new_array;
+
+		/* Skip initial delimiters */
+		while (repeat && strchr (delim, *str))
+			str++;
+
+		/* Find the end of the token */
+		ptr = str;
+		while (*str && (! strchr (delim, *str)))
+			str++;
+
+		/* Increase the size of the array */
+		new_array = nih_realloc (array, parent,
+					 sizeof (char *) * (i + 2));
+		if (! new_array) {
+			nih_free (array);
+			return NULL;
+		}
+		array = new_array;
+
+		/* Fill in the new value */
+		array[i++] = nih_strndup (array, ptr, str - ptr);
+		array[i] = NULL;
+
+		/* Skip over the delimiter */
+		if (*str)
+			str++;
+	}
+
+	return array;
+}
+
+/**
  * nih_strv_free:
  * @strv: array of strings:
  *

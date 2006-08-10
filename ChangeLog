@@ -1,3 +1,10 @@
+2006-08-10  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/string.c (nih_str_split): Add a function to split a string
+	based on delimiters into an array.
+	* nih/string.h: Update.
+	* nih/tests/test_string.c (test_str_split): Test the new function.
+
 2006-08-09  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/tests/test_child.c (test_poll): Add extra sleep calls for

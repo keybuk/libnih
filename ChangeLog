@@ -1,5 +1,9 @@
 2006-08-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (nih_realloc): Fix a fairly critical bug, we weren't
+	dealing with the fact that the children list head can move;
+	do some fancy shifting to make that work.
+
 	* nih/string.c (nih_str_split): Add a function to split a string
 	based on delimiters into an array.
 	* nih/string.h: Update.

@@ -1,5 +1,8 @@
 2006-08-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.h, nih/child.h, nih/hash.h, nih/logging.h, nih/signal.h,
+	nih/timer.h: Document arguments to function pointers.
+
 	* nih/io.c: Add a whole bunch of code to provide us with a high-
 	throughput, async file/socket layer; largely copied from the
 	dircproxy code (well, it works!).  This allows read and write calls

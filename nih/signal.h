@@ -28,10 +28,12 @@
 
 /**
  * NihSignalCb:
+ * @data: pointer given with callback,
+ * @signal: signal watch structure.
  *
  * The signal callback is called whenever the signal has been raised, it
- * is passed the data pointer given when the signal was registered and the
- * signal structure.
+ * is passed the #NihSignal structure rather than the actual signal so that
+ * it can be removed if desired.
  **/
 typedef struct nih_signal NihSignal;
 typedef void (*NihSignalCb) (void *, NihSignal *);

@@ -29,12 +29,15 @@
 
 /**
  * NihReaper:
+ * @data: data pointer given with callback,
+ * @pid: process that died,
+ * @killed: TRUE if the process was killed by a signal, FALSE otherwise,
+ * @status: exit status of process or signal that killed it.
  *
  * A reaper is a function called once a child process has terminated
- * and its status obtained.  It is called with the process id of the
- * terminated child, whether the child was killed and its exit status,
- * if the third argument is true then the last argument is the signal that
- * killed it rather than the exit status.
+ * and its status obtained.  The child is not actually cleaned up fully
+ * until these functions have been called, so it still exists in the process
+ * table.
  **/
 typedef void (*NihReaper) (void *, pid_t, int, int);
 

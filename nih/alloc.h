@@ -25,6 +25,8 @@
 
 /**
  * NihAllocator:
+ * @ptr: pointer to be reallocated,
+ * @size: size of allocation.
  *
  * An allocator is a function that can be used to both allocate memory
  * and return it to the system (or cache it, etc.)  The behaviour should
@@ -34,6 +36,7 @@ typedef void *(*NihAllocator) (void *, size_t);
 
 /**
  * NihDestructor:
+ * @ptr: pointer to be destroyed.
  *
  * A destructor is a function that can be associated with an allocated
  * block of memory and is called when the block is freed; the pointer

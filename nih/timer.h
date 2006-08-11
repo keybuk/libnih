@@ -28,11 +28,10 @@
 
 /**
  * NihTimerCb:
+ * @data: pointer given with callback,
+ * @timer: timer that triggered the call.
  *
- * The timer callback is called whenever the timer has been triggered, it
- * is passed the data pointer given when the timer was registered and the
- * timer itself.
- *
+ * The timer callback is called whenever the timer has been triggered.
  * For periodic and scheduled timers, the timer may be removed by calling
  * #nih_list_remove or similar; this happens automatically for timeouts.
  **/

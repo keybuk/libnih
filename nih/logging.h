@@ -42,6 +42,8 @@ typedef enum {
 
 /**
  * NihLogger:
+ * @priority: priority of message,
+ * @message: message to log.
  *
  * A logger is a function that receives a formatted message to be logged
  * in whatever manner is appropriate.  The priority of the message is given

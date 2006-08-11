@@ -1,3 +1,14 @@
+2006-08-11  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/io.c: Add a whole bunch of code to provide us with a high-
+	throughput, async file/socket layer; largely copied from the
+	dircproxy code (well, it works!).  This allows read and write calls
+	to happen inside the main loop based on whenever poll thinks either
+	is possible, while user space can just write what it likes or get
+	called when there's data in the recv buffer.
+	* nih/io.h: Add the new typedefs, structures and prototypes.
+	* nih/tests/test_io.c: Lots of test cases for this stuff.
+
 2006-08-10  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/alloc.c (nih_realloc): Fix a fairly critical bug, we weren't

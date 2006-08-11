@@ -20,6 +20,7 @@
 #ifndef NIH_IO_H
 #define NIH_IO_H
 
+#include <sys/types.h>
 #include <sys/poll.h>
 
 #include <nih/macros.h>
@@ -190,6 +191,7 @@ ssize_t      nih_io_printf        (NihIo *io, const char *format, ...)
 	__attribute__ ((format (printf, 2, 3)));
 
 int          nih_io_set_nonblock  (int fd);
+int          nih_io_set_cloexec   (int fd);
 
 
 NIH_END_EXTERN

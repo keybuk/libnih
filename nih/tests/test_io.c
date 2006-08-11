@@ -1527,6 +1527,32 @@ test_set_nonblock (void)
 	return ret;
 }
 
+int
+test_set_cloexec (void)
+{
+	int ret = 0, fds[2], flags;
+
+	printf ("Testing nih_io_set_cloexec()\n");
+	assert (pipe (fds) == 0);
+	assert ((flags = fcntl (fds[0], F_GETFD)) >= 0);
+	assert (! (flags & FD_CLOEXEC));
+
+	nih_io_set_cloexec (fds[0]);
+
+	assert ((flags = fcntl (fds[0], F_GETFD)) >= 0);
+
+	/* FD_CLOEXEC should be set */
+	if (! (flags & FD_CLOEXEC)) {
+		printf ("BAD: expected flag was not set.\n");
+		ret = 1;
+	}
+
+	close (fds[0]);
+	close (fds[1]);
+
+	return ret;
+}
+
 
 int
 main (int   argc,
@@ -1549,6 +1575,7 @@ main (int   argc,
 	ret |= test_get ();
 	ret |= test_printf ();
 	ret |= test_set_nonblock ();
+	ret |= test_set_cloexec ();
 
 	return ret;
 }

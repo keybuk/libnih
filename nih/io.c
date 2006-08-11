@@ -801,3 +801,30 @@ nih_io_set_nonblock (int fd)
 
 	return 0;
 }
+
+/**
+ * nih_io_set_cloexec:
+ * @fd: file descriptor to change.
+ *
+ * Change the flags of @fd so that the file descriptor is closed on exec().
+ *
+ * Returns: zero on success, negative value on raised error.
+ **/
+int
+nih_io_set_cloexec (int fd)
+{
+	int flags;
+
+	nih_assert (fd >= 0);
+
+	flags = fcntl (fd, F_GETFD);
+	if (flags < 0)
+		nih_return_system_error (-1);
+
+	flags |= FD_CLOEXEC;
+
+	if (fcntl (fd, F_SETFD, flags) < 0)
+		nih_return_system_error (-1);
+
+	return 0;
+}

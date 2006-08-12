@@ -1,5 +1,8 @@
 2006-08-12  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/main.c (nih_main_loop): Correct a memory leak, we forgot
+	to clean up the poll fds list.
+
 	* nih/io.c (nih_io_handle_fds): Always call the callback, even if
 	unexpected events happen, otherwise we'll miss ERR, HUP, etc.
 	(nih_io_shutdown): Allow a socket to be closed lazily, so we can

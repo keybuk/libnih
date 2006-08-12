@@ -265,6 +265,9 @@ nih_main_loop (void)
 		if (ret > 0)
 			nih_io_handle_fds (ufds, nfds);
 
+		if (ufds)
+			nih_free (ufds);
+
 		/* Deal with signals */
 		nih_signal_poll ();
 

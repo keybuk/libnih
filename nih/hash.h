@@ -26,6 +26,7 @@
 
 /**
  * NihKeyFunction:
+ * @entry: entry to key.
  *
  * This function is used to obtain a string key for a given hash table
  * entry; the key is not freed so should be a constant, or at least static,

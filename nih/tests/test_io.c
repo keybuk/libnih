@@ -197,16 +197,15 @@ test_poll_fds (void)
 int
 test_handle_fds (void)
 {
-	NihIoWatch    *watch1, *watch2, *watch3;
+	NihIoWatch    *watch1, *watch2;
 	struct pollfd *ufds;
 	nfds_t         nfds;
 	int            ret = 0, fds[2];
 
-	printf ("Testing nih_io_poll_fds()\n");
+	printf ("Testing nih_io_handle_fds()\n");
 	assert (pipe (fds) == 0);
 	watch1 = nih_io_add_watch (NULL, fds[0], POLLIN, my_callback, &ret);
 	watch2 = nih_io_add_watch (NULL, fds[1], POLLOUT, my_callback, &ret);
-	watch3 = nih_io_add_watch (NULL, fds[0], POLLERR, my_callback, &ret);
 
 	ufds = NULL;
 	nfds = 0;
@@ -249,7 +248,7 @@ test_handle_fds (void)
 	last_watch = NULL;
 	last_events = 0;
 	ufds[0].revents = 0;
-	ufds[2].revents = POLLERR | POLLHUP;
+	ufds[1].revents = POLLERR | POLLHUP;
 	nih_io_handle_fds (ufds, nfds);
 
 	/* Callback should be called just once */
@@ -264,8 +263,8 @@ test_handle_fds (void)
 		ret = 1;
 	}
 
-	/* Last watch should be third one */
-	if (last_watch != watch3) {
+	/* Last watch should be second one */
+	if (last_watch != watch2) {
 		printf ("BAD: last watch wasn't what we expected.\n");
 		ret = 1;
 	}
@@ -276,19 +275,6 @@ test_handle_fds (void)
 		ret = 1;
 	}
 
-
-	callback_called = 0;
-	ufds[2].revents = 0;
-	ufds[1].revents = POLLHUP;
-	nih_io_handle_fds (ufds, nfds);
-
-	/* Callback should not be called */
-	if (callback_called != 0) {
-		printf ("BAD: callback called unexpectedly.\n");
-		ret = 1;
-	}
-
-	nih_list_free (&watch3->entry);
 	nih_list_free (&watch2->entry);
 	nih_list_free (&watch1->entry);
 
@@ -765,6 +751,65 @@ destructor_called (void *ptr)
 	free_called++;
 
 	return 0;
+}
+
+int
+test_shutdown (void)
+{
+	struct pollfd  ufds[1];
+	NihIo         *io;
+	int            ret = 0, fds[2], flags;
+
+	printf ("Testing nih_io_shutdown()\n");
+
+	assert (pipe (fds) == 0);
+	ufds[0].fd = fds[0];
+	io = nih_io_reopen (NULL, fds[0], NULL, NULL, NULL, NULL);
+	nih_io_buffer_push (io->recv_buf, "some data", 9);
+	nih_alloc_set_destructor (io, destructor_called);
+	free_called = 0;
+	nih_io_shutdown (io);
+
+	/* Socket should have been marked as shutdown */
+	if (! io->shutdown) {
+		printf ("BAD: shutdown not set correctly.\n");
+		ret = 1;
+	}
+
+	/* Descriptor should not yet have been closed */
+	flags = fcntl (fds[0], F_GETFD);
+	if (flags < 0) {
+		printf ("BAD: file descriptor closed unexpectedly.\n");
+		ret = 1;
+	}
+
+	/* Should not have been freed */
+	if (free_called) {
+		printf ("BAD: structure freed unexpectedly.\n");
+		ret = 1;
+	}
+
+
+	/* Now poll the struct (which will take the data off) */
+	ufds[0].revents = POLLIN;
+	nih_io_handle_fds (ufds, 1);
+
+	/* Descriptor should have been closed */
+	flags = fcntl (fds[0], F_GETFD);
+	if ((flags != -1) || (errno != EBADF)) {
+		printf ("BAD: file descriptor was not closed.\n");
+		ret = 1;
+	}
+
+	/* Should have been freed */
+	if (! free_called) {
+		printf ("BAD: structure was not freed.\n");
+		ret = 1;
+	}
+
+	close (fds[1]);
+
+	return ret;
 }
 
 int
@@ -1568,6 +1613,7 @@ main (int   argc,
 	ret |= test_buffer_push ();
 	ret |= test_buffer_pop ();
 	ret |= test_reopen ();
+	ret |= test_shutdown ();
 	ret |= test_close ();
 	ret |= test_cb ();
 	ret |= test_read ();

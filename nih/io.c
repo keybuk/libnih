@@ -200,7 +200,7 @@ nih_io_handle_fds (const struct pollfd *ufds,
 			if (ufds[i].fd != watch->fd)
 				continue;
 
-			if (! (ufds[i].revents & watch->events))
+			if (! ufds[i].revents)
 				continue;
 
 			watch->callback (watch->data, watch, ufds[i].revents);
@@ -429,6 +429,7 @@ nih_io_reopen (void         *parent,
 	io->close_cb = close_cb;
 	io->error_cb = error_cb;
 	io->data = data;
+	io->shutdown = FALSE;
 
 	/* Only poll for input if there's actually a callback */
 	io->watch = nih_io_add_watch (io, fd, (read_cb ? POLLIN : 0),
@@ -482,7 +483,7 @@ nih_io_cb (NihIo      *io,
 	   short       events)
 {
 	/* There's data to be read */
-	if (events & POLLIN) {
+	if (events & ~POLLOUT) {
 		ssize_t len;
 
 		/* Read directly into the buffer to save hauling temporary
@@ -561,6 +562,10 @@ nih_io_cb (NihIo      *io,
 		/* Resize the buffer to avoid memory wastage */
 		nih_io_buffer_resize (io->send_buf, 0);
 	}
+
+	/* Shut down the socket if it has empty buffers */
+	if (io->shutdown && (! io->send_buf->len) && (! io->recv_buf->len))
+		nih_io_closed (io);
 }
 
 /**
@@ -612,6 +617,26 @@ nih_io_closed (NihIo *io)
 	} else {
 		nih_io_close (io);
 	}
+}
+
+/**
+ * nih_io_shutdown:
+ * @io: structure to be closed.
+ *
+ * Marks the #NihIo structure to be closed once the buffers have been
+ * emptied, rather than immediately.  Closure is performed by calling
+ * the close callback if given or #nih_io_close.
+ *
+ * This is most useful to send a burst of data and discard the structure
+ * once the data has been sent, without worrying about keeping track of
+ * the structure in the mean time.
+ **/
+void
+nih_io_shutdown (NihIo *io)
+{
+	nih_assert (io != NULL);
+
+	io->shutdown = TRUE;
 }
 
 /**

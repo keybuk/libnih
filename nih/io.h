@@ -128,7 +128,8 @@ typedef struct nih_io_buffer {
  * @read_cb: function called when new data in @recv_buf,
  * @close_cb: function called when socket closes,
  * @error_cb: function called when an error occurs,
- * @data: pointer passed to callbacks.
+ * @data: pointer passed to callbacks,
+ * @shutdown: TRUE if the structure should be freed once the buffers are empty.
  *
  * This structure implements more featureful I/O handling than provided by
  * an #NihIoWatch alone.  It combines an #NihIoWatch and two #NihIoBuffer
@@ -152,6 +153,8 @@ struct nih_io {
 	NihIoCloseCb  close_cb;
 	NihIoErrorCb  error_cb;
 	void         *data;
+
+	int           shutdown;
 };
 
 
@@ -178,6 +181,7 @@ int          nih_io_buffer_push   (NihIoBuffer *buffer, const char *str,
 NihIo *      nih_io_reopen        (void *parent, int fd, NihIoReadCb read_cb,
 				   NihIoCloseCb close_cb,
 				   NihIoErrorCb error_cb, void *data);
+void         nih_io_shutdown      (NihIo *io);
 void         nih_io_close         (NihIo *io);
 
 char *       nih_io_read          (void *parent, NihIo *io, size_t len)
@@ -192,7 +196,6 @@ ssize_t      nih_io_printf        (NihIo *io, const char *format, ...)
 
 int          nih_io_set_nonblock  (int fd);
 int          nih_io_set_cloexec   (int fd);
-
 
 NIH_END_EXTERN
 

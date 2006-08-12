@@ -1,5 +1,18 @@
 2006-08-12  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.c (nih_io_handle_fds): Always call the callback, even if
+	unexpected events happen, otherwise we'll miss ERR, HUP, etc.
+	(nih_io_shutdown): Allow a socket to be closed lazily, so we can
+	send (or receive) a whole bunch of stuff and expect the structure to
+	go away afterwards.
+	(nih_io_cb): If the shutdown flag has been marked and we run out
+	of things in either buffer, act as if one end was closed.
+	(nih_io_reopen): Mark sockets as not shutdown by default.
+	* nih/io.h: Update.
+	* nih/tests/test_io.c (test_shutdown): Test behaviour.
+	(test_handle_fds): Take out some of the tests due to changed
+	behaviour.  While "clever" I think overall this is undesirable.
+
 	* nih/io.c (nih_io_set_cloexec): Function to set the FD_CLOEXEC flag.
 	* nih/io.h: Update.
 	* nih/tests/test_io.c (test_set_cloexec): Test the function.

@@ -21,12 +21,26 @@
 #define NIH_IO_H
 
 #include <sys/types.h>
-#include <sys/poll.h>
 
 #include <nih/macros.h>
 #include <nih/list.h>
 
 
+/**
+ * NihIoEvents:
+ *
+ * Events that we can watch for, generally used as a bit mask of the events
+ * that have occurred.
+ **/
+typedef enum {
+	NIH_IO_NONE   = 00,
+	NIH_IO_READ   = 01,
+	NIH_IO_WRITE  = 02,
+	NIH_IO_EXCEPT = 04,
+} NihIoEvents;
+
+
+/* Predefine the typedefs as we use them in the callbacks */
 typedef struct nih_io_watch NihIoWatch;
 typedef struct nih_io       NihIo;
 
@@ -39,7 +53,7 @@ typedef struct nih_io       NihIo;
  * I/O callback functions are called whenever an event occurs on a file
  * descriptor or socket being watched by an #NihIoWatch.
  **/
-typedef void (*NihIoCb) (void *, NihIoWatch *, short);
+typedef void (*NihIoCb) (void *, NihIoWatch *, NihIoEvents);
 
 /**
  * NihIoReadCb:
@@ -97,12 +111,12 @@ typedef void (*NihIoErrorCb) (void *, NihIo *);
  * as they are held in a list internally.
  **/
 struct nih_io_watch {
-	NihList  entry;
-	int      fd;
-	short    events;
+	NihList      entry;
+	int          fd;
+	NihIoEvents  events;
 
-	NihIoCb  callback;
-	void    *data;
+	NihIoCb      callback;
+	void        *data;
 };
 
 /**
@@ -160,11 +174,13 @@ struct nih_io {
 
 NIH_BEGIN_EXTERN
 
-NihIoWatch * nih_io_add_watch     (void *parent, int fd, short events,
+NihIoWatch * nih_io_add_watch     (void *parent, int fd, NihIoEvents events,
 				   NihIoCb callback, void *data);
 
-int          nih_io_poll_fds      (struct pollfd **ufds, nfds_t *nfds);
-void         nih_io_handle_fds    (const struct pollfd *ufds, nfds_t nfds);
+void         nih_io_select_fds    (int *nfds, fd_set *readfds,
+				   fd_set *writefds, fd_set *exceptfds);
+void         nih_io_handle_fds    (fd_set *readfds, fd_set *writewfds,
+				   fd_set *exceptfds);
 
 
 NihIoBuffer *nih_io_buffer_new    (void *parent)

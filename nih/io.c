@@ -25,7 +25,7 @@
 
 
 #include <sys/types.h>
-#include <sys/poll.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 
 #include <errno.h>
@@ -49,7 +49,7 @@
 /* Prototypes for static functions */
 static inline void nih_io_buffer_shrink (NihIoBuffer *buffer, size_t len);
 static void        nih_io_cb            (NihIo *io, NihIoWatch *watch,
-					 short events);
+					 NihIoEvents events);
 static void        nih_io_closed        (NihIo *io);
 static void        nih_io_error         (NihIo *io);
 
@@ -84,8 +84,8 @@ nih_io_init (void)
  * @data: pointer to pass to @callback.
  *
  * Adds @fd to the list of file descriptors to watch, when any of @events
- * occur on the socket, @callback will be called.  @events is the standard
- * list of #poll events.
+ * occur on the socket, @callback will be called.  @events is a bit mask
+ * of the different events we care about.
  *
  * This is the simplest form of watch and satisfies most purposes.
  *
@@ -96,11 +96,11 @@ nih_io_init (void)
  * Returns: the watch structure, or %NULL if insufficient memory.
  **/
 NihIoWatch *
-nih_io_add_watch (void    *parent,
-		  int      fd,
-		  short    events,
-		  NihIoCb  callback,
-		  void    *data)
+nih_io_add_watch (void        *parent,
+		  int          fd,
+		  NihIoEvents  events,
+		  NihIoCb      callback,
+		  void        *data)
 {
 	NihIoWatch *watch;
 
@@ -129,82 +129,90 @@ nih_io_add_watch (void    *parent,
 
 
 /**
- * nih_io_poll_fds:
- * @ufds: pointer to store location of array in,
- * @nfds: pointer to store length of array in.
+ * nih_io_select_fds:
+ * @nfds: pointer to store highest number in,
+ * @readfds: pointer to set of descriptors to check for read,
+ * @writefds: pointer to set of descriptors to check for write,
+ * @exceptfds: pointer to set of descriptors to check for exceptions.
  *
- * Builds an array of pollfd structures suitable for giving to poll
- * containing the list of I/O watches.  The array is allocated using
- * #nih_alloc.
- *
- * Returns: zero on success, negative value on insufficient memory.
+ * Fills the given fd_set arrays based on the list of I/O watches.
  **/
-int
-nih_io_poll_fds (struct pollfd **ufds,
-		 nfds_t         *nfds)
+void
+nih_io_select_fds (int    *nfds,
+		   fd_set *readfds,
+		   fd_set *writefds,
+		   fd_set *exceptfds)
 {
-	nih_assert (ufds != NULL);
 	nih_assert (nfds != NULL);
+	nih_assert (readfds != NULL);
+	nih_assert (writefds != NULL);
+	nih_assert (exceptfds != NULL);
 
 	nih_io_init ();
 
-	*ufds = NULL;
-	*nfds = 0;
-
 	NIH_LIST_FOREACH (io_watches, iter) {
 		NihIoWatch    *watch = (NihIoWatch *)iter;
-		struct pollfd *new_ufds, *ufd;
 
-		new_ufds = nih_realloc (*ufds, NULL,
-					sizeof (struct pollfd) * ++(*nfds));
-		if (! new_ufds) {
-			nih_free (*ufds);
-			return -1;
+		if (watch->events & NIH_IO_READ) {
+			FD_SET (watch->fd, readfds);
+			*nfds = MAX (*nfds, watch->fd + 1);
 		}
-		*ufds = new_ufds;
 
-		ufd = &(*ufds)[*nfds - 1];
-		ufd->fd = watch->fd;
-		ufd->events = watch->events;
-		ufd->revents = 0;
+		if (watch->events & NIH_IO_WRITE) {
+			FD_SET (watch->fd, writefds);
+			*nfds = MAX (*nfds, watch->fd + 1);
+		}
+
+		if (watch->events & NIH_IO_EXCEPT) {
+			FD_SET (watch->fd, exceptfds);
+			*nfds = MAX (*nfds, watch->fd + 1);
+		}
 	}
-
-	return 0;
 }
 
 /**
  * nih_io_handle_fds:
- * @ufds: array of poll information,
- * @nfds: length of array.
+ * @readfds: pointer to set of descriptors ready for read,
+ * @writefds: pointer to set of descriptors ready for write,
+ * @exceptfds: pointer to set of descriptors with exceptions.
  *
- * Recieves an array of pollfd structures which has had the revents
- * members filled in by a call to #poll and iterates the watch list
- * calling the appropriate callbacks.
+ * Receives arrays of fd_set structures which have been cleared of any
+ * descriptors which haven't changed and iterates the watch list calling
+ * the appropriate callbacks.
  *
  * It is safe for callbacks to remove the watch during their call.
  **/
 void
-nih_io_handle_fds (const struct pollfd *ufds,
-		   nfds_t               nfds)
+nih_io_handle_fds (fd_set *readfds,
+		   fd_set *writefds,
+		   fd_set *exceptfds)
 {
-	nih_assert (ufds != NULL);
-	nih_assert (nfds > 0);
+	nih_assert (readfds != NULL);
+	nih_assert (writefds != NULL);
+	nih_assert (exceptfds != NULL);
 
 	nih_io_init ();
 
 	NIH_LIST_FOREACH_SAFE (io_watches, iter) {
-		NihIoWatch *watch = (NihIoWatch *)iter;
-		nfds_t              i;
+		NihIoWatch  *watch = (NihIoWatch *)iter;
+		NihIoEvents  events;
 
-		for (i = 0; i < nfds; i++) {
-			if (ufds[i].fd != watch->fd)
-				continue;
+		events = NIH_IO_NONE;
 
-			if (! ufds[i].revents)
-				continue;
+		if ((watch->events & NIH_IO_READ)
+		    && FD_ISSET (watch->fd, readfds))
+			events |= NIH_IO_READ;
 
-			watch->callback (watch->data, watch, ufds[i].revents);
-		}
+		if ((watch->events & NIH_IO_WRITE)
+		    && FD_ISSET (watch->fd, writefds))
+			events |= NIH_IO_WRITE;
+
+		if ((watch->events & NIH_IO_EXCEPT)
+		    && FD_ISSET (watch->fd, exceptfds))
+			events |= NIH_IO_EXCEPT;
+
+		if (events)
+			watch->callback (watch->data, watch, events);
 	}
 }
 
@@ -431,8 +439,7 @@ nih_io_reopen (void         *parent,
 	io->data = data;
 	io->shutdown = FALSE;
 
-	/* Only poll for input if there's actually a callback */
-	io->watch = nih_io_add_watch (io, fd, (read_cb ? POLLIN : 0),
+	io->watch = nih_io_add_watch (io, fd, NIH_IO_READ,
 				      (NihIoCb) nih_io_cb, io);
 	if (! io->watch)
 		goto error;
@@ -478,12 +485,12 @@ error:
  * the send buffer is written to the socket and any errors are handled
  **/
 static void
-nih_io_cb (NihIo      *io,
-	   NihIoWatch *watch,
-	   short       events)
+nih_io_cb (NihIo       *io,
+	   NihIoWatch  *watch,
+	   NihIoEvents  events)
 {
 	/* There's data to be read */
-	if (events & ~POLLOUT) {
+	if (events & NIH_IO_READ) {
 		ssize_t len;
 
 		/* Read directly into the buffer to save hauling temporary
@@ -534,7 +541,7 @@ nih_io_cb (NihIo      *io,
 	}
 
 	/* There's room to write data, send as much as we can */
-	if (events & POLLOUT) {
+	if (events & NIH_IO_WRITE) {
 		ssize_t len;
 
 		/* Write directly from the buffer to save hauling temporary
@@ -545,9 +552,8 @@ nih_io_cb (NihIo      *io,
 			len = write (watch->fd, io->send_buf->buf,
 				     io->send_buf->len);
 
-			/* Don't bother checking for errors, it'll poll for
-			 * ERR, HUP on IN next time round and we can get
-			 * them that way.
+			/* Don't bother checking errors, we catch them
+			 * using read
 			 */
 			if (len <= 0)
 				break;
@@ -555,9 +561,9 @@ nih_io_cb (NihIo      *io,
 			nih_io_buffer_shrink (io->send_buf, len);
 		}
 
-		/* Don't poll for write if we have nothing to write */
+		/* Don't check for writability if we have nothing to write */
 		if (! io->send_buf->len)
-			watch->events &= ~POLLOUT;
+			watch->events &= ~NIH_IO_WRITE;
 
 		/* Resize the buffer to avoid memory wastage */
 		nih_io_buffer_resize (io->send_buf, 0);
@@ -711,9 +717,9 @@ nih_io_write (NihIo      *io,
 
 	ret = nih_io_buffer_push (io->send_buf, str, len);
 
-	/* If we have data to write, ensure we poll for POLLOUT */
+	/* If we have data to write, ensure we watch for writability */
 	if (io->send_buf->len)
-		io->watch->events |= POLLOUT;
+		io->watch->events |= NIH_IO_WRITE;
 
 	return ret;
 }

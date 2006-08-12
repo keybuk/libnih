@@ -21,7 +21,7 @@
 
 #include <config.h>
 
-#include <sys/poll.h>
+#include <sys/select.h>
 
 #include <errno.h>
 #include <stdio.h>
@@ -40,10 +40,10 @@
 static int callback_called = 0;
 static void *last_data = NULL;
 static NihIoWatch *last_watch = NULL;
-static short last_events = 0;
+static NihIoEvents last_events = 0;
 
 static void
-my_callback (void *data, NihIoWatch *watch, short events)
+my_callback (void *data, NihIoWatch *watch, NihIoEvents events)
 {
 	callback_called++;
 	last_data = data;
@@ -59,7 +59,8 @@ test_add_watch (void)
 
 	printf ("Testing nih_io_add_watch()\n");
 	assert (pipe (fds) == 0);
-	watch = nih_io_add_watch (NULL, fds[0], POLLIN, my_callback, &ret);
+	watch = nih_io_add_watch (NULL, fds[0], NIH_IO_READ,
+				  my_callback, &ret);
 
 	/* File descriptor should be that given */
 	if (watch->fd != fds[0]) {
@@ -68,8 +69,8 @@ test_add_watch (void)
 	}
 
 	/* Events mask should be that given */
-	if (watch->events != POLLIN) {
-		printf ("BAD: poll events set incorrectly.\n");
+	if (watch->events != NIH_IO_READ) {
+		printf ("BAD: callback events set incorrectly.\n");
 		ret = 1;
 	}
 
@@ -95,92 +96,61 @@ test_add_watch (void)
 
 
 int
-test_poll_fds (void)
+test_select_fds (void)
 {
-	NihIoWatch    *watch1, *watch2, *watch3;
-	struct pollfd *ufds;
-	nfds_t         nfds;
-	int            ret = 0, retval, fds[2];
+	NihIoWatch *watch1, *watch2, *watch3;
+	fd_set      readfds, writefds, exceptfds;
+	int         ret = 0, nfds, fds[2];
 
-	printf ("Testing nih_io_poll_fds()\n");
+	printf ("Testing nih_io_select_fds()\n");
 	assert (pipe (fds) == 0);
-	watch1 = nih_io_add_watch (NULL, fds[0], POLLIN, my_callback, &ret);
-	watch2 = nih_io_add_watch (NULL, fds[1], POLLOUT, my_callback, &ret);
-	watch3 = nih_io_add_watch (NULL, fds[0], POLLERR, my_callback, &ret);
+	watch1 = nih_io_add_watch (NULL, fds[0], NIH_IO_READ,
+				   my_callback, &ret);
+	watch2 = nih_io_add_watch (NULL, fds[1], NIH_IO_WRITE,
+				   my_callback, &ret);
+	watch3 = nih_io_add_watch (NULL, fds[0], NIH_IO_EXCEPT,
+				   my_callback, &ret);
 
-	ufds = NULL;
 	nfds = 0;
-	retval = nih_io_poll_fds (&ufds, &nfds);
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
 
-	/* Return value should be zero */
-	if (retval != 0) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Should have three structures */
-	if (nfds != 3) {
+	/* Should be highest fd plus one */
+	if (nfds != MAX (fds[0], fds[1]) + 1) {
 		printf ("BAD: nfds wasn't what we expected.\n");
 		ret = 1;
 	}
 
-	/* Structure array should be allocated with nih_alloc */
-	if (nih_alloc_size (ufds) != sizeof (struct pollfd) * 3) {
-		printf ("BAD: nih_alloc not used or size incorrect.\n");
+	/* First entry's file descriptor should be watched for read */
+	if (! FD_ISSET (watch1->fd, &readfds)) {
+		printf ("BAD: first file descriptor not watched.\n");
 		ret = 1;
 	}
 
-	/* First entry's file descriptor should be from first watch */
-	if (ufds[0].fd != fds[0]) {
-		printf ("BAD: first file descriptor incorrect.\n");
+	/* First entry's file descriptor should not be watched for write */
+	if (FD_ISSET (watch1->fd, &writefds)) {
+		printf ("BAD: first file descriptor watched unexpectedly.\n");
 		ret = 1;
 	}
 
-	/* First entry's events should be from first watch */
-	if (ufds[0].events != POLLIN) {
-		printf ("BAD: first events incorrect.\n");
+	/* Second entry's file descriptor should be watched for write */
+	if (! FD_ISSET (watch2->fd, &writefds)) {
+		printf ("BAD: second file descriptor not watched.\n");
 		ret = 1;
 	}
 
-	/* First entry's revents should be reset */
-	if (ufds[0].revents != 0) {
-		printf ("BAD: first returned events not cleared.\n");
+	/* Second entry's file descriptor should not be watched for others */
+	if (FD_ISSET (watch2->fd, &readfds)
+	    || FD_ISSET (watch2->fd, &exceptfds)) {
+		printf ("BAD: second file descriptor watched unexpectedly.\n");
 		ret = 1;
 	}
 
-	/* Second entry's file descriptor should be from second watch */
-	if (ufds[1].fd != fds[1]) {
-		printf ("BAD: second file descriptor incorrect.\n");
-		ret = 1;
-	}
-
-	/* Second entry's events should be from second watch */
-	if (ufds[1].events != POLLOUT) {
-		printf ("BAD: second events incorrect.\n");
-		ret = 1;
-	}
-
-	/* Second entry's revents should be reset */
-	if (ufds[1].revents != 0) {
-		printf ("BAD: second returned events not cleared.\n");
-		ret = 1;
-	}
-
-	/* Third entry's file descriptor should be from third watch */
-	if (ufds[2].fd != fds[0]) {
-		printf ("BAD: third file descriptor incorrect.\n");
-		ret = 1;
-	}
-
-	/* Third entry's events should be from third watch */
-	if (ufds[2].events != POLLERR) {
-		printf ("BAD: third events incorrect.\n");
-		ret = 1;
-	}
-
-	/* Third entry's revents should be reset */
-	if (ufds[2].revents != 0) {
-		printf ("BAD: third returned events not cleared.\n");
+	/* Third entry's file descriptor should be watched for exception */
+	if (! FD_ISSET (watch3->fd, &exceptfds)) {
+		printf ("BAD: third file descriptor not watched.\n");
 		ret = 1;
 	}
 
@@ -197,26 +167,29 @@ test_poll_fds (void)
 int
 test_handle_fds (void)
 {
-	NihIoWatch    *watch1, *watch2;
-	struct pollfd *ufds;
-	nfds_t         nfds;
+	NihIoWatch    *watch1, *watch2, *watch3;
+	fd_set         readfds, writefds, exceptfds;
 	int            ret = 0, fds[2];
 
 	printf ("Testing nih_io_handle_fds()\n");
 	assert (pipe (fds) == 0);
-	watch1 = nih_io_add_watch (NULL, fds[0], POLLIN, my_callback, &ret);
-	watch2 = nih_io_add_watch (NULL, fds[1], POLLOUT, my_callback, &ret);
+	watch1 = nih_io_add_watch (NULL, fds[0], NIH_IO_READ,
+				   my_callback, &ret);
+	watch2 = nih_io_add_watch (NULL, fds[1], NIH_IO_WRITE,
+				   my_callback, &ret);
+	watch3 = nih_io_add_watch (NULL, fds[0], NIH_IO_EXCEPT,
+				   my_callback, &ret);
 
-	ufds = NULL;
-	nfds = 0;
-	assert (nih_io_poll_fds (&ufds, &nfds) == 0);
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
 
 	callback_called = 0;
 	last_data = NULL;
 	last_watch = NULL;
 	last_events = 0;
-	ufds[0].revents = POLLIN;
-	nih_io_handle_fds (ufds, nfds);
+	FD_SET (watch1->fd, &readfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
 	/* Callback should be called just once */
 	if (callback_called != 1) {
@@ -237,7 +210,7 @@ test_handle_fds (void)
 	}
 
 	/* Last events should be those we set */
-	if (last_events != POLLIN) {
+	if (last_events != NIH_IO_READ) {
 		printf ("BAD: last events wasn't what we expected.\n");
 		ret = 1;
 	}
@@ -247,9 +220,9 @@ test_handle_fds (void)
 	last_data = NULL;
 	last_watch = NULL;
 	last_events = 0;
-	ufds[0].revents = 0;
-	ufds[1].revents = POLLERR | POLLHUP;
-	nih_io_handle_fds (ufds, nfds);
+	FD_ZERO (&readfds);
+	FD_SET (watch3->fd, &exceptfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
 	/* Callback should be called just once */
 	if (callback_called != 1) {
@@ -263,18 +236,32 @@ test_handle_fds (void)
 		ret = 1;
 	}
 
-	/* Last watch should be second one */
-	if (last_watch != watch2) {
+	/* Last watch should be third one */
+	if (last_watch != watch3) {
 		printf ("BAD: last watch wasn't what we expected.\n");
 		ret = 1;
 	}
 
 	/* Last events should be those we set */
-	if (last_events != (POLLERR | POLLHUP)) {
+	if (last_events != NIH_IO_EXCEPT) {
 		printf ("BAD: last events wasn't what we expected.\n");
 		ret = 1;
 	}
 
+
+	callback_called = 0;
+	FD_ZERO (&exceptfds);
+	FD_SET (watch2->fd, &exceptfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	/* Callback should not be called */
+	if (callback_called != 0) {
+		printf ("BAD: callback called incorrect number of times.\n");
+		ret = 1;
+	}
+
+
+	nih_list_free (&watch3->entry);
 	nih_list_free (&watch2->entry);
 	nih_list_free (&watch1->entry);
 
@@ -644,7 +631,6 @@ test_reopen (void)
 	assert ((flags = fcntl (fds[0], F_GETFL)) >= 0);
 	assert (! (flags & O_NONBLOCK));
 
-	printf ("...with all callbacks given\n");
 	io = nih_io_reopen (NULL, fds[0], my_read_cb, my_close_cb, my_error_cb,
 			    &ret);
 
@@ -678,8 +664,8 @@ test_reopen (void)
 		ret = 1;
 	}
 
-	/* Events should be POLLIN */
-	if (io->watch->events != POLLIN) {
+	/* Events should be read */
+	if (io->watch->events != NIH_IO_READ) {
 		printf ("BAD: watch events set incorrectly.\n");
 		ret = 1;
 	}
@@ -724,19 +710,6 @@ test_reopen (void)
 
 	nih_free (io);
 
-
-	printf ("...with no callbacks\n");
-	io = nih_io_reopen (NULL, fds[0], NULL, NULL, NULL, NULL);
-
-	/* Should not be listening for any events */
-	if (io->watch->events != 0) {
-		printf ("BAD: watch events set incorrectly.\n");
-		ret = 1;
-	}
-
-	nih_free (io);
-
-
 	close (fds[0]);
 	close (fds[1]);
 
@@ -756,14 +729,13 @@ destructor_called (void *ptr)
 int
 test_shutdown (void)
 {
-	struct pollfd  ufds[1];
-	NihIo         *io;
-	int            ret = 0, fds[2], flags;
+	NihIo  *io;
+	fd_set  readfds, writefds, exceptfds;
+	int     ret = 0, fds[2], flags;
 
 	printf ("Testing nih_io_shutdown()\n");
 
 	assert (pipe (fds) == 0);
-	ufds[0].fd = fds[0];
 	io = nih_io_reopen (NULL, fds[0], NULL, NULL, NULL, NULL);
 	nih_io_buffer_push (io->recv_buf, "some data", 9);
 	nih_alloc_set_destructor (io, destructor_called);
@@ -790,9 +762,12 @@ test_shutdown (void)
 	}
 
 
-	/* Now poll the struct (which will take the data off) */
-	ufds[0].revents = POLLIN;
-	nih_io_handle_fds (ufds, 1);
+	/* Now handle the fds (which will take the data off) */
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+	FD_SET (fds[0], &readfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
 	/* Descriptor should have been closed */
 	flags = fcntl (fds[0], F_GETFD);
@@ -897,27 +872,29 @@ test_close (void)
 int
 test_cb (void)
 {
-	struct pollfd  ufds[1];
-	NihIo         *io;
-	FILE          *output;
-	char           text[80];
-	int            ret = 0, fds[2], flags;
+	NihIo  *io;
+	FILE   *output;
+	char    text[80];
+	fd_set  readfds, writefds, exceptfds;
+	int     ret = 0, fds[2], flags;
 
 	printf ("Testing nih_io_cb()\n");
 
 	printf ("...with data to read\n");
 	assert (pipe (fds) == 0);
-	ufds[0].fd = fds[0];
 	io = nih_io_reopen (NULL, fds[0], my_read_cb, my_close_cb, my_error_cb,
 			    &ret);
 
 	assert (write (fds[1], "this is a test", 14) == 14);
-	ufds[0].revents = POLLIN;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+	FD_SET (fds[0], &readfds);
 	read_called = 0;
 	last_data = NULL;
 	last_str = NULL;
 	last_len = 0;
-	nih_io_handle_fds (ufds, 1);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
 	/* Our read function should have been called */
 	if (! read_called) {
@@ -958,12 +935,11 @@ test_cb (void)
 
 	printf ("...with more data to read\n");
 	assert (write (fds[1], " of the callback code", 19) == 19);
-	ufds[0].revents = POLLIN;
 	read_called = 0;
 	last_data = NULL;
 	last_str = NULL;
 	last_len = 0;
-	nih_io_handle_fds (ufds, 1);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
 	/* Our read function should have been called */
 	if (! read_called) {
@@ -1005,13 +981,12 @@ test_cb (void)
 
 	printf ("...with remote end closed\n");
 	assert (close (fds[1]) == 0);
-	ufds[0].revents = POLLIN;
 	read_called = 0;
 	close_called = 0;
 	last_data = NULL;
 	last_str = NULL;
 	last_len = 0;
-	nih_io_handle_fds (ufds, 1);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
 	/* Our read function should have been called */
 	if (! read_called) {
@@ -1059,13 +1034,12 @@ test_cb (void)
 
 	printf ("...with local end closed\n");
 	assert (close (fds[0]) == 0);
-	ufds[0].revents = POLLIN;
 	read_called = 0;
 	error_called = 0;
 	last_data = NULL;
 	last_str = NULL;
 	last_len = 0;
-	nih_io_handle_fds (ufds, 1);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
 	/* Our read function should have been called */
 	if (! read_called) {
@@ -1124,13 +1098,13 @@ test_cb (void)
 
 	printf ("...with no close callback\n");
 	assert (pipe (fds) == 0);
-	ufds[0].fd = fds[0];
+	FD_ZERO (&readfds);
 	io = nih_io_reopen (NULL, fds[0], my_read_cb, NULL, NULL, &ret);
 	nih_alloc_set_destructor (io, destructor_called);
 	assert (close (fds[1]) == 0);
-	ufds[0].revents = POLLIN;
 	free_called = 0;
-	nih_io_handle_fds (ufds, 1);
+	FD_SET (fds[0], &readfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
 	/* Local end should have been closed */
 	flags = fcntl (fds[0], F_GETFD);
@@ -1148,14 +1122,14 @@ test_cb (void)
 
 	printf ("...with no error callback\n");
 	assert (pipe (fds) == 0);
-	ufds[0].fd = fds[0];
+	FD_ZERO (&readfds);
 	io = nih_io_reopen (NULL, fds[0], my_read_cb, NULL, NULL, &ret);
 	nih_alloc_set_destructor (io, destructor_called);
 	assert (close (fds[0]) == 0);
 	assert (close (fds[1]) == 0);
-	ufds[0].revents = POLLIN;
 	free_called = 0;
-	nih_io_handle_fds (ufds, 1);
+	FD_SET (fds[0], &readfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
 	/* Local end should have been closed */
 	flags = fcntl (fds[0], F_GETFD);
@@ -1173,12 +1147,12 @@ test_cb (void)
 
 	printf ("...with data to write\n");
 	output = tmpfile ();
-	ufds[0].fd = fileno (output);
+	FD_ZERO (&readfds);
 	io = nih_io_reopen (NULL, fileno (output), NULL,
 			    my_close_cb, my_error_cb, &ret);
 	nih_io_printf (io, "this is a test\n");
-	ufds[0].revents = POLLOUT;
-	nih_io_handle_fds (ufds, 1);
+	FD_SET (fileno (output), &writefds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
 	fseek (output, 0, SEEK_SET);
 
@@ -1189,17 +1163,16 @@ test_cb (void)
 		ret = 1;
 	}
 
-	/* Should no longer be polling for write */
-	if (io->watch->events & POLLOUT) {
-		printf ("BAD: watch polling for OUT unexpectedly.\n");
+	/* Should no longer be watching for write */
+	if (io->watch->events & NIH_IO_WRITE) {
+		printf ("BAD: watch watching for write unexpectedly.\n");
 		ret = 1;
 	}
 
 
 	printf ("...with more data to write\n");
 	nih_io_printf (io, "so is this\n");
-	ufds[0].revents = POLLOUT;
-	nih_io_handle_fds (ufds, 1);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 	fseek (output, 0, SEEK_SET);
 
 	/* Data should have been written */
@@ -1215,9 +1188,9 @@ test_cb (void)
 		ret = 1;
 	}
 
-	/* Should no longer be polling for write */
-	if (io->watch->events & POLLOUT) {
-		printf ("BAD: watch polling for OUT unexpectedly.\n");
+	/* Should no longer be watching for write */
+	if (io->watch->events & NIH_IO_WRITE) {
+		printf ("BAD: watch watching for write unexpectedly.\n");
 		ret = 1;
 	}
 
@@ -1228,8 +1201,8 @@ test_cb (void)
 	last_data = NULL;
 	last_error = NULL;
 	nih_io_printf (io, "this write fails\n");
-	ufds[0].revents = POLLIN | POLLOUT;
-	nih_io_handle_fds (ufds, 1);
+	FD_SET (fds[0], &readfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
 	/* Error callback should have been called */
 	if (! error_called) {
@@ -1376,9 +1349,9 @@ test_write (void)
 		ret = 1;
 	}
 
-	/* Watch should now be flagged for POLLOUT */
-	if (! (io->watch->events & POLLOUT)) {
-		printf ("BAD: watch not looking for POLLOUT.\n");
+	/* Watch should now be flagged for write */
+	if (! (io->watch->events & NIH_IO_WRITE)) {
+		printf ("BAD: watch not looking for writability.\n");
 		ret = 1;
 	}
 
@@ -1517,9 +1490,9 @@ test_printf (void)
 		ret = 1;
 	}
 
-	/* Watch should now be flagged for POLLOUT */
-	if (! (io->watch->events & POLLOUT)) {
-		printf ("BAD: watch not looking for POLLOUT.\n");
+	/* Watch should now be flagged for write */
+	if (! (io->watch->events & NIH_IO_WRITE)) {
+		printf ("BAD: watch not looking for writability.\n");
 		ret = 1;
 	}
 
@@ -1606,7 +1579,7 @@ main (int   argc,
 	int ret = 0;
 
 	ret |= test_add_watch ();
-	ret |= test_poll_fds ();
+	ret |= test_select_fds ();
 	ret |= test_handle_fds ();
 	ret |= test_buffer_new ();
 	ret |= test_buffer_resize ();

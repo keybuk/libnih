@@ -21,9 +21,9 @@
 
 #include <config.h>
 
-#include <sys/poll.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/select.h>
 
 #include <stdio.h>
 #include <assert.h>
@@ -159,7 +159,7 @@ test_poll (void)
 	pid = fork ();
 	if (pid == 0) {
 		/* Child */
-		poll (NULL, 0, -1);
+		select (0, NULL, NULL, NULL, NULL);
 
 		exit (0);
 	}
@@ -217,7 +217,7 @@ test_poll (void)
 	pid = fork ();
 	if (pid == 0) {
 		/* Child */
-		poll (NULL, 0, -1);
+		select (0, NULL, NULL, NULL, NULL);
 
 		exit (0);
 	}

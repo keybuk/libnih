@@ -24,11 +24,12 @@
 #endif /* HAVE_CONFIG_H */
 
 
-#include <sys/poll.h>
+#include <sys/select.h>
 
 #include <stdio.h>
 #include <signal.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
@@ -93,6 +94,15 @@ const char *package_bugreport = NULL;
  **/
 static char *package_string = NULL;
 
+
+/**
+ * interrupt_pipe:
+ *
+ * Pipe used for interrupting an active select() call in case a signal
+ * comes in between the last time we handled the signal and the time we
+ * ran the call.
+ **/
+static int interrupt_pipe[2] = { -1, -1 };
 
 /**
  * exit_loop:
@@ -232,44 +242,68 @@ nih_main_loop (void)
 	/* Set a handler for SIGCHLD so that it can interrupt syscalls */
 	nih_signal_set_handler (SIGCHLD, nih_signal_handler);
 
+	/* Set up the interrupt pipe, we need it to be non blocking so that
+	 * we don't accidentally block if there's too many signals been
+	 * triggered or something
+	 */
+	if (interrupt_pipe[0] == -1) {
+		NIH_MUST (pipe (interrupt_pipe) == 0);
+
+		nih_io_set_nonblock (interrupt_pipe[0]);
+		nih_io_set_nonblock (interrupt_pipe[1]);
+	}
+
+	/* In very rare cases, signals can happen before we get into the
+	 * main loop, so we won't know to interrupt select().  Deal with
+	 * those now, anything that happens from here on results in an
+	 * interrupt anyway.
+	 */
+	nih_signal_poll ();
+
 	while (! exit_loop) {
-		NihTimer      *next_timer;
-		struct pollfd *ufds;
-		nfds_t         nfds;
-		int            timeout = -1, ret;
+		NihTimer       *next_timer;
+		struct timeval  timeout;
+		fd_set          readfds, writefds, exceptfds;
+		char            buf[1];
+		int             nfds, ret;
 
 		/* Use the due time of the next timer to calculate how long
-		 * to spend in poll().  That way we don't sleep for any less
-		 * or more time than we need to.
+		 * to spend in select().  That way we don't sleep for any
+		 * less or more time than we need to.
 		 */
 		next_timer = nih_timer_next_due ();
-		if (next_timer)
-			timeout = (next_timer->due - time (NULL)) * 1000;
-
-		/* Build up list of file descriptors and sockets to poll,
-		 * if we run out of memory just don't poll anything and wait
-		 * for a second anyway.
-		 */
-		if (nih_io_poll_fds (&ufds, &nfds) < 0) {
-			ufds = NULL;
-			nfds = 0;
-
-			if (timeout < 0)
-				timeout = 1000;
+		if (next_timer) {
+			timeout.tv_sec = next_timer->due - time (NULL);
+			timeout.tv_usec = 0;
 		}
 
-		/* Do the poll */
-		ret = poll (ufds, nfds, timeout);
+		/* Start off with empty watch lists */
+		FD_ZERO (&readfds);
+		FD_ZERO (&writefds);
+		FD_ZERO (&exceptfds);
 
-		/* Deal with polled events */
+		/* Always look for changes in the interrupt pipe */
+		FD_SET (interrupt_pipe[0], &readfds);
+		nfds = interrupt_pipe[0] + 1;
+
+		/* And look for changes in anything we're watching */
+		nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+
+		/* Now we hang around until either a signal comes in (and
+		 * calls nih_main_loop_interrupt), a file descriptor we're
+		 * watching changes in some way or it's time to run a timer.
+		 */
+		ret = select (nfds, &readfds, &writefds, &exceptfds,
+			      (next_timer ? &timeout : NULL));
+
+		/* Deal with events */
 		if (ret > 0)
-			nih_io_handle_fds (ufds, nfds);
-
-		if (ufds)
-			nih_free (ufds);
+			nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
 		/* Deal with signals */
 		nih_signal_poll ();
+		while (read (interrupt_pipe[0], buf, sizeof (buf)) > 0)
+			;
 
 		/* Deal with terminated children */
 		nih_child_poll ();
@@ -280,6 +314,22 @@ nih_main_loop (void)
 
 	exit_loop = 0;
 	return exit_status;
+}
+
+/**
+ * nih_main_loop_interrupt:
+ *
+ * Interrupts the current (or next) main loop interaction because of an
+ * event that potentially needs immediate processing, or because some
+ * condition of the main loop has been changed.
+ *
+ * This has no effect unless a main loop is running.
+ **/
+void
+nih_main_loop_interrupt (void)
+{
+	if (interrupt_pipe[1] != -1)
+		write (interrupt_pipe[1], "", 1);
 }
 
 /**
@@ -297,6 +347,26 @@ nih_main_loop_exit (int status)
 {
 	exit_status = status;
 	exit_loop = TRUE;
+
+	nih_main_loop_interrupt ();
+}
+
+/**
+ * nih_main_loop_close:
+ *
+ * Close the interrupt pipes if they are open, needed when we fork to a
+ * child otherwise they leak.
+ **/
+void
+nih_main_loop_close (void)
+{
+	if (interrupt_pipe[0] != -1){
+		close (interrupt_pipe[0]);
+		close (interrupt_pipe[1]);
+
+		interrupt_pipe[0] = -1;
+		interrupt_pipe[1] = -1;
+	}
 }
 
 

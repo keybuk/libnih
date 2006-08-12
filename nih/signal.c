@@ -29,6 +29,7 @@
 #include <nih/macros.h>
 #include <nih/alloc.h>
 #include <nih/list.h>
+#include <nih/main.h>
 #include <nih/logging.h>
 #include <nih/error.h>
 
@@ -252,6 +253,8 @@ nih_signal_handler (int signum)
 	nih_assert (signum < NUM_SIGNALS);
 
 	signals_caught[signum]++;
+
+	nih_main_loop_interrupt ();
 }
 
 /**

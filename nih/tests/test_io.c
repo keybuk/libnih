@@ -540,7 +540,7 @@ int
 test_buffer_push (void)
 {
 	NihIoBuffer *buf;
-	int          ret;
+	int          ret = 0;
 
 	printf ("Testing nih_io_buffer_push()\n");
 	buf = nih_io_buffer_new (NULL);
@@ -1356,7 +1356,7 @@ int
 test_write (void)
 {
 	NihIo *io;
-	int    ret;
+	int    ret = 0;
 
 	printf ("Testing nih_io_write()\n");
 	io = nih_io_reopen (NULL, 0, NULL, NULL, NULL, NULL);

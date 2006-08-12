@@ -1,5 +1,9 @@
 2006-08-12  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/main.c (nih_main_loop_close): Drop this function
+	(nih_main_loop): Instead mark them close on exec.
+	* nih/main.h: Update.
+
 	* nih/main.c (nih_main_loop): Change the main loop to use select
 	instead of poll, as its semantics are a lot easier to deal with.
 	We also use allow select to be interrupted by writing to a pipe

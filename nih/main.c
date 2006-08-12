@@ -251,6 +251,9 @@ nih_main_loop (void)
 
 		nih_io_set_nonblock (interrupt_pipe[0]);
 		nih_io_set_nonblock (interrupt_pipe[1]);
+
+		nih_io_set_cloexec (interrupt_pipe[0]);
+		nih_io_set_cloexec (interrupt_pipe[1]);
 	}
 
 	/* In very rare cases, signals can happen before we get into the
@@ -349,24 +352,6 @@ nih_main_loop_exit (int status)
 	exit_loop = TRUE;
 
 	nih_main_loop_interrupt ();
-}
-
-/**
- * nih_main_loop_close:
- *
- * Close the interrupt pipes if they are open, needed when we fork to a
- * child otherwise they leak.
- **/
-void
-nih_main_loop_close (void)
-{
-	if (interrupt_pipe[0] != -1){
-		close (interrupt_pipe[0]);
-		close (interrupt_pipe[1]);
-
-		interrupt_pipe[0] = -1;
-		interrupt_pipe[1] = -1;
-	}
 }
 
 

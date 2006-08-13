@@ -463,8 +463,15 @@ nih_io_reopen (void         *parent,
 	 * don't want to end up blocking; so set the socket so that
 	 * doesn't happen.
 	 */
-	if (nih_io_set_nonblock (fd) < 0)
-		nih_free (nih_error_get ());
+	if (nih_io_set_nonblock (fd) < 0) {
+		NihError *err;
+
+		err = nih_error_get ();
+		nih_error ("%s: %s",
+			   _("Unable to set descriptor non-blocking"),
+			   err->message);
+		nih_free (err);
+	}
 
 	return io;
 error:
@@ -592,7 +599,13 @@ nih_io_error (NihIo *io)
 	if (io->error_cb) {
 		io->error_cb (io->data, io);
 	} else {
-		nih_free (nih_error_get ());
+		NihError *err;
+
+		err = nih_error_get ();
+		nih_error ("%s: %s", _("Error while reading from descriptor"),
+			   err->message);
+		nih_free (err);
+
 		nih_io_closed (io);
 	}
 }

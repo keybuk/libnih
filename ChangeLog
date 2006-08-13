@@ -1,3 +1,9 @@
+2006-08-14  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/io.c (nih_io_reopen): Report on the error rather than just
+	suppressing it.
+	(nih_io_error): Likewise, report on the error.
+
 2006-08-12  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/main.c (nih_main_loop_close): Drop this function

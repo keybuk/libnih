@@ -221,7 +221,7 @@ nih_realloc (void       *ptr,
 	     size_t      size)
 {
 	NihAllocCtx *ctx;
-	NihList     *head = NULL;
+	NihList     *first_child = NULL;
 
 	if (! ptr)
 		return nih_alloc (parent, size);
@@ -231,44 +231,70 @@ nih_realloc (void       *ptr,
 	if (parent)
 		nih_assert (ctx->parent == NIH_ALLOC_CTX (parent));
 
-	/* We don't need to remove ourselves from the parent's children
-	 * list because that happens implicitly when we add again -- and
-	 * we want to be safe from the allocator returning NULL.
+	/* This is somewhat more difficult than alloc or free because we
+	 * have a tree of pointers to worry about.  Fortunately the
+	 * properties of the nih_list_* functions we use help us a lot here.
 	 *
-	 * We do need to deal with the children list though, because it
-	 * can move; the easiest way to do this is to remove it from its
-	 * own list and add it again later.
+	 * The problem is that references in the parent to this ptr's list
+	 * entry or references in children to this ptr's children list
+	 * entry are invalid once the allocator has been called.
+	 *
+	 * We could strip it all down before the allocator, then rebuild it
+	 * afterwards, but that's expensive and could be error-prone in the
+	 * case where the allocator fails.
+	 *
+	 * The solution is to rely on a property of nih_list_add; the entry
+	 * passed (to be added) is cut out of its containing list without
+	 * deferencing the return pointers, this means we can cut the bad
+	 * pointers out simply by calling nih_list_add to put the new
+	 * entry back in the same position.
+	 *
+	 * Of course, this only works in the non-empty list case as trying
+	 * to cut an entry out of an empty list would deference those
+	 * invalid pointers.  Happily all we need to do for the non-empty
+	 * list case is call nih_list_init again.
+	 *
+	 * For the primary list entry this is if we don't have a parent.
+	 * For the children list entry, this is if we don't have children,
+	 * which is difficult to detect after the allocator has been
+	 * called.  The easiest thing to do is stash a pointer to the first
+	 * child, if non-NULL then we use it for nih_list_add, if NULL then
+	 * we call nih_list_init.
 	 */
-	if (! NIH_LIST_EMPTY (&ctx->children)) {
-		head = ctx->children.next;
-		nih_list_remove (&ctx->children);
-	}
 
+	if (! NIH_LIST_EMPTY (&ctx->children))
+		first_child = ctx->children.next;
+
+	/* Now we do the actual realloc(), if this fails then the original
+	 * structure is still intact in memory so we can just return NULL
+	 */
 	ctx = ctx->allocator (ctx, sizeof (NihAllocCtx) + size);
-	if (! ctx) {
-		if (head)
-			nih_list_add (head, &ctx->children);
-
+	if (! ctx)
 		return NULL;
-	}
 
 	ctx->size = size;
 
-	/* Put us back in our parent's list of children; this automatically
-	 * cuts us out of the previous list without the pointers needing
-	 * to be accurate; so we use it as an optimisation
+	/* Either update our entry in our parent's list of children,
+	 * or reinitialise the list entry so it doesn't point to nowhere.
 	 */
-	if (ctx->parent)
+	if (ctx->parent) {
 		nih_list_add (&ctx->parent->children, &ctx->entry);
+	} else {
+		nih_list_init (&ctx->entry);
+	}
 
-	/* The location of the children list may have changed, so we need
-	 * to update the various pointers ... this is actually easier than
-	 * it appears.
+	/* Likewise update the head entry in our own list of children,
+	 * or reinitialise it so it doesn't point to nowhere.
 	 */
-	nih_list_init (&ctx->children);
-	if (head)
-		nih_list_add (head, &ctx->children);
+	if (first_child) {
+		nih_list_add (first_child, &ctx->children);
+	} else {
+		nih_list_init (&ctx->children);
+	}
 
+	/* Finally fix up the parent pointer in all of our children so they
+	 * point to our new location
+	 */
 	NIH_LIST_FOREACH (&ctx->children, iter) {
 		NihAllocCtx *child_ctx = (NihAllocCtx *)iter;
 

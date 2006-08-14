@@ -1,5 +1,12 @@
 2006-08-14  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (nih_realloc): Yet another fix to realloc, we
+	forgot to reinitialise our entry in the parent's children list in
+	the case of no parent.  After fixing this and tracing the code, I
+	realised that the previous fix was inelegant and there is a way to
+	deal with children without modifying the pointers until after the
+	reallocation.  Documented the reasoning in the function.
+
 	* nih/io.c (nih_io_reopen): Report on the error rather than just
 	suppressing it.
 	(nih_io_error): Likewise, report on the error.

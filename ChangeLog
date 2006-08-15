@@ -1,3 +1,7 @@
+2006-08-16  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/macros.h (N_): Should be defined to be a no-op.
+
 2006-08-14  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/alloc.c (nih_realloc): Yet another fix to realloc, we

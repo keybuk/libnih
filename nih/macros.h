@@ -74,7 +74,7 @@
 #if ENABLE_NLS
 # include <libintl.h>
 # define _(_str)  gettext (_str)
-# define N_(_str) gettext_noop (_str)
+# define N_(_str) (_str)
 #else
 # define _(_str)  (_str)
 # define N_(_str) (_str)

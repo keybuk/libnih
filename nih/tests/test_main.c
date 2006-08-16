@@ -27,6 +27,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <nih/alloc.h>
 #include <nih/main.h>
 #include <nih/timer.h>
 
@@ -294,6 +295,17 @@ test_version (void)
 }
 
 
+static int callback_called = 0;
+static void *last_data = NULL;
+
+static void
+my_callback (void            *data,
+	     NihMainLoopFunc *func)
+{
+	callback_called++;
+	last_data = data;
+}
+
 static void
 my_timeout (void *data, NihTimer *timer)
 {
@@ -304,9 +316,13 @@ my_timeout (void *data, NihTimer *timer)
 int
 test_main_loop (void)
 {
-	int ret = 0, retval;
+	NihMainLoopFunc *func;
+	int              ret = 0, retval;
 
 	printf ("Testing nih_main_loop()\n");
+	callback_called = 0;
+	last_data = NULL;
+	func = nih_main_loop_add_func (NULL, my_callback, &ret);
 	nih_timer_add_timeout (NULL, 1, my_timeout, NULL);
 	retval = nih_main_loop ();
 
@@ -315,6 +331,59 @@ test_main_loop (void)
 		printf ("BAD: return value wasn't what we expected.\n");
 		ret = 1;
 	}
+
+	/* Callback should have been called at least once */
+	if (! callback_called) {
+		printf ("BAD: loop function wasn't called.\n");
+		ret = 1;
+	}
+
+	/* Callback should have been passed data pointer */
+	if (last_data != &ret) {
+		printf ("BAD: callback data wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	nih_list_free (&func->entry);
+
+	return ret;
+}
+
+
+int
+test_main_loop_add_func (void)
+{
+	NihMainLoopFunc *func;
+	int              ret = 0;
+
+	printf ("Testing nih_main_loop_add_func()\n");
+	func = nih_main_loop_add_func (NULL, my_callback, &ret);
+
+	/* Callback should be function given */
+	if (func->callback != my_callback) {
+		printf ("BAD: callback function set incorrectly.\n");
+		ret = 1;
+	}
+
+	/* Callback data should be pointer given */
+	if (func->data != &ret) {
+		printf ("BAD: callback data set incorrectly.\n");
+		ret = 1;
+	}
+
+	/* Should be in the loop functions list */
+	if (NIH_LIST_EMPTY (&func->entry)) {
+		printf ("BAD: not placed into loop functions list.\n");
+		ret = 1;
+	}
+
+	/* Should have been allocated using nih_alloc */
+	if (nih_alloc_size (func) != sizeof (NihMainLoopFunc)) {
+		printf ("BAD: nih_alloc was not used.\n");
+		ret = 1;
+	}
+
+	nih_list_free (&func->entry);
 
 	return ret;
 }
@@ -331,6 +400,7 @@ main (int   argc,
 	ret |= test_suggest_help ();
 	ret |= test_version ();
 	ret |= test_main_loop ();
+	ret |= test_main_loop_add_func ();
 
 	return ret;
 }

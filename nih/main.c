@@ -34,6 +34,7 @@
 #include <nih/macros.h>
 #include <nih/alloc.h>
 #include <nih/string.h>
+#include <nih/list.h>
 #include <nih/timer.h>
 #include <nih/signal.h>
 #include <nih/child.h>
@@ -118,6 +119,13 @@ static __thread int exit_loop = 0;
  * Status to exit the running main loop with, set by #nih_main_loop_exit.
  **/
 static __thread int exit_status = 0;
+
+/**
+ * loop_functions:
+ *
+ * List of functions to be called in each main loop iteration.
+ **/
+static NihList *loop_functions = NULL;
 
 
 /**
@@ -229,6 +237,18 @@ nih_main_version (void)
 
 
 /**
+ * nih_main_loop_init:
+ *
+ * Initialise the loop functions list.
+ **/
+static void
+nih_main_loop_init (void)
+{
+	if (! loop_functions)
+		NIH_MUST (loop_functions = nih_list_new ());
+}
+
+/**
  * nih_main_loop:
  *
  * Implements a fully functional main loop for a typical process, handling
@@ -239,6 +259,8 @@ nih_main_version (void)
 int
 nih_main_loop (void)
 {
+	nih_main_loop_init ();
+
 	/* Set a handler for SIGCHLD so that it can interrupt syscalls */
 	nih_signal_set_handler (SIGCHLD, nih_signal_handler);
 
@@ -303,16 +325,29 @@ nih_main_loop (void)
 		if (ret > 0)
 			nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-		/* Deal with signals */
-		nih_signal_poll ();
+		/* Deal with signals.
+		 *
+		 * Clear the list first so that if a signal occurs while
+		 * handling signals it'll ensure that the functions get
+		 * a chance to decide whether to do anything next time round
+		 * without having to wait.
+		 */
 		while (read (interrupt_pipe[0], buf, sizeof (buf)) > 0)
 			;
+		nih_signal_poll ();
 
 		/* Deal with terminated children */
 		nih_child_poll ();
 
 		/* Deal with timers */
 		nih_timer_poll ();
+
+		/* Run the loop functions */
+		NIH_LIST_FOREACH_SAFE (loop_functions, iter) {
+			NihMainLoopFunc *func = (NihMainLoopFunc *)iter;
+
+			func->callback (func->data, func);
+		}
 	}
 
 	exit_loop = 0;
@@ -352,6 +387,48 @@ nih_main_loop_exit (int status)
 	exit_loop = TRUE;
 
 	nih_main_loop_interrupt ();
+}
+
+
+/**
+ * nih_main_loop_add_func:
+ * @parent: parent of callback,
+ * @callback: function to call,
+ * @data: pointer to pass to @callback.
+ *
+ * Adds @callback to the list of functions that should be called once
+ * in each main loop iteration.
+ *
+ * The callback structure is allocated using #nih_alloc and stored in a linked
+ * list, a default destructor is set that removes the callback from the list.
+ * Removal of the callback can be performed by freeing it.
+ *
+ * Returns: the signal information, or %NULL if insufficient memory.
+ **/
+NihMainLoopFunc *
+nih_main_loop_add_func (void          *parent,
+			NihMainLoopCb  callback,
+			void          *data)
+{
+	NihMainLoopFunc *func;
+
+	nih_assert (callback != NULL);
+
+	nih_main_loop_init ();
+
+	func = nih_new (parent, NihMainLoopFunc);
+	if (! func)
+		return NULL;
+
+	nih_list_init (&func->entry);
+	nih_alloc_set_destructor (func, (NihDestructor)nih_list_destructor);
+
+	func->callback = callback;
+	func->data = data;
+
+	nih_list_add (loop_functions, &func->entry);
+
+	return func;
 }
 
 

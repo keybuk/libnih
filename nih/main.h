@@ -21,7 +21,42 @@
 #define NIH_MAIN_H
 
 #include <nih/macros.h>
+#include <nih/list.h>
 #include <nih/signal.h>
+
+
+/**
+ * NihMainLoopCb:
+ * @data: pointer given with callback,
+ * @loop: loop callback structure.
+ *
+ * Main loop callbacks are called each time through the main loop to
+ * perform any additional processing before the process is put back
+ * to sleep.  For anything time critical, timers should be used instead.
+ *
+ * The @loop pointer can be used to remove the callback.
+ **/
+typedef struct nih_main_loop_func NihMainLoopFunc;
+typedef void (*NihMainLoopCb) (void *, NihMainLoopFunc *);
+
+/**
+ * NihMainLoopFunc:
+ * @entry: list header,
+ * @callback: function called,
+ * @data: pointer passed to @callback.
+ *
+ * This structure contains information about a function that should be
+ * called once in each main loop iteration.
+ *
+ * The callback can be removed by using #nih_list_remove as they are
+ * held in a list internally.
+ **/
+struct nih_main_loop_func {
+	NihList        entry;
+
+	NihMainLoopCb  callback;
+	void          *data;
+};
 
 
 /**
@@ -49,21 +84,24 @@ const char *package_copyright;
 const char *package_bugreport;
 
 
-void        nih_main_init_full      (const char *argv0,
-				     const char *package,
-				     const char *version,
-				     const char *bugreport,
-				     const char *copyright);
+void             nih_main_init_full      (const char *argv0,
+					  const char *package,
+					  const char *version,
+					  const char *bugreport,
+					  const char *copyright);
 
-const char *nih_main_package_string (void);
-void        nih_main_suggest_help   (void);
-void        nih_main_version        (void);
+const char *     nih_main_package_string (void);
+void             nih_main_suggest_help   (void);
+void             nih_main_version        (void);
 
-int         nih_main_loop           (void);
-void        nih_main_loop_interrupt (void);
-void        nih_main_loop_exit      (int status);
+int              nih_main_loop           (void);
+void             nih_main_loop_interrupt (void);
+void             nih_main_loop_exit      (int status);
 
-void        nih_main_term_signal    (void *data, NihSignal *signal);
+NihMainLoopFunc *nih_main_loop_add_func  (void *parent, NihMainLoopCb callback,
+					  void *data);
+
+void             nih_main_term_signal    (void *data, NihSignal *signal);
 
 NIH_END_EXTERN
 

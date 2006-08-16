@@ -1,5 +1,7 @@
 2006-08-16  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.c (nih_io_cb): Add a couple of check assertions.
+
 	* nih/macros.h (N_): Should be defined to be a no-op.
 
 2006-08-14  Scott James Remnant  <scott@netsplit.com>

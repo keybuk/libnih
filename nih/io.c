@@ -496,6 +496,9 @@ nih_io_cb (NihIo       *io,
 	   NihIoWatch  *watch,
 	   NihIoEvents  events)
 {
+	nih_assert (io != NULL);
+	nih_assert (watch != NULL);
+
 	/* There's data to be read */
 	if (events & NIH_IO_READ) {
 		ssize_t len;

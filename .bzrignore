@@ -1,3 +1,4 @@
+*.lo
 *.gcov
 *.gcda
 *.gcno

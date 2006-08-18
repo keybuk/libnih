@@ -60,19 +60,44 @@ struct nih_main_loop_func {
 
 
 /**
+ * nih_main_init_gettext:
+ *
+ * Initialises gettext using the PACKAGE_NAME and LOCALEDIR macros that should
+ * be set by Autoconf/Automake.
+ **/
+#if ENABLE_NLS
+# ifndef LOCALEDIR
+#  define LOCALEDIR NULL
+# endif /* LOCALEDIR */
+
+# define nih_main_init_gettext() \
+	do { \
+		setlocale (LC_ALL, ""); \
+		bindtextdomain (PACKAGE_NAME, LOCALEDIR); \
+		textdomain (PACKAGE_NAME); \
+	} while (0)
+#else /* ENABLE_NLS */
+# define nih_main_init_gettext()
+#endif /* ENABLE_NLS */
+
+/**
  * nih_main_init:
  * @argv0: program name from arguments.
  *
  * Should be called at the beginning of #main to initialise the various
- * global variables exported from this module.  Wraps #nih_main_init_full
+ * global variables exported from this module.  Expands to both
+ * #nih_main_init_gettext and wraps #nih_main_init_full
  * passing values set by Autoconf AC_INIT and AC_COPYRIGHT macros.
  **/
 #ifndef PACKAGE_COPYRIGHT
 # define PACKAGE_COPYRIGHT NULL
-#endif
+#endif /* PACKAGE_COPYRIGHT */
 #define nih_main_init(argv0) \
-	nih_main_init_full (argv0, PACKAGE_NAME, PACKAGE_VERSION, \
-			    PACKAGE_BUGREPORT, PACKAGE_COPYRIGHT)
+	do { \
+		nih_main_init_gettext (); \
+		nih_main_init_full (argv0, PACKAGE_NAME, PACKAGE_VERSION, \
+				    PACKAGE_BUGREPORT, PACKAGE_COPYRIGHT); \
+	} while (0);
 
 
 NIH_BEGIN_EXTERN

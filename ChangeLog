@@ -1,5 +1,15 @@
 2006-08-18  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/main.h (nih_main_init_gettext): Macro that expands to the
+	usual gettext initialisation spiel if ENABLE_NLS is set, or nothing
+	if not.
+	(nih_main_init): Expand nih_main_init_gettext as well, we almost
+	always want to do that, after all.
+	* nih/macros.h: Include locale.h if ENABLE_NLS is set, as that
+	contains setlocale, amongst other things.
+	* nih/tests/test_main.c (test_init_gettext): Check the macro does
+	the right things.
+
 	* nih/io.h (NihIoCb): Rename to NihIoWatcher.
 	(NihIoReadCb): Rename to NihIoReader.
 	(NihIoCloseCb): Rename to NihIoCloseHandler.

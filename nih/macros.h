@@ -73,11 +73,13 @@
 /* Make gettext friendlier */
 #if ENABLE_NLS
 # include <libintl.h>
+# include <locale.h>
+
 # define _(_str)  gettext (_str)
 # define N_(_str) (_str)
-#else
+#else /* ENABLE_NLS */
 # define _(_str)  (_str)
 # define N_(_str) (_str)
-#endif
+#endif /* ENABLE_NLS */
 
 #endif /* NIH_MACROS_H */

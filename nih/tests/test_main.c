@@ -33,6 +33,32 @@
 
 
 int
+test_init_gettext (void)
+{
+	char *ptr;
+	int   ret = 0;
+
+	printf ("Testing nih_main_init_gettext()\n");
+	nih_main_init_gettext();
+
+	/* PACKAGE_NAME should be bound to LOCALEDIR */
+	ptr = bindtextdomain (PACKAGE_NAME, NULL);
+	if (strcmp (ptr, LOCALEDIR)) {
+		printf ("BAD: text domain not bound to where we expected.\n");
+		ret = 1;
+	}
+
+	/* Text domain should be PACKAGENAME */
+	ptr = textdomain (NULL);
+	if (strcmp (ptr, PACKAGE_NAME)) {
+		printf ("BAD: text domain wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	return ret;
+}
+
+int
 test_init (void)
 {
 	int ret = 0;
@@ -395,6 +421,7 @@ main (int   argc,
 {
 	int ret = 0;
 
+	ret |= test_init_gettext ();
 	ret |= test_init ();
 	ret |= test_package_string ();
 	ret |= test_suggest_help ();

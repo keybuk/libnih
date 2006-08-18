@@ -1,3 +1,11 @@
+need the initial gettext setup function
+
+option parsing
+
+inotify support
+
+
+
 allocator/slab module
 restore list_entry code somewhere else
 
@@ -9,4 +17,3 @@ tree? (binary and n-ary)
   a little ineffeficient for binary, though
 - need a comparison function
 
-option parsing

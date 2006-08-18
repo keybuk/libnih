@@ -1,5 +1,7 @@
 2006-08-18  Scott James Remnant  <scott@netsplit.com>
 
+	* TODO: Update.
+
 	* nih/main.h (nih_main_init_gettext): Macro that expands to the
 	usual gettext initialisation spiel if ENABLE_NLS is set, or nothing
 	if not.

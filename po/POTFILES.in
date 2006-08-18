@@ -1,1 +1,12 @@
 # List of source files which contain translatable strings.
+nih/alloc.c
+nih/child.c
+nih/error.c
+nih/hash.c
+nih/io.c
+nih/list.c
+nih/logging.c
+nih/main.c
+nih/signal.c
+nih/string.c
+nih/timer.c

@@ -10,3 +10,5 @@ nih/main.c
 nih/signal.c
 nih/string.c
 nih/timer.c
+
+nih/errors.h

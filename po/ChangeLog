@@ -1,5 +1,7 @@
 2006-08-18  Scott James Remnant  <scott@netsplit.com>
 
+	* POTFILES.in: errors.h can have translatable strings.
+
 	* POTFILES.in: Add the list of current source files.
 
 2005-08-21  Scott James Remnant  <scott@netsplit.com>

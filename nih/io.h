@@ -45,54 +45,63 @@ typedef struct nih_io_watch NihIoWatch;
 typedef struct nih_io       NihIo;
 
 /**
- * NihIoCb:
- * @data: data pointer given with callback,
+ * NihIoWatcher:
+ * @data: data pointer given when registered,
  * @watch: #NihIoWatch for which an event occurred,
  * @events: events that occurred.
  *
- * I/O callback functions are called whenever an event occurs on a file
- * descriptor or socket being watched by an #NihIoWatch.
+ * An I/O watcher is a function that is called whenever an event occurs
+ * on a file descriptor or socket being watched.  It is safe for the
+ * watcher to remove the watch during the call.
  **/
-typedef void (*NihIoCb) (void *, NihIoWatch *, NihIoEvents);
+typedef void (*NihIoWatcher) (void *, NihIoWatch *, NihIoEvents);
 
 /**
- * NihIoReadCb:
- * @data: data pointer given with callback,
+ * NihIoReader:
+ * @data: data pointer given when registered,
  * @io: #NihIo with data to be read,
  * @buf: buffer data is available in,
  * @len: bytes in @buf.
  *
- * I/O read callback functions are called whenever there is new data in the
- * receive buffer of an #NihIo object.
+ * An I/O reader is a function that is called whenever new data has been
+ * received on a file descriptor or socket and placed into the receive
+ * buffer.
+ *
+ * The function need not clear the buffer, it is entirely permitted for the
+ * data to be left there; when further data arrives, the buffer will be
+ * extended and the reader called again.
  **/
-typedef void (*NihIoReadCb) (void *, NihIo *, const char *, size_t);
+typedef void (*NihIoReader) (void *, NihIo *, const char *, size_t);
 
 /**
- * NihIoCloseCb:
- * @data: data pointer given with callback,
+ * NihIoCloseHandler:
+ * @data: data pointer given when registered.
  * @io: #NihIo that closed.
  *
- * I/O close callback functions are called when the remote end of the
- * associated file descriptor is closed.
+ * An I/O close handler is a function that is called when the remote end
+ * of a file descriptor or socket is closed and data can no longer be
+ * read from it.
  *
- * This function should take appropriate action, which may include freeing
- * the #NihIo structure and closing the socket.
+ * It should take appropriate action, which may include closing the
+ * file descriptor and freeing the structure.  It is safe for the
+ * close handler to do this.
  **/
-typedef void (*NihIoCloseCb) (void *, NihIo *);
+typedef void (*NihIoCloseHandler) (void *, NihIo *);
 
 /**
- * NihIoErrorCb:
- * @data: data pointer given with callback,
+ * NihIoErrorHandler:
+ * @data: data pointer given when registered,
  * @io: #NihIo that caused the error.
  *
- * I/O error callback functions are called when an error was raised while
- * processing the file descriptor.  The error can be obtained using
- * #nih_error_get.
+ * An I/O error handler is a function that is called to handle an error
+ * raise while reading from the file descriptor or socket.  The error
+ * itself can be obtained using #nih_error_get as usual.
  *
- * This function should take appropriate action, which may include freeing
- * the #NihIo structure and closing the socket.
+ * It should take appropriate action, which may include closing the
+ * file descriptor and freeing the structure.  It is safe for the
+ * error handler to do this.
  **/
-typedef void (*NihIoErrorCb) (void *, NihIo *);
+typedef void (*NihIoErrorHandler) (void *, NihIo *);
 
 
 /**
@@ -100,8 +109,8 @@ typedef void (*NihIoErrorCb) (void *, NihIo *);
  * @entry: list header,
  * @fd: file descriptor,
  * @events: events to watch for,
- * @callback: function called when @events occur on @fd,
- * @data: pointer passed to @callback.
+ * @watcher: function called when @events occur on @fd,
+ * @data: pointer passed to @watcher.
  *
  * This structure represents the most basic kind of I/O handling, a watch
  * on a file descriptor or socket that causes a function to be called
@@ -111,12 +120,12 @@ typedef void (*NihIoErrorCb) (void *, NihIo *);
  * as they are held in a list internally.
  **/
 struct nih_io_watch {
-	NihList      entry;
-	int          fd;
-	NihIoEvents  events;
+	NihList       entry;
+	int           fd;
+	NihIoEvents   events;
 
-	NihIoCb      callback;
-	void        *data;
+	NihIoWatcher  watcher;
+	void         *data;
 };
 
 /**
@@ -139,10 +148,10 @@ typedef struct nih_io_buffer {
  * @watch: associated file descriptor watch,
  * @send_buf: buffer that pools data to be sent,
  * @recv_buf: buffer that pools data received,
- * @read_cb: function called when new data in @recv_buf,
- * @close_cb: function called when socket closes,
- * @error_cb: function called when an error occurs,
- * @data: pointer passed to callbacks,
+ * @reader: function called when new data in @recv_buf,
+ * @close_handler: function called when socket closes,
+ * @error_handler: function called when an error occurs,
+ * @data: pointer passed to functions,
  * @shutdown: TRUE if the structure should be freed once the buffers are empty.
  *
  * This structure implements more featureful I/O handling than provided by
@@ -159,23 +168,23 @@ typedef struct nih_io_buffer {
  * or processed at your leisure.
  **/
 struct nih_io {
-	NihIoWatch   *watch;
-	NihIoBuffer  *send_buf;
-	NihIoBuffer  *recv_buf;
+	NihIoWatch        *watch;
+	NihIoBuffer       *send_buf;
+	NihIoBuffer       *recv_buf;
 
-	NihIoReadCb   read_cb;
-	NihIoCloseCb  close_cb;
-	NihIoErrorCb  error_cb;
-	void         *data;
+	NihIoReader        reader;
+	NihIoCloseHandler  close_handler;
+	NihIoErrorHandler  error_handler;
+	void              *data;
 
-	int           shutdown;
+	int                shutdown;
 };
 
 
 NIH_BEGIN_EXTERN
 
 NihIoWatch * nih_io_add_watch     (void *parent, int fd, NihIoEvents events,
-				   NihIoCb callback, void *data);
+				   NihIoWatcher watcher, void *data);
 
 void         nih_io_select_fds    (int *nfds, fd_set *readfds,
 				   fd_set *writefds, fd_set *exceptfds);
@@ -194,9 +203,10 @@ int          nih_io_buffer_push   (NihIoBuffer *buffer, const char *str,
 				   size_t len);
 
 
-NihIo *      nih_io_reopen        (void *parent, int fd, NihIoReadCb read_cb,
-				   NihIoCloseCb close_cb,
-				   NihIoErrorCb error_cb, void *data);
+NihIo *      nih_io_reopen        (void *parent, int fd, NihIoReader read_er,
+				   NihIoCloseHandler close_handler,
+				   NihIoErrorHandler error_handler,
+				   void *data);
 void         nih_io_shutdown      (NihIo *io);
 void         nih_io_close         (NihIo *io);
 

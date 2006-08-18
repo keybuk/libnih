@@ -37,15 +37,15 @@
 #include <nih/error.h>
 
 
-static int callback_called = 0;
+static int watcher_called = 0;
 static void *last_data = NULL;
 static NihIoWatch *last_watch = NULL;
 static NihIoEvents last_events = 0;
 
 static void
-my_callback (void *data, NihIoWatch *watch, NihIoEvents events)
+my_watcher (void *data, NihIoWatch *watch, NihIoEvents events)
 {
-	callback_called++;
+	watcher_called++;
 	last_data = data;
 	last_watch = watch;
 	last_events = events;
@@ -60,7 +60,7 @@ test_add_watch (void)
 	printf ("Testing nih_io_add_watch()\n");
 	assert (pipe (fds) == 0);
 	watch = nih_io_add_watch (NULL, fds[0], NIH_IO_READ,
-				  my_callback, &ret);
+				  my_watcher, &ret);
 
 	/* File descriptor should be that given */
 	if (watch->fd != fds[0]) {
@@ -70,19 +70,19 @@ test_add_watch (void)
 
 	/* Events mask should be that given */
 	if (watch->events != NIH_IO_READ) {
-		printf ("BAD: callback events set incorrectly.\n");
+		printf ("BAD: watcher events set incorrectly.\n");
 		ret = 1;
 	}
 
-	/* Callback function should be that given */
-	if (watch->callback != my_callback) {
-		printf ("BAD: callback function set incorrectly.\n");
+	/* Watcher function should be that given */
+	if (watch->watcher != my_watcher) {
+		printf ("BAD: watcher function set incorrectly.\n");
 		ret = 1;
 	}
 
-	/* Callback data should be that given */
+	/* Watcher data should be that given */
 	if (watch->data != &ret) {
-		printf ("BAD: callback data set incorrectly.\n");
+		printf ("BAD: watcher data set incorrectly.\n");
 		ret = 1;
 	}
 
@@ -105,11 +105,11 @@ test_select_fds (void)
 	printf ("Testing nih_io_select_fds()\n");
 	assert (pipe (fds) == 0);
 	watch1 = nih_io_add_watch (NULL, fds[0], NIH_IO_READ,
-				   my_callback, &ret);
+				   my_watcher, &ret);
 	watch2 = nih_io_add_watch (NULL, fds[1], NIH_IO_WRITE,
-				   my_callback, &ret);
+				   my_watcher, &ret);
 	watch3 = nih_io_add_watch (NULL, fds[0], NIH_IO_EXCEPT,
-				   my_callback, &ret);
+				   my_watcher, &ret);
 
 	nfds = 0;
 	FD_ZERO (&readfds);
@@ -174,26 +174,26 @@ test_handle_fds (void)
 	printf ("Testing nih_io_handle_fds()\n");
 	assert (pipe (fds) == 0);
 	watch1 = nih_io_add_watch (NULL, fds[0], NIH_IO_READ,
-				   my_callback, &ret);
+				   my_watcher, &ret);
 	watch2 = nih_io_add_watch (NULL, fds[1], NIH_IO_WRITE,
-				   my_callback, &ret);
+				   my_watcher, &ret);
 	watch3 = nih_io_add_watch (NULL, fds[0], NIH_IO_EXCEPT,
-				   my_callback, &ret);
+				   my_watcher, &ret);
 
 	FD_ZERO (&readfds);
 	FD_ZERO (&writefds);
 	FD_ZERO (&exceptfds);
 
-	callback_called = 0;
+	watcher_called = 0;
 	last_data = NULL;
 	last_watch = NULL;
 	last_events = 0;
 	FD_SET (watch1->fd, &readfds);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	/* Callback should be called just once */
-	if (callback_called != 1) {
-		printf ("BAD: callback called incorrect number of times.\n");
+	/* Watcher should be called just once */
+	if (watcher_called != 1) {
+		printf ("BAD: watcher called incorrect number of times.\n");
 		ret = 1;
 	}
 
@@ -216,7 +216,7 @@ test_handle_fds (void)
 	}
 
 
-	callback_called = 0;
+	watcher_called = 0;
 	last_data = NULL;
 	last_watch = NULL;
 	last_events = 0;
@@ -224,9 +224,9 @@ test_handle_fds (void)
 	FD_SET (watch3->fd, &exceptfds);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	/* Callback should be called just once */
-	if (callback_called != 1) {
-		printf ("BAD: callback called incorrect number of times.\n");
+	/* Watcher should be called just once */
+	if (watcher_called != 1) {
+		printf ("BAD: watcher called incorrect number of times.\n");
 		ret = 1;
 	}
 
@@ -249,14 +249,14 @@ test_handle_fds (void)
 	}
 
 
-	callback_called = 0;
+	watcher_called = 0;
 	FD_ZERO (&exceptfds);
 	FD_SET (watch2->fd, &exceptfds);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	/* Callback should not be called */
-	if (callback_called != 0) {
-		printf ("BAD: callback called incorrect number of times.\n");
+	/* Watcher should not be called */
+	if (watcher_called != 0) {
+		printf ("BAD: watcher called incorrect number of times.\n");
 		ret = 1;
 	}
 
@@ -590,7 +590,7 @@ static const char *last_str = NULL;
 static size_t last_len = 0;
 
 static void
-my_read_cb (void       *data,
+my_reader (void       *data,
 	    NihIo      *io,
 	    const char *str,
 	    size_t      len)
@@ -602,7 +602,7 @@ my_read_cb (void       *data,
 }
 
 static void
-my_close_cb (void  *data,
+my_close_handler (void  *data,
 	     NihIo *io)
 {
 	last_data = data;
@@ -610,7 +610,7 @@ my_close_cb (void  *data,
 }
 
 static void
-my_error_cb (void  *data,
+my_error_handler (void  *data,
 	     NihIo *io)
 {
 	last_data = data;
@@ -631,30 +631,30 @@ test_reopen (void)
 	assert ((flags = fcntl (fds[0], F_GETFL)) >= 0);
 	assert (! (flags & O_NONBLOCK));
 
-	io = nih_io_reopen (NULL, fds[0], my_read_cb, my_close_cb, my_error_cb,
+	io = nih_io_reopen (NULL, fds[0], my_reader, my_close_handler, my_error_handler,
 			    &ret);
 
-	/* Read callback should be set */
-	if (io->read_cb != my_read_cb) {
-		printf ("BAD: read callback set incorrectly.\n");
+	/* Reader should be set */
+	if (io->reader != my_reader) {
+		printf ("BAD: reader set incorrectly.\n");
 		ret = 1;
 	}
 
-	/* Read callback should be set */
-	if (io->close_cb != my_close_cb) {
-		printf ("BAD: close callback set incorrectly.\n");
+	/* Close handler should be set */
+	if (io->close_handler != my_close_handler) {
+		printf ("BAD: close handler set incorrectly.\n");
 		ret = 1;
 	}
 
-	/* Error callback should be set */
-	if (io->error_cb != my_error_cb) {
-		printf ("BAD: error callback set incorrectly.\n");
+	/* Error handler should be set */
+	if (io->error_handler != my_error_handler) {
+		printf ("BAD: error handler set incorrectly.\n");
 		ret = 1;
 	}
 
 	/* Data should be set */
 	if (io->data != &ret) {
-		printf ("BAD: callback data set incorrectly.\n");
+		printf ("BAD: data pointer set incorrectly.\n");
 		ret = 1;
 	}
 
@@ -797,15 +797,15 @@ test_close (void)
 
 	printf ("...with open file descriptor\n");
 	assert (pipe (fds) == 0);
-	io = nih_io_reopen (NULL, fds[0], NULL, NULL, my_error_cb, &ret);
+	io = nih_io_reopen (NULL, fds[0], NULL, NULL, my_error_handler, &ret);
 	nih_alloc_set_destructor (io, destructor_called);
 	free_called = 0;
 	error_called = 0;
 	nih_io_close (io);
 
-	/* Error callback should not be called */
+	/* Error handler should not be called */
 	if (error_called) {
-		printf ("BAD: error callback called unexpectedly.\n");
+		printf ("BAD: error handler called unexpectedly.\n");
 		ret = 1;
 	}
 
@@ -827,7 +827,7 @@ test_close (void)
 
 	printf ("...with closed file descriptor\n");
 	assert (pipe (fds) == 0);
-	io = nih_io_reopen (NULL, fds[0], NULL, NULL, my_error_cb, &ret);
+	io = nih_io_reopen (NULL, fds[0], NULL, NULL, my_error_handler, &ret);
 	nih_alloc_set_destructor (io, destructor_called);
 	free_called = 0;
 	error_called = 0;
@@ -836,13 +836,13 @@ test_close (void)
 	close (fds[0]);
 	nih_io_close (io);
 
-	/* Error callback should have been called */
+	/* Error handler should have been called */
 	if (! error_called) {
-		printf ("BAD: error callback wasn't called.\n");
+		printf ("BAD: error handler wasn't called.\n");
 		ret = 1;
 	}
 
-	/* Error callback should have been passed data */
+	/* Error handler should have been passed data */
 	if (last_data != &ret) {
 		printf ("BAD: data pointer wasn't what we expected.\n");
 		ret = 1;
@@ -870,7 +870,7 @@ test_close (void)
 
 
 int
-test_cb (void)
+test_watcher (void)
 {
 	NihIo  *io;
 	FILE   *output;
@@ -878,11 +878,11 @@ test_cb (void)
 	fd_set  readfds, writefds, exceptfds;
 	int     ret = 0, fds[2], flags;
 
-	printf ("Testing nih_io_cb()\n");
+	printf ("Testing nih_io_watcher()\n");
 
 	printf ("...with data to read\n");
 	assert (pipe (fds) == 0);
-	io = nih_io_reopen (NULL, fds[0], my_read_cb, my_close_cb, my_error_cb,
+	io = nih_io_reopen (NULL, fds[0], my_reader, my_close_handler, my_error_handler,
 			    &ret);
 
 	assert (write (fds[1], "this is a test", 14) == 14);
@@ -896,9 +896,9 @@ test_cb (void)
 	last_len = 0;
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	/* Our read function should have been called */
+	/* Our reader should have been called */
 	if (! read_called) {
-		printf ("BAD: read callback wasn't called.\n");
+		printf ("BAD: reader wasn't called.\n");
 		ret = 1;
 	}
 
@@ -943,7 +943,7 @@ test_cb (void)
 
 	/* Our read function should have been called */
 	if (! read_called) {
-		printf ("BAD: read callback wasn't called.\n");
+		printf ("BAD: reader wasn't called.\n");
 		ret = 1;
 	}
 
@@ -990,7 +990,7 @@ test_cb (void)
 
 	/* Our read function should have been called */
 	if (! read_called) {
-		printf ("BAD: read callback wasn't called.\n");
+		printf ("BAD: reader wasn't called.\n");
 		ret = 1;
 	}
 
@@ -1019,9 +1019,9 @@ test_cb (void)
 		ret = 1;
 	}
 
-	/* Close callback should have also been called */
+	/* Close handler should have also been called */
 	if (! close_called) {
-		printf ("BAD: read callback wasn't called.\n");
+		printf ("BAD: close handler wasn't called.\n");
 		ret = 1;
 	}
 
@@ -1043,7 +1043,7 @@ test_cb (void)
 
 	/* Our read function should have been called */
 	if (! read_called) {
-		printf ("BAD: read callback wasn't called.\n");
+		printf ("BAD: reader wasn't called.\n");
 		ret = 1;
 	}
 
@@ -1072,9 +1072,9 @@ test_cb (void)
 		ret = 1;
 	}
 
-	/* Error callback should have also been called */
+	/* Error handler should have also been called */
 	if (! error_called) {
-		printf ("BAD: error callback wasn't called.\n");
+		printf ("BAD: error handler wasn't called.\n");
 		ret = 1;
 	}
 
@@ -1096,10 +1096,10 @@ test_cb (void)
 	nih_free (io);
 
 
-	printf ("...with no close callback\n");
+	printf ("...with no close handler\n");
 	assert (pipe (fds) == 0);
 	FD_ZERO (&readfds);
-	io = nih_io_reopen (NULL, fds[0], my_read_cb, NULL, NULL, &ret);
+	io = nih_io_reopen (NULL, fds[0], my_reader, NULL, NULL, &ret);
 	nih_alloc_set_destructor (io, destructor_called);
 	assert (close (fds[1]) == 0);
 	free_called = 0;
@@ -1120,10 +1120,10 @@ test_cb (void)
 	}
 
 
-	printf ("...with no error callback\n");
+	printf ("...with no error handler\n");
 	assert (pipe (fds) == 0);
 	FD_ZERO (&readfds);
-	io = nih_io_reopen (NULL, fds[0], my_read_cb, NULL, NULL, &ret);
+	io = nih_io_reopen (NULL, fds[0], my_reader, NULL, NULL, &ret);
 	nih_alloc_set_destructor (io, destructor_called);
 	assert (close (fds[0]) == 0);
 	assert (close (fds[1]) == 0);
@@ -1149,7 +1149,7 @@ test_cb (void)
 	output = tmpfile ();
 	FD_ZERO (&readfds);
 	io = nih_io_reopen (NULL, fileno (output), NULL,
-			    my_close_cb, my_error_cb, &ret);
+			    my_close_handler, my_error_handler, &ret);
 	nih_io_printf (io, "this is a test\n");
 	FD_SET (fileno (output), &writefds);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
@@ -1204,9 +1204,9 @@ test_cb (void)
 	FD_SET (fds[0], &readfds);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	/* Error callback should have been called */
+	/* Error handler should have been called */
 	if (! error_called) {
-		printf ("BAD: error callback was not called.\n");
+		printf ("BAD: error handler was not called.\n");
 		ret = 1;
 	}
 
@@ -1588,7 +1588,7 @@ main (int   argc,
 	ret |= test_reopen ();
 	ret |= test_shutdown ();
 	ret |= test_close ();
-	ret |= test_cb ();
+	ret |= test_watcher ();
 	ret |= test_read ();
 	ret |= test_write ();
 	ret |= test_get ();

@@ -48,7 +48,7 @@
 
 /* Prototypes for static functions */
 static inline void nih_io_buffer_shrink (NihIoBuffer *buffer, size_t len);
-static void        nih_io_cb            (NihIo *io, NihIoWatch *watch,
+static void        nih_io_watcher       (NihIo *io, NihIoWatch *watch,
 					 NihIoEvents events);
 static void        nih_io_closed        (NihIo *io);
 static void        nih_io_error         (NihIo *io);
@@ -80,11 +80,11 @@ nih_io_init (void)
  * @parent: parent of watch,
  * @fd: file descriptor or socket to watch,
  * @events: events to watch for,
- * @callback: function to call when @events occur on @fd,
- * @data: pointer to pass to @callback.
+ * @watcher: function to call when @events occur on @fd,
+ * @data: pointer to pass to @watcher.
  *
- * Adds @fd to the list of file descriptors to watch, when any of @events
- * occur on the socket, @callback will be called.  @events is a bit mask
+ * Adds @fd to the list of file descriptors and sockets to watch, when any
+ * of @events occur @watcher will be called.  @events is a bit mask
  * of the different events we care about.
  *
  * This is the simplest form of watch and satisfies most purposes.
@@ -96,16 +96,16 @@ nih_io_init (void)
  * Returns: the watch structure, or %NULL if insufficient memory.
  **/
 NihIoWatch *
-nih_io_add_watch (void        *parent,
-		  int          fd,
-		  NihIoEvents  events,
-		  NihIoCb      callback,
-		  void        *data)
+nih_io_add_watch (void         *parent,
+		  int           fd,
+		  NihIoEvents   events,
+		  NihIoWatcher  watcher,
+		  void         *data)
 {
 	NihIoWatch *watch;
 
 	nih_assert (fd >= 0);
-	nih_assert (callback != NULL);
+	nih_assert (watcher != NULL);
 
 	nih_io_init ();
 
@@ -119,7 +119,7 @@ nih_io_add_watch (void        *parent,
 	watch->fd = fd;
 	watch->events = events;
 
-	watch->callback = callback;
+	watch->watcher = watcher;
 	watch->data = data;
 
 	nih_list_add (io_watches, &watch->entry);
@@ -178,9 +178,9 @@ nih_io_select_fds (int    *nfds,
  *
  * Receives arrays of fd_set structures which have been cleared of any
  * descriptors which haven't changed and iterates the watch list calling
- * the appropriate callbacks.
+ * the appropriate functions.
  *
- * It is safe for callbacks to remove the watch during their call.
+ * It is safe for watches to remove the watch during their call.
  **/
 void
 nih_io_handle_fds (fd_set *readfds,
@@ -212,7 +212,7 @@ nih_io_handle_fds (fd_set *readfds,
 			events |= NIH_IO_EXCEPT;
 
 		if (events)
-			watch->callback (watch->data, watch, events);
+			watch->watcher (watch->data, watch, events);
 	}
 }
 
@@ -392,38 +392,38 @@ nih_io_buffer_push (NihIoBuffer *buffer,
  * nih_io_reopen:
  * @parent: parent pointer of new structure,
  * @fd: file descriptor to manage,
- * @read_cb: function to call when new data available,
- * @close_cb: function to call on close,
- * @error_cb: function to call on error,
- * @data: data to pass to callbacks.
+ * @reader: function to call when new data available,
+ * @close_handler: function to call on close,
+ * @error_handler: function to call on error,
+ * @data: data to pass to functions.
  *
  * This allocates and returns an #NihIo structure for managing an already
  * opened file descriptor.  The file descriptor is set to be non-blocking
  * if it hasn't already been and the SIGPIPE signal is set to be ignored.
  *
- * If @read_cb is given then all data is automatically read from the
+ * If @reader is given then all data is automatically read from the
  * file descriptor and stored in a buffer and this function is called
  * whenever there is new data available.  The function is under no
  * obligation to remove any data, it's perfectly valid to leave it in the
  * buffer until next time.
  *
- * If @close_cb is given then it is called whenever the remote end of the
+ * If @close_handler is given then it is called whenever the remote end of the
  * file descriptor is closed, otherwise the local end is closed and the
  * entire structure freed (which may be surprising to you).
  *
- * If @error_cb is given then any it is called whenever any errors are
- * raised, otherwise the same action as for @close_cb is taken (including
- * that callback).
+ * If @error_handler is given then any it is called whenever any errors are
+ * raised, otherwise the @close_handler is called or the same action taken
+ * if that is not given either.
  *
  * Returns: newly allocated structure, or %NULL if insufficient memory.
  **/
 NihIo *
-nih_io_reopen (void         *parent,
-	       int           fd,
-	       NihIoReadCb   read_cb,
-	       NihIoCloseCb  close_cb,
-	       NihIoErrorCb  error_cb,
-	       void         *data)
+nih_io_reopen (void              *parent,
+	       int                fd,
+	       NihIoReader        reader,
+	       NihIoCloseHandler  close_handler,
+	       NihIoErrorHandler  error_handler,
+	       void              *data)
 {
 	NihIo *io;
 
@@ -433,14 +433,14 @@ nih_io_reopen (void         *parent,
 	if (! io)
 		return NULL;
 
-	io->read_cb = read_cb;
-	io->close_cb = close_cb;
-	io->error_cb = error_cb;
+	io->reader = reader;
+	io->close_handler = close_handler;
+	io->error_handler = error_handler;
 	io->data = data;
 	io->shutdown = FALSE;
 
 	io->watch = nih_io_add_watch (io, fd, NIH_IO_READ,
-				      (NihIoCb) nih_io_cb, io);
+				      (NihIoWatcher) nih_io_watcher, io);
 	if (! io->watch)
 		goto error;
 
@@ -481,20 +481,20 @@ error:
 
 
 /**
- * nih_io_cb:
- * @io: structure with callbacks,
+ * nih_io_watcher:
+ * @io: #NihIo structure,
  * @watch: #NihIoWatch for which an event occurred,
  * @events: events that occurred.
  *
- * This is the callback function associated with all file descriptors
+ * This is the watcher function associated with all file descriptors
  * being managed by #NihIo.  It ensures that data is read from the file
- * descriptor into the recv buffer and the read_cb called, any data in
+ * descriptor into the recv buffer and the reader called, any data in
  * the send buffer is written to the socket and any errors are handled
  **/
 static void
-nih_io_cb (NihIo       *io,
-	   NihIoWatch  *watch,
-	   NihIoEvents  events)
+nih_io_watcher (NihIo       *io,
+		NihIoWatch  *watch,
+		NihIoEvents  events)
 {
 	nih_assert (io != NULL);
 	nih_assert (watch != NULL);
@@ -521,16 +521,16 @@ nih_io_cb (NihIo       *io,
 				io->recv_buf->len += len;
 		} while (len > 0);
 
-		/* Call the callback if we have any data in the buffer.
+		/* Call the reader if we have any data in the buffer.
 		 * This could be called simply because we're about to error,
 		 * but it means we give it one last chance to process.
 		 */
 		if (io->recv_buf->len) {
-			if (io->read_cb) {
-				io->read_cb (io->data, io, io->recv_buf->buf,
+			if (io->reader) {
+				io->reader (io->data, io, io->recv_buf->buf,
 					     io->recv_buf->len);
 			} else {
-				/* No read callback, just discard */
+				/* No reader, just discard */
 				nih_io_buffer_shrink (io->recv_buf,
 						      io->recv_buf->len);
 			}
@@ -591,7 +591,7 @@ nih_io_cb (NihIo       *io,
  * This function is called to deal with errors that have occurred on a
  * file descriptor being managed by #NihIo.
  *
- * Normally this just calls the error callback, or if not available, it
+ * Normally this just calls the error handler, or if not available, it
  * behaves as if the remote end was closed.
  **/
 static void
@@ -599,8 +599,8 @@ nih_io_error (NihIo *io)
 {
 	nih_assert (io != NULL);
 
-	if (io->error_cb) {
-		io->error_cb (io->data, io);
+	if (io->error_handler) {
+		io->error_handler (io->data, io);
 	} else {
 		NihError *err;
 
@@ -620,13 +620,13 @@ nih_io_error (NihIo *io)
  * This function is called when the local end of a file descriptor being
  * managed by #NihIo should be closed.  Usually this is because the remote
  * end has been closed (without error) but it can also be because no
- * error callback was given
+ * error handler was given
  *
- * Normally this just calls the close callback, or if not available, it
+ * Normally this just calls the close handler, or if not available, it
  * closes the file descriptor and frees the structure (which may be
  * surprising if you were hanging on to a pointer of it).
  *
- * Note that this can result in the error callback getting called if
+ * Note that this can result in the error handler getting called if
  * there's an error caught by closing the socket.
  **/
 static void
@@ -634,8 +634,8 @@ nih_io_closed (NihIo *io)
 {
 	nih_assert (io != NULL);
 
-	if (io->close_cb) {
-		io->close_cb (io->data, io);
+	if (io->close_handler) {
+		io->close_handler (io->data, io);
 	} else {
 		nih_io_close (io);
 	}
@@ -647,7 +647,7 @@ nih_io_closed (NihIo *io)
  *
  * Marks the #NihIo structure to be closed once the buffers have been
  * emptied, rather than immediately.  Closure is performed by calling
- * the close callback if given or #nih_io_close.
+ * the close handler if given or #nih_io_close.
  *
  * This is most useful to send a burst of data and discard the structure
  * once the data has been sent, without worrying about keeping track of
@@ -667,16 +667,18 @@ nih_io_shutdown (NihIo *io)
  *
  * Closes the file descriptor associated with an #NihIo structure and
  * frees the structure.  If an error is caught by closing the descriptor,
- * it is handled through the error callback rather than raised.
+ * it is the error handler is called instead of the error being raised;
+ * this allows you to group your error handling in one place rather than
+ * special-case close.
  **/
 void
 nih_io_close (NihIo *io)
 {
 	nih_assert (io != NULL);
 
-	if ((close (io->watch->fd) < 0) && io->error_cb) {
+	if ((close (io->watch->fd) < 0) && io->error_handler) {
 		nih_error_raise_system ();
-		io->error_cb (io->data, io);
+		io->error_handler (io->data, io);
 	}
 
 	nih_free (io);

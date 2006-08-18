@@ -1,5 +1,16 @@
 2006-08-18  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.h (NihIoCb): Rename to NihIoWatcher.
+	(NihIoReadCb): Rename to NihIoReader.
+	(NihIoCloseCb): Rename to NihIoCloseHandler.
+	(NihIoErrorCb): Rename to NihIoErrorHandler.
+	(NihIoWatch): Rename callback member to watcher.
+	(NihIo): Rename read_cb member to reader, close_cb member to
+	close_handler and error_cb member to error_handler.
+	* nih/io.c: Update to use new names.
+	(nih_io_cb): Rename to nih_io_watcher.
+	* nih/tests/test_io.c: Update to use new names.
+
 	* TODO: Update.
 
 2006-08-16  Scott James Remnant  <scott@netsplit.com>

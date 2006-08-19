@@ -104,7 +104,7 @@ struct nih_option {
 NIH_BEGIN_EXTERN
 
 char **nih_option_parser   (void *parent, int argc, char *argv[],
-			    NihOption *options);
+			    NihOption *options, int break_nonopt);
 
 int    nih_option_count    (NihOption *option, const char *arg);
 int    nih_option_quiet    (NihOption *option, const char *arg);

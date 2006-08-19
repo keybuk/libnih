@@ -1,5 +1,10 @@
 2006-08-19  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/option.c (nih_option_parser): Finish option processing when
+	the first non-option argument is found (command-mode)
+	* nih/option.h: Update.
+	* nih/tests/test_option.c (test_parser): Test command-mode.
+
 	* nih/option.c: Implement a simple, yet flexible option parser.
 	* nih/option.h: Typedefs, structures and prototypes.
 	* nih/libnih.h: Include option.h

@@ -105,7 +105,7 @@ test_parser (void)
 	argc = 0;
 	argv[argc++] = "ignored";
 	argv[argc] = NULL;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -123,7 +123,7 @@ test_parser (void)
 	argv[argc++] = "bar";
 	argv[argc++] = "baz";
 	argv[argc] = NULL;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* First array entry should be first argument */
 	if (strcmp (args[0], "foo")) {
@@ -158,7 +158,7 @@ test_parser (void)
 	argv[argc++] = "-d";
 	argv[argc] = NULL;
 	daemonise = 0;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -183,7 +183,7 @@ test_parser (void)
 	argv[argc] = NULL;
 	daemonise = 0;
 	recursive = 0;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -213,7 +213,7 @@ test_parser (void)
 	argv[argc] = NULL;
 	daemonise = 0;
 	recursive = 0;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -247,7 +247,7 @@ test_parser (void)
 	argv[argc] = NULL;
 	daemonise = 0;
 	recursive = 0;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* First array entry should be first argument */
 	if (strcmp (args[0], "foo")) {
@@ -288,6 +288,70 @@ test_parser (void)
 	nih_free (args);
 
 
+	printf ("...with command-mode short options and arguments\n");
+	argc = 0;
+	argv[argc++] = "ignored";
+	argv[argc++] = "foo";
+	argv[argc++] = "-d";
+	argv[argc++] = "bar";
+	argv[argc++] = "-R";
+	argv[argc++] = "baz";
+	argv[argc] = NULL;
+	daemonise = 0;
+	recursive = 0;
+	args = nih_option_parser (NULL, argc, argv, options, TRUE);
+
+	/* First array entry should be first argument */
+	if (strcmp (args[0], "foo")) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Second array entry should be first option */
+	if (strcmp (args[1], "-d")) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Third array entry should be second argument */
+	if (strcmp (args[2], "bar")) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Fourth array entry should be second option */
+	if (strcmp (args[3], "-R")) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Firth array entry should be third argument */
+	if (strcmp (args[4], "baz")) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Return value should be a NULL array */
+	if (args[5] != NULL) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Daemonise variable should not have been set */
+	if (daemonise) {
+		printf ("BAD: daemonise value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Recursive variable should have been set */
+	if (recursive) {
+		printf ("BAD: recursive value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	nih_free (args);
+
+
 	printf ("...with short options and terminator\n");
 	argc = 0;
 	argv[argc++] = "ignored";
@@ -300,7 +364,7 @@ test_parser (void)
 	argv[argc] = NULL;
 	daemonise = 0;
 	recursive = 0;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* First array entry should be first argument */
 	if (strcmp (args[0], "foo")) {
@@ -354,7 +418,7 @@ test_parser (void)
 	argv[argc++] = "foo";
 	argv[argc] = NULL;
 	filename = NULL;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -382,7 +446,7 @@ test_parser (void)
 	argv[argc++] = "baz";
 	argv[argc] = NULL;
 	filename = NULL;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* First array entry should be first argument */
 	if (strcmp (args[0], "bar")) {
@@ -426,7 +490,7 @@ test_parser (void)
 	daemonise = 0;
 	recursive = 0;
 	filename = NULL;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* First array entry should be previous to options */
 	if (strcmp (args[0], "wibble")) {
@@ -487,7 +551,7 @@ test_parser (void)
 	argv[argc] = NULL;
 	filename = NULL;
 	recursive = 0;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -519,7 +583,7 @@ test_parser (void)
 	filename = NULL;
 	daemonise = 0;
 	recursive = 0;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -558,7 +622,7 @@ test_parser (void)
 	argv[argc] = NULL;
 	filename = NULL;
 	option = NULL;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -589,7 +653,7 @@ test_parser (void)
 	argv[argc++] = "--wibble";
 	argv[argc] = NULL;
 	wibble = 0;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -614,7 +678,7 @@ test_parser (void)
 	argv[argc] = NULL;
 	wibble = 0;
 	recursive = 0;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -648,7 +712,7 @@ test_parser (void)
 	argv[argc] = NULL;
 	wibble = 0;
 	recursive = 0;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* First array entry should be first argument */
 	if (strcmp (args[0], "foo")) {
@@ -689,6 +753,70 @@ test_parser (void)
 	nih_free (args);
 
 
+	printf ("...with command-mode long options and arguments\n");
+	argc = 0;
+	argv[argc++] = "ignored";
+	argv[argc++] = "foo";
+	argv[argc++] = "--wibble";
+	argv[argc++] = "bar";
+	argv[argc++] = "--recursive";
+	argv[argc++] = "baz";
+	argv[argc] = NULL;
+	wibble = 0;
+	recursive = 0;
+	args = nih_option_parser (NULL, argc, argv, options, TRUE);
+
+	/* First array entry should be first argument */
+	if (strcmp (args[0], "foo")) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Second array entry should be first option */
+	if (strcmp (args[1], "--wibble")) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Third array entry should be second argument */
+	if (strcmp (args[2], "bar")) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Fourth array entry should be third argument */
+	if (strcmp (args[3], "--recursive")) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Third array entry should be third argument */
+	if (strcmp (args[4], "baz")) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Return value should be a NULL array */
+	if (args[5] != NULL) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Wibble variable should not have been set */
+	if (wibble) {
+		printf ("BAD: wibble value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Recursive variable should not have been set */
+	if (recursive) {
+		printf ("BAD: recursive value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	nih_free (args);
+
+
 	printf ("...with long options and terminator\n");
 	argc = 0;
 	argv[argc++] = "ignored";
@@ -701,7 +829,7 @@ test_parser (void)
 	argv[argc] = NULL;
 	wibble = 0;
 	recursive = 0;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* First array entry should be first argument */
 	if (strcmp (args[0], "foo")) {
@@ -755,7 +883,7 @@ test_parser (void)
 	argv[argc++] = "foo";
 	argv[argc] = NULL;
 	filename = NULL;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -782,7 +910,7 @@ test_parser (void)
 	argv[argc++] = "baz";
 	argv[argc] = NULL;
 	filename = NULL;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* First array entry should be first argument */
 	if (strcmp (args[0], "bar")) {
@@ -827,7 +955,7 @@ test_parser (void)
 	wibble = 0;
 	recursive = 0;
 	filename = NULL;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* First array entry should be previous to options */
 	if (strcmp (args[0], "wibble")) {
@@ -887,7 +1015,7 @@ test_parser (void)
 	argv[argc++] = "--filename=ROOT";
 	argv[argc] = NULL;
 	filename = NULL;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -914,7 +1042,7 @@ test_parser (void)
 	argv[argc] = NULL;
 	filename = NULL;
 	option = NULL;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -946,7 +1074,7 @@ test_parser (void)
 	argv[argc] = NULL;
 
 	dup2 (fileno (output), STDERR_FILENO);
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
@@ -988,7 +1116,7 @@ test_parser (void)
 	argv[argc] = NULL;
 
 	dup2 (fileno (output), STDERR_FILENO);
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
@@ -1030,7 +1158,7 @@ test_parser (void)
 	argv[argc] = NULL;
 
 	dup2 (fileno (output), STDERR_FILENO);
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
@@ -1071,7 +1199,7 @@ test_parser (void)
 	argv[argc++] = "-f";
 	argv[argc] = NULL;
 	dup2 (fileno (output), STDERR_FILENO);
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
@@ -1113,7 +1241,7 @@ test_parser (void)
 	argv[argc] = NULL;
 
 	dup2 (fileno (output), STDERR_FILENO);
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
@@ -1157,7 +1285,7 @@ test_parser (void)
 	was_called = 0;
 	last_option = NULL;
 	last_arg = NULL;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* First array entry should be first argument */
 	if (strcmp (args[0], "foo")) {
@@ -1201,7 +1329,7 @@ test_parser (void)
 	was_called = 0;
 	last_option = NULL;
 	last_arg = NULL;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -1238,7 +1366,7 @@ test_parser (void)
 	was_called = 0;
 	last_option = NULL;
 	last_arg = NULL;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -1276,7 +1404,7 @@ test_parser (void)
 	was_called = 0;
 	last_option = NULL;
 	last_arg = NULL;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* First array entry should be first argument */
 	if (strcmp (args[0], "foo")) {
@@ -1320,7 +1448,7 @@ test_parser (void)
 	was_called = 0;
 	last_option = NULL;
 	last_arg = NULL;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -1357,7 +1485,7 @@ test_parser (void)
 	was_called = 0;
 	last_option = NULL;
 	last_arg = NULL;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -1396,7 +1524,7 @@ test_parser (void)
 	last_arg = NULL;
 
 	dup2 (fileno (output), STDERR_FILENO);
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
@@ -1445,7 +1573,7 @@ test_parser (void)
 	last_arg = NULL;
 
 	dup2 (fileno (output), STDERR_FILENO);
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
@@ -1561,7 +1689,7 @@ test_quiet (void)
 	argv[argc] = NULL;
 	nih_log_set_priority (NIH_LOG_WARN);
 	logger_called = 0;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 	nih_info ("test message");
 	nih_warn ("test message");
 	nih_error ("test message");
@@ -1588,7 +1716,7 @@ test_quiet (void)
 	argv[argc] = NULL;
 	nih_log_set_priority (NIH_LOG_WARN);
 	logger_called = 0;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 	nih_info ("test message");
 	nih_warn ("test message");
 	nih_error ("test message");
@@ -1631,7 +1759,7 @@ test_verbose (void)
 	argv[argc] = NULL;
 	nih_log_set_priority (NIH_LOG_WARN);
 	logger_called = 0;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 	nih_info ("test message");
 	nih_warn ("test message");
 	nih_error ("test message");
@@ -1659,7 +1787,7 @@ test_verbose (void)
 	argv[argc] = NULL;
 	nih_log_set_priority (NIH_LOG_WARN);
 	logger_called = 0;
-	args = nih_option_parser (NULL, argc, argv, options);
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 	nih_info ("test message");
 	nih_warn ("test message");
 	nih_error ("test message");
@@ -1710,7 +1838,7 @@ test_version (void)
 	pid = fork ();
 	if (pid == 0) {
 		dup2 (fileno (output), STDOUT_FILENO);
-		nih_option_parser (NULL, argc, argv, options);
+		nih_option_parser (NULL, argc, argv, options, FALSE);
 		exit (1);
 	}
 
@@ -1791,7 +1919,7 @@ test_help (void)
 	pid = fork ();
 	if (pid == 0) {
 		dup2 (fileno (output), STDOUT_FILENO);
-		nih_option_parser (NULL, argc, argv, options);
+		nih_option_parser (NULL, argc, argv, options, FALSE);
 		exit (1);
 	}
 

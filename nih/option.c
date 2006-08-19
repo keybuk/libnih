@@ -111,7 +111,8 @@ static NihOption default_options[] = {
  * @parent: parent for returned arguments,
  * @argc: number of arguments,
  * @argv: command-line arguments,
- * @options: options to look for.
+ * @options: options to look for,
+ * @break_nonopt: stop processing options at first non-option argument.
  *
  * Parses the command-line arguments given in @argv looking for options
  * described in @options, or those built-in.  Options are handled according
@@ -119,7 +120,10 @@ static NihOption default_options[] = {
  * and arguments need not immediately follow the option that requires it.
  *
  * Remaining non-option arguments are placed into an array for processing
- * by the caller.
+ * by the caller.  If @break_nonopt is %FALSE then the first non-option
+ * argument concludes option processing and all subsequent options are
+ * considered to be ordinary arguments; this is most useful when the
+ * first argument should be a command.
  *
  * Errors are handled by printing a message to standard error.
  *
@@ -129,7 +133,8 @@ char **
 nih_option_parser (void      *parent,
 		   int        argc,
 		   char      *argv[],
-		   NihOption *options)
+		   NihOption *options,
+		   int        break_nonopt)
 {
 	NihOptionCtx ctx;
 
@@ -159,8 +164,11 @@ nih_option_parser (void      *parent,
 		arg = ctx.argv[ctx.arg];
 		if ((arg[0] != '-') || (ctx.optend && ctx.arg > ctx.optend)) {
 			/* Not an option */
-			if (ctx.arg > ctx.nonopt)
+			if (ctx.arg > ctx.nonopt) {
 				nih_option_add_arg (&ctx);
+				if (break_nonopt)
+					ctx.optend = ctx.arg;
+			}
 
 		} else if (arg[1] != '-') {
 			/* Short option */

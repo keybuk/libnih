@@ -1,4 +1,5 @@
-option parsing
+break at first non-option argument for command-handling
+
 
 inotify support
 

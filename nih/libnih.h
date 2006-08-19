@@ -30,6 +30,7 @@
 #include <nih/child.h>
 #include <nih/io.h>
 #include <nih/main.h>
+#include <nih/option.h>
 #include <nih/logging.h>
 #include <nih/error.h>
 #include <nih/errors.h>

@@ -1,5 +1,16 @@
 2006-08-19  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/option.c: Implement a simple, yet flexible option parser.
+	* nih/option.h: Typedefs, structures and prototypes.
+	* nih/libnih.h: Include option.h
+	* nih/tests/test_option.c: Test it all pretty thoroughly.
+	* nih/Makefile.am (libnih_la_SOURCES): Build and link option.c
+	(nihinclude_HEADERS): Install option.h
+	(TESTS): Run the option test cases
+	(test_option_SOURCES, test_option_LDFLAGS, test_option_LDADD):
+	Details for the option test case binary.
+	* TODO: Update.
+
 	* nih/string.c (nih_str_wrap): Implement a function to wrap a
 	string into the desired number of characters wide.
 	* nih/string.h: Update.

@@ -7,6 +7,7 @@ nih/io.c
 nih/list.c
 nih/logging.c
 nih/main.c
+nih/option.c
 nih/signal.c
 nih/string.c
 nih/timer.c

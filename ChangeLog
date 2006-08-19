@@ -1,3 +1,11 @@
+2006-08-19  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/string.c (nih_str_wrap): Implement a function to wrap a
+	string into the desired number of characters wide.
+	* nih/string.h: Update.
+	* nih/tests/test_string.c (test_str_wrap): Test the new function
+	to make sure it does the right things.
+
 2006-08-18  Scott James Remnant  <scott@netsplit.com>
 
 	* TODO: Update.

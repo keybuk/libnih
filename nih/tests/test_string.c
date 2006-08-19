@@ -427,6 +427,139 @@ test_strv_free (void)
 
 
 int
+test_str_wrap (void)
+{
+	char *str;
+	int   ret = 0;
+
+	printf ("Testing nih_str_wrap()\n");
+
+	printf ("...with no wrapping\n");
+	str = nih_str_wrap (NULL, "this is a test", 80, 0, 0);
+
+	/* Check returned string */
+	if (strcmp (str, "this is a test")) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	nih_free (str);
+
+
+	printf ("...with embedded newlines\n");
+	str = nih_str_wrap (NULL, "this is\na test", 80, 0, 0);
+
+	/* Check returned string */
+	if (strcmp (str, "this is\na test")) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	nih_free (str);
+
+
+	printf ("...with no wrapping and indent\n");
+	str = nih_str_wrap (NULL, "this is a test", 80, 2, 0);
+
+	/* Check returned string */
+	if (strcmp (str, "  this is a test")) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	nih_free (str);
+
+
+	printf ("...with embedded newlines and indent\n");
+	str = nih_str_wrap (NULL, "this is\na test", 80, 4, 2);
+
+	/* Check returned string */
+	if (strcmp (str, "    this is\n  a test")) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	nih_free (str);
+
+
+	printf ("...with simple wrapping\n");
+	str = nih_str_wrap (NULL, "this is an example of a string that will "
+			    "need wrapping to fit the line length we set",
+			    20, 0, 0);
+
+	/* Check returned string */
+	if (strcmp (str, ("this is an example\n"
+			  "of a string that\n"
+			  "will need wrapping\n"
+			  "to fit the line\n"
+			  "length we set"))) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	nih_free (str);
+
+
+	printf ("...with wrapping and indents\n");
+	str = nih_str_wrap (NULL, "this is an example of a string that will "
+			    "need wrapping to fit the line length we set",
+			    20, 4, 2);
+
+	/* Check returned string */
+	if (strcmp (str, ("    this is an\n"
+			  "  example of a\n"
+			  "  string that will\n"
+			  "  need wrapping to\n"
+			  "  fit the line\n"
+			  "  length we set"))) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	nih_free (str);
+
+
+	printf ("...with split inside word\n");
+	str = nih_str_wrap (NULL, ("this string is supercalifragilisticexpi"
+				   "alidocious even though the sound of it "
+				   "is something quite atrocious"), 30, 0, 0);
+
+	/* Check returned string */
+	if (strcmp (str, ("this string is\n"
+			  "supercalifragilisticexpialidoc\n"
+			  "ious even though the sound of\n"
+			  "it is something quite\n"
+			  "atrocious"))) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	nih_free (str);
+
+
+	printf ("...with split inside word and indents\n");
+	str = nih_str_wrap (NULL, ("this string is supercalifragilisticexpi"
+				   "alidocious even though the sound of it "
+				   "is something quite atrocious"), 30, 4, 2);
+
+	/* Check returned string */
+	if (strcmp (str, ("    this string is\n"
+			  "  supercalifragilisticexpialid\n"
+			  "  ocious even though the sound\n"
+			  "  of it is something quite\n"
+			  "  atrocious"))) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	nih_free (str);
+
+
+	return ret;
+}
+
+
+int
 main (int   argc,
       char *argv[])
 {
@@ -438,6 +571,7 @@ main (int   argc,
 	ret |= test_strndup ();
 	ret |= test_str_split ();
 	ret |= test_strv_free ();
+	ret |= test_str_wrap ();
 
 	return ret;
 }

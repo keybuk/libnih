@@ -44,6 +44,9 @@ char **nih_str_split (void *parent, const char *str, const char *delim,
 	__attribute__ ((warn_unused_result, malloc));
 void   nih_strv_free (char **strv);
 
+char * nih_str_wrap  (void *parent, const char *str, size_t len,
+		      size_t first_indent, size_t indent);
+
 NIH_END_EXTERN
 
 #endif /* NIH_STRING_H */

@@ -31,6 +31,7 @@
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
+#include <nih/logging.h>
 
 #include "string.h"
 
@@ -58,6 +59,8 @@ nih_sprintf (void       *parent,
 {
 	char    *str;
 	va_list  args;
+
+	nih_assert (format != NULL);
 
 	va_start (args, format);
 	str = nih_vsprintf (parent, format, args);
@@ -91,6 +94,8 @@ nih_vsprintf (void       *parent,
 	size_t   len;
 	va_list  args_copy;
 	char    *str;
+
+	nih_assert (format != NULL);
 
 	va_copy (args_copy, args);
 
@@ -128,8 +133,9 @@ nih_strdup (void       *parent,
 {
 	size_t len;
 
-	len = strlen (str);
+	nih_assert (str != NULL);
 
+	len = strlen (str);
 	return nih_strndup (parent, str, len);
 }
 
@@ -157,6 +163,8 @@ nih_strndup (void       *parent,
 	     size_t      len)
 {
 	char *dup;
+
+	nih_assert (str != NULL);
 
 	dup = nih_alloc (parent, len + 1);
 	if (! str)
@@ -195,6 +203,9 @@ nih_str_split (void       *parent,
 {
 	char **array;
 	int    i;
+
+	nih_assert (str != NULL);
+	nih_assert (delim != NULL);
 
 	i = 0;
 	array = nih_alloc (parent, sizeof (char *) * (i + 1));
@@ -252,4 +263,120 @@ nih_strv_free (char **strv)
 
 	for (s = strv; *s; s++)
 		free (*s);
+}
+
+
+/**
+ * nih_str_wrap:
+ * @parent: parent of returned string,
+ * @str: string to be wrapped,
+ * @len: length of line to fit into,
+ * @first_indent: indent for first line,
+ * @indent: indent for subsequent lines.
+ *
+ * Returns a newly allocated copy of @str with newlines inserted so no
+ * line is longer than @len characters (not including the newline).  Where
+ * possible, newlines replace existing whitespace characters so that words
+ * are not broken.
+ *
+ * The first line may be indented by an extra @first_indent characters, and
+ * subsequent lines may be intended by an extra @indent characters.  These
+ * are added to the string as whitespace characters.
+ *
+ * Returns: newly allocated string or %NULL if insufficient memory.
+ **/
+char *
+nih_str_wrap (void       *parent,
+	      const char *str,
+	      size_t      len,
+	      size_t      first_indent,
+	      size_t      indent)
+{
+	char   *txt;
+	size_t  txtlen, col, ls, i;
+
+	nih_assert (str != NULL);
+	nih_assert (len > 0);
+
+	txtlen = first_indent + strlen (str);
+	txt = nih_alloc (parent, txtlen + 1);
+	if (! txt)
+		return NULL;
+
+	memset (txt, ' ', first_indent);
+	memcpy (txt + first_indent, str, strlen (str) + 1);
+
+	col = ls = 0;
+	for (i = 0; i < txtlen; i++) {
+		int nl = 0;
+
+		if (strchr (" \t\r", txt[i])) {
+			/* Character is whitespace; convert to an ordinary
+			 * space and remember the position for next time.
+			 */
+			txt[i] = ' ';
+			ls = i;
+
+			/* If this doesn't go over the line length,
+			 * continue to the next character
+			 */
+			if (++col <= len)
+				continue;
+		} else if (txt[i] != '\n') {
+			/* Character is part of a word.  If this doesn't go
+			 * over the line length, continue to the next
+			 * character
+			 */
+			if (++col <= len)
+				continue;
+
+			/* Filled a line; if we marked a whitespace character
+			 * on this line, go back to that, otherwise we'll
+			 * need to add a newline to the string after this
+			 * character
+			 */
+			if (ls) {
+				i = ls;
+			} else {
+				nl = 1;
+			}
+		}
+
+		/* We need to insert a line break at this position, and
+		 * any indent that goes along with it
+		 */
+		if (indent | nl) {
+			char *new_txt;
+
+			/* Need to increase the size of the string in memory */
+			new_txt = nih_realloc (txt, parent,
+					       txtlen + indent + nl + 1);
+			if (! new_txt) {
+				nih_free (txt);
+				return NULL;
+			}
+			txt = new_txt;
+
+			/* Move up the existing characters, then replace
+			 * the gap with the indent
+			 */
+			memmove (txt + i + indent + 1, txt + i + 1 - nl,
+				 txtlen - i + nl);
+			memset (txt + i + 1, ' ', indent);
+			txtlen += indent + nl;
+		}
+
+		/* Replace the current character with a newline */
+		txt[i] = '\n';
+
+		/* Reset the current column and last seen whitespace index;
+		 * make sure we skip any indent as it's whitespace that doesn't
+		 * count
+		 */
+		i += indent;
+		col = indent;
+		ls = 0;
+	}
+
+	return txt;
 }

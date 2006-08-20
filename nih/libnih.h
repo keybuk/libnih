@@ -29,6 +29,7 @@
 #include <nih/signal.h>
 #include <nih/child.h>
 #include <nih/io.h>
+#include <nih/file.h>
 #include <nih/main.h>
 #include <nih/option.h>
 #include <nih/logging.h>

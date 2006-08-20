@@ -203,7 +203,7 @@ int          nih_io_buffer_push   (NihIoBuffer *buffer, const char *str,
 				   size_t len);
 
 
-NihIo *      nih_io_reopen        (void *parent, int fd, NihIoReader read_er,
+NihIo *      nih_io_reopen        (void *parent, int fd, NihIoReader reader,
 				   NihIoCloseHandler close_handler,
 				   NihIoErrorHandler error_handler,
 				   void *data);

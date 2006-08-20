@@ -1,3 +1,16 @@
+2006-08-21  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/file.c: Wrap the inotify syscalls with something a little
+	friendlier to deal with.
+	* nih/file.h: Typedefs, structures and prototypes.
+	* nih/libnih.h: Include file.h
+	* nih/io.h: Correct typo in argument name.
+	* nih/Makefile.am (libnih_la_SOURCES): Build and link file.c
+	(nihinclude_HEADERS): Install file.h
+	(TESTS): Build and run file test cases
+	(test_file_SOURCES, test_file_LDFLAGS, test_file_LDADD): Details
+	for file test case binary
+
 2006-08-19  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/option.c (nih_option_parser): Finish option processing when

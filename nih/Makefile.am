@@ -18,6 +18,7 @@ libnih_la_SOURCES = \
 	signal.c \
 	child.c \
 	io.c \
+	file.c \
 	main.c \
 	option.c \
 	logging.c \
@@ -47,6 +48,7 @@ nihinclude_HEADERS = \
 	signal.h \
 	child.h \
 	io.h \
+	file.h \
 	main.h \
 	option.h \
 	logging.h \
@@ -63,6 +65,7 @@ TESTS = \
 	test_signal \
 	test_child \
 	test_io \
+	test_file \
 	test_main \
 	test_option \
 	test_logging \
@@ -101,6 +104,10 @@ test_child_LDADD = libnih.la
 test_io_SOURCES = tests/test_io.c
 test_io_LDFLAGS = -static
 test_io_LDADD = libnih.la
+
+test_file_SOURCES = tests/test_file.c
+test_file_LDFLAGS = -static
+test_file_LDADD = libnih.la
 
 test_main_SOURCES = tests/test_main.c
 test_main_LDFLAGS = -static

@@ -245,12 +245,58 @@ test_add_watch (void)
 
 
 int
+test_map (void)
+{
+	FILE  *fd;
+	char   filename[24], *map;
+	size_t length;
+	int    ret = 0;
+
+	printf ("Testing nih_file_map()\n");
+	sprintf (filename, "/tmp/test_file.%d", getpid ());
+	unlink (filename);
+
+	fd = fopen (filename, "w");
+	fprintf (fd, "test\n");
+	fclose (fd);
+
+	length = 0;
+	map = nih_file_map (filename, O_RDONLY, &length);
+
+	/* Return value should not be NULL */
+	if (map == NULL) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Length should be 5 chars */
+	if (length != 5) {
+		printf ("BAD: map length wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Memory should contain file contents */
+	if (strncmp (map, "test\n", 5)) {
+		printf ("BAD: memory map wasn't what we expected.\n");
+		ret = 1;
+	}
+
+
+	printf ("Testing nih_file_unmap()\n");
+	nih_file_unmap (map, length);
+
+	return 0;
+}
+
+
+int
 main (int   argc,
       char *argv[])
 {
 	int ret = 0;
 
 	ret |= test_add_watch ();
+	ret |= test_map ();
 
 	return ret;
 }

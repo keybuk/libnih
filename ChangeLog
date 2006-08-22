@@ -1,3 +1,10 @@
+2006-08-22  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/file.c (nih_file_map, nih_file_unmap): Add an easier to use
+	wrapper around mmap() when we just want the file in memory.
+	* nih/file.h: Add prototypes.
+	* nih/tests/test_file.c (test_map): Test the functions.
+
 2006-08-21  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/file.c: Wrap the inotify syscalls with something a little

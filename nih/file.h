@@ -25,6 +25,8 @@
 #include <nih/macros.h>
 #include <nih/list.h>
 
+#include <fcntl.h>
+
 
 /* Predefine the typedefs as we use them in the callbacks */
 typedef struct nih_file_watch NihFileWatch;
@@ -88,6 +90,10 @@ NihFileWatch *nih_file_add_watch    (void *parent, const char *path,
 				     uint32_t events, NihFileWatcher watcher,
 				     void *data);
 int           nih_file_remove_watch (NihFileWatch *watch);
+
+void *        nih_file_map          (const char *path, int flags,
+				     size_t *length);
+int           nih_file_unmap        (void *map, size_t length);
 
 NIH_END_EXTERN
 

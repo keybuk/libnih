@@ -23,9 +23,13 @@
 # include <config.h>
 #endif /* HAVE_CONFIG_H */
 
-#include <sys/inotify.h>
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include <sys/ioctl.h>
+#include <sys/inotify.h>
 
+#include <fcntl.h>
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
@@ -223,4 +227,83 @@ nih_file_reader (void       *data,
 
 		nih_free (event);
 	}
+}
+
+
+/**
+ * nih_file_map:
+ * @path: path to open,
+ * @flags: open mode,
+ * @length: pointer to store file length.
+ *
+ * Opens the file at @path and maps it into memory, returning the mapped
+ * pointer and the length of the file (required to unmap it later).  The
+ * file is opened with the @flags given.
+ *
+ * Returns: memory mapped file or %NULL on raised error.
+ **/
+void *
+nih_file_map (const char *path,
+	      int         flags,
+	      size_t     *length)
+{
+	struct stat  statbuf;
+	char        *map;
+	int          fd, prot;
+
+	nih_assert (path != NULL);
+	nih_assert (length != NULL);
+
+	fd = open (path, flags);
+	if (fd < 0)
+		nih_return_system_error (NULL);
+
+	if (flags & O_RDONLY) {
+		prot = PROT_READ;
+	} else if (flags & O_WRONLY) {
+		prot = PROT_WRITE;
+	} else if (flags & O_RDWR) {
+		prot = PROT_READ | PROT_WRITE;
+	} else {
+		prot = PROT_NONE;
+	}
+
+	if (fstat (fd, &statbuf) < 0) {
+		nih_error_raise_system ();
+		close (fd);
+		return NULL;
+	}
+
+	*length = statbuf.st_size;
+
+	map = mmap (NULL, *length, prot, MAP_SHARED, fd, 0);
+	if (map == MAP_FAILED) {
+		nih_error_raise_system ();
+		close (fd);
+		return NULL;
+	}
+
+	close (fd);
+	return map;
+}
+
+/**
+ * nih_file_unmap:
+ * @map: memory mapped file,
+ * @length: length of file.
+ *
+ * Unmap a file previously mapped with #nih_file_map.
+ *
+ * Returns: zero on success, %NULL on raised error.
+ **/
+int
+nih_file_unmap (void   *map,
+		size_t  length)
+{
+	nih_assert (map != NULL);
+
+	if (munmap (map, length) < 0)
+		nih_return_system_error (-1);
+
+	return 0;
 }

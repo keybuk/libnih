@@ -280,6 +280,8 @@ test_poll (void)
 		ret = 1;
 	}
 
+	nih_free (watch1);
+
 	return ret;
 }
 

@@ -164,7 +164,7 @@ nih_file_remove_watch (NihFileWatch *watch)
 		nih_return_system_error (-1);
 	}
 
-	return nih_free (watch);
+	return nih_list_free (&watch->entry);
 }
 
 

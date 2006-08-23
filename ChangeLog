@@ -1,5 +1,10 @@
 2006-08-23  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/file.c (nih_file_remove_watch): Remove from the containing
+	list before freeing.
+	* nih/tests/test_file.c (my_watcher): Make sure we copy the name
+	as it will be freed by the time we get back to the test.
+
 	* nih/list.c (nih_list_free): Don't throw away the destructor
 	return value.
 

@@ -33,6 +33,7 @@
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
+#include <nih/string.h>
 #include <nih/list.h>
 #include <nih/io.h>
 #include <nih/file.h>
@@ -54,7 +55,7 @@ my_watcher (void         *data,
 	last_data = data;
 	last_watch = watch;
 	last_events = events;
-	last_name = name;
+	last_name = name ? nih_strdup (watch, name) : NULL;
 }
 
 
@@ -174,6 +175,7 @@ test_add_watch (void)
 		printf ("BAD: last name wasn't what we expected.\n");
 		ret = 1;
 	}
+
 
 	nih_file_remove_watch (watch);
 	unlink (filename);

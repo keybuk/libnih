@@ -96,7 +96,7 @@ NihList *     nih_list_new        (void);
 
 NihList *     nih_list_remove     (NihList *entry);
 int           nih_list_destructor (NihList *entry);
-void          nih_list_free       (NihList *entry);
+int           nih_list_free       (NihList *entry);
 
 NihList *     nih_list_add        (NihList *list, NihList *entry);
 NihList *     nih_list_add_after  (NihList *list, NihList *entry);

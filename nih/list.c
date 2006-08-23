@@ -149,14 +149,16 @@ nih_list_destructor (NihList *entry)
  * You must take care of freeing the data attached to the entry yourself
  * by either freeing it before calling this function or allocating it using
  * the list entry as the context.
+ *
+ * Returns: return value from destructor, or 0.
  **/
-void
+int
 nih_list_free (NihList *entry)
 {
 	nih_assert (entry != NULL);
 
 	nih_list_cut (entry);
-	nih_free (entry);
+	return nih_free (entry);
 }
 
 

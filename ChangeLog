@@ -1,5 +1,8 @@
 2006-08-23  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/list.c (nih_list_free): Don't throw away the destructor
+	return value.
+
 	* nih/tests/test_error.c: Further missing calls to nih_free
 
 	* nih/tests/test_alloc.c: Correct a few missing nih_free's

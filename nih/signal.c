@@ -126,8 +126,6 @@ nih_signal_set_default (int signum)
 	nih_assert (signum > 0);
 	nih_assert (signum < NUM_SIGNALS);
 
-	nih_signal_init ();
-
 	act.sa_handler = SIG_DFL;
 	act.sa_flags = 0;
 	if (signum != SIGALRM)
@@ -156,8 +154,6 @@ nih_signal_set_ignore (int signum)
 
 	nih_assert (signum > 0);
 	nih_assert (signum < NUM_SIGNALS);
-
-	nih_signal_init ();
 
 	act.sa_handler = SIG_IGN;
 	act.sa_flags = 0;

@@ -1,5 +1,8 @@
 2006-08-23  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/signal.c (nih_signal_set_default, nih_signal_set_ignore):
+	Don't initialise the signals list, there's no need.
+
 	* nih/tests/test_hash.c: Various missing calls to nih_free.
 
 	* nih/file.c (nih_file_remove_watch): Fix another wrong call to

@@ -631,8 +631,8 @@ test_reopen (void)
 	assert ((flags = fcntl (fds[0], F_GETFL)) >= 0);
 	assert (! (flags & O_NONBLOCK));
 
-	io = nih_io_reopen (NULL, fds[0], my_reader, my_close_handler, my_error_handler,
-			    &ret);
+	io = nih_io_reopen (NULL, fds[0], my_reader, my_close_handler,
+			    my_error_handler, &ret);
 
 	/* Reader should be set */
 	if (io->reader != my_reader) {
@@ -862,7 +862,6 @@ test_close (void)
 
 	nih_free (last_error);
 
-
 	close (fds[1]);
 
 	return ret;
@@ -882,8 +881,8 @@ test_watcher (void)
 
 	printf ("...with data to read\n");
 	assert (pipe (fds) == 0);
-	io = nih_io_reopen (NULL, fds[0], my_reader, my_close_handler, my_error_handler,
-			    &ret);
+	io = nih_io_reopen (NULL, fds[0], my_reader, my_close_handler,
+			    my_error_handler, &ret);
 
 	assert (write (fds[1], "this is a test", 14) == 14);
 	FD_ZERO (&readfds);
@@ -1039,6 +1038,7 @@ test_watcher (void)
 	last_data = NULL;
 	last_str = NULL;
 	last_len = 0;
+	last_error = NULL;
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
 	/* Our read function should have been called */
@@ -1225,7 +1225,6 @@ test_watcher (void)
 	nih_free (last_error);
 
 	nih_free (io);
-
 
 	return ret;
 }

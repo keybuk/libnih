@@ -1,5 +1,7 @@
 2006-08-23  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_string.c: Add missing free calls.
+
 	* nih/tests/test_io.c (test_watcher): Silence the error message.
 	* nih/tests/test_option.c (test_parser): Add some forgotten calls
 	to nih_free

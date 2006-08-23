@@ -85,6 +85,8 @@ test_sprintf (void)
 		ret = 1;
 	}
 
+	nih_free (str1);
+
 	return ret;
 }
 
@@ -155,6 +157,8 @@ test_vsprintf (void)
 		ret = 1;
 	}
 
+	nih_free (str1);
+
 	return ret;
 }
 
@@ -208,6 +212,8 @@ test_strdup (void)
 		printf ("BAD: parent incorrect.\n");
 		ret = 1;
 	}
+
+	nih_free (str1);
 
 	return ret;
 }
@@ -264,6 +270,8 @@ test_strndup (void)
 		ret = 1;
 	}
 
+	nih_free (str1);
+
 
 	printf ("...with smaller length than string\n");
 	str = nih_strndup (NULL, "something to test with", 9);
@@ -286,6 +294,8 @@ test_strndup (void)
 		ret = 1;
 	}
 
+	nih_free (str);
+
 
 	printf ("...with larger length than string\n");
 	str = nih_strndup (NULL, "small string", 20);
@@ -307,6 +317,8 @@ test_strndup (void)
 		printf ("BAD: parent incorrect.\n");
 		ret = 1;
 	}
+
+	nih_free (str);
 
 	return ret;
 }
@@ -353,6 +365,8 @@ test_str_split (void)
 		}
 	}
 
+	nih_free (array);
+
 
 	printf ("...with repeat\n");
 	array = nih_str_split (NULL, "this is  a\ttest", " \t", TRUE);
@@ -386,6 +400,8 @@ test_str_split (void)
 		}
 	}
 
+	nih_free (array);
+
 
 	printf ("...with empty string\n");
 	array = nih_str_split (NULL, "", " ", FALSE);
@@ -401,6 +417,8 @@ test_str_split (void)
 		printf ("BAD: nih_alloc was not used.\n");
 		ret = 1;
 	}
+
+	nih_free (array);
 
 	return ret;
 }
@@ -421,6 +439,7 @@ test_strv_free (void)
 
 	/* If it doesn't crash, it's a pass */
 	nih_strv_free (strv);
+	free (strv);
 
 	return ret;
 }

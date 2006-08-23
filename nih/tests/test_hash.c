@@ -38,13 +38,14 @@ typedef struct hash_entry {
 } HashEntry;
 
 static NihList *
-new_entry (const char *key)
+new_entry (void       *parent,
+	   const char *key)
 {
 	HashEntry *entry;
 
 	assert (key != NULL);
 
-	entry = nih_new (NULL, HashEntry);
+	entry = nih_new (parent, HashEntry);
 	assert (entry != NULL);
 
 	nih_list_init (&entry->list);
@@ -106,6 +107,8 @@ test_new (void)
 		ret = 1;
 	}
 
+	nih_free (hash);
+
 
 	printf ("...with medium size\n");
 	hash = nih_hash_new (650, key_function);
@@ -141,6 +144,8 @@ test_new (void)
 		printf ("BAD: key_function set incorrectly.\n");
 		ret = 1;
 	}
+
+	nih_free (hash);
 
 
 	printf ("...with large size\n");
@@ -178,6 +183,8 @@ test_new (void)
 		ret = 1;
 	}
 
+	nih_free (hash);
+
 	return ret;
 }
 
@@ -191,10 +198,10 @@ test_add (void)
 
 	printf ("Testing nih_hash_add()\n");
 	hash = nih_hash_new (0, key_function);
-	entry1 = new_entry ("entry 1");
-	entry2 = new_entry ("entry 2");
-	entry3 = new_entry ("entry 1");
-	entry4 = new_entry ("entry 4");
+	entry1 = new_entry (hash, "entry 1");
+	entry2 = new_entry (hash, "entry 2");
+	entry3 = new_entry (hash, "entry 1");
+	entry4 = new_entry (hash, "entry 4");
 
 	printf ("...with empty hash\n");
 	ptr = nih_hash_add (hash, entry1);
@@ -339,6 +346,9 @@ test_add (void)
 		ret = 1;
 	}
 
+	nih_free (hash);
+	nih_free (ptr);
+
 	return ret;
 }
 
@@ -351,10 +361,10 @@ test_add_unique (void)
 
 	printf ("Testing nih_hash_add_unique()\n");
 	hash = nih_hash_new (0, key_function);
-	entry1 = new_entry ("entry 1");
-	entry2 = new_entry ("entry 2");
-	entry3 = new_entry ("entry 1");
-	entry4 = new_entry ("entry 4");
+	entry1 = new_entry (hash, "entry 1");
+	entry2 = new_entry (hash, "entry 2");
+	entry3 = new_entry (hash, "entry 1");
+	entry4 = new_entry (hash, "entry 4");
 
 	printf ("...with empty hash\n");
 	ptr = nih_hash_add_unique (hash, entry1);
@@ -505,6 +515,9 @@ test_add_unique (void)
 		ret = 1;
 	}
 
+	nih_free (hash);
+	nih_free (ptr);
+
 	return ret;
 }
 
@@ -517,10 +530,10 @@ test_replace (void)
 
 	printf ("Testing nih_hash_replace()\n");
 	hash = nih_hash_new (0, key_function);
-	entry1 = new_entry ("entry 1");
-	entry2 = new_entry ("entry 2");
-	entry3 = new_entry ("entry 1");
-	entry4 = new_entry ("entry 4");
+	entry1 = new_entry (hash, "entry 1");
+	entry2 = new_entry (hash, "entry 2");
+	entry3 = new_entry (hash, "entry 1");
+	entry4 = new_entry (hash, "entry 4");
 
 	printf ("...with empty hash\n");
 	ptr = nih_hash_replace (hash, entry1);
@@ -671,6 +684,9 @@ test_replace (void)
 		ret = 1;
 	}
 
+	nih_free (hash);
+	nih_free (ptr);
+
 	return ret;
 }
 
@@ -683,9 +699,9 @@ test_search (void)
 
 	printf ("Testing nih_hash_search()\n");
 	hash = nih_hash_new (0, key_function);
-	entry1 = nih_hash_add (hash, new_entry ("entry 1"));
-	entry2 = nih_hash_add (hash, new_entry ("entry 2"));
-	entry3 = nih_hash_add (hash, new_entry ("entry 2"));
+	entry1 = nih_hash_add (hash, new_entry (hash, "entry 1"));
+	entry2 = nih_hash_add (hash, new_entry (hash, "entry 2"));
+	entry3 = nih_hash_add (hash, new_entry (hash, "entry 2"));
 
 	printf ("...with single match\n");
 	ptr = nih_hash_search (hash, "entry 1", NULL);
@@ -740,6 +756,7 @@ test_search (void)
 		ret = 1;
 	}
 
+	nih_free (hash);
 
 	return ret;
 }
@@ -753,9 +770,9 @@ test_lookup (void)
 
 	printf ("Testing nih_hash_lookup()\n");
 	hash = nih_hash_new (0, key_function);
-	entry1 = nih_hash_add (hash, new_entry ("entry 1"));
-	entry2 = nih_hash_add (hash, new_entry ("entry 2"));
-	entry3 = nih_hash_add (hash, new_entry ("entry 2"));
+	entry1 = nih_hash_add (hash, new_entry (hash, "entry 1"));
+	entry2 = nih_hash_add (hash, new_entry (hash, "entry 2"));
+	entry3 = nih_hash_add (hash, new_entry (hash, "entry 2"));
 
 	printf ("...with single match\n");
 	ptr = nih_hash_lookup (hash, "entry 1");
@@ -786,6 +803,7 @@ test_lookup (void)
 		ret = 1;
 	}
 
+	nih_free (hash);
 
 	return ret;
 }

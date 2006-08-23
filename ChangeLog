@@ -1,3 +1,9 @@
+2006-08-23  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/file.c (nih_file_map): Correct a thinko, have to mask
+	flags by O_ACCMODE and compare for equality to extract the open
+	access mode.
+
 2006-08-22  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/file.c (nih_file_map, nih_file_unmap): Add an easier to use

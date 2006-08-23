@@ -258,11 +258,11 @@ nih_file_map (const char *path,
 	if (fd < 0)
 		nih_return_system_error (NULL);
 
-	if (flags & O_RDONLY) {
+	if ((flags & O_ACCMODE) == O_RDONLY) {
 		prot = PROT_READ;
-	} else if (flags & O_WRONLY) {
+	} else if ((flags & O_ACCMODE) == O_WRONLY) {
 		prot = PROT_WRITE;
-	} else if (flags & O_RDWR) {
+	} else if ((flags & O_ACCMODE) == O_RDWR) {
 		prot = PROT_READ | PROT_WRITE;
 	} else {
 		prot = PROT_NONE;

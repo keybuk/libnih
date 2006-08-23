@@ -52,6 +52,8 @@ test_raise (void)
 		ret = 1;
 	}
 
+	nih_free (error);
+
 	return ret;
 }
 
@@ -82,6 +84,8 @@ test_raise_printf (void)
 		printf ("BAD: error message parent incorrect.\n");
 		ret = 1;
 	}
+
+	nih_free (error);
 
 	return ret;
 }
@@ -114,6 +118,8 @@ test_raise_system (void)
 		printf ("BAD: error message parent incorrect.\n");
 		ret = 1;
 	}
+
+	nih_free (error);
 
 	return ret;
 }
@@ -194,6 +200,8 @@ test_raise_again (void)
 		ret = 1;
 	}
 
+	nih_free (error3);
+
 	nih_log_set_logger (nih_logger_printf);
 
 	return ret;
@@ -235,6 +243,8 @@ test_return_error (void)
 		ret = 1;
 	}
 
+	nih_free (error);
+
 	return ret;
 }
 
@@ -273,6 +283,8 @@ test_return_system_error (void)
 		ret = 1;
 	}
 
+	nih_free (error);
+
 	return ret;
 }
 
@@ -295,6 +307,8 @@ test_push_context (void)
 		ret = 1;
 	}
 
+	nih_free (error);
+
 	/* Should be able to retrieve original error after pop */
 	nih_error_pop_context ();
 	error = nih_error_get ();
@@ -303,6 +317,8 @@ test_push_context (void)
 		printf ("BAD: incorrect error returned.\n");
 		ret = 1;
 	}
+
+	nih_free (error);
 
 	return ret;
 }

@@ -26,19 +26,21 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <nih/alloc.h>
+#include <nih/string.h>
 #include <nih/logging.h>
 #include <nih/main.h>
 
 
 static NihLogLevel last_priority = NIH_LOG_UNKNOWN;
-static const char *last_message = NULL;
+static char *last_message = NULL;
 
 static int
 my_logger (NihLogLevel  priority,
 	   const char  *message)
 {
 	last_priority = priority;
-	last_message = message;
+	last_message = nih_strdup (NULL, message);
 
 	if (! strcmp (message, "this should error"))
 		return -1;
@@ -65,6 +67,8 @@ test_set_logger (void)
 		ret = 1;
 	}
 
+	nih_free (last_message);
+
 	nih_log_set_logger (nih_logger_printf);
 
 	return ret;
@@ -88,6 +92,8 @@ test_set_priority (void)
 		printf ("BAD: logger was not called.\n");
 		ret = 1;
 	}
+
+	nih_free (last_message);
 
 	nih_log_set_logger (nih_logger_printf);
 	nih_log_set_priority (NIH_LOG_WARN);
@@ -129,9 +135,12 @@ test_log_message (void)
 		ret = 1;
 	}
 
+	nih_free (last_message);
+
 
 	printf ("...with message of insufficient priority\n");
 
+	last_message = NULL;
 	err = nih_log_message (NIH_LOG_DEBUG, "not high enough");
 
 	/* A positive error code should be returned */
@@ -141,7 +150,7 @@ test_log_message (void)
 	}
 
 	/* Logger should not have been called */
-	if (strcmp (last_message, "message with some 20 formatting")) {
+	if (last_message != NULL) {
 		printf ("BAD: logger called unexpected.\n");
 		ret = 1;
 	}
@@ -156,6 +165,8 @@ test_log_message (void)
 		printf ("BAD: return value wasn't what we expected.\n");
 		ret = 1;
 	}
+
+	nih_free (last_message);
 
 
 	printf ("Testing nih_debug()\n");
@@ -181,6 +192,8 @@ test_log_message (void)
 		ret = 1;
 	}
 
+	nih_free (last_message);
+
 
 	printf ("Testing nih_info()\n");
 
@@ -203,6 +216,8 @@ test_log_message (void)
 		printf ("BAD: logger not called with expected message.\n");
 		ret = 1;
 	}
+
+	nih_free (last_message);
 
 
 	printf ("Testing nih_warn()\n");
@@ -227,6 +242,8 @@ test_log_message (void)
 		ret = 1;
 	}
 
+	nih_free (last_message);
+
 
 	printf ("Testing nih_error()\n");
 
@@ -250,6 +267,8 @@ test_log_message (void)
 		ret = 1;
 	}
 
+	nih_free (last_message);
+
 
 	printf ("Testing nih_fatal()\n");
 
@@ -272,6 +291,8 @@ test_log_message (void)
 		printf ("BAD: logger not called with expected message.\n");
 		ret = 1;
 	}
+
+	nih_free (last_message);
 
 
 	nih_log_set_priority (NIH_LOG_WARN);

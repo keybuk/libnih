@@ -1,5 +1,8 @@
 2006-08-23  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_logging.c: Keep a copy of the last message
+	otherwise we're reading free'd memory (again).
+
 	* nih/tests/test_list.c: Memory cleanups.
 
 	* nih/signal.c (nih_signal_set_default, nih_signal_set_ignore):

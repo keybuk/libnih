@@ -1,5 +1,7 @@
 2006-08-23  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_alloc.c: Correct a few missing nih_free's
+
 	* nih/file.c (nih_file_map): Correct a thinko, have to mask
 	flags by O_ACCMODE and compare for equality to extract the open
 	access mode.

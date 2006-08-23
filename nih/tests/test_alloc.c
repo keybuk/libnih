@@ -72,6 +72,8 @@ test_alloc (void)
 		ret = 1;
 	}
 
+	nih_free (ptr1);
+
 	return ret;
 }
 
@@ -99,6 +101,8 @@ test_alloc_using (void)
 		printf ("BAD: realloc not called with correct size.\n");
 		ret = 1;
 	}
+
+	nih_free (ptr);
 
 	return ret;
 }
@@ -150,6 +154,8 @@ test_realloc (void)
 		ret = 1;
 	}
 
+	nih_free (ptr1);
+
 	return ret;
 }
 
@@ -191,6 +197,8 @@ test_new (void)
 		printf ("BAD: parent of second block incorrect.\n");
 		ret = 1;
 	}
+
+	nih_free (ptr1);
 
 	return ret;
 }
@@ -315,6 +323,8 @@ test_set_allocator (void)
 		printf ("BAD: allocator was not called.\n");
 		ret = 1;
 	}
+
+	nih_free (ptr);
 
 	nih_alloc_set_allocator (realloc);
 

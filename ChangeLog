@@ -1,5 +1,7 @@
 2006-08-23  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_list.c: Memory cleanups.
+
 	* nih/signal.c (nih_signal_set_default, nih_signal_set_ignore):
 	Don't initialise the signals list, there's no need.
 

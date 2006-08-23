@@ -82,6 +82,8 @@ test_new (void)
 		ret = 1;
 	}
 
+	nih_free (list);
+
 	return ret;
 }
 
@@ -228,6 +230,11 @@ test_add (void)
 		printf ("BAD: old list tail prev pointer set incorrectly.\n");
 		ret = 1;
 	}
+
+	nih_list_free (list);
+	nih_list_free (entry1);
+	nih_list_free (entry2);
+	nih_list_free (ptr);
 
 	return ret;
 }
@@ -376,6 +383,11 @@ test_add_after (void)
 		ret = 1;
 	}
 
+	nih_free (list);
+	nih_free (entry1);
+	nih_free (entry2);
+	nih_free (ptr);
+
 	return ret;
 }
 
@@ -413,6 +425,9 @@ test_empty (void)
 		ret = 1;
 	}
 
+	nih_free (list);
+	nih_free (entry);
+
 	return ret;
 }
 
@@ -444,6 +459,11 @@ test_foreach (void)
 
 		i++;
 	}
+
+	nih_free (list);
+	nih_free (entry[0]);
+	nih_free (entry[1]);
+	nih_free (entry[2]);
 
 	return ret;
 }
@@ -484,6 +504,11 @@ test_foreach_safe (void)
 		printf ("BAD: list not empty.\n");
 		ret = 1;
 	}
+
+	nih_free (list);
+	nih_free (entry[0]);
+	nih_free (entry[1]);
+	nih_free (entry[2]);
 
 	return ret;
 }
@@ -600,6 +625,10 @@ test_remove (void)
 		ret = 1;
 	}
 
+	nih_free (list);
+	nih_free (entry);
+	nih_free (tail);
+
 	return ret;
 }
 
@@ -644,6 +673,10 @@ test_destructor (void)
 		printf ("BAD: tail next pointer set incorrectly.\n");
 		ret = 1;
 	}
+
+	nih_free (entry);
+	nih_free (list);
+	nih_free (tail);
 
 	return ret;
 }
@@ -701,6 +734,9 @@ test_free (void)
 		printf ("BAD: tail next pointer set incorrectly.\n");
 		ret = 1;
 	}
+
+	nih_free (list);
+	nih_free (tail);
 
 	return ret;
 }

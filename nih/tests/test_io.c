@@ -34,6 +34,7 @@
 #include <nih/alloc.h>
 #include <nih/list.h>
 #include <nih/io.h>
+#include <nih/logging.h>
 #include <nih/error.h>
 
 
@@ -1129,7 +1130,9 @@ test_watcher (void)
 	assert (close (fds[1]) == 0);
 	free_called = 0;
 	FD_SET (fds[0], &readfds);
+	nih_log_set_priority (NIH_LOG_FATAL);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+	nih_log_set_priority (NIH_LOG_DEBUG);
 
 	/* Local end should have been closed */
 	flags = fcntl (fds[0], F_GETFD);

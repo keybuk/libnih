@@ -571,6 +571,7 @@ test_parser (void)
 		ret = 1;
 	}
 
+	nih_free (filename);
 	nih_free (args);
 
 
@@ -609,6 +610,7 @@ test_parser (void)
 		ret = 1;
 	}
 
+	nih_free (filename);
 	nih_free (args);
 
 
@@ -1029,6 +1031,7 @@ test_parser (void)
 		ret = 1;
 	}
 
+	nih_free (filename);
 	nih_free (args);
 
 

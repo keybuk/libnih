@@ -168,6 +168,8 @@ nih_main_init_full (const char *argv0,
 	if (copyright && *copyright)
 		package_copyright = copyright;
 
+	if (package_string)
+		nih_free (package_string);
 	package_string = NULL;
 }
 

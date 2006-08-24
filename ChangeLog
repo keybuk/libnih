@@ -1,5 +1,9 @@
 2006-08-24  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.c (nih_io_watcher): Fix a pretty critical bug, we weren't
+	saving the value of errno so it was usually zero by the time we
+	looked at it.
+
 	* nih/logging.c (nih_logger_syslog): Useful alternative to
 	nih_logger_printf.
 	* nih/logging.h: Update.

@@ -502,6 +502,7 @@ nih_io_watcher (NihIo       *io,
 	/* There's data to be read */
 	if (events & NIH_IO_READ) {
 		ssize_t len;
+		int     saved_errno;
 
 		/* Read directly into the buffer to save hauling temporary
 		 * blocks around; always make sure there's room for at
@@ -517,8 +518,11 @@ nih_io_watcher (NihIo       *io,
 			len = read (watch->fd,
 				    io->recv_buf->buf + io->recv_buf->len,
 				    io->recv_buf->size - io->recv_buf->len);
-			if (len > 0)
+			if (len > 0) {
 				io->recv_buf->len += len;
+			} else if (len < 0) {
+				saved_errno = errno;
+			}
 		} while (len > 0);
 
 		/* Call the reader if we have any data in the buffer.
@@ -537,6 +541,7 @@ nih_io_watcher (NihIo       *io,
 		}
 
 		/* Deal with errors */
+		errno = saved_errno;
 		if ((len < 0) && (errno != EAGAIN) && (errno != EINTR)) {
 			nih_error_raise_system ();
 			nih_io_error (io);

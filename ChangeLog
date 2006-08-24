@@ -1,5 +1,7 @@
 2006-08-24  Scott James Remnant  <scott@netsplit.com>
 
+	* nihify (src_dir): Also copy m4/Makefile.am
+
 	* nih/file.c (nih_file_remove_watch): Raise the error before
 	performing other actions so errno is not lost.
 

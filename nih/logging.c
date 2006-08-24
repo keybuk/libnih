@@ -28,6 +28,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
 
 #include <nih/alloc.h>
 #include <nih/string.h>
@@ -185,6 +186,49 @@ nih_logger_printf (NihLogLevel  priority,
 	/* Output it */
 	if (fprintf (stream, format, program_name, message) < 0)
 		return -1;
+
+	return 0;
+}
+
+/**
+ * nih_logger_syslog:
+ * @priority: priority of message being logged,
+ * @message: message to log.
+ *
+ * Outputs the @message to the system logging daemon, it is up to the
+ * program to call openlog and set up the parameters for the connection.
+ *
+ * Returns: zero on completion, negative value on error.
+ **/
+int
+nih_logger_syslog (NihLogLevel  priority,
+		   const char  *message)
+{
+	int level;
+
+	nih_assert (message != NULL);
+
+	switch (priority) {
+	case NIH_LOG_DEBUG:
+		level = LOG_DEBUG;
+		break;
+	case NIH_LOG_INFO:
+		level = LOG_INFO;
+		break;
+	case NIH_LOG_WARN:
+		level = LOG_WARNING;
+		break;
+	case NIH_LOG_ERROR:
+		level = LOG_ERR;
+		break;
+	case NIH_LOG_FATAL:
+		level = LOG_CRIT;
+		break;
+	default:
+		level = LOG_NOTICE;
+	}
+
+	syslog (level, "%s", message);
 
 	return 0;
 }

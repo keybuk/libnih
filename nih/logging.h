@@ -135,6 +135,7 @@ int  nih_log_message      (NihLogLevel priority, const char *format, ...)
 	__attribute__ ((format (printf, 2, 3)));
 
 int  nih_logger_printf    (NihLogLevel priority, const char *message);
+int  nih_logger_syslog    (NihLogLevel priority, const char *message);
 
 NIH_END_EXTERN
 

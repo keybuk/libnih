@@ -160,8 +160,9 @@ nih_file_remove_watch (NihFileWatch *watch)
 	nih_assert (watch != NULL);
 
 	if (inotify_rm_watch (inotify_fd, watch->wd) < 0) {
+		nih_error_raise_system ();
 		nih_list_free (&watch->entry);
-		nih_return_system_error (-1);
+		return -1;
 	}
 
 	return nih_list_free (&watch->entry);

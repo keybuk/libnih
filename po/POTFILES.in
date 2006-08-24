@@ -2,6 +2,7 @@
 nih/alloc.c
 nih/child.c
 nih/error.c
+nih/file.c
 nih/hash.c
 nih/io.c
 nih/list.c

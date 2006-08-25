@@ -1,3 +1,9 @@
+2006-08-25  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/io.c (nih_io_watcher): Clean up the handling of the out of
+	memory condition while extending the buffer so that we just return
+	to be called again rather than end up performing some random action.
+
 2006-08-24  Scott James Remnant  <scott@netsplit.com>
 
 	* nihify (src_dir): Also copy m4/Makefile.am

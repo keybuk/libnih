@@ -502,7 +502,6 @@ nih_io_watcher (NihIo       *io,
 	/* There's data to be read */
 	if (events & NIH_IO_READ) {
 		ssize_t len;
-		int     saved_errno;
 
 		/* Read directly into the buffer to save hauling temporary
 		 * blocks around; always make sure there's room for at
@@ -512,16 +511,15 @@ nih_io_watcher (NihIo       *io,
 		 */
 		do {
 			if (nih_io_buffer_resize (io->recv_buf, 80) < 0)
-				/* Out of memory; just handle what we have */
-				break;
+				return;
 
 			len = read (watch->fd,
 				    io->recv_buf->buf + io->recv_buf->len,
 				    io->recv_buf->size - io->recv_buf->len);
-			if (len > 0) {
+			if (len < 0) {
+				nih_error_raise_system ();
+			} else if (len > 0) {
 				io->recv_buf->len += len;
-			} else if (len < 0) {
-				saved_errno = errno;
 			}
 		} while (len > 0);
 
@@ -529,6 +527,7 @@ nih_io_watcher (NihIo       *io,
 		 * This could be called simply because we're about to error,
 		 * but it means we give it one last chance to process.
 		 */
+		nih_error_push_context();
 		if (io->recv_buf->len) {
 			if (io->reader) {
 				io->reader (io->data, io, io->recv_buf->buf,
@@ -539,13 +538,21 @@ nih_io_watcher (NihIo       *io,
 						      io->recv_buf->len);
 			}
 		}
+		nih_error_pop_context();
 
 		/* Deal with errors */
-		errno = saved_errno;
-		if ((len < 0) && (errno != EAGAIN) && (errno != EINTR)) {
-			nih_error_raise_system ();
-			nih_io_error (io);
-			return;
+		if (len < 0) {
+			NihError *err;
+
+			err = nih_error_get ();
+			if ((err->number != EAGAIN)
+			    && (err->number != EINTR)) {
+				nih_error_raise_again (err);
+				nih_io_error (io);
+				return;
+			} else {
+				nih_free (err);
+			}
 		}
 
 		/* Deal with socket being closed */

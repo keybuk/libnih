@@ -1,3 +1,9 @@
+2006-08-30  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/option.c (nih_option_group_help): Don't output options without
+	help strings.
+	* nih/tests/test_option.c (test_help): Update.
+
 2006-08-25  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/io.c (nih_io_watcher): Clean up the handling of the out of

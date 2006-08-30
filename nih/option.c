@@ -688,6 +688,9 @@ nih_option_group_help (NihOptionGroup *group,
 			if (opt->group != group)
 				continue;
 
+			if (! opt->help)
+				continue;
+
 			/* Indent by two spaces */
 			printf ("  ");
 			len += 2;
@@ -725,12 +728,6 @@ nih_option_group_help (NihOptionGroup *group,
 					printf ("=%s", opt->arg_name);
 					len += strlen (opt->arg_name) + 1;
 				}
-			}
-
-			/* No help string? */
-			if (! opt->help) {
-				printf ("\n");
-				continue;
 			}
 
 			/* Format the help string to fit in the latter

@@ -79,8 +79,6 @@ static NihOption options[] = {
 	  &test_group1, NULL, NULL, my_setter },
 	{ 'I', NULL, "add directory to include list",
 	  &test_group1, "DIRECTORY", NULL, NULL },
-	{ 'n', NULL, NULL,
-	  &test_group2, NULL, NULL, NULL },
 
 	NIH_OPTION_LAST
 };
@@ -2037,12 +2035,6 @@ test_help (void)
  	fgets (text, sizeof (text), output);
 	if (strcmp (text, ("                              "
 			   "something with special treatment\n"))) {
-		printf ("BAD: output wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	fgets (text, sizeof (text), output);
-	if (strcmp (text, ("  -n\n"))) {
 		printf ("BAD: output wasn't what we expected.\n");
 		ret = 1;
 	}

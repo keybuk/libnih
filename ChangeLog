@@ -1,5 +1,12 @@
 2006-08-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/option.c (nih_option_debug): Add a hidden --debug option that
+	sets the logging level up really high.
+	(nih_option_handle): Just compare the names rather than offset
+	within a list that can change.
+	* nih/option.h: Update.
+	* nih/tests/test_option.c (test_debug): Check that it works.
+
 	* nih/option.c (nih_option_group_help): Output "Options" where we
 	only have the one group.
 

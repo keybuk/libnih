@@ -109,6 +109,7 @@ char **nih_option_parser   (void *parent, int argc, char *argv[],
 int    nih_option_count    (NihOption *option, const char *arg);
 int    nih_option_quiet    (NihOption *option, const char *arg);
 int    nih_option_verbose  (NihOption *option, const char *arg);
+int    nih_option_debug    (NihOption *option, const char *arg);
 
 void   nih_option_help     (NihOption *options[]);
 

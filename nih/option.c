@@ -96,6 +96,7 @@ static NihOption default_options[] = {
 	{ 'v', "verbose",
 	  N_("increase output to include informational messages"),
 	  NULL, NULL, NULL, nih_option_verbose },
+	{ 0, "debug", NULL, NULL, NULL, NULL, nih_option_debug },
 	{ 0, "help",
 	  N_("display this help and exit"),
 	  NULL, NULL, NULL, NULL },
@@ -412,11 +413,12 @@ nih_option_handle (NihOptionCtx *ctx,
 	nih_assert (opt != NULL);
 
 	/* Handle the special cased options first */
-	if (opt == &(default_options[2])) {
+	if (opt->long_option && (! strcmp (opt->long_option, "help"))) {
 		/* --help */
 		nih_option_help (ctx->options);
 		exit (0);
-	} else if (opt == &(default_options[3])) {
+	} else if (opt->long_option
+		   && (! strcmp (opt->long_option, "version"))) {
 		/* --version */
 		nih_main_version ();
 		exit (0);
@@ -585,6 +587,28 @@ nih_option_verbose (NihOption  *option,
 	nih_assert (arg == NULL);
 
 	nih_log_set_priority (NIH_LOG_INFO);
+
+	return 0;
+}
+
+/**
+ * nih_option_debug:
+ * @option: NihOption invoked,
+ * @arg: argument to parse.
+ *
+ * This option setter is used by the built-in --debug option to set the
+ * default logging level to DEBUG.
+ *
+ * Returns: always returns zero.
+ **/
+int
+nih_option_debug (NihOption  *option,
+		  const char *arg)
+{
+	nih_assert (option != NULL);
+	nih_assert (arg == NULL);
+
+	nih_log_set_priority (NIH_LOG_DEBUG);
 
 	return 0;
 }

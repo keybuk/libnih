@@ -1814,6 +1814,48 @@ test_verbose (void)
 	return ret;
 }
 
+int
+test_debug (void)
+{
+	char *argv[3], **args;
+	int   ret = 0, argc;
+
+	printf ("Testing nih_option_debug()\n");
+	program_name = "test";
+	nih_log_set_logger (my_logger);
+
+	argc = 0;
+	argv[argc++] = "ignored";
+	argv[argc++] = "--debug";
+	argv[argc] = NULL;
+	nih_log_set_priority (NIH_LOG_WARN);
+	logger_called = 0;
+	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+	nih_debug ("test message");
+	nih_info ("test message");
+	nih_warn ("test message");
+	nih_error ("test message");
+
+	/* Return value should be a NULL array */
+	if (args[0] != NULL) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Logger should have been called four times */
+	if (logger_called != 4) {
+		printf ("BAD: priority wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	nih_free (args);
+
+	nih_log_set_priority (NIH_LOG_INFO);
+	nih_log_set_logger (nih_logger_printf);
+
+	return ret;
+}
+
 
 int
 test_version (void)

@@ -79,7 +79,8 @@ static int         nih_option_handle_arg  (NihOptionCtx *ctx, NihOption *opt,
 					   const char *arg);
 static const char *nih_option_next_nonopt (NihOptionCtx *ctx);
 static void        nih_option_group_help  (NihOptionGroup *group,
-					   NihOption *options[]);
+					   NihOption *options[],
+					   NihOptionGroup **groups);
 
 
 /**
@@ -644,11 +645,11 @@ nih_option_help (NihOption *options[])
 	 * only their options
 	 */
 	for (group = 0; group < ngroups; group++)
-		nih_option_group_help (groups[group], options);
+		nih_option_group_help (groups[group], options, groups);
 
 	/* Display the other group */
 	if (other)
-		nih_option_group_help (NULL, options);
+		nih_option_group_help (NULL, options, groups);
 
 	/* Append the bug report address */
 	if (package_bugreport)
@@ -667,8 +668,9 @@ nih_option_help (NihOption *options[])
  * standard output.
  **/
 static void
-nih_option_group_help (NihOptionGroup *group,
-		       NihOption      *options[])
+nih_option_group_help (NihOptionGroup  *group,
+		       NihOption       *options[],
+		       NihOptionGroup **groups)
 {
 	NihOption *opt, **opts;
 
@@ -676,8 +678,10 @@ nih_option_group_help (NihOptionGroup *group,
 
 	if (group) {
 		printf (_("%s options:\n"), _(group->title));
-	} else {
+	} else if (groups) {
 		printf (_("Other options:\n"));
+	} else {
+		printf (_("Options:\n"));
 	}
 
 	for (opts = options; *opts != NULL; opts++) {

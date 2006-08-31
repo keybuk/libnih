@@ -82,6 +82,11 @@ static NihOption options[] = {
 
 	NIH_OPTION_LAST
 };
+static NihOption catch_options[] = {
+	{ '-', "--", NULL, NULL, NULL, NULL, NULL },
+
+	NIH_OPTION_LAST
+};
 
 
 int
@@ -1110,6 +1115,20 @@ test_parser (void)
 	ftruncate (fileno (output), 0);
 
 
+	printf ("...with invalid short option and catch-all\n");
+	argc = 0;
+	argv[argc++] = "ignored";
+	argv[argc++] = "-z";
+	argv[argc] = NULL;
+	args = nih_option_parser (NULL, argc, argv, catch_options, FALSE);
+
+	/* Return value should not be NULL */
+	if (args == NULL) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+
 	printf ("...with invalid long option\n");
 	argc = 0;
 	argv[argc++] = "ignored";
@@ -1150,6 +1169,20 @@ test_parser (void)
 
 	rewind (output);
 	ftruncate (fileno (output), 0);
+
+
+	printf ("...with invalid long option and catch-all\n");
+	argc = 0;
+	argv[argc++] = "ignored";
+	argv[argc++] = "--zoiks";
+	argv[argc] = NULL;
+	args = nih_option_parser (NULL, argc, argv, catch_options, FALSE);
+
+	/* Return value should not be NULL */
+	if (args == NULL) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
 
 
 	printf ("...with unexpected long option argument\n");

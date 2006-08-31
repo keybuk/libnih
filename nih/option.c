@@ -224,7 +224,9 @@ nih_option_add_arg (NihOptionCtx *ctx)
  * @ctx: parsing context,
  * @option: option to find.
  *
- * Find the option structure with the given short @option.
+ * Find the option structure with the given short @option.  If an option
+ * exists with the short option '-' this is used instead if no specific
+ * option is found.
  *
  * Returns; pointer to option, or %NULL if not found.
  **/
@@ -232,16 +234,18 @@ static NihOption *
 nih_option_get_short (NihOptionCtx *ctx,
 		      int           option)
 {
-	NihOption *opt, **opts;
+	NihOption *opt, **opts, *catch = NULL;
 
 	for (opts = ctx->options; *opts != NULL; opts++) {
 		for (opt = *opts; (opt->option || opt->long_option); opt++) {
 			if (opt->option == option)
 				return opt;
+			if (opt->option == '-')
+				catch = opt;
 		}
 	}
 
-	return NULL;
+	return catch;
 }
 
 /**
@@ -303,7 +307,8 @@ nih_option_short (NihOptionCtx *ctx)
  * @len: length of option.
  *
  * Find the option structure with the given long @option, of which only
- * the first @len characters will be read.
+ * the first @len characters will be read.  If an option named "--" exists
+ * then it is used if no other option could be found.
  *
  * Returns; pointer to option, or %NULL if not found.
  **/
@@ -312,12 +317,15 @@ nih_option_get_long (NihOptionCtx *ctx,
 		     const char   *option,
 		     size_t        len)
 {
-	NihOption *opt, **opts;
+	NihOption *opt, **opts, *catch = NULL;
 
 	for (opts = ctx->options; *opts != NULL; opts++) {
 		for (opt = *opts; (opt->option || opt->long_option); opt++) {
 			if (! opt->long_option)
 				continue;
+
+			if (! strcmp (opt->long_option, "--"))
+				catch = opt;
 
 			if (strlen (opt->long_option) > len)
 				continue;
@@ -327,7 +335,7 @@ nih_option_get_long (NihOptionCtx *ctx,
 		}
 	}
 
-	return NULL;
+	return catch;
 }
 
 /**

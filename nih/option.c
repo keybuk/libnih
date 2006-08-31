@@ -474,6 +474,9 @@ nih_option_handle_arg (NihOptionCtx *ctx,
 	} else if (opt->value) {
 		char **value = (char **)opt->value;
 
+		if (*value)
+			nih_free (*value);
+
 		NIH_MUST (*value = nih_strdup (ctx->parent, arg));
 	}
 

@@ -794,7 +794,7 @@ nih_option_group_help (NihOptionGroup  *group,
 
 				/* Output the line up until the next line */
 				linelen = strcspn (ptr, "\n");
-				printf ("%.*s\n", linelen, ptr);
+				printf ("%.*s\n", (int)linelen, ptr);
 				len = 0;
 
 				/* Skip to the next line */

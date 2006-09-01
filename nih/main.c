@@ -248,6 +248,20 @@ nih_main_loop_init (void)
 {
 	if (! loop_functions)
 		NIH_MUST (loop_functions = nih_list_new ());
+
+	/* Set up the interrupt pipe, we need it to be non blocking so that
+	 * we don't accidentally block if there's too many signals been
+	 * triggered or something
+	 */
+	if (interrupt_pipe[0] == -1) {
+		NIH_MUST (pipe (interrupt_pipe) == 0);
+
+		nih_io_set_nonblock (interrupt_pipe[0]);
+		nih_io_set_nonblock (interrupt_pipe[1]);
+
+		nih_io_set_cloexec (interrupt_pipe[0]);
+		nih_io_set_cloexec (interrupt_pipe[1]);
+	}
 }
 
 /**
@@ -265,27 +279,6 @@ nih_main_loop (void)
 
 	/* Set a handler for SIGCHLD so that it can interrupt syscalls */
 	nih_signal_set_handler (SIGCHLD, nih_signal_handler);
-
-	/* Set up the interrupt pipe, we need it to be non blocking so that
-	 * we don't accidentally block if there's too many signals been
-	 * triggered or something
-	 */
-	if (interrupt_pipe[0] == -1) {
-		NIH_MUST (pipe (interrupt_pipe) == 0);
-
-		nih_io_set_nonblock (interrupt_pipe[0]);
-		nih_io_set_nonblock (interrupt_pipe[1]);
-
-		nih_io_set_cloexec (interrupt_pipe[0]);
-		nih_io_set_cloexec (interrupt_pipe[1]);
-	}
-
-	/* In very rare cases, signals can happen before we get into the
-	 * main loop, so we won't know to interrupt select().  Deal with
-	 * those now, anything that happens from here on results in an
-	 * interrupt anyway.
-	 */
-	nih_signal_poll ();
 
 	while (! exit_loop) {
 		NihTimer       *next_timer;
@@ -368,6 +361,8 @@ nih_main_loop (void)
 void
 nih_main_loop_interrupt (void)
 {
+	nih_main_loop_init ();
+
 	if (interrupt_pipe[1] != -1)
 		write (interrupt_pipe[1], "", 1);
 }

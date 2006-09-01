@@ -1,5 +1,11 @@
 2006-08-31  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/main.c (nih_main_loop_interrupt): Always initialise the
+	interrupt pipe.
+	(nih_main_loop_init): Move interrupt pipe initialisation to here
+	so that it's always available.
+	(nih_main_loop): Drop the extra call to nih_signal_poll().
+
 	* nih/option.c (nih_option_get_short, nih_option_get_long): Allow
 	catch-all options.
 	* nih/tests/test_option.c (test_parser): Test catch-all options.

@@ -1,5 +1,11 @@
 2006-09-04  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/file.c (nih_file_add_watch): Set nih_file_remove_watch as
+	the default destructor so that nih_free can be called or work in
+	a tree.
+	(nih_file_remove_watch): Modify to not call nih_free and work if
+	called multiple times.
+
 	* nih/signal.c (nih_signal_set_default, nih_signal_set_ignore):
 	Set flags to zero when defaulting or ignoring signals.
 	* nih/tests/test_signal.c (test_set_default, test_set_ignore)

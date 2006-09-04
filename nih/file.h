@@ -89,7 +89,7 @@ NIH_BEGIN_EXTERN
 NihFileWatch *nih_file_add_watch    (void *parent, const char *path,
 				     uint32_t events, NihFileWatcher watcher,
 				     void *data);
-int           nih_file_remove_watch (NihFileWatch *watch);
+void          nih_file_remove_watch (NihFileWatch *watch);
 
 void *        nih_file_map          (const char *path, int flags,
 				     size_t *length);

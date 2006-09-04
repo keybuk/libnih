@@ -98,8 +98,10 @@ nih_file_init (void)
  * bitmask as described in inotify(7).  When any of the listed events
  * occur, @watcher is called.
  *
- * The watch may be terminated and resources freed using
- * #nih_file_remove_watch.
+ * The watch structure is allocated using #nih_alloc and stored in a linked
+ * list, a default destructor is set that removes the watch from the list
+ * and terminates the inotify watch.  Removal of the watch can be performed
+ * by freeing it.
  *
  * Returns: new NihFileWatch structure or %NULL on raised error.
  **/
@@ -131,6 +133,7 @@ nih_file_add_watch (void           *parent,
 	}
 
 	nih_list_init (&watch->entry);
+	nih_alloc_set_destructor (watch, (NihDestructor)nih_file_remove_watch);
 
 	watch->wd = wd;
 	watch->path = nih_strdup (watch, path);
@@ -149,23 +152,22 @@ nih_file_add_watch (void           *parent,
  * @watch: watch to remove.
  *
  * Remove the watch on the path and events mask associated with the @wwatch
- * given and free the resources associated with it, including the structure
- * itself.
+ * given and remove it from the list of watches.
  *
- * Returns: return value from destructor, -1 on raised error, or 0.
+ * The structure itself is not freed.
  **/
-int
+void
 nih_file_remove_watch (NihFileWatch *watch)
 {
 	nih_assert (watch != NULL);
 
-	if (inotify_rm_watch (inotify_fd, watch->wd) < 0) {
-		nih_error_raise_system ();
-		nih_list_free (&watch->entry);
-		return -1;
-	}
+	if (watch->wd < 0)
+		return;
 
-	return nih_list_free (&watch->entry);
+	inotify_rm_watch (inotify_fd, watch->wd);
+	watch->wd = -1;
+
+	nih_list_remove (&watch->entry);
 }
 
 

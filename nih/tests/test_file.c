@@ -177,7 +177,7 @@ test_add_watch (void)
 	}
 
 
-	nih_file_remove_watch (watch);
+	nih_free (watch);
 	unlink (filename);
 
 
@@ -238,7 +238,7 @@ test_add_watch (void)
 		ret = 1;
 	}
 
-	nih_file_remove_watch (watch);
+	nih_free (watch);
 	unlink (filename);
 	rmdir (dirname);
 

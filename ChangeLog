@@ -1,3 +1,8 @@
+2006-09-04  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/hash.h: Add missing attribute for nih_hash_new
+	* nih/list.h: Add missing attribute for nih_list_new
+
 2006-09-01  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/option.c (nih_option_group_help): Cast linelen to not induce

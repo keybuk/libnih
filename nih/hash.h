@@ -60,7 +60,8 @@ typedef struct nih_hash {
 
 NIH_BEGIN_EXTERN
 
-NihHash *nih_hash_new        (size_t entries, NihKeyFunction key_function);
+NihHash *nih_hash_new        (size_t entries, NihKeyFunction key_function)
+	__attribute__ ((warn_unused_result, malloc));
 
 NihList *nih_hash_add        (NihHash *hash, NihList *entry);
 NihList *nih_hash_add_unique (NihHash *hash, NihList *entry);

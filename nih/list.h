@@ -92,7 +92,8 @@ typedef struct nih_list {
 NIH_BEGIN_EXTERN
 
 void          nih_list_init       (NihList *entry);
-NihList *     nih_list_new        (void);
+NihList *     nih_list_new        (void)
+	__attribute__ ((warn_unused_result, malloc));
 
 NihList *     nih_list_remove     (NihList *entry);
 int           nih_list_destructor (NihList *entry);

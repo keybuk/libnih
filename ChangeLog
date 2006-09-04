@@ -1,5 +1,7 @@
 2006-09-04  Scott James Remnant  <scott@netsplit.com>
 
+	* README: Add some documentation for the curious.
+
 	* nih/file.c (nih_file_add_watch): Set nih_file_remove_watch as
 	the default destructor so that nih_free can be called or work in
 	a tree.

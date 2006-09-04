@@ -1,0 +1,40 @@
+libnih is a light-weight "standard library" of C functions to ease the
+development of other libraries and applications.
+
+It's goals are:
+
+ * despite its name, to _not_ reimplement anything found in the
+   standard C library or any library normally found in /lib;
+
+ * use standard C types and conventions where appropriate;
+
+ * have a simple and consistent programming interface;
+
+ * be useful to library developers without needing to be exposed in
+   the library's API;
+
+ * not hide implementation details or structure contents, we're all
+   adults after all.
+
+
+Usage
+-----
+
+The libnih API has not yet been declared stable, and it is not yet
+considered suitable for deployment as a shared object shared by many
+parts of the system.
+
+Therefore the correct way to use libnih is to copy the source into
+your own application or library's tree.  A script (nihify) is provided
+to do this for you.
+
+Once you've run this script (from the tree of your own application or
+library) you'll need to edit configure.ac to expand the following
+macros:
+
+	NIH_C_C99
+	NIH_COMPILER_WARNINGS
+	NIH_COMPILER_OPTIMISATIONS
+	NIH_COMPILER_COVERAGE
+	NIH_LINKER_OPTIMISATIONS
+	NIH_LINKER_VERSION_SCRIPT

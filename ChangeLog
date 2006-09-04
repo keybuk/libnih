@@ -1,5 +1,10 @@
 2006-09-04  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/signal.c (nih_signal_set_default, nih_signal_set_ignore):
+	Set flags to zero when defaulting or ignoring signals.
+	* nih/tests/test_signal.c (test_set_default, test_set_ignore)
+	(test_reset): Modify test cases appropriately.
+
 	* nih/hash.h: Add missing attribute for nih_hash_new
 	* nih/list.h: Add missing attribute for nih_list_new
 

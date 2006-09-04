@@ -128,8 +128,6 @@ nih_signal_set_default (int signum)
 
 	act.sa_handler = SIG_DFL;
 	act.sa_flags = 0;
-	if (signum != SIGALRM)
-		act.sa_flags |= SA_RESTART;
 	sigemptyset (&act.sa_mask);
 
 	if (sigaction (signum, &act, NULL) < 0)
@@ -157,8 +155,6 @@ nih_signal_set_ignore (int signum)
 
 	act.sa_handler = SIG_IGN;
 	act.sa_flags = 0;
-	if (signum != SIGALRM)
-		act.sa_flags |= SA_RESTART;
 	sigemptyset (&act.sa_mask);
 
 	if (sigaction (signum, &act, NULL) < 0)

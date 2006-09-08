@@ -259,20 +259,21 @@ nih_main_version (void)
 
 /**
  * nih_main_daemonise:
- * @pidname: name of program to use for pid file.
  *
  * Perform the necessary steps to become a daemon process, this will only
- * return in the child process if successful.  If @pidname is not %NULL,
- * a file will be written in /var/run/@pidname.pid containing the pid of the
- * child process.
+ * return in the child process if successful.  A file will be written to
+ * /var/run/<program_name>.pid containing the pid of the child process.
  *
  * Returns: zero on success, negative value on raised error.
  **/
 int
-nih_main_daemonise (const char *pidname)
+nih_main_daemonise (void)
 {
 	pid_t pid;
 	int   i, fd;
+
+	nih_assert (program_name != NULL);
+
 
 	/* Fork off child process.  This begans the detachment from our
 	 * parent process; this will terminate the intermediate process.
@@ -304,19 +305,17 @@ nih_main_daemonise (const char *pidname)
 	if (pid < 0) {
 		nih_return_system_error (-1);
 	} else if (pid > 0) {
-		if (pidname) {
-			FILE *pidfile;
-			char *filename;
+		FILE *pidfile;
+		char *filename;
 
-			umask (022);
+		umask (022);
 
-			NIH_MUST (filename = nih_sprintf (NULL, "%s/%s.pid",
-							  VAR_RUN, pidname));
-			pidfile = fopen (filename, "w");
-			if (pidfile) {
-				fprintf (pidfile, "%d\n", pid);
-				fclose (pidfile);
-			}
+		NIH_MUST (filename = nih_sprintf (NULL, "%s/%s.pid",
+						  VAR_RUN, program_name));
+		pidfile = fopen (filename, "w");
+		if (pidfile) {
+			fprintf (pidfile, "%d\n", pid);
+			fclose (pidfile);
 		}
 
 		exit (0);

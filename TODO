@@ -1,3 +1,21 @@
+option parser:
+- should be able to give a description for the program that appears
+  after usage
+- should be able to give an extensive help that appears after the
+  options
+- might not want log level stuff by default, likewise help/version
+
+command parser:
+- based on option parser, works in form [OPTION...] CMD [OPTION...]
+- also switches on argv[0]
+
+timers:
+- calendar scheduled timers
+
+file matching functions
+common pathnames?
+
+
 allocator/slab module
 restore list_entry code somewhere else
 

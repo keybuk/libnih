@@ -107,6 +107,13 @@ static NihOption default_options[] = {
 	NIH_OPTION_LAST
 };
 
+/**
+ * usage_string:
+ *
+ * This string is appended to the program help if given.
+ **/
+static const char *usage_string = NULL;
+
 
 /**
  * nih_option_parser:
@@ -626,6 +633,21 @@ nih_option_debug (NihOption  *option,
 
 
 /**
+ * nih_option_set_usage:
+ * @usage: usage string.
+ *
+ * Set the usage string appended to the program help output, this should
+ * be a static translated string.
+ **/
+void
+nih_option_set_usage (const char *usage)
+{
+	nih_assert (usage != NULL);
+
+	usage_string = usage;
+}
+
+/**
  * nih_option_help:
  * @options: program options lists.
  *
@@ -672,8 +694,9 @@ nih_option_help (NihOption *options[])
 		}
 	}
 
-	/* FIXME ideally this header should be changeable */
-	printf ("%s: %s [OPTION]... [ARG]...\n", _("Usage"), program_name);
+	printf ("%s: %s [OPTION]...", _("Usage"), program_name);
+	if (usage_string)
+		printf (" %s", usage_string);
 	printf ("\n");
 
 	/* Iterate the option groups we found in order, and display

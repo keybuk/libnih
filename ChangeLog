@@ -1,5 +1,11 @@
 2006-09-08  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/option.c (nih_option_help): Allow the usage string to be
+	customised.
+	(nih_option_set_usage): Using this function.
+	* nih/option.h: Update.
+	* nih/tests/test_option.c (test_help): Test the usage string.
+
 	* nih/main.c (nih_main_daemonise): Use program_name for the pid file.
 	* nih/main.h: Update.
 

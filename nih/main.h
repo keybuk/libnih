@@ -119,6 +119,8 @@ const char *     nih_main_package_string (void);
 void             nih_main_suggest_help   (void);
 void             nih_main_version        (void);
 
+int              nih_main_daemonise      (const char *pidname);
+
 int              nih_main_loop           (void);
 void             nih_main_loop_interrupt (void);
 void             nih_main_loop_exit      (int status);

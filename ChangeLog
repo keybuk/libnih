@@ -1,3 +1,9 @@
+2006-09-08  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/main.c (nih_main_daemonise): Add a daemonise function,
+	pretty standard really.
+	* nih/main.h: Update.
+
 2006-09-07  Scott James Remnant  <scott@netsplit.com>
 
 	* AUTHORS: Mention the ChangeLog file.

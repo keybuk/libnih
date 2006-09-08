@@ -24,8 +24,11 @@
 #endif /* HAVE_CONFIG_H */
 
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/select.h>
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <signal.h>
 #include <string.h>
@@ -39,9 +42,25 @@
 #include <nih/signal.h>
 #include <nih/child.h>
 #include <nih/io.h>
+#include <nih/error.h>
 #include <nih/logging.h>
 
 #include "main.h"
+
+
+/**
+ * VAR_RUN:
+ *
+ * Directory to write pid files into.
+ **/
+#define VAR_RUN "/var/run"
+
+/**
+ * DEV_NULL:
+ *
+ * Device bound to stdin/out/err when daemonising.
+ **/
+#define DEV_NULL "/dev/null"
 
 
 /**
@@ -235,6 +254,90 @@ nih_main_version (void)
 	printf ("\n");
 	printf (_("This is free software; see the source for copying conditions.  There is NO\n"
 		  "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"));
+}
+
+
+/**
+ * nih_main_daemonise:
+ * @pidname: name of program to use for pid file.
+ *
+ * Perform the necessary steps to become a daemon process, this will only
+ * return in the child process if successful.  If @pidname is not %NULL,
+ * a file will be written in /var/run/@pidname.pid containing the pid of the
+ * child process.
+ *
+ * Returns: zero on success, negative value on raised error.
+ **/
+int
+nih_main_daemonise (const char *pidname)
+{
+	pid_t pid;
+	int   i, fd;
+
+	/* Fork off child process.  This begans the detachment from our
+	 * parent process; this will terminate the intermediate process.
+	 */
+	pid = fork ();
+	if (pid < 0) {
+		nih_return_system_error (-1);
+	} else if (pid > 0) {
+		exit (0);
+	}
+
+	/* Become session leader of a new process group, without any
+	 * controlling tty.
+	 */
+	setsid ();
+
+	/* When the session leader dies, SIGHUP is sent to all processes
+	 * in that process group, including the child we're about to
+	 * spawn.  So make damned sure it's ignored.
+	 */
+	nih_signal_set_ignore (SIGHUP);
+
+	/* We now spawn off a second child (or at least attempt to),
+	 * we do this so that it is guaranteed not to be a session leader,
+	 * even by accident.  Therefore any open() call on a tty won't
+	 * make that it's controlling terminal.
+	 */
+	pid = fork ();
+	if (pid < 0) {
+		nih_return_system_error (-1);
+	} else if (pid > 0) {
+		if (pidname) {
+			FILE *pidfile;
+			char *filename;
+
+			umask (022);
+
+			NIH_MUST (filename = nih_sprintf (NULL, "%s/%s.pid",
+							  VAR_RUN, pidname));
+			pidfile = fopen (filename, "w");
+			if (pidfile) {
+				fprintf (pidfile, "%d\n", pid);
+				fclose (pidfile);
+			}
+		}
+
+		exit (0);
+	}
+
+	/* We're now in a daemon child process.  Change our working directory
+	 * and file creation mask to be more appropriate.
+	 */
+	chdir ("/");
+	umask (0);
+
+	/* Close the stdin/stdout/stderr that we inherited */
+	for (i = 0; i < 3; i++)
+		close (i);
+
+	/* And instead bind /dev/null to them */
+	fd = open (DEV_NULL, O_RDWR);
+	dup (fd);
+	dup (fd);
+
+	return 0;
 }
 
 

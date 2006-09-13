@@ -27,6 +27,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include <string.h>
+
 #include <nih/macros.h>
 #include <nih/alloc.h>
 #include <nih/list.h>
@@ -121,7 +123,15 @@ nih_child_poll (void)
 
 	nih_child_init ();
 
-	info.si_pid = 0;
+	/* NOTE: there's a strange kernel inconsistency, when the waitid()
+	 * syscall is native, it takes special care to zero this struct
+	 * before returning ... but when it's a compat syscall, it
+	 * specifically *doesn't* zero the struct.
+	 *
+	 * So we have to take care to do it ourselves before every call.
+	 */
+	memset (&info, 0, sizeof (info));
+
 	while (waitid (P_ALL, 0, &info, WEXITED | WNOHANG | WNOWAIT) == 0) {
 		pid_t pid;
 		int   killed, status;
@@ -146,6 +156,10 @@ nih_child_poll (void)
 		}
 
 		/* Reap the child */
+		memset (&info, 0, sizeof (info));
 		waitid (P_PID, pid, &info, WEXITED);
+
+		/* For next waitid call */
+		memset (&info, 0, sizeof (info));
 	}
 }

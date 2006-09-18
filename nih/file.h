@@ -20,7 +20,11 @@
 #ifndef NIH_FILE_H
 #define NIH_FILE_H
 
-#include <sys/inotify.h>
+#ifdef HAVE_SYS_INOTIFY_H
+# include <sys/inotify.h>
+#else
+# include <nih/inotify.h>
+#endif /* HAVE_SYS_INOTIFY_H */
 
 #include <nih/macros.h>
 #include <nih/list.h>

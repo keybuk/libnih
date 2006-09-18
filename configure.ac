@@ -18,6 +18,7 @@ AC_PROG_LIBTOOL
 # Checks for libraries.
 
 # Checks for header files.
+AC_CHECK_HEADERS([sys/inotify.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 NIH_C_C99

@@ -1,3 +1,11 @@
+2006-09-18  Michael Biebl  <mbiebl@gmail.com>
+
+	* configure.ac: Check for sys/inotify.h
+	* nih/inotify.h: Taken from udev, this defines the syscalls
+	and flags, etc. for inotify on glibc 2.3
+	* nih/file.c, nih/file.h: Include nih/inotify.h if we do not have
+	sys/inotify.h
+
 2006-09-13  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/child.c (nih_child_poll): Zero the siginfo_t struct before

@@ -1,3 +1,8 @@
+2006-09-19  Michael Biebl  <mbiebl@gmail.com>
+
+	* nih/Makefile.am (nihinclude_HEADERS): Install inotify.h just in
+	case it's required
+
 2006-09-18  Michael Biebl  <mbiebl@gmail.com>
 
 	* configure.ac: Check for sys/inotify.h

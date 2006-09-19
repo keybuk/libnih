@@ -53,7 +53,8 @@ nihinclude_HEADERS = \
 	option.h \
 	logging.h \
 	error.h \
-	errors.h
+	errors.h \
+	inotify.h
 
 
 TESTS = \

@@ -1,3 +1,8 @@
+2006-09-20  Michael Biebl  <mbiebl@gmail.com>
+
+	* nih/tests/test_file.c: Include nih/inotify.h when sys/inotify.h
+	is not available.
+
 2006-09-19  Michael Biebl  <mbiebl@gmail.com>
 
 	* nih/Makefile.am (nihinclude_HEADERS): Install inotify.h just in

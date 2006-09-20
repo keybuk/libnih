@@ -21,10 +21,15 @@
 
 #include <config.h>
 
+#ifdef HAVE_SYS_INOTIFY_H
+# include <sys/inotify.h>
+#else
+# include <nih/inotify.h>
+#endif /* HAVE_SYS_INOTIFY_H */
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/select.h>
-#include <sys/inotify.h>
 
 #include <stdio.h>
 #include <assert.h>

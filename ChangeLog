@@ -1,3 +1,9 @@
+2006-09-25  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/logging.h (nih_message): Add nih_message as an alias for
+	nih_warn.
+	* nih/tests/test_logging.c (test_log_message): Check new macro.
+
 2006-09-20  Michael Biebl  <mbiebl@gmail.com>
 
 	* nih/tests/test_file.c: Include nih/inotify.h when sys/inotify.h

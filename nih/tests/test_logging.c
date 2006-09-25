@@ -245,6 +245,31 @@ test_log_message (void)
 	nih_free (last_message);
 
 
+	printf ("Testing nih_message()\n");
+
+	err = nih_message ("%d formatted %s", -2, "text");
+
+	/* No error should be returned */
+	if (err) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Logger should be called with NIH_LOG_WARN */
+	if (last_priority != NIH_LOG_WARN) {
+		printf ("BAD: logger was not called or priority wrong.\n");
+		ret = 1;
+	}
+
+	/* Logger should be given formatted message */
+	if (strcmp (last_message, "-2 formatted text")) {
+		printf ("BAD: logger not called with expected message.\n");
+		ret = 1;
+	}
+
+	nih_free (last_message);
+
+
 	printf ("Testing nih_error()\n");
 
 	err = nih_error ("formatted %d %s", 42, "text");

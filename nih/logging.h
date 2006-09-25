@@ -91,6 +91,18 @@ typedef int (*NihLogger) (NihLogLevel, const char *);
 	nih_log_message (NIH_LOG_WARN, format, ##__VA_ARGS__)
 
 /**
+ * nih_message:
+ * @format: printf-style format string.
+ *
+ * Outputs a message from a non-daemon process that is normally shown unless
+ * the user wants quiet operation.
+ *
+ * This is an alias for nih_warn, as the same logging priority is used.
+ **/
+#define nih_message(format, ...) \
+	nih_log_message (NIH_LOG_WARN, format, ##__VA_ARGS__)
+
+/**
  * nih_error:
  * @format: printf-style format string.
  *

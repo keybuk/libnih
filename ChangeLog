@@ -1,5 +1,7 @@
 2006-09-25  Scott James Remnant  <scott@netsplit.com>
 
+	* TODO (main): Update.
+
 	* nih/logging.h (nih_message): Add nih_message as an alias for
 	nih_warn.
 	* nih/tests/test_logging.c (test_log_message): Check new macro.

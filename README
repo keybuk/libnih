@@ -29,12 +29,8 @@ your own application or library's tree.  A script (nihify) is provided
 to do this for you.
 
 Once you've run this script (from the tree of your own application or
-library) you'll need to edit configure.ac to expand the following
-macros:
+library) you'll need to edit configure.ac and add the following line
+after any checks for the compiler (the "Checks for libraries" section
+is usually the right place).
 
-	NIH_C_C99
-	NIH_COMPILER_WARNINGS
-	NIH_COMPILER_OPTIMISATIONS
-	NIH_COMPILER_COVERAGE
-	NIH_LINKER_OPTIMISATIONS
-	NIH_LINKER_VERSION_SCRIPT
+	NIH_INIT

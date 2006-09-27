@@ -1,3 +1,11 @@
+2006-09-27  Scott James Remnant  <scott@netsplit.com>
+
+	* m4/misc.m4 (NIH_INIT): Add easier macro for using libnih.
+	* m4/compiler.m4: Remove hack to include misc.m4
+	* configure.ac: Drop the macro set and replace with NIH_INIT
+	* README: Update.
+	* nihify: Warn if NIH_INIT not present.
+
 2006-09-25  Scott James Remnant  <scott@netsplit.com>
 
 	* TODO (main): Update.

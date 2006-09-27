@@ -38,3 +38,24 @@ m4_ifndef([NIH_PACKAGE_COPYRIGHT], [m4_bmatch([$1], [
 	AC_DEFINE([PACKAGE_COPYRIGHT], [NIH_PACKAGE_COPYRIGHT],
 		  [Define to the copyright message of this package.])])])dnl
 ])# AC_COPYRIGHT
+
+
+# NIH_INIT
+# --------
+# Expands to the set of macros normally required for using libnih within
+# another source tree.
+AC_DEFUN([NIH_INIT],
+[# Checks for header files.  (libnih)
+AC_CHECK_HEADERS([sys/inotify.h])
+
+# Checks for typedefs, structures, and compiler characteristics.  (libnih)
+NIH_C_C99
+
+# Other checks
+NIH_COMPILER_WARNINGS
+NIH_COMPILER_OPTIMISATIONS
+NIH_COMPILER_COVERAGE
+
+NIH_LINKER_OPTIMISATIONS
+NIH_LINKER_VERSION_SCRIPT
+])# NIH_INIT

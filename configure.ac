@@ -16,21 +16,15 @@ AC_PROG_CC
 AC_PROG_LIBTOOL
 
 # Checks for libraries.
+NIH_INIT
 
 # Checks for header files.
-AC_CHECK_HEADERS([sys/inotify.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
-NIH_C_C99
 
 # Checks for library functions.
 
 # Other checks
-NIH_COMPILER_WARNINGS
-NIH_COMPILER_OPTIMISATIONS
-NIH_COMPILER_COVERAGE
-NIH_LINKER_OPTIMISATIONS
-NIH_LINKER_VERSION_SCRIPT
 
 AC_CONFIG_FILES([ Makefile m4/Makefile po/Makefile.in intl/Makefile
 		  nih/Makefile ])

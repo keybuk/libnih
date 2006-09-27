@@ -37,3 +37,8 @@ for SYMLINK in nih m4/Makefile.am m4/compiler.m4 m4/linker.m4 m4/misc.m4; do
     echo "Creating symlink to $SYMLINK"
     ln -s "$libnih_dir/$SYMLINK" "$src_dir/$SYMLINK"
 done
+
+if ! grep "^NIH_INIT" "$src_dir/configure.ac" >/dev/null 2>&1; then
+    echo
+    echo "Remember to add NIH_INIT to configure.ac"
+fi

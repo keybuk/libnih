@@ -1,10 +1,5 @@
 option parser:
-- should be able to give a description for the program that appears
-  after usage
-- should be able to give an extensive help that appears after the
-  options
 - might not want log level stuff by default, likewise help/version
-- wrap help to screen width, not 80 columns
 
 command parser:
 - based on option parser, works in form [OPTION...] CMD [OPTION...]

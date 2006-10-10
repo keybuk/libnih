@@ -24,10 +24,16 @@
 #endif /* HAVE_CONFIG_H */
 
 
+#include <sys/stat.h>
+
+#include <pty.h>
+#include <fcntl.h>
 #include <stdio.h>
+#include <assert.h>
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <nih/alloc.h>
 #include <nih/string.h>
@@ -577,6 +583,93 @@ test_str_wrap (void)
 	return ret;
 }
 
+int
+test_str_screen_wrap (void)
+{
+	char           *str;
+	struct winsize  winsize;
+	int             oldstdout, pty, pts, ret = 0;
+
+	printf ("Testing nih_str_screen_wrap()\n");
+	oldstdout = dup (STDOUT_FILENO);
+
+	unsetenv ("COLUMNS");
+
+	winsize.ws_row = 24;
+	winsize.ws_col = 40;
+	winsize.ws_xpixel = 0;
+	winsize.ws_ypixel = 0;
+	assert (openpty (&pty, &pts, NULL, NULL, &winsize) == 0);
+
+	printf ("...with screen width\n");
+	dup2 (pts, STDOUT_FILENO);
+	str = nih_str_screen_wrap (NULL, ("this is a string that should need "
+					  "wrapping at any different screen "
+					  "width that we choose to set"),
+				   0, 0);
+	dup2 (oldstdout, STDOUT_FILENO);
+
+	/* Check returned string */
+	if (strcmp (str, ("this is a string that should need\n"
+			  "wrapping at any different screen width\n"
+			  "that we choose to set"))) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	nih_free (str);
+
+
+	printf ("...with COLUMNS variable\n");
+	putenv ("COLUMNS=30");
+	dup2 (pts, STDOUT_FILENO);
+	str = nih_str_screen_wrap (NULL, ("this is a string that should need "
+					  "wrapping at any different screen "
+					  "width that we choose to set"),
+				   0, 0);
+	dup2 (oldstdout, STDOUT_FILENO);
+
+	/* Check returned string */
+	if (strcmp (str, ("this is a string that should\n"
+			  "need wrapping at any different\n"
+			  "screen width that we choose to\n"
+			  "set"))) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	nih_free (str);
+
+	unsetenv ("COLUMNS");
+	close (pts);
+	close (pty);
+
+
+	assert (pts = open ("/dev/null", O_RDWR | O_NOCTTY) >= 0);
+
+	printf ("...with fallback to 80 columns\n");
+	dup2 (pts, STDOUT_FILENO);
+	str = nih_str_screen_wrap (NULL, ("this is a string that should need "
+					  "wrapping at any different screen "
+					  "width that we choose to set"),
+				   0, 0);
+	dup2 (oldstdout, STDOUT_FILENO);
+
+	/* Check returned string */
+	if (strcmp (str, ("this is a string that should need wrapping at "
+			  "any different screen width that we\n"
+			  "choose to set"))) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	nih_free (str);
+
+	close (pts);
+
+	return ret;
+}
+
 
 int
 main (int   argc,
@@ -591,6 +684,7 @@ main (int   argc,
 	ret |= test_str_split ();
 	ret |= test_strv_free ();
 	ret |= test_str_wrap ();
+	ret |= test_str_screen_wrap ();
 
 	return ret;
 }

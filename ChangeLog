@@ -1,5 +1,12 @@
 2006-10-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/string.c (nih_str_screen_wrap): Add wrapper around
+	nih_str_wrap that obtains the screen width and uses that for len.
+	* nih/string.h: Add prototype.
+	* nih/tests/test_string.c (test_str_screen_wrap): Test new function.
+	* nih/Makefile.am (test_string_LDADD): Link with -lutil so we can
+	use openpty in our "fake terminal" tests.
+
 	* nih/tests/test_option.c: Fix minor test case memory leak.
 
 	* nih/tests/test_child.c (test_poll, test_poll): Use better

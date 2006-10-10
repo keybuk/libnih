@@ -24,10 +24,13 @@
 #endif /* HAVE_CONFIG_H */
 
 
+#include <sys/ioctl.h>
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
@@ -391,4 +394,67 @@ nih_str_wrap (const void *parent,
 	}
 
 	return txt;
+}
+
+/**
+ * nih_str_screen_wrap:
+ * @parent: parent of returned string,
+ * @str: string to be wrapped,
+ * @first_indent: indent for first line,
+ * @indent: indent for subsequent lines.
+ *
+ * Returns a newly allocated copy of @str with newlines inserted so no
+ * line is wider than the screen (not including the newline).  Where
+ * possible, newlines replace existing whitespace characters so that words
+ * are not broken.
+ *
+ * If standard output is not a terminal, then 80 characters is assumed.
+ * The width can be overriden with the COLUMNS environment variable.
+ *
+ * The first line may be indented by an extra @first_indent characters, and
+ * subsequent lines may be intended by an extra @indent characters.  These
+ * are added to the string as whitespace characters.
+ *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned string will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the nih_alloc_set_destructor() function.
+ *
+ * Returns: newly allocated string or NULL if insufficient memory.
+ **/
+char *
+nih_str_screen_wrap (const void *parent,
+		     const char *str,
+		     size_t      first_indent,
+		     size_t      indent)
+{
+	char   *columns;
+	size_t  len = 0;
+
+	nih_assert (str != NULL);
+
+	/* Look at the columns environment variable */
+	columns = getenv ("COLUMNS");
+	if ((! len) && columns) {
+		char *endptr;
+
+		len = strtoul (columns, &endptr, 10);
+		if (*endptr)
+			len = 0;
+	}
+
+	/* Check whether standard output is a tty */
+	if ((! len) && isatty (STDOUT_FILENO)) {
+		struct winsize winsize;
+
+		if (ioctl (STDOUT_FILENO, TIOCGWINSZ, &winsize) == 0)
+			len = winsize.ws_col;
+	}
+
+	/* Fallback to 80 columns */
+	if (! len)
+		len = 80;
+
+	return nih_str_wrap (parent, str, len, first_indent, indent);
 }

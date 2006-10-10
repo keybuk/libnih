@@ -80,7 +80,7 @@ test_alloc_LDADD = libnih.la
 
 test_string_SOURCES = tests/test_string.c
 test_string_LDFLAGS = -static
-test_string_LDADD = libnih.la
+test_string_LDADD = libnih.la -lutil
 
 test_list_SOURCES = tests/test_list.c
 test_list_LDFLAGS = -static

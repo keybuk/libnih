@@ -265,6 +265,10 @@ nih_main_version (void)
  * return in the child process if successful.  A file will be written to
  * /var/run/<program_name>.pid containing the pid of the child process.
  *
+ * This is preferable to the libc daemon() function because it ensures
+ * that the new process is not a session leader, so can open ttys without
+ * worrying about them becoming its controlling terminal.
+ *
  * Returns: zero on success, negative value on raised error.
  **/
 int

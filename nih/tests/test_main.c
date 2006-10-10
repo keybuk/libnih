@@ -22,8 +22,11 @@
 #include <config.h>
 
 
+#include <sys/wait.h>
+
 #include <stdio.h>
 #include <assert.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -321,6 +324,65 @@ test_version (void)
 }
 
 
+int
+test_daemonise (void)
+{
+	pid_t pid;
+	char  result[2];
+	int   ret = 0, status, fds[2];
+
+	printf ("Testing nih_main_daemonise\n");
+	assert (pipe (fds) == 0);
+
+	assert ((pid = fork ()) >= 0);
+	if (pid == 0) {
+		char buf[80];
+
+		program_name = "test";
+		if (nih_main_daemonise () < 0)
+			exit (50);
+
+		/* Working directory should be / */
+		getcwd (buf, sizeof (buf));
+		if (strcmp (buf, "/")) {
+			write (fds[1], "wd", 2);
+			exit (0);
+		}
+
+		write (fds[1], "ok", 2);
+		exit (0);
+	}
+
+	assert (waitpid (pid, &status, 0) > 0);
+
+	/* Child process should exit 0 */
+	if ((! WIFEXITED (status)) || (WEXITSTATUS (status) != 0)) {
+		printf ("BAD: exit status wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Check we got a result code */
+	if (read (fds[0], result, 2) != 2) {
+		printf ("BAD: result code wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Working directory should be / */
+	if (! memcmp (result, "wd", 2)) {
+		printf ("BAD: working directory wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Check the child process worked */
+	if (memcmp (result, "ok", 2)) {
+		printf ("BAD: unknown result code.\n");
+		ret = 1;
+	}
+
+	return ret;
+}
+
+
 static int callback_called = 0;
 static void *last_data = NULL;
 
@@ -426,6 +488,7 @@ main (int   argc,
 	ret |= test_package_string ();
 	ret |= test_suggest_help ();
 	ret |= test_version ();
+	ret |= test_daemonise ();
 	ret |= test_main_loop ();
 	ret |= test_main_loop_add_func ();
 

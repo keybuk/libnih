@@ -142,7 +142,8 @@ static __thread int exit_status = 0;
 /**
  * loop_functions:
  *
- * List of functions to be called in each main loop iteration.
+ * List of functions to be called in each main loop iteration.  Each item
+ * is an NihMainLoopFunc structure.
  **/
 static NihList *loop_functions = NULL;
 

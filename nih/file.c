@@ -58,7 +58,8 @@ static void nih_file_reader (void *data, NihIo *io,
 /**
  * file_watches:
  *
- * List of all file watches.
+ * List of all file watches, in no particular order.  Each item is an
+ * NihFileWatch structure.
  **/
 static NihList *file_watches = NULL;
 

@@ -1,5 +1,11 @@
 2006-10-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/child.c: Clarify child_watches item types.
+	* nih/file.c: Clarify file_watches item types.
+	* nih/io.c: Clarify io_watches item types.
+	* nih/main.c: Clarify loop_functions item types.
+	* nih/timer.c: Clarify timers item types.
+
 	* nih/signal.h (NihSignalCb): Rename to NihSignalHandler.
 	(NihSignal): Change callback name to handler and type
 	to NihSignalHandler.

@@ -41,7 +41,7 @@
  * child_watches:
  *
  * This is the list of current child watches, not sorted into any
- * particular order.
+ * particular order.  Each item is an NihChildWatch structure.
  **/
 static NihList *child_watches = NULL;
 

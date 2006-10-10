@@ -58,7 +58,8 @@ static void        nih_io_error         (NihIo *io);
  * io_watches;
  *
  * This is the list of current watches on file descriptors and sockets,
- * not sorted into any particular order.
+ * not sorted into any particular order.  Each item is an NihIoWatch
+ * structure.
  **/
 static NihList *io_watches = NULL;
 

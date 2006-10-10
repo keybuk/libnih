@@ -41,6 +41,8 @@
  * This is the list of all registered timers, it is not sorted into any
  * particular order.  The due time of timers should be set when the timer
  * is added to this list, or rescheduled; it is not calculated on the fly.
+ *
+ * Each item is an NihTimer structure.
  **/
 static NihList *timers = NULL;
 

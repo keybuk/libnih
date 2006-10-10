@@ -247,14 +247,22 @@ nih_main_suggest_help (void)
 void
 nih_main_version (void)
 {
+	char *str;
+
 	nih_assert (program_name != NULL);
 
 	printf ("%s\n", nih_main_package_string ());
 	if (package_copyright)
 		printf ("%s\n", package_copyright);
 	printf ("\n");
-	printf (_("This is free software; see the source for copying conditions.  There is NO\n"
-		  "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"));
+
+	NIH_MUST (str = nih_str_screen_wrap (
+			  NULL, _("This is free software; see the source for "
+				  "copying conditions.  There is NO warranty; "
+				  "not even for MERCHANTABILITY or FITNESS "
+				  "FOR A PARTICULAR PURPOSE."), 0, 0));
+	printf ("%s\n", str);
+	nih_free (str);
 }
 
 

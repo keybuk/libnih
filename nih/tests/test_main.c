@@ -269,6 +269,7 @@ test_version (void)
 
 	output = tmpfile ();
 	oldstdout = dup (STDOUT_FILENO);
+	unsetenv ("COLUMNS");
 
 	dup2 (fileno (output), STDOUT_FILENO);
 	nih_main_version ();

@@ -1,5 +1,7 @@
 2006-10-10  Scott James Remnant  <scott@netsplit.com>
 
+	* HACKING: Detail function documentation requirement and format.
+
 	* nih/tests/test_signal.c (test_set_default, test_set_ignore) 
 	(test_reset): amd64 seems to set the SA_NODEFER flag even when
 	you pass zero, so just check we clear important bits.

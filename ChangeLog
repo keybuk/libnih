@@ -1,5 +1,12 @@
 2006-10-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/signal.h (NihSignalCb): Rename to NihSignalHandler.
+	(NihSignal): Change callback name to handler and type
+	to NihSignalHandler.
+	* nih/signal.c (nih_signal_add_callback): Rename to
+	nih_signal_add_handler.
+	* nih/tests/test_signal.c: Update.
+
 	* nih/list.c (nih_list_new): Take a parent pointer like everything
 	else, showing its age slightly.
 	* nih/list.h: Update prototype.

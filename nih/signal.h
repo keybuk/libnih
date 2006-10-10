@@ -27,23 +27,23 @@
 
 
 /**
- * NihSignalCb:
- * @data: pointer given with callback,
+ * NihSignalHandler:
+ * @data: pointer given with handler,
  * @signal: signal watch structure.
  *
- * The signal callback is called whenever the signal has been raised, it
+ * A signal handler is called whenever the signal has been raised, it
  * is passed the NihSignal structure rather than the actual signal so that
  * it can be removed if desired.
  **/
 typedef struct nih_signal NihSignal;
-typedef void (*NihSignalCb) (void *, NihSignal *);
+typedef void (*NihSignalHandler) (void *, NihSignal *);
 
 /**
  * NihSignal:
  * @entry: list header,
  * @signum: signal to catch,
- * @callback: function called when caught,
- * @data: pointer passed to callback.
+ * @handler: function called when caught,
+ * @data: pointer passed to @handler.
  *
  * This structure contains information about a function that should be
  * called whenever a particular signal is raised.  The calling is done
@@ -54,26 +54,26 @@ typedef void (*NihSignalCb) (void *, NihSignal *);
  * held in a list internally.
  **/
 struct nih_signal {
-	NihList      entry;
-	int          signum;
+	NihList           entry;
+	int               signum;
 
-	NihSignalCb  callback;
-	void        *data;
+	NihSignalHandler  handler;
+	void             *data;
 };
 
 
 NIH_BEGIN_EXTERN
 
-int        nih_signal_set_handler  (int signum, void (*handler)(int));
-int        nih_signal_set_default  (int signum);
-int        nih_signal_set_ignore   (int signum);
-void       nih_signal_reset        (void);
+int        nih_signal_set_handler (int signum, void (*handler)(int));
+int        nih_signal_set_default (int signum);
+int        nih_signal_set_ignore  (int signum);
+void       nih_signal_reset       (void);
 
-NihSignal *nih_signal_add_callback (const void *parent, int signum,
-				    NihSignalCb callback, void *data);
+NihSignal *nih_signal_add_handler (const void *parent, int signum,
+				   NihSignalHandler handler, void *data);
 
-void       nih_signal_handler      (int signum);
-void       nih_signal_poll         (void);
+void       nih_signal_handler     (int signum);
+void       nih_signal_poll        (void);
 
 NIH_END_EXTERN
 

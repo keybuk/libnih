@@ -31,7 +31,7 @@
 
 
 static void
-my_handler (int signum) {
+my_sig_handler (int signum) {
 }
 
 int
@@ -41,7 +41,7 @@ test_set_handler (void)
 	int              ret = 0, retval, i;
 
 	printf ("Testing nih_signal_set_handler()\n");
-	retval = nih_signal_set_handler (SIGUSR1, my_handler);
+	retval = nih_signal_set_handler (SIGUSR1, my_sig_handler);
 
 	/* Return value should be zero */
 	if (retval != 0) {
@@ -53,7 +53,7 @@ test_set_handler (void)
 	assert (sigaction (SIGUSR1, NULL, &act) == 0);
 
 	/* Handler should be function given */
-	if (act.sa_handler != my_handler) {
+	if (act.sa_handler != my_sig_handler) {
 		printf ("BAD: signal handler set incorrectly.\n");
 		ret = 1;
 	}
@@ -204,26 +204,26 @@ test_reset (void)
 }
 
 
-static int callback_called = 0;
+static int handler_called = 0;
 static void *last_data;
 static NihSignal *last_signal;
 
 static void
-my_callback (void *data, NihSignal *signal)
+my_handler (void *data, NihSignal *signal)
 {
-	callback_called++;
+	handler_called++;
 	last_data = data;
 	last_signal = signal;
 }
 
 int
-test_add_callback (void)
+test_add_handler (void)
 {
 	NihSignal *signal;
 	int        ret = 0;
 
-	printf ("Testing nih_signal_add_callback()\n");
-	signal = nih_signal_add_callback (NULL, SIGUSR1, my_callback, &ret);
+	printf ("Testing nih_signal_add_handler()\n");
+	signal = nih_signal_add_handler (NULL, SIGUSR1, my_handler, &ret);
 
 	/* Signal number should be number given */
 	if (signal->signum != SIGUSR1) {
@@ -231,15 +231,15 @@ test_add_callback (void)
 		ret = 1;
 	}
 
-	/* Callback should be callback given */
-	if (signal->callback != my_callback) {
-		printf ("BAD: callback set incorrectly.\n");
+	/* Handler should be handler given */
+	if (signal->handler != my_handler) {
+		printf ("BAD: handler set incorrectly.\n");
 		ret = 1;
 	}
 
-	/* Callback data should be pointer given */
+	/* Handler data should be pointer given */
 	if (signal->data != &ret) {
-		printf ("BAD: callback data set incorrectly.\n");
+		printf ("BAD: handler data set incorrectly.\n");
 		ret = 1;
 	}
 
@@ -267,17 +267,17 @@ test_poll (void)
 	int        ret = 0;
 
 	printf ("Testing nih_signal_poll()\n");
-	signal1 = nih_signal_add_callback (NULL, SIGUSR1, my_callback, &ret);
-	signal2 = nih_signal_add_callback (NULL, SIGUSR2, my_callback, &ret);
+	signal1 = nih_signal_add_handler (NULL, SIGUSR1, my_handler, &ret);
+	signal2 = nih_signal_add_handler (NULL, SIGUSR2, my_handler, &ret);
 
-	callback_called = 0;
+	handler_called = 0;
 	last_data = NULL;
 	last_signal = NULL;
 	nih_signal_handler (SIGUSR1);
 	nih_signal_poll ();
 
 	/* Only one signal should have been triggered */
-	if (callback_called != 1) {
+	if (handler_called != 1) {
 		printf ("BAD: incorrect number of signals called.\n");
 		ret = 1;
 	}
@@ -294,14 +294,14 @@ test_poll (void)
 		ret = 1;
 	}
 
-	callback_called = 0;
+	handler_called = 0;
 	last_data = NULL;
 	last_signal = NULL;
 	nih_signal_handler (SIGUSR2);
 	nih_signal_poll ();
 
 	/* Only one signal should have been triggered */
-	if (callback_called != 1) {
+	if (handler_called != 1) {
 		printf ("BAD: incorrect number of signals called.\n");
 		ret = 1;
 	}
@@ -318,12 +318,12 @@ test_poll (void)
 		ret = 1;
 	}
 
-	callback_called = 0;
+	handler_called = 0;
 	nih_signal_handler (SIGINT);
 	nih_signal_poll ();
 
 	/* No signals should have been triggered */
-	if (callback_called != 0) {
+	if (handler_called != 0) {
 		printf ("BAD: signals called unexpectedly.\n");
 		ret = 1;
 	}
@@ -342,7 +342,7 @@ main (int   argc,
 	ret |= test_set_default ();
 	ret |= test_set_ignore ();
 	ret |= test_reset ();
-	ret |= test_add_callback ();
+	ret |= test_add_handler ();
 	ret |= test_poll ();
 
 	return ret;

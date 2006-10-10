@@ -57,7 +57,7 @@ static volatile sig_atomic_t signals_caught[NUM_SIGNALS];
  * signals:
  *
  * This is the list of registered signals, not sorted into any particular
- * order.
+ * order.  Each item is an NihSignal structure.
  **/
 static NihList *signals = NULL;
 
@@ -181,19 +181,19 @@ nih_signal_reset (void)
 
 
 /**
- * nih_signal_add_callback:
- * @parent: parent of callback,
+ * nih_signal_add_handler:
+ * @parent: parent of structure,
  * @signum: signal number to catch,
- * @callback: function to call,
- * @data: pointer to pass to @callback.
+ * @handler: function to call,
+ * @data: pointer to pass to @handler.
  *
- * Adds @callback to the list of functions that should be called by
+ * Adds @handler to the list of functions that should be called by
  * nih_signal_poll() if the @signum signal was raised.  The signal must first
  * have been set to nih_signal_handler() using nih_signal_set_handler(),
  *
  * The callback structure is allocated using nih_alloc() and stored in a
- * linked list, a default destructor is set that removes the callback from
- * the list.  Removal of the callback can be performed by freeing it.
+ * linked list, a default destructor is set that removes the handler from
+ * the list.  Removal of the handler can be performed by freeing it.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
@@ -204,16 +204,16 @@ nih_signal_reset (void)
  * Returns: the signal information, or NULL if insufficient memory.
  **/
 NihSignal *
-nih_signal_add_callback (const void  *parent,
-			 int          signum,
-			 NihSignalCb  callback,
-			 void        *data)
+nih_signal_add_handler (const void       *parent,
+			int               signum,
+			NihSignalHandler  handler,
+			void             *data)
 {
 	NihSignal *signal;
 
 	nih_assert (signum > 0);
 	nih_assert (signum < NUM_SIGNALS);
-	nih_assert (callback != NULL);
+	nih_assert (handler != NULL);
 
 	nih_signal_init ();
 
@@ -226,7 +226,7 @@ nih_signal_add_callback (const void  *parent,
 
 	signal->signum = signum;
 
-	signal->callback = callback;
+	signal->handler = handler;
 	signal->data = data;
 
 	nih_list_add (signals, &signal->entry);
@@ -240,7 +240,7 @@ nih_signal_add_callback (const void  *parent,
  * @signum: signal raised.
  *
  * This signal handler should be used for any signals that you wish to use
- * nih_signal_add_callback() and nih_signal_poll() for.  It simply sets a
+ * nih_signal_add_handler() and nih_signal_poll() for.  It simply sets a
  * volatile sig_atomic_t variable so that the signal can be detected in
  * the main loop.
  **/
@@ -258,11 +258,11 @@ nih_signal_handler (int signum)
 /**
  * nih_signal_poll:
  *
- * Iterate the list of registered signal callbacks and call the function
+ * Iterate the list of registered signal handlers and call the function
  * if that signal has been raised since the last time nih_signal_poll() was
  * called.
  *
- * It is safe for the callback to remove itself.
+ * It is safe for the handler to remove itself.
  **/
 void
 nih_signal_poll (void)
@@ -277,7 +277,7 @@ nih_signal_poll (void)
 		if (! signals_caught[signal->signum])
 			continue;
 
-		signal->callback (signal->data, signal);
+		signal->handler (signal->data, signal);
 	}
 
 	for (s = 0; s < NUM_SIGNALS; s++)

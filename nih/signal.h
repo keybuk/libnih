@@ -32,7 +32,7 @@
  * @signal: signal watch structure.
  *
  * The signal callback is called whenever the signal has been raised, it
- * is passed the #NihSignal structure rather than the actual signal so that
+ * is passed the NihSignal structure rather than the actual signal so that
  * it can be removed if desired.
  **/
 typedef struct nih_signal NihSignal;
@@ -50,7 +50,7 @@ typedef void (*NihSignalCb) (void *, NihSignal *);
  * inside the main loop rather than inside the signal handler, so the
  * function is free to do whatever it wishes.
  *
- * The callback can be removed by using #nih_list_remove as they are
+ * The callback can be removed by using nih_list_remove() as they are
  * held in a list internally.
  **/
 struct nih_signal {
@@ -69,7 +69,7 @@ int        nih_signal_set_default  (int signum);
 int        nih_signal_set_ignore   (int signum);
 void       nih_signal_reset        (void);
 
-NihSignal *nih_signal_add_callback (void *parent, int signum,
+NihSignal *nih_signal_add_callback (const void *parent, int signum,
 				    NihSignalCb callback, void *data);
 
 void       nih_signal_handler      (int signum);

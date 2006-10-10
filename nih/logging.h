@@ -48,7 +48,7 @@ typedef enum {
  * A logger is a function that receives a formatted message to be logged
  * in whatever manner is appropriate.  The priority of the message is given
  * so that the logger may direct it appropriately, however the function
- * should not discard any messages and instead @nih_log_set_priority used
+ * should not discard any messages and instead nih_log_set_priority() used
  * to decide the treshold of logged messages.
  *
  * The logger may return non-zero to indicate that it was not able to
@@ -97,7 +97,7 @@ typedef int (*NihLogger) (NihLogLevel, const char *);
  * Outputs a message from a non-daemon process that is normally shown unless
  * the user wants quiet operation.
  *
- * This is an alias for nih_warn, as the same logging priority is used.
+ * This is an alias for nih_warn(), as the same logging priority is used.
  **/
 #define nih_message(format, ...) \
 	nih_log_message (NIH_LOG_WARN, format, ##__VA_ARGS__)

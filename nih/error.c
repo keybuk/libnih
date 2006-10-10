@@ -164,7 +164,7 @@ nih_error_raise_printf (int         number,
 /**
  * nih_error_raise_system:
  *
- * Raises an error with details taken from the current value of %errno,
+ * Raises an error with details taken from the current value of errno,
  * if an unhandled error already exists then an error message is emmitted
  * through the logging system; you should try to avoid this.
  **/
@@ -241,8 +241,8 @@ nih_error_clear (void)
  * Returns the last unhandled error from the current context, clearing it
  * so that further errors may be raised.
  *
- * The object must be freed with #nih_free once you are finished with it,
- * if you want to raise it again, use #nih_error_raise_again.
+ * The object must be freed with nih_free() once you are finished with it,
+ * if you want to raise it again, use nih_error_raise_again().
  *
  * Returns: error object from current context.
  **/
@@ -287,7 +287,7 @@ nih_error_push_context (void)
 /**
  * nih_error_pop_context:
  *
- * Ends the last context created with #nih_error_push_context, deliberate
+ * Ends the last context created with nih_error_push_context(), deliberate
  * care should be taken so that these are always properly nested (through
  * the correct use of scope, for example) and contexts are not left unpopped.
  **/

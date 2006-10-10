@@ -54,17 +54,17 @@
  * re-entrant.
  **/
 typedef struct nih_option_ctx {
-	void       *parent;
-	int         argc;
-	char      **argv;
-	NihOption  *options[3];
+	const void  *parent;
+	int          argc;
+	char       **argv;
+	NihOption   *options[3];
 
-	size_t      nargs;
-	char      **args;
+	size_t       nargs;
+	char       **args;
 
-	int         arg;
-	int         nonopt;
-	int         optend;
+	int          arg;
+	int          nonopt;
+	int          optend;
 } NihOptionCtx;
 
 
@@ -130,21 +130,31 @@ static const char *usage_string = NULL;
  * and arguments need not immediately follow the option that requires it.
  *
  * Remaining non-option arguments are placed into an array for processing
- * by the caller.  If @break_nonopt is %FALSE then the first non-option
+ * by the caller.  If @break_nonopt is FALSE then the first non-option
  * argument concludes option processing and all subsequent options are
  * considered to be ordinary arguments; this is most useful when the
  * first argument should be a command.
  *
+ * Both the array itself, and the array items are allocated with nih_alloc();
+ * the items are children of the array, so it is only necessary to call
+ * nih_free() on the array.
+ *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned string will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the nih_alloc_set_destructor() function.
+ *
  * Errors are handled by printing a message to standard error.
  *
- * Returns: non-option arguments array or %NULL on error.
+ * Returns: non-option arguments array or NULL on error.
  **/
 char **
-nih_option_parser (void      *parent,
-		   int        argc,
-		   char      *argv[],
-		   NihOption *options,
-		   int        break_nonopt)
+nih_option_parser (const void *parent,
+		   int         argc,
+		   char       *argv[],
+		   NihOption  *options,
+		   int         break_nonopt)
 {
 	NihOptionCtx ctx;
 
@@ -236,7 +246,7 @@ nih_option_add_arg (NihOptionCtx *ctx)
  * exists with the short option '-' this is used instead if no specific
  * option is found.
  *
- * Returns; pointer to option, or %NULL if not found.
+ * Returns; pointer to option, or NULL if not found.
  **/
 static NihOption *
 nih_option_get_short (NihOptionCtx *ctx,
@@ -318,7 +328,7 @@ nih_option_short (NihOptionCtx *ctx)
  * the first @len characters will be read.  If an option named "--" exists
  * then it is used if no other option could be found.
  *
- * Returns; pointer to option, or %NULL if not found.
+ * Returns; pointer to option, or NULL if not found.
  **/
 static NihOption *
 nih_option_get_long (NihOptionCtx *ctx,
@@ -415,9 +425,9 @@ nih_option_long (NihOptionCtx *ctx)
  *
  * Handle an option which either does not take an argument, or should
  * take the next non-option argument from the command-line.  For options
- * with arguments, this calls #nih_option_handle_arg; for those without,
+ * with arguments, this calls nih_option_handle_arg(); for those without,
  * this calls the setter function or treats the value member as a pointer
- * to an int to store %TRUE in.
+ * to an int to store TRUE in.
  *
  * Returns: zero on success, negative value on invalid option.
  **/
@@ -508,7 +518,7 @@ nih_option_handle_arg (NihOptionCtx *ctx,
  * that is not an option.  Updates the nonopt member of @ctx to point
  * at the option used.
  *
- * Returns: next non-option argument or %NULL if none remain.
+ * Returns: next non-option argument or NULL if none remain.
  **/
 static const char *
 nih_option_next_nonopt (NihOptionCtx *ctx)
@@ -545,7 +555,7 @@ nih_option_next_nonopt (NihOptionCtx *ctx)
  * of times they are placed on the command line.
  *
  * The value member of @option must be a pointer to an integer variable,
- * the arg_name member must be %NULL.
+ * the arg_name member must be NULL.
  *
  * Returns: always returns zero.
  **/

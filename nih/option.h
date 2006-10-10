@@ -30,7 +30,7 @@
  *
  * An option setter is a function that is called whenever an option is
  * found in the command-line arguments.  If the option expects a value
- * then the argument is passed to the function, otherwise %NULL is
+ * then the argument is passed to the function, otherwise NULL is
  * passed.
  *
  * The function may use the value member of @option to store the parsed
@@ -60,21 +60,21 @@ typedef struct nih_option_group {
  * @long_option: long option name,
  * @help: descriptive help message,
  * @group: group option is member of,
- * @arg_name: description of value or %NULL if option takes no argument,
+ * @arg_name: description of value or NULL if option takes no argument,
  * @value: pointer of variable to store argument in,
  * @setter: function to store the value.
  *
  * This structure defines an option that may be found in the command-line
  * arguments.  One or both of @option and @long_option myst be specified,
  * if no short option is wanted it may be zero and if no @long_option is
- * wanted it may be %NULL.
+ * wanted it may be NULL.
  *
- * If @arg_name is not %NULL then the option takes the next non-option
- * argument from the command-line; if @setter is not %NULL it is passed
+ * If @arg_name is not NULL then the option takes the next non-option
+ * argument from the command-line; if @setter is not NULL it is passed
  * this argument, otherwise @value should contain the address of a char *
  * in which a newly allocated copy of the argument will be stored.
  *
- * If @arg_name is %NULL then %NULL if passed to @setter.  If both
+ * If @arg_name is NULL then NULL if passed to @setter.  If both
  * @arg_name and @setter are NULL then @value should contain the address
  * of an int in which a TRUE value is stored.
  **/
@@ -96,14 +96,14 @@ struct nih_option {
  * NIH_OPTION_LAST:
  *
  * This macro may be used as the last option in the list to avoid typing
- * all those %NULLs and 0s yourself.
+ * all those NULLs and 0s yourself.
  **/
 #define NIH_OPTION_LAST { 0, NULL, NULL, NULL, NULL, NULL, NULL }
 
 
 NIH_BEGIN_EXTERN
 
-char **nih_option_parser    (void *parent, int argc, char *argv[],
+char **nih_option_parser    (const void *parent, int argc, char *argv[],
 			     NihOption *options, int break_nonopt);
 
 int    nih_option_count     (NihOption *option, const char *arg);

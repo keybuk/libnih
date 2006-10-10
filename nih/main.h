@@ -48,7 +48,7 @@ typedef void (*NihMainLoopCb) (void *, NihMainLoopFunc *);
  * This structure contains information about a function that should be
  * called once in each main loop iteration.
  *
- * The callback can be removed by using #nih_list_remove as they are
+ * The callback can be removed by using nih_list_remove() as they are
  * held in a list internally.
  **/
 struct nih_main_loop_func {
@@ -84,9 +84,9 @@ struct nih_main_loop_func {
  * nih_main_init:
  * @argv0: program name from arguments.
  *
- * Should be called at the beginning of #main to initialise the various
- * global variables exported from this module.  Expands to both
- * #nih_main_init_gettext and wraps #nih_main_init_full
+ * Should be called at the beginning of main() to initialise the various
+ * global variables exported from this module.  Expands both
+ * nih_main_init_gettext() and nih_main_init_full()
  * passing values set by Autoconf AC_INIT and AC_COPYRIGHT macros.
  **/
 #ifndef PACKAGE_COPYRIGHT
@@ -125,8 +125,8 @@ int              nih_main_loop           (void);
 void             nih_main_loop_interrupt (void);
 void             nih_main_loop_exit      (int status);
 
-NihMainLoopFunc *nih_main_loop_add_func  (void *parent, NihMainLoopCb callback,
-					  void *data);
+NihMainLoopFunc *nih_main_loop_add_func  (const void *parent,
+					  NihMainLoopCb callback, void *data);
 
 void             nih_main_term_signal    (void *data, NihSignal *signal);
 

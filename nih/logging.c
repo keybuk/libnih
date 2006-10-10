@@ -72,7 +72,7 @@ nih_log_init (void)
  * @new_logger: new logger function.
  *
  * Sets the function that will be used to output log messages above the
- * priority set with @nih_log_set_priority.
+ * priority set with nih_log_set_priority().
  **/
 void
 nih_log_set_logger (NihLogger new_logger)

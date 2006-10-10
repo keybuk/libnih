@@ -38,7 +38,7 @@ typedef struct nih_file_watch NihFileWatch;
 /**
  * NihFileWatcher:
  * @data: data pointer given when registered,
- * @watch: #NihFileWatch for which an event occurred,
+ * @watch: NihFileWatch for which an event occurred,
  * @events: event mask that occurred,
  * @name: optional name.
  *
@@ -50,7 +50,7 @@ typedef struct nih_file_watch NihFileWatch;
  * The name of the file or directory being watched can be obtained from the
  * @watch structure.
  *
- * It is safe to remove a watch with #nih_file_remove_watch from this
+ * It is safe to remove a watch with nih_file_remove_watch() from this
  * function.
  **/
 typedef void (*NihFileWatcher) (void *, NihFileWatch *, uint32_t events,
@@ -68,12 +68,12 @@ typedef void (*NihFileWatcher) (void *, NihFileWatch *, uint32_t events,
  *
  * This structure represents an inotify watch on a single @path.  A single
  * inotify file descriptor is shared amongst all watches, so watches on
- * multiple files should have multiple #NihFileWatch entries (optionally
+ * multiple files should have multiple NihFileWatch entries (optionally
  * with the same watcher function).
  *
  * @events is a bit mask of events as described in inotify(7).
  *
- * The watch may be terminated and freed by the using #nih_file_remove_watch
+ * The watch may be terminated and freed by the using nih_file_remove_watch()
  * function.
  **/
 struct nih_file_watch {
@@ -90,7 +90,7 @@ struct nih_file_watch {
 
 NIH_BEGIN_EXTERN
 
-NihFileWatch *nih_file_add_watch    (void *parent, const char *path,
+NihFileWatch *nih_file_add_watch    (const void *parent, const char *path,
 				     uint32_t events, NihFileWatcher watcher,
 				     void *data);
 void          nih_file_remove_watch (NihFileWatch *watch);

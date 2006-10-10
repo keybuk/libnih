@@ -104,15 +104,21 @@ nih_file_init (void)
  * bitmask as described in inotify(7).  When any of the listed events
  * occur, @watcher is called.
  *
- * The watch structure is allocated using #nih_alloc and stored in a linked
+ * The watch structure is allocated using nih_alloc() and stored in a linked
  * list, a default destructor is set that removes the watch from the list
  * and terminates the inotify watch.  Removal of the watch can be performed
  * by freeing it.
  *
- * Returns: new NihFileWatch structure or %NULL on raised error.
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned string will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the nih_alloc_set_destructor() function.
+ *
+ * Returns: new NihFileWatch structure or NULL on raised error.
  **/
 NihFileWatch *
-nih_file_add_watch (void           *parent,
+nih_file_add_watch (const void     *parent,
 		    const char     *path,
 		    uint32_t        events,
 		    NihFileWatcher  watcher,
@@ -249,7 +255,7 @@ nih_file_reader (void       *data,
  * pointer and the length of the file (required to unmap it later).  The
  * file is opened with the @flags given.
  *
- * Returns: memory mapped file or %NULL on raised error.
+ * Returns: memory mapped file or NULL on raised error.
  **/
 void *
 nih_file_map (const char *path,
@@ -301,9 +307,9 @@ nih_file_map (const char *path,
  * @map: memory mapped file,
  * @length: length of file.
  *
- * Unmap a file previously mapped with #nih_file_map.
+ * Unmap a file previously mapped with nih_file_map().
  *
- * Returns: zero on success, %NULL on raised error.
+ * Returns: zero on success, NULL on raised error.
  **/
 int
 nih_file_unmap (void   *map,

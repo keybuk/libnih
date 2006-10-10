@@ -46,9 +46,9 @@ typedef const char *(*NihKeyFunction) (NihList *);
  * This structure represents a hash table which is more efficient for
  * looking up members than an ordinary list.
  *
- * Individual members of the hash table are #NihList members as are the
+ * Individual members of the hash table are NihList members as are the
  * bins themselves, so to remove an entry from the table you can just
- * use #nih_list_remove.
+ * use nih_list_remove().
  **/
 typedef struct nih_hash {
 	NihList        *bins;

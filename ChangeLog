@@ -1,5 +1,12 @@
 2006-10-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c, nih/alloc.h, nih/child.c, nih/child.h, nih/error.c,
+	nih/error.h, nih/file.c, nih/file.h, nih/hash.c, nih/hash.h,
+	nih/io.c, nih/io.h, nih/list.c, nih/list.h, nih/main.c, nih/main.h,
+	nih/option.c, nih/option.h, nih/signal.c, nih/signal.h, nih/string.c,
+	nih/string.h, nih/timer.c, nih/timer.h: Clean up documentation and
+	parent return values.
+
 	* HACKING: Detail function documentation requirement and format.
 
 	* nih/tests/test_signal.c (test_set_default, test_set_ignore) 

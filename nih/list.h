@@ -62,7 +62,7 @@ typedef struct nih_list {
  * the loop.
  *
  * If you wish to modify the list, e.g. remove entries, use
- * #NIH_LIST_FOREACH_SAFE instead.
+ * NIH_LIST_FOREACH_SAFE() instead.
  **/
 #define NIH_LIST_FOREACH(list, iter) \
 	for (NihList *iter = (list)->next; iter != (list); iter = iter->next)
@@ -82,7 +82,7 @@ typedef struct nih_list {
  * after it.
  *
  * Note that if you wish an entry added after @iter to be visited, you
- * would need to use #NIH_LIST_FOREACH instead, as this would skip it.
+ * would need to use NIH_LIST_FOREACH() instead, as this would skip it.
  **/
 #define NIH_LIST_FOREACH_SAFE(list, iter) \
 	for (NihList *iter = (list)->next, *_##iter = iter->next; \

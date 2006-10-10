@@ -89,14 +89,20 @@ nih_io_init (void)
  *
  * This is the simplest form of watch and satisfies most purposes.
  *
- * The watch structure is allocated using #nih_alloc and stored in a linked
+ * The watch structure is allocated using nih_alloc() and stored in a linked
  * list, a default destructor is set that removes the watch from the list.
  * Removal of the watch can be performed by freeing it.
  *
- * Returns: the watch structure, or %NULL if insufficient memory.
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned string will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the nih_alloc_set_destructor() function.
+ *
+ * Returns: the watch structure, or NULL if insufficient memory.
  **/
 NihIoWatch *
-nih_io_add_watch (void         *parent,
+nih_io_add_watch (const void   *parent,
 		  int           fd,
 		  NihIoEvents   events,
 		  NihIoWatcher  watcher,
@@ -221,14 +227,24 @@ nih_io_handle_fds (fd_set *readfds,
  * nih_io_buffer_new:
  * @parent: parent of new buffer.
  *
- * Allocates a new #NihIoBuffer structure containing an empty buffer,
+ * Allocates a new NihIoBuffer structure containing an empty buffer,
  * all functions that use the buffer ensure that the internal data is
- * an #nih_alloc child of the buffer, so this may be freed using #nih_free.
+ * an nih_alloc() child of the buffer, so this may be freed using
+ * nih_free().
  *
- * Returns: new buffer, or %NULL if insufficient memory.
+ * The buffer is allocated using nih_alloc(), it can be freed using
+ * nih_free().
+ *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned string will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the nih_alloc_set_destructor() function.
+ *
+ * Returns: new buffer, or NULL if insufficient memory.
  **/
 NihIoBuffer *
-nih_io_buffer_new (void *parent)
+nih_io_buffer_new (const void *parent)
 {
 	NihIoBuffer *buffer;
 
@@ -253,7 +269,7 @@ nih_io_buffer_new (void *parent)
  * If there is more room than there needs to be, the buffer may actually
  * be decreased in size.
  *
- * Returns: zero on success, %NULL if insufficient memory.
+ * Returns: zero on success, NULL if insufficient memory.
  **/
 int
 nih_io_buffer_resize (NihIoBuffer *buffer,
@@ -301,16 +317,23 @@ nih_io_buffer_resize (NihIoBuffer *buffer,
  * @len: bytes to take.
  *
  * Takes @len bytes from the start of @buffer, reducing the size if
- * necessary, and returns them in a newly allocated string.  It is
- * illegal to request more bytes than are available in the buffer.
+ * necessary, and returns them in a new string allocated with nih_alloc().
  *
- * The returned string is always %NULL terminated, even if there was
- * not a %NULL in the buffer.
+ * The returned string is always NULL terminated, even if there was
+ * not a NULL in the buffer.
  *
- * Returns: newly allocated data pointer, or %NULL if insufficient memory.
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned string will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the nih_alloc_set_destructor() function.
+ *
+ * It is illegal to request more bytes than are available in the buffer.
+ *
+ * Returns: newly allocated data pointer, or NULL if insufficient memory.
  **/
 char *
-nih_io_buffer_pop (void        *parent,
+nih_io_buffer_pop (const void  *parent,
 		   NihIoBuffer *buffer,
 		   size_t       len)
 {
@@ -367,7 +390,7 @@ nih_io_buffer_shrink (NihIoBuffer *buffer,
  * Pushes @len bytes from @str onto the end of @buffer, increasing the size
  * if necessary.
  *
- * Returns: zero on success, %NULL if insufficient memory.
+ * Returns: zero on success, NULL if insufficient memory.
  **/
 int
 nih_io_buffer_push (NihIoBuffer *buffer,
@@ -397,8 +420,8 @@ nih_io_buffer_push (NihIoBuffer *buffer,
  * @error_handler: function to call on error,
  * @data: data to pass to functions.
  *
- * This allocates and returns an #NihIo structure for managing an already
- * opened file descriptor.  The file descriptor is set to be non-blocking
+ * This allocates a new NihIo structure using nih_alloc, used to manage an
+ * already opened file descriptor.  The descriptor is set to be non-blocking
  * if it hasn't already been and the SIGPIPE signal is set to be ignored.
  *
  * If @reader is given then all data is automatically read from the
@@ -415,10 +438,16 @@ nih_io_buffer_push (NihIoBuffer *buffer,
  * raised, otherwise the @close_handler is called or the same action taken
  * if that is not given either.
  *
- * Returns: newly allocated structure, or %NULL if insufficient memory.
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned string will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the nih_alloc_set_destructor() function.
+ *
+ * Returns: newly allocated structure, or NULL if insufficient memory.
  **/
 NihIo *
-nih_io_reopen (void              *parent,
+nih_io_reopen (const void        *parent,
 	       int                fd,
 	       NihIoReader        reader,
 	       NihIoCloseHandler  close_handler,
@@ -482,12 +511,12 @@ error:
 
 /**
  * nih_io_watcher:
- * @io: #NihIo structure,
- * @watch: #NihIoWatch for which an event occurred,
+ * @io: NihIo structure,
+ * @watch: NihIoWatch for which an event occurred,
  * @events: events that occurred.
  *
  * This is the watcher function associated with all file descriptors
- * being managed by #NihIo.  It ensures that data is read from the file
+ * being managed by NihIo.  It ensures that data is read from the file
  * descriptor into the recv buffer and the reader called, any data in
  * the send buffer is written to the socket and any errors are handled
  **/
@@ -601,7 +630,7 @@ nih_io_watcher (NihIo       *io,
  * @io: structure error occurred for.
  *
  * This function is called to deal with errors that have occurred on a
- * file descriptor being managed by #NihIo.
+ * file descriptor being managed by NihIo.
  *
  * Normally this just calls the error handler, or if not available, it
  * behaves as if the remote end was closed.
@@ -630,7 +659,7 @@ nih_io_error (NihIo *io)
  * @io: structure to be closed.
  *
  * This function is called when the local end of a file descriptor being
- * managed by #NihIo should be closed.  Usually this is because the remote
+ * managed by NihIo should be closed.  Usually this is because the remote
  * end has been closed (without error) but it can also be because no
  * error handler was given
  *
@@ -657,9 +686,9 @@ nih_io_closed (NihIo *io)
  * nih_io_shutdown:
  * @io: structure to be closed.
  *
- * Marks the #NihIo structure to be closed once the buffers have been
+ * Marks the NihIo structure to be closed once the buffers have been
  * emptied, rather than immediately.  Closure is performed by calling
- * the close handler if given or #nih_io_close.
+ * the close handler if given or nih_io_close().
  *
  * This is most useful to send a burst of data and discard the structure
  * once the data has been sent, without worrying about keeping track of
@@ -677,7 +706,7 @@ nih_io_shutdown (NihIo *io)
  * nih_io_close:
  * @io: structure to be closed.
  *
- * Closes the file descriptor associated with an #NihIo structure and
+ * Closes the file descriptor associated with an NihIo structure and
  * frees the structure.  If an error is caught by closing the descriptor,
  * it is the error handler is called instead of the error being raised;
  * this allows you to group your error handling in one place rather than
@@ -704,17 +733,23 @@ nih_io_close (NihIo *io)
  * @len: number of bytes to read.
  *
  * Reads @len bytes from the receive buffer of @io and returns the data
- * in a newly allocated string which is always %NULL terminated even
- * if there was not a %NULL in the buffer.
+ * in a new string allocated with nih_alloc() that is always NULL terminated
+ * even if there was not a NULL in the buffer.
+ *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned string will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the nih_alloc_set_destructor() function.
  *
  * It is illegal to request more bytes than exist in the bufferr.
  *
- * Returns: newly allocated string, or %NULL if insufficient memory.
+ * Returns: newly allocated string, or NULL if insufficient memory.
  **/
 char *
-nih_io_read (void   *parent,
-	     NihIo  *io,
-	     size_t  len)
+nih_io_read (const void *parent,
+	     NihIo      *io,
+	     size_t      len)
 {
 	nih_assert (io != NULL);
 
@@ -730,7 +765,7 @@ nih_io_read (void   *parent,
  * Writes @len bytes from @str into the send buffer of @io, the data will
  * not be sent immediately but whenever possible.
  *
- * Care should be taken to ensure @len does not include the %NULL
+ * Care should be taken to ensure @len does not include the NULL
  * terminator unless you really want that sent.
  *
  * Returns: zero on success, negative value if insufficient memory.
@@ -762,19 +797,26 @@ nih_io_write (NihIo      *io,
  * @delim: character to read until.
  *
  * Reads from the receive buffer of @io until a character in @delim or
- * the %NULL terminator is found, and returns the string up to, but not
- * including, the delimiter as a newly allocated string.
+ * the NULL terminator is found, and returns a new string allocated with
+ * nih_alloc() that contains a copy of the buffer up to, but not including,
+ * the delimiter.
  *
- * @delim may be the empty string if only the %NULL terminator is considered
+ * @delim may be the empty string if only the NULL terminator is considered
  * a delimiter.
  *
  * The string and the delimiter are removed from the buffer.
  *
- * Returns: newly allocated string or %NULL if delimiter not found or
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned string will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the nih_alloc_set_destructor() function.
+ *
+ * Returns: newly allocated string or NULL if delimiter not found or
  * insufficient memory.
  **/
 char *
-nih_io_get (void       *parent,
+nih_io_get (const void *parent,
 	    NihIo      *io,
 	    const char *delim)
 {

@@ -65,7 +65,7 @@ typedef struct nih_error_info {
  * nih_return_system_error:
  * @retval: return value for function.
  *
- * Raises an error with details taken from the current value of %errno,
+ * Raises an error with details taken from the current value of errno,
  * if an unhandled error already exists then an error message is emmitted
  * through the logging system; you should try to avoid this.
  *

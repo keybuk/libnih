@@ -111,14 +111,14 @@ fnv_hash (const char *key)
  * number that is no larger than @entries; this should be set to a rough
  * number of expected entries to ensure optimum distribution.
  *
- * Individual members of the hash table are #NihList members, so to
+ * Individual members of the hash table are NihList members, so to
  * associate them with a string key @key_function must be provided; this
  * would ordinarily just return a static string within the entry itself.
  *
- * The structure is allocated using #nih_alloc so it can be used as a
+ * The structure is allocated using nih_alloc() so it can be used as a
  * context to other allocations.
  *
- * Returns: the new hash table or %NULL if the allocation failed.
+ * Returns: the new hash table or NULL if the allocation failed.
  **/
 NihHash *
 nih_hash_new (size_t         entries,
@@ -160,15 +160,15 @@ nih_hash_new (size_t         entries,
  * @hash: destination hash table,
  * @entry: entry to be added.
  *
- * Adds @entry to @hash using the value returned by the hash #NihKeyFunction
+ * Adds @entry to @hash using the value returned by the hash NihKeyFunction
  * to indicate which bin the entry should be placed into.
  *
  * For speed reasons, this function does not check whether an entry already
  * exists with the key.  If you need that constraint use either
- * #nih_hash_add_unique or #nih_hash_replace.
+ * nih_hash_add_unique() or nih_hash_replace().
  *
  * If @entry is already in another list it is removed so there is no need
- * to call #nih_list_remove before this function.
+ * to call nih_list_remove() before this function.
  *
  * Returns: @entry which is now a member of one of @hash's bins.
  **/
@@ -193,19 +193,19 @@ nih_hash_add (NihHash *hash,
  * @hash: destination hash table,
  * @entry: entry to be added.
  *
- * Adds @entry to @hash using the value returned by the hash #NihKeyFunction
+ * Adds @entry to @hash using the value returned by the hash NihKeyFunction
  * to indicate which bin the entry should be placed into, provided the key
  * is unique.
  *
  * Because the hash table does not store the key of each entry, this requires
- * that #NihKeyFunction be called for each entry in the destination bin, so
+ * that NihKeyFunction be called for each entry in the destination bin, so
  * should only be used where the uniqueness constraint is required and not
  * already enforced by other code.
  *
  * If @entry is already in another list it is removed so there is no need
- * to call #nih_list_remove before this function.
+ * to call nih_list_remove() before this function.
  *
- * Returns: @entry which is now a member of one of @hash's bins or %NULL if
+ * Returns: @entry which is now a member of one of @hash's bins or NULL if
  * an entry already existed with the same key.
  **/
 NihList *
@@ -234,12 +234,12 @@ nih_hash_add_unique (NihHash *hash,
  * @hash: destination hash table,
  * @entry: entry to be added.
  *
- * Adds @entry to @hash using the value returned by the hash #NihKeyFunction
+ * Adds @entry to @hash using the value returned by the hash NihKeyFunction
  * to indicate which bin the entry should be placed into, replacing any
  * existing entry with the same key.
  *
  * Because the hash table does not store the key of each entry, this requires
- * that #NihKeyFunction be called for each entry in the destination bin, so
+ * that NihKeyFunction be called for each entry in the destination bin, so
  * should only be used where the uniqueness constraint is required and not
  * already enforced by other code.
  *
@@ -247,9 +247,9 @@ nih_hash_add_unique (NihHash *hash,
  * ensure this does not come as a surprise to other code.
  *
  * If @entry is already in another list it is removed so there is no need
- * to call #nih_list_remove before this function.
+ * to call nih_list_remove() before this function.
  *
- * Returns: existing entry with the same key replaced in the table, or %NULL
+ * Returns: existing entry with the same key replaced in the table, or NULL
  * if no such entry existed.
  **/
 NihList *
@@ -285,12 +285,12 @@ nih_hash_replace (NihHash *hash,
  * @entry: previous entry found.
  *
  * Finds all entries in @hash with a key of @key by calling the hash's
- * #NihKeyFunction on each entry in the appropriate bin, starting with @entry,
+ * NihKeyFunction on each entry in the appropriate bin, starting with @entry,
  * until one is found.
  *
- * The initial @entry can be found by passing %NULL or using #nih_hash_lookup.
+ * The initial @entry can be found by passing NULL or using nih_hash_lookup().
  *
- * Returns: next entry in the hash or %NULL if there are no more entries.
+ * Returns: next entry in the hash or NULL if there are no more entries.
  **/
 NihList *
 nih_hash_search (NihHash    *hash,
@@ -323,11 +323,11 @@ nih_hash_search (NihHash    *hash,
  * @key: key to look for.
  *
  * Finds the first entry in @hash with a key of @key by calling the hash's
- * #NihKeyFunction on each entry in the appropriate bin until one is found.
+ * NihKeyFunction on each entry in the appropriate bin until one is found.
  *
- * If multiple entries are expected, use #nih_hash_search instead.
+ * If multiple entries are expected, use nih_hash_search() instead.
  *
- * Returns: entry found or %NULL if no entry existed.
+ * Returns: entry found or NULL if no entry existed.
  **/
 NihList *
 nih_hash_lookup (NihHash    *hash,

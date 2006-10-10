@@ -30,7 +30,7 @@
  *
  * An allocator is a function that can be used to both allocate memory
  * and return it to the system (or cache it, etc.)  The behaviour should
- * be the same of that as the standard #realloc function.
+ * be the same of that as the standard realloc() function.
  **/
 typedef void *(*NihAllocator) (void *, size_t);
 
@@ -56,11 +56,11 @@ typedef int (*NihDestructor) (void *);
  * Allocates a block of memory large enough to store a @type object and
  * returns a pointer to it.
  *
- * If @parent is not %NULL, it should be a pointer to another allocated
+ * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
  * is freed, the returned block will be freed too.  If you have clean-up
  * that would need to be run, you can assign a destructor function using
- * the #nih_alloc_set_destructor function.
+ * the nih_alloc_set_destructor() function.
  *
  * Returns: requested memory block.
  **/

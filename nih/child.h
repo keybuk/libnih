@@ -53,7 +53,7 @@ typedef void (*NihReaper) (void *, pid_t, int, int);
  * If @pid is -1 then this function is called when all processes
  * terminate.
  *
- * The watch can be cancelled by calling #nih_list_remove on the structure
+ * The watch can be cancelled by calling nih_list_remove() on the structure
  * as they are held in a list internally.
  **/
 typedef struct nih_child_watch {
@@ -67,7 +67,7 @@ typedef struct nih_child_watch {
 
 NIH_BEGIN_EXTERN
 
-NihChildWatch *nih_child_add_watch (void *parent, pid_t pid,
+NihChildWatch *nih_child_add_watch (const void *parent, pid_t pid,
 				    NihReaper reaper, void *data);
 
 void           nih_child_poll      (void);

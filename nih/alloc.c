@@ -61,19 +61,19 @@ typedef struct nih_alloc_ctx {
  * NIH_ALLOC_CTX:
  * @ptr: pointer to block of memory.
  *
- * Obtain the location of the #NihAllocCtx structure given a pointer to the
+ * Obtain the location of the NihAllocCtx structure given a pointer to the
  * block of memory beyond it.
  *
- * Returns: pointer to #NihAllocCtx structure.
+ * Returns: pointer to NihAllocCtx structure.
  **/
 #define NIH_ALLOC_CTX(ptr) ((NihAllocCtx *)(ptr) - 1)
 
 /**
  * NIH_ALLOC_PTR:
- * @ctx: pointer to #NihAllocCtx structure.
+ * @ctx: pointer to NihAllocCtx structure.
  *
  * Obtain the location of the block of memory given a pointer to the
- * #NihAllocCtx structure in front of it.
+ * NihAllocCtx structure in front of it.
  *
  * Returns: pointer to block of memory.
  **/
@@ -106,11 +106,11 @@ nih_alloc_init (void)
  *
  * Sets the function that will be used to allocate memory for all further
  * blocks requested and return it to the system.  The behaviour of the
- * function should be the same of that as the standard #realloc function.
+ * function should be the same of that as the standard realloc() function.
  *
  * This function should generally only be used in the initialisation
  * portion of your program, and should not be used to switch allocators
- * temporarily.  Use #nih_alloc_using to allocate a block with an
+ * temporarily.  Use nih_alloc_using() to allocate a block with an
  * alternate allocator.
  **/
 void
@@ -131,13 +131,13 @@ nih_alloc_set_allocator (NihAllocator new_allocator)
  * Allocates a block of memory of at least @size bytes with the @allocator
  * function and returns a pointer to it.
  *
- * If @parent is not %NULL, it should be a pointer to another allocated
+ * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
  * is freed, the returned block will be freed too.  If you have clean-up
  * that would need to be run, you can assign a destructor function using
- * the #nih_alloc_set_destructor function.
+ * the nih_alloc_set_destructor() function.
  *
- * Returns: requested memory block or %NULL if allocation fails.
+ * Returns: requested memory block or NULL if allocation fails.
  **/
 void *
 nih_alloc_using (NihAllocator  allocator,
@@ -179,13 +179,13 @@ nih_alloc_using (NihAllocator  allocator,
  * Allocates a block of memory of at least @size bytes and returns
  * a pointer to it.
  *
- * If @parent is not %NULL, it should be a pointer to another allocated
+ * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
  * is freed, the returned block will be freed too.  If you have clean-up
  * that would need to be run, you can assign a destructor function using
- * the #nih_alloc_set_destructor function.
+ * the nih_alloc_set_destructor() function.
  *
- * Returns: requested memory block or %NULL if allocation fails.
+ * Returns: requested memory block or NULL if allocation fails.
  **/
 void *
 nih_alloc (const void *parent,
@@ -198,22 +198,22 @@ nih_alloc (const void *parent,
 
 /**
  * nih_realloc:
- * @ptr: block to reallocate or %NULL,
+ * @ptr: block to reallocate or NULL,
  * @parent: parent block of allocation,
  * @size: size of new block.
  *
  * Adjusts the size of the block of memory allocated for @ptr to be at
- * least @size bytes and returns the new pointer.  If @ptr is %NULL then
- * this is equivalent to %nih_alloc.
+ * least @size bytes and returns the new pointer.  If @ptr is NULL then
+ * this is equivalent to nih_alloc().
  *
- * If @parent is not %NULL, it must be the same object as the parent to
- * @ptr, unless that is also %NULL in which case it should be a pointer to
+ * If @parent is not NULL, it must be the same object as the parent to
+ * @ptr, unless that is also NULL in which case it should be a pointer to
  * another block which will be used as the parent for the newly allocated
  * block.  When @parent is freed, the returned block will be freed too.
  * If you have clean-up that would need to be run, you can assign a
- * destructor function using the #nih_alloc_set_destructor function.
+ * destructor function using the nih_alloc_set_destructor() function.
  *
- * Returns: reallocated block or %NULL if reallocation fails.
+ * Returns: reallocated block or NULL if reallocation fails.
  **/
 void *
 nih_realloc (void       *ptr,
@@ -243,23 +243,23 @@ nih_realloc (void       *ptr,
 	 * afterwards, but that's expensive and could be error-prone in the
 	 * case where the allocator fails.
 	 *
-	 * The solution is to rely on a property of nih_list_add; the entry
-	 * passed (to be added) is cut out of its containing list without
-	 * deferencing the return pointers, this means we can cut the bad
-	 * pointers out simply by calling nih_list_add to put the new
-	 * entry back in the same position.
+	 * The solution is to rely on a property of nih_list_add(); the
+	 * entry passed (to be added) is cut out of its containing list
+	 * without deferencing the return pointers, this means we can cut
+	 * the bad pointers out simply by calling nih_list_add() to put the
+	 * new entry back in the same position.
 	 *
 	 * Of course, this only works in the non-empty list case as trying
 	 * to cut an entry out of an empty list would deference those
 	 * invalid pointers.  Happily all we need to do for the non-empty
-	 * list case is call nih_list_init again.
+	 * list case is call nih_list_init() again.
 	 *
 	 * For the primary list entry this is if we don't have a parent.
 	 * For the children list entry, this is if we don't have children,
 	 * which is difficult to detect after the allocator has been
 	 * called.  The easiest thing to do is stash a pointer to the first
-	 * child, if non-NULL then we use it for nih_list_add, if NULL then
-	 * we call nih_list_init.
+	 * child, if non-NULL then we use it for nih_list_add(), if NULL
+	 * then we call nih_list_init().
 	 */
 
 	if (! NIH_LIST_EMPTY (&ctx->children))
@@ -348,12 +348,12 @@ nih_free (void *ptr)
  * @destructor: destructor function to set.
  *
  * Sets the destructor function of the block to @destructor, which may be
- * %NULL.
+ * NULL.
  *
  * The destructor function will be called when the block is freed, either
  * directly or as a result as a parent being freed.  The block will be
  * passed as a pointer to the destructor, and the destructor may return
- * a value which will be the return value of the #nih_free function.
+ * a value which will be the return value of the nih_free() function.
  **/
 void
 nih_alloc_set_destructor (void          *ptr,
@@ -389,7 +389,7 @@ nih_alloc_size (const void *ptr)
  * nih_alloc_parent:
  * @ptr: pointer to block.
  *
- * Returns: the parent block or %NULL if none.
+ * Returns: the parent block or NULL if none.
  **/
 void *
 nih_alloc_parent (const void *ptr)

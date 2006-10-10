@@ -59,7 +59,7 @@ typedef void (*NihIoWatcher) (void *, NihIoWatch *, NihIoEvents);
 /**
  * NihIoReader:
  * @data: data pointer given when registered,
- * @io: #NihIo with data to be read,
+ * @io: NihIo with data to be read,
  * @buf: buffer data is available in,
  * @len: bytes in @buf.
  *
@@ -76,7 +76,7 @@ typedef void (*NihIoReader) (void *, NihIo *, const char *, size_t);
 /**
  * NihIoCloseHandler:
  * @data: data pointer given when registered.
- * @io: #NihIo that closed.
+ * @io: NihIo that closed.
  *
  * An I/O close handler is a function that is called when the remote end
  * of a file descriptor or socket is closed and data can no longer be
@@ -91,11 +91,11 @@ typedef void (*NihIoCloseHandler) (void *, NihIo *);
 /**
  * NihIoErrorHandler:
  * @data: data pointer given when registered,
- * @io: #NihIo that caused the error.
+ * @io: NihIo that caused the error.
  *
  * An I/O error handler is a function that is called to handle an error
  * raise while reading from the file descriptor or socket.  The error
- * itself can be obtained using #nih_error_get as usual.
+ * itself can be obtained using nih_error_get().
  *
  * It should take appropriate action, which may include closing the
  * file descriptor and freeing the structure.  It is safe for the
@@ -116,7 +116,7 @@ typedef void (*NihIoErrorHandler) (void *, NihIo *);
  * on a file descriptor or socket that causes a function to be called
  * when listed events occur.
  *
- * The watch can be cancelled by calling #nih_list_remove on the structure
+ * The watch can be cancelled by calling nih_list_remove() on the structure
  * as they are held in a list internally.
  **/
 struct nih_io_watch {
@@ -155,7 +155,7 @@ typedef struct nih_io_buffer {
  * @shutdown: TRUE if the structure should be freed once the buffers are empty.
  *
  * This structure implements more featureful I/O handling than provided by
- * an #NihIoWatch alone.  It combines an #NihIoWatch and two #NihIoBuffer
+ * an NihIoWatch alone.  It combines an NihIoWatch and two NihIoBuffer
  * structures to implement a high-throughput alternative to the
  * traditional stdio functions.
  *
@@ -163,7 +163,7 @@ typedef struct nih_io_buffer {
  * calls made on a file descriptor, and cannot be used to pool large
  * amounts of data for processing.
  *
- * The #NihIo functions are instead optimised for being able to queue and
+ * The NihIo functions are instead optimised for being able to queue and
  * receive much data as possible, and have the data sent in the background
  * or processed at your leisure.
  **/
@@ -183,7 +183,8 @@ struct nih_io {
 
 NIH_BEGIN_EXTERN
 
-NihIoWatch * nih_io_add_watch     (void *parent, int fd, NihIoEvents events,
+NihIoWatch * nih_io_add_watch     (const void *parent, int fd,
+				   NihIoEvents events,
 				   NihIoWatcher watcher, void *data);
 
 void         nih_io_select_fds    (int *nfds, fd_set *readfds,
@@ -192,29 +193,31 @@ void         nih_io_handle_fds    (fd_set *readfds, fd_set *writewfds,
 				   fd_set *exceptfds);
 
 
-NihIoBuffer *nih_io_buffer_new    (void *parent)
+NihIoBuffer *nih_io_buffer_new    (const void *parent)
 	__attribute__ ((warn_unused_result, malloc));
 
 int          nih_io_buffer_resize (NihIoBuffer *buffer, size_t grow);
-char *       nih_io_buffer_pop    (void *parent, NihIoBuffer *buffer,
+char *       nih_io_buffer_pop    (const void *parent, NihIoBuffer *buffer,
 				   size_t len)
 	__attribute__ ((warn_unused_result, malloc));
 int          nih_io_buffer_push   (NihIoBuffer *buffer, const char *str,
 				   size_t len);
 
 
-NihIo *      nih_io_reopen        (void *parent, int fd, NihIoReader reader,
+NihIo *      nih_io_reopen        (const void *parent, int fd,
+				   NihIoReader reader,
 				   NihIoCloseHandler close_handler,
 				   NihIoErrorHandler error_handler,
 				   void *data);
 void         nih_io_shutdown      (NihIo *io);
 void         nih_io_close         (NihIo *io);
 
-char *       nih_io_read          (void *parent, NihIo *io, size_t len)
+char *       nih_io_read          (const void *parent, NihIo *io, size_t len)
 	__attribute__ ((warn_unused_result, malloc));
 int          nih_io_write         (NihIo *io, const char *str, size_t len);
 
-char *       nih_io_get           (void *parent, NihIo *io, const char *delim)
+char *       nih_io_get           (const void *parent, NihIo *io,
+				   const char *delim)
 	__attribute__ ((warn_unused_result, malloc));
 
 ssize_t      nih_io_printf        (NihIo *io, const char *format, ...)

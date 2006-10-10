@@ -1,5 +1,7 @@
 2006-10-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_option.c: Fix minor test case memory leak.
+
 	* nih/tests/test_child.c (test_poll, test_poll): Use better
 	interlocks then usleep.
 

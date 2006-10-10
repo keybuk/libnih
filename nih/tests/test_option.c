@@ -1128,6 +1128,8 @@ test_parser (void)
 		ret = 1;
 	}
 
+	nih_free (args);
+
 
 	printf ("...with invalid long option\n");
 	argc = 0;
@@ -1183,6 +1185,8 @@ test_parser (void)
 		printf ("BAD: return value wasn't what we expected.\n");
 		ret = 1;
 	}
+
+	nih_free (args);
 
 
 	printf ("...with unexpected long option argument\n");
@@ -1321,6 +1325,12 @@ test_parser (void)
 	last_arg = NULL;
 	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
+	/* Return value should not be NULL */
+	if (args == NULL) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
 	/* First array entry should be first argument */
 	if (strcmp (args[0], "foo")) {
 		printf ("BAD: return value wasn't what we expected.\n");
@@ -1365,6 +1375,12 @@ test_parser (void)
 	last_arg = NULL;
 	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
+	/* Return value should not be NULL */
+	if (args == NULL) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
 		printf ("BAD: return value wasn't what we expected.\n");
@@ -1401,6 +1417,12 @@ test_parser (void)
 	last_option = NULL;
 	last_arg = NULL;
 	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+
+	/* Return value should not be NULL */
+	if (args == NULL) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -1439,6 +1461,12 @@ test_parser (void)
 	last_option = NULL;
 	last_arg = NULL;
 	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+
+	/* Return value should not be NULL */
+	if (args == NULL) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
 
 	/* First array entry should be first argument */
 	if (strcmp (args[0], "foo")) {
@@ -1484,6 +1512,12 @@ test_parser (void)
 	last_arg = NULL;
 	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
+	/* Return value should not be NULL */
+	if (args == NULL) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
 		printf ("BAD: return value wasn't what we expected.\n");
@@ -1520,6 +1554,12 @@ test_parser (void)
 	last_option = NULL;
 	last_arg = NULL;
 	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+
+	/* Return value should not be NULL */
+	if (args == NULL) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -1728,6 +1768,12 @@ test_quiet (void)
 	nih_warn ("test message");
 	nih_error ("test message");
 
+	/* Return value should not be NULL */
+	if (args == NULL) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
 		printf ("BAD: return value wasn't what we expected.\n");
@@ -1754,6 +1800,12 @@ test_quiet (void)
 	nih_info ("test message");
 	nih_warn ("test message");
 	nih_error ("test message");
+
+	/* Return value should not be NULL */
+	if (args == NULL) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -1797,6 +1849,12 @@ test_verbose (void)
 	nih_info ("test message");
 	nih_warn ("test message");
 	nih_error ("test message");
+
+	/* Return value should not be NULL */
+	if (args == NULL) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {
@@ -1868,6 +1926,12 @@ test_debug (void)
 	nih_info ("test message");
 	nih_warn ("test message");
 	nih_error ("test message");
+
+	/* Return value should not be NULL */
+	if (args == NULL) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
 
 	/* Return value should be a NULL array */
 	if (args[0] != NULL) {

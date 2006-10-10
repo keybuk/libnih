@@ -107,7 +107,7 @@ test_set_default (void)
 	}
 
 	/* Flags should be zero */
-	if (act.sa_flags) {
+	if (act.sa_flags & (SA_RESTART | SA_NOCLDSTOP)) {
 		printf ("BAD: signal flags set incorrectly.\n");
 		ret = 1;
 	}
@@ -149,7 +149,7 @@ test_set_ignore (void)
 	}
 
 	/* Flags should be zero */
-	if (act.sa_flags) {
+	if (act.sa_flags & (SA_RESTART | SA_NOCLDSTOP)) {
 		printf ("BAD: signal flags set incorrectly.\n");
 		ret = 1;
 	}
@@ -186,7 +186,7 @@ test_reset (void)
 	}
 
 	/* Flags should be zero */
-	if (act.sa_flags) {
+	if (act.sa_flags & (SA_RESTART | SA_NOCLDSTOP)) {
 		printf ("BAD: signal flags set incorrectly.\n");
 		ret = 1;
 	}

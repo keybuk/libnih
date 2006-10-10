@@ -817,6 +817,7 @@ nih_option_group_help (NihOptionGroup  *group,
 		       NihOptionGroup **groups)
 {
 	NihOption *opt, **opts;
+	size_t     width;
 
 	nih_assert (options != NULL);
 
@@ -827,6 +828,8 @@ nih_option_group_help (NihOptionGroup  *group,
 	} else {
 		printf (_("Options:\n"));
 	}
+
+	width = MAX (nih_str_screen_width (), 50) - 30;
 
 	for (opts = options; *opts != NULL; opts++) {
 		for (opt = *opts; (opt->option || opt->long_option); opt++) {
@@ -882,7 +885,7 @@ nih_option_group_help (NihOptionGroup  *group,
 			 * half of the screen
 			 */
 			NIH_MUST (str = nih_str_wrap (NULL, opt->help,
-						      50, 0, 2));
+						      width, 0, 2));
 
 			/* Write the description to the screen */
 			ptr = str;

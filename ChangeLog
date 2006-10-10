@@ -1,5 +1,9 @@
 2006-10-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/option.c (nih_option_group_help): Use a factor of the screen
+	width when formatting help options, but keep at least 20 chars
+	visible at all times.
+
 	* nih/string.c (nih_str_screen_width): Add function to return just
 	the screen width.
 	(nih_str_screen_wrap): Use that function.

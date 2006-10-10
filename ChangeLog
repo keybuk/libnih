@@ -1,5 +1,8 @@
 2006-10-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_child.c (test_poll, test_poll): Use better
+	interlocks then usleep.
+
 	* nih/tests/test_option.c (main): Enable test of --debug, oops.
 
 	* nih/main.c (nih_main_daemonise): Document why this is better than

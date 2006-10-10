@@ -159,6 +159,8 @@ test_poll (void)
 	pid = fork ();
 	if (pid == 0) {
 		/* Child */
+		raise (SIGSTOP);
+
 		select (0, NULL, NULL, NULL, NULL);
 
 		exit (0);
@@ -178,10 +180,14 @@ test_poll (void)
 	last_pid = 0;
 	last_killed = FALSE;
 	last_status = 0;
-	usleep (1000); /* Urgh */
+
+	assert (waitpid (pid, NULL, WUNTRACED) > 0);
+	assert (kill (pid, SIGCONT) == 0);
+
 	assert (kill (pid, SIGTERM) == 0);
-	usleep (1000); /* Urgh */
-	nih_child_poll ();
+
+	while (reaper_called < 2)
+		nih_child_poll ();
 
 	/* Both reapers should have been triggered */
 	if (reaper_called != 2) {
@@ -217,6 +223,8 @@ test_poll (void)
 	pid = fork ();
 	if (pid == 0) {
 		/* Child */
+		raise (SIGSTOP);
+
 		select (0, NULL, NULL, NULL, NULL);
 
 		exit (0);
@@ -230,10 +238,14 @@ test_poll (void)
 	last_pid = 0;
 	last_killed = FALSE;
 	last_status = 0;
-	usleep (1000); /* Urgh */
+
+	assert (waitpid (pid, NULL, WUNTRACED) > 0);
+	assert (kill (pid, SIGCONT) == 0);
+
 	assert (kill (pid, SIGTERM) == 0);
-	usleep (1000); /* Urgh */
-	nih_child_poll ();
+
+	while (reaper_called < 1)
+		nih_child_poll ();
 
 	/* Only one reaper should have been triggered */
 	if (reaper_called != 1) {

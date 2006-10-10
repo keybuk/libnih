@@ -79,7 +79,7 @@ static inline void
 nih_file_init (void)
 {
 	if (! file_watches)
-		NIH_MUST (file_watches = nih_list_new ());
+		NIH_MUST (file_watches = nih_list_new (NULL));
 
 	if (inotify_fd == -1) {
 		inotify_fd = inotify_init ();

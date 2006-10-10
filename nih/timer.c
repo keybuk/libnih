@@ -54,7 +54,7 @@ static inline void
 nih_timer_init (void)
 {
 	if (! timers)
-		NIH_MUST (timers = nih_list_new ());
+		NIH_MUST (timers = nih_list_new (NULL));
 }
 
 

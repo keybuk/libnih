@@ -87,7 +87,7 @@ static inline void
 nih_error_init (void)
 {
 	if (! context_stack) {
-		NIH_MUST (context_stack = nih_list_new ());
+		NIH_MUST (context_stack = nih_list_new (NULL));
 
 		nih_error_push_context ();
 	}

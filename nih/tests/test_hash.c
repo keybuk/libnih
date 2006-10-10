@@ -306,7 +306,7 @@ test_add (void)
 
 
 	printf ("...with entry already in a list\n");
-	ptr = nih_list_new ();
+	ptr = nih_list_new (NULL);
 	nih_list_add (ptr, entry4);
 	nih_hash_add (hash, entry4);
 
@@ -475,7 +475,7 @@ test_add_unique (void)
 
 
 	printf ("...with entry already in a list\n");
-	ptr = nih_list_new ();
+	ptr = nih_list_new (NULL);
 	nih_list_add (ptr, entry4);
 	nih_hash_add_unique (hash, entry4);
 
@@ -644,7 +644,7 @@ test_replace (void)
 
 
 	printf ("...with entry already in a list\n");
-	ptr = nih_list_new ();
+	ptr = nih_list_new (NULL);
 	nih_list_add (ptr, entry4);
 	nih_hash_replace (hash, entry4);
 

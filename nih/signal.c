@@ -71,7 +71,7 @@ static inline void
 nih_signal_init (void)
 {
 	if (! signals)
-		NIH_MUST (signals = nih_list_new ());
+		NIH_MUST (signals = nih_list_new (NULL));
 }
 
 

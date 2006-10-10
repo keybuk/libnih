@@ -62,7 +62,7 @@ test_new (void)
 	int      ret = 0;
 
 	printf ("Testing nih_list_new()\n");
-	list = nih_list_new ();
+	list = nih_list_new (NULL);
 
 	/* Previous pointer should point back to itself */
 	if (list->prev != list) {
@@ -95,9 +95,9 @@ test_add (void)
 
 	printf ("Testing nih_list_add()\n");
 
-	list = nih_list_new ();
-	entry1 = nih_list_new ();
-	entry2 = nih_list_new ();
+	list = nih_list_new (NULL);
+	entry1 = nih_list_new (NULL);
+	entry2 = nih_list_new (NULL);
 
 	printf ("...with single-entry list\n");
 	ptr = nih_list_add (list, entry1);
@@ -214,7 +214,7 @@ test_add (void)
 
 
 	printf ("...with entry from other list\n");
-	ptr = nih_list_new ();
+	ptr = nih_list_new (NULL);
 	nih_list_add (ptr, entry2);
 
 	/* The entry should be removed from the old list, so the
@@ -247,9 +247,9 @@ test_add_after (void)
 
 	printf ("Testing nih_list_add_after()\n");
 
-	list = nih_list_new ();
-	entry1 = nih_list_new ();
-	entry2 = nih_list_new ();
+	list = nih_list_new (NULL);
+	entry1 = nih_list_new (NULL);
+	entry2 = nih_list_new (NULL);
 
 	printf ("...with single-entry list\n");
 	ptr = nih_list_add_after (list, entry1);
@@ -366,7 +366,7 @@ test_add_after (void)
 
 
 	printf ("...with entry from other list\n");
-	ptr = nih_list_new ();
+	ptr = nih_list_new (NULL);
 	nih_list_add_after (ptr, entry1);
 
 	/* The entry should be removed from the old list, so the
@@ -398,8 +398,8 @@ test_empty (void)
 	int      ret = 0;
 
 	printf ("Testing NIH_LIST_EMPTY()\n");
-	list = nih_list_new ();
-	entry = nih_list_new ();
+	list = nih_list_new (NULL);
+	entry = nih_list_new (NULL);
 
 	printf ("...with empty list\n");
 
@@ -438,10 +438,10 @@ test_foreach (void)
 	int      i, ret = 0;
 
 	printf ("Testing NIH_LIST_FOREACH()\n");
-	list = nih_list_new ();
-	entry[0] = nih_list_add (list, nih_list_new ());
-	entry[1] = nih_list_add (list, nih_list_new ());
-	entry[2] = nih_list_add (list, nih_list_new ());
+	list = nih_list_new (NULL);
+	entry[0] = nih_list_add (list, nih_list_new (NULL));
+	entry[1] = nih_list_add (list, nih_list_new (NULL));
+	entry[2] = nih_list_add (list, nih_list_new (NULL));
 
 	/* Perform a test iteration */
 	i = 0;
@@ -475,10 +475,10 @@ test_foreach_safe (void)
 	int      i, ret = 0;
 
 	printf ("Testing NIH_LIST_FOREACH_SAFE()\n");
-	list = nih_list_new ();
-	entry[0] = nih_list_add (list, nih_list_new ());
-	entry[1] = nih_list_add (list, nih_list_new ());
-	entry[2] = nih_list_add (list, nih_list_new ());
+	list = nih_list_new (NULL);
+	entry[0] = nih_list_add (list, nih_list_new (NULL));
+	entry[1] = nih_list_add (list, nih_list_new (NULL));
+	entry[2] = nih_list_add (list, nih_list_new (NULL));
 
 	/* Perform a test iteration */
 	i = 0;
@@ -520,9 +520,9 @@ test_remove (void)
 	int      ret = 0;
 
 	printf ("Testing nih_list_remove()\n");
-	list = nih_list_new ();
-	entry = nih_list_add (list, nih_list_new ());
-	tail = nih_list_add (list, nih_list_new ());
+	list = nih_list_new (NULL);
+	entry = nih_list_add (list, nih_list_new (NULL));
+	tail = nih_list_add (list, nih_list_new (NULL));
 
 	printf ("...with two-entry list\n");
 	ptr = nih_list_remove (entry);
@@ -639,9 +639,9 @@ test_destructor (void)
 	int      ret = 0, retval;
 
 	printf ("Testing nih_list_destructor()\n");
-	list = nih_list_new ();
-	entry = nih_list_add (list, nih_list_new ());
-	tail = nih_list_add (list, nih_list_new ());
+	list = nih_list_new (NULL);
+	entry = nih_list_add (list, nih_list_new (NULL));
+	tail = nih_list_add (list, nih_list_new (NULL));
 	retval = nih_list_destructor (entry);
 
 	/* Zero should be returned */
@@ -697,9 +697,9 @@ test_free (void)
 	NihList *list, *entry, *tail;
 	int      ret = 0;
 
-	list = nih_list_new ();
-	entry = nih_list_add (list, nih_list_new ());
-	tail = nih_list_add (list, nih_list_new ());
+	list = nih_list_new (NULL);
+	entry = nih_list_add (list, nih_list_new (NULL));
+	tail = nih_list_add (list, nih_list_new (NULL));
 
 	printf ("Testing nih_list_free()\n");
 	nih_alloc_set_destructor (entry, destructor_called);

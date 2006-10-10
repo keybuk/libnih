@@ -55,7 +55,7 @@ static inline void
 nih_child_init (void)
 {
 	if (! child_watches)
-		NIH_MUST (child_watches = nih_list_new ());
+		NIH_MUST (child_watches = nih_list_new (NULL));
 }
 
 

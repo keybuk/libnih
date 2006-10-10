@@ -349,7 +349,7 @@ static void
 nih_main_loop_init (void)
 {
 	if (! loop_functions)
-		NIH_MUST (loop_functions = nih_list_new ());
+		NIH_MUST (loop_functions = nih_list_new (NULL));
 
 	/* Set up the interrupt pipe, we need it to be non blocking so that
 	 * we don't accidentally block if there's too many signals been

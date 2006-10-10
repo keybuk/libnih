@@ -1,5 +1,18 @@
 2006-10-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/list.c (nih_list_new): Take a parent pointer like everything
+	else, showing its age slightly.
+	* nih/list.h: Update prototype.
+	* nih/tests/test_list.c: Update test cases.
+	* nih/child.c (nih_child_init): Pass NULL to nih_list_new().
+	* nih/error.c (nih_error_init): Pass NULL to nih_list_new().
+	* nih/file.c (nih_file_init): Pass NULL to nih_list_new().
+	* nih/io.c (nih_io_init): Pass NULL to nih_list_new().
+	* nih/main.c (nih_main_loop_init): Pass NULL to nih_list_new().
+	* nih/signal.c (nih_signal_init): Pass NULL to nih_list_new().
+	* nih/timer.c (nih_timer_init): Pass NULL to nih_list_new().
+	* nih/tests/test_hash.c: Pass NULL to nih_list_new().
+
 	* nih/alloc.c, nih/alloc.h, nih/child.c, nih/child.h, nih/error.c,
 	nih/error.h, nih/file.c, nih/file.h, nih/hash.c, nih/hash.h,
 	nih/io.c, nih/io.h, nih/list.c, nih/list.h, nih/main.c, nih/main.h,

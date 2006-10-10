@@ -60,14 +60,20 @@ nih_list_init (NihList *entry)
  * The structure is allocated using nih_alloc() so can be used as a context
  * to other allocations.
  *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned string will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the nih_alloc_set_destructor() function.
+ *
  * Returns: the new list entry or NULL if the allocation failed.
  **/
 NihList *
-nih_list_new (void)
+nih_list_new (const void *parent)
 {
 	NihList *list;
 
-	list = nih_new (NULL, NihList);
+	list = nih_new (parent, NihList);
 	if (! list)
 		return NULL;
 

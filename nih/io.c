@@ -72,7 +72,7 @@ static inline void
 nih_io_init (void)
 {
 	if (! io_watches)
-		NIH_MUST (io_watches = nih_list_new ());
+		NIH_MUST (io_watches = nih_list_new (NULL));
 }
 
 /**

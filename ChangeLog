@@ -1,5 +1,11 @@
 2006-10-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/timer.h: Fix comments.
+
+	* nih/hash.c (nih_hash_new): This needs a parent pointer too.
+	* nih/hash.h: Update prototype.
+	* nih/tests/test_hash.c: Update test cases.
+
 	* nih/child.c: Clarify child_watches item types.
 	* nih/file.c: Clarify file_watches item types.
 	* nih/io.c: Clarify io_watches item types.

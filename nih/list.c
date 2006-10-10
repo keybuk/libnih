@@ -52,6 +52,7 @@ nih_list_init (NihList *entry)
 
 /**
  * nih_list_new:
+ * @parent: parent of new list.
  *
  * Allocates a new list structure, usually used as the start of a new
  * list.  You may prefer to allocate the NihList structure statically and

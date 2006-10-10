@@ -73,7 +73,7 @@ test_new (void)
 	printf ("Testing nih_hash_new()\n");
 
 	printf ("...with zero size\n");
-	hash = nih_hash_new (0, key_function);
+	hash = nih_hash_new (NULL, 0, key_function);
 
 	/* Size should be smallest prime number */
 	if (hash->size != 17) {
@@ -111,7 +111,7 @@ test_new (void)
 
 
 	printf ("...with medium size\n");
-	hash = nih_hash_new (650, key_function);
+	hash = nih_hash_new (NULL, 650, key_function);
 
 	/* Size should be closest prime number */
 	if (hash->size != 331) {
@@ -149,7 +149,7 @@ test_new (void)
 
 
 	printf ("...with large size\n");
-	hash = nih_hash_new (40000000, key_function);
+	hash = nih_hash_new (NULL, 40000000, key_function);
 
 	/* Size should be largest prime number */
 	if (hash->size != 10250323) {
@@ -197,7 +197,7 @@ test_add (void)
 	int      ret = 0;
 
 	printf ("Testing nih_hash_add()\n");
-	hash = nih_hash_new (0, key_function);
+	hash = nih_hash_new (NULL, 0, key_function);
 	entry1 = new_entry (hash, "entry 1");
 	entry2 = new_entry (hash, "entry 2");
 	entry3 = new_entry (hash, "entry 1");
@@ -360,7 +360,7 @@ test_add_unique (void)
 	int      ret = 0;
 
 	printf ("Testing nih_hash_add_unique()\n");
-	hash = nih_hash_new (0, key_function);
+	hash = nih_hash_new (NULL, 0, key_function);
 	entry1 = new_entry (hash, "entry 1");
 	entry2 = new_entry (hash, "entry 2");
 	entry3 = new_entry (hash, "entry 1");
@@ -529,7 +529,7 @@ test_replace (void)
 	int      ret = 0;
 
 	printf ("Testing nih_hash_replace()\n");
-	hash = nih_hash_new (0, key_function);
+	hash = nih_hash_new (NULL, 0, key_function);
 	entry1 = new_entry (hash, "entry 1");
 	entry2 = new_entry (hash, "entry 2");
 	entry3 = new_entry (hash, "entry 1");
@@ -698,7 +698,7 @@ test_search (void)
 	int      ret = 0;
 
 	printf ("Testing nih_hash_search()\n");
-	hash = nih_hash_new (0, key_function);
+	hash = nih_hash_new (NULL, 0, key_function);
 	entry1 = nih_hash_add (hash, new_entry (hash, "entry 1"));
 	entry2 = nih_hash_add (hash, new_entry (hash, "entry 2"));
 	entry3 = nih_hash_add (hash, new_entry (hash, "entry 2"));
@@ -769,7 +769,7 @@ test_lookup (void)
 	int      ret = 0;
 
 	printf ("Testing nih_hash_lookup()\n");
-	hash = nih_hash_new (0, key_function);
+	hash = nih_hash_new (NULL, 0, key_function);
 	entry1 = nih_hash_add (hash, new_entry (hash, "entry 1"));
 	entry2 = nih_hash_add (hash, new_entry (hash, "entry 2"));
 	entry3 = nih_hash_add (hash, new_entry (hash, "entry 2"));

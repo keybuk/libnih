@@ -104,6 +104,7 @@ fnv_hash (const char *key)
 
 /**
  * nih_hash_new:
+ * @parent: parent of new hash,
  * @entries: rough number of entries expected,
  * @key_function: function used to obtain keys for entries.
  *
@@ -118,18 +119,25 @@ fnv_hash (const char *key)
  * The structure is allocated using nih_alloc() so it can be used as a
  * context to other allocations.
  *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned string will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the nih_alloc_set_destructor() function.
+ *
  * Returns: the new hash table or NULL if the allocation failed.
  **/
 NihHash *
-nih_hash_new (size_t         entries,
-	      NihKeyFunction key_function)
+nih_hash_new (const void     *parent,
+	      size_t          entries,
+	      NihKeyFunction  key_function)
 {
 	NihHash *hash;
 	size_t   i;
 
 	nih_assert (key_function != NULL);
 
-	hash = nih_new (NULL, NihHash);
+	hash = nih_new (parent, NihHash);
 	if (! hash)
 		return NULL;
 

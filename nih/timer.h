@@ -33,7 +33,7 @@
  *
  * The timer callback is called whenever the timer has been triggered.
  * For periodic and scheduled timers, the timer may be removed by calling
- * #nih_list_remove or similar; this happens automatically for timeouts.
+ * nih_list_remove() or similar; this happens automatically for timeouts.
  **/
 typedef struct nih_timer NihTimer;
 typedef void (*NihTimerCb) (void *, NihTimer *);
@@ -89,7 +89,7 @@ typedef struct nih_timer_schedule {
  * Periodic timers are called every @period seconds after they were registered.
  * Scheduled timers are called based on the information in @schedule.
  *
- * In all cases, a timer may be cancelled by calling #nih_list_remove on
+ * In all cases, a timer may be cancelled by calling nih_list_remove() on
  * it as they are held in a list internally.
  **/
 struct nih_timer {

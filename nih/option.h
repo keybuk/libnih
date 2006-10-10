@@ -103,16 +103,18 @@ struct nih_option {
 
 NIH_BEGIN_EXTERN
 
-char **nih_option_parser    (const void *parent, int argc, char *argv[],
-			     NihOption *options, int break_nonopt);
+char **nih_option_parser       (const void *parent, int argc, char *argv[],
+			        NihOption *options, int break_nonopt);
 
-int    nih_option_count     (NihOption *option, const char *arg);
-int    nih_option_quiet     (NihOption *option, const char *arg);
-int    nih_option_verbose   (NihOption *option, const char *arg);
-int    nih_option_debug     (NihOption *option, const char *arg);
+int    nih_option_count        (NihOption *option, const char *arg);
+int    nih_option_quiet        (NihOption *option, const char *arg);
+int    nih_option_verbose      (NihOption *option, const char *arg);
+int    nih_option_debug        (NihOption *option, const char *arg);
 
-void   nih_option_set_usage (const char *usage);
-void   nih_option_help      (NihOption *options[]);
+void   nih_option_set_usage    (const char *usage);
+void   nih_option_set_synopsis (const char *synopsis);
+void   nih_option_set_help     (const char *help);
+void   nih_option_help         (NihOption *options[]);
 
 NIH_END_EXTERN
 

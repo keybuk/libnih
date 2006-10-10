@@ -2041,13 +2041,25 @@ int
 test_help (void)
 {
 	FILE  *output;
-	char   text[81];
+	char   text[100];
 	char  *argv[3];
 	pid_t  pid;
 	int    ret = 0, argc, status;
 
 	printf ("Testing nih_option_set_usage()\n");
-	nih_option_set_usage ("CMD [ARG]...\n");
+	nih_option_set_usage ("CMD [ARG]...");
+
+	printf ("Testing nih_option_set_synopsis()\n");
+	nih_option_set_synopsis ("Frobnicates bars carefully, taking into "
+				 "account things that are important when "
+				 "doing that");
+
+	printf ("Testing nih_option_set_help()\n");
+	nih_option_set_help ("This is the help text for the bar frobnication "
+			     "program.\n\n"
+			     "It is also wrapped to the screen width, so it "
+			     "can be as long as we like, and can also include "
+			     "paragraph breaks and stuff.");
 
 
 	printf ("Testing nih_option_help()\n");
@@ -2062,6 +2074,8 @@ test_help (void)
 	output = tmpfile ();
 	pid = fork ();
 	if (pid == 0) {
+		unsetenv ("COLUMNS");
+
 		dup2 (fileno (output), STDOUT_FILENO);
 		nih_option_parser (NULL, argc, argv, options, FALSE);
 		exit (1);
@@ -2083,7 +2097,22 @@ test_help (void)
 		ret = 1;
 	}
 
-	/* Second line of output should be a blank line */
+	/* Next line of output should be the synopsis */
+	fgets (text, sizeof (text), output);
+	if (strcmp (text, ("Frobnicates bars carefully, taking into account "
+			   "things that are important when\n"))) {
+		printf ("BAD: synopsis line wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Next line of output should also be the synopsis */
+	fgets (text, sizeof (text), output);
+	if (strcmp (text, ("doing that\n"))) {
+		printf ("BAD: synopsis line wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Next line of output should be a blank line */
 	fgets (text, sizeof (text), output);
 	if (strcmp (text, "\n")) {
 		printf ("BAD: output wasn't what we expected.\n");
@@ -2225,6 +2254,45 @@ test_help (void)
 		printf ("BAD: output wasn't what we expected.\n");
 		ret = 1;
 	}
+
+	/* Next line of output should be a blank line */
+	fgets (text, sizeof (text), output);
+	if (strcmp (text, "\n")) {
+		printf ("BAD: output wasn't what we expected.\n");
+		ret = 1;
+	}
+
+
+	/* Help text should now begin */
+	fgets (text, sizeof (text), output);
+	if (strcmp (text, ("This is the help text for the bar frobnication "
+			   "program.\n"))) {
+		printf ("BAD: help string wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Paragraph break */
+	fgets (text, sizeof (text), output);
+	if (strcmp (text, "\n")) {
+		printf ("BAD: help string wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Help text should continue */
+	fgets (text, sizeof (text), output);
+	if (strcmp (text, ("It is also wrapped to the screen width, so it "
+			   "can be as long as we like, and can\n"))) {
+		printf ("BAD: help string wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Help text should finish */
+	fgets (text, sizeof (text), output);
+	if (strcmp (text, "also include paragraph breaks and stuff.\n")) {
+		printf ("BAD: help string wasn't what we expected.\n");
+		ret = 1;
+	}
+
 
 	/* Next line of output should be a blank line */
 	fgets (text, sizeof (text), output);

@@ -111,9 +111,23 @@ static NihOption default_options[] = {
 /**
  * usage_string:
  *
- * This string is appended to the program help if given.
+ * This string is appended to the program's usage line if given.
  **/
 static const char *usage_string = NULL;
+
+/**
+ * synopsis_string:
+ *
+ * This string is output after the program's usage string if given.
+ **/
+static const char *synopsis_string = NULL;
+
+/**
+ * help_string:
+ *
+ * This string is output after the options if given.
+ **/
+static const char *help_string = NULL;
 
 
 /**
@@ -647,8 +661,10 @@ nih_option_debug (NihOption  *option,
  * nih_option_set_usage:
  * @usage: usage string.
  *
- * Set the usage string appended to the program help output, this should
- * be a static translated string.
+ * Set the usage string appended to the program usage line in the help output,
+ * this should be a static translated string.
+ *
+ * The string should not be terminated with a newline.
  **/
 void
 nih_option_set_usage (const char *usage)
@@ -656,6 +672,42 @@ nih_option_set_usage (const char *usage)
 	nih_assert (usage != NULL);
 
 	usage_string = usage;
+}
+
+/**
+ * nih_option_set_synopsis:
+ * @synopsis: synopsis string.
+ *
+ * Set the synopsis string, shown after the program usage line in the help
+ * output.  This should be a static translated string.  It will be
+ * automatically wrapped to the screen width.
+ *
+ * The string should not be terminated with a newline.
+ **/
+void
+nih_option_set_synopsis (const char *synopsis)
+{
+	nih_assert (synopsis != NULL);
+
+	synopsis_string = synopsis;
+}
+
+/**
+ * nih_option_set_help:
+ * @help: help string.
+ *
+ * Set the help string, this is displayed after the options in the help
+ * output.  This should be a static translated string.  It will be
+ * automatically wrapped to the screen width.
+ *
+ * The string should not be terminated with a newline.
+ **/
+void
+nih_option_set_help (const char *help)
+{
+	nih_assert (help != NULL);
+
+	help_string = help;
 }
 
 /**
@@ -710,6 +762,17 @@ nih_option_help (NihOption *options[])
 		printf (" %s", usage_string);
 	printf ("\n");
 
+	/* Wrap the synopsis to the screen width */
+	if (synopsis_string) {
+		char *str;
+
+		NIH_MUST (str = nih_str_screen_wrap (NULL, synopsis_string,
+						     0, 0));
+		printf ("%s\n", str);
+		nih_free (str);
+	}
+	printf ("\n");
+
 	/* Iterate the option groups we found in order, and display
 	 * only their options
 	 */
@@ -719,6 +782,18 @@ nih_option_help (NihOption *options[])
 	/* Display the other group */
 	if (other)
 		nih_option_group_help (NULL, options, groups);
+
+	/* Wrap the help to the screen width */
+	if (help_string) {
+		char *str;
+
+		NIH_MUST (str = nih_str_screen_wrap (NULL, help_string, 0, 0));
+		printf ("%s\n", str);
+		nih_free (str);
+
+		if (package_bugreport)
+			printf ("\n");
+	}
 
 	/* Append the bug report address */
 	if (package_bugreport)

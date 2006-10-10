@@ -1,5 +1,13 @@
 2006-10-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/option.c (nih_option_set_synopsis): Function to set a synopsis
+	string that follows the usage.
+	(nih_option_set_help): Function to set the help string that follows
+	the options.
+	(nih_option_help): Output synopsis and help strings.
+	* nih/option.h: Update.
+	* nih/tests/test_option.c (test_help): Check behaviour
+
 	* TODO: Update.
 
 	* nih/main.c (nih_main_version): Use nih_str_screen_wrap to output

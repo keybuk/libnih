@@ -1,5 +1,11 @@
 2006-10-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/string.c (nih_str_screen_width): Add function to return just
+	the screen width.
+	(nih_str_screen_wrap): Use that function.
+	* nih/string.h: Update.
+	* nih/tests/test_string.c (test_str_screen_width): Check function.
+
 	* nih/option.c (nih_option_set_synopsis): Function to set a synopsis
 	string that follows the usage.
 	(nih_option_set_help): Function to set the help string that follows

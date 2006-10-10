@@ -397,6 +397,45 @@ nih_str_wrap (const void *parent,
 }
 
 /**
+ * nih_str_screen_width:
+ *
+ * Checks the COLUMNS environment variable, standard output if it is a
+ * terminal or defaults to 80 characters.
+ *
+ * Returns: the width of the screen.
+ **/
+size_t
+nih_str_screen_width (void)
+{
+	char   *columns;
+	size_t  len = 0;
+
+	/* Look at the columns environment variable */
+	columns = getenv ("COLUMNS");
+	if ((! len) && columns) {
+		char *endptr;
+
+		len = strtoul (columns, &endptr, 10);
+		if (*endptr)
+			len = 0;
+	}
+
+	/* Check whether standard output is a tty */
+	if ((! len) && isatty (STDOUT_FILENO)) {
+		struct winsize winsize;
+
+		if (ioctl (STDOUT_FILENO, TIOCGWINSZ, &winsize) == 0)
+			len = winsize.ws_col;
+	}
+
+	/* Fallback to 80 columns */
+	if (! len)
+		len = 80;
+
+	return len;
+}
+
+/**
  * nih_str_screen_wrap:
  * @parent: parent of returned string,
  * @str: string to be wrapped,
@@ -429,32 +468,11 @@ nih_str_screen_wrap (const void *parent,
 		     size_t      first_indent,
 		     size_t      indent)
 {
-	char   *columns;
-	size_t  len = 0;
+	size_t len;
 
 	nih_assert (str != NULL);
 
-	/* Look at the columns environment variable */
-	columns = getenv ("COLUMNS");
-	if ((! len) && columns) {
-		char *endptr;
-
-		len = strtoul (columns, &endptr, 10);
-		if (*endptr)
-			len = 0;
-	}
-
-	/* Check whether standard output is a tty */
-	if ((! len) && isatty (STDOUT_FILENO)) {
-		struct winsize winsize;
-
-		if (ioctl (STDOUT_FILENO, TIOCGWINSZ, &winsize) == 0)
-			len = winsize.ws_col;
-	}
-
-	/* Fallback to 80 columns */
-	if (! len)
-		len = 80;
+	len = nih_str_screen_width ();
 
 	return nih_str_wrap (parent, str, len, first_indent, indent);
 }

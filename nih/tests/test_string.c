@@ -583,6 +583,73 @@ test_str_wrap (void)
 	return ret;
 }
 
+
+int
+test_str_screen_width (void)
+{
+	struct winsize  winsize;
+	size_t          len;
+	int             oldstdout, pty, pts, ret = 0;
+
+	printf ("Testing nih_str_screen_width()\n");
+	oldstdout = dup (STDOUT_FILENO);
+
+	unsetenv ("COLUMNS");
+
+	winsize.ws_row = 24;
+	winsize.ws_col = 40;
+	winsize.ws_xpixel = 0;
+	winsize.ws_ypixel = 0;
+	assert (openpty (&pty, &pts, NULL, NULL, &winsize) == 0);
+
+	printf ("...with screen width\n");
+	dup2 (pts, STDOUT_FILENO);
+	len = nih_str_screen_width ();
+	dup2 (oldstdout, STDOUT_FILENO);
+
+	/* Check return value */
+	if (len != 40) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+
+	printf ("...with COLUMNS variable\n");
+	putenv ("COLUMNS=30");
+	dup2 (pts, STDOUT_FILENO);
+	len = nih_str_screen_width ();
+	dup2 (oldstdout, STDOUT_FILENO);
+
+	/* Check return value */
+	if (len != 30) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	unsetenv ("COLUMNS");
+	close (pts);
+	close (pty);
+
+
+	assert ((pts = open ("/dev/null", O_RDWR | O_NOCTTY)) >= 0);
+
+	printf ("...with fallback to 80 columns\n");
+	dup2 (pts, STDOUT_FILENO);
+	len = nih_str_screen_width ();
+	dup2 (oldstdout, STDOUT_FILENO);
+
+	/* Check return value */
+	if (len != 80) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	close (pts);
+	close (oldstdout);
+
+	return ret;
+}
+
 int
 test_str_screen_wrap (void)
 {
@@ -645,7 +712,7 @@ test_str_screen_wrap (void)
 	close (pty);
 
 
-	assert (pts = open ("/dev/null", O_RDWR | O_NOCTTY) >= 0);
+	assert ((pts = open ("/dev/null", O_RDWR | O_NOCTTY)) >= 0);
 
 	printf ("...with fallback to 80 columns\n");
 	dup2 (pts, STDOUT_FILENO);
@@ -666,6 +733,7 @@ test_str_screen_wrap (void)
 	nih_free (str);
 
 	close (pts);
+	close (oldstdout);
 
 	return ret;
 }
@@ -684,6 +752,7 @@ main (int   argc,
 	ret |= test_str_split ();
 	ret |= test_strv_free ();
 	ret |= test_str_wrap ();
+	ret |= test_str_screen_width ();
 	ret |= test_str_screen_wrap ();
 
 	return ret;

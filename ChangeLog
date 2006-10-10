@@ -1,5 +1,7 @@
 2006-10-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_option.c (main): Enable test of --debug, oops.
+
 	* nih/main.c (nih_main_daemonise): Document why this is better than
 	daemon(), and thus not nih.
 	* nih/tests/test_main.c (test_daemonise): Test the daemonise

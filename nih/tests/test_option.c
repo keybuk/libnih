@@ -2199,6 +2199,7 @@ main (int   argc,
 	ret |= test_count ();
 	ret |= test_quiet ();
 	ret |= test_verbose ();
+	ret |= test_debug ();
 	ret |= test_version ();
 	ret |= test_help ();
 

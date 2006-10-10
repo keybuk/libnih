@@ -13,9 +13,6 @@ command parser:
 timers:
 - calendar scheduled timers
 
-main:
-- wrap copyright to screen width
-
 file matching functions
 common pathnames?
 

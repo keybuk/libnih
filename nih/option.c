@@ -670,8 +670,6 @@ nih_option_debug (NihOption  *option,
 void
 nih_option_set_usage (const char *usage)
 {
-	nih_assert (usage != NULL);
-
 	usage_string = usage;
 }
 
@@ -688,8 +686,6 @@ nih_option_set_usage (const char *usage)
 void
 nih_option_set_synopsis (const char *synopsis)
 {
-	nih_assert (synopsis != NULL);
-
 	synopsis_string = synopsis;
 }
 
@@ -706,8 +702,6 @@ nih_option_set_synopsis (const char *synopsis)
 void
 nih_option_set_help (const char *help)
 {
-	nih_assert (help != NULL);
-
 	help_string = help;
 }
 

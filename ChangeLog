@@ -1,5 +1,9 @@
 2006-10-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/option.c (nih_option_set_usage, nih_option_set_synopsis) 
+	(nih_option_set_help): Allow NULL to be set to override existing
+	strings.
+
 	* nih/option.c (nih_option_help): Make static.
 	* nih/option.h: Update.
 

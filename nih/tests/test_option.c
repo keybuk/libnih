@@ -49,7 +49,8 @@ static int
 my_setter (NihOption *option, const char *arg)
 {
 	was_called++;
-	last_option = option;
+	last_option = nih_alloc (NULL, sizeof (NihOption));
+	memcpy (last_option, option, sizeof (NihOption));
 	last_arg = arg;
 
 	if (arg && (! strcmp (arg, "fail")))
@@ -1362,6 +1363,7 @@ test_parser (void)
 	}
 
 	nih_free (args);
+	nih_free (last_option);
 
 
 	printf ("...with short setter argument option\n");
@@ -1406,6 +1408,7 @@ test_parser (void)
 	}
 
 	nih_free (args);
+	nih_free (last_option);
 
 
 	printf ("...with short setter embedded argument option\n");
@@ -1449,6 +1452,7 @@ test_parser (void)
 	}
 
 	nih_free (args);
+	nih_free (last_option);
 
 
 	printf ("...with long setter option\n");
@@ -1499,6 +1503,7 @@ test_parser (void)
 	}
 
 	nih_free (args);
+	nih_free (last_option);
 
 
 	printf ("...with long setter argument option\n");
@@ -1543,6 +1548,7 @@ test_parser (void)
 	}
 
 	nih_free (args);
+	nih_free (last_option);
 
 
 	printf ("...with long setter embedded argument option\n");
@@ -1586,6 +1592,7 @@ test_parser (void)
 	}
 
 	nih_free (args);
+	nih_free (last_option);
 
 
 	printf ("...with short setter embedded argument error\n");
@@ -1632,6 +1639,8 @@ test_parser (void)
 		printf ("BAD: more output than we expected.\n");
 		ret = 1;
 	}
+
+	nih_free (last_option);
 
 	rewind (output);
 	ftruncate (fileno (output), 0);
@@ -1681,6 +1690,8 @@ test_parser (void)
 		printf ("BAD: more output than we expected.\n");
 		ret = 1;
 	}
+
+	nih_free (last_option);
 
 	rewind (output);
 	ftruncate (fileno (output), 0);

@@ -1,5 +1,8 @@
 2006-10-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_option.c: Keep a copy of last_option otherwise
+	it's freed while we're not around.
+
 	* nih/option.c (nih_option_set_footer): Add a footer string.
 	(nih_option_help): Also add the footer string.
 	* nih/option.h: Update.

@@ -42,7 +42,7 @@
  * @parent: parent for new allocations,
  * @argc: number of arguments,
  * @argv: arguments array,
- * @options: lists of options,
+ * @options: list of options,
  * @nargs: number of non-option arguments,
  * @args: non-option arguments to return,
  * @arg: current argument index,
@@ -57,7 +57,7 @@ typedef struct nih_option_ctx {
 	const void  *parent;
 	int          argc;
 	char       **argv;
-	NihOption   *options[3];
+	NihOption   *options;
 
 	size_t       nargs;
 	char       **args;
@@ -79,9 +79,9 @@ static int         nih_option_handle      (NihOptionCtx *ctx, NihOption *opt);
 static int         nih_option_handle_arg  (NihOptionCtx *ctx, NihOption *opt,
 					   const char *arg);
 static const char *nih_option_next_nonopt (NihOptionCtx *ctx);
-static void        nih_option_help        (NihOption *options[]);
+static void        nih_option_help        (NihOption *options);
 static void        nih_option_group_help  (NihOptionGroup *group,
-					   NihOption *options[],
+					   NihOption *options,
 					   NihOptionGroup **groups);
 
 
@@ -181,9 +181,7 @@ nih_option_parser (const void *parent,
 	ctx.argc = argc;
 	ctx.argv = argv;
 
-	ctx.options[0] = options;
-	ctx.options[1] = default_options;
-	ctx.options[2] = NULL;
+	ctx.options = nih_option_join (parent, options, default_options);
 
 	NIH_MUST (ctx.args = nih_alloc (parent, sizeof (char *)));
 	ctx.args[0] = NULL;
@@ -221,8 +219,10 @@ nih_option_parser (const void *parent,
 		}
 	}
 
+	nih_free (ctx.options);
 	return ctx.args;
 error:
+	nih_free (ctx.options);
 	nih_free (ctx.args);
 	return NULL;
 }
@@ -267,15 +267,14 @@ static NihOption *
 nih_option_get_short (NihOptionCtx *ctx,
 		      int           option)
 {
-	NihOption *opt, **opts, *catch = NULL;
+	NihOption *opt, *catch = NULL;
 
-	for (opts = ctx->options; *opts != NULL; opts++) {
-		for (opt = *opts; (opt->option || opt->long_option); opt++) {
-			if (opt->option == option)
-				return opt;
-			if (opt->option == '-')
-				catch = opt;
-		}
+	for (opt = ctx->options; (opt->option || opt->long_option); opt++) {
+		if (opt->option == '-')
+			catch = opt;
+
+		if (opt->option == option)
+			return opt;
 	}
 
 	return catch;
@@ -350,22 +349,20 @@ nih_option_get_long (NihOptionCtx *ctx,
 		     const char   *option,
 		     size_t        len)
 {
-	NihOption *opt, **opts, *catch = NULL;
+	NihOption *opt, *catch = NULL;
 
-	for (opts = ctx->options; *opts != NULL; opts++) {
-		for (opt = *opts; (opt->option || opt->long_option); opt++) {
-			if (! opt->long_option)
-				continue;
+	for (opt = ctx->options; (opt->option || opt->long_option); opt++) {
+		if (! opt->long_option)
+			continue;
 
-			if (! strcmp (opt->long_option, "--"))
-				catch = opt;
+		if (! strcmp (opt->long_option, "--"))
+			catch = opt;
 
-			if (strlen (opt->long_option) > len)
-				continue;
+		if (strlen (opt->long_option) > len)
+			continue;
 
-			if (! strncmp (option, opt->long_option, len))
-				return opt;
-		}
+		if (! strncmp (option, opt->long_option, len))
+			return opt;
 	}
 
 	return catch;
@@ -562,6 +559,58 @@ nih_option_next_nonopt (NihOptionCtx *ctx)
 
 
 /**
+ * nih_option_join:
+ * @parent: parent for new allocation,
+ * @a: first option array,
+ * @b: second option array.
+ *
+ * Joins the two option arrays together to produce a combined array containing
+ * the options from @a followed by the options from @b.
+ *
+ * The new list is allocated with nih_alloc(), but the members are just
+ * copied in from @a and @b including any pointers therein.  Freeing the
+ * new array with nih_free() is entirely safe.
+ *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned string will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the nih_alloc_set_destructor() function.
+ *
+ * Returns: combined option array.
+ **/
+NihOption *
+nih_option_join (const void *parent,
+		 NihOption  *a,
+		 NihOption  *b)
+{
+	NihOption *opt, *opts;
+	size_t     alen = 0, blen = 0;
+
+	nih_assert (a != NULL);
+	nih_assert (b != NULL);
+
+	/* Count options in first list */
+	for (opt = a; (opt->option || opt->long_option); opt++)
+		alen++;
+
+	/* Count options in second list */
+	for (opt = b; (opt->option || opt->long_option); opt++)
+		blen++;
+
+	/* Allocate combined list */
+	NIH_MUST (opts = nih_alloc (parent,
+				    sizeof (NihOption) * (alen + blen + 1)));
+
+	/* Copy options, making sure to copy the last option from b */
+	memcpy (opts, a, sizeof (NihOption) * alen);
+	memcpy (opts + alen, b, sizeof (NihOption) * (blen + 1));
+
+	return opts;
+}
+
+
+/**
  * nih_option_count:
  * @option: NihOption invoked,
  * @arg: argument to parse.
@@ -707,15 +756,15 @@ nih_option_set_help (const char *help)
 
 /**
  * nih_option_help:
- * @options: program options lists.
+ * @options: program options list.
  *
  * Output a description of the program's options to standard output
  * grouped by the group member of the option.
  **/
 static void
-nih_option_help (NihOption *options[])
+nih_option_help (NihOption *options)
 {
-	NihOption       *opt, **opts;
+	NihOption       *opt;
 	NihOptionGroup **groups;
 	size_t           group, ngroups;
 	int              other = FALSE;
@@ -726,30 +775,27 @@ nih_option_help (NihOption *options[])
 	ngroups = 0;
 
 	/* Count the number of option groups */
-	for (opts = options; *opts != NULL; opts++) {
-		for (opt = *opts; (opt->option || opt->long_option); opt++) {
-			NihOptionGroup **new_groups;
+	for (opt = options; (opt->option || opt->long_option); opt++) {
+		NihOptionGroup **new_groups;
 
-			if (! opt->group) {
-				other = TRUE;
+		if (! opt->group) {
+			other = TRUE;
 				continue;
-			}
-
-			for (group = 0; group < ngroups; group++) {
-				if (groups[group] == opt->group)
-					break;
-			}
-
-			if (group < ngroups)
-				continue;
-
-			NIH_MUST (new_groups = nih_realloc (
-					  groups, NULL,
-					  (sizeof (NihOptionGroup *)
-					   * (ngroups + 1))));
-			groups = new_groups;
-			groups[ngroups++] = opt->group;
 		}
+
+		for (group = 0; group < ngroups; group++) {
+			if (groups[group] == opt->group)
+				break;
+		}
+
+		if (group < ngroups)
+			continue;
+
+		NIH_MUST (new_groups = nih_realloc (groups, NULL,
+						    (sizeof (NihOptionGroup *)
+						     * (ngroups + 1))));
+		groups = new_groups;
+		groups[ngroups++] = opt->group;
 	}
 
 	printf ("%s: %s [OPTION]...", _("Usage"), program_name);
@@ -801,17 +847,17 @@ nih_option_help (NihOption *options[])
 /**
  * nih_option_group_help:
  * @group: group to display,
- * @options: program options lists.
+ * @options: program options list.
  *
  * Output a list of the program's options in the given option group to
  * standard output.
  **/
 static void
 nih_option_group_help (NihOptionGroup  *group,
-		       NihOption       *options[],
+		       NihOption       *options,
 		       NihOptionGroup **groups)
 {
-	NihOption *opt, **opts;
+	NihOption *opt;
 	size_t     width;
 
 	nih_assert (options != NULL);
@@ -826,92 +872,89 @@ nih_option_group_help (NihOptionGroup  *group,
 
 	width = MAX (nih_str_screen_width (), 50) - 30;
 
-	for (opts = options; *opts != NULL; opts++) {
-		for (opt = *opts; (opt->option || opt->long_option); opt++) {
-			char   *str, *ptr;
-			size_t  len = 0;
+	for (opt = options; (opt->option || opt->long_option); opt++) {
+		char   *str, *ptr;
+		size_t  len = 0;
 
-			if (opt->group != group)
-				continue;
+		if (opt->group != group)
+			continue;
 
-			if (! opt->help)
-				continue;
+		if (! opt->help)
+			continue;
 
-			/* Indent by two spaces */
-			printf ("  ");
+		/* Indent by two spaces */
+		printf ("  ");
+		len += 2;
+
+		/* Display the short option */
+		if (opt->option) {
+			printf ("-%c", opt->option);
 			len += 2;
 
-			/* Display the short option */
-			if (opt->option) {
-				printf ("-%c", opt->option);
-				len += 2;
-
-				/* Seperate short and long option, or
-				 * give the argument name
-				 */
-				if (opt->long_option) {
-					printf (", ");
-					len += 2;
-				} else if (opt->arg_name) {
-					printf (" %s", opt->arg_name);
-					len += strlen (opt->arg_name) + 1;
-				}
-			} else {
-				/* Make all long options the same indent
-				 * whether or not there's a short one
-				 */
-				printf ("    ");
-				len += 4;
-			}
-
-			/* Display the long option */
-			if (opt->long_option) {
-				printf ("--%s", opt->long_option);
-				len += strlen (opt->long_option) + 2;
-
-				/* With the argument name */
-				if (opt->arg_name) {
-					printf ("=%s", opt->arg_name);
-					len += strlen (opt->arg_name) + 1;
-				}
-			}
-
-			/* Format the help string to fit in the latter
-			 * half of the screen
+			/* Seperate short and long option, or
+			 * give the argument name
 			 */
-			NIH_MUST (str = nih_str_wrap (NULL, opt->help,
-						      width, 0, 2));
+			if (opt->long_option) {
+				printf (", ");
+				len += 2;
+			} else if (opt->arg_name) {
+				printf (" %s", opt->arg_name);
+				len += strlen (opt->arg_name) + 1;
+			}
+		} else {
+			/* Make all long options the same indent
+			 * whether or not there's a short one
+			 */
+			printf ("    ");
+			len += 4;
+		}
 
-			/* Write the description to the screen */
-			ptr = str;
-			while (ptr && *ptr) {
-				size_t linelen;
+		/* Display the long option */
+		if (opt->long_option) {
+			printf ("--%s", opt->long_option);
+			len += strlen (opt->long_option) + 2;
 
-				/* Not enough room on this line */
-				if (len > 28) {
-					printf ("\n");
-					len = 0;
-				}
+			/* With the argument name */
+			if (opt->arg_name) {
+				printf ("=%s", opt->arg_name);
+				len += strlen (opt->arg_name) + 1;
+			}
+		}
 
-				/* Pad line up to the right column */
-				while (len < 30) {
-					printf (" ");
-					len++;
-				}
+		/* Format the help string to fit in the latter
+		 * half of the screen
+		 */
+		NIH_MUST (str = nih_str_wrap (NULL, opt->help, width, 0, 2));
 
-				/* Output the line up until the next line */
-				linelen = strcspn (ptr, "\n");
-				printf ("%.*s\n", (int)linelen, ptr);
+		/* Write the description to the screen */
+		ptr = str;
+		while (ptr && *ptr) {
+			size_t linelen;
+
+			/* Not enough room on this line */
+			if (len > 28) {
+				printf ("\n");
 				len = 0;
-
-				/* Skip to the next line */
-				ptr += linelen;
-				if (*ptr == '\n')
-					ptr++;
 			}
 
-			nih_free (str);
+			/* Pad line up to the right column */
+			while (len < 30) {
+				printf (" ");
+				len++;
+			}
+
+			/* Output the line up until the next line */
+			linelen = strcspn (ptr, "\n");
+			printf ("%.*s\n", (int)linelen, ptr);
+			len = 0;
+
+			/* Skip to the next line */
+			ptr += linelen;
+			if (*ptr == '\n')
+				ptr++;
 		}
+
+		nih_free (str);
 	}
 
 	printf ("\n");

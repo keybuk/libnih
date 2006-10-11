@@ -1,5 +1,17 @@
 2006-10-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/option.c (nih_option_join): Add function to combine two lists
+	of options.
+	(nih_option_parser): Join the options and default_options lists,
+	don't play with arrays of lists.
+	(nih_option_get_short, nih_option_get_long): Simply by just iterating
+	the one array.
+	(nih_option_help, nih_option_group_help): Again simply by just
+	iterating the one array.
+	* nih/option.h: Update.
+	* nih/tests/test_option.c (test_parser): Don't check addresses of
+	options as they've moved.
+
 	* nih/option.c (nih_option_set_usage, nih_option_set_synopsis) 
 	(nih_option_set_help): Allow NULL to be set to override existing
 	strings.

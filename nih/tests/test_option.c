@@ -1350,7 +1350,7 @@ test_parser (void)
 	}
 
 	/* Option passed should have been the execute one */
-	if (last_option != &(options[6])) {
+	if (last_option->option != options[6].option) {
 		printf ("BAD: setter's option wasn't what we expected.\n");
 		ret = 1;
 	}
@@ -1394,7 +1394,7 @@ test_parser (void)
 	}
 
 	/* Option passed should have been the special one */
-	if (last_option != &(options[5])) {
+	if (last_option->option != options[5].option) {
 		printf ("BAD: setter's option wasn't what we expected.\n");
 		ret = 1;
 	}
@@ -1437,7 +1437,7 @@ test_parser (void)
 	}
 
 	/* Option passed should have been the special one */
-	if (last_option != &(options[5])) {
+	if (last_option->option != options[5].option) {
 		printf ("BAD: setter's option wasn't what we expected.\n");
 		ret = 1;
 	}
@@ -1487,7 +1487,7 @@ test_parser (void)
 	}
 
 	/* Option passed should have been the execute one */
-	if (last_option != &(options[6])) {
+	if (last_option->option != options[6].option) {
 		printf ("BAD: setter's option wasn't what we expected.\n");
 		ret = 1;
 	}
@@ -1531,7 +1531,7 @@ test_parser (void)
 	}
 
 	/* Option passed should have been the special one */
-	if (last_option != &(options[5])) {
+	if (last_option->option != options[5].option) {
 		printf ("BAD: setter's option wasn't what we expected.\n");
 		ret = 1;
 	}
@@ -1574,7 +1574,7 @@ test_parser (void)
 	}
 
 	/* Option passed should have been the special one */
-	if (last_option != &(options[5])) {
+	if (last_option->option != options[5].option) {
 		printf ("BAD: setter's option wasn't what we expected.\n");
 		ret = 1;
 	}
@@ -1616,7 +1616,7 @@ test_parser (void)
 	}
 
 	/* Option passed should have been the special one */
-	if (last_option != &(options[5])) {
+	if (last_option->option != options[5].option) {
 		printf ("BAD: setter's option wasn't what we expected.\n");
 		ret = 1;
 	}
@@ -1665,7 +1665,7 @@ test_parser (void)
 	}
 
 	/* Option passed should have been the special one */
-	if (last_option != &(options[5])) {
+	if (last_option->option != options[5].option) {
 		printf ("BAD: setter's option wasn't what we expected.\n");
 		ret = 1;
 	}

@@ -137,6 +137,13 @@ static const char *synopsis_string = NULL;
  **/
 static const char *help_string = NULL;
 
+/**
+ * footer_string:
+ *
+ * This string is output after the options and help if given.
+ **/
+static const char *footer_string = NULL;
+
 
 /**
  * nih_option_parser:
@@ -777,6 +784,21 @@ nih_option_set_help (const char *help)
 }
 
 /**
+ * nih_option_set_footer:
+ * @footer: footer string.
+ *
+ * Set the footer string, this is displayed after the options and help
+ * text in the output.  This should be a static translated string.
+ *
+ * The string should not be terminated with a newline.
+ **/
+void
+nih_option_set_footer (const char *footer)
+{
+	footer_string = footer;
+}
+
+/**
  * nih_option_help:
  * @options: program options list.
  *
@@ -858,6 +880,14 @@ nih_option_help (NihOption *options)
 		NIH_MUST (str = nih_str_screen_wrap (NULL, help_string, 0, 0));
 		printf ("%s\n", str);
 		nih_free (str);
+
+		if (package_bugreport || footer_string)
+			printf ("\n");
+	}
+
+	/* Append the footer */
+	if (footer_string) {
+		printf ("%s\n", footer_string);
 
 		if (package_bugreport)
 			printf ("\n");

@@ -2047,7 +2047,7 @@ test_help (void)
 	int    ret = 0, argc, status;
 
 	printf ("Testing nih_option_set_usage_stem()\n");
-	nih_option_set_usage ("[OPT]...");
+	nih_option_set_usage_stem ("[OPT]...");
 
 	printf ("Testing nih_option_set_usage()\n");
 	nih_option_set_usage ("CMD [ARG]...");
@@ -2063,6 +2063,9 @@ test_help (void)
 			     "It is also wrapped to the screen width, so it "
 			     "can be as long as we like, and can also include "
 			     "paragraph breaks and stuff.");
+
+	printf ("Testing nih_option_set_footer()\n");
+	nih_option_set_footer ("Go away!");
 
 
 	printf ("Testing nih_option_help()\n");
@@ -2296,6 +2299,21 @@ test_help (void)
 		ret = 1;
 	}
 
+
+	/* Next line of output should be a blank line */
+	fgets (text, sizeof (text), output);
+	if (strcmp (text, "\n")) {
+		printf ("BAD: output wasn't what we expected.\n");
+		ret = 1;
+	}
+
+
+	/* Should be the footer */
+	fgets (text, sizeof (text), output);
+	if (strcmp (text, "Go away!\n")) {
+		printf ("BAD: footer wasn't what we expected.\n");
+		ret = 1;
+	}
 
 	/* Next line of output should be a blank line */
 	fgets (text, sizeof (text), output);

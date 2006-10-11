@@ -119,6 +119,7 @@ void       nih_option_set_usage      (const char *usage);
 void       nih_option_set_usage_stem (const char *usage);
 void       nih_option_set_synopsis   (const char *synopsis);
 void       nih_option_set_help       (const char *help);
+void       nih_option_set_footer     (const char *footer);
 
 NIH_END_EXTERN
 

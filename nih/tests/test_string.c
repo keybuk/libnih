@@ -698,9 +698,9 @@ test_str_screen_wrap (void)
 
 	/* Check returned string */
 	if (strcmp (str, ("this is a string that should\n"
-			  "need wrapping at any different\n"
-			  "screen width that we choose to\n"
-			  "set"))) {
+			  "need wrapping at any\n"
+			  "different screen width that\n"
+			  "we choose to set"))) {
 		printf ("BAD: return value wasn't what we expected.\n");
 		ret = 1;
 	}
@@ -724,8 +724,8 @@ test_str_screen_wrap (void)
 
 	/* Check returned string */
 	if (strcmp (str, ("this is a string that should need wrapping at "
-			  "any different screen width that we\n"
-			  "choose to set"))) {
+			  "any different screen width that\n"
+			  "we choose to set"))) {
 		printf ("BAD: return value wasn't what we expected.\n");
 		ret = 1;
 	}

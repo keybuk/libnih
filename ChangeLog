@@ -1,5 +1,11 @@
 2006-10-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/string.c (nih_str_screen_wrap): Don't quite fill the screen,
+	instead leave a character spare as it looks somehow neater that way.
+	* nih/option.c (nih_option_group_help): Likewise.
+	* nih/tests/test_string.c (test_str_screen_wrap): Update tests.
+	* nih/tests/test_option.c (test_help): Fix wrapping test.
+
 	* TODO: Update.
 
 	* nih/command.c: Implement a command parser that uses the first

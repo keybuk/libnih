@@ -472,7 +472,7 @@ nih_str_screen_wrap (const void *parent,
 
 	nih_assert (str != NULL);
 
-	len = nih_str_screen_width ();
+	len = nih_str_screen_width () - 1;
 
 	return nih_str_wrap (parent, str, len, first_indent, indent);
 }

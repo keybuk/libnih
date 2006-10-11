@@ -2298,14 +2298,14 @@ test_help (void)
 	/* Help text should continue */
 	fgets (text, sizeof (text), output);
 	if (strcmp (text, ("It is also wrapped to the screen width, so it "
-			   "can be as long as we like, and can\n"))) {
+			   "can be as long as we like, and\n"))) {
 		printf ("BAD: help string wasn't what we expected.\n");
 		ret = 1;
 	}
 
 	/* Help text should finish */
 	fgets (text, sizeof (text), output);
-	if (strcmp (text, "also include paragraph breaks and stuff.\n")) {
+	if (strcmp (text, "can also include paragraph breaks and stuff.\n")) {
 		printf ("BAD: help string wasn't what we expected.\n");
 		ret = 1;
 	}

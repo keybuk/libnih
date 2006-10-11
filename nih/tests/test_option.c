@@ -2046,6 +2046,9 @@ test_help (void)
 	pid_t  pid;
 	int    ret = 0, argc, status;
 
+	printf ("Testing nih_option_set_usage_stem()\n");
+	nih_option_set_usage ("[OPT]...");
+
 	printf ("Testing nih_option_set_usage()\n");
 	nih_option_set_usage ("CMD [ARG]...");
 
@@ -2092,7 +2095,7 @@ test_help (void)
 
 	/* First line of output should be usage string */
 	fgets (text, sizeof (text), output);
-	if (strcmp (text, "Usage: test [OPTION]... CMD [ARG]...\n")) {
+	if (strcmp (text, "Usage: test [OPT]... CMD [ARG]...\n")) {
 		printf ("BAD: usage line wasn't what we expected.\n");
 		ret = 1;
 	}

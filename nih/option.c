@@ -110,6 +110,13 @@ static NihOption default_options[] = {
 };
 
 /**
+ * usage_stem:
+ *
+ * This string is prepended to the program's usage line if given.
+ **/
+static const char *usage_stem = NULL;
+
+/**
  * usage_string:
  *
  * This string is appended to the program's usage line if given.
@@ -708,6 +715,21 @@ nih_option_debug (NihOption  *option,
 
 
 /**
+ * nih_option_set_usage_stem:
+ * @usage: usage stem.
+ *
+ * Set the usage stem prepended to the program usage line in the help output,
+ * this should be a static translated string.
+ *
+ * The string should not be terminated with a newline.
+ **/
+void
+nih_option_set_usage_stem (const char *usage)
+{
+	usage_stem = usage;
+}
+
+/**
  * nih_option_set_usage:
  * @usage: usage string.
  *
@@ -780,7 +802,7 @@ nih_option_help (NihOption *options)
 
 		if (! opt->group) {
 			other = TRUE;
-				continue;
+			continue;
 		}
 
 		for (group = 0; group < ngroups; group++) {
@@ -798,7 +820,12 @@ nih_option_help (NihOption *options)
 		groups[ngroups++] = opt->group;
 	}
 
-	printf ("%s: %s [OPTION]...", _("Usage"), program_name);
+	printf ("%s: %s", _("Usage"), program_name);
+	if (usage_stem) {
+		printf (" %s", usage_stem);
+	} else {
+		printf (" %s", _("[OPTION]..."));
+	}
 	if (usage_string)
 		printf (" %s", usage_string);
 	printf ("\n");
@@ -847,7 +874,8 @@ nih_option_help (NihOption *options)
 /**
  * nih_option_group_help:
  * @group: group to display,
- * @options: program options list.
+ * @options: program options list,
+ * @groups: all groups.
  *
  * Output a list of the program's options in the given option group to
  * standard output.

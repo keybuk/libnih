@@ -32,6 +32,7 @@
 #include <nih/file.h>
 #include <nih/main.h>
 #include <nih/option.h>
+#include <nih/command.h>
 #include <nih/logging.h>
 #include <nih/error.h>
 #include <nih/errors.h>

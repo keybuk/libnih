@@ -1,5 +1,17 @@
 2006-10-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/command.c: Implement a command parser that uses the first
+	non-option argument (or program name) and selects different help
+	and options based on that.
+	* nih/command.h: Structures and prototypes.
+	* nih/libnih.h: Include command.h
+	* nih/tests/test_command.c: Test suite for command parser.
+	* nih/Makefile.am (libnih_la_SOURCES): Build and link command.c
+	(nihinclude_HEADERS): Install command.h
+	(TESTS): Build and run command test cases
+	(test_command_SOURCES, test_command_LDFLAGS, test_command_LDADD):
+	Details for command test suite binary.
+
 	* nih/tests/test_option.c: Keep a copy of last_option otherwise
 	it's freed while we're not around.
 

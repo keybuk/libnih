@@ -79,6 +79,7 @@ static int         nih_option_handle      (NihOptionCtx *ctx, NihOption *opt);
 static int         nih_option_handle_arg  (NihOptionCtx *ctx, NihOption *opt,
 					   const char *arg);
 static const char *nih_option_next_nonopt (NihOptionCtx *ctx);
+static void        nih_option_help        (NihOption *options[]);
 static void        nih_option_group_help  (NihOptionGroup *group,
 					   NihOption *options[],
 					   NihOptionGroup **groups);
@@ -717,7 +718,7 @@ nih_option_set_help (const char *help)
  * Output a description of the program's options to standard output
  * grouped by the group member of the option.
  **/
-void
+static void
 nih_option_help (NihOption *options[])
 {
 	NihOption       *opt, **opts;

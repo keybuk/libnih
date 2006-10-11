@@ -114,7 +114,6 @@ int    nih_option_debug        (NihOption *option, const char *arg);
 void   nih_option_set_usage    (const char *usage);
 void   nih_option_set_synopsis (const char *synopsis);
 void   nih_option_set_help     (const char *help);
-void   nih_option_help         (NihOption *options[]);
 
 NIH_END_EXTERN
 

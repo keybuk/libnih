@@ -1,14 +1,16 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.59)
+AC_PREREQ(2.60)
 AC_INIT([libnih], [0.1.0], [libnih-bugs@netsplit.com])
 AC_COPYRIGHT([[Copyright © 2006 Scott James Remnant <scott@netsplit.com>.]])
 AC_CONFIG_SRCDIR([nih/libnih.h])
 AC_CONFIG_MACRO_DIR([m4])
 
+AC_GNU_SOURCE
+
 AM_INIT_AUTOMAKE([1.9 gnu check-news dist-bzip2])
 
-AM_GNU_GETTEXT_VERSION(0.14.1)
+AM_GNU_GETTEXT_VERSION(0.15)
 AM_GNU_GETTEXT()
 
 # Checks for programs.

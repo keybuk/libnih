@@ -1,3 +1,11 @@
+2006-10-12  Scott James Remnant  <scott@netsplit.com>
+
+	* configure.ac: Expand AC_GNU_SOURCE so we get _GNU_SOURCE and so
+	that gettext doesn't complain.
+	(AM_GNU_GETTEXT_VERSION): Increase to 0.15
+	(AC_PREREQ): Increase to 2.60
+	* HACKING: Update autoconf and gettext requirements.
+
 2006-10-11  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/string.c (nih_str_screen_wrap): Don't quite fill the screen,

@@ -37,7 +37,7 @@
  * The return value of the function is returned from nih_command_parser().
  **/
 typedef struct nih_command NihCommand;
-typedef int (*NihCommandAction) (NihCommand *, char **);
+typedef int (*NihCommandAction) (NihCommand *, char * const *);
 
 
 /**

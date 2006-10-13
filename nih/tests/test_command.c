@@ -47,7 +47,7 @@ static char *last_arg0 = NULL;
 static char *last_arg1 = NULL;
 
 static int
-my_action (NihCommand *command, char **args)
+my_action (NihCommand *command, char * const *args)
 {
 	was_called++;
 	last_command = nih_alloc (NULL, sizeof (NihCommand));

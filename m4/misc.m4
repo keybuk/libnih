@@ -50,6 +50,7 @@ AC_CHECK_HEADERS([sys/inotify.h])
 
 # Checks for typedefs, structures, and compiler characteristics.  (libnih)
 NIH_C_C99
+NIH_C_THREAD
 
 # Other checks
 NIH_COMPILER_WARNINGS

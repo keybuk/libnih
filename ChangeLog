@@ -1,3 +1,10 @@
+2006-11-12  Scott James Remnant  <scott@netsplit.com>
+
+	* m4/compiler.m4 (NIH_C_THREAD): Define a macro in the manner of
+	AC_C_CONST that will #define __thread to empty if it isn't supported
+	by the compiler.
+	* m4/misc.m4 (NIH_INIT): libnih uses __thread.
+
 2006-10-13  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/command.h: Adjust type of NihCommandAction to include const.

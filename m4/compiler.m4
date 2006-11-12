@@ -129,3 +129,15 @@ AS_IF([test "x$nih_cv_c99" = "xyes"],
 	       [CC="$CC $nih_cv_c99_arg"
 		AC_DEFINE([HAVE_C99], 1)])])[]dnl
 ])# NIH_C_C99
+
+# NIH_C_THREAD
+# ------------
+# Check whether compiler supports __thread.
+AC_DEFUN([NIH_C_THREAD],
+[AC_CACHE_CHECK([whether compiler supports __thread], [nih_cv_c_thread],
+[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[int __thread a;]], [])],
+                   [nih_cv_c_thread=yes], [nih_cv_c_thread=no])])
+AS_IF([test $nih_cv_c_thread = no],
+      [AC_DEFINE([__thread],,
+                 [Define to empty if `__thread' is not supported.])])
+])# NIH_C_THREAD

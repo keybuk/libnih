@@ -1,5 +1,11 @@
 2006-11-12  Scott James Remnant  <scott@netsplit.com>
 
+	* configure.ac (AM_INIT_AUTOMAKE): Include nostdinc so we don't get
+	Automake's broken default includes.
+	* nih/Makefile.am (INCLUDES): Include $top_builddir and $top_srcdir,
+	everything else wants relative paths from there.
+	(DEFAULT_INCLUDES): Drop override now we don't need it.
+
 	* m4/compiler.m4 (NIH_C_THREAD): Define a macro in the manner of
 	AC_C_CONST that will #define __thread to empty if it isn't supported
 	by the compiler.

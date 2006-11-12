@@ -1,10 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 
-DEFAULT_INCLUDES = -I$(top_builddir) -I$(top_srcdir)
-
 localedir = $(datadir)/locale
 DEFS += -DLOCALEDIR="\"$(localedir)\""
-INCLUDES = -I$(top_srcdir)/intl
+INCLUDES = -I$(top_builddir) -I$(top_srcdir) -I$(top_srcdir)/intl
 
 
 lib_LTLIBRARIES = libnih.la

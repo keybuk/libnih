@@ -1,8 +1,9 @@
 ## Process this file with automake to produce Makefile.in
 
-localedir = $(datadir)/locale
-DEFS += -DLOCALEDIR="\"$(localedir)\""
-INCLUDES = -I$(top_builddir) -I$(top_srcdir) -I$(top_srcdir)/intl
+AM_CPPFLAGS = \
+	-DLOCALEDIR="\"$(localedir)\"" \
+	-I$(top_builddir) -I$(top_srcdir) \
+	-I$(top_srcdir)/intl
 
 
 lib_LTLIBRARIES = libnih.la

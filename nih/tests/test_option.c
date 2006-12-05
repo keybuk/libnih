@@ -1080,8 +1080,10 @@ test_parser (void)
 	argv[argc++] = "-z";
 	argv[argc] = NULL;
 
+	fflush (stderr);
 	dup2 (fileno (output), STDERR_FILENO);
 	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+	fflush (stderr);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
@@ -1138,8 +1140,10 @@ test_parser (void)
 	argv[argc++] = "--zoiks";
 	argv[argc] = NULL;
 
+	fflush (stderr);
 	dup2 (fileno (output), STDERR_FILENO);
 	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+	fflush (stderr);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
@@ -1196,8 +1200,10 @@ test_parser (void)
 	argv[argc++] = "--wibble=woo";
 	argv[argc] = NULL;
 
+	fflush (stderr);
 	dup2 (fileno (output), STDERR_FILENO);
 	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+	fflush (stderr);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
@@ -1237,8 +1243,10 @@ test_parser (void)
 	argv[argc++] = "ignored";
 	argv[argc++] = "-f";
 	argv[argc] = NULL;
+	fflush (stderr);
 	dup2 (fileno (output), STDERR_FILENO);
 	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+	fflush (stderr);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
@@ -1279,8 +1287,10 @@ test_parser (void)
 	argv[argc++] = "--filename";
 	argv[argc] = NULL;
 
+	fflush (stderr);
 	dup2 (fileno (output), STDERR_FILENO);
 	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+	fflush (stderr);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
@@ -1604,8 +1614,10 @@ test_parser (void)
 	last_option = NULL;
 	last_arg = NULL;
 
+	fflush (stderr);
 	dup2 (fileno (output), STDERR_FILENO);
 	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+	fflush (stderr);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
@@ -1655,8 +1667,10 @@ test_parser (void)
 	last_option = NULL;
 	last_arg = NULL;
 
+	fflush (stderr);
 	dup2 (fileno (output), STDERR_FILENO);
 	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+	fflush (stderr);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
@@ -1988,6 +2002,7 @@ test_version (void)
 	output = tmpfile ();
 	pid = fork ();
 	if (pid == 0) {
+		fflush (stdout);
 		dup2 (fileno (output), STDOUT_FILENO);
 		nih_option_parser (NULL, argc, argv, options, FALSE);
 		exit (1);
@@ -2093,6 +2108,7 @@ test_help (void)
 	if (pid == 0) {
 		unsetenv ("COLUMNS");
 
+		fflush (stdout);
 		dup2 (fileno (output), STDOUT_FILENO);
 		nih_option_parser (NULL, argc, argv, options, FALSE);
 		exit (1);

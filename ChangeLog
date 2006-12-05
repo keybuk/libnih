@@ -1,5 +1,7 @@
 2006-12-05  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_hash.c: Port to the new test framework.
+
 	* nih/tests/test_list.c: Port to the new test framework.
 
 	* nih/tests/test_alloc.c: Port to the new test framework.

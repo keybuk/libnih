@@ -86,6 +86,16 @@ my_realloc (void *ptr, size_t size)
 	return realloc (ptr, size);
 }
 
+static void *
+null_realloc (void *ptr, size_t size)
+{
+	if (size > 100) {
+		return NULL;
+	} else {
+		return realloc (ptr, size);
+	}
+}
+
 int
 test_alloc_using (void)
 {
@@ -93,6 +103,8 @@ test_alloc_using (void)
 	int   ret = 0;
 
 	printf ("Testing nih_alloc_using()\n");
+
+	printf ("...with realloc\n");
 	ptr = nih_alloc_using (my_realloc, NULL, 8096);
 	memset (ptr, 'x', 8096);
 
@@ -104,16 +116,45 @@ test_alloc_using (void)
 
 	nih_free (ptr);
 
+
+	printf ("...with failing realloc\n");
+	ptr = nih_alloc_using (null_realloc, NULL, 8096);
+
+	/* Should have returned NULL */
+	if (ptr) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
 	return ret;
 }
 
 int
 test_realloc (void)
 {
-	void *ptr1, *ptr2;
+	void *ptr1, *ptr2, *ptr3;
 	int   ret = 0;
 
 	printf ("Testing nih_realloc()\n");
+
+	printf ("...as nih_alloc\n");
+	ptr1 = nih_realloc (NULL, NULL, 4096);
+	memset (ptr1, 'x', 4096);
+
+	/* Size should be correct */
+	if (nih_alloc_size (ptr1) != 4096) {
+		printf ("BAD: size of block incorrect.\n");
+		ret = 1;
+	}
+
+	/* Parent should be none */
+	if (nih_alloc_parent (ptr1) != NULL) {
+		printf ("BAD: parent of block incorrect.\n");
+		ret = 1;
+	}
+
+	nih_free (ptr1);
+
 
 	printf ("...with no parent\n");
 	ptr1 = nih_alloc (NULL, 4096);
@@ -151,6 +192,50 @@ test_realloc (void)
 	/* Parent should be ptr1 */
 	if (nih_alloc_parent (ptr2) != ptr1) {
 		printf ("BAD: parent of second block incorrect.\n");
+		ret = 1;
+	}
+
+	nih_free (ptr1);
+
+
+	printf ("...with existant children\n");
+	ptr1 = nih_alloc (NULL, 128);
+	memset (ptr1, 'x', 128);
+
+	ptr2 = nih_alloc (ptr1, 512);
+	memset (ptr2, 'x', 512);
+
+	ptr3 = nih_realloc (ptr1, NULL, 1024);
+	memset (ptr3, 'x', 1024);
+
+	/* Size should be correct */
+	if (nih_alloc_size (ptr3) != 1024) {
+		printf ("BAD: size of new block incorrect.\n");
+		ret = 1;
+	}
+
+	/* Parent of second block should be new pointer */
+	if (nih_alloc_parent (ptr2) != ptr3) {
+		printf ("BAD: parent of child block incorrect.\n");
+		ret = 1;
+	}
+
+
+	printf ("...with failure to realloc\n");
+	ptr1 = nih_alloc_using (null_realloc, NULL, 10);
+	memset (ptr1, 'x', 10);
+
+	ptr2 = nih_realloc (ptr1, NULL, 200);
+
+	/* Return value should be NULL */
+	if (ptr2) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* First pointer should be unchanged */
+	if (nih_alloc_size (ptr1) != 10) {
+		printf ("BAD: size of block incorrect.\n");
 		ret = 1;
 	}
 

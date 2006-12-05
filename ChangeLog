@@ -1,5 +1,11 @@
 2006-12-05  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_alloc.c (test_alloc_using): Check that this works
+	properly if the allocator returns NULL.
+	(test_realloc): A few cases to check here; make sure that it works
+	if the pointer to realloc is NULL, actually test the children
+	reparenting code here and test the reallocator returning NULL.
+
 	* README: Correct typo.
 
 2006-11-12  Scott James Remnant  <scott@netsplit.com>

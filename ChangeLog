@@ -1,5 +1,9 @@
 2006-12-05  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/test.h: Macros that implement a simple test framework based
+	on the patterns I was using anyway.
+	* nih/Makefile.am (nihinclude_HEADERS): Install nih/test.h
+
 	* nih/tests/test_command.c (test_parser, test_help): flush stdout
 	or stderr before calling dup2().
 

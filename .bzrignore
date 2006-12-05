@@ -12,10 +12,10 @@ Makefile.in.in
 ./INSTALL
 ./aclocal.m4
 ./autom4te.cache
-./config.h
-./config.h.in
 ./config.cache
 ./config.guess
+./config.h
+./config.h.in
 ./config.log
 ./config.rpath
 ./config.status
@@ -27,7 +27,6 @@ Makefile.in.in
 ./libtool
 ./ltmain.sh
 ./missing
-./mkinstalldirs
 ./stamp-h1
 m4/*.m4
 po/Makevars.template

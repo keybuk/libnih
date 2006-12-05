@@ -19,443 +19,246 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif /* HAVE_CONFIG_H */
+#include <nih/test.h>
 
-
-#include <stdio.h>
-#include <string.h>
-
-#include <nih/alloc.h>
 #include <nih/list.h>
 
 
-int
+void
 test_init (void)
 {
 	NihList entry;
-	int     ret = 0;
 
-	printf ("Testing nih_list_init()\n");
+	/* Check that nih_list_init correctly initialises an empty list,
+	 * with both pointers pointing back to the entry itself.
+	 */
+	TEST_FUNCTION ("nih_list_init");
 	nih_list_init (&entry);
 
-	/* Previous pointer should point back to itself */
-	if (entry.prev != &entry) {
-		printf ("BAD: prev pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Next pointer should point back to itself */
-	if (entry.next != &entry) {
-		printf ("BAD: next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	return ret;
+	TEST_EQ_P (entry.prev, &entry);
+	TEST_EQ_P (entry.next, &entry);
 }
 
-int
+void
 test_new (void)
 {
 	NihList *list;
-	int      ret = 0;
 
-	printf ("Testing nih_list_new()\n");
+	/* Check that nih_list_new allocates a new empty list with nih_alloc
+	 * and that it is initialised with pointers pointing to itself.
+	 */
+	TEST_FUNCTION ("nih_list_new");
 	list = nih_list_new (NULL);
 
-	/* Previous pointer should point back to itself */
-	if (list->prev != list) {
-		printf ("BAD: prev pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Next pointer should point back to itself */
-	if (list->next != list) {
-		printf ("BAD: next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Should have been allocated using nih_alloc */
-	if (nih_alloc_size (list) != sizeof (NihList)) {
-		printf ("BAD: nih_alloc was not used.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (list, sizeof (NihList));
+	TEST_EQ_P (list->prev, list);
+	TEST_EQ_P (list->next, list);
 
 	nih_free (list);
-
-	return ret;
 }
 
-int
+void
 test_add (void)
 {
 	NihList *list, *entry1, *entry2, *ptr;
-	int      ret = 0;
 
-	printf ("Testing nih_list_add()\n");
+	TEST_FUNCTION ("nih_list_add");
 
 	list = nih_list_new (NULL);
 	entry1 = nih_list_new (NULL);
 	entry2 = nih_list_new (NULL);
 
-	printf ("...with single-entry list\n");
+	/* Check that nih_list_add can add a single entry to an empty list;
+	 * the added entry should be returned and the pointers should all
+	 * chain up.
+	 */
+	TEST_FEATURE ("with single-entry list");
 	ptr = nih_list_add (list, entry1);
 
-	/* The added entry should be returned */
-	if (ptr != entry1) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Head entry's previous pointer should be the new entry */
-	if (list->prev != entry1) {
-		printf ("BAD: head prev pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Head entry's next pointer should be the new entry too */
-	if (list->next != entry1) {
-		printf ("BAD: head next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* New entry's next pointer should be the head */
-	if (entry1->next != list) {
-		printf ("BAD: entry next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* New entry's previous pointer should be the head too */
-	if (entry1->prev != list) {
-		printf ("BAD: entry prev pointer set incorrectly.\n");
-		ret = 1;
-	}
+	TEST_EQ_P (ptr, entry1);
+	TEST_EQ_P (list->next, entry1);
+	TEST_EQ_P (entry1->next, list);
+	TEST_EQ_P (list->prev, entry1);
+	TEST_EQ_P (entry1->prev, list);
 
 
-	printf ("...with multi-entry list\n");
+	/* Check that we can now add another entry to that two entry list,
+	 * and the pointers are still all right.
+	 */
+	TEST_FEATURE ("with multi-entry list");
 	nih_list_add (list, entry2);
 
-	/* Head entry's previous pointer should be the new entry */
-	if (list->prev != entry2) {
-		printf ("BAD: head prev pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Head entry's next pointer should be unchanged. */
-	if (list->next != entry1) {
-		printf ("BAD: head next pointer changed.\n");
-		ret = 1;
-	}
-
-	/* New entry's next pointer should be the head */
-	if (entry2->next != list) {
-		printf ("BAD: entry next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* New entry's previous pointer should be the previous tail */
-	if (entry2->prev != entry1) {
-		printf ("BAD: entry prev pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Previous tail's next pointer should be the new entry */
-	if (entry1->next != entry2) {
-		printf ("BAD: previous tail next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Previous tail's prev pointer should be unchanged. */
-	if (entry1->prev != list) {
-		printf ("BAD: previous tail prev pointer changed.\n");
-		ret = 1;
-	}
+	TEST_EQ_P (list->next, entry1);
+	TEST_EQ_P (entry1->next, entry2);
+	TEST_EQ_P (entry2->next, list);
+	TEST_EQ_P (list->prev, entry2);
+	TEST_EQ_P (entry2->prev, entry1);
+	TEST_EQ_P (entry1->prev, list);
 
 
-	printf ("...with two entries from same list\n");
+	/* Check that we can use nih_list_add to swap two entries that are
+	 * in the same list.
+	 */
+	TEST_FEATURE ("with two entries from same list");
 	nih_list_add (entry1, entry2);
 
-	/* Head entry's next pointer should now be entry2 */
-	if (list->next != entry2) {
-		printf ("BAD: list head next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* entry2's previous pointer should be the head entry */
-	if (entry2->prev != list) {
-		printf ("BAD: entry2 prev pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* entry2's next pointer should be entry1 */
-	if (entry2->next != entry1) {
-		printf ("BAD: entry2 next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* entry1's previous pointer should be entry2 */
-	if (entry1->prev != entry2) {
-		printf ("BAD: entry1 prev pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* entry1's next pointer should be the head entry */
-	if (entry1->next != list) {
-		printf ("BAD: entry1 next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* head entry's previous pointer should be entry1 */
-	if (list->prev != entry1) {
-		printf ("BAD: head prev pointer set incorrectly.\n");
-		ret = 1;
-	}
+	TEST_EQ_P (list->next, entry2);
+	TEST_EQ_P (entry2->next, entry1);
+	TEST_EQ_P (entry1->next, list);
+	TEST_EQ_P (list->prev, entry1);
+	TEST_EQ_P (entry1->prev, entry2);
+	TEST_EQ_P (entry2->prev, list);
 
 
-	printf ("...with entry from other list\n");
+	/* Check that we can rip an entry out of its list and place it in
+	 * a new empty one.
+	 */
+	TEST_FEATURE ("with entry from other list");
 	ptr = nih_list_new (NULL);
 	nih_list_add (ptr, entry2);
 
-	/* The entry should be removed from the old list, so the
-	 * old list head entry's next pointer should point to the tail. */
-	if (list->next != entry1) {
-		printf ("BAD: old list head next pointer set incorrectly.\n");
-		ret = 1;
-	}
+	TEST_EQ_P (list->next, entry1);
+	TEST_EQ_P (entry1->next, list);
+	TEST_EQ_P (list->prev, entry1);
+	TEST_EQ_P (entry1->prev, list);
 
-	/* The entry should be removed from the old list, so the
-	 * old list tail entry's prev pointer should point to the head. */
-	if (entry1->prev != list) {
-		printf ("BAD: old list tail prev pointer set incorrectly.\n");
-		ret = 1;
-	}
+	TEST_EQ_P (ptr->next, entry2);
+	TEST_EQ_P (entry2->next, ptr);
+	TEST_EQ_P (ptr->prev, entry2);
+	TEST_EQ_P (entry2->prev, ptr);
 
 	nih_list_free (list);
 	nih_list_free (entry1);
 	nih_list_free (entry2);
 	nih_list_free (ptr);
-
-	return ret;
 }
 
-int
+void
 test_add_after (void)
 {
 	NihList *list, *entry1, *entry2, *ptr;
-	int      ret = 0;
 
-	printf ("Testing nih_list_add_after()\n");
+	TEST_FUNCTION ("nih_list_add_after");
 
 	list = nih_list_new (NULL);
 	entry1 = nih_list_new (NULL);
 	entry2 = nih_list_new (NULL);
 
-	printf ("...with single-entry list\n");
+	/* Check that nih_list_add_after can add a single entry to an empty
+	 * list, the result should be the same as nih_list_add.
+	 */
+	TEST_FEATURE ("with single-entry list");
 	ptr = nih_list_add_after (list, entry1);
 
-	/* The added entry should be returned */
-	if (ptr != entry1) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Head entry's next pointer should be the new entry */
-	if (list->next != entry1) {
-		printf ("BAD: head next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Head entry's previous pointer should be the new entry too */
-	if (list->prev != entry1) {
-		printf ("BAD: head prev pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* New entry's previous pointer should be the head */
-	if (entry1->prev != list) {
-		printf ("BAD: entry prev pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* New entry's next pointer should be the head too */
-	if (entry1->next != list) {
-		printf ("BAD: entry next pointer set incorrectly.\n");
-		ret = 1;
-	}
+	TEST_EQ_P (ptr, entry1);
+	TEST_EQ_P (list->next, entry1);
+	TEST_EQ_P (entry1->next, list);
+	TEST_EQ_P (list->prev, entry1);
+	TEST_EQ_P (entry1->prev, list);
 
 
-	printf ("...with multi-entry list\n");
+	/* Check that when adding an entry to a list with multiple entries,
+	 * nih_list_add_after adds the entry immediately after the entry
+	 * given, not before (as nih_list_add does)
+	 */
+	TEST_FEATURE ("with multi-entry list");
 	nih_list_add_after (list, entry2);
 
-	/* Head entry's next pointer should be the new entry */
-	if (list->next != entry2) {
-		printf ("BAD: head next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Head entry's previous pointer should be unchanged. */
-	if (list->prev != entry1) {
-		printf ("BAD: head prev pointer changed.\n");
-		ret = 1;
-	}
-
-	/* New entry's previous pointer should be the head */
-	if (entry2->prev != list) {
-		printf ("BAD: entry prev pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* New entry's next pointer should be the tail */
-	if (entry2->next != entry1) {
-		printf ("BAD: entry next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Tail entry's prev pointer should be the new entry */
-	if (entry1->prev != entry2) {
-		printf ("BAD: tail prev pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Tail entry's next pointer should be unchanged. */
-	if (entry1->next != list) {
-		printf ("BAD: tail next pointer changed.\n");
-		ret = 1;
-	}
+	TEST_EQ_P (list->next, entry2);
+	TEST_EQ_P (entry2->next, entry1);
+	TEST_EQ_P (entry1->next, list);
+	TEST_EQ_P (list->prev, entry1);
+	TEST_EQ_P (entry1->prev, entry2);
+	TEST_EQ_P (entry2->prev, list);
 
 
-	printf ("...with two entries from same list\n");
+	/* Check that nih_list_add_after can be used to swap two entries
+	 * around.
+	 */
+	TEST_FEATURE ("with two entries from same list");
 	nih_list_add_after (entry1, entry2);
 
-        /* Head entry's next pointer should now be entry1 */
-	if (list->next != entry1) {
-		printf ("BAD: list head next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* entry1's previous pointer should be the head entry */
-	if (entry1->prev != list) {
-		printf ("BAD: entry1 prev pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* entry1's next pointer should be entry2 */
-	if (entry1->next != entry2) {
-		printf ("BAD: entry1 next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* entry2's previous pointer should be entry1 */
-	if (entry2->prev != entry1) {
-		printf ("BAD: entry2 prev pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* entry2's next pointer should be the head entry */
-	if (entry2->next != list) {
-		printf ("BAD: entry2 next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* head entry's previous pointer should be entry2 */
-	if (list->prev != entry2) {
-		printf ("BAD: head prev pointer set incorrectly.\n");
-		ret = 1;
-	}
+	TEST_EQ_P (list->next, entry1);
+	TEST_EQ_P (entry1->next, entry2);
+	TEST_EQ_P (entry2->next, list);
+	TEST_EQ_P (list->prev, entry2);
+	TEST_EQ_P (entry2->prev, entry1);
+	TEST_EQ_P (entry1->prev, list);
 
 
-	printf ("...with entry from other list\n");
+	/* Check that nih_list_add_after can rip an entry out of its
+	 * containing list, and add it to a new one.
+	 */
+	TEST_FEATURE ("with entry from other list");
 	ptr = nih_list_new (NULL);
 	nih_list_add_after (ptr, entry1);
 
-	/* The entry should be removed from the old list, so the
-	 * old list head entry's next pointer should point to the tail. */
-	if (list->next != entry2) {
-		printf ("BAD: old list head next pointer set incorrectly.\n");
-		ret = 1;
-	}
+	TEST_EQ_P (list->next, entry2);
+	TEST_EQ_P (entry2->next, list);
+	TEST_EQ_P (list->prev, entry2);
+	TEST_EQ_P (entry2->prev, list);
 
-	/* The entry should be removed from the old list, so the
-	 * old list tail entry's prev pointer should point to the head. */
-	if (entry2->prev != list) {
-		printf ("BAD: old list tail prev pointer set incorrectly.\n");
-		ret = 1;
-	}
+	TEST_EQ_P (ptr->next, entry1);
+	TEST_EQ_P (entry1->next, ptr);
+	TEST_EQ_P (ptr->prev, entry1);
+	TEST_EQ_P (entry1->prev, ptr);
 
 	nih_free (list);
 	nih_free (entry1);
 	nih_free (entry2);
 	nih_free (ptr);
-
-	return ret;
 }
 
-int
+void
 test_empty (void)
 {
 	NihList *list, *entry;
-	int      ret = 0;
 
-	printf ("Testing NIH_LIST_EMPTY()\n");
+	TEST_FUNCTION ("NIH_LIST_EMPTY");
+
+	/* Check that NIH_LIST_EMPTY is TRUE on an empty list */
+	TEST_FEATURE ("with empty list");
 	list = nih_list_new (NULL);
+
+	TEST_TRUE (NIH_LIST_EMPTY (list));
+
+
+	/* Check that NIH_LIST_EMPTY is FALSE on a non-empty list */
+	TEST_FEATURE ("with non-empty list");
 	entry = nih_list_new (NULL);
-
-	printf ("...with empty list\n");
-
-	/* The list should be empty */
-	if (! NIH_LIST_EMPTY (list)) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
-
-
-	printf ("...with non-empty list\n");
 	nih_list_add (list, entry);
 
-	/* The list should not be empty */
-	if (NIH_LIST_EMPTY (list)) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Check that's true for the entry too */
-	if (NIH_LIST_EMPTY (entry)) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_FALSE (NIH_LIST_EMPTY (list));
+	TEST_FALSE (NIH_LIST_EMPTY (entry));
 
 	nih_free (list);
 	nih_free (entry);
-
-	return ret;
 }
 
-int
+void
 test_foreach (void)
 {
 	NihList *list, *entry[3];
-	int      i, ret = 0;
+	int      i;
 
-	printf ("Testing NIH_LIST_FOREACH()\n");
+	/* Check that NIH_LIST_FOREACH iterates the list correctly in
+	 * order, visiting each entry.
+	 */
+	TEST_FUNCTION ("NIH_LIST_FOREACH");
 	list = nih_list_new (NULL);
 	entry[0] = nih_list_add (list, nih_list_new (NULL));
 	entry[1] = nih_list_add (list, nih_list_new (NULL));
 	entry[2] = nih_list_add (list, nih_list_new (NULL));
 
-	/* Perform a test iteration */
 	i = 0;
 	NIH_LIST_FOREACH (list, iter) {
-		if (i > 2) {
-			printf ("BAD: more iterations than expected.\n");
-			ret = 1;
-			break;
-		}
+		if (i > 2)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     3, i + 1);
 
-		if (iter != entry[i]) {
-			printf ("BAD: iteration not entry we expected.\n");
-			ret = 1;
-		}
+		if (iter != entry[i])
+			TEST_FAILED ("wrong list entry, expected %p got %p",
+				     entry[i], iter);
 
 		i++;
 	}
@@ -464,222 +267,128 @@ test_foreach (void)
 	nih_free (entry[0]);
 	nih_free (entry[1]);
 	nih_free (entry[2]);
-
-	return ret;
 }
 
-int
+void
 test_foreach_safe (void)
 {
 	NihList *list, *entry[3];
-	int      i, ret = 0;
+	int      i;
 
-	printf ("Testing NIH_LIST_FOREACH_SAFE()\n");
+	/* Check that NIH_LIST_FOREACH_SAFE iterates the list correctly in
+	 * order, visiting each entry; and that it's safe to remove entries
+	 * while doing so.
+	 */
+	TEST_FUNCTION ("NIH_LIST_FOREACH_SAFE");
 	list = nih_list_new (NULL);
 	entry[0] = nih_list_add (list, nih_list_new (NULL));
 	entry[1] = nih_list_add (list, nih_list_new (NULL));
 	entry[2] = nih_list_add (list, nih_list_new (NULL));
 
-	/* Perform a test iteration */
 	i = 0;
 	NIH_LIST_FOREACH_SAFE (list, iter) {
-		if (i > 2) {
-			printf ("BAD: more iterations than expected.\n");
-			ret = 1;
-			break;
-		}
+		if (i > 2)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     3, i + 1);
 
-		if (iter != entry[i]) {
-			printf ("BAD: iteration not entry we expected.\n");
-			ret = 1;
-		}
+		if (iter != entry[i])
+			TEST_FAILED ("wrong list entry, expected %p got %p",
+				     entry[i], iter);
 
 		nih_list_remove (entry[i]);
 
 		i++;
 	}
 
-	/* List should be empty */
-	if (! NIH_LIST_EMPTY (list)) {
-		printf ("BAD: list not empty.\n");
-		ret = 1;
-	}
+
+	/* Check that the list is now empty */
+	TEST_TRUE (NIH_LIST_EMPTY (list));
 
 	nih_free (list);
 	nih_free (entry[0]);
 	nih_free (entry[1]);
 	nih_free (entry[2]);
-
-	return ret;
 }
 
-int
+void
 test_remove (void)
 {
 	NihList *list, *entry, *tail, *ptr;
-	int      ret = 0;
 
-	printf ("Testing nih_list_remove()\n");
+	TEST_FUNCTION ("nih_list_remove");
 	list = nih_list_new (NULL);
 	entry = nih_list_add (list, nih_list_new (NULL));
 	tail = nih_list_add (list, nih_list_new (NULL));
 
-	printf ("...with two-entry list\n");
+	/* Check that nih_list_remove works, returning the entry that was
+	 * removed and adjusting both sets of pointers in the lists.
+	 */
+	TEST_FEATURE ("with two-entry list");
 	ptr = nih_list_remove (entry);
 
-	/* The entry that was removed should be returned */
-	if (ptr != entry) {
-		printf ("BAD: return value is not what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ_P (ptr, entry);
+	TEST_EQ_P (list->next, tail);
+	TEST_EQ_P (tail->next, list);
+	TEST_EQ_P (list->prev, tail);
+	TEST_EQ_P (tail->prev, list);
 
-	/* The previous pointer should point back to itself */
-	if (entry->prev != entry) {
-		printf ("BAD: prev pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* The next pointer should point back to itself */
-	if (entry->next != entry) {
-		printf ("BAD: next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Head entry's next pointer should point to the tail entry */
-	if (list->next != tail) {
-		printf ("BAD: head next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Head entry's previous pointer should still point to the tail */
-	if (list->prev != tail) {
-		printf ("BAD: head prev pointer changed.\n");
-		ret = 1;
-	}
-
-	/* Tail entry's next pointer should still point to the head */
-	if (tail->next != list) {
-		printf ("BAD: tail next pointer changed.\n");
-		ret = 1;
-	}
-
-	/* Tail entry's previous pointer should point to the head entry */
-	if (tail->prev != list) {
-		printf ("BAD: tail next pointer set incorrectly.\n");
-		ret = 1;
-	}
+	TEST_EQ_P (entry->next, entry);
+	TEST_EQ_P (entry->prev, entry);
 
 
-	printf ("...with one-entry list\n");
+	/* Check that nih_list_remove works if there is only one entry in the
+	 * list that's not the head, the pointers should both curl in.
+	 */
+	TEST_FEATURE ("with one-entry list");
 	ptr = nih_list_remove (tail);
 
-	/* The entry that was removed should be returned */
-	if (ptr != tail) {
-		printf ("BAD: return value is not what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ_P (list->next, list);
+	TEST_EQ_P (list->prev, list);
 
-	/* The previous pointer should point back to itself */
-	if (tail->prev != tail) {
-		printf ("BAD: prev pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* The next pointer should point back to itself */
-	if (tail->next != tail) {
-		printf ("BAD: next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Head entry's next pointer should point back to itself */
-	if (list->next != list) {
-		printf ("BAD: head next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Head entry's previous pointer should point back to itself */
-	if (list->prev != list) {
-		printf ("BAD: head prev pointer changed.\n");
-		ret = 1;
-	}
+	TEST_EQ_P (tail->next, tail);
+	TEST_EQ_P (tail->prev, tail);
 
 
-	printf ("...with empty list\n");
+	/* Check that it works on an empty list, this should do nothing. */
+	TEST_FEATURE ("with empty list");
 	ptr = nih_list_remove (tail);
 
-	/* The entry that was removed should be returned */
-	if (ptr != tail) {
-		printf ("BAD: return value is not what we expected.\n");
-		ret = 1;
-	}
-
-	/* The previous pointer should still point back to itself */
-	if (tail->prev != tail) {
-		printf ("BAD: prev pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* The next pointer should still point back to itself */
-	if (tail->next != tail) {
-		printf ("BAD: next pointer set incorrectly.\n");
-		ret = 1;
-	}
+	TEST_EQ_P (tail->next, tail);
+	TEST_EQ_P (tail->prev, tail);
 
 	nih_free (list);
 	nih_free (entry);
 	nih_free (tail);
-
-	return ret;
 }
 
-int
+void
 test_destructor (void)
 {
 	NihList *list, *entry, *tail;
-	int      ret = 0, retval;
+	int      ret;
 
-	printf ("Testing nih_list_destructor()\n");
+	/* Check that the function removes the entry from its containing
+	 * list, it needn't bother updating the entry itself seeing as it's
+	 * being freed anyway.
+	 */
+	TEST_FUNCTION ("nih_list_destructor");
 	list = nih_list_new (NULL);
 	entry = nih_list_add (list, nih_list_new (NULL));
 	tail = nih_list_add (list, nih_list_new (NULL));
-	retval = nih_list_destructor (entry);
+	ret = nih_list_destructor (entry);
 
-	/* Zero should be returned */
-	if (retval != 0) {
-		printf ("BAD: return value is not what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ (ret, 0);
 
-	/* Head entry's next pointer should point to the tail entry */
-	if (list->next != tail) {
-		printf ("BAD: head next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Head entry's previous pointer should still point to the tail */
-	if (list->prev != tail) {
-		printf ("BAD: head prev pointer changed.\n");
-		ret = 1;
-	}
-
-	/* Tail entry's next pointer should still point to the head */
-	if (tail->next != list) {
-		printf ("BAD: tail next pointer changed.\n");
-		ret = 1;
-	}
-
-	/* Tail entry's previous pointer should point to the head entry */
-	if (tail->prev != list) {
-		printf ("BAD: tail next pointer set incorrectly.\n");
-		ret = 1;
-	}
+	TEST_EQ_P (list->next, tail);
+	TEST_EQ_P (tail->next, list);
+	TEST_EQ_P (list->prev, tail);
+	TEST_EQ_P (tail->prev, list);
 
 	nih_free (entry);
 	nih_free (list);
 	nih_free (tail);
-
-	return ret;
 }
+
 
 static int was_called;
 
@@ -691,54 +400,33 @@ destructor_called (void *ptr)
 	return 0;
 }
 
-static int
+void
 test_free (void)
 {
 	NihList *list, *entry, *tail;
-	int      ret = 0;
+	int      ret;
 
+	/* Check that destructors are called on nih_list_free and the return
+	 * value of that destructor is returned; the entry should be cut out
+	 * of the list it was in.
+	 */
+	TEST_FUNCTION ("nih_list_free");
 	list = nih_list_new (NULL);
 	entry = nih_list_add (list, nih_list_new (NULL));
 	tail = nih_list_add (list, nih_list_new (NULL));
-
-	printf ("Testing nih_list_free()\n");
 	nih_alloc_set_destructor (entry, destructor_called);
-	nih_list_free (entry);
+	ret = nih_list_free (entry);
 
-	/* Destructor should have been called */
-	if (! was_called) {
-		printf ("BAD: destructor was not called.\n");
-		ret = 1;
-	}
+	TEST_EQ (ret, 0);
+	TEST_TRUE (was_called);
 
-	/* Head entry's next pointer should point to the tail entry */
-	if (list->next != tail) {
-		printf ("BAD: head next pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Head entry's previous pointer should still point to the tail */
-	if (list->prev != tail) {
-		printf ("BAD: head prev pointer changed.\n");
-		ret = 1;
-	}
-
-	/* Tail entry's next pointer should still point to the head */
-	if (tail->next != list) {
-		printf ("BAD: tail next pointer changed.\n");
-		ret = 1;
-	}
-
-	/* Tail entry's previous pointer should point to the head entry */
-	if (tail->prev != list) {
-		printf ("BAD: tail next pointer set incorrectly.\n");
-		ret = 1;
-	}
+	TEST_EQ_P (list->next, tail);
+	TEST_EQ_P (tail->next, list);
+	TEST_EQ_P (list->prev, tail);
+	TEST_EQ_P (tail->prev, list);
 
 	nih_free (list);
 	nih_free (tail);
-
-	return ret;
 }
 
 
@@ -746,18 +434,16 @@ int
 main (int   argc,
       char *argv[])
 {
-	int ret = 0;
+	test_init ();
+	test_new ();
+	test_add ();
+	test_add_after ();
+	test_empty ();
+	test_foreach ();
+	test_foreach_safe ();
+	test_remove ();
+	test_destructor ();
+	test_free ();
 
-	ret |= test_init ();
-	ret |= test_new ();
-	ret |= test_add ();
-	ret |= test_add_after ();
-	ret |= test_empty ();
-	ret |= test_foreach ();
-	ret |= test_foreach_safe ();
-	ret |= test_remove ();
-	ret |= test_destructor ();
-	ret |= test_free ();
-
-	return ret;
+	return 0;
 }

@@ -631,8 +631,10 @@ test_parser (void)
 	argv[argc] = NULL;
 	was_called = 0;
 
+	fflush (stderr);
 	dup2 (fileno (output), STDERR_FILENO);
 	result = nih_command_parser (NULL, argc, argv, options, commands);
+	fflush (stderr);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
@@ -681,8 +683,10 @@ test_parser (void)
 	argv[argc] = NULL;
 	was_called = 0;
 
+	fflush (stderr);
 	dup2 (fileno (output), STDERR_FILENO);
 	result = nih_command_parser (NULL, argc, argv, options, commands);
+	fflush (stderr);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
@@ -729,8 +733,10 @@ test_parser (void)
 	argv[argc] = NULL;
 	was_called = 0;
 
+	fflush (stderr);
 	dup2 (fileno (output), STDERR_FILENO);
 	result = nih_command_parser (NULL, argc, argv, options, commands);
+	fflush (stderr);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
@@ -778,8 +784,10 @@ test_parser (void)
 	argv[argc] = NULL;
 	was_called = 0;
 
+	fflush (stderr);
 	dup2 (fileno (output), STDERR_FILENO);
 	result = nih_command_parser (NULL, argc, argv, options, commands);
+	fflush (stderr);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
@@ -914,6 +922,7 @@ test_help (void)
 	if (pid == 0) {
 		unsetenv ("COLUMNS");
 
+		fflush (stdout);
 		dup2 (fileno (output), STDOUT_FILENO);
 		nih_command_parser (NULL, argc, argv, options, commands);
 		exit (1);
@@ -1041,6 +1050,7 @@ test_help (void)
 	if (pid == 0) {
 		unsetenv ("COLUMNS");
 
+		fflush (stdout);
 		dup2 (fileno (output), STDOUT_FILENO);
 		nih_command_parser (NULL, argc, argv, options, commands);
 		exit (1);
@@ -1184,6 +1194,7 @@ test_help (void)
 	if (pid == 0) {
 		unsetenv ("COLUMNS");
 
+		fflush (stdout);
 		dup2 (fileno (output), STDOUT_FILENO);
 		nih_command_parser (NULL, argc, argv, options, commands);
 		exit (1);
@@ -1329,6 +1340,7 @@ test_help (void)
 	if (pid == 0) {
 		unsetenv ("COLUMNS");
 
+		fflush (stdout);
 		dup2 (fileno (output), STDOUT_FILENO);
 		nih_command_parser (NULL, argc, argv, options, commands);
 		exit (1);

@@ -22,7 +22,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <setjmp.h>
+#include <string.h>
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
@@ -111,6 +111,18 @@
 			     #_a, (_b), (_a))
 
 /**
+ * TEST_EQ_STR:
+ * @_a: first string,
+ * @_b: second string.
+ *
+ * Check that the two strings @_a and @_b are equal.
+ **/
+#define TEST_EQ_STR(_a, _b) \
+	if (strcmp ((_a), (_b))) \
+		TEST_FAILED ("wrong value for %s, expected '%s' got '%s'", \
+			     #_a, (_b), (_a))
+
+/**
  * TEST_NE:
  * @_a: first integer,
  * @_b: second integer.
@@ -128,11 +140,23 @@
  * @_a: first pointer,
  * @_b: second pointer.
  *
- * Check that the two pointers @_a and @_b are not equa.
+ * Check that the two pointers @_a and @_b are not equal.
  **/
 #define TEST_NE_P(_a, _b) \
 	if ((_a) == (_b)) \
 		TEST_FAILED ("wrong value for %s, got unexpected %p", \
+			     #_a, (_b))
+
+/**
+ * TEST_NE_STR:
+ * @_a: first string,
+ * @_b: second string.
+ *
+ * Check that the two strings @_a and @_b are not equal.
+ **/
+#define TEST_NE_STR(_a, _b) \
+	if (! strcmp ((_a), (_b))) \
+		TEST_FAILED ("wrong value for %s, got expected '%s'", \
 			     #_a, (_b))
 
 /**

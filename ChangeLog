@@ -1,5 +1,7 @@
 2006-12-05  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/test.h (TEST_EQ_STR, TEST_NE_STR): String comparison tests.
+
 	* nih/test.h (TEST_FAILED): abort is much better than exit
 
 	* nih/test.h (INIT_TEST): Drop this, we'll just return directly.

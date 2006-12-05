@@ -83,6 +83,8 @@ void * nih_realloc              (void *ptr, const void *parent, size_t size)
 
 int    nih_free                 (void *ptr);
 
+void   nih_alloc_reparent       (void *ptr, const void *parent);
+
 void   nih_alloc_set_destructor (void *ptr, NihDestructor destructor);
 
 size_t nih_alloc_size           (const void *ptr);

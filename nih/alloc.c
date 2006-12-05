@@ -369,6 +369,40 @@ nih_alloc_set_destructor (void          *ptr,
 
 
 /**
+ * nih_alloc_reparent:
+ * @ptr: pointer to block to reparent,
+ * @parent: new parent block.
+ *
+ * Disassociate the block of memory at @ptr from its current parent, if
+ * any, and optionally assign a new parent.
+ *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned block will be freed too.
+ **/
+void
+nih_alloc_reparent (void       *ptr,
+		    const void *parent)
+{
+	NihAllocCtx *ctx;
+
+	nih_assert (ptr != NULL);
+
+	ctx = NIH_ALLOC_CTX (ptr);
+
+	if (parent) {
+		ctx->parent = NIH_ALLOC_CTX (parent);
+
+		nih_list_add (&ctx->parent->children, &ctx->entry);
+	} else {
+		ctx->parent = NULL;
+
+		nih_list_remove (&ctx->entry);
+	}
+}
+
+
+/**
  * nih_alloc_size:
  * @ptr: pointer to block.
  *

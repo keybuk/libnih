@@ -391,6 +391,125 @@ test_free (void)
 	return ret;
 }
 
+
+int
+test_reparent (void)
+{
+	void *ptr1, *ptr2, *ptr3;
+	int   ret = 0;
+
+	printf ("Testing nih_alloc_reparent()\n");
+
+	printf ("...with orphan and no parent\n");
+	ptr1 = nih_alloc (NULL, 100);
+	memset (ptr1, 'x', 100);
+
+	nih_alloc_reparent (ptr1, NULL);
+
+	/* Parent should still be NULL */
+	if (nih_alloc_parent (ptr1) != NULL) {
+		printf ("BAD: parent of block set incorrectly..\n");
+		ret = 1;
+	}
+
+
+	printf ("...with orphan and new parent\n");
+	ptr2 = nih_alloc (NULL, 50);
+	memset (ptr2, 'x', 50);
+
+	nih_alloc_reparent (ptr2, ptr1);
+
+	/* Parent should be new parent */
+	if (nih_alloc_parent (ptr2) != ptr1) {
+		printf ("BAD: parent of block set incorrectly.\n");
+		ret = 1;
+	}
+
+	/* Should be freed with new parent */
+	was_called = 0;
+	nih_alloc_set_destructor (ptr2, destructor_called);
+	nih_free (ptr1);
+
+	/* Block should have been freed */
+	if (! was_called) {
+		printf ("BAD: destructor was not called.\n");
+		ret = 1;
+	}
+
+
+	printf ("...with child and no parent\n");
+	ptr1 = nih_alloc (NULL, 100);
+	memset (ptr1, 'x', 100);
+
+	ptr2 = nih_alloc (ptr1, 50);
+	memset (ptr2, 'x', 50);
+
+	nih_alloc_reparent (ptr2, NULL);
+
+	/* Parent should be NULL */
+	if (nih_alloc_parent (ptr2) != NULL) {
+		printf ("BAD: parent of block set incorrectly.\n");
+		ret = 1;
+	}
+
+	/* Should not be freed with old parent */
+	was_called = 0;
+	nih_alloc_set_destructor (ptr2, destructor_called);
+	nih_free (ptr1);
+
+	/* Block should not have been freed */
+	if (was_called) {
+		printf ("BAD: destructor called unexpectedly.\n");
+		ret = 1;
+	}
+
+	nih_free (ptr2);
+
+
+	printf ("...with child and new parent\n");
+	ptr1 = nih_alloc (NULL, 100);
+	memset (ptr1, 'x', 100);
+
+	ptr2 = nih_alloc (ptr1, 50);
+	memset (ptr2, 'x', 50);
+
+	ptr3 = nih_alloc (NULL, 75);
+	memset (ptr3, 'x', 75);
+
+	nih_alloc_reparent (ptr2, ptr3);
+
+	/* Parent should be new parent */
+	if (nih_alloc_parent (ptr2) != ptr3) {
+		printf ("BAD: parent of block set incorrectly.\n");
+		ret = 1;
+	}
+
+	/* Should not be freed with old parent */
+	was_called = 0;
+	nih_alloc_set_destructor (ptr2, destructor_called);
+	nih_free (ptr1);
+
+	/* Block should not have been freed */
+	if (was_called) {
+		printf ("BAD: destructor called unexpectedly.\n");
+		ret = 1;
+	}
+
+	/* Should be freed with new parent */
+	was_called = 0;
+	nih_alloc_set_destructor (ptr2, destructor_called);
+	nih_free (ptr3);
+
+	/* Block should have been freed */
+	if (! was_called) {
+		printf ("BAD: destructor was not called.\n");
+		ret = 1;
+	}
+
+	return ret;
+}
+
+
 int
 test_set_allocator (void)
 {
@@ -428,6 +547,7 @@ main (int   argc,
 	ret |= test_realloc ();
 	ret |= test_new ();
 	ret |= test_free ();
+	ret |= test_reparent ();
 	ret |= test_set_allocator ();
 
 	return ret;

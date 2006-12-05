@@ -1,5 +1,8 @@
 2006-12-05  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_string.c (test_str_screen_width) 
+	(test_str_screen_wrap): flush stdout before calling dup2().
+
 	* nih/tests/test_main.c (test_suggest_help, test_version): flush
 	stdout or stderr before calling dup2().
 

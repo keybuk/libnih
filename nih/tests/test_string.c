@@ -603,8 +603,10 @@ test_str_screen_width (void)
 	assert (openpty (&pty, &pts, NULL, NULL, &winsize) == 0);
 
 	printf ("...with screen width\n");
+	fflush (stdout);
 	dup2 (pts, STDOUT_FILENO);
 	len = nih_str_screen_width ();
+	fflush (stdout);
 	dup2 (oldstdout, STDOUT_FILENO);
 
 	/* Check return value */
@@ -616,8 +618,10 @@ test_str_screen_width (void)
 
 	printf ("...with COLUMNS variable\n");
 	putenv ("COLUMNS=30");
+	fflush (stdout);
 	dup2 (pts, STDOUT_FILENO);
 	len = nih_str_screen_width ();
+	fflush (stdout);
 	dup2 (oldstdout, STDOUT_FILENO);
 
 	/* Check return value */
@@ -634,8 +638,10 @@ test_str_screen_width (void)
 	assert ((pts = open ("/dev/null", O_RDWR | O_NOCTTY)) >= 0);
 
 	printf ("...with fallback to 80 columns\n");
+	fflush (stdout);
 	dup2 (pts, STDOUT_FILENO);
 	len = nih_str_screen_width ();
+	fflush (stdout);
 	dup2 (oldstdout, STDOUT_FILENO);
 
 	/* Check return value */
@@ -669,11 +675,13 @@ test_str_screen_wrap (void)
 	assert (openpty (&pty, &pts, NULL, NULL, &winsize) == 0);
 
 	printf ("...with screen width\n");
+	fflush (stdout);
 	dup2 (pts, STDOUT_FILENO);
 	str = nih_str_screen_wrap (NULL, ("this is a string that should need "
 					  "wrapping at any different screen "
 					  "width that we choose to set"),
 				   0, 0);
+	fflush (stdout);
 	dup2 (oldstdout, STDOUT_FILENO);
 
 	/* Check returned string */
@@ -689,11 +697,13 @@ test_str_screen_wrap (void)
 
 	printf ("...with COLUMNS variable\n");
 	putenv ("COLUMNS=30");
+	fflush (stdout);
 	dup2 (pts, STDOUT_FILENO);
 	str = nih_str_screen_wrap (NULL, ("this is a string that should need "
 					  "wrapping at any different screen "
 					  "width that we choose to set"),
 				   0, 0);
+	fflush (stdout);
 	dup2 (oldstdout, STDOUT_FILENO);
 
 	/* Check returned string */
@@ -715,11 +725,13 @@ test_str_screen_wrap (void)
 	assert ((pts = open ("/dev/null", O_RDWR | O_NOCTTY)) >= 0);
 
 	printf ("...with fallback to 80 columns\n");
+	fflush (stdout);
 	dup2 (pts, STDOUT_FILENO);
 	str = nih_str_screen_wrap (NULL, ("this is a string that should need "
 					  "wrapping at any different screen "
 					  "width that we choose to set"),
 				   0, 0);
+	fflush (stdout);
 	dup2 (oldstdout, STDOUT_FILENO);
 
 	/* Check returned string */

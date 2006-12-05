@@ -342,9 +342,11 @@ test_logger_printf (void)
 	oldstderr = dup (STDERR_FILENO);
 
 	printf ("...with low priority message\n");
+	fflush (stdout);
 	dup2 (fileno (output), STDOUT_FILENO);
 	err = nih_log_message (NIH_LOG_DEBUG, "message with %s %d formatting",
 			       "some", 20);
+	fflush (stdout);
 	dup2 (oldstdout, STDOUT_FILENO);
 
 	rewind (output);
@@ -374,9 +376,11 @@ test_logger_printf (void)
 
 
 	printf ("...with high priority message\n");
+	fflush (stderr);
 	dup2 (fileno (output), STDERR_FILENO);
 	err = nih_log_message (NIH_LOG_FATAL, "%s message %d formatted",
 			       "error", -1);
+	fflush (stderr);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
@@ -406,9 +410,11 @@ test_logger_printf (void)
 
 
 	printf ("...with prefixed message\n");
+	fflush (stderr);
 	dup2 (fileno (output), STDERR_FILENO);
 	err = nih_log_message (NIH_LOG_FATAL, "%s:%d: some error or other",
 			       "example.txt", 303);
+	fflush (stderr);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);

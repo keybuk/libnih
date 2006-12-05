@@ -1,5 +1,9 @@
 2006-12-05  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_logging.c (test_logger_printf): flush stdout or
+	stderr before calling dup2(), otherwise we don't know which stream
+	the buffered output will be going to.
+
 	* nih/tests/test_error.c (test_push_context): Check that unhandled
 	errors within a context are notified and freed if the context is
 	popped.

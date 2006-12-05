@@ -1,5 +1,9 @@
 2006-12-05  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_alloc.c: Port to the new test framework.
+	(test_set_allocator): Test that the allocator is called with zero
+	as the argument.
+
 	* nih/test.h: Include config.h on behalf of the test suites.
 
 	* nih/test.h (TEST_EQ_STR, TEST_NE_STR): String comparison tests.

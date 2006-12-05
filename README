@@ -1,7 +1,7 @@
 libnih is a light-weight "standard library" of C functions to ease the
 development of other libraries and applications.
 
-It's goals are:
+Its goals are:
 
  * despite its name, to _not_ reimplement anything found in the
    standard C library or any library normally found in /lib;

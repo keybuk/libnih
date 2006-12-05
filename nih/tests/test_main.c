@@ -229,8 +229,10 @@ test_suggest_help (void)
 	output = tmpfile ();
 	oldstderr = dup (STDERR_FILENO);
 
+	fflush (stderr);
 	dup2 (fileno (output), STDERR_FILENO);
 	nih_main_suggest_help ();
+	fflush (stderr);
 	dup2 (oldstderr, STDERR_FILENO);
 
 	rewind (output);
@@ -271,8 +273,10 @@ test_version (void)
 	oldstdout = dup (STDOUT_FILENO);
 	unsetenv ("COLUMNS");
 
+	fflush (stdout);
 	dup2 (fileno (output), STDOUT_FILENO);
 	nih_main_version ();
+	fflush (stdout);
 	dup2 (oldstdout, STDOUT_FILENO);
 
 	rewind (output);

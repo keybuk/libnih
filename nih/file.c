@@ -140,10 +140,8 @@ nih_file_add_watch (const void     *parent,
 		nih_return_system_error (NULL);
 
 	watch = nih_new (parent, NihFileWatch);
-	if (! watch) {
-		errno = ENOMEM;
+	if (! watch)
 		nih_return_system_error (NULL);
-	}
 
 	nih_list_init (&watch->entry);
 	nih_alloc_set_destructor (watch, (NihDestructor)nih_file_remove_watch);
@@ -225,7 +223,10 @@ nih_file_reader (void       *data,
 		if (len < sz)
 			return;
 
-		/* Read the data (allocates the event structure, etc.) */
+		/* Read the data (allocates the event structure, etc.)
+		 * Force this, otherwise we won't get called until the
+		 * next inotify event.
+		 */
 		NIH_MUST (event = (struct inotify_event *)nih_io_read (
 				  NULL, io, sz));
 		len -= sz;

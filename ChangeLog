@@ -1,5 +1,7 @@
 2006-12-05  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_io.c: Formatting fix.
+
 	* nih/file.c (nih_file_map): Tidy up; in particular don't allow
 	opening in just write mode, seeing as that doesn't work.
 	* nih/tests/test_file.c (test_unmap): Test unmap separately.

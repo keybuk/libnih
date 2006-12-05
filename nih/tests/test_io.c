@@ -391,7 +391,7 @@ test_buffer_resize (void)
 	}
 
 
-	printf ("...with part-full buffer and increase.\n");
+	printf ("...with part-full buffer and increase\n");
 	buf->len = BUFSIZ / 2;
 	nih_io_buffer_resize (buf, BUFSIZ);
 
@@ -408,7 +408,7 @@ test_buffer_resize (void)
 	}
 
 
-	printf ("...with no change.\n");
+	printf ("...with no change\n");
 	buf->len = BUFSIZ + BUFSIZ / 2;
 	nih_io_buffer_resize (buf, 80);
 

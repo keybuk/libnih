@@ -42,6 +42,17 @@
 	int *_test_failed = &(_ret)
 
 /**
+ * CALL_TEST:
+ * @_func: function to call.
+ *
+ * Call the test function @_func, which should accept no arguments and
+ * return an integer; if TRUE then that function is considered to be
+ * a test failure.
+ **/
+#define CALL_TEST(_func) \
+	*_test_failed |= _func ()
+
+/**
  * TEST_FUNCTION:
  * @_func: name of function being tested.
  *

@@ -1,5 +1,7 @@
 2006-12-05  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/test.h (CALL_TEST): Add "call a function" macro.
+
 	* nih/test.h: Macros that implement a simple test framework based
 	on the patterns I was using anyway.
 	* nih/Makefile.am (nihinclude_HEADERS): Install nih/test.h

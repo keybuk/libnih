@@ -307,10 +307,37 @@ test_push_context (void)
 		ret = 1;
 	}
 
-	nih_free (error);
+
+	printf ("Testing nih_error_pop_context()\n");
+
+	/* Raise it again so we can check unhandled errors are notified */
+	was_destroyed = 0;
+	nih_alloc_set_destructor (error, destructor_called);
+	nih_error_raise_again (error);
+
+	was_logged = 0;
+	nih_log_set_priority (NIH_LOG_WARN);
+	nih_log_set_logger (logger_called);
+
+	/* Pop the ccontext */
+	nih_error_pop_context ();
+
+	/* A log message should have been emitted */
+	if (! was_logged) {
+		printf ("BAD: logger not called.\n");
+		ret = 1;
+	}
+
+	/* Unhandled error should have been freed */
+	if (! was_destroyed) {
+		printf ("BAD: unhandled error was not freed.\n");
+		ret = 1;
+	}
+
+	nih_log_set_logger (nih_logger_printf);
+
 
 	/* Should be able to retrieve original error after pop */
-	nih_error_pop_context ();
 	error = nih_error_get ();
 
 	if (error->number != 0x20003) {

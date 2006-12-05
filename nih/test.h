@@ -59,7 +59,7 @@
 	do { \
 		printf ("BAD: " _fmt "\n\tat %s:%d (%s).\n", \
 			##__VA_ARGS__, __FILE__, __LINE__, __FUNCTION__); \
-		exit (1); \
+		abort (); \
 	} while (0)
 
 

@@ -1,5 +1,7 @@
 2006-12-05  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/test.h (TEST_FAILED): abort is much better than exit
+
 	* nih/test.h (INIT_TEST): Drop this, we'll just return directly.
 	(TEST_FAILED): Return directly on failure.
 	(CALL_TEST): Drop this again.

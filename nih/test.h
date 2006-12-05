@@ -21,36 +21,12 @@
 #define NIH_TEST_H
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <setjmp.h>
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
 
-
-/**
- * INIT_TEST:
- * @_ret: variable to store failure in.
- *
- * Initialise the test framework so that tests may be used within and
- * beneath the scope of this call; normally this macro is required once
- * per function at the top.
- *
- * The int variable named in @_ret will be set to TRUE if any test fails,
- * otherwise left alone.
- **/
-#define INIT_TEST(_ret) \
-	int *_test_failed = &(_ret)
-
-/**
- * CALL_TEST:
- * @_func: function to call.
- *
- * Call the test function @_func, which should accept no arguments and
- * return an integer; if TRUE then that function is considered to be
- * a test failure.
- **/
-#define CALL_TEST(_func) \
-	*_test_failed |= _func ()
 
 /**
  * TEST_FUNCTION:
@@ -78,14 +54,12 @@
  *
  * Output a formatted message indicating that a test has failed, including
  * the file, line number and function where the failure happened.
- *
- * Also sets the test failure variable to TRUE.
  **/
 #define TEST_FAILED(_fmt, ...) \
 	do { \
-		*_test_failed = TRUE; \
 		printf ("BAD: " _fmt "\n\tat %s:%d (%s).\n", \
 			##__VA_ARGS__, __FILE__, __LINE__, __FUNCTION__); \
+		exit (1); \
 	} while (0)
 
 

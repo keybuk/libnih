@@ -1,5 +1,10 @@
 2006-12-05  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/file.c (nih_file_map): Tidy up; in particular don't allow
+	opening in just write mode, seeing as that doesn't work.
+	* nih/tests/test_file.c (test_unmap): Test unmap separately.
+	(test_map): Update for new checks.
+
 	* nih/file.c (nih_file_add_watch): No need to set ENOMEM if
 	nih_new fails, that will be already set.
 	(nih_file_reader): Clarify why nih_io_read must return a pointer.

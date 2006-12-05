@@ -271,37 +271,32 @@ nih_file_map (const char *path,
 	nih_assert (path != NULL);
 	nih_assert (length != NULL);
 
+	nih_assert (((flags & O_ACCMODE) == O_RDONLY)
+		    || ((flags & O_ACCMODE) == O_RDWR));
+
 	fd = open (path, flags);
 	if (fd < 0)
 		nih_return_system_error (NULL);
 
-	if ((flags & O_ACCMODE) == O_RDONLY) {
-		prot = PROT_READ;
-	} else if ((flags & O_ACCMODE) == O_WRONLY) {
-		prot = PROT_WRITE;
-	} else if ((flags & O_ACCMODE) == O_RDWR) {
-		prot = PROT_READ | PROT_WRITE;
-	} else {
-		prot = PROT_NONE;
-	}
+	prot = PROT_READ;
+	if ((flags & O_ACCMODE) == O_RDWR)
+		prot |= PROT_WRITE;
 
-	if (fstat (fd, &statbuf) < 0) {
-		nih_error_raise_system ();
-		close (fd);
-		return NULL;
-	}
+	if (fstat (fd, &statbuf) < 0)
+		goto error;
 
 	*length = statbuf.st_size;
 
 	map = mmap (NULL, *length, prot, MAP_SHARED, fd, 0);
-	if (map == MAP_FAILED) {
-		nih_error_raise_system ();
-		close (fd);
-		return NULL;
-	}
+	if (map == MAP_FAILED)
+		goto error;
 
 	close (fd);
 	return map;
+error:
+	nih_error_raise_system ();
+	close (fd);
+	return NULL;
 }
 
 /**

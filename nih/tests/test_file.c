@@ -28,6 +28,7 @@
 #endif /* HAVE_SYS_INOTIFY_H */
 
 #include <sys/types.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/select.h>
 
@@ -255,11 +256,13 @@ int
 test_map (void)
 {
 	FILE  *fd;
-	char   filename[24], *map;
+	char   filename[24], text[80], *map;
 	size_t length;
 	int    ret = 0;
 
 	printf ("Testing nih_file_map()\n");
+
+	printf ("...with read mode\n");
 	sprintf (filename, "/tmp/test_file.%d", getpid ());
 	unlink (filename);
 
@@ -288,11 +291,84 @@ test_map (void)
 		ret = 1;
 	}
 
+	munmap (map, length);
+	unlink (filename);
+
+
+	printf ("...with read/write mode\n");
+	fd = fopen (filename, "w");
+	fprintf (fd, "test\n");
+	fclose (fd);
+
+	length = 0;
+	map = nih_file_map (filename, O_RDWR, &length);
+
+	/* Return value should not be NULL */
+	if (map == NULL) {
+		printf ("BAD: return value wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Length should be 5 chars */
+	if (length != 5) {
+		printf ("BAD: map length wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Memory should contain file contents */
+	if (strncmp (map, "test\n", 5)) {
+		printf ("BAD: memory map wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	/* Memory should be alterable */
+	memcpy (map, "cool\n", 5);
+	if (strncmp (map, "cool\n", 5)) {
+		printf ("BAD: memory map wasn't what we expected.\n");
+		ret = 1;
+	}
+
+	munmap (map, length);
+	fd = fopen (filename, "r");
+
+	/* File should be new contents */
+	fgets (text, sizeof (text), fd);
+	if (strcmp (text, "cool\n")) {
+		printf ("BAD: file contents weren't what we expected.\n");
+		ret  = 1;
+	}
+
+	fclose (fd);
+	unlink (filename);
+
+	return ret;
+}
+
+int
+test_unmap (void)
+{
+	FILE  *fd;
+	char   filename[24], *map;
+	size_t length;
+	int    ret = 0;
 
 	printf ("Testing nih_file_unmap()\n");
+
+	printf ("...with read mode\n");
+	sprintf (filename, "/tmp/test_file.%d", getpid ());
+	unlink (filename);
+
+	fd = fopen (filename, "w");
+	fprintf (fd, "test\n");
+	fclose (fd);
+
+	length = 0;
+	map = nih_file_map (filename, O_RDONLY, &length);
 	nih_file_unmap (map, length);
 
-	return 0;
+	unlink (filename);
+
+	return ret;
 }
 
 
@@ -304,6 +380,7 @@ main (int   argc,
 
 	ret |= test_add_watch ();
 	ret |= test_map ();
+	ret |= test_unmap ();
 
 	return ret;
 }

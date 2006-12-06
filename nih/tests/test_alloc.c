@@ -21,6 +21,10 @@
 
 #include <nih/test.h>
 
+#include <stdlib.h>
+#include <string.h>
+
+#include <nih/macros.h>
 #include <nih/alloc.h>
 
 

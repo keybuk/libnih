@@ -23,6 +23,8 @@
 
 #include <assert.h>
 
+#include <nih/macros.h>
+#include <nih/alloc.h>
 #include <nih/list.h>
 #include <nih/hash.h>
 

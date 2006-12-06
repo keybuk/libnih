@@ -1,5 +1,7 @@
 2006-12-06  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_child.c: Port to the new test framework.
+
 	* nih/test.h (TEST_CHILD): Macro to spawn an interlocked child
 	process, so we don't keep having to remember how to.
 

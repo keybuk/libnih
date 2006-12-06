@@ -25,9 +25,12 @@
 #endif /* HAVE_CONFIG_H */
 
 
+#include <sys/types.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
@@ -219,6 +222,42 @@
 
 
 /**
+ * TEST_CHILD:
+ * @_pid: variable to store pid in.
+ *
+ * Spawn a child in which a test can be performed without affecting the
+ * main flow of the process.  The pid of the child is stored in @_pid.
+ *
+ * This macro ensures that the child has begun exectution before the
+ * parent is allowed to continue through the usual use of a pipe.
+ *
+ * A block of code should follow this macro, which is the code that will
+ * be run in the child process; if the block ends, the child will abort.
+ **/
+#define TEST_CHILD(_pid) \
+	do { \
+		int _test_fds[2]; \
+		pipe (_test_fds); \
+		_pid = fork (); \
+		if (_pid > 0) { \
+			char _test_buf[1]; \
+			close (_test_fds[1]); \
+			read (_test_fds[0], _test_buf, 1); \
+			close (_test_fds[0]); \
+		} else if (_pid == 0) { \
+			close (_test_fds[0]); \
+			write (_test_fds[1], "\n", 1); \
+			close (_test_fds[1]); \
+		} \
+	} while (0); \
+	if (_pid == 0) \
+		for (int _test_half = 0; _test_half < 2; _test_half++) \
+			if (_test_half) { \
+				abort (); \
+			} else
+
+
+/**
  * TEST_ALLOC_SIZE:
  * @_ptr: allocated pointer,
  * @_sz: expected size.
@@ -270,5 +309,6 @@
 	if (NIH_LIST_EMPTY (_list)) \
 		TEST_FAILED ("list %p (%s) empty, expected multiple members", \
 			     (_list), #_list)
+
 
 #endif /* NIH_TEST_H */

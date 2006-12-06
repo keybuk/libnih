@@ -81,7 +81,7 @@ test_new (void)
 	TEST_ALLOC_PARENT (hash->bins, hash);
 
 	for (i = 0; i < hash->size; i++)
-		TEST_TRUE (NIH_LIST_EMPTY (&hash->bins[i]));
+		TEST_LIST_EMPTY (&hash->bins[i]);
 
 	nih_free (hash);
 
@@ -97,7 +97,7 @@ test_new (void)
 	TEST_ALLOC_PARENT (hash->bins, hash);
 
 	for (i = 0; i < hash->size; i++)
-		TEST_TRUE (NIH_LIST_EMPTY (&hash->bins[i]));
+		TEST_LIST_EMPTY (&hash->bins[i]);
 
 	nih_free (hash);
 
@@ -113,7 +113,7 @@ test_new (void)
 	TEST_ALLOC_PARENT (hash->bins, hash);
 
 	for (i = 0; i < hash->size; i++)
-		TEST_TRUE (NIH_LIST_EMPTY (&hash->bins[i]));
+		TEST_LIST_EMPTY (&hash->bins[i]);
 
 	nih_free (hash);
 }

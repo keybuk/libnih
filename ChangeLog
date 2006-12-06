@@ -1,3 +1,13 @@
+2006-12-06  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/test.h (TEST_ALLOC_SIZE, TEST_ALLOC_PARENT): Include the
+	expression that generated the pointer, as well as the pointer.
+	(TEST_LIST_EMPTY, TEST_LIST_NOT_EMPTY): Check whether a list is
+	empty or not.
+	* nih/tests/test_list.c (test_empty, test_foreach_safe): Use the
+	new list test macros instead of TEST_TRUE/TEST_FALSE.
+	* nih/tests/test_hash.c (test_new): Likewise.
+
 2006-12-05  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/tests/test_hash.c: Port to the new test framework.

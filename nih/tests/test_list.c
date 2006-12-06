@@ -220,7 +220,7 @@ test_empty (void)
 	TEST_FEATURE ("with empty list");
 	list = nih_list_new (NULL);
 
-	TEST_TRUE (NIH_LIST_EMPTY (list));
+	TEST_LIST_EMPTY (list);
 
 
 	/* Check that NIH_LIST_EMPTY is FALSE on a non-empty list */
@@ -228,8 +228,8 @@ test_empty (void)
 	entry = nih_list_new (NULL);
 	nih_list_add (list, entry);
 
-	TEST_FALSE (NIH_LIST_EMPTY (list));
-	TEST_FALSE (NIH_LIST_EMPTY (entry));
+	TEST_LIST_NOT_EMPTY (list);
+	TEST_LIST_NOT_EMPTY (entry);
 
 	nih_free (list);
 	nih_free (entry);
@@ -302,7 +302,7 @@ test_foreach_safe (void)
 
 
 	/* Check that the list is now empty */
-	TEST_TRUE (NIH_LIST_EMPTY (list));
+	TEST_LIST_EMPTY (list);
 
 	nih_free (list);
 	nih_free (entry[0]);

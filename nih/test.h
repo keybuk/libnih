@@ -31,6 +31,7 @@
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
+#include <nih/list.h>
 
 
 /**
@@ -227,8 +228,9 @@
  **/
 #define TEST_ALLOC_SIZE(_ptr, _sz) \
 	if (nih_alloc_size (_ptr) != (_sz)) \
-		TEST_FAILED ("wrong size of block %p, expected %zu got %zu", \
-			     (_ptr), (size_t)(_sz), nih_alloc_size (_ptr))
+		TEST_FAILED ("wrong size of block %p (%s), expected %zu got %zu", \
+			     (_ptr), #_ptr, (size_t)(_sz), \
+			     nih_alloc_size (_ptr))
 
 /**
  * TEST_ALLOC_PARENT:
@@ -240,8 +242,33 @@
  **/
 #define TEST_ALLOC_PARENT(_ptr, _parent) \
 	if (nih_alloc_parent (_ptr) != (_parent)) \
-		TEST_FAILED ("wrong parent of block %p, expected %p got %p", \
-			     (_ptr), (_parent), nih_alloc_parent (_ptr))
+		TEST_FAILED ("wrong parent of block %p (%s), expected %p (%s) got %p", \
+			     (_ptr), #_ptr, (_parent), #_parent, \
+			     nih_alloc_parent (_ptr))
 
+
+/**
+ * TEST_LIST_EMPTY:
+ * @_list: entry in list.
+ *
+ * Check that the list of which @_list is a member is empty, ie. that
+ * @_list is the sole member.
+ **/
+#define TEST_LIST_EMPTY(_list) \
+	if (! NIH_LIST_EMPTY (_list)) \
+		TEST_FAILED ("list %p (%s) not empty as expected", \
+			     (_list), #_list)
+
+/**
+ * TEST_LIST_NOT_EMPTY:
+ * @_list: entry in list.
+ *
+ * Check that the list of which @_list is a member is not empty, ie. that
+ * there are more members than just @_list.
+ **/
+#define TEST_LIST_NOT_EMPTY(_list) \
+	if (NIH_LIST_EMPTY (_list)) \
+		TEST_FAILED ("list %p (%s) empty, expected multiple members", \
+			     (_list), #_list)
 
 #endif /* NIH_TEST_H */

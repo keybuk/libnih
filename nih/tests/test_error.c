@@ -19,110 +19,75 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include <config.h>
+#include <nih/test.h>
 
 #include <errno.h>
-#include <stdio.h>
 #include <string.h>
 
+#include <nih/macros.h>
 #include <nih/alloc.h>
 #include <nih/error.h>
 #include <nih/logging.h>
 
 
-int
+void
 test_raise (void)
 {
 	NihError *error;
-	int       ret = 0;
 
-	printf ("Testing nih_error_raise()\n");
+	/* Check that after raising an error, we can get it again, and that
+	 * the number and message are what we gave.
+	 */
+	TEST_FUNCTION ("nih_error_raise");
 	nih_error_raise (0x20001, "Test error");
 	error = nih_error_get ();
 
-	/* Error number should be what we gave */
-	if (error->number != 0x20001) {
-		printf ("BAD: error number incorrect.\n");
-		ret = 1;
-	}
-
-	/* Error message should be what we gave */
-	if (strcmp (error->message, "Test error")) {
-		printf ("BAD: error message incorrect.\n");
-		ret = 1;
-	}
+	TEST_EQ (error->number, 0x20001);
+	TEST_EQ_STR (error->message, "Test error");
 
 	nih_free (error);
-
-	return ret;
 }
 
-int
+void
 test_raise_printf (void)
 {
 	NihError *error;
-	int       ret = 0;
 
-	printf ("Testing nih_error_raise_printf()\n");
+	/* Check that we can raise an error with a formatted string, and
+	 * that when we get it, the message is formatted appropriately and
+	 * that the string is a child of the error object.
+	 */
+	TEST_FUNCTION ("nih_error_raise_printf");
 	nih_error_raise_printf (0x20002, "This is a %s error %d", "test", 123);
 	error = nih_error_get ();
 
-	/* Error number should be what we gave */
-	if (error->number != 0x20002) {
-		printf ("BAD: error number incorrect.\n");
-		ret = 1;
-	}
-
-	/* Error message should be formatted */
-	if (strcmp (error->message, "This is a test error 123")) {
-		printf ("BAD: error message incorrect.\n");
-		ret = 1;
-	}
-
-	/* Error message should be child of error */
-	if (nih_alloc_parent (error->message) != error) {
-		printf ("BAD: error message parent incorrect.\n");
-		ret = 1;
-	}
+	TEST_EQ (error->number, 0x20002);
+	TEST_EQ_STR (error->message, "This is a test error 123");
+	TEST_ALLOC_PARENT (error->message, error);
 
 	nih_free (error);
-
-	return ret;
 }
 
-int
+void
 test_raise_system (void)
 {
 	NihError *error;
-	int       ret = 0;
 
-	printf ("Testing nih_error_raise_system()\n");
+	/* Check that we can raise a system error, which takes the number and
+	 * message from the errno table.
+	 */
+	TEST_FUNCTION ("nih_error_raise_system");
 	errno = ENOENT;
 	nih_error_raise_system ();
 	error = nih_error_get ();
 
-	/* Error number should be the original errno */
-	if (error->number != ENOENT) {
-		printf ("BAD: error number incorrect.\n");
-		ret = 1;
-	}
-
-	/* Error message should be result of strerror */
-	if (strcmp (error->message, strerror (ENOENT))) {
-		printf ("BAD: error message incorrect.\n");
-		ret = 1;
-	}
-
-	/* Error message should be child of error */
-	if (nih_alloc_parent (error->message) != error) {
-		printf ("BAD: error message parent incorrect.\n");
-		ret = 1;
-	}
+	TEST_EQ (error->number, ENOENT);
+	TEST_EQ_STR (error->message, strerror (ENOENT));
+	TEST_ALLOC_PARENT (error->message, error);
 
 	nih_free (error);
-
-	return ret;
 }
+
 
 static int was_logged;
 static int was_destroyed;
@@ -144,29 +109,32 @@ destructor_called (void *ptr)
 	return 2;
 }
 
-int
+void
 test_raise_again (void)
 {
 	NihError *error1, *error2, *error3;
-	int       ret = 0;
 
-	printf ("Testing nih_error_raise_again()\n");
+	TEST_FUNCTION ("nih_error_raise_again");
 
-	printf ("...with no current error\n");
+	/* Check that we can raise an arbitrary error object, and that we
+	 * get the exact pointer we raised.
+	 */
+	TEST_FEATURE ("with no current error");
 	error1 = nih_new (NULL, NihError);
 	error1->number = ENOENT;
 	error1->message = strerror (ENOENT);
 	nih_error_raise_again (error1);
 	error2 = nih_error_get ();
 
-	/* Error returned should be error raised */
-	if (error2 != error1) {
-		printf ("BAD: return value was not correct.\n");
-		ret = 1;
-	}
+	TEST_EQ_P (error2, error1);
 
 
-	printf ("...with current error\n");
+	/* Check that an error raised while there's already an unhandled
+	 * error causes an error message to be logged through the usual
+	 * mechanism and the unhandled error to be destroyed.  The error
+	 * returned should be the new one.
+	 */
+	TEST_FEATURE ("with unhandled error");
 	was_destroyed = 0;
 	nih_alloc_set_destructor (error1, destructor_called);
 	nih_error_raise_again (error1);
@@ -182,135 +150,99 @@ test_raise_again (void)
 	nih_error_raise_again (error2);
 	error3 = nih_error_get ();
 
-	/* Error returned should be new error */
-	if (error3 != error2) {
-		printf ("BAD: return value was not correct.\n");
-		ret = 1;
-	}
-
-	/* A log message should have been emitted */
-	if (! was_logged) {
-		printf ("BAD: logger not called.\n");
-		ret = 1;
-	}
-
-	/* Original error should have been freed */
-	if (! was_destroyed) {
-		printf ("BAD: original error was not freed.\n");
-		ret = 1;
-	}
+	TEST_EQ_P (error3, error2);
+	TEST_TRUE (was_logged);
+	TEST_TRUE (was_destroyed);
 
 	nih_free (error3);
 
 	nih_log_set_logger (nih_logger_printf);
-
-	return ret;
 }
 
+
 static int
-call_return_error (int         retval,
+call_return_error (int         ret,
 		   int         number,
 		   const char *message)
 {
-	nih_return_error (retval, number, message);
+	nih_return_error (ret, number, message);
+	return 254;
 }
 
-int
+void
 test_return_error (void)
 {
 	NihError *error;
-	int       ret = 0, retval;
+	int       ret;
 
-	printf ("Testing nih_return_error()\n");
-	retval = call_return_error (-1, 0x20001, "Test error");
+	/* Check that the macro to raise an error and return from a
+	 * function does just that.
+	 */
+	TEST_FUNCTION ("nih_return_error");
+	ret = call_return_error (-1, 0x20001, "Test error");
 	error = nih_error_get ();
 
-	/* Return value should be first argument */
-	if (retval != -1) {
-		printf ("BAD: return value was not correct.\n");
-		ret = 1;
-	}
-
-	/* Error number should be what we gave */
-	if (error->number != 0x20001) {
-		printf ("BAD: error number incorrect.\n");
-		ret = 1;
-	}
-
-	/* Error message should be what we gave */
-	if (strcmp (error->message, "Test error")) {
-		printf ("BAD: error message incorrect.\n");
-		ret = 1;
-	}
+	TEST_EQ (ret, -1);
+	TEST_EQ (error->number, 0x20001);
+	TEST_EQ_STR (error->message, "Test error");
 
 	nih_free (error);
-
-	return ret;
 }
+
 
 static int
-call_return_system_error (int retval)
+call_return_system_error (int ret)
 {
-	nih_return_system_error (retval);
+	nih_return_system_error (ret);
 }
 
-int
+void
 test_return_system_error (void)
 {
 	NihError *error;
-	int       ret = 0, retval;
+	int       ret;
 
-	printf ("Testing nih_return_system_error()\n");
+	/* Check that the macro to raise an error based on the value of
+	 * errno and return from a function does just that.
+	 */
+	TEST_FUNCTION ("nih_return_system_error");
 	errno = ENOENT;
-	retval = call_return_system_error (-1);
+	ret = call_return_system_error (-1);
 	error = nih_error_get ();
 
-	/* Return value should be first argument */
-	if (retval != -1) {
-		printf ("BAD: return value was not correct.\n");
-		ret = 1;
-	}
-
-	/* Error number should be what we set */
-	if (error->number != ENOENT) {
-		printf ("BAD: error number incorrect.\n");
-		ret = 1;
-	}
-
-	/* Error message should be from strerror */
-	if (strcmp (error->message, "No such file or directory")) {
-		printf ("BAD: error message incorrect.\n");
-		ret = 1;
-	}
+	TEST_EQ (ret, -1);
+	TEST_EQ (error->number, ENOENT);
+	TEST_EQ_STR (error->message, strerror (ENOENT));
 
 	nih_free (error);
-
-	return ret;
 }
 
 
-int
+void
 test_push_context (void)
 {
 	NihError *error;
-	int       ret = 0;
 
-	printf ("Testing nih_error_push_context()\n");
+	/* Check that we can push an error context over the top of a
+	 * handled error, and that if we try and raise then get an error
+	 * afterwards, we get the newer one.
+	 */
+	TEST_FUNCTION ("nih_error_push_context");
 	nih_error_raise (0x20003, "Error in default context");
 	nih_error_push_context ();
 	nih_error_raise (0x20004, "Error in new context");
 	error = nih_error_get ();
 
-	/* Error returned should be from new context */
-	if (error->number != 0x20004) {
-		printf ("BAD: incorrect error returned.\n");
-		ret = 1;
-	}
+	TEST_EQ (error->number, 0x20004);
 
 
-	printf ("Testing nih_error_pop_context()\n");
+	TEST_FUNCTION ("nih_error_pop_context");
 
-	/* Raise it again so we can check unhandled errors are notified */
+	/* Check that we can pop the error context; when doing so, if an
+	 * unhandled error exists, an error is logged through the usual
+	 * mechanism and the error destroyed.
+	 */
+	TEST_FEATURE ("with unhandled error in context");
 	was_destroyed = 0;
 	nih_alloc_set_destructor (error, destructor_called);
 	nih_error_raise_again (error);
@@ -319,35 +251,23 @@ test_push_context (void)
 	nih_log_set_priority (NIH_LOG_WARN);
 	nih_log_set_logger (logger_called);
 
-	/* Pop the ccontext */
 	nih_error_pop_context ();
 
-	/* A log message should have been emitted */
-	if (! was_logged) {
-		printf ("BAD: logger not called.\n");
-		ret = 1;
-	}
-
-	/* Unhandled error should have been freed */
-	if (! was_destroyed) {
-		printf ("BAD: unhandled error was not freed.\n");
-		ret = 1;
-	}
+	TEST_TRUE (was_logged);
+	TEST_TRUE (was_destroyed);
 
 	nih_log_set_logger (nih_logger_printf);
 
 
-	/* Should be able to retrieve original error after pop */
+	/* Check that once popped, any unhandled error in lower contexts
+	 * is available again.
+	 */
+	TEST_FEATURE ("with unhandler error beneath context");
 	error = nih_error_get ();
 
-	if (error->number != 0x20003) {
-		printf ("BAD: incorrect error returned.\n");
-		ret = 1;
-	}
+	TEST_EQ (error->number, 0x20003);
 
 	nih_free (error);
-
-	return ret;
 }
 
 
@@ -355,15 +275,13 @@ int
 main (int   argc,
       char *argv[])
 {
-	int ret = 0;
+	test_raise ();
+	test_raise_printf ();
+	test_raise_system ();
+	test_raise_again ();
+	test_return_error ();
+	test_return_system_error ();
+	test_push_context();
 
-	ret |= test_raise ();
-	ret |= test_raise_printf ();
-	ret |= test_raise_system ();
-	ret |= test_raise_again ();
-	ret |= test_return_error ();
-	ret |= test_return_system_error ();
-	ret |= test_push_context();
-
-	return ret;
+	return 0;
 }

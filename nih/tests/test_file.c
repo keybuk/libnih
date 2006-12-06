@@ -19,28 +19,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include <config.h>
+#include <nih/test.h>
 
-#ifdef HAVE_SYS_INOTIFY_H
-# include <sys/inotify.h>
-#else
-# include <nih/inotify.h>
-#endif /* HAVE_SYS_INOTIFY_H */
-
-#include <sys/types.h>
 #include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/select.h>
 
 #include <stdio.h>
-#include <assert.h>
 #include <string.h>
 #include <unistd.h>
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
 #include <nih/string.h>
-#include <nih/list.h>
 #include <nih/io.h>
 #include <nih/file.h>
 
@@ -64,77 +53,42 @@ my_watcher (void         *data,
 	last_name = name ? nih_strdup (watch, name) : NULL;
 }
 
-
-int
+void
 test_add_watch (void)
 {
 	NihFileWatch *watch;
 	FILE         *fd;
 	fd_set        readfds, writefds, exceptfds;
-	char          dirname[22], filename[32];
-	int           ret = 0, nfds = 0;
+	char          filename[PATH_MAX], dirname[PATH_MAX];
+	int           nfds = 0;
 
-	printf ("Testing nih_file_add_watch()\n");
+	TEST_FUNCTION ("nih_file_add_watch");
 
-	printf ("...with file\n");
-	sprintf (filename, "/tmp/test_file.%d", getpid ());
-	unlink (filename);
+	/* Check that we can add a watch on a filename, and that the returned
+	 * structure is all filled out correctly.
+	 */
+	TEST_FEATURE ("with file");
+	TEST_FILENAME (filename);
 
 	fd = fopen (filename, "w");
 	fprintf (fd, "test\n");
 	fclose (fd);
 
-	watch = nih_file_add_watch (NULL, filename, IN_OPEN, my_watcher, &ret);
+	watch = nih_file_add_watch (NULL, filename, IN_OPEN, my_watcher,
+				    &watch);
 
-	/* Watch descriptor should be valid */
-	if (watch->wd < 0) {
-		printf ("BAD: watch fd set incorrectly.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (watch, sizeof (NihFileWatch));
+	TEST_GE (watch->wd, 0);
+	TEST_EQ_STR (watch->path, filename);
+	TEST_ALLOC_PARENT (watch->path, watch);
+	TEST_EQ (watch->events, IN_OPEN);
+	TEST_EQ_P (watch->watcher, my_watcher);
+	TEST_EQ_P (watch->data, &watch);
+	TEST_LIST_NOT_EMPTY (&watch->entry);
 
-	/* Watch path should be the filename */
-	if (strcmp (watch->path, filename)) {
-		printf ("BAD: watch filename set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Watch events should be IN_OPEN */
-	if (watch->events != IN_OPEN) {
-		printf ("BAD: watch events set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Watcher should be function we gave */
-	if (watch->watcher != my_watcher) {
-		printf ("BAD: watcher set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Watcher data should be pointer we gave */
-	if (watch->data != &ret) {
-		printf ("BAD: watcher data set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Should be in a list */
-	if (NIH_LIST_EMPTY (&watch->entry)) {
-		printf ("BAD: watcher wasn't placed in the list.\n");
-		ret = 1;
-	}
-
-	/* Structure should be allocated with nih_alloc */
-	if (nih_alloc_size (watch) != sizeof (NihFileWatch)) {
-		printf ("BAD: nih_alloc was not used.\n");
-		ret = 1;
-	}
-
-	/* Path should be child */
-	if (nih_alloc_parent (watch->path) != watch) {
-		printf ("BAD: I/O watch parent wasn't file watch.\n");
-		ret = 1;
-	}
-
-
+	/* Check that a modification to that file results in the watcher
+	 * being called with appropriate parameters.
+	 */
 	watcher_called = 0;
 	last_data = NULL;
 	last_watch = NULL;
@@ -152,47 +106,23 @@ test_add_watch (void)
 	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	/* Watcher should have been called */
-	if (! watcher_called) {
-		printf ("BAD: watcher was not called.\n");
-		ret = 1;
-	}
-
-	/* Data pointer should have been that registered */
-	if (last_data != &ret) {
-		printf ("BAD: watcher data wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Watch should have been the one we created */
-	if (last_watch != watch) {
-		printf ("BAD: watcher watch wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Events mask should include OPEN */
-	if (! (last_events & IN_OPEN)) {
-		printf ("BAD: inotify event wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Name should be NULL */
-	if (last_name != NULL) {
-		printf ("BAD: last name wasn't what we expected.\n");
-		ret = 1;
-	}
-
+	TEST_TRUE (watcher_called);
+	TEST_EQ_P (last_data, &watch);
+	TEST_EQ_P (last_watch, watch);
+	TEST_TRUE (last_events & IN_OPEN);
+	TEST_EQ_P (last_name, NULL);
 
 	nih_free (watch);
 	unlink (filename);
 
 
-	printf ("...with directory\n");
-
+	/* Check that we can watch a directory, and get notified when files
+	 * are created within it.
+	 */
+	TEST_FEATURE ("with directory");
 	strcpy (dirname, filename);
 	strcat (filename, "/foo");
-
-	assert (mkdir (dirname, 0700) == 0);
+	mkdir (dirname, 0700);
 
 	watcher_called = 0;
 	last_data = NULL;
@@ -201,7 +131,7 @@ test_add_watch (void)
 	last_name = NULL;
 
 	watch = nih_file_add_watch (NULL, dirname, IN_CREATE,
-				    my_watcher, &ret);
+				    my_watcher, &watch);
 
 	fd = fopen (filename, "w");
 	fprintf (fd, "test\n");
@@ -214,57 +144,32 @@ test_add_watch (void)
 	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	/* Watcher should have been called */
-	if (! watcher_called) {
-		printf ("BAD: watcher was not called.\n");
-		ret = 1;
-	}
-
-	/* Data pointer should have been that registered */
-	if (last_data != &ret) {
-		printf ("BAD: watcher data wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Watch should have been the one we created */
-	if (last_watch != watch) {
-		printf ("BAD: watcher watch wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Events mask should include CREATE */
-	if (! (last_events & IN_CREATE)) {
-		printf ("BAD: inotify event wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Name should be sub-path */
-	if (strcmp (last_name, "foo")) {
-		printf ("BAD: last name wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_TRUE (watcher_called);
+	TEST_EQ_P (last_data, &watch);
+	TEST_EQ_P (last_watch, watch);
+	TEST_TRUE (last_events & IN_CREATE);
+	TEST_EQ_STR (last_name, "foo");
 
 	nih_free (watch);
 	unlink (filename);
 	rmdir (dirname);
-
-	return ret;
 }
 
 
-int
+void
 test_map (void)
 {
 	FILE  *fd;
-	char   filename[24], text[80], *map;
+	char   filename[PATH_MAX], text[80], *map;
 	size_t length;
-	int    ret = 0;
 
-	printf ("Testing nih_file_map()\n");
+	TEST_FUNCTION ("nih_file_map");
 
-	printf ("...with read mode\n");
-	sprintf (filename, "/tmp/test_file.%d", getpid ());
-	unlink (filename);
+	/* Check that we can map a file into memory for reading, and that
+	 * the memory contents match the file.
+	 */
+	TEST_FEATURE ("with read mode");
+	TEST_FILENAME (filename);
 
 	fd = fopen (filename, "w");
 	fprintf (fd, "test\n");
@@ -273,29 +178,20 @@ test_map (void)
 	length = 0;
 	map = nih_file_map (filename, O_RDONLY, &length);
 
-	/* Return value should not be NULL */
-	if (map == NULL) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Length should be 5 chars */
-	if (length != 5) {
-		printf ("BAD: map length wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Memory should contain file contents */
-	if (strncmp (map, "test\n", 5)) {
-		printf ("BAD: memory map wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_NE_P (map, NULL);
+	TEST_EQ (length, 5);
+	TEST_EQ_MEM (map, "test\n", 5);
 
 	munmap (map, length);
 	unlink (filename);
 
 
-	printf ("...with read/write mode\n");
+	/* Check that we can map a file for both reading and writing, the
+	 * memory contents should match the file.
+	 */
+	TEST_FEATURE ("with read/write mode");
+	TEST_FILENAME (filename);
+
 	fd = fopen (filename, "w");
 	fprintf (fd, "test\n");
 	fclose (fd);
@@ -303,60 +199,40 @@ test_map (void)
 	length = 0;
 	map = nih_file_map (filename, O_RDWR, &length);
 
-	/* Return value should not be NULL */
-	if (map == NULL) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_NE_P (map, NULL);
+	TEST_EQ (length, 5);
+	TEST_EQ_MEM (map, "test\n", 5);
 
-	/* Length should be 5 chars */
-	if (length != 5) {
-		printf ("BAD: map length wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Memory should contain file contents */
-	if (strncmp (map, "test\n", 5)) {
-		printf ("BAD: memory map wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Memory should be alterable */
+	/* Check that we can alter the memory at that address, and have the
+	 * file altered.
+	 */
 	memcpy (map, "cool\n", 5);
-	if (strncmp (map, "cool\n", 5)) {
-		printf ("BAD: memory map wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ_MEM (map, "cool\n", 5);
 
 	munmap (map, length);
 	fd = fopen (filename, "r");
 
-	/* File should be new contents */
 	fgets (text, sizeof (text), fd);
-	if (strcmp (text, "cool\n")) {
-		printf ("BAD: file contents weren't what we expected.\n");
-		ret  = 1;
-	}
+	TEST_EQ_STR (text, "cool\n");
 
 	fclose (fd);
 	unlink (filename);
-
-	return ret;
 }
 
-int
+void
 test_unmap (void)
 {
 	FILE  *fd;
-	char   filename[24], *map;
+	char   filename[PATH_MAX], *map;
 	size_t length;
-	int    ret = 0;
+	int    ret;
 
-	printf ("Testing nih_file_unmap()\n");
+	TEST_FUNCTION ("nih_file_unmap");
 
-	printf ("...with read mode\n");
-	sprintf (filename, "/tmp/test_file.%d", getpid ());
-	unlink (filename);
+	/* Check that we can unmap a file that we mapped with nih_map.
+	 * Mostly just make sure it returns zero.
+	 */
+	TEST_FILENAME (filename);
 
 	fd = fopen (filename, "w");
 	fprintf (fd, "test\n");
@@ -364,11 +240,11 @@ test_unmap (void)
 
 	length = 0;
 	map = nih_file_map (filename, O_RDONLY, &length);
-	nih_file_unmap (map, length);
+	ret = nih_file_unmap (map, length);
+
+	TEST_EQ (ret, 0);
 
 	unlink (filename);
-
-	return ret;
 }
 
 
@@ -376,11 +252,9 @@ int
 main (int   argc,
       char *argv[])
 {
-	int ret = 0;
+	test_add_watch ();
+	test_map ();
+	test_unmap ();
 
-	ret |= test_add_watch ();
-	ret |= test_map ();
-	ret |= test_unmap ();
-
-	return ret;
+	return 0;
 }

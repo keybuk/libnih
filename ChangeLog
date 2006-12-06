@@ -1,5 +1,8 @@
 2006-12-06  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/test.h (TEST_EQ_MEM, TEST_NE_MEM): Tests that wrap memcmp.
+	(TEST_FILENAME): Macro to generate a filename.
+
 	* nih/tests/test_error.c: Port to the new test framework.
 
 	* nih/tests/test_alloc.c, nih/tests/test_list.c, nih/tests/test_hash.c:

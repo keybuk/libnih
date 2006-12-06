@@ -28,6 +28,7 @@
 #include <sys/types.h>
 
 #include <stdio.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -132,6 +133,20 @@
 			     #_a, (_b), (_a))
 
 /**
+ * TEST_EQ_MEM:
+ * @_a: first memory area,
+ * @_b: second memory area,
+ * @_l: length of @_a and @_b.
+ *
+ * Check that the two @_l byte long areas of memory at @_a and @_b are
+ * identical.
+ **/
+#define TEST_EQ_MEM(_a, _b, _l) \
+	if (memcmp ((_a), (_b), (_l))) \
+		TEST_FAILED ("wrong %d bytes at %p (%s), expected %p (%s)", \
+			     (_l), (_a), #_a, (_b), #_b)
+
+/**
  * TEST_NE:
  * @_a: first integer,
  * @_b: second integer.
@@ -165,8 +180,22 @@
  **/
 #define TEST_NE_STR(_a, _b) \
 	if (! strcmp ((_a), (_b))) \
-		TEST_FAILED ("wrong value for %s, got expected '%s'", \
+		TEST_FAILED ("wrong value for %s, got unexpected '%s'", \
 			     #_a, (_b))
+
+/**
+ * TEST_NE_MEM:
+ * @_a: first memory area,
+ * @_b: second memory area,
+ * @_l: length of @_a and @_b.
+ *
+ * Check that the two @_l byte long areas of memory at @_a and @_b are
+ * different.
+ **/
+#define TEST_NE_MEM(_a, _b, _l) \
+	if (! memcmp ((_a), (_b), (_l))) \
+		TEST_FAILED ("wrong %d bytes at %p (%s), got unexpected %p (%s)", \
+			     (_l), (_a), #_a, (_b), #_b)
 
 /**
  * TEST_LT:
@@ -255,6 +284,20 @@
 			if (_test_half) { \
 				abort (); \
 			} else
+
+/**
+ * TEST_FILENAME:
+ * @_var: variable to store filename in.
+ *
+ * Generate a filename that may be used for testing, it's unlinked it if
+ * exists and it's up to you to unlink it when done.  @_var should be at
+ * least PATH_MAX long.
+ **/
+#define TEST_FILENAME(_var) \
+	snprintf ((_var), sizeof (_var), "/tmp/%s:%s:%d:%d", \
+		  strrchr (__FILE__, '/') ? strrchr (__FILE__, '/') + 1 : __FILE__, \
+		  __FUNCTION__, __LINE__, getpid ()); \
+	unlink (_var)
 
 
 /**

@@ -133,6 +133,19 @@
 			     #_a, (_b), (_a))
 
 /**
+ * TEST_EQ_STRN:
+ * @_a: first string,
+ * @_b: second string.
+ *
+ * Check that the two strings @_a and @_b are equal, up to the length of
+ * the second string.
+ **/
+#define TEST_EQ_STRN(_a, _b) \
+	if (strncmp ((_a), (_b), strlen (_b))) \
+		TEST_FAILED ("wrong value for %s, expected '%.*s' got '%.*s'", \
+			     #_a, strlen (_b), (_b), strlen (_b), (_a))
+
+/**
  * TEST_EQ_MEM:
  * @_a: first memory area,
  * @_b: second memory area,
@@ -182,6 +195,19 @@
 	if (! strcmp ((_a), (_b))) \
 		TEST_FAILED ("wrong value for %s, got unexpected '%s'", \
 			     #_a, (_b))
+
+/**
+ * TEST_NE_STRN:
+ * @_a: first string,
+ * @_b: second string.
+ *
+ * Check that the two strings @_a and @_b are not equal, up to the length
+ * of the second string.
+ **/
+#define TEST_NE_STRN(_a, _b) \
+	if (! strncmp ((_a), (_b), strlen (_b))) \
+		TEST_FAILED ("wrong value for %s, got unexpected '%.*s'", \
+			     #_a, strlen (_b), (_b))
 
 /**
  * TEST_NE_MEM:
@@ -280,10 +306,46 @@
 		} \
 	} while (0); \
 	if (_pid == 0) \
-		for (int _test_half = 0; _test_half < 2; _test_half++) \
-			if (_test_half) { \
+		for (int _test_child = 0; _test_child < 2; _test_child++) \
+			if (_test_child) { \
 				abort (); \
 			} else
+
+/**
+ * TEST_DIVERT_STDOUT:
+ * @_file: FILE to send standard output to.
+ *
+ * This macro diverts standard output to a different file for the duration
+ * of a block of code that should follow it.
+ */
+#define TEST_DIVERT_STDOUT(_file) \
+	for (int _test_stdout = 0, _test_oldstdout = dup (STDOUT_FILENO); \
+	     _test_stdout < 3; _test_stdout++) \
+		if (_test_stdout < 1) { \
+			fflush (stdout); \
+			dup2 (fileno (_file), STDOUT_FILENO); \
+		} else if (_test_stdout > 1) { \
+			dup2 (_test_oldstdout, STDOUT_FILENO); \
+			close (_test_oldstdout); \
+		} else
+
+/**
+ * TEST_DIVERT_STDERR:
+ * @_file: FILE to send standard error to.
+ *
+ * This macro diverts standard error to a different file for the duration
+ * of a block of code that should follow it.
+ */
+#define TEST_DIVERT_STDERR(_file) \
+	for (int _test_stderr = 0, _test_oldstderr = dup (STDERR_FILENO); \
+	     _test_stderr < 3; _test_stderr++) \
+		if (_test_stderr < 1) { \
+			fflush (stderr); \
+			dup2 (fileno (_file), STDERR_FILENO); \
+		} else if (_test_stderr > 1) { \
+			dup2 (_test_oldstderr, STDERR_FILENO); \
+			close (_test_oldstderr); \
+		} else
 
 /**
  * TEST_FILENAME:
@@ -298,6 +360,109 @@
 		  strrchr (__FILE__, '/') ? strrchr (__FILE__, '/') + 1 : __FILE__, \
 		  __FUNCTION__, __LINE__, getpid ()); \
 	unlink (_var)
+
+/**
+ * TEST_FILE_EQ:
+ * @_file: FILE to read from,
+ * @_line: line to expect.
+ *
+ * Check that the next line in the file @_file is @_line, which should
+ * include the terminating newline if one is expected.
+ **/
+#define TEST_FILE_EQ(_file, _line) \
+	do { \
+		char _test_file[512]; \
+		if (! fgets (_test_file, sizeof (_test_file), (_file))) \
+			TEST_FAILED ("eof on file %p (%s), expected '%s'", \
+				     (_file), #_file, (_line)); \
+		if (strcmp (_test_file, (_line))) \
+			TEST_FAILED ("wrong content in file %p (%s), expected '%s' got '%s'", \
+			     (_file), #_file, (_line), _test_file); \
+	} while (0)
+
+/**
+ * TEST_FILE_EQ_N:
+ * @_file: FILE to read from,
+ * @_line: line to expect.
+ *
+ * Check that the start of the next line in the file @_file is @_line, up to
+ * the length of that argument.
+ **/
+#define TEST_FILE_EQ_N(_file, _line) \
+	do { \
+		char _test_file[512]; \
+		if (! fgets (_test_file, sizeof (_test_file), (_file))) \
+			TEST_FAILED ("eof on file %p (%s), expected '%s'", \
+				     (_file), #_file, (_line)); \
+		if (strncmp (_test_file, (_line), strlen (_line))) \
+			TEST_FAILED ("wrong content in file %p (%s), expected '%.*s' got '%.*s'", \
+			     (_file), #_file, strlen (_line), (_line), strlen (_line), _test_file); \
+	} while (0)
+
+/**
+ * TEST_FILE_NE:
+ * @_file: FILE to read from,
+ * @_line: line to expect.
+ *
+ * Check that the next line in the file @_file is not @_line, but also not
+ * end of file.
+ **/
+#define TEST_FILE_NE(_file, _line) \
+	do { \
+		char _test_file[512]; \
+		if (! fgets (_test_file, sizeof (_test_file), (_file))) \
+			TEST_FAILED ("eof on file %p (%s), expected line other than '%s'", \
+				     (_file), #_file, (_line)); \
+		if (strcmp (_test_file, (_line))) \
+			TEST_FAILED ("wrong content in file %p (%s), got unexpected '%s'", \
+			     (_file), #_file, (_line)); \
+	} while (0)
+
+/**
+ * TEST_FILE_NE_N:
+ * @_file: FILE to read from,
+ * @_line: line to expect.
+ *
+ * Check that the next line in the file @_file does not start with @_line,
+ * up to the length of that argument; but also not end of file.
+ **/
+#define TEST_FILE_NE_N(_file, _line) \
+	do { \
+		char _test_file[512]; \
+		if (! fgets (_test_file, sizeof (_test_file), (_file))) \
+			TEST_FAILED ("eof on file %p (%s), expected line other than '%s'", \
+				     (_file), #_file, (_line)); \
+		if (strncmp (_test_file, (_line), strlen (_line))) \
+			TEST_FAILED ("wrong content in file %p (%s), got unexpected '%.*s'", \
+			     (_file), #_file, strlen (_line), (_line)); \
+	} while (0)
+
+/**
+ * TEST_FILE_END:
+ * @_file: FILE to check.
+ *
+ * Check that the end of the file @_file has been reached, and that there
+ * are no more lines to read.
+ **/
+#define TEST_FILE_END(_file) \
+	do { \
+		char _test_file[512];\
+		if (fgets (_test_file, sizeof (_test_file), (_file))) \
+			TEST_FAILED ("wrong content in file %p (%s), expected eof got '%s'", \
+				     (_file), #_file, _test_file); \
+	} while (0)
+
+/**
+ * TEST_FILE_RESET:
+ * @_file: FILE to reset.
+ *
+ * This macro may be used to reset a temporary file such that it can be
+ * treated as a new one.
+ **/
+#define TEST_FILE_RESET(_file) \
+	fflush (_file); \
+	rewind (_file); \
+	ftruncate (fileno (_file), 0)
 
 
 /**

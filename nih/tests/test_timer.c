@@ -195,7 +195,7 @@ test_poll (void)
 	/* Check that we can poll for timers to be triggered, and have the
 	 * first timeout run.  Once run, the timer should be destroyed.
 	 */
-	TEST_FEATURE ("...with timeout");
+	TEST_FEATURE ("with timeout");
 	callback_called = 0;
 	last_data = NULL;
 	last_timer = NULL;
@@ -213,7 +213,7 @@ test_poll (void)
 	/* Check that we can poll again and have the periodic timer run,
 	 * that should be rescheduled instead of destroyed.
 	 */
-	TEST_FEATURE ("...with periodic timer");
+	TEST_FEATURE ("with periodic timer");
 	callback_called = 0;
 	last_data = NULL;
 	last_timer = NULL;

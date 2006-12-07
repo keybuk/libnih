@@ -19,18 +19,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include <config.h>
+#include <nih/test.h>
 
-#include <sys/select.h>
-
+#include <fcntl.h>
 #include <errno.h>
 #include <stdio.h>
-#include <assert.h>
 #include <signal.h>
 #include <string.h>
 #include <unistd.h>
-#include <fcntl.h>
 
+#include <nih/macros.h>
 #include <nih/alloc.h>
 #include <nih/list.h>
 #include <nih/io.h>
@@ -52,65 +50,51 @@ my_watcher (void *data, NihIoWatch *watch, NihIoEvents events)
 	last_events = events;
 }
 
-int
+void
 test_add_watch (void)
 {
 	NihIoWatch *watch;
-	int         ret = 0, fds[2];
+	int         fds[2];
 
-	printf ("Testing nih_io_add_watch()\n");
-	assert (pipe (fds) == 0);
+	/* Check that we can add a watch on a file descriptor and that the
+	 * structure is properly filled in and placed in a list.
+	 */
+	TEST_FUNCTION ("nih_io_add_watch");
+	pipe (fds);
 	watch = nih_io_add_watch (NULL, fds[0], NIH_IO_READ,
-				  my_watcher, &ret);
+				  my_watcher, &watch);
 
-	/* File descriptor should be that given */
-	if (watch->fd != fds[0]) {
-		printf ("BAD: file descriptor set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Events mask should be that given */
-	if (watch->events != NIH_IO_READ) {
-		printf ("BAD: watcher events set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Watcher function should be that given */
-	if (watch->watcher != my_watcher) {
-		printf ("BAD: watcher function set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Watcher data should be that given */
-	if (watch->data != &ret) {
-		printf ("BAD: watcher data set incorrectly.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (watch, sizeof (NihIoWatch));
+	TEST_EQ (watch->fd, fds[0]);
+	TEST_EQ (watch->events, NIH_IO_READ);
+	TEST_EQ_P (watch->watcher, my_watcher);
+	TEST_EQ_P (watch->data, &watch);
 
 	nih_list_free (&watch->entry);
 
 	close (fds[0]);
 	close (fds[1]);
-
-	return ret;
 }
 
 
-int
+void
 test_select_fds (void)
 {
 	NihIoWatch *watch1, *watch2, *watch3;
 	fd_set      readfds, writefds, exceptfds;
-	int         ret = 0, nfds, fds[2];
+	int         nfds, fds[2];
 
-	printf ("Testing nih_io_select_fds()\n");
-	assert (pipe (fds) == 0);
+	/* Check that the select file descriptor sets are correctly filled
+	 * based on a set of watches we add.
+	 */
+	TEST_FUNCTION ("nih_io_select_fds");
+	pipe (fds);
 	watch1 = nih_io_add_watch (NULL, fds[0], NIH_IO_READ,
-				   my_watcher, &ret);
+				   my_watcher, &watch1);
 	watch2 = nih_io_add_watch (NULL, fds[1], NIH_IO_WRITE,
-				   my_watcher, &ret);
+				   my_watcher, &watch2);
 	watch3 = nih_io_add_watch (NULL, fds[0], NIH_IO_EXCEPT,
-				   my_watcher, &ret);
+				   my_watcher, &watch3);
 
 	nfds = 0;
 	FD_ZERO (&readfds);
@@ -118,468 +102,274 @@ test_select_fds (void)
 	FD_ZERO (&exceptfds);
 	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
 
-	/* Should be highest fd plus one */
-	if (nfds != MAX (fds[0], fds[1]) + 1) {
-		printf ("BAD: nfds wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ (nfds, MAX (fds[0], fds[1]) + 1);
+	TEST_TRUE (FD_ISSET (fds[0], &readfds));
+	TEST_FALSE (FD_ISSET (fds[0], &writefds));
+	TEST_TRUE (FD_ISSET (fds[0], &exceptfds));
+	TEST_FALSE (FD_ISSET (fds[1], &readfds));
+	TEST_TRUE (FD_ISSET (fds[1], &writefds));
+	TEST_FALSE (FD_ISSET (fds[1], &exceptfds));
 
-	/* First entry's file descriptor should be watched for read */
-	if (! FD_ISSET (watch1->fd, &readfds)) {
-		printf ("BAD: first file descriptor not watched.\n");
-		ret = 1;
-	}
-
-	/* First entry's file descriptor should not be watched for write */
-	if (FD_ISSET (watch1->fd, &writefds)) {
-		printf ("BAD: first file descriptor watched unexpectedly.\n");
-		ret = 1;
-	}
-
-	/* Second entry's file descriptor should be watched for write */
-	if (! FD_ISSET (watch2->fd, &writefds)) {
-		printf ("BAD: second file descriptor not watched.\n");
-		ret = 1;
-	}
-
-	/* Second entry's file descriptor should not be watched for others */
-	if (FD_ISSET (watch2->fd, &readfds)
-	    || FD_ISSET (watch2->fd, &exceptfds)) {
-		printf ("BAD: second file descriptor watched unexpectedly.\n");
-		ret = 1;
-	}
-
-	/* Third entry's file descriptor should be watched for exception */
-	if (! FD_ISSET (watch3->fd, &exceptfds)) {
-		printf ("BAD: third file descriptor not watched.\n");
-		ret = 1;
-	}
-
-	nih_list_free (&watch3->entry);
-	nih_list_free (&watch2->entry);
 	nih_list_free (&watch1->entry);
+	nih_list_free (&watch2->entry);
+	nih_list_free (&watch3->entry);
 
 	close (fds[0]);
 	close (fds[1]);
-
-	return ret;
 }
 
-int
+void
 test_handle_fds (void)
 {
 	NihIoWatch    *watch1, *watch2, *watch3;
 	fd_set         readfds, writefds, exceptfds;
-	int            ret = 0, fds[2];
+	int            fds[2];
 
-	printf ("Testing nih_io_handle_fds()\n");
-	assert (pipe (fds) == 0);
+	TEST_FUNCTION ("nih_io_handle_fds");
+	pipe (fds);
 	watch1 = nih_io_add_watch (NULL, fds[0], NIH_IO_READ,
-				   my_watcher, &ret);
+				   my_watcher, &watch1);
 	watch2 = nih_io_add_watch (NULL, fds[1], NIH_IO_WRITE,
-				   my_watcher, &ret);
+				   my_watcher, &watch2);
 	watch3 = nih_io_add_watch (NULL, fds[0], NIH_IO_EXCEPT,
-				   my_watcher, &ret);
+				   my_watcher, &watch3);
 
 	FD_ZERO (&readfds);
 	FD_ZERO (&writefds);
 	FD_ZERO (&exceptfds);
 
+	/* Check that something watching a file descriptor for readability
+	 * is called, with the right arguments passed; and that another
+	 * watch on the same file descriptor for different events is not
+	 * called.
+	 */
+	TEST_FEATURE ("with select for read");
 	watcher_called = 0;
 	last_data = NULL;
 	last_watch = NULL;
 	last_events = 0;
-	FD_SET (watch1->fd, &readfds);
+	FD_SET (fds[0], &readfds);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	/* Watcher should be called just once */
-	if (watcher_called != 1) {
-		printf ("BAD: watcher called incorrect number of times.\n");
-		ret = 1;
-	}
-
-	/* Last data should be pointer from watch */
-	if (last_data != &ret) {
-		printf ("BAD: last data pointer wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Last watch should be first one */
-	if (last_watch != watch1) {
-		printf ("BAD: last watch wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Last events should be those we set */
-	if (last_events != NIH_IO_READ) {
-		printf ("BAD: last events wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ (watcher_called, 1);
+	TEST_EQ (last_events, NIH_IO_READ);
+	TEST_EQ_P (last_watch, watch1);
+	TEST_EQ_P (last_data, &watch1);
 
 
+	/* Check that something watching a file descriptor for an exception
+	 * is called, and that the watch on the same descriptor for reading
+	 * is not called.
+	 */
+	TEST_FEATURE ("with select for exception");
 	watcher_called = 0;
 	last_data = NULL;
 	last_watch = NULL;
 	last_events = 0;
 	FD_ZERO (&readfds);
-	FD_SET (watch3->fd, &exceptfds);
+	FD_SET (fds[0], &exceptfds);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	/* Watcher should be called just once */
-	if (watcher_called != 1) {
-		printf ("BAD: watcher called incorrect number of times.\n");
-		ret = 1;
-	}
-
-	/* Last data should be pointer from watch */
-	if (last_data != &ret) {
-		printf ("BAD: last data pointer wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Last watch should be third one */
-	if (last_watch != watch3) {
-		printf ("BAD: last watch wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Last events should be those we set */
-	if (last_events != NIH_IO_EXCEPT) {
-		printf ("BAD: last events wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ (watcher_called, 1);
+	TEST_EQ (last_events, NIH_IO_EXCEPT);
+	TEST_EQ_P (last_watch, watch3);
+	TEST_EQ_P (last_data, &watch3);
 
 
+	/* Check that nothing is called if the file descriptor and events
+	 * being polled don't match anything.
+	 */
+	TEST_FEATURE ("with unwatched select");
 	watcher_called = 0;
 	FD_ZERO (&exceptfds);
-	FD_SET (watch2->fd, &exceptfds);
+	FD_SET (fds[1], &exceptfds);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	/* Watcher should not be called */
-	if (watcher_called != 0) {
-		printf ("BAD: watcher called incorrect number of times.\n");
-		ret = 1;
-	}
+	TEST_EQ (watcher_called, 0);
 
 
-	nih_list_free (&watch3->entry);
-	nih_list_free (&watch2->entry);
 	nih_list_free (&watch1->entry);
+	nih_list_free (&watch2->entry);
+	nih_list_free (&watch3->entry);
 
 	close (fds[0]);
 	close (fds[1]);
-
-	return ret;
 }
 
 
-int
+void
 test_buffer_new (void)
 {
 	NihIoBuffer *buf;
-	int          ret = 0;
 
-	printf ("Testing nih_io_buffer_new()\n");
+	/* Check that we can create a new empty buffer, and that the
+	 * structure members are correct.
+	 */
+	TEST_FUNCTION ("nih_io_buffer_new");
 	buf = nih_io_buffer_new (NULL);
 
-	/* Buffer should be NULL */
-	if (buf->buf != NULL) {
-		printf ("BAD: buffer pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Buffer size should be zero */
-	if (buf->size != 0) {
-		printf ("BAD: buffer size set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Buffer length should be zero */
-	if (buf->len != 0) {
-		printf ("BAD: buffer length set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Should be allocated with nih_alloc */
-	if (nih_alloc_size (buf) != sizeof (NihIoBuffer)) {
-		printf ("BAD: nih_alloc was not used.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (buf, sizeof (NihIoBuffer));
+	TEST_EQ_P (buf->buf, NULL);
+	TEST_EQ (buf->size, 0);
+	TEST_EQ (buf->len, 0);
 
 	nih_free (buf);
-
-	return ret;
 }
 
-int
+void
 test_buffer_resize (void)
 {
 	NihIoBuffer *buf;
-	int          ret = 0;
 
-	printf ("Testing nih_io_buffer_resize()\n");
+	TEST_FUNCTION ("nih_io_buffer_resize");
 	buf = nih_io_buffer_new (NULL);
 
-
-	printf ("...with empty buffer and half increase\n");
+	/* Check that we can resize a NULL buffer; we ask for half a page
+	 * and expect to get a full page allocated as a child of the buffer
+	 * itself.
+	 */
+	TEST_FEATURE ("with empty buffer and half increase");
 	nih_io_buffer_resize (buf, BUFSIZ / 2);
 
-	/* Size should now be BUFSIZ */
-	if (buf->size != BUFSIZ) {
-		printf ("BAD: buffer size wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Buffer should be the same size */
-	if (nih_alloc_size (buf->buf) != buf->size) {
-		printf ("BAD: buffer allocation wasn't the same.\n");
-		ret = 1;
-	}
-
-	/* Parent of the buffer should the struct */
-	if (nih_alloc_parent (buf->buf) != buf) {
-		printf ("BAD: nih_alloc parent wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_PARENT (buf->buf, buf);
+	TEST_ALLOC_SIZE (buf->buf, BUFSIZ);
+	TEST_EQ (buf->size, BUFSIZ);
+	TEST_EQ (buf->len, 0);
 
 
-	printf ("...with empty but alloc'd buffer and full increase\n");
+	/* Check that we can increase the size by a full page, and not
+	 * have anything change because there's no space used yet.
+	 */
+	TEST_FEATURE ("with empty but alloc'd buffer and full increase");
 	nih_io_buffer_resize (buf, BUFSIZ);
 
-	/* Size should still be BUFSIZ (we didn't increase the length) */
-	if (buf->size != BUFSIZ) {
-		printf ("BAD: buffer size wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Buffer should be the same size */
-	if (nih_alloc_size (buf->buf) != buf->size) {
-		printf ("BAD: buffer allocation wasn't the same.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (buf->buf, BUFSIZ);
+	TEST_EQ (buf->size, BUFSIZ);
 
 
-	printf ("...with empty but alloc'd buffer and larger increase\n");
+	/* Check that we can increase the size beyond a full page, and
+	 * get another page of allocated space.
+	 */
+	TEST_FEATURE ("with empty but alloc'd buffer and larger increase");
 	nih_io_buffer_resize (buf, BUFSIZ + BUFSIZ / 2);
 
-	/* Size should now be twice BUFSIZ (still didn't increase length) */
-	if (buf->size != BUFSIZ * 2) {
-		printf ("BAD: buffer size wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Buffer should be the same size */
-	if (nih_alloc_size (buf->buf) != buf->size) {
-		printf ("BAD: buffer allocation wasn't the same.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (buf->buf, BUFSIZ * 2);
+	TEST_EQ (buf->size, BUFSIZ * 2);
 
 
-	printf ("...with alloc'd buffer and no data\n");
+	/* Check that we can drop the size of an allocated but empty buffer
+	 * back to zero and have the buffer freed.
+	 */
+	TEST_FEATURE ("with alloc'd buffer and no data");
 	nih_io_buffer_resize (buf, 0);
 
-	/* Size should now drop to zero again (still nothing in length) */
-	if (buf->size != 0) {
-		printf ("BAD: buffer size wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Buffer should have been freed */
-	if (buf->buf != NULL) {
-		printf ("BAD: buffer wasn't freed.\n");
-		ret = 1;
-	}
+	TEST_EQ (buf->size, 0);
+	TEST_EQ_P (buf->buf, NULL);
 
 
-	printf ("...with part-full buffer and increase\n");
+	/* Check that asking for a page more space when we claim to be
+	 * using half a page gives us a full two pages of space.
+	 */
+	TEST_FEATURE ("with part-full buffer and increase");
 	buf->len = BUFSIZ / 2;
 	nih_io_buffer_resize (buf, BUFSIZ);
 
-	/* Size should be twice BUFSIZ (enough for both bits) */
-	if (buf->size != BUFSIZ * 2) {
-		printf ("BAD: buffer size wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Buffer should be the same size */
-	if (nih_alloc_size (buf->buf) != buf->size) {
-		printf ("BAD: buffer allocation wasn't the same.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (buf->buf, BUFSIZ * 2);
+	TEST_EQ (buf->size, BUFSIZ * 2);
+	TEST_EQ (buf->len, BUFSIZ / 2);
 
 
-	printf ("...with no change\n");
+	/* Check that asking for an increase smaller than the difference
+	 * between the buffer size and length has no effect.
+	 */
+	TEST_FEATURE ("with no change");
 	buf->len = BUFSIZ + BUFSIZ / 2;
 	nih_io_buffer_resize (buf, 80);
 
-	/* Size should still be twice BUFSIZ (it'll still fit) */
-	if (buf->size != BUFSIZ * 2) {
-		printf ("BAD: buffer size wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Buffer should be the same size */
-	if (nih_alloc_size (buf->buf) != buf->size) {
-		printf ("BAD: buffer allocation wasn't the same.\n");
-		ret = 1;
-	}
-
+	TEST_ALLOC_SIZE (buf->buf, BUFSIZ * 2);
+	TEST_EQ (buf->size, BUFSIZ * 2);
+	TEST_EQ (buf->len, BUFSIZ + BUFSIZ / 2);
 
 	nih_free (buf);
-
-	return ret;
 }
 
-int
+void
 test_buffer_pop (void)
 {
 	NihIoBuffer *buf;
 	char        *str;
-	int          ret = 0;
 
-	printf ("Testing nih_io_buffer_pop()\n");
+	TEST_FUNCTION ("nih_io_buffer_pop");
 	buf = nih_io_buffer_new (NULL);
 	nih_io_buffer_push (buf, "this is a test of the buffer code", 33);
 
 
-	printf ("...with full buffer\n");
+	/* Check that we can pop some bytes out of a buffer, and have a
+	 * NULL-terminated string returned that is allocated with nih_alloc.
+	 * The buffer should be shrunk appropriately and moved up.
+	 */
+	TEST_FEATURE ("with full buffer");
 	str = nih_io_buffer_pop (NULL, buf, 14);
 
-	/* String should be NULL terminated */
-	if (str[14] != '\0') {
-		printf ("BAD: return value wasn't NULL terminated.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (str, 15);
+	TEST_EQ (str[14], '\0');
+	TEST_EQ_STR (str, "this is a test");
 
-	/* String returned should be data from the front */
-	if (strcmp (str, "this is a test")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Should have been allocated with nih_alloc */
-	if (nih_alloc_size (str) != 15) {
-		printf ("BAD: nih_alloc was not used.\n");
-		ret = 1;
-	}
-
-	/* Buffer length should now be 19 */
-	if (buf->len != 19) {
-		printf ("BAD: buffer length wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Buffer should have been moved up */
-	if (strncmp (buf->buf, " of the buffer code", 19)) {
-		printf ("BAD: buffer contents weren't what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ (buf->len, 19);
+	TEST_EQ_MEM (buf->buf, " of the buffer code", 19);
 
 	nih_free (str);
 
 
-	printf ("...with request to empty buffer\n");
+	/* Check that we can empty the buffer and the buffer is freed. */
+	TEST_FEATURE ("with request to empty buffer");
 	str = nih_io_buffer_pop (NULL, buf, 19);
 
-	/* String should be NULL terminated */
-	if (str[19] != '\0') {
-		printf ("BAD: return value wasn't NULL terminated.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (str, 20);
+	TEST_EQ (str[19], '\0');
+	TEST_EQ_STR (str, " of the buffer code");
 
-	/* String returned should be the data */
-	if (strcmp (str, " of the buffer code")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Should have been allocated with nih_alloc */
-	if (nih_alloc_size (str) != 20) {
-		printf ("BAD: nih_alloc was not used.\n");
-		ret = 1;
-	}
-
-	/* Buffer length should now be zero */
-	if (buf->len != 0) {
-		printf ("BAD: buffer length wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Buffer size should now be zero */
-	if (buf->size != 0) {
-		printf ("BAD: buffer size wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Buffer should have been freed */
-	if (buf->buf != NULL) {
-		printf ("BAD: buffer wasn't freed.\n");
-		ret = 1;
-	}
+	TEST_EQ (buf->len, 0);
+	TEST_EQ (buf->size, 0);
+	TEST_EQ_P (buf->buf, NULL);
 
 	nih_free (str);
 
 	nih_free (buf);
-
-	return 0;
 }
 
-int
+void
 test_buffer_push (void)
 {
 	NihIoBuffer *buf;
-	int          ret = 0;
 
-	printf ("Testing nih_io_buffer_push()\n");
+	TEST_FUNCTION ("nih_io_buffer_push");
 	buf = nih_io_buffer_new (NULL);
 
-	printf ("...with empty buffer\n");
+	/* Check that we can push data into an empty buffer, which will
+	 * store it in the buffer.
+	 */
+	TEST_FEATURE ("with empty buffer");
 	nih_io_buffer_push (buf, "test", 4);
 
-	/* Buffer length should be four */
-	if (buf->len != 4) {
-		printf ("BAD: buffer length wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Buffer should contain our data */
-	if (strncmp (buf->buf, "test", 4)) {
-		printf ("BAD: buffer contents weren't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Size should be BUFSIZ */
-	if (buf->size != BUFSIZ) {
-		printf ("BAD: buffer size wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Buffer should be the same size */
-	if (nih_alloc_size (buf->buf) != buf->size) {
-		printf ("BAD: buffer allocation wasn't the same.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (buf->buf, BUFSIZ);
+	TEST_EQ (buf->size, BUFSIZ);
+	TEST_EQ (buf->len, 4);
+	TEST_EQ_MEM (buf->buf, "test", 4);
 
 
-	printf ("...with data in the buffer\n");
+	/* Check that we can push more data into that buffer, which will
+	 * append it to the data already there.
+	 */
+	TEST_FEATURE ("with data in the buffer");
 	nih_io_buffer_push (buf, "ing the buffer code", 14);
 
-	/* Buffer length should be eighteen */
-	if (buf->len != 18) {
-		printf ("BAD: buffer length wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Buffer should contain our data (note we didn't copy it all) */
-	if (strncmp (buf->buf, "testing the buffer", 18)) {
-		printf ("BAD: buffer contents weren't what we expected.\n");
-		ret = 1;
-	}
-
+	TEST_ALLOC_SIZE (buf->buf, BUFSIZ);
+	TEST_EQ (buf->size, BUFSIZ);
+	TEST_EQ (buf->len, 18);
+	TEST_EQ_MEM (buf->buf, "testing the buffer code", 18);
 
 	nih_free (buf);
-
-	return ret;
 }
 
 
@@ -592,9 +382,9 @@ static size_t last_len = 0;
 
 static void
 my_reader (void       *data,
-	    NihIo      *io,
-	    const char *str,
-	    size_t      len)
+	   NihIo      *io,
+	   const char *str,
+	   size_t      len)
 {
 	read_called++;
 	last_data = data;
@@ -604,7 +394,7 @@ my_reader (void       *data,
 
 static void
 my_close_handler (void  *data,
-	     NihIo *io)
+		  NihIo *io)
 {
 	last_data = data;
 	close_called++;
@@ -612,110 +402,55 @@ my_close_handler (void  *data,
 
 static void
 my_error_handler (void  *data,
-	     NihIo *io)
+		  NihIo *io)
 {
 	last_data = data;
 	last_error = nih_error_get ();
 	error_called++;
 }
 
-
-int
+void
 test_reopen (void)
 {
-	struct sigaction  oldact;
 	NihIo            *io;
-	int               ret = 0, fds[2], flags;
+	int               fds[2];
+	struct sigaction  oldact;
 
-	printf ("Testing nih_io_reopen()\n");
-	assert (pipe (fds) == 0);
-	assert ((flags = fcntl (fds[0], F_GETFL)) >= 0);
-	assert (! (flags & O_NONBLOCK));
-
+	/* Check that we can create an NihIo structure from an existing
+	 * file descriptor; the structure should be correctly populated
+	 * and assigned an NihIoWatch.  The file descriptor should be
+	 * altered so that it is non-blocking.
+	 */
+	TEST_FUNCTION ("nih_io_reopen");
+	pipe (fds);
 	io = nih_io_reopen (NULL, fds[0], my_reader, my_close_handler,
-			    my_error_handler, &ret);
+			    my_error_handler, &io);
 
-	/* Reader should be set */
-	if (io->reader != my_reader) {
-		printf ("BAD: reader set incorrectly.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (io, sizeof (NihIo));
+	TEST_ALLOC_PARENT (io->send_buf, io);
+	TEST_ALLOC_PARENT (io->recv_buf, io);
+	TEST_EQ_P (io->reader, my_reader);
+	TEST_EQ_P (io->close_handler, my_close_handler);
+	TEST_EQ_P (io->error_handler, my_error_handler);
+	TEST_EQ_P (io->data, &io);
 
-	/* Close handler should be set */
-	if (io->close_handler != my_close_handler) {
-		printf ("BAD: close handler set incorrectly.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_PARENT (io->watch, io);
+	TEST_EQ (io->watch->fd, fds[0]);
+	TEST_EQ (io->watch->events, NIH_IO_READ);
+	TEST_TRUE (fcntl (fds[0], F_GETFL) & O_NONBLOCK);
 
-	/* Error handler should be set */
-	if (io->error_handler != my_error_handler) {
-		printf ("BAD: error handler set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Data should be set */
-	if (io->data != &ret) {
-		printf ("BAD: data pointer set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Watch should be on file descriptor given */
-	if (io->watch->fd != fds[0]) {
-		printf ("BAD: file descriptor set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Events should be read */
-	if (io->watch->events != NIH_IO_READ) {
-		printf ("BAD: watch events set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* SIGPIPE should be ignored */
-	assert (sigaction (SIGPIPE, NULL, &oldact) == 0);
-	if (oldact.sa_handler != SIG_IGN) {
-		printf ("BAD: PIPE signal not ignored.\n");
-		ret = 1;
-	}
-
-	/* Socket should be non-blocking */
-	assert ((flags = fcntl (fds[0], F_GETFL)) >= 0);
-	if (! (flags & O_NONBLOCK)) {
-		printf ("BAD: file descriptor not set O_NONBLOCK.\n");
-		ret = 1;
-	}
-
-	/* Should be allocated with nih_alloc */
-	if (nih_alloc_size (io) != sizeof (NihIo)) {
-		printf ("BAD: nih_alloc wasn't used.\n");
-		ret = 1;
-	}
-
-	/* nih_alloc parent of watch should be io structure */
-	if (nih_alloc_parent (io->watch) != io) {
-		printf ("BAD: nih_alloc parent wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* nih_alloc parent of send_buf should be io structure */
-	if (nih_alloc_parent (io->send_buf) != io) {
-		printf ("BAD: nih_alloc parent wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* nih_alloc parent of recv_buf should be io structure */
-	if (nih_alloc_parent (io->recv_buf) != io) {
-		printf ("BAD: nih_alloc parent wasn't what we expected.\n");
-		ret = 1;
-	}
 
 	nih_free (io);
 
 	close (fds[0]);
 	close (fds[1]);
 
-	return ret;
+
+	/* Check that the SIGPIPE signal will now be ignored */
+	sigaction (SIGPIPE, NULL, &oldact);
+	TEST_EQ (oldact.sa_handler, SIG_IGN);
 }
+
 
 static int free_called;
 
@@ -727,850 +462,543 @@ destructor_called (void *ptr)
 	return 0;
 }
 
-int
+void
 test_shutdown (void)
 {
 	NihIo  *io;
+	int     fds[2];
 	fd_set  readfds, writefds, exceptfds;
-	int     ret = 0, fds[2], flags;
 
-	printf ("Testing nih_io_shutdown()\n");
-
-	assert (pipe (fds) == 0);
+	TEST_FUNCTION ("nih_io_shutdown");
+	pipe (fds);
 	io = nih_io_reopen (NULL, fds[0], NULL, NULL, NULL, NULL);
 	nih_io_buffer_push (io->recv_buf, "some data", 9);
-	nih_alloc_set_destructor (io, destructor_called);
+
 	free_called = 0;
+	nih_alloc_set_destructor (io, destructor_called);
+
+	/* Check that shutting down a socket with data in the buffer
+	 * merely marks it as shutdown and neither closes the socket or
+	 * frees the structure.
+	 */
+	TEST_FEATURE ("with data in the buffer");
 	nih_io_shutdown (io);
 
-	/* Socket should have been marked as shutdown */
-	if (! io->shutdown) {
-		printf ("BAD: shutdown not set correctly.\n");
-		ret = 1;
-	}
-
-	/* Descriptor should not yet have been closed */
-	flags = fcntl (fds[0], F_GETFD);
-	if (flags < 0) {
-		printf ("BAD: file descriptor closed unexpectedly.\n");
-		ret = 1;
-	}
-
-	/* Should not have been freed */
-	if (free_called) {
-		printf ("BAD: structure freed unexpectedly.\n");
-		ret = 1;
-	}
+	TEST_TRUE (io->shutdown);
+	TEST_FALSE (free_called);
+	TEST_GE (fcntl (fds[0], F_GETFD), 0);
 
 
-	/* Now handle the fds (which will take the data off) */
+	/* Check that handling the data in the buffer, emptying it, causes
+	 * the shutdown socket to be closed and the structure to be freed.
+	 */
+	TEST_FEATURE ("with data being handled");
 	FD_ZERO (&readfds);
 	FD_ZERO (&writefds);
 	FD_ZERO (&exceptfds);
 	FD_SET (fds[0], &readfds);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	/* Descriptor should have been closed */
-	flags = fcntl (fds[0], F_GETFD);
-	if ((flags != -1) || (errno != EBADF)) {
-		printf ("BAD: file descriptor was not closed.\n");
-		ret = 1;
-	}
-
-	/* Should have been freed */
-	if (! free_called) {
-		printf ("BAD: structure was not freed.\n");
-		ret = 1;
-	}
+	TEST_TRUE (free_called);
+	TEST_LT (fcntl (fds[0], F_GETFD), 0);
+	TEST_EQ (errno, EBADF);
 
 	close (fds[1]);
-
-	return ret;
 }
 
-int
+void
 test_close (void)
 {
 	NihIo *io;
-	int    ret = 0, fds[2], flags;
+	int    fds[2];
 
-	printf ("Testing nih_io_close()\n");
+	TEST_FUNCTION ("nih_io_close");
 
-	printf ("...with open file descriptor\n");
-	assert (pipe (fds) == 0);
-	io = nih_io_reopen (NULL, fds[0], NULL, NULL, my_error_handler, &ret);
-	nih_alloc_set_destructor (io, destructor_called);
-	free_called = 0;
+	/* Check that closing an open file descriptor doesn't call the error
+	 * handler, and just closes the fd and frees the structure.
+	 */
+	TEST_FEATURE ("with open file descriptor");
+	pipe (fds);
 	error_called = 0;
+	io = nih_io_reopen (NULL, fds[0], NULL, NULL, my_error_handler, &io);
+
+	free_called = 0;
+	nih_alloc_set_destructor (io, destructor_called);
+
 	nih_io_close (io);
 
-	/* Error handler should not be called */
-	if (error_called) {
-		printf ("BAD: error handler called unexpectedly.\n");
-		ret = 1;
-	}
-
-	/* Descriptor should have been closed */
-	flags = fcntl (fds[0], F_GETFD);
-	if ((flags != -1) || (errno != EBADF)) {
-		printf ("BAD: file descriptor was not closed.\n");
-		ret = 1;
-	}
-
-	/* Should have been freed */
-	if (! free_called) {
-		printf ("BAD: structure was not freed.\n");
-		ret = 1;
-	}
+	TEST_FALSE (error_called);
+	TEST_TRUE (free_called);
+	TEST_LT (fcntl (fds[0], F_GETFD), 0);
+	TEST_EQ (errno, EBADF);
 
 	close (fds[1]);
 
 
-	printf ("...with closed file descriptor\n");
-	assert (pipe (fds) == 0);
-	io = nih_io_reopen (NULL, fds[0], NULL, NULL, my_error_handler, &ret);
-	nih_alloc_set_destructor (io, destructor_called);
-	free_called = 0;
+	/* Check that closing a file descriptor that's already closed
+	 * results in the error handler being called with an EBADF system
+	 * error and the data pointer, followed by the structure being
+	 * freed.
+	 */
+	TEST_FEATURE ("with closed file descriptor");
+	pipe (fds);
 	error_called = 0;
 	last_data = NULL;
 	last_error = NULL;
+	io = nih_io_reopen (NULL, fds[0], NULL, NULL, my_error_handler, &io);
+
+	free_called = 0;
+	nih_alloc_set_destructor (io, destructor_called);
+
 	close (fds[0]);
 	nih_io_close (io);
 
-	/* Error handler should have been called */
-	if (! error_called) {
-		printf ("BAD: error handler wasn't called.\n");
-		ret = 1;
-	}
-
-	/* Error handler should have been passed data */
-	if (last_data != &ret) {
-		printf ("BAD: data pointer wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Error should be EBADF */
-	if (last_error->number != EBADF) {
-		printf ("BAD: error wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Should have been freed */
-	if (! free_called) {
-		printf ("BAD: structure was not freed.\n");
-		ret = 1;
-	}
+	TEST_TRUE (error_called);
+	TEST_EQ (last_error->number, EBADF);
+	TEST_EQ_P (last_data, &io);
+	TEST_TRUE (free_called);
 
 	nih_free (last_error);
 
 	close (fds[1]);
-
-	return ret;
 }
 
-
-int
+void
 test_watcher (void)
 {
 	NihIo  *io;
-	FILE   *output;
-	char    text[80];
+	int     fds[2];
 	fd_set  readfds, writefds, exceptfds;
-	int     ret = 0, fds[2], flags;
+	FILE   *output;
 
-	printf ("Testing nih_io_watcher()\n");
+	TEST_FUNCTION ("nih_io_watcher");
 
-	printf ("...with data to read\n");
-	assert (pipe (fds) == 0);
+	/* Check that data to be read on a socket watched by NihIo ends up
+	 * in the receive buffer, and results in the reader function being
+	 * called with the right arguments.
+	 */
+	TEST_FEATURE ("with data to read");
+	pipe (fds);
 	io = nih_io_reopen (NULL, fds[0], my_reader, my_close_handler,
-			    my_error_handler, &ret);
+			    my_error_handler, &io);
 
-	assert (write (fds[1], "this is a test", 14) == 14);
+	write (fds[1], "this is a test", 14);
+
 	FD_ZERO (&readfds);
 	FD_ZERO (&writefds);
 	FD_ZERO (&exceptfds);
 	FD_SET (fds[0], &readfds);
+
 	read_called = 0;
 	last_data = NULL;
 	last_str = NULL;
 	last_len = 0;
+
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	/* Our reader should have been called */
-	if (! read_called) {
-		printf ("BAD: reader wasn't called.\n");
-		ret = 1;
-	}
-
-	/* Should have been passed the data pointer */
-	if (last_data != &ret) {
-		printf ("BAD: data pointer wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Should have been passed the receive buffer */
-	if (last_str != io->recv_buf->buf) {
-		printf ("BAD: str pointer wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Should have been passed the buffer length */
-	if (last_len != io->recv_buf->len) {
-		printf ("BAD: length argument wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Receive buffer should have 14 bytes in it */
-	if (io->recv_buf->len != 14) {
-		printf ("BAD: buffer length wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Receive buffer should have our string in it */
-	if (strncmp (io->recv_buf->buf, "this is a test", 14)) {
-		printf ("BAD: buffer contents weren't what we expected.\n");
-		ret = 1;
-	}
+	TEST_TRUE (read_called);
+	TEST_EQ_P (last_data, &io);
+	TEST_EQ_P (last_str, io->recv_buf->buf);
+	TEST_EQ (last_len, io->recv_buf->len);
+	TEST_EQ (io->recv_buf->len, 14);
+	TEST_EQ_MEM (io->recv_buf->buf, "this is a test", 14);
 
 
-	printf ("...with more data to read\n");
-	assert (write (fds[1], " of the callback code", 19) == 19);
+	/* Check that the reader function is called again when more data
+	 * comes in, and that the buffer contains both sets of data.
+	 */
+	TEST_FEATURE ("with more data to read");
+	write (fds[1], " of the callback code", 19);
+
 	read_called = 0;
 	last_data = NULL;
 	last_str = NULL;
 	last_len = 0;
+
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	/* Our read function should have been called */
-	if (! read_called) {
-		printf ("BAD: reader wasn't called.\n");
-		ret = 1;
-	}
-
-	/* Should have been passed the data pointer */
-	if (last_data != &ret) {
-		printf ("BAD: data pointer wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Should have been passed the receive buffer */
-	if (last_str != io->recv_buf->buf) {
-		printf ("BAD: str pointer wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Should have been passed the buffer length */
-	if (last_len != io->recv_buf->len) {
-		printf ("BAD: length argument wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Receive buffer should have 33 bytes in it */
-	if (io->recv_buf->len != 33) {
-		printf ("BAD: buffer length wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Receive buffer should have both strings in it */
-	if (strncmp (io->recv_buf->buf, "this is a test of the callback code",
-		     33)) {
-		printf ("BAD: buffer contents weren't what we expected.\n");
-		ret = 1;
-	}
+	TEST_TRUE (read_called);
+	TEST_EQ_P (last_data, &io);
+	TEST_EQ_P (last_str, io->recv_buf->buf);
+	TEST_EQ (last_len, io->recv_buf->len);
+	TEST_EQ (io->recv_buf->len, 33);
+	TEST_EQ_MEM (io->recv_buf->buf, "this is a test of the callback code",
+		     33);
 
 
-	printf ("...with remote end closed\n");
-	assert (close (fds[1]) == 0);
+	/* Check that the reader function is also closed when the remote end
+	 * has been closed; along with the close function.
+	 */
+	TEST_FEATURE ("with remote end closed");
 	read_called = 0;
 	close_called = 0;
 	last_data = NULL;
 	last_str = NULL;
 	last_len = 0;
+
+	close (fds[1]);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	/* Our read function should have been called */
-	if (! read_called) {
-		printf ("BAD: reader wasn't called.\n");
-		ret = 1;
-	}
-
-	/* Should have been passed the receive buffer */
-	if (last_str != io->recv_buf->buf) {
-		printf ("BAD: str pointer wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Should have been passed the buffer length */
-	if (last_len != io->recv_buf->len) {
-		printf ("BAD: length argument wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Receive buffer should have 33 bytes in it */
-	if (io->recv_buf->len != 33) {
-		printf ("BAD: buffer length wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Receive buffer should have both strings in it */
-	if (strncmp (io->recv_buf->buf, "this is a test of the callback code",
-		     33)) {
-		printf ("BAD: buffer contents weren't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Close handler should have also been called */
-	if (! close_called) {
-		printf ("BAD: close handler wasn't called.\n");
-		ret = 1;
-	}
-
-	/* Should have been passed the data pointer */
-	if (last_data != &ret) {
-		printf ("BAD: data pointer wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_TRUE (read_called);
+	TEST_TRUE (close_called);
+	TEST_EQ_P (last_data, &io);
+	TEST_EQ_P (last_str, io->recv_buf->buf);
+	TEST_EQ (last_len, io->recv_buf->len);
+	TEST_EQ (io->recv_buf->len, 33);
+	TEST_EQ_MEM (io->recv_buf->buf, "this is a test of the callback code",
+		     33);
 
 
-	printf ("...with local end closed\n");
-	assert (close (fds[0]) == 0);
+	/* Check that the reader function and error handler are called if
+	 * the local end gets closed.  The error should be EBADF.
+	 */
+	TEST_FEATURE ("with local end closed");
 	read_called = 0;
 	error_called = 0;
 	last_data = NULL;
 	last_str = NULL;
 	last_len = 0;
 	last_error = NULL;
-	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
-
-	/* Our read function should have been called */
-	if (! read_called) {
-		printf ("BAD: reader wasn't called.\n");
-		ret = 1;
-	}
-
-	/* Should have been passed the receive buffer */
-	if (last_str != io->recv_buf->buf) {
-		printf ("BAD: str pointer wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Should have been passed the buffer length */
-	if (last_len != io->recv_buf->len) {
-		printf ("BAD: length argument wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Receive buffer should have 33 bytes in it */
-	if (io->recv_buf->len != 33) {
-		printf ("BAD: buffer length wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Receive buffer should have both strings in it */
-	if (strncmp (io->recv_buf->buf, "this is a test of the callback code",
-		     33)) {
-		printf ("BAD: buffer contents weren't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Error handler should have also been called */
-	if (! error_called) {
-		printf ("BAD: error handler wasn't called.\n");
-		ret = 1;
-	}
-
-	/* Error should be EBADF */
-	if (last_error->number != EBADF) {
-		printf ("BAD: error wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Should have been passed the data pointer */
-	if (last_data != &ret) {
-		printf ("BAD: data pointer wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	nih_free (last_error);
 
 	close (fds[0]);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_TRUE (error_called);
+	TEST_EQ (last_error->number, EBADF);
+	TEST_TRUE (read_called);
+	TEST_EQ_P (last_data, &io);
+	TEST_EQ_P (last_str, io->recv_buf->buf);
+	TEST_EQ (last_len, io->recv_buf->len);
+	TEST_EQ (io->recv_buf->len, 33);
+	TEST_EQ_MEM (io->recv_buf->buf, "this is a test of the callback code",
+		     33);
+
+	nih_free (last_error);
 	nih_free (io);
 
 
-	printf ("...with no close handler\n");
-	assert (pipe (fds) == 0);
-	FD_ZERO (&readfds);
-	io = nih_io_reopen (NULL, fds[0], my_reader, NULL, NULL, &ret);
-	nih_alloc_set_destructor (io, destructor_called);
-	assert (close (fds[1]) == 0);
+	/* Check that if the remote end closes and there's no close handler,
+	 * the file descriptor is closed and the structure freed.
+	 */
+	TEST_FEATURE ("with no close handler");
+	pipe (fds);
+	io = nih_io_reopen (NULL, fds[0], my_reader, NULL, NULL, &io);
+
 	free_called = 0;
+	nih_alloc_set_destructor (io, destructor_called);
+
+	FD_ZERO (&readfds);
 	FD_SET (fds[0], &readfds);
+
+	close (fds[1]);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	/* Local end should have been closed */
-	flags = fcntl (fds[0], F_GETFD);
-	if ((flags != -1) || (errno != EBADF)) {
-		printf ("BAD: file descriptor was not closed.\n");
-		ret = 1;
-	}
-
-	/* Structure should have been freed */
-	if (! free_called) {
-		printf ("BAD: structure was not freed.\n");
-		ret = 1;
-	}
+	TEST_TRUE (free_called);
+	TEST_LT (fcntl (fds[0], F_GETFD), 0);
+	TEST_EQ (errno, EBADF);
 
 
-	printf ("...with no error handler\n");
-	assert (pipe (fds) == 0);
-	FD_ZERO (&readfds);
-	io = nih_io_reopen (NULL, fds[0], my_reader, NULL, NULL, &ret);
-	nih_alloc_set_destructor (io, destructor_called);
-	assert (close (fds[0]) == 0);
-	assert (close (fds[1]) == 0);
+	/* Check that if the local end closes and there's no error handler
+	 * that the structure is freed.
+	 */
+	TEST_FEATURE ("with no error handler");
+	pipe (fds);
+	io = nih_io_reopen (NULL, fds[0], my_reader, NULL, NULL, &io);
+
 	free_called = 0;
+	nih_alloc_set_destructor (io, destructor_called);
+
+	FD_ZERO (&readfds);
 	FD_SET (fds[0], &readfds);
+
 	nih_log_set_priority (NIH_LOG_FATAL);
+	close (fds[0]);
+	close (fds[1]);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 	nih_log_set_priority (NIH_LOG_DEBUG);
 
-	/* Local end should have been closed */
-	flags = fcntl (fds[0], F_GETFD);
-	if ((flags != -1) || (errno != EBADF)) {
-		printf ("BAD: file descriptor was not closed.\n");
-		ret = 1;
-	}
+	TEST_TRUE (free_called);
 
-	/* Structure should have been freed */
-	if (! free_called) {
-		printf ("BAD: structure was not freed.\n");
-		ret = 1;
-	}
-
-
-	printf ("...with data to write\n");
-	output = tmpfile ();
 	FD_ZERO (&readfds);
+
+
+	/* Check that data in the send buffer is written to the file
+	 * descriptor if it's pollable for writing.  Once the data has been
+	 * written, the watch should no longer be checking for writability.
+	 */
+	TEST_FEATURE ("with data to write");
+	output = tmpfile ();
 	io = nih_io_reopen (NULL, fileno (output), NULL,
-			    my_close_handler, my_error_handler, &ret);
+			    my_close_handler, my_error_handler, &io);
+
 	nih_io_printf (io, "this is a test\n");
+
 	FD_SET (fileno (output), &writefds);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	fseek (output, 0, SEEK_SET);
+	rewind (output);
 
-	/* Data should have been written */
-	fgets (text, sizeof (text), output);
-	if (strcmp (text, "this is a test\n")) {
-		printf ("BAD: output wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_FILE_EQ (output, "this is a test\n");
+	TEST_FILE_END (output);
 
-	/* Should no longer be watching for write */
-	if (io->watch->events & NIH_IO_WRITE) {
-		printf ("BAD: watch watching for write unexpectedly.\n");
-		ret = 1;
-	}
+	TEST_EQ (io->send_buf->len, 0);
+	TEST_EQ (io->send_buf->size, 0);
+	TEST_EQ_P (io->send_buf->buf, NULL);
+
+	TEST_FALSE (io->watch->events & NIH_IO_WRITE);
 
 
-	printf ("...with more data to write\n");
+	/* Check that we can write more data and that is send out to the
+	 * file descriptor as well.
+	 */
+	TEST_FEATURE ("with more data to write");
 	nih_io_printf (io, "so is this\n");
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
-	fseek (output, 0, SEEK_SET);
 
-	/* Data should have been written */
-	fgets (text, sizeof (text), output);
-	if (strcmp (text, "this is a test\n")) {
-		printf ("BAD: output wasn't what we expected.\n");
-		ret = 1;
-	}
+	rewind (output);
 
-	fgets (text, sizeof (text), output);
-	if (strcmp (text, "so is this\n")) {
-		printf ("BAD: output wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_FILE_EQ (output, "this is a test\n");
+	TEST_FILE_EQ (output, "so is this\n");
+	TEST_FILE_END (output);
 
-	/* Should no longer be watching for write */
-	if (io->watch->events & NIH_IO_WRITE) {
-		printf ("BAD: watch watching for write unexpectedly.\n");
-		ret = 1;
-	}
+	TEST_EQ (io->send_buf->len, 0);
+	TEST_EQ (io->send_buf->size, 0);
+	TEST_EQ_P (io->send_buf->buf, NULL);
 
+	TEST_FALSE (io->watch->events & NIH_IO_WRITE);
 
-	printf ("...with closed file\n");
 	fclose (output);
+
+
+	/* Check that an attempt to write to a closed file results in the
+	 * error handler being called.
+	 */
+	TEST_FEATURE ("with closed file");
 	error_called = 0;
 	last_data = NULL;
 	last_error = NULL;
+
 	nih_io_printf (io, "this write fails\n");
 	FD_SET (fds[0], &readfds);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	/* Error handler should have been called */
-	if (! error_called) {
-		printf ("BAD: error handler was not called.\n");
-		ret = 1;
-	}
-
-	/* Error should be EBADF */
-	if (last_error->number != EBADF) {
-		printf ("BAD: error wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Should have been passed the data pointer */
-	if (last_data != &ret) {
-		printf ("BAD: data pointer wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_TRUE (error_called);
+	TEST_EQ (last_error->number, EBADF);
+	TEST_EQ_P (last_data, &io);
 
 	nih_free (last_error);
 
 	nih_free (io);
-
-	return ret;
 }
 
 
-int
+void
 test_read (void)
 {
 	NihIo *io;
 	char  *str;
-	int    ret = 0;
 
-	printf ("Testing nih_io_read()\n");
+	TEST_FUNCTION ("nih_io_read");
 	io = nih_io_reopen (NULL, 0, NULL, NULL, NULL, NULL);
 	nih_io_buffer_push (io->recv_buf, "this is a test of the io code", 29);
 
 
-	printf ("...with full buffer\n");
+	/* Check that we can read data in the NihIo receive buffer, and the
+	 * data is returned NULL-terminated, allocated with nih_alloc and
+	 * removed from the front of the receive buffer itself.
+	 */
+	TEST_FEATURE ("with full buffer");
 	str = nih_io_read (NULL, io, 14);
 
-	/* String should be NULL terminated */
-	if (str[14] != '\0') {
-		printf ("BAD: return value wasn't NULL terminated.\n");
-		ret = 1;
-	}
-
-	/* String returned should be data from the front */
-	if (strcmp (str, "this is a test")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Should have been allocated with nih_alloc */
-	if (nih_alloc_size (str) != 15) {
-		printf ("BAD: nih_alloc was not used.\n");
-		ret = 1;
-	}
-
-	/* Buffer length should now be 15 */
-	if (io->recv_buf->len != 15) {
-		printf ("BAD: buffer length wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Buffer should have been moved up */
-	if (strncmp (io->recv_buf->buf, " of the io code", 15)) {
-		printf ("BAD: buffer contents weren't what we expected.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (str, 15);
+	TEST_EQ (str[14], '\0');
+	TEST_EQ_STR (str, "this is a test");
+	TEST_EQ (io->recv_buf->len, 15);
+	TEST_EQ_MEM (io->recv_buf->buf, " of the io code", 15);
 
 	nih_free (str);
 
 
-	printf ("...with request to empty buffer\n");
+	/* Check that we can empty all of the data from the NihIo receive
+	 * buffer, which results in the buffer being freed.
+	 */
+	TEST_FEATURE ("with request to empty buffer");
 	str = nih_io_read (NULL, io, 15);
 
-	/* String should be NULL terminated */
-	if (str[15] != '\0') {
-		printf ("BAD: return value wasn't NULL terminated.\n");
-		ret = 1;
-	}
-
-	/* String returned should be the data */
-	if (strcmp (str, " of the io code")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Should have been allocated with nih_alloc */
-	if (nih_alloc_size (str) != 16) {
-		printf ("BAD: nih_alloc was not used.\n");
-		ret = 1;
-	}
-
-	/* Buffer length should now be zero */
-	if (io->recv_buf->len != 0) {
-		printf ("BAD: buffer length wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Buffer size should now be zero */
-	if (io->recv_buf->size != 0) {
-		printf ("BAD: buffer size wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Buffer should have been freed */
-	if (io->recv_buf->buf != NULL) {
-		printf ("BAD: buffer wasn't freed.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (str, 16);
+	TEST_EQ (str[15], '\0');
+	TEST_EQ_STR (str, " of the io code");
+	TEST_EQ (io->recv_buf->len, 0);
+	TEST_EQ (io->recv_buf->size, 0);
+	TEST_EQ_P (io->recv_buf->buf, NULL);
 
 	nih_free (str);
 
 	nih_free (io);
-
-	return 0;
 }
 
-int
+void
 test_write (void)
 {
 	NihIo *io;
-	int    ret = 0;
 
-	printf ("Testing nih_io_write()\n");
+	TEST_FUNCTION ("nih_io_write");
 	io = nih_io_reopen (NULL, 0, NULL, NULL, NULL, NULL);
 
-	printf ("...with empty buffer\n");
+	/* Check that we can write data into the NihIo send buffer, the
+	 * buffer should contain the data and be a page in size.  The
+	 * watch should also now be looking for writability.
+	 */
+	TEST_FEATURE ("with empty buffer");
 	nih_io_write (io, "test", 4);
 
-	/* Buffer length should be four */
-	if (io->send_buf->len != 4) {
-		printf ("BAD: buffer length wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Buffer should contain our data */
-	if (strncmp (io->send_buf->buf, "test", 4)) {
-		printf ("BAD: buffer contents weren't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Watch should now be flagged for write */
-	if (! (io->watch->events & NIH_IO_WRITE)) {
-		printf ("BAD: watch not looking for writability.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (io->send_buf->buf, BUFSIZ);
+	TEST_EQ (io->send_buf->size, BUFSIZ);
+	TEST_EQ (io->send_buf->len, 4);
+	TEST_EQ_MEM (io->send_buf->buf, "test", 4);
+	TEST_TRUE (io->watch->events & NIH_IO_WRITE);
 
 
-	printf ("...with data in the buffer\n");
+	/* Check that we can write more data onto the end of the NihIo
+	 * send buffer, which increases its size.
+	 */
+	TEST_FEATURE ("with data in the buffer");
 	nih_io_write (io, "ing the io code", 10);
 
-	/* Buffer length should be eighteen */
-	if (io->send_buf->len != 14) {
-		printf ("BAD: buffer length wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Buffer should contain our data (note we didn't copy it all) */
-	if (strncmp (io->send_buf->buf, "testing the io", 14)) {
-		printf ("BAD: buffer contents weren't what we expected.\n");
-		ret = 1;
-	}
-
+	TEST_EQ (io->send_buf->len, 14);
+	TEST_EQ_MEM (io->send_buf->buf, "testing the io", 14);
 
 	nih_free (io);
-
-	return ret;
 }
 
-
-int
+void
 test_get (void)
 {
 	NihIo *io;
 	char  *str;
-	int    ret = 0;
 
-	printf ("Testing nih_io_get()\n");
+	TEST_FUNCTION ("nih_io_get");
 	io = nih_io_reopen (NULL, 0, NULL, NULL, NULL, NULL);
 	nih_io_buffer_push (io->recv_buf, "some data\n", 10);
 	nih_io_buffer_push (io->recv_buf, "and another line\n", 17);
 	nih_io_buffer_push (io->recv_buf, "incomplete", 10);
 
-	printf ("...with full buffer\n");
+	/* Check that we can take data from the front of a buffer up until
+	 * the first embedded new line (which isn't returned), and have the
+	 * buffer shuffled up.
+	 */
+	TEST_FEATURE ("with full buffer");
 	str = nih_io_get (NULL, io, "\n");
 
-	/* String returned should be the first line without the newline */
-	if (strcmp (str, "some data")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Should have been allocated with nih_alloc */
-	if (nih_alloc_size (str) != 10) {
-		printf ("BAD: nih_alloc was not used.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (str, 10);
+	TEST_EQ_STR (str, "some data");
 
 	nih_free (str);
 
 
-	printf ("...with part-full buffer\n");
+	/* Check that we can read up to the next line line. */
+	TEST_FEATURE ("with part-full buffer");
 	str = nih_io_get (NULL, io, "\n");
 
-	/* String returned should be the second line without the newline */
-	if (strcmp (str, "and another line")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Should have been allocated with nih_alloc */
-	if (nih_alloc_size (str) != 17) {
-		printf ("BAD: nih_alloc was not used.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (str, 17);
+	TEST_EQ_STR (str, "and another line");
 
 	nih_free (str);
 
 
-	printf ("...with incomplete line in buffer\n");
+	/* Check that NULL is returned if the data in the buffer doesn't
+	 * contain the delimeter or a NULL terminator.
+	 */
+	TEST_FEATURE ("with incomplete line in buffer");
 	str = nih_io_get (NULL, io, "\n");
 
-	/* NULL should be returned */
-	if (str != NULL) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ_P (str, NULL);
 
 
-	printf ("...with null-terminated string in buffer\n");
+	/* Check that a NULL terminator is sufficient to return the data
+	 * in the buffer, which should now be empty.
+	 */
+	TEST_FEATURE ("with null-terminated string in buffer");
 	nih_io_buffer_push (io->recv_buf, "\0", 1);
 	str = nih_io_get (NULL, io, "\n");
 
-	/* String should be returned */
-	if (strcmp (str, "incomplete")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (str, 11);
+	TEST_EQ_STR (str, "incomplete");
 
-	/* Should have been allocated with nih_alloc */
-	if (nih_alloc_size (str) != 11) {
-		printf ("BAD: nih_alloc was not used.\n");
-		ret = 1;
-	}
-
-	/* Buffer should be empty */
-	if (io->recv_buf->len != 0) {
-		printf ("BAD: buffer length wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ (io->recv_buf->len, 0);
 
 	nih_free (str);
 
 	nih_free (io);
-
-	return ret;
 }
 
-int
+void
 test_printf (void)
 {
 	NihIo *io;
-	int    ret = 0;
 
-	printf ("Testing nih_io_printf()\n");
+	TEST_FUNCTION ("nih_io_printf");
 	io = nih_io_reopen (NULL, 0, NULL, NULL, NULL, NULL);
 
-	printf ("...with empty buffer\n");
+	/* Check that we can write a line of formatted data into the send
+	 * buffer, which should be written without a NULL terminator.
+	 * The watch should also look for writability.
+	 */
+	TEST_FEATURE ("with empty buffer");
 	nih_io_printf (io, "this is a %d %s test\n", 4, "format");
 
-	/* Buffer length should be 24 */
-	if (io->send_buf->len != 24) {
-		printf ("BAD: buffer length wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Buffer should contain formatted data */
-	if (strncmp (io->send_buf->buf, "this is a 4 format test\n", 24)) {
-		printf ("BAD: buffer contents weren't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Watch should now be flagged for write */
-	if (! (io->watch->events & NIH_IO_WRITE)) {
-		printf ("BAD: watch not looking for writability.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (io->send_buf->buf, BUFSIZ);
+	TEST_EQ (io->send_buf->size, BUFSIZ);
+	TEST_EQ (io->send_buf->len, 24);
+	TEST_EQ_MEM (io->send_buf->buf, "this is a 4 format test\n", 24);
+	TEST_TRUE (io->watch->events & NIH_IO_WRITE);
 
 
-	printf ("...with data in the buffer\n");
+	/* Check that we can append a further line of formatted data into
+	 * the send buffer
+	 */
+	TEST_FEATURE ("with data in the buffer");
 	nih_io_printf (io, "and this is %s line\n", "another");
 
-	/* Buffer length should be 49 */
-	if (io->send_buf->len != 49) {
-		printf ("BAD: buffer length wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Buffer should contain our data */
-	if (strncmp (io->send_buf->buf,
+	TEST_EQ (io->send_buf->len, 49);
+	TEST_EQ_MEM (io->send_buf->buf,
 		     "this is a 4 format test\nand this is another line\n",
-		     49)) {
-		printf ("BAD: buffer contents weren't what we expected.\n");
-		ret = 1;
-	}
+		     49);
 
 	nih_free (io);
-
-	return ret;
 }
 
-int
+
+void
 test_set_nonblock (void)
 {
-	int ret = 0, fds[2], flags;
+	int fds[2];
 
-	printf ("Testing nih_io_set_nonblock()\n");
-	assert (pipe (fds) == 0);
-	assert ((flags = fcntl (fds[0], F_GETFL)) >= 0);
-	assert (! (flags & O_NONBLOCK));
-
+	/* Check that we can trivially mark a socket to be non-blocking. */
+	TEST_FUNCTION ("nih_io_set_nonblock");
+	pipe (fds);
 	nih_io_set_nonblock (fds[0]);
 
-	assert ((flags = fcntl (fds[0], F_GETFL)) >= 0);
-
-	/* O_NONBLOCK should be set */
-	if (! (flags & O_NONBLOCK)) {
-		printf ("BAD: expected flag was not set.\n");
-		ret = 1;
-	}
+	TEST_TRUE (fcntl (fds[0], F_GETFL) & O_NONBLOCK);
 
 	close (fds[0]);
 	close (fds[1]);
-
-	return ret;
 }
 
-int
+void
 test_set_cloexec (void)
 {
-	int ret = 0, fds[2], flags;
+	int fds[2];
 
-	printf ("Testing nih_io_set_cloexec()\n");
-	assert (pipe (fds) == 0);
-	assert ((flags = fcntl (fds[0], F_GETFD)) >= 0);
-	assert (! (flags & FD_CLOEXEC));
-
+	/* Check that we can trivially mark a socket to be closed on exec. */
+	TEST_FUNCTION ("nih_io_set_cloexec");
+	pipe (fds);
 	nih_io_set_cloexec (fds[0]);
 
-	assert ((flags = fcntl (fds[0], F_GETFD)) >= 0);
-
-	/* FD_CLOEXEC should be set */
-	if (! (flags & FD_CLOEXEC)) {
-		printf ("BAD: expected flag was not set.\n");
-		ret = 1;
-	}
+	TEST_TRUE (fcntl (fds[0], F_GETFD) & FD_CLOEXEC);
 
 	close (fds[0]);
 	close (fds[1]);
-
-	return ret;
 }
 
 
@@ -1578,25 +1006,23 @@ int
 main (int   argc,
       char *argv[])
 {
-	int ret = 0;
+	test_add_watch ();
+	test_select_fds ();
+	test_handle_fds ();
+	test_buffer_new ();
+	test_buffer_resize ();
+	test_buffer_push ();
+	test_buffer_pop ();
+	test_reopen ();
+	test_shutdown ();
+	test_close ();
+	test_watcher ();
+	test_read ();
+	test_write ();
+	test_get ();
+	test_printf ();
+	test_set_nonblock ();
+	test_set_cloexec ();
 
-	ret |= test_add_watch ();
-	ret |= test_select_fds ();
-	ret |= test_handle_fds ();
-	ret |= test_buffer_new ();
-	ret |= test_buffer_resize ();
-	ret |= test_buffer_push ();
-	ret |= test_buffer_pop ();
-	ret |= test_reopen ();
-	ret |= test_shutdown ();
-	ret |= test_close ();
-	ret |= test_watcher ();
-	ret |= test_read ();
-	ret |= test_write ();
-	ret |= test_get ();
-	ret |= test_printf ();
-	ret |= test_set_nonblock ();
-	ret |= test_set_cloexec ();
-
-	return ret;
+	return 0;
 }

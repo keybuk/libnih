@@ -313,6 +313,24 @@
 			} else
 
 /**
+ * TEST_DIVERT_STDOUT_FD:
+ * @_fd: fd to send standard output to.
+ *
+ * This macro diverts standard output to a different file descriptor
+ * for the duration of a block of code that should follow it.
+ **/
+#define TEST_DIVERT_STDOUT_FD(_fd) \
+	for (int _test_stdout = 0, _test_oldstdout = dup (STDOUT_FILENO); \
+	     _test_stdout < 3; _test_stdout++) \
+		if (_test_stdout < 1) { \
+			fflush (stdout); \
+			dup2 ((_fd), STDOUT_FILENO); \
+		} else if (_test_stdout > 1) { \
+			dup2 (_test_oldstdout, STDOUT_FILENO); \
+			close (_test_oldstdout); \
+		} else
+
+/**
  * TEST_DIVERT_STDOUT:
  * @_file: FILE to send standard output to.
  *
@@ -320,14 +338,24 @@
  * of a block of code that should follow it.
  */
 #define TEST_DIVERT_STDOUT(_file) \
-	for (int _test_stdout = 0, _test_oldstdout = dup (STDOUT_FILENO); \
-	     _test_stdout < 3; _test_stdout++) \
-		if (_test_stdout < 1) { \
-			fflush (stdout); \
-			dup2 (fileno (_file), STDOUT_FILENO); \
-		} else if (_test_stdout > 1) { \
-			dup2 (_test_oldstdout, STDOUT_FILENO); \
-			close (_test_oldstdout); \
+	TEST_DIVERT_STDOUT_FD (fileno (_file))
+
+/**
+ * TEST_DIVERT_STDERR_FD:
+ * @_fd: fd to send standard error to.
+ *
+ * This macro diverts standard error to a different file descriptor for the
+ * duration of a block of code that should follow it.
+ */
+#define TEST_DIVERT_STDERR_FD(_fd) \
+	for (int _test_stderr = 0, _test_oldstderr = dup (STDERR_FILENO); \
+	     _test_stderr < 3; _test_stderr++) \
+		if (_test_stderr < 1) { \
+			fflush (stderr); \
+			dup2 ((_fd), STDERR_FILENO); \
+		} else if (_test_stderr > 1) { \
+			dup2 (_test_oldstderr, STDERR_FILENO); \
+			close (_test_oldstderr); \
 		} else
 
 /**
@@ -338,15 +366,7 @@
  * of a block of code that should follow it.
  */
 #define TEST_DIVERT_STDERR(_file) \
-	for (int _test_stderr = 0, _test_oldstderr = dup (STDERR_FILENO); \
-	     _test_stderr < 3; _test_stderr++) \
-		if (_test_stderr < 1) { \
-			fflush (stderr); \
-			dup2 (fileno (_file), STDERR_FILENO); \
-		} else if (_test_stderr > 1) { \
-			dup2 (_test_oldstderr, STDERR_FILENO); \
-			close (_test_oldstderr); \
-		} else
+	TEST_DIVERT_STDERR_FD (fileno (_file))
 
 /**
  * TEST_FILENAME:

@@ -143,7 +143,8 @@
 #define TEST_EQ_STRN(_a, _b) \
 	if (strncmp ((_a), (_b), strlen (_b))) \
 		TEST_FAILED ("wrong value for %s, expected '%.*s' got '%.*s'", \
-			     #_a, strlen (_b), (_b), strlen (_b), (_a))
+			     #_a, (int)strlen (_b), (_b), \
+			     (int)strlen (_b), (_a))
 
 /**
  * TEST_EQ_MEM:
@@ -207,7 +208,7 @@
 #define TEST_NE_STRN(_a, _b) \
 	if (! strncmp ((_a), (_b), strlen (_b))) \
 		TEST_FAILED ("wrong value for %s, got unexpected '%.*s'", \
-			     #_a, strlen (_b), (_b))
+			     #_a, (int)strlen (_b), (_b))
 
 /**
  * TEST_NE_MEM:
@@ -396,7 +397,8 @@
 				     (_file), #_file, (_line)); \
 		if (strncmp (_test_file, (_line), strlen (_line))) \
 			TEST_FAILED ("wrong content in file %p (%s), expected '%.*s' got '%.*s'", \
-			     (_file), #_file, strlen (_line), (_line), strlen (_line), _test_file); \
+			     (_file), #_file, (int)strlen (_line), (_line), \
+			     (int)strlen (_line), _test_file); \
 	} while (0)
 
 /**
@@ -434,7 +436,7 @@
 				     (_file), #_file, (_line)); \
 		if (strncmp (_test_file, (_line), strlen (_line))) \
 			TEST_FAILED ("wrong content in file %p (%s), got unexpected '%.*s'", \
-			     (_file), #_file, strlen (_line), (_line)); \
+			     (_file), #_file, (int)strlen (_line), (_line)); \
 	} while (0)
 
 /**

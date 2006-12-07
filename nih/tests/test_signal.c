@@ -19,13 +19,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#include <config.h>
+#include <nih/test.h>
 
-#include <stdio.h>
-#include <assert.h>
 #include <signal.h>
 
-#include <nih/alloc.h>
+#include <nih/macros.h>
 #include <nih/list.h>
 #include <nih/signal.h>
 
@@ -34,173 +32,94 @@ static void
 my_sig_handler (int signum) {
 }
 
-int
+void
 test_set_handler (void)
 {
 	struct sigaction act;
-	int              ret = 0, retval, i;
+	int              ret, i;
 
-	printf ("Testing nih_signal_set_handler()\n");
-	retval = nih_signal_set_handler (SIGUSR1, my_sig_handler);
+	/* Check that we can install a signal handler, and that the action
+	 * for that signal points to our handler, has the right flags and
+	 * an empty signal mask.
+	 */
+	TEST_FUNCTION ("nih_signal_set_handler");
+	ret = nih_signal_set_handler (SIGUSR1, my_sig_handler);
 
-	/* Return value should be zero */
-	if (retval != 0) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ (ret, 0);
 
-	/* Check installed signal action */
-	assert (sigaction (SIGUSR1, NULL, &act) == 0);
+	sigaction (SIGUSR1, NULL, &act);
+	TEST_EQ_P (act.sa_handler, my_sig_handler);
+	TEST_TRUE (act.sa_flags & SA_RESTART);
+	TEST_FALSE (act.sa_flags & SA_RESETHAND);
 
-	/* Handler should be function given */
-	if (act.sa_handler != my_sig_handler) {
-		printf ("BAD: signal handler set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Flags should contain SA_RESTART */
-	if (! (act.sa_flags & SA_RESTART)) {
-		printf ("BAD: signal flags set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Flags should not contain SA_RESETHAND */
-	if (act.sa_flags & SA_RESETHAND) {
-		printf ("BAD: signal flags set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Mask should be empty */
-	for (i = 1; i < 32; i++) {
-		if (sigismember (&act.sa_mask, i)) {
-			printf ("BAD: signal mask not empty set.\n");
-			ret = 1;
-			break;
-		}
-	}
-
-	return ret;
+	for (i = 1; i < 32; i++)
+		TEST_FALSE (sigismember (&act.sa_mask, i));
 }
 
-int
+void
 test_set_default (void)
 {
 	struct sigaction act;
-	int              ret = 0, retval, i;
+	int              ret, i;
 
-	printf ("Testing nih_signal_set_default()\n");
-	retval = nih_signal_set_default (SIGUSR1);
+	/* Check that we can reset a signal to the default handling, which
+	 * should update the action properly.
+	 */
+	TEST_FUNCTION ("nih_signal_set_default");
+	ret = nih_signal_set_default (SIGUSR1);
 
-	/* Return value should be zero */
-	if (retval != 0) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ (ret, 0);
 
-	/* Check installed signal action */
-	assert (sigaction (SIGUSR1, NULL, &act) == 0);
+	sigaction (SIGUSR1, NULL, &act);
+	TEST_EQ_P (act.sa_handler, SIG_DFL);
+	TEST_FALSE (act.sa_flags & SA_RESTART);
+	TEST_FALSE (act.sa_flags & SA_NOCLDSTOP);
 
-	/* Handler should be the default */
-	if (act.sa_handler != SIG_DFL) {
-		printf ("BAD: signal handler set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Flags should be zero */
-	if (act.sa_flags & (SA_RESTART | SA_NOCLDSTOP)) {
-		printf ("BAD: signal flags set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Mask should be empty */
-	for (i = 1; i < 32; i++) {
-		if (sigismember (&act.sa_mask, i)) {
-			printf ("BAD: signal mask not empty set.\n");
-			ret = 1;
-			break;
-		}
-	}
-
-	return ret;
+	for (i = 1; i < 32; i++)
+		TEST_FALSE (sigismember (&act.sa_mask, i));
 }
 
-int
+void
 test_set_ignore (void)
 {
 	struct sigaction act;
-	int              ret = 0, retval, i;
+	int              ret, i;
 
-	printf ("Testing nih_signal_set_ignore()\n");
-	retval = nih_signal_set_ignore (SIGUSR1);
+	/* Check that we can set a signal to be ignored, which should update
+	 * the action properly.
+	 */
+	TEST_FUNCTION ("nih_signal_set_ignore");
+	ret = nih_signal_set_ignore (SIGUSR1);
 
-	/* Return value should be zero */
-	if (retval != 0) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ (ret, 0);
 
-	/* Check installed signal action */
-	assert (sigaction (SIGUSR1, NULL, &act) == 0);
+	sigaction (SIGUSR1, NULL, &act);
+	TEST_EQ_P (act.sa_handler, SIG_IGN);
+	TEST_FALSE (act.sa_flags & SA_RESTART);
+	TEST_FALSE (act.sa_flags & SA_NOCLDSTOP);
 
-	/* Handler should be the ignore special */
-	if (act.sa_handler != SIG_IGN) {
-		printf ("BAD: signal handler set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Flags should be zero */
-	if (act.sa_flags & (SA_RESTART | SA_NOCLDSTOP)) {
-		printf ("BAD: signal flags set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Mask should be empty */
-	for (i = 1; i < 32; i++) {
-		if (sigismember (&act.sa_mask, i)) {
-			printf ("BAD: signal mask not empty set.\n");
-			ret = 1;
-			break;
-		}
-	}
-
-	return ret;
+	for (i = 1; i < 32; i++)
+		TEST_FALSE (sigismember (&act.sa_mask, i));
 }
 
-int
+void
 test_reset (void)
 {
 	struct sigaction act;
-	int              ret = 0, i;
+	int              i;
 
-	printf ("Testing nih_signal_reset()\n");
+	/* Check that we can reset all signals back to their defaults. */
+	TEST_FUNCTION ("nih_signal_reset");
 	nih_signal_set_ignore (SIGTERM);
 	nih_signal_reset ();
 
-	/* Check installed signal action */
-	assert (sigaction (SIGTERM, NULL, &act) == 0);
+	sigaction (SIGTERM, NULL, &act);
+	TEST_EQ_P (act.sa_handler, SIG_DFL);
+	TEST_FALSE (act.sa_flags & SA_RESTART);
+	TEST_FALSE (act.sa_flags & SA_NOCLDSTOP);
 
-	/* Handler should be the default */
-	if (act.sa_handler != SIG_DFL) {
-		printf ("BAD: signal handler set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Flags should be zero */
-	if (act.sa_flags & (SA_RESTART | SA_NOCLDSTOP)) {
-		printf ("BAD: signal flags set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Mask should be empty */
-	for (i = 1; i < 32; i++) {
-		if (sigismember (&act.sa_mask, i)) {
-			printf ("BAD: signal mask not empty set.\n");
-			ret = 1;
-			break;
-		}
-	}
-
-	return ret;
+	for (i = 1; i < 32; i++)
+		TEST_FALSE (sigismember (&act.sa_mask, i));
 }
 
 
@@ -216,119 +135,87 @@ my_handler (void *data, NihSignal *signal)
 	last_signal = signal;
 }
 
-int
+void
 test_add_handler (void)
 {
 	NihSignal *signal;
-	int        ret = 0;
 
-	printf ("Testing nih_signal_add_handler()\n");
-	signal = nih_signal_add_handler (NULL, SIGUSR1, my_handler, &ret);
+	/* Check that we can add a signal handling callback function, and
+	 * that the structure returned is properly populated and placed in
+	 * the callbacks list.
+	 */
+	TEST_FUNCTION ("nih_signal_add_handler");
+	signal = nih_signal_add_handler (NULL, SIGUSR1, my_handler, &signal);
 
-	/* Signal number should be number given */
-	if (signal->signum != SIGUSR1) {
-		printf ("BAD: signal number set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Handler should be handler given */
-	if (signal->handler != my_handler) {
-		printf ("BAD: handler set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Handler data should be pointer given */
-	if (signal->data != &ret) {
-		printf ("BAD: handler data set incorrectly.\n");
-		ret = 1;
-	}
-
-	/* Should be in the signals list */
-	if (NIH_LIST_EMPTY (&signal->entry)) {
-		printf ("BAD: not placed into signals list.\n");
-		ret = 1;
-	}
-
-	/* Should have been allocated using nih_alloc */
-	if (nih_alloc_size (signal) != sizeof (NihSignal)) {
-		printf ("BAD: nih_alloc was not used.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (signal, sizeof (NihSignal));
+	TEST_LIST_NOT_EMPTY (&signal->entry);
+	TEST_EQ (signal->signum, SIGUSR1);
+	TEST_EQ_P (signal->handler, my_handler);
+	TEST_EQ_P (signal->data, &signal);
 
 	nih_list_free (&signal->entry);
-
-	return ret;
 }
 
-int
+void
 test_poll (void)
 {
 	NihSignal *signal1, *signal2;
-	int        ret = 0;
 
-	printf ("Testing nih_signal_poll()\n");
-	signal1 = nih_signal_add_handler (NULL, SIGUSR1, my_handler, &ret);
-	signal2 = nih_signal_add_handler (NULL, SIGUSR2, my_handler, &ret);
+	TEST_FUNCTION ("nih_signal_poll");
+	signal1 = nih_signal_add_handler (NULL, SIGUSR1, my_handler, &signal1);
+	signal2 = nih_signal_add_handler (NULL, SIGUSR2, my_handler, &signal2);
 
+	/* Check that we can poll for a signal being caught, which should
+	 * result in only the callback for that signal being run.
+	 */
+	TEST_FEATURE ("with one signal");
 	handler_called = 0;
 	last_data = NULL;
 	last_signal = NULL;
+
 	nih_signal_handler (SIGUSR1);
 	nih_signal_poll ();
 
-	/* Only one signal should have been triggered */
-	if (handler_called != 1) {
-		printf ("BAD: incorrect number of signals called.\n");
-		ret = 1;
-	}
+	TEST_EQ (handler_called, 1);
+	TEST_EQ_P (last_signal, signal1);
+	TEST_EQ_P (last_data, &signal1);
 
-	/* Signal should have been the first one */
-	if (last_signal != signal1) {
-		printf ("BAD: last signal wasn't what we expected.\n");
-		ret = 1;
-	}
 
-	/* Data should have been the data pointer of the first one */
-	if (last_data != &ret) {
-		printf ("BAD: last data wasn't what we expected.\n");
-		ret = 1;
-	}
-
+	/* Check that we can poll for only the other signal. */
+	TEST_FEATURE ("with different signal");
 	handler_called = 0;
 	last_data = NULL;
 	last_signal = NULL;
+
 	nih_signal_handler (SIGUSR2);
 	nih_signal_poll ();
 
-	/* Only one signal should have been triggered */
-	if (handler_called != 1) {
-		printf ("BAD: incorrect number of signals called.\n");
-		ret = 1;
-	}
+	TEST_EQ (handler_called, 1);
+	TEST_EQ_P (last_signal, signal2);
+	TEST_EQ_P (last_data, &signal2);
 
-	/* Signal should have been the second one */
-	if (last_signal != signal2) {
-		printf ("BAD: last signal wasn't what we expected.\n");
-		ret = 1;
-	}
 
-	/* Data should have been the data pointer of the first one */
-	if (last_data != &ret) {
-		printf ("BAD: last data wasn't what we expected.\n");
-		ret = 1;
-	}
-
+	/* Check that we can poll for both signals. */
+	TEST_FEATURE ("with multiple signals");
 	handler_called = 0;
+
+	nih_signal_handler (SIGUSR1);
+	nih_signal_handler (SIGUSR2);
+	nih_signal_poll ();
+
+	TEST_EQ (handler_called, 2);
+
+
+	/* Check what happens if a signal we have no callbacks for is
+	 * caught.  This should run neither callback.
+	 */
+	TEST_FEATURE ("with unknown signal");
+	handler_called = 0;
+
 	nih_signal_handler (SIGINT);
 	nih_signal_poll ();
 
-	/* No signals should have been triggered */
-	if (handler_called != 0) {
-		printf ("BAD: signals called unexpectedly.\n");
-		ret = 1;
-	}
-
-	return ret;
+	TEST_EQ (handler_called, 0);
 }
 
 
@@ -336,14 +223,12 @@ int
 main (int   argc,
       char *argv[])
 {
-	int ret = 0;
+	test_set_handler ();
+	test_set_default ();
+	test_set_ignore ();
+	test_reset ();
+	test_add_handler ();
+	test_poll ();
 
-	ret |= test_set_handler ();
-	ret |= test_set_default ();
-	ret |= test_set_ignore ();
-	ret |= test_reset ();
-	ret |= test_add_handler ();
-	ret |= test_poll ();
-
-	return ret;
+	return 0;
 }

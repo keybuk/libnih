@@ -19,82 +19,53 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif /* HAVE_CONFIG_H */
+#include <nih/test.h>
 
-
+#include <sys/types.h>
 #include <sys/stat.h>
 
 #include <pty.h>
 #include <fcntl.h>
-#include <stdio.h>
-#include <assert.h>
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <nih/macros.h>
 #include <nih/alloc.h>
 #include <nih/string.h>
 
 
-int
+void
 test_sprintf (void)
 {
 	char *str1, *str2;
-	int   ret = 0;
 
-	printf ("Testing nih_sprintf()\n");
+	TEST_FUNCTION ("nih_sprintf");
 
-	printf ("...with no parent\n");
+	/* Check that we can create a formatted string with no parent,
+	 * it should be allocated with nih_alloc and be the right length.
+	 */
+	TEST_FEATURE ("with no parent");
 	str1 = nih_sprintf (NULL, "this %s a test %d", "is", 54321);
 
-	/* Returned value should be correct */
-	if (strcmp (str1, "this is a test 54321")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Size should be correct */
-	if (nih_alloc_size (str1) != strlen ("this is a test 54321") + 1) {
-		printf ("BAD: size incorrect.\n");
-		ret = 1;
-	}
-
-	/* Parent should be none */
-	if (nih_alloc_parent (str1) != NULL) {
-		printf ("BAD: parent incorrect.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_PARENT (str1, NULL);
+	TEST_ALLOC_SIZE (str1, strlen (str1) + 1);
+	TEST_EQ_STR (str1, "this is a test 54321");
 
 
-	printf ("...with a parent\n");
+	/* Check that we can create a string with a parent. */
+	TEST_FEATURE ("with a parent");
 	str2 = nih_sprintf (str1, "another %d test %s", 12345, "string");
 
-	/* Returned value should be correct */
-	if (strcmp (str2, "another 12345 test string")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_PARENT (str2, str1);
+	TEST_ALLOC_SIZE (str2, strlen (str2) + 1);
+	TEST_EQ_STR (str2, "another 12345 test string");
 
-	/* Size should be correct */
-	if (nih_alloc_size (str2)
-	    != strlen ("another 12345 test string") + 1) {
-		printf ("BAD: size incorrect.\n");
-		ret = 1;
-	}
-
-	/* Parent should be first string */
-	if (nih_alloc_parent (str2) != str1) {
-		printf ("BAD: parent incorrect.\n");
-		ret = 1;
-	}
 
 	nih_free (str1);
-
-	return ret;
 }
+
 
 static char *
 my_vsprintf (void *parent,
@@ -111,331 +82,180 @@ my_vsprintf (void *parent,
 	return str;
 }
 
-int
+void
 test_vsprintf (void)
 {
 	char *str1, *str2;
-	int   ret = 0;
 
-	printf ("Testing nih_vsprintf()\n");
+	TEST_FUNCTION ("nih_vsprintf");
 
-	printf ("...with no parent\n");
+	/* Check that we can create a formatted string for a va_list,
+	 * first with no parent.
+	 */
+	TEST_FEATURE ("with no parent");
 	str1 = my_vsprintf (NULL, "this %s a test %d", "is", 54321);
 
-	/* Returned value should be correct */
-	if (strcmp (str1, "this is a test 54321")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Size should be correct */
-	if (nih_alloc_size (str1) != strlen ("this is a test 54321") + 1) {
-		printf ("BAD: size incorrect.\n");
-		ret = 1;
-	}
-
-	/* Parent should be none */
-	if (nih_alloc_parent (str1) != NULL) {
-		printf ("BAD: parent incorrect.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_PARENT (str1, NULL);
+	TEST_ALLOC_SIZE (str1, strlen (str1) + 1);
+	TEST_EQ_STR (str1, "this is a test 54321");
 
 
-	printf ("...with a parent\n");
+	/* And then with a parent. */
+	TEST_FEATURE ("with a parent");
 	str2 = my_vsprintf (str1, "another %d test %s", 12345, "string");
 
-	/* Returned value should be correct */
-	if (strcmp (str2, "another 12345 test string")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_PARENT (str2, str1);
+	TEST_ALLOC_SIZE (str2, strlen (str2) + 1);
+	TEST_EQ_STR (str2, "another 12345 test string");
 
-	/* Size should be correct */
-	if (nih_alloc_size (str2)
-	    != strlen ("another 12345 test string") + 1) {
-		printf ("BAD: size incorrect.\n");
-		ret = 1;
-	}
-
-	/* Parent should be first string */
-	if (nih_alloc_parent (str2) != str1) {
-		printf ("BAD: parent incorrect.\n");
-		ret = 1;
-	}
 
 	nih_free (str1);
-
-	return ret;
 }
 
-int
+void
 test_strdup (void)
 {
 	char *str1, *str2;
-	int   ret = 0;
 
-	printf ("Testing nih_strdup()\n");
+	TEST_FUNCTION ("nih_strdup");
 
-	printf ("...with no parent\n");
+	/* Check that we can create a duplicate of another string,
+	 * allocated with nih_alloc and no parent.
+	 */
+	TEST_FEATURE ("with no parent");
 	str1 = nih_strdup (NULL, "this is a test");
 
-	/* Returned value should be correct */
-	if (strcmp (str1, "this is a test")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Size should be correct */
-	if (nih_alloc_size (str1) != strlen ("this is a test") + 1) {
-		printf ("BAD: size incorrect.\n");
-		ret = 1;
-	}
-
-	/* Parent should be none */
-	if (nih_alloc_parent (str1) != NULL) {
-		printf ("BAD: parent incorrect.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_PARENT (str1, NULL);
+	TEST_ALLOC_SIZE (str1, strlen (str1) + 1);
+	TEST_EQ_STR (str1, "this is a test");
 
 
-	printf ("...with a parent\n");
+	/* And check we can allocate with a parent. */
+	TEST_FEATURE ("with a parent");
 	str2 = nih_strdup (str1, "another test string");
 
-	/* Returned value should be correct */
-	if (strcmp (str2, "another test string")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_PARENT (str2, str1);
+	TEST_ALLOC_SIZE (str2, strlen (str2) + 1);
+	TEST_EQ_STR (str2, "another test string");
 
-	/* Size should be correct */
-	if (nih_alloc_size (str2) != strlen ("another test string") + 1) {
-		printf ("BAD: size incorrect.\n");
-		ret = 1;
-	}
-
-	/* Parent should be first string */
-	if (nih_alloc_parent (str2) != str1) {
-		printf ("BAD: parent incorrect.\n");
-		ret = 1;
-	}
 
 	nih_free (str1);
-
-	return ret;
 }
 
-int
+void
 test_strndup (void)
 {
-	char *str1, *str2, *str;
-	int   ret = 0;
+	char *str1, *str2;
 
-	printf ("Testing nih_strndup()\n");
+	TEST_FUNCTION ("nih_strndup");
 
-	printf ("...with no parent\n");
-	str1 = nih_strndup (NULL, "this is a test", strlen("this is a test"));
+	/* Check that we can create a duplicate of the first portion of
+	 * another string, allocated with nih_alloc and no parent.  The
+	 * new string should still include a NULL byte.
+	 */
+	TEST_FEATURE ("with no parent");
+	str1 = nih_strndup (NULL, "this is a test", 7);
 
-	/* Returned value should be correct */
-	if (strcmp (str1, "this is a test")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Size should be correct */
-	if (nih_alloc_size (str1) != strlen ("this is a test") + 1) {
-		printf ("BAD: size incorrect.\n");
-		ret = 1;
-	}
-
-	/* Parent should be none */
-	if (nih_alloc_parent (str1) != NULL) {
-		printf ("BAD: parent incorrect.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_PARENT (str1, NULL);
+	TEST_ALLOC_SIZE (str1, 8);
+	TEST_EQ_STR (str1, "this is");
 
 
-	printf ("...with a parent\n");
-	str2 = nih_strndup (str1, "another test string",
-			    strlen("another test string"));
+	/* Check that it works with a parent. */
+	TEST_FEATURE ("with a parent");
+	str2 = nih_strndup (str1, "another test string", 12);
 
-	/* Returned value should be correct */
-	if (strcmp (str2, "another test string")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Size should be correct */
-	if (nih_alloc_size (str2) != strlen ("another test string") + 1) {
-		printf ("BAD: size incorrect.\n");
-		ret = 1;
-	}
-
-	/* Parent should be first string */
-	if (nih_alloc_parent (str2) != str1) {
-		printf ("BAD: parent incorrect.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_PARENT (str2, str1);
+	TEST_ALLOC_SIZE (str2, 13);
+	TEST_EQ_STR (str2, "another test");
 
 	nih_free (str1);
 
 
-	printf ("...with smaller length than string\n");
-	str = nih_strndup (NULL, "something to test with", 9);
+	/* Check that the right thing happens if the length we give is
+	 * longer than the string, the returned size should be ample but
+	 * with the complete string copied in.
+	 */
+	TEST_FEATURE ("with larger length than string");
+	str1 = nih_strndup (NULL, "small string", 20);
 
-	/* Returned value should be correct */
-	if (strcmp (str, "something")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (str1, 21);
+	TEST_EQ_STR (str1, "small string");
 
-	/* Size should be correct */
-	if (nih_alloc_size (str) != 10) {
-		printf ("BAD: size incorrect.\n");
-		ret = 1;
-	}
-
-	/* Parent should be none */
-	if (nih_alloc_parent (str) != NULL) {
-		printf ("BAD: parent incorrect.\n");
-		ret = 1;
-	}
-
-	nih_free (str);
-
-
-	printf ("...with larger length than string\n");
-	str = nih_strndup (NULL, "small string", 20);
-
-	/* Returned value should be correct */
-	if (strcmp (str, "small string")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
-
-	/* Size should be correct */
-	if (nih_alloc_size (str) != 21) {
-		printf ("BAD: size incorrect.\n");
-		ret = 1;
-	}
-
-	/* Parent should be none */
-	if (nih_alloc_parent (str) != NULL) {
-		printf ("BAD: parent incorrect.\n");
-		ret = 1;
-	}
-
-	nih_free (str);
-
-	return ret;
+	nih_free (str1);
 }
 
-
-int
+void
 test_str_split (void)
 {
 	char **array;
-	int    ret = 0, i;
+	int    i;
 
-	printf ("Testing nih_str_split()\n");
+	TEST_FUNCTION ("nih_str_split");
 
-	printf ("...with no repeat\n");
+	/* Check that we can split a string into a NULL-terminated array
+	 * at each matching character.  The array should be allocated with
+	 * nih_alloc, and each element should also be with the array as
+	 * their parent.
+	 */
+	TEST_FEATURE ("with no repeat");
 	array = nih_str_split (NULL, "this is  a\ttest", " \t", FALSE);
 
-	/* Check elements; crash means a fail */
-	if (strcmp (array[0], "this")
-	    || strcmp (array[1], "is")
-	    || strcmp (array[2], "")
-	    || strcmp (array[3], "a")
-	    || strcmp (array[4], "test")) {
-		printf ("BAD: array element wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (array, sizeof (char *) * 6);
+	for (i = 0; i < 5; i++)
+		TEST_ALLOC_PARENT (array[i], array);
 
-	/* Last element should be NULL */
-	if (array[5] != NULL) {
-		printf ("BAD: last array element wasn't NULL.\n");
-		ret = 1;
-	}
-
-	/* Should have been allocated with nih_alloc */
-	if (nih_alloc_size (array) != sizeof (char *) * 6) {
-		printf ("BAD: nih_alloc was not used.\n");
-		ret = 1;
-	}
-
-	/* Strings should have been allocated as children of parent */
-	for (i = 0; i < 5; i++) {
-		if (nih_alloc_parent (array[i]) != array) {
-			printf ("BAD: nih_alloc of string not parent.\n");
-			ret = 1;
-		}
-	}
+	TEST_EQ_STR (array[0], "this");
+	TEST_EQ_STR (array[1], "is");
+	TEST_EQ_STR (array[2], "");
+	TEST_EQ_STR (array[3], "a");
+	TEST_EQ_STR (array[4], "test");
+	TEST_EQ_P (array[5], NULL);
 
 	nih_free (array);
 
 
-	printf ("...with repeat\n");
+	/* Check that we can split a string treating multiple consecutive
+	 * matching characters as a single separator to be skipped.
+	 */
+	TEST_FEATURE ("with repeat");
 	array = nih_str_split (NULL, "this is  a\ttest", " \t", TRUE);
 
-	/* Check elements; crash means a fail */
-	if (strcmp (array[0], "this")
-	    || strcmp (array[1], "is")
-	    || strcmp (array[2], "a")
-	    || strcmp (array[3], "test")) {
-		printf ("BAD: array element wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (array, sizeof (char *) * 5);
+	for (i = 0; i < 4; i++)
+		TEST_ALLOC_PARENT (array[i], array);
 
-	/* Last element should be NULL */
-	if (array[4] != NULL) {
-		printf ("BAD: last array element wasn't NULL.\n");
-		ret = 1;
-	}
-
-	/* Should have been allocated with nih_alloc */
-	if (nih_alloc_size (array) != sizeof (char *) * 5) {
-		printf ("BAD: nih_alloc was not used.\n");
-		ret = 1;
-	}
-
-	/* Strings should have been allocated as children of parent */
-	for (i = 0; i < 4; i++) {
-		if (nih_alloc_parent (array[i]) != array) {
-			printf ("BAD: nih_alloc of string not parent.\n");
-			ret = 1;
-		}
-	}
+	TEST_EQ_STR (array[0], "this");
+	TEST_EQ_STR (array[1], "is");
+	TEST_EQ_STR (array[2], "a");
+	TEST_EQ_STR (array[3], "test");
+	TEST_EQ_P (array[4], NULL);
 
 	nih_free (array);
 
 
-	printf ("...with empty string\n");
+	/* Check that we can give an empty string, and end up with a
+	 * one-element array that only contains a NULL pointer.
+	 */
+	TEST_FEATURE ("with empty string");
 	array = nih_str_split (NULL, "", " ", FALSE);
 
-	/* Only element should be NULL */
-	if (array[0] != NULL) {
-		printf ("BAD: last array element wasn't NULL.\n");
-		ret = 1;
-	}
-
-	/* Should have been allocated with nih_alloc */
-	if (nih_alloc_size (array) != sizeof (char *) * 1) {
-		printf ("BAD: nih_alloc was not used.\n");
-		ret = 1;
-	}
+	TEST_ALLOC_SIZE (array, sizeof (char *));
+	TEST_EQ_P (array[0], NULL);
 
 	nih_free (array);
-
-	return ret;
 }
 
-int
+void
 test_strv_free (void)
 {
 	char **strv;
-	int    ret = 0;
 
-	printf ("Testing nih_strv_free()\n");
+	/* Check that we can free a NULL-termianted array of allocated strings,
+	 * this doesn't use nih_alloc so the only way to test it is to see
+	 * whether this crashes.
+	 */
+	TEST_FUNCTION ("nih_strv_free");
 	strv = malloc (sizeof (char *) * 5);
 	strv[0] = strdup ("This");
 	strv[1] = strdup ("is");
@@ -443,277 +263,237 @@ test_strv_free (void)
 	strv[3] = strdup ("test");
 	strv[4] = NULL;
 
-	/* If it doesn't crash, it's a pass */
 	nih_strv_free (strv);
 	free (strv);
-
-	return ret;
 }
 
-
-int
+void
 test_str_wrap (void)
 {
 	char *str;
-	int   ret = 0;
 
-	printf ("Testing nih_str_wrap()\n");
+	TEST_FUNCTION ("nih_str_wrap");
 
-	printf ("...with no wrapping\n");
+	/* Check that a string smaller than the wrap length is returned
+	 * unaltered.
+	 */
+	TEST_FEATURE ("with no wrapping");
 	str = nih_str_wrap (NULL, "this is a test", 80, 0, 0);
 
-	/* Check returned string */
-	if (strcmp (str, "this is a test")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ_STR (str, "this is a test");
 
 	nih_free (str);
 
 
-	printf ("...with embedded newlines\n");
+	/* Check that a string with embedded new lines is returned with
+	 * the line breaks preserved.
+	 */
+	TEST_FEATURE ("with embedded newlines");
 	str = nih_str_wrap (NULL, "this is\na test", 80, 0, 0);
 
-	/* Check returned string */
-	if (strcmp (str, "this is\na test")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ_STR (str, "this is\na test");
 
 	nih_free (str);
 
 
-	printf ("...with no wrapping and indent\n");
+	/* Check that a smaller string is indented if one is given. */
+	TEST_FEATURE ("with no wrapping and indent");
 	str = nih_str_wrap (NULL, "this is a test", 80, 2, 0);
 
-	/* Check returned string */
-	if (strcmp (str, "  this is a test")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ_STR (str, "  this is a test");
 
 	nih_free (str);
 
 
-	printf ("...with embedded newlines and indent\n");
+	/* Check that a string with embedded newlines gets an indent on
+	 * each new line.
+	 */
+	TEST_FEATURE ("with embedded newlines and indent");
 	str = nih_str_wrap (NULL, "this is\na test", 80, 4, 2);
 
-	/* Check returned string */
-	if (strcmp (str, "    this is\n  a test")) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ_STR (str, "    this is\n  a test");
 
 	nih_free (str);
 
 
-	printf ("...with simple wrapping\n");
+	/* Check that a long string is split at the wrap point. */
+	TEST_FEATURE ("with simple wrapping");
 	str = nih_str_wrap (NULL, "this is an example of a string that will "
 			    "need wrapping to fit the line length we set",
 			    20, 0, 0);
 
-	/* Check returned string */
-	if (strcmp (str, ("this is an example\n"
-			  "of a string that\n"
-			  "will need wrapping\n"
-			  "to fit the line\n"
-			  "length we set"))) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ_STR (str, ("this is an example\n"
+			   "of a string that\n"
+			   "will need wrapping\n"
+			   "to fit the line\n"
+			   "length we set"));
 
 	nih_free (str);
 
 
-	printf ("...with wrapping and indents\n");
+	/* Check that a long string is split at the wrap point, and each
+	 * new line indented, with the first line given a different indent.
+	 */
+	TEST_FEATURE ("with wrapping and indents");
 	str = nih_str_wrap (NULL, "this is an example of a string that will "
 			    "need wrapping to fit the line length we set",
 			    20, 4, 2);
 
-	/* Check returned string */
-	if (strcmp (str, ("    this is an\n"
-			  "  example of a\n"
-			  "  string that will\n"
-			  "  need wrapping to\n"
-			  "  fit the line\n"
-			  "  length we set"))) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ_STR (str, ("    this is an\n"
+			   "  example of a\n"
+			   "  string that will\n"
+			   "  need wrapping to\n"
+			   "  fit the line\n"
+			   "  length we set"));
 
 	nih_free (str);
 
 
-	printf ("...with split inside word\n");
+	/* Check that a long string that would be split inside a long word
+	 * is wrapepd before the word, and then split inside that word if it
+	 * is still too long.
+	 */
+	TEST_FEATURE ("with split inside word");
 	str = nih_str_wrap (NULL, ("this string is supercalifragilisticexpi"
 				   "alidocious even though the sound of it "
 				   "is something quite atrocious"), 30, 0, 0);
 
-	/* Check returned string */
-	if (strcmp (str, ("this string is\n"
-			  "supercalifragilisticexpialidoc\n"
-			  "ious even though the sound of\n"
-			  "it is something quite\n"
-			  "atrocious"))) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ_STR (str, ("this string is\n"
+			   "supercalifragilisticexpialidoc\n"
+			   "ious even though the sound of\n"
+			   "it is something quite\n"
+			   "atrocious"));
 
 	nih_free (str);
 
 
-	printf ("...with split inside word and indents\n");
+	/* Check that an indent is still applied if the split occurs inside
+	 * a word.
+	 */
+	TEST_FEATURE ("with split inside word and indents");
 	str = nih_str_wrap (NULL, ("this string is supercalifragilisticexpi"
 				   "alidocious even though the sound of it "
 				   "is something quite atrocious"), 30, 4, 2);
 
-	/* Check returned string */
-	if (strcmp (str, ("    this string is\n"
-			  "  supercalifragilisticexpialid\n"
-			  "  ocious even though the sound\n"
-			  "  of it is something quite\n"
-			  "  atrocious"))) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
-	}
+	TEST_EQ_STR (str, ("    this string is\n"
+			   "  supercalifragilisticexpialid\n"
+			   "  ocious even though the sound\n"
+			   "  of it is something quite\n"
+			   "  atrocious"));
 
 	nih_free (str);
-
-
-	return ret;
 }
 
-
-int
+void
 test_str_screen_width (void)
 {
 	struct winsize  winsize;
+	int             pty, pts;
 	size_t          len;
-	int             oldstdout, pty, pts, ret = 0;
 
-	printf ("Testing nih_str_screen_width()\n");
-	oldstdout = dup (STDOUT_FILENO);
-
+	TEST_FUNCTION ("nih_str_screen_width");
 	unsetenv ("COLUMNS");
 
 	winsize.ws_row = 24;
 	winsize.ws_col = 40;
 	winsize.ws_xpixel = 0;
 	winsize.ws_ypixel = 0;
-	assert (openpty (&pty, &pts, NULL, NULL, &winsize) == 0);
+	openpty (&pty, &pts, NULL, NULL, &winsize);
 
-	printf ("...with screen width\n");
-	fflush (stdout);
-	dup2 (pts, STDOUT_FILENO);
-	len = nih_str_screen_width ();
-	fflush (stdout);
-	dup2 (oldstdout, STDOUT_FILENO);
-
-	/* Check return value */
-	if (len != 40) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
+	/* Check that we can obtain the width of a screen, where one
+	 * is available.  It should match the number of columns in the
+	 * pty we run this within.
+	 */
+	TEST_FEATURE ("with screen width");
+	TEST_DIVERT_STDOUT_FD (pts) {
+		len = nih_str_screen_width ();
 	}
 
+	TEST_EQ (len, 40);
 
-	printf ("...with COLUMNS variable\n");
+
+	/* Check that the COLUMNS environment variable overrides the width
+	 * of the screen that we detect.
+	 */
+	TEST_FEATURE ("with COLUMNS variable");
 	putenv ("COLUMNS=30");
-	fflush (stdout);
-	dup2 (pts, STDOUT_FILENO);
-	len = nih_str_screen_width ();
-	fflush (stdout);
-	dup2 (oldstdout, STDOUT_FILENO);
-
-	/* Check return value */
-	if (len != 30) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
+	TEST_DIVERT_STDOUT_FD (pts) {
+		len = nih_str_screen_width ();
 	}
+
+	TEST_EQ (len, 30);
 
 	unsetenv ("COLUMNS");
 	close (pts);
 	close (pty);
 
 
-	assert ((pts = open ("/dev/null", O_RDWR | O_NOCTTY)) >= 0);
-
-	printf ("...with fallback to 80 columns\n");
-	fflush (stdout);
-	dup2 (pts, STDOUT_FILENO);
-	len = nih_str_screen_width ();
-	fflush (stdout);
-	dup2 (oldstdout, STDOUT_FILENO);
-
-	/* Check return value */
-	if (len != 80) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
+	/* Check that we fallback to assuming 80 columns if we don't have
+	 * any luck with either the tty or COLUMNS variable.
+	 */
+	TEST_FEATURE ("with fallback to 80 columns");
+	pts = open ("/dev/null", O_RDWR | O_NOCTTY);
+	TEST_DIVERT_STDOUT_FD (pts) {
+		len = nih_str_screen_width ();
 	}
 
-	close (pts);
-	close (oldstdout);
+	TEST_EQ (len, 80);
 
-	return ret;
+	close (pts);
 }
 
-int
+void
 test_str_screen_wrap (void)
 {
 	char           *str;
 	struct winsize  winsize;
-	int             oldstdout, pty, pts, ret = 0;
+	int             pty, pts;
 
-	printf ("Testing nih_str_screen_wrap()\n");
-	oldstdout = dup (STDOUT_FILENO);
-
+	TEST_FUNCTION ("nih_str_screen_wrap");
 	unsetenv ("COLUMNS");
 
 	winsize.ws_row = 24;
 	winsize.ws_col = 40;
 	winsize.ws_xpixel = 0;
 	winsize.ws_ypixel = 0;
-	assert (openpty (&pty, &pts, NULL, NULL, &winsize) == 0);
+	openpty (&pty, &pts, NULL, NULL, &winsize);
 
-	printf ("...with screen width\n");
-	fflush (stdout);
-	dup2 (pts, STDOUT_FILENO);
-	str = nih_str_screen_wrap (NULL, ("this is a string that should need "
-					  "wrapping at any different screen "
-					  "width that we choose to set"),
-				   0, 0);
-	fflush (stdout);
-	dup2 (oldstdout, STDOUT_FILENO);
-
-	/* Check returned string */
-	if (strcmp (str, ("this is a string that should need\n"
-			  "wrapping at any different screen width\n"
-			  "that we choose to set"))) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
+	/* Check that we correctly wrap text to the width of the screen
+	 * when it is available.
+	 */
+	TEST_FEATURE ("with screen width");
+	TEST_DIVERT_STDOUT_FD (pts) {
+		str = nih_str_screen_wrap (NULL, ("this is a string that "
+						  "should need wrapping at "
+						  "any different screen width "
+						  "that we choose to set"),
+					   0, 0);
 	}
+
+	TEST_EQ_STR (str, ("this is a string that should need\n"
+			   "wrapping at any different screen width\n"
+			   "that we choose to set"));
 
 	nih_free (str);
 
 
-	printf ("...with COLUMNS variable\n");
+	/* Check that we wrap at the number specified in the COLUMNS
+	 * variable in preference to the width of the screen.
+	 */
+	TEST_FEATURE ("with COLUMNS variable");
 	putenv ("COLUMNS=30");
-	fflush (stdout);
-	dup2 (pts, STDOUT_FILENO);
-	str = nih_str_screen_wrap (NULL, ("this is a string that should need "
-					  "wrapping at any different screen "
-					  "width that we choose to set"),
-				   0, 0);
-	fflush (stdout);
-	dup2 (oldstdout, STDOUT_FILENO);
-
-	/* Check returned string */
-	if (strcmp (str, ("this is a string that should\n"
-			  "need wrapping at any\n"
-			  "different screen width that\n"
-			  "we choose to set"))) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
+	TEST_DIVERT_STDOUT_FD (pts) {
+		str = nih_str_screen_wrap (NULL, ("this is a string that "
+						  "should need wrapping at "
+						  "any different screen width "
+						  "that we choose to set"),
+					   0, 0);
 	}
+
+	TEST_EQ_STR (str, ("this is a string that should\n"
+			   "need wrapping at any\n"
+			   "different screen width that\n"
+			   "we choose to set"));
 
 	nih_free (str);
 
@@ -722,32 +502,26 @@ test_str_screen_wrap (void)
 	close (pty);
 
 
-	assert ((pts = open ("/dev/null", O_RDWR | O_NOCTTY)) >= 0);
-
-	printf ("...with fallback to 80 columns\n");
-	fflush (stdout);
-	dup2 (pts, STDOUT_FILENO);
-	str = nih_str_screen_wrap (NULL, ("this is a string that should need "
-					  "wrapping at any different screen "
-					  "width that we choose to set"),
-				   0, 0);
-	fflush (stdout);
-	dup2 (oldstdout, STDOUT_FILENO);
-
-	/* Check returned string */
-	if (strcmp (str, ("this is a string that should need wrapping at "
-			  "any different screen width that\n"
-			  "we choose to set"))) {
-		printf ("BAD: return value wasn't what we expected.\n");
-		ret = 1;
+	/* Check that we fallback to assuming 80 columns if we don't have
+	 * any luck with either the tty or COLUMNS variable.
+	 */
+	TEST_FEATURE ("with fallback to 80 columns");
+	pts = open ("/dev/null", O_RDWR | O_NOCTTY);
+	TEST_DIVERT_STDOUT_FD (pts) {
+		str = nih_str_screen_wrap (NULL, ("this is a string that "
+						  "should need wrapping at "
+						  "any different screen width "
+						  "that we choose to set"),
+					   0, 0);
 	}
+
+	TEST_EQ_STR (str, ("this is a string that should need wrapping at "
+			   "any different screen width that\n"
+			   "we choose to set"));
 
 	nih_free (str);
 
 	close (pts);
-	close (oldstdout);
-
-	return ret;
 }
 
 
@@ -755,17 +529,15 @@ int
 main (int   argc,
       char *argv[])
 {
-	int ret = 0;
+	test_sprintf ();
+	test_vsprintf ();
+	test_strdup ();
+	test_strndup ();
+	test_str_split ();
+	test_strv_free ();
+	test_str_wrap ();
+	test_str_screen_width ();
+	test_str_screen_wrap ();
 
-	ret |= test_sprintf ();
-	ret |= test_vsprintf ();
-	ret |= test_strdup ();
-	ret |= test_strndup ();
-	ret |= test_str_split ();
-	ret |= test_strv_free ();
-	ret |= test_str_wrap ();
-	ret |= test_str_screen_width ();
-	ret |= test_str_screen_wrap ();
-
-	return ret;
+	return 0;
 }

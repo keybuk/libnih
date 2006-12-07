@@ -21,8 +21,6 @@
 
 #include <nih/test.h>
 
-#include <assert.h>
-
 #include <nih/macros.h>
 #include <nih/alloc.h>
 #include <nih/list.h>
@@ -40,10 +38,7 @@ new_entry (void       *parent,
 {
 	HashEntry *entry;
 
-	assert (key != NULL);
-
 	entry = nih_new (parent, HashEntry);
-	assert (entry != NULL);
 
 	nih_list_init (&entry->list);
 	entry->key = key;
@@ -54,8 +49,6 @@ new_entry (void       *parent,
 static const char *
 key_function (NihList *entry)
 {
-	assert (entry != NULL);
-
 	return ((HashEntry *)entry)->key;
 }
 

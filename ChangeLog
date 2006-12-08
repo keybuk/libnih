@@ -1,5 +1,7 @@
 2006-12-08  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_option.c: Drop unused include.
+
 	* nih/tests/test_option.c: Port to the new test framework.
 
 2006-12-07  Scott James Remnant  <scott@netsplit.com>

@@ -27,7 +27,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h> /**/
 
 #include <nih/macros.h>
 #include <nih/alloc.h>

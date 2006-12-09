@@ -1,3 +1,9 @@
+2006-12-09  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/test.h (TEST_DIVERT_STDOUT_FD, TEST_DIVERT_STDERR_FD): Flush
+	before dup2ing the original file descriptor back, otherwise we end
+	up with the content still in the buffer later.
+
 2006-12-08  Scott James Remnant  <scott@netsplit.com>
 
 	* HACKING: Document that test cases are expected.

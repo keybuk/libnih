@@ -326,6 +326,7 @@
 			fflush (stdout); \
 			dup2 ((_fd), STDOUT_FILENO); \
 		} else if (_test_stdout > 1) { \
+			fflush (stdout); \
 			dup2 (_test_oldstdout, STDOUT_FILENO); \
 			close (_test_oldstdout); \
 		} else
@@ -354,6 +355,7 @@
 			fflush (stderr); \
 			dup2 ((_fd), STDERR_FILENO); \
 		} else if (_test_stderr > 1) { \
+			fflush (stderr); \
 			dup2 (_test_oldstderr, STDERR_FILENO); \
 			close (_test_oldstderr); \
 		} else

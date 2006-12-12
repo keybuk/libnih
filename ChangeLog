@@ -1,5 +1,7 @@
 2006-12-12  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_alloc.c (test_realloc): Fix missing free.
+
 	* configure.ac (AM_GNU_GETTEXT_VERSION): Quote version number.
 
 2006-12-09  Scott James Remnant  <scott@netsplit.com>

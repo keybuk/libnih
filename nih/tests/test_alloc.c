@@ -170,6 +170,8 @@ test_realloc (void)
 
 	TEST_ALLOC_PARENT (ptr2, ptr3);
 
+	nih_free (ptr3);
+
 
 	/* Check that nih_realloc returns NULL and doesn't alter the block
 	 * if the allocator fails.

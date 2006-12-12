@@ -1,5 +1,8 @@
 2006-12-12  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/libnih.supp: Include a valgrind suppressions file.
+	* nih/Makefile.am (EXTRA_DIST): Distribute the suppressions file.
+
 	* nih/tests/test_alloc.c (test_realloc): Fix missing free.
 
 	* configure.ac (AM_GNU_GETTEXT_VERSION): Quote version number.

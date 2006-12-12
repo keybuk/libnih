@@ -31,7 +31,7 @@ if HAVE_VERSION_SCRIPT_ARG
 libnih_la_LDFLAGS += @VERSION_SCRIPT_ARG@=$(srcdir)/libnih.ver
 endif
 
-EXTRA_DIST = libnih.ver
+EXTRA_DIST = libnih.ver libnih.supp
 
 
 include_HEADERS = \

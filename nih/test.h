@@ -428,10 +428,12 @@
  * least PATH_MAX long.
  **/
 #define TEST_FILENAME(_var) \
-	snprintf ((_var), sizeof (_var), "/tmp/%s:%s:%d:%d", \
-		  strrchr (__FILE__, '/') ? strrchr (__FILE__, '/') + 1 : __FILE__, \
-		  __FUNCTION__, __LINE__, getpid ()); \
-	unlink (_var)
+	do { \
+		snprintf ((_var), sizeof (_var), "/tmp/%s:%s:%d:%d", \
+			  strrchr (__FILE__, '/') ? strrchr (__FILE__, '/') + 1 : __FILE__, \
+			  __FUNCTION__, __LINE__, getpid ()); \
+		unlink (_var); \
+	} while (0)
 
 /**
  * TEST_FILE_EQ:

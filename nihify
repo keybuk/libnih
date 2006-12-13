@@ -30,6 +30,12 @@ fi
 libnih_dir="$(cd "$libnih_dir" && pwd)"
 src_dir="$(cd "$src_dir" && pwd)"
 
+[ ! -L "$src_dir/ChangeLog.nih" ] || rm "$src_dir/ChangeLog.nih"
+
+echo "Creating symlink to ChangeLog as ChangeLog.nih"
+ln -s "$libnih_dir/ChangeLog" "$src_dir/ChangeLog.nih"
+
+
 for SYMLINK in nih m4/Makefile.am m4/compiler.m4 m4/linker.m4 m4/misc.m4; do
     [ -e "$libnih_dir/$SYMLINK" ]
     [ ! -L "$src_dir/$SYMLINK" ] || rm "$src_dir/$SYMLINK"

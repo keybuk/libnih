@@ -1,3 +1,7 @@
+2006-12-13  Scott James Remnant  <scott@netsplit.com>
+
+	* nihify: Link to the nih ChangeLog.
+
 2006-12-12  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/test.h (TEST_CHILD_WAIT, TEST_CHILD_RELEASE): Sometimes the

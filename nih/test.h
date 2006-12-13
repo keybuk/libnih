@@ -533,9 +533,11 @@
  * treated as a new one.
  **/
 #define TEST_FILE_RESET(_file) \
-	fflush (_file); \
-	rewind (_file); \
-	ftruncate (fileno (_file), 0)
+	do { \
+		fflush (_file); \
+		rewind (_file); \
+		ftruncate (fileno (_file), 0); \
+	} while (0)
 
 
 /**

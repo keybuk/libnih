@@ -61,7 +61,7 @@ Coding style
 The coding style for libnih is roughly K&R with function names in
 column 0, and variable names aligned in declarations.
 
-The right results can be almost acheived by doing the following.
+The right results can be almost achieved by doing the following.
 
 	* GNU Emacs: if you're not using auto-newline, the following
 	should do the right thing:
@@ -81,7 +81,7 @@ The right results can be almost acheived by doing the following.
 	indent -kr -i8 -psl
 
 All functions, typedefs, structures and file-level variables, whether
-exported or not, must be preceeded by a documentation comment
+exported or not, must be preceded by a documentation comment
 detailing their usage and behaviour.  The format of that command is as
 follows:
 

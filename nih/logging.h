@@ -137,6 +137,19 @@ typedef int (*NihLogger) (NihLogLevel, const char *);
 		abort (); \
 	}
 
+/**
+ * nih_assert_notreached:
+ *
+ * Outputs a fatal error message and terminates the process if this
+ * line of code is reached.
+ **/
+#define nih_assert_notreached() \
+	do { \
+		nih_fatal ("%s:%d: Not reached assertion failed in %s", \
+			   __FILE__, __LINE__, __FUNCTION__); \
+		abort (); \
+	} while (0)
+
 
 NIH_BEGIN_EXTERN
 

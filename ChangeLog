@@ -1,3 +1,9 @@
+2006-12-17  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/tests/test_logging.c, nih/tests/test_string.c: Set local
+	variables to avoid gcc thinking that they may be unused when
+	using TEST_DIVERT_*.
+
 2006-12-14  Scott James Remnant  <scott@netsplit.com>
 
 	* HACKING: Correct some typos.

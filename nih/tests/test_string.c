@@ -389,7 +389,7 @@ test_str_screen_width (void)
 {
 	struct winsize  winsize;
 	int             pty, pts;
-	size_t          len;
+	size_t          len = 0;
 
 	TEST_FUNCTION ("nih_str_screen_width");
 	unsetenv ("COLUMNS");
@@ -445,7 +445,7 @@ test_str_screen_width (void)
 void
 test_str_screen_wrap (void)
 {
-	char           *str;
+	char           *str = NULL;
 	struct winsize  winsize;
 	int             pty, pts;
 

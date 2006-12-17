@@ -239,7 +239,7 @@ void
 test_logger_printf (void)
 {
 	FILE *output;
-	int   ret;
+	int   ret = 0;
 
 	TEST_FUNCTION ("nih_logger_printf");
 	output = tmpfile ();

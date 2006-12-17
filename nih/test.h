@@ -109,6 +109,19 @@
 			     #_a, (ssize_t)(_b), (ssize_t)(_a))
 
 /**
+ * TEST_EQ_U:
+ * @_a: first unsigned integer,
+ * @_b: second unsigned integer.
+ *
+ * Check that the two numeric values @_a and @_b are equal, they are cast
+ * to size_t for display purposes.
+ **/
+#define TEST_EQ_U(_a, _b) \
+	if ((_a) != (_b)) \
+		TEST_FAILED ("wrong value for %s, expected %zu got %zu", \
+			     #_a, (size_t)(_b), (size_t)(_a))
+
+/**
  * TEST_EQ_P:
  * @_a: first pointer,
  * @_b: second pointer.
@@ -172,6 +185,19 @@
 	if ((_a) == (_b)) \
 		TEST_FAILED ("wrong value for %s, got unexpected %zi", \
 			     #_a, (ssize_t)(_b))
+
+/**
+ * TEST_NE_U:
+ * @_a: first unsigned integer,
+ * @_b: second unsigned integer.
+ *
+ * Check that the two numeric values @_a and @_b are not equal, they are
+ * cast to size_t for display purposes.
+ **/
+#define TEST_NE_U(_a, _b) \
+	if ((_a) == (_b)) \
+		TEST_FAILED ("wrong value for %s, got unexpected %zu", \
+			     #_a, (size_t)(_b))
 
 /**
  * TEST_NE_P:

@@ -21,10 +21,22 @@
 #define NIH_IO_H
 
 #include <sys/types.h>
+#include <sys/socket.h>
 
 #include <nih/macros.h>
 #include <nih/list.h>
 
+
+/**
+ * NihIoType:
+ *
+ * Whether an NihIo structure is used for a buffered stream of data, or
+ * a queue of discreet messages.
+ **/
+typedef enum {
+	NIH_IO_STREAM,
+	NIH_IO_MESSAGE
+} NihIoType;
 
 /**
  * NihIoEvents:
@@ -144,20 +156,46 @@ typedef struct nih_io_buffer {
 } NihIoBuffer;
 
 /**
+ * NihIoMessage:
+ * @entry: list header,
+ * @addr: address received from or to be sent to,
+ * @addrlen: length of @addr,
+ * @msg_buf: buffer for message,
+ * @ctrl_buf: buffer for control data.
+ *
+ * This structure is used to represent an individual message waiting in
+ * a queue to be sent or processed.
+ **/
+typedef struct nih_io_message {
+	NihList          entry;
+
+	struct sockaddr *addr;
+	socklen_t        addrlen;
+
+	NihIoBuffer     *msg_buf;
+	NihIoBuffer     *ctrl_buf;
+} NihIoMessage;
+
+/**
  * NihIo:
+ * @type: type of structure,
  * @watch: associated file descriptor watch,
- * @send_buf: buffer that pools data to be sent,
- * @recv_buf: buffer that pools data received,
- * @reader: function called when new data in @recv_buf,
+ * @send_buf: buffer that pools data to be sent (NIH_IO_STREAM),
+ * @send_q: queue of messages to be sent (NIH_IO_MESSAGE),
+ * @recv_buf: buffer that pools data received (NIH_IO_STREAM),
+ * @recv_q: queue of messages received (NIH_IO_MESSAGE),
+ * @reader: function called when new data in @recv_buf or @recv_q,
  * @close_handler: function called when socket closes,
  * @error_handler: function called when an error occurs,
  * @data: pointer passed to functions,
  * @shutdown: TRUE if the structure should be freed once the buffers are empty.
  *
  * This structure implements more featureful I/O handling than provided by
- * an NihIoWatch alone.  It combines an NihIoWatch and two NihIoBuffer
- * structures to implement a high-throughput alternative to the
- * traditional stdio functions.
+ * an NihIoWatch alone.
+ *
+ * When used in the stream mode (@type is NIH_IO_STREAM), it combines an
+ * NihIoWatch and two NihIoBuffer structures to implement a high-throughput
+ * alternative to the traditional stdio functions.
  *
  * Those functions are optimised to reduce the number of read() or write()
  * calls made on a file descriptor, and cannot be used to pool large
@@ -166,42 +204,58 @@ typedef struct nih_io_buffer {
  * The NihIo functions are instead optimised for being able to queue and
  * receive much data as possible, and have the data sent in the background
  * or processed at your leisure.
+ *
+ * When used in the message mode (@type is NIH_IO_MESSAGE), it combines the
+ * NihIoWatch with an NihList of NihIoMessage structures to implement
+ * asynchronous handling of datagram sockets.
  **/
 struct nih_io {
-	NihIoWatch        *watch;
-	NihIoBuffer       *send_buf;
-	NihIoBuffer       *recv_buf;
+	NihIoType            type;
 
-	NihIoReader        reader;
-	NihIoCloseHandler  close_handler;
-	NihIoErrorHandler  error_handler;
-	void              *data;
+	NihIoWatch          *watch;
+	union {
+		NihIoBuffer *send_buf;
+		NihList     *send_q;
+	};
+	union {
+		NihIoBuffer *recv_buf;
+		NihList     *recv_q;
+	};
 
-	int                shutdown;
+	NihIoReader          reader;
+	NihIoCloseHandler    close_handler;
+	NihIoErrorHandler    error_handler;
+	void                *data;
+
+	int                  shutdown;
 };
 
 
 NIH_BEGIN_EXTERN
 
-NihIoWatch * nih_io_add_watch     (const void *parent, int fd,
-				   NihIoEvents events,
-				   NihIoWatcher watcher, void *data);
+NihIoWatch *  nih_io_add_watch     (const void *parent, int fd,
+				    NihIoEvents events,
+				    NihIoWatcher watcher, void *data);
 
-void         nih_io_select_fds    (int *nfds, fd_set *readfds,
-				   fd_set *writefds, fd_set *exceptfds);
-void         nih_io_handle_fds    (fd_set *readfds, fd_set *writewfds,
-				   fd_set *exceptfds);
+void          nih_io_select_fds    (int *nfds, fd_set *readfds,
+				    fd_set *writefds, fd_set *exceptfds);
+void          nih_io_handle_fds    (fd_set *readfds, fd_set *writewfds,
+				    fd_set *exceptfds);
 
 
-NihIoBuffer *nih_io_buffer_new    (const void *parent)
+NihIoBuffer * nih_io_buffer_new    (const void *parent)
 	__attribute__ ((warn_unused_result, malloc));
 
-int          nih_io_buffer_resize (NihIoBuffer *buffer, size_t grow);
-char *       nih_io_buffer_pop    (const void *parent, NihIoBuffer *buffer,
-				   size_t len)
+int           nih_io_buffer_resize (NihIoBuffer *buffer, size_t grow);
+char *        nih_io_buffer_pop    (const void *parent, NihIoBuffer *buffer,
+				    size_t len)
 	__attribute__ ((warn_unused_result, malloc));
-int          nih_io_buffer_push   (NihIoBuffer *buffer, const char *str,
-				   size_t len);
+int           nih_io_buffer_push   (NihIoBuffer *buffer, const char *str,
+				    size_t len);
+
+
+NihIoMessage *nih_io_message_new   (const void *parent)
+	__attribute__ ((warn_unused_result, malloc));
 
 
 NihIo *      nih_io_reopen        (const void *parent, int fd,

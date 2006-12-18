@@ -373,6 +373,30 @@ test_buffer_push (void)
 }
 
 
+void
+test_message_new (void)
+{
+	NihIoMessage *msg;
+
+	/* Check that we can create a new empty message, that doesn't appear
+	 * in any list and with the structure and msghdr members correct.
+	 */
+	TEST_FUNCTION ("nih_io_message_new");
+	msg = nih_io_message_new (NULL);
+
+	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+	TEST_LIST_EMPTY (&msg->entry);
+	TEST_EQ_P (msg->addr, NULL);
+	TEST_EQ (msg->addrlen, 0);
+	TEST_ALLOC_SIZE (msg->msg_buf, sizeof (NihIoBuffer));
+	TEST_ALLOC_PARENT (msg->msg_buf, msg);
+	TEST_ALLOC_SIZE (msg->ctrl_buf, sizeof (NihIoBuffer));
+	TEST_ALLOC_PARENT (msg->ctrl_buf, msg);
+
+	nih_free (msg);
+}
+
+
 static int read_called = 0;
 static int close_called = 0;
 static int error_called = 0;
@@ -429,6 +453,7 @@ test_reopen (void)
 	TEST_ALLOC_SIZE (io, sizeof (NihIo));
 	TEST_ALLOC_PARENT (io->send_buf, io);
 	TEST_ALLOC_PARENT (io->recv_buf, io);
+	TEST_EQ (io->type, NIH_IO_STREAM);
 	TEST_EQ_P (io->reader, my_reader);
 	TEST_EQ_P (io->close_handler, my_close_handler);
 	TEST_EQ_P (io->error_handler, my_error_handler);
@@ -564,14 +589,14 @@ test_close (void)
 }
 
 void
-test_watcher (void)
+test_stream_watcher (void)
 {
 	NihIo  *io;
 	int     fds[2];
 	fd_set  readfds, writefds, exceptfds;
 	FILE   *output;
 
-	TEST_FUNCTION ("nih_io_watcher");
+	TEST_FUNCTION ("nih_io_stream_watcher");
 
 	/* Check that data to be read on a socket watched by NihIo ends up
 	 * in the receive buffer, and results in the reader function being
@@ -1016,7 +1041,7 @@ main (int   argc,
 	test_reopen ();
 	test_shutdown ();
 	test_close ();
-	test_watcher ();
+	test_stream_watcher ();
 	test_read ();
 	test_write ();
 	test_get ();

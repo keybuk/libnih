@@ -1,3 +1,23 @@
+2006-12-18  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/io.h (NihIoMessage): Structure that represents an individual
+	message in a queue; has a buffer for the message, and for ancillary
+	control data, as well as an address that the message is being sent
+	to or received from.
+	(NihIoType): Enum to select whether an NihIo structure is in stream
+	mode or message mode.
+	(NihIo): Add a type member to select whether this is in stream or
+	message mode, and a union to select whether we're using buffers
+	or message queues.
+	* nih/io.c (nih_io_message_new): Allocate an NihIoMessage and its
+	child buffers.
+	(nih_io_reopen): Initialise the type to NIH_IO_STREAM.
+	(nih_io_watcher): Rename to nih_io_stream_watcher.
+	* nih/tests/test_io.c (test_message_new): Check that the new message
+	structure is initialised properly.
+	(test_reopen): Check that we get a stream structure by default.
+	(test_watcher): Rename to test_stream_watcher.
+
 2006-12-17  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/logging.h (nih_assert_notreached): Add an assertion for the

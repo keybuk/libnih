@@ -47,11 +47,11 @@
 
 
 /* Prototypes for static functions */
-static inline void nih_io_buffer_shrink (NihIoBuffer *buffer, size_t len);
-static void        nih_io_watcher       (NihIo *io, NihIoWatch *watch,
-					 NihIoEvents events);
-static void        nih_io_closed        (NihIo *io);
-static void        nih_io_error         (NihIo *io);
+static inline void nih_io_buffer_shrink  (NihIoBuffer *buffer, size_t len);
+static void        nih_io_stream_watcher (NihIo *io, NihIoWatch *watch,
+					  NihIoEvents events);
+static void        nih_io_closed         (NihIo *io);
+static void        nih_io_error          (NihIo *io);
 
 
 /**
@@ -413,6 +413,50 @@ nih_io_buffer_push (NihIoBuffer *buffer,
 
 
 /**
+ * nih_io_message_new:
+ * @parent: parent of new message.
+ *
+ * Allocates a new NihIoMessage structure containing an empty message
+ * header, with no allocated address or iovec.  All functions that use
+ * the message structure ensure that the internal data is an nih_alloc()
+ * child of the message, so this may be freed using nih_list_free().
+ *
+ * The message structure is allocated using nih_alloc() and normally
+ * stored in a linked list, a default destructor is set that removes the
+ * message from the list.  Removal of the message can be performed by
+ * freeing it.
+ *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned string will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the nih_alloc_set_destructor() function.
+ *
+ * Returns: new message, or NULL if insufficient memory.
+ **/
+NihIoMessage *
+nih_io_message_new (const void *parent)
+{
+	NihIoMessage *message;
+
+	message = nih_new (parent, NihIoMessage);
+	if (! message)
+		return NULL;
+
+	nih_list_init (&message->entry);
+	nih_alloc_set_destructor (message, (NihDestructor)nih_list_destructor);
+
+	message->addr = NULL;
+	message->addrlen = 0;
+
+	message->msg_buf = nih_io_buffer_new (message);
+	message->ctrl_buf = nih_io_buffer_new (message);
+
+	return message;
+}
+
+
+/**
  * nih_io_reopen:
  * @parent: parent pointer of new structure,
  * @fd: file descriptor to manage,
@@ -463,6 +507,7 @@ nih_io_reopen (const void        *parent,
 	if (! io)
 		return NULL;
 
+	io->type = NIH_IO_STREAM;
 	io->reader = reader;
 	io->close_handler = close_handler;
 	io->error_handler = error_handler;
@@ -470,7 +515,8 @@ nih_io_reopen (const void        *parent,
 	io->shutdown = FALSE;
 
 	io->watch = nih_io_add_watch (io, fd, NIH_IO_READ,
-				      (NihIoWatcher) nih_io_watcher, io);
+				      (NihIoWatcher) nih_io_stream_watcher,
+				      io);
 	if (! io->watch)
 		goto error;
 
@@ -511,22 +557,24 @@ error:
 
 
 /**
- * nih_io_watcher:
+ * nih_io_stream_watcher:
  * @io: NihIo structure,
  * @watch: NihIoWatch for which an event occurred,
  * @events: events that occurred.
  *
  * This is the watcher function associated with all file descriptors
- * being managed by NihIo.  It ensures that data is read from the file
- * descriptor into the recv buffer and the reader called, any data in
- * the send buffer is written to the socket and any errors are handled
+ * in the stream mode being managed by NihIo.  It ensures that data is
+ * read from the file descriptor into the recv buffer and the reader
+ * called, any data in the send buffer is written to the socket
+ * and any errors are handled
  **/
 static void
-nih_io_watcher (NihIo       *io,
-		NihIoWatch  *watch,
-		NihIoEvents  events)
+nih_io_stream_watcher (NihIo       *io,
+		       NihIoWatch  *watch,
+		       NihIoEvents  events)
 {
 	nih_assert (io != NULL);
+	nih_assert (io->type == NIH_IO_STREAM);
 	nih_assert (watch != NULL);
 
 	/* There's data to be read */
@@ -626,6 +674,7 @@ nih_io_watcher (NihIo       *io,
 		nih_io_closed (io);
 }
 
+
 /**
  * nih_io_error:
  * @io: structure error occurred for.
@@ -687,8 +736,8 @@ nih_io_closed (NihIo *io)
  * nih_io_shutdown:
  * @io: structure to be closed.
  *
- * Marks the NihIo structure to be closed once the buffers have been
- * emptied, rather than immediately.  Closure is performed by calling
+ * Marks the NihIo structure to be closed once the buffers or queue have
+ * been emptied, rather than immediately.  Closure is performed by calling
  * the close handler if given or nih_io_close().
  *
  * This is most useful to send a burst of data and discard the structure

@@ -1,5 +1,12 @@
 2006-12-19  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.c (nih_io_reopen): Receive the type from the arguments,
+	instead of hard-coding to be stream.  Set up the structure accordingly.
+	* nih/io.h: Update prototype.
+	* nih/tests/test_io.c (test_reopen): Check message mode is allocated
+	properly.
+	* nih/file.c (nih_file_init): Open in stream mode.
+
 	* nih/io.c (nih_io_message_new): Catch failure to allocate message
 	or control buffer.
 	(nih_io_message_add_control): No need to try and allocate the control

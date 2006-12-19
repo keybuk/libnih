@@ -269,7 +269,7 @@ int           nih_io_message_send        (NihIoMessage *message, int fd);
 
 
 NihIo *      nih_io_reopen               (const void *parent, int fd,
-					  NihIoReader reader,
+					  NihIoType type, NihIoReader reader,
 					  NihIoCloseHandler close_handler,
 					  NihIoErrorHandler error_handler,
 					  void *data);

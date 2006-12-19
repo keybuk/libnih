@@ -787,19 +787,24 @@ test_reopen (void)
 	int               fds[2];
 	struct sigaction  oldact;
 
-	/* Check that we can create an NihIo structure from an existing
-	 * file descriptor; the structure should be correctly populated
-	 * and assigned an NihIoWatch.  The file descriptor should be
-	 * altered so that it is non-blocking.
-	 */
 	TEST_FUNCTION ("nih_io_reopen");
 	pipe (fds);
-	io = nih_io_reopen (NULL, fds[0], my_reader, my_close_handler,
-			    my_error_handler, &io);
+
+	/* Check that we can create a stream mode NihIo structure from an
+	 * existing file descriptor; the structure should be correctly
+	 * populated and assigned an NihIoWatch.  The file descriptor
+	 * should be altered so that it is non-blocking.
+	 */
+	TEST_FEATURE ("with stream mode");
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
+			    my_reader, my_close_handler, my_error_handler,
+			    &io);
 
 	TEST_ALLOC_SIZE (io, sizeof (NihIo));
 	TEST_ALLOC_PARENT (io->send_buf, io);
+	TEST_ALLOC_SIZE (io->send_buf, sizeof (NihIoBuffer));
 	TEST_ALLOC_PARENT (io->recv_buf, io);
+	TEST_ALLOC_SIZE (io->recv_buf, sizeof (NihIoBuffer));
 	TEST_EQ (io->type, NIH_IO_STREAM);
 	TEST_EQ_P (io->reader, my_reader);
 	TEST_EQ_P (io->close_handler, my_close_handler);
@@ -811,8 +816,37 @@ test_reopen (void)
 	TEST_EQ (io->watch->events, NIH_IO_READ);
 	TEST_TRUE (fcntl (fds[0], F_GETFL) & O_NONBLOCK);
 
+	nih_free (io);
+
+
+	/* Check that we can create a message mode NihIo structure from an
+	 * existing file descriptor; the structure should be correctly
+	 * populated and assigned an NihIoWatch.  The file descriptor
+	 * should be altered so that it is non-blocking.
+	 */
+	TEST_FEATURE ("with message mode");
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
+			    my_reader, my_close_handler, my_error_handler,
+			    &io);
+
+	TEST_ALLOC_SIZE (io, sizeof (NihIo));
+	TEST_ALLOC_PARENT (io->send_q, io);
+	TEST_ALLOC_SIZE (io->send_q, sizeof (NihList));
+	TEST_ALLOC_PARENT (io->recv_q, io);
+	TEST_ALLOC_SIZE (io->recv_q, sizeof (NihList));
+	TEST_EQ (io->type, NIH_IO_MESSAGE);
+	TEST_EQ_P (io->reader, my_reader);
+	TEST_EQ_P (io->close_handler, my_close_handler);
+	TEST_EQ_P (io->error_handler, my_error_handler);
+	TEST_EQ_P (io->data, &io);
+
+	TEST_ALLOC_PARENT (io->watch, io);
+	TEST_EQ (io->watch->fd, fds[0]);
+	TEST_EQ (io->watch->events, NIH_IO_READ);
+	TEST_TRUE (fcntl (fds[0], F_GETFL) & O_NONBLOCK);
 
 	nih_free (io);
+
 
 	close (fds[0]);
 	close (fds[1]);
@@ -843,7 +877,8 @@ test_shutdown (void)
 
 	TEST_FUNCTION ("nih_io_shutdown");
 	pipe (fds);
-	io = nih_io_reopen (NULL, fds[0], NULL, NULL, NULL, NULL);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
+			    NULL, NULL, NULL, NULL);
 	nih_io_buffer_push (io->recv_buf, "some data", 9);
 
 	free_called = 0;
@@ -892,7 +927,8 @@ test_close (void)
 	TEST_FEATURE ("with open file descriptor");
 	pipe (fds);
 	error_called = 0;
-	io = nih_io_reopen (NULL, fds[0], NULL, NULL, my_error_handler, &io);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
+			    NULL, NULL, my_error_handler, &io);
 
 	free_called = 0;
 	nih_alloc_set_destructor (io, destructor_called);
@@ -917,7 +953,8 @@ test_close (void)
 	error_called = 0;
 	last_data = NULL;
 	last_error = NULL;
-	io = nih_io_reopen (NULL, fds[0], NULL, NULL, my_error_handler, &io);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
+			    NULL, NULL, my_error_handler, &io);
 
 	free_called = 0;
 	nih_alloc_set_destructor (io, destructor_called);
@@ -951,8 +988,9 @@ test_stream_watcher (void)
 	 */
 	TEST_FEATURE ("with data to read");
 	pipe (fds);
-	io = nih_io_reopen (NULL, fds[0], my_reader, my_close_handler,
-			    my_error_handler, &io);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
+			    my_reader, my_close_handler, my_error_handler,
+			    &io);
 
 	write (fds[1], "this is a test", 14);
 
@@ -1054,7 +1092,8 @@ test_stream_watcher (void)
 	 */
 	TEST_FEATURE ("with no close handler");
 	pipe (fds);
-	io = nih_io_reopen (NULL, fds[0], my_reader, NULL, NULL, &io);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
+			    my_reader, NULL, NULL, &io);
 
 	free_called = 0;
 	nih_alloc_set_destructor (io, destructor_called);
@@ -1075,7 +1114,8 @@ test_stream_watcher (void)
 	 */
 	TEST_FEATURE ("with no error handler");
 	pipe (fds);
-	io = nih_io_reopen (NULL, fds[0], my_reader, NULL, NULL, &io);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
+			    my_reader, NULL, NULL, &io);
 
 	free_called = 0;
 	nih_alloc_set_destructor (io, destructor_called);
@@ -1100,8 +1140,8 @@ test_stream_watcher (void)
 	 */
 	TEST_FEATURE ("with data to write");
 	output = tmpfile ();
-	io = nih_io_reopen (NULL, fileno (output), NULL,
-			    my_close_handler, my_error_handler, &io);
+	io = nih_io_reopen (NULL, fileno (output), NIH_IO_STREAM,
+			    NULL, my_close_handler, my_error_handler, &io);
 
 	nih_io_printf (io, "this is a test\n");
 
@@ -1171,7 +1211,7 @@ test_read (void)
 	char  *str;
 
 	TEST_FUNCTION ("nih_io_read");
-	io = nih_io_reopen (NULL, 0, NULL, NULL, NULL, NULL);
+	io = nih_io_reopen (NULL, 0, NIH_IO_STREAM, NULL, NULL, NULL, NULL);
 	nih_io_buffer_push (io->recv_buf, "this is a test of the io code", 29);
 
 
@@ -1215,7 +1255,7 @@ test_write (void)
 	NihIo *io;
 
 	TEST_FUNCTION ("nih_io_write");
-	io = nih_io_reopen (NULL, 0, NULL, NULL, NULL, NULL);
+	io = nih_io_reopen (NULL, 0, NIH_IO_STREAM, NULL, NULL, NULL, NULL);
 
 	/* Check that we can write data into the NihIo send buffer, the
 	 * buffer should contain the data and be a page in size.  The
@@ -1250,7 +1290,7 @@ test_get (void)
 	char  *str;
 
 	TEST_FUNCTION ("nih_io_get");
-	io = nih_io_reopen (NULL, 0, NULL, NULL, NULL, NULL);
+	io = nih_io_reopen (NULL, 0, NIH_IO_STREAM, NULL, NULL, NULL, NULL);
 	nih_io_buffer_push (io->recv_buf, "some data\n", 10);
 	nih_io_buffer_push (io->recv_buf, "and another line\n", 17);
 	nih_io_buffer_push (io->recv_buf, "incomplete", 10);
@@ -1310,7 +1350,7 @@ test_printf (void)
 	NihIo *io;
 
 	TEST_FUNCTION ("nih_io_printf");
-	io = nih_io_reopen (NULL, 0, NULL, NULL, NULL, NULL);
+	io = nih_io_reopen (NULL, 0, NIH_IO_STREAM, NULL, NULL, NULL, NULL);
 
 	/* Check that we can write a line of formatted data into the send
 	 * buffer, which should be written without a NULL terminator.

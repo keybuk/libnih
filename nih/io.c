@@ -681,6 +681,7 @@ nih_io_message_send (NihIoMessage *message,
  * nih_io_reopen:
  * @parent: parent pointer of new structure,
  * @fd: file descriptor to manage,
+ * @type: handling mode,
  * @reader: function to call when new data available,
  * @close_handler: function to call on close,
  * @error_handler: function to call on error,
@@ -690,11 +691,18 @@ nih_io_message_send (NihIoMessage *message,
  * already opened file descriptor.  The descriptor is set to be non-blocking
  * if it hasn't already been and the SIGPIPE signal is set to be ignored.
  *
+ * If @type is NIH_IO_STREAM, the descriptor is managed in stream mode; data
+ * to be sent and data received are held in a single buffer that is expanded
+ * and shrunk as required.  If @type is NIH_IO_MESSAGE, the descriptor is
+ * managed in message mode; individual messages are queued to be sent and
+ * are received into a queue as discreet messages.
+ *
  * If @reader is given then all data is automatically read from the
  * file descriptor and stored in a buffer and this function is called
- * whenever there is new data available.  The function is under no
- * obligation to remove any data, it's perfectly valid to leave it in the
- * buffer until next time.
+ * whenever there is new data available.  In stream mode, the function is
+ * under no obligation to remove any data, it's perfectly valid to leave it
+ * in the buffer until next time.  In message mode, the data must be processed
+ * or lost, as the next time it is called will be for the next message.
  *
  * If @close_handler is given then it is called whenever the remote end of the
  * file descriptor is closed, otherwise the local end is closed and the
@@ -715,12 +723,14 @@ nih_io_message_send (NihIoMessage *message,
 NihIo *
 nih_io_reopen (const void        *parent,
 	       int                fd,
+	       NihIoType          type,
 	       NihIoReader        reader,
 	       NihIoCloseHandler  close_handler,
 	       NihIoErrorHandler  error_handler,
 	       void              *data)
 {
-	NihIo *io;
+	NihIo        *io;
+	NihIoWatcher  watcher;
 
 	nih_assert (fd >= 0);
 
@@ -728,25 +738,45 @@ nih_io_reopen (const void        *parent,
 	if (! io)
 		return NULL;
 
-	io->type = NIH_IO_STREAM;
+	io->type = type;
 	io->reader = reader;
 	io->close_handler = close_handler;
 	io->error_handler = error_handler;
 	io->data = data;
 	io->shutdown = FALSE;
 
-	io->watch = nih_io_add_watch (io, fd, NIH_IO_READ,
-				      (NihIoWatcher) nih_io_stream_watcher,
-				      io);
+	switch (io->type) {
+	case NIH_IO_STREAM:
+		watcher = (NihIoWatcher)nih_io_stream_watcher;
+
+		io->send_buf = nih_io_buffer_new (io);
+		if (! io->send_buf)
+			goto error;
+
+		io->recv_buf = nih_io_buffer_new (io);
+		if (! io->recv_buf)
+			goto error;
+
+		break;
+	case NIH_IO_MESSAGE:
+		io->send_q = nih_list_new (io);
+		if (! io->send_q)
+			goto error;
+
+		io->recv_q = nih_list_new (io);
+		if (! io->recv_q)
+			goto error;
+
+		break;
+	default:
+		nih_assert_notreached ();
+	}
+
+	/* The most appropriate watcher function is selected above based
+	 * on the mode.
+	 */
+	io->watch = nih_io_add_watch (io, fd, NIH_IO_READ, watcher, io);
 	if (! io->watch)
-		goto error;
-
-	io->send_buf = nih_io_buffer_new (io);
-	if (! io->send_buf)
-		goto error;
-
-	io->recv_buf = nih_io_buffer_new (io);
-	if (! io->recv_buf)
 		goto error;
 
 	/* Irritating signal, means we terminate if the remote end

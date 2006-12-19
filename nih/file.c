@@ -87,8 +87,8 @@ nih_file_init (void)
 		if (inotify_fd < 0)
 			return;
 
-		NIH_MUST (nih_io_reopen (NULL, inotify_fd, nih_file_reader,
-					 NULL, NULL, NULL));
+		NIH_MUST (nih_io_reopen (NULL, inotify_fd, NIH_IO_STREAM,
+					 nih_file_reader, NULL, NULL, NULL));
 	}
 }
 

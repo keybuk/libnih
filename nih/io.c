@@ -52,7 +52,6 @@
 
 
 /* Prototypes for static functions */
-static inline void nih_io_buffer_shrink  (NihIoBuffer *buffer, size_t len);
 static void        nih_io_stream_watcher (NihIo *io, NihIoWatch *watch,
 					  NihIoEvents events);
 static void        nih_io_closed         (NihIo *io);
@@ -359,11 +358,6 @@ nih_io_buffer_pop (const void  *parent,
 	/* Move the buffer up */
 	nih_io_buffer_shrink (buffer, len);
 
-	/* Don't worry if this fails, it just means the buffer is larger
-	 * than it needs to be.
-	 */
-	nih_io_buffer_resize (buffer, 0);
-
 	return str;
 }
 
@@ -375,7 +369,7 @@ nih_io_buffer_pop (const void  *parent,
  * Removes @len bytes from the beginning of @buffer and moves the rest
  * of the data up to begin there.
  **/
-static inline void
+void
 nih_io_buffer_shrink (NihIoBuffer *buffer,
 		      size_t       len)
 {
@@ -385,6 +379,10 @@ nih_io_buffer_shrink (NihIoBuffer *buffer,
 	memmove (buffer->buf, buffer->buf + len, buffer->len - len);
 	buffer->len -= len;
 
+	/* Don't worry if this fails, it just means the buffer is larger
+	 * than it needs to be.
+	 */
+	nih_io_buffer_resize (buffer, 0);
 }
 
 /**
@@ -848,9 +846,6 @@ nih_io_stream_watcher (NihIo       *io,
 		/* Don't check for writability if we have nothing to write */
 		if (! io->send_buf->len)
 			watch->events &= ~NIH_IO_WRITE;
-
-		/* Resize the buffer to avoid memory wastage */
-		nih_io_buffer_resize (io->send_buf, 0);
 	}
 
 	/* Shut down the socket if it has empty buffers */

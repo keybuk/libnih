@@ -343,6 +343,35 @@ test_buffer_pop (void)
 }
 
 void
+test_buffer_shrink (void)
+{
+	NihIoBuffer *buf;
+
+	TEST_FUNCTION ("nih_io_buffer_shrink");
+	buf = nih_io_buffer_new (NULL);
+	nih_io_buffer_push (buf, "this is a test of the buffer code", 33);
+
+
+	/* Check that we can shrink the buffer by a small number of bytes. */
+	TEST_FEATURE ("with full buffer");
+	nih_io_buffer_shrink (buf, 14);
+
+	TEST_EQ (buf->len, 19);
+	TEST_EQ_MEM (buf->buf, " of the buffer code", 19);
+
+
+	/* Check that we can empty the buffer and the buffer is freed. */
+	TEST_FEATURE ("with request to empty buffer");
+	nih_io_buffer_shrink (buf, 19);
+
+	TEST_EQ (buf->len, 0);
+	TEST_EQ (buf->size, 0);
+	TEST_EQ_P (buf->buf, NULL);
+
+	nih_free (buf);
+}
+
+void
 test_buffer_push (void)
 {
 	NihIoBuffer *buf;
@@ -1346,8 +1375,9 @@ main (int   argc,
 	test_handle_fds ();
 	test_buffer_new ();
 	test_buffer_resize ();
-	test_buffer_push ();
 	test_buffer_pop ();
+	test_buffer_shrink ();
+	test_buffer_push ();
 	test_message_new ();
 	test_message_recv ();
 	test_message_send ();

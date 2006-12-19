@@ -1,5 +1,12 @@
 2006-12-19  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.c (nih_io_buffer_shrink): Make an exported function, resize
+	the buffer once done to save on memory.
+	(nih_io_buffer_pop, nih_io_stream_watcher): No need to explicitly
+	resize here now, as it gets called from shrink.
+	* nih/io.h: Add prototype.
+	* nih/tests/test_io.c (test_buffer_shrink): Test shrink.
+
 	* nih/io.c (nih_io_message_recv, nih_io_message_send): Functions
 	to send and receive a message over a socket, hiding the difficult
 	bits of dealing with msghdr/iovec.

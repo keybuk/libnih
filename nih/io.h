@@ -250,6 +250,7 @@ int           nih_io_buffer_resize (NihIoBuffer *buffer, size_t grow);
 char *        nih_io_buffer_pop    (const void *parent, NihIoBuffer *buffer,
 				    size_t len)
 	__attribute__ ((warn_unused_result, malloc));
+void          nih_io_buffer_shrink (NihIoBuffer *buffer, size_t len);
 int           nih_io_buffer_push   (NihIoBuffer *buffer, const char *str,
 				    size_t len);
 

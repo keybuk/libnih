@@ -1068,6 +1068,9 @@ nih_io_close (NihIo *io)
  * in a new string allocated with nih_alloc() that is always NULL terminated
  * even if there was not a NULL in the buffer.
  *
+ * This may only be used when @io is in stream mode; if in message mode,
+ * use nih_io_read_message().
+ *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
  * is freed, the returned string will be freed too.  If you have clean-up
@@ -1084,6 +1087,7 @@ nih_io_read (const void *parent,
 	     size_t      len)
 {
 	nih_assert (io != NULL);
+	nih_assert (io->type == NIH_IO_STREAM);
 
 	return nih_io_buffer_pop (parent, io->recv_buf, len);
 }
@@ -1100,6 +1104,9 @@ nih_io_read (const void *parent,
  * Care should be taken to ensure @len does not include the NULL
  * terminator unless you really want that sent.
  *
+ * This may only be used when @io is in stream mode; if in message mode,
+ * use nih_io_send_message().
+ *
  * Returns: zero on success, negative value if insufficient memory.
  **/
 int
@@ -1110,6 +1117,7 @@ nih_io_write (NihIo      *io,
 	int ret;
 
 	nih_assert (io != NULL);
+	nih_assert (io->type == NIH_IO_STREAM);
 	nih_assert (str != NULL);
 
 	ret = nih_io_buffer_push (io->send_buf, str, len);
@@ -1138,6 +1146,9 @@ nih_io_write (NihIo      *io,
  *
  * The string and the delimiter are removed from the buffer.
  *
+ * This may only be used when @io is in stream mode; if in message mode,
+ * use nih_io_read_message().
+ *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
  * is freed, the returned string will be freed too.  If you have clean-up
@@ -1155,6 +1166,7 @@ nih_io_get (const void *parent,
 	size_t i;
 
 	nih_assert (io != NULL);
+	nih_assert (io->type == NIH_IO_STREAM);
 	nih_assert (delim != NULL);
 
 	for (i = 0; i < io->recv_buf->len; i++) {
@@ -1182,6 +1194,9 @@ nih_io_get (const void *parent,
  * the send buffer of @io, the data will not be sent immediately but
  * whenever possible.
  *
+ * This may only be used when @io is in stream mode; if in message mode,
+ * use nih_io_send_message().
+ *
  * Returns: number of bytes written, negative value if insufficient memory.
  **/
 ssize_t
@@ -1194,6 +1209,7 @@ nih_io_printf (NihIo      *io,
 	ssize_t  len;
 
 	nih_assert (io != NULL);
+	nih_assert (io->type == NIH_IO_STREAM);
 	nih_assert (format != NULL);
 
 	va_start (args, format);

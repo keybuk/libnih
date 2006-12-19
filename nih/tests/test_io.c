@@ -430,6 +430,68 @@ test_message_new (void)
 }
 
 void
+test_message_add_control (void)
+{
+	NihIoMessage   *msg;
+	struct cmsghdr *cmsg;
+	struct ucred    cred;
+	int             ret, value;
+
+	TEST_FUNCTION ("nih_io_message_add_control");
+	msg = nih_io_message_new (NULL);
+
+	/* Check that we can add a control message to a message that doesn't
+	 * yet have a control buffer.  The control buffer should be a child
+	 * of the message, and contain the complete aligned cmsg.
+	 */
+	TEST_FEATURE ("with empty message");
+	value = 0;
+	ret = nih_io_message_add_control (msg, SOL_SOCKET, SCM_RIGHTS,
+					  sizeof (int), &value);
+
+	TEST_ALLOC_PARENT (msg->ctrl_buf, msg);
+	TEST_ALLOC_SIZE (msg->ctrl_buf, sizeof (NihIoBuffer));
+	TEST_ALLOC_PARENT (msg->ctrl_buf->buf, msg->ctrl_buf);
+	TEST_ALLOC_SIZE (msg->ctrl_buf->buf, BUFSIZ);
+
+	TEST_EQ (msg->ctrl_buf->len, CMSG_SPACE (sizeof (int)));
+
+	cmsg = (struct cmsghdr *)msg->ctrl_buf->buf;
+
+	TEST_EQ (cmsg->cmsg_level, SOL_SOCKET);
+	TEST_EQ (cmsg->cmsg_type, SCM_RIGHTS);
+	TEST_EQ (cmsg->cmsg_len, CMSG_LEN (sizeof (int)));
+	TEST_EQ_MEM (CMSG_DATA (cmsg), &value, sizeof (int));
+
+
+	/* Check that we can append more control data onto the end of an
+	 * existing message.  The buffer should include both messages.
+	 */
+	TEST_FEATURE ("with existing control data");
+	cred.pid = cred.uid = cred.gid = 1;
+	ret = nih_io_message_add_control (msg, SOL_SOCKET, SCM_CREDENTIALS,
+					  sizeof (cred), &cred);
+
+	TEST_ALLOC_PARENT (msg->ctrl_buf, msg);
+	TEST_ALLOC_SIZE (msg->ctrl_buf, sizeof (NihIoBuffer));
+	TEST_ALLOC_PARENT (msg->ctrl_buf->buf, msg->ctrl_buf);
+	TEST_ALLOC_SIZE (msg->ctrl_buf->buf, BUFSIZ);
+
+	TEST_EQ (msg->ctrl_buf->len, (CMSG_SPACE (sizeof (int))
+				      + CMSG_SPACE (sizeof (cred))));
+
+	cmsg = (struct cmsghdr *)(msg->ctrl_buf->buf
+				  + CMSG_SPACE (sizeof (int)));
+
+	TEST_EQ (cmsg->cmsg_level, SOL_SOCKET);
+	TEST_EQ (cmsg->cmsg_type, SCM_CREDENTIALS);
+	TEST_EQ (cmsg->cmsg_len, CMSG_LEN (sizeof (cred)));
+	TEST_EQ_MEM (CMSG_DATA (cmsg), &cred, sizeof (cred));
+
+	nih_free (msg);
+}
+
+void
 test_message_recv (void)
 {
 	NihIoMessage       *msg;
@@ -1379,6 +1441,7 @@ main (int   argc,
 	test_buffer_shrink ();
 	test_buffer_push ();
 	test_message_new ();
+	test_message_add_control ();
 	test_message_recv ();
 	test_message_send ();
 	test_reopen ();

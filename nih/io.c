@@ -274,7 +274,7 @@ nih_io_buffer_new (const void *parent)
  * If there is more room than there needs to be, the buffer may actually
  * be decreased in size.
  *
- * Returns: zero on success, NULL if insufficient memory.
+ * Returns: zero on success, negative value if insufficient memory.
  **/
 int
 nih_io_buffer_resize (NihIoBuffer *buffer,
@@ -394,7 +394,7 @@ nih_io_buffer_shrink (NihIoBuffer *buffer,
  * Pushes @len bytes from @str onto the end of @buffer, increasing the size
  * if necessary.
  *
- * Returns: zero on success, NULL if insufficient memory.
+ * Returns: zero on success, negative value if insufficient memory.
  **/
 int
 nih_io_buffer_push (NihIoBuffer *buffer,
@@ -455,6 +455,60 @@ nih_io_message_new (const void *parent)
 	message->ctrl_buf = nih_io_buffer_new (message);
 
 	return message;
+}
+
+/**
+ * nih_io_message_add_control:
+ * @message: message to extend,
+ * @level: level of control message,
+ * @type: protocol-specific type,
+ * @len: length of control data,
+ * @data: control data.
+ *
+ * Adds a new control message to @message, with the @level and @type given.
+ * The control data is specified in @data and should be @len bytes long.
+ *
+ * Returns: zero on success, negative value if insufficient memory.
+ **/
+int
+nih_io_message_add_control (NihIoMessage *message,
+			    int           level,
+			    int           type,
+			    socklen_t     len,
+			    const void   *data)
+{
+	struct cmsghdr *cmsg;
+
+	nih_assert (message != NULL);
+	nih_assert (data != NULL);
+
+	/* Allocate the control message buffer if necessary */
+	if (! message->ctrl_buf) {
+		message->ctrl_buf = nih_io_buffer_new (message);
+		if (! message->ctrl_buf)
+			return -1;
+	}
+
+	/* Extend it to have sufficient space for a new control message */
+	if (nih_io_buffer_resize (message->ctrl_buf, CMSG_SPACE (len)) < 0)
+		return -1;
+
+	/* Place it immediately after the current length (this is supposedly
+	 * guaranteed to be aligned).  Increment the length to the next
+	 * alignment point.
+	 */
+	cmsg = (struct cmsghdr *)(message->ctrl_buf->buf
+				  + message->ctrl_buf->len);
+
+	cmsg->cmsg_level = level;
+	cmsg->cmsg_type = type;
+	cmsg->cmsg_len = CMSG_LEN (len);
+
+	memcpy (CMSG_DATA (cmsg), data, len);
+
+	message->ctrl_buf->len += CMSG_SPACE (len);
+
+	return 0;
 }
 
 

@@ -42,6 +42,17 @@
 }
 
 {
+   nih-io-init
+   Memcheck:Leak
+   fun:malloc
+   fun:realloc
+   fun:nih_alloc_using
+   fun:nih_alloc
+   fun:nih_list_new
+   fun:nih_io_init
+}
+
+{
    nih-signal-init
    Memcheck:Leak
    fun:malloc

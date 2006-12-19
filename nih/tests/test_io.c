@@ -449,8 +449,6 @@ test_message_add_control (void)
 	ret = nih_io_message_add_control (msg, SOL_SOCKET, SCM_RIGHTS,
 					  sizeof (int), &value);
 
-	TEST_ALLOC_PARENT (msg->ctrl_buf, msg);
-	TEST_ALLOC_SIZE (msg->ctrl_buf, sizeof (NihIoBuffer));
 	TEST_ALLOC_PARENT (msg->ctrl_buf->buf, msg->ctrl_buf);
 	TEST_ALLOC_SIZE (msg->ctrl_buf->buf, BUFSIZ);
 
@@ -472,8 +470,6 @@ test_message_add_control (void)
 	ret = nih_io_message_add_control (msg, SOL_SOCKET, SCM_CREDENTIALS,
 					  sizeof (cred), &cred);
 
-	TEST_ALLOC_PARENT (msg->ctrl_buf, msg);
-	TEST_ALLOC_SIZE (msg->ctrl_buf, sizeof (NihIoBuffer));
 	TEST_ALLOC_PARENT (msg->ctrl_buf->buf, msg->ctrl_buf);
 	TEST_ALLOC_SIZE (msg->ctrl_buf->buf, BUFSIZ);
 
@@ -531,10 +527,6 @@ test_message_recv (void)
 
 	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
 	TEST_LIST_EMPTY (&msg->entry);
-	TEST_ALLOC_SIZE (msg->msg_buf, sizeof (NihIoBuffer));
-	TEST_ALLOC_PARENT (msg->msg_buf, msg);
-	TEST_ALLOC_SIZE (msg->ctrl_buf, sizeof (NihIoBuffer));
-	TEST_ALLOC_PARENT (msg->ctrl_buf, msg);
 
 	TEST_EQ (msg->msg_buf->len, 4);
 	TEST_EQ_MEM (msg->msg_buf->buf, "test", 4);
@@ -565,10 +557,6 @@ test_message_recv (void)
 
 	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
 	TEST_LIST_EMPTY (&msg->entry);
-	TEST_ALLOC_SIZE (msg->msg_buf, sizeof (NihIoBuffer));
-	TEST_ALLOC_PARENT (msg->msg_buf, msg);
-	TEST_ALLOC_SIZE (msg->ctrl_buf, sizeof (NihIoBuffer));
-	TEST_ALLOC_PARENT (msg->ctrl_buf, msg);
 
 	TEST_EQ (msg->msg_buf->len, 4);
 	TEST_EQ_MEM (msg->msg_buf->buf, "test", 4);
@@ -620,10 +608,6 @@ test_message_recv (void)
 
 	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
 	TEST_LIST_EMPTY (&msg->entry);
-	TEST_ALLOC_SIZE (msg->msg_buf, sizeof (NihIoBuffer));
-	TEST_ALLOC_PARENT (msg->msg_buf, msg);
-	TEST_ALLOC_SIZE (msg->ctrl_buf, sizeof (NihIoBuffer));
-	TEST_ALLOC_PARENT (msg->ctrl_buf, msg);
 
 	TEST_EQ (msg->msg_buf->len, 4);
 	TEST_EQ_MEM (msg->msg_buf->buf, "test", 4);
@@ -672,7 +656,6 @@ test_message_send (void)
 	 */
 	TEST_FEATURE ("with no control data");
 	msg = nih_io_message_new (NULL);
-	msg->msg_buf = nih_io_buffer_new (msg);
 	nih_io_buffer_push (msg->msg_buf, "test", 4);
 
 	ret = nih_io_message_send (msg, fds[0]);
@@ -689,7 +672,6 @@ test_message_send (void)
 	 * message, and have it come out the other end.
 	 */
 	TEST_FEATURE ("with control data");
-	msg->ctrl_buf = nih_io_buffer_new (msg);
 	nih_io_buffer_resize (msg->ctrl_buf, CMSG_SPACE (sizeof (int)));
 
 	cmsg = (struct cmsghdr *)msg->ctrl_buf->buf;
@@ -741,8 +723,7 @@ test_message_send (void)
 	msg->addr = (struct sockaddr *)&addr;
 	msg->addrlen = addrlen;
 
-	nih_free (msg->ctrl_buf);
-	msg->ctrl_buf = 0;
+	msg->ctrl_buf->len = 0;
 
 	ret = nih_io_message_send (msg, fds[0]);
 

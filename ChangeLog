@@ -1,5 +1,18 @@
 2006-12-19  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.c (nih_io_message_new): Catch failure to allocate message
+	or control buffer.
+	(nih_io_message_add_control): No need to try and allocate the control
+	buffer here.
+	(nih_io_message_recv): Only need to resize the buffers here as well.
+	(nih_io_message_send): No need to deal with there being no message
+	or control buffer here either.
+	* nih/tests/test_io.c: Fix test assumptions based on above.
+	* nih/libnih.supp: Add missing nih_io_init suppression.
+
+	* nih/tests/test_io.c (test_message_add_control): Non need to check
+	allocation of the buffer itself.
+
 	* nih/io.c (nih_io_message_add_control): Function to add a control
 	message to the control buffer, to save mucking around with difficult
 	bits ourselves.

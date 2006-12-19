@@ -452,7 +452,16 @@ nih_io_message_new (const void *parent)
 	message->addrlen = 0;
 
 	message->msg_buf = nih_io_buffer_new (message);
+	if (! message->msg_buf) {
+		nih_free (message);
+		return NULL;
+	}
+
 	message->ctrl_buf = nih_io_buffer_new (message);
+	if (! message->ctrl_buf) {
+		nih_free (message);
+		return NULL;
+	}
 
 	return message;
 }
@@ -482,14 +491,8 @@ nih_io_message_add_control (NihIoMessage *message,
 	nih_assert (message != NULL);
 	nih_assert (data != NULL);
 
-	/* Allocate the control message buffer if necessary */
-	if (! message->ctrl_buf) {
-		message->ctrl_buf = nih_io_buffer_new (message);
-		if (! message->ctrl_buf)
-			return -1;
-	}
-
-	/* Extend it to have sufficient space for a new control message */
+	/* Extend the control buffer to have sufficient space for a new
+	 * control message */
 	if (nih_io_buffer_resize (message->ctrl_buf, CMSG_SPACE (len)) < 0)
 		return -1;
 
@@ -583,13 +586,9 @@ nih_io_message_recv  (const void *parent,
 		msghdr.msg_namelen = 0;
 	}
 
-	/* Allocate the message buffer and resize it so it'll fit at least
-	 * the number of bytes expected, receive the data directly into it.
+	/* Resize the message buffer it so it'll fit at least the number
+	 * of bytes expected, receive the data directly into it.
 	 */
-	message->msg_buf = nih_io_buffer_new (message);
-	if (! message->msg_buf)
-		goto error;
-
 	if (nih_io_buffer_resize (message->msg_buf, len) < 0)
 		goto error;
 
@@ -598,14 +597,10 @@ nih_io_message_recv  (const void *parent,
 	iov[0].iov_base = message->msg_buf->buf;
 	iov[0].iov_len = message->msg_buf->size;
 
-	/* Allocate the control buffer with ample space to receive any
+	/* Provide the control buffer with ample space to receive any
 	 * control information that we might get, and receive the data
 	 * directly into it as well.
 	 */
-	message->ctrl_buf = nih_io_buffer_new (message);
-	if (! message->ctrl_buf)
-		goto error;
-
 	if (nih_io_buffer_resize (message->ctrl_buf, BUFSIZ) < 0)
 		goto error;
 
@@ -665,23 +660,13 @@ nih_io_message_send (NihIoMessage *message,
 	msghdr.msg_name = message->addr;
 	msghdr.msg_namelen = message->addrlen;
 
-	if (message->msg_buf) {
-		msghdr.msg_iov = iov;
-		msghdr.msg_iovlen = 1;
-		iov[0].iov_base = message->msg_buf->buf;
-		iov[0].iov_len = message->msg_buf->len;
-	} else {
-		msghdr.msg_iov = NULL;
-		msghdr.msg_iovlen = 0;
-	}
+	msghdr.msg_iov = iov;
+	msghdr.msg_iovlen = 1;
+	iov[0].iov_base = message->msg_buf->buf;
+	iov[0].iov_len = message->msg_buf->len;
 
-	if (message->ctrl_buf) {
-		msghdr.msg_control = message->ctrl_buf->buf;
-		msghdr.msg_controllen = message->ctrl_buf->len;
-	} else {
-		msghdr.msg_control = NULL;
-		msghdr.msg_controllen = 0;
-	}
+	msghdr.msg_control = message->ctrl_buf->buf;
+	msghdr.msg_controllen = message->ctrl_buf->len;
 
 	msghdr.msg_flags = 0;
 

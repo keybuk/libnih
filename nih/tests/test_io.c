@@ -21,6 +21,10 @@
 
 #include <nih/test.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+
 #include <fcntl.h>
 #include <errno.h>
 #include <stdio.h>
@@ -392,6 +396,277 @@ test_message_new (void)
 	TEST_ALLOC_PARENT (msg->msg_buf, msg);
 	TEST_ALLOC_SIZE (msg->ctrl_buf, sizeof (NihIoBuffer));
 	TEST_ALLOC_PARENT (msg->ctrl_buf, msg);
+
+	nih_free (msg);
+}
+
+void
+test_message_recv (void)
+{
+	NihIoMessage       *msg;
+	struct sockaddr_un  addr0, addr1;
+	size_t              addr0len, addr1len;
+	struct msghdr       msghdr;
+	struct iovec        iov[1];
+	char                buf[BUFSIZ], cbuf[CMSG_SPACE(sizeof (int))];
+	struct cmsghdr     *cmsg;
+	int                 fds[2], *fdptr;
+
+	TEST_FUNCTION ("nih_io_message_recv");
+	socketpair (PF_UNIX, SOCK_DGRAM, 0, fds);
+
+	msghdr.msg_name = NULL;
+	msghdr.msg_namelen = 0;
+	msghdr.msg_iov = iov;
+	msghdr.msg_iovlen = 1;
+	msghdr.msg_control = NULL;
+	msghdr.msg_controllen = 0;
+	msghdr.msg_flags = 0;
+
+	iov[0].iov_base = buf;
+	iov[0].iov_len = sizeof (buf);
+
+	/* Check that we can receive a message from a socket with just
+	 * text, and no control data.  The message structure should be
+	 * allocated and filled properly.
+	 */
+	TEST_FEATURE ("with no control data");
+	memcpy (buf, "test", 4);
+	iov[0].iov_len = 4;
+
+	sendmsg (fds[0], &msghdr, 0);
+
+	msg = nih_io_message_recv (NULL, fds[1], 4);
+
+	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+	TEST_LIST_EMPTY (&msg->entry);
+	TEST_ALLOC_SIZE (msg->msg_buf, sizeof (NihIoBuffer));
+	TEST_ALLOC_PARENT (msg->msg_buf, msg);
+	TEST_ALLOC_SIZE (msg->ctrl_buf, sizeof (NihIoBuffer));
+	TEST_ALLOC_PARENT (msg->ctrl_buf, msg);
+
+	TEST_EQ (msg->msg_buf->len, 4);
+	TEST_EQ_MEM (msg->msg_buf->buf, "test", 4);
+
+	nih_free (msg);
+
+
+	/* Check that we can receive a message that contains control data,
+	 * and that it's put in the structure.
+	 */
+	TEST_FEATURE ("with control data");
+	msghdr.msg_control = cbuf;
+	msghdr.msg_controllen = sizeof (cbuf);
+
+	cmsg = CMSG_FIRSTHDR (&msghdr);
+	cmsg->cmsg_level = SOL_SOCKET;
+	cmsg->cmsg_type = SCM_RIGHTS;
+	cmsg->cmsg_len = CMSG_LEN (sizeof (int));
+
+	fdptr = (int *)CMSG_DATA (cmsg);
+	memcpy (fdptr, &fds[0], sizeof (int));
+
+	msghdr.msg_controllen = cmsg->cmsg_len;
+
+	sendmsg (fds[0], &msghdr, 0);
+
+	msg = nih_io_message_recv (NULL, fds[1], 4);
+
+	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+	TEST_LIST_EMPTY (&msg->entry);
+	TEST_ALLOC_SIZE (msg->msg_buf, sizeof (NihIoBuffer));
+	TEST_ALLOC_PARENT (msg->msg_buf, msg);
+	TEST_ALLOC_SIZE (msg->ctrl_buf, sizeof (NihIoBuffer));
+	TEST_ALLOC_PARENT (msg->ctrl_buf, msg);
+
+	TEST_EQ (msg->msg_buf->len, 4);
+	TEST_EQ_MEM (msg->msg_buf->buf, "test", 4);
+
+	cmsg = (struct cmsghdr *)msg->ctrl_buf->buf;
+	TEST_EQ (cmsg->cmsg_level, SOL_SOCKET);
+	TEST_EQ (cmsg->cmsg_type, SCM_RIGHTS);
+	TEST_EQ (cmsg->cmsg_len, CMSG_LEN (sizeof (int)));
+
+	nih_free (msg);
+
+	close (fds[0]);
+	close (fds[1]);
+
+
+	/* Check that we can receive a message from a non-specific source
+	 * over an unconnected socket.
+	 */
+	TEST_FEATURE ("with unconnected sockets");
+	addr0.sun_family = AF_UNIX;
+	addr0.sun_path[0] = '\0';
+
+	addr0len = offsetof (struct sockaddr_un, sun_path) + 1;
+	addr0len += snprintf (addr0.sun_path + 1, sizeof (addr0.sun_path) - 1,
+			      "/com/netsplit/libnih/test_io/%d.0", getpid ());
+
+	fds[0] = socket (PF_UNIX, SOCK_DGRAM, 0);
+	bind (fds[0], (struct sockaddr *)&addr0, addr0len);
+
+	addr1.sun_family = AF_UNIX;
+	addr1.sun_path[0] = '\0';
+
+	addr1len = offsetof (struct sockaddr_un, sun_path) + 1;
+	addr1len += snprintf (addr1.sun_path + 1, sizeof (addr1.sun_path) - 1,
+			      "/com/netsplit/libnih/test_io/%d.1", getpid ());
+
+	fds[1] = socket (PF_UNIX, SOCK_DGRAM, 0);
+	bind (fds[1], (struct sockaddr *)&addr1, addr1len);
+
+	msghdr.msg_name = (struct sockaddr *)&addr1;
+	msghdr.msg_namelen = addr1len;
+
+	msghdr.msg_control = NULL;
+	msghdr.msg_controllen = 0;
+
+	sendmsg (fds[0], &msghdr, 0);
+
+	msg = nih_io_message_recv (NULL, fds[1], 4);
+
+	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+	TEST_LIST_EMPTY (&msg->entry);
+	TEST_ALLOC_SIZE (msg->msg_buf, sizeof (NihIoBuffer));
+	TEST_ALLOC_PARENT (msg->msg_buf, msg);
+	TEST_ALLOC_SIZE (msg->ctrl_buf, sizeof (NihIoBuffer));
+	TEST_ALLOC_PARENT (msg->ctrl_buf, msg);
+
+	TEST_EQ (msg->msg_buf->len, 4);
+	TEST_EQ_MEM (msg->msg_buf->buf, "test", 4);
+
+	TEST_EQ (msg->addrlen, addr0len);
+	TEST_EQ (msg->addr->sa_family, PF_UNIX);
+	TEST_EQ_MEM (((struct sockaddr_un *)msg->addr)->sun_path,
+		     addr0.sun_path,
+		     addr0len - offsetof (struct sockaddr_un, sun_path));
+
+	nih_free (msg);
+
+	close (fds[0]);
+	close (fds[1]);
+}
+
+void
+test_message_send (void)
+{
+	NihIoMessage       *msg;
+	struct sockaddr_un  addr;
+	size_t              addrlen;
+	struct msghdr       msghdr;
+	struct iovec        iov[1];
+	char                buf[BUFSIZ], cbuf[CMSG_SPACE(sizeof (int))];
+	struct cmsghdr     *cmsg;
+	ssize_t             len;
+	int                 fds[2], ret, *fdptr;
+
+	TEST_FUNCTION ("nih_io_message_send");
+	socketpair (PF_UNIX, SOCK_DGRAM, 0, fds);
+
+	msghdr.msg_name = NULL;
+	msghdr.msg_namelen = 0;
+	msghdr.msg_iov = iov;
+	msghdr.msg_iovlen = 1;
+	msghdr.msg_control = NULL;
+	msghdr.msg_controllen = 0;
+	msghdr.msg_flags = 0;
+
+	iov[0].iov_base = buf;
+	iov[0].iov_len = sizeof (buf);
+
+	/* Check that we can send a message down a socket with just the
+	 * ordinary text, and no control data.
+	 */
+	TEST_FEATURE ("with no control data");
+	msg = nih_io_message_new (NULL);
+	msg->msg_buf = nih_io_buffer_new (msg);
+	nih_io_buffer_push (msg->msg_buf, "test", 4);
+
+	ret = nih_io_message_send (msg, fds[0]);
+
+	TEST_EQ (ret, 0);
+
+	len = recvmsg (fds[1], &msghdr, 0);
+
+	TEST_EQ (len, 4);
+	TEST_EQ_MEM (buf, "test", 4);
+
+
+	/* Check that we can include control message information in the
+	 * message, and have it come out the other end.
+	 */
+	TEST_FEATURE ("with control data");
+	msg->ctrl_buf = nih_io_buffer_new (msg);
+	nih_io_buffer_resize (msg->ctrl_buf, CMSG_SPACE (sizeof (int)));
+
+	cmsg = (struct cmsghdr *)msg->ctrl_buf->buf;
+	cmsg->cmsg_level = SOL_SOCKET;
+	cmsg->cmsg_type = SCM_RIGHTS;
+	cmsg->cmsg_len = CMSG_LEN (sizeof (int));
+
+	fdptr = (int *)CMSG_DATA (cmsg);
+	memcpy (fdptr, &fds[0], sizeof (int));
+
+	msg->ctrl_buf->len = cmsg->cmsg_len;
+
+	ret = nih_io_message_send (msg, fds[0]);
+
+	TEST_EQ (ret, 0);
+
+	msghdr.msg_control = cbuf;
+	msghdr.msg_controllen = sizeof (cbuf);
+
+	len = recvmsg (fds[1], &msghdr, 0);
+
+	TEST_EQ (len, 4);
+	TEST_EQ_MEM (buf, "test", 4);
+
+	cmsg = CMSG_FIRSTHDR (&msghdr);
+	TEST_EQ (cmsg->cmsg_level, SOL_SOCKET);
+	TEST_EQ (cmsg->cmsg_type, SCM_RIGHTS);
+	TEST_EQ (cmsg->cmsg_len, CMSG_LEN (sizeof (int)));
+
+	close (fds[0]);
+	close (fds[1]);
+
+
+	/* Check that we can send a message to a specific destination over
+	 * an unconnected socket.
+	 */
+	TEST_FEATURE ("with unconnected sockets");
+	addr.sun_family = AF_UNIX;
+	addr.sun_path[0] = '\0';
+
+	addrlen = offsetof (struct sockaddr_un, sun_path) + 1;
+	addrlen += snprintf (addr.sun_path + 1, sizeof (addr.sun_path) - 1,
+			     "/com/netsplit/libnih/test_io/%d", getpid ());
+
+	fds[0] = socket (PF_UNIX, SOCK_DGRAM, 0);
+	fds[1] = socket (PF_UNIX, SOCK_DGRAM, 0);
+	bind (fds[1], (struct sockaddr *)&addr, addrlen);
+
+	msg->addr = (struct sockaddr *)&addr;
+	msg->addrlen = addrlen;
+
+	nih_free (msg->ctrl_buf);
+	msg->ctrl_buf = 0;
+
+	ret = nih_io_message_send (msg, fds[0]);
+
+	TEST_EQ (ret, 0);
+
+	msghdr.msg_control = NULL;
+	msghdr.msg_controllen = 0;
+
+	len = recvmsg (fds[1], &msghdr, 0);
+
+	TEST_EQ (len, 4);
+	TEST_EQ_MEM (buf, "test", 4);
+
+	close (fds[0]);
+	close (fds[1]);
 
 	nih_free (msg);
 }
@@ -1026,6 +1301,41 @@ test_set_cloexec (void)
 	close (fds[1]);
 }
 
+void
+test_get_family (void)
+{
+	int fd;
+
+	TEST_FUNCTION ("nih_io_get_family");
+
+	/* Check that we can obtain the family of a UNIX socket. */
+	fd = socket (PF_UNIX, SOCK_STREAM, 0);
+
+	TEST_EQ (nih_io_get_family (fd), PF_UNIX);
+
+	close (fd);
+
+
+	/* Check that we can obtain the family of an IPv4 socket. */
+	fd = socket (PF_INET, SOCK_STREAM, 0);
+
+	TEST_EQ (nih_io_get_family (fd), PF_INET);
+
+	close (fd);
+
+
+	/* Check that we can obtain the family of an IPv6 socket. */
+	fd = socket (PF_INET6, SOCK_STREAM, 0);
+
+	TEST_EQ (nih_io_get_family (fd), PF_INET6);
+
+	close (fd);
+
+
+	/* Check that we get -1 on error. */
+	TEST_LT (nih_io_get_family (fd), 0);
+}
+
 
 int
 main (int   argc,
@@ -1038,6 +1348,9 @@ main (int   argc,
 	test_buffer_resize ();
 	test_buffer_push ();
 	test_buffer_pop ();
+	test_message_new ();
+	test_message_recv ();
+	test_message_send ();
 	test_reopen ();
 	test_shutdown ();
 	test_close ();
@@ -1048,6 +1361,7 @@ main (int   argc,
 	test_printf ();
 	test_set_nonblock ();
 	test_set_cloexec ();
+	test_get_family ();
 
 	return 0;
 }

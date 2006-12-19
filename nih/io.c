@@ -27,6 +27,10 @@
 #include <sys/types.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <sys/un.h>
+
+#include <netinet/in.h>
+#include <netinet/ip.h>
 
 #include <errno.h>
 #include <stdio.h>
@@ -42,6 +46,7 @@
 #include <nih/signal.h>
 #include <nih/logging.h>
 #include <nih/error.h>
+#include <nih/errors.h>
 
 #include "io.h"
 
@@ -416,8 +421,7 @@ nih_io_buffer_push (NihIoBuffer *buffer,
  * nih_io_message_new:
  * @parent: parent of new message.
  *
- * Allocates a new NihIoMessage structure containing an empty message
- * header, with no allocated address or iovec.  All functions that use
+ * Allocates a new empty NihIoMessage structure.  All functions that use
  * the message structure ensure that the internal data is an nih_alloc()
  * child of the message, so this may be freed using nih_list_free().
  *
@@ -453,6 +457,186 @@ nih_io_message_new (const void *parent)
 	message->ctrl_buf = nih_io_buffer_new (message);
 
 	return message;
+}
+
+
+/**
+ * nih_io_message_recv:
+ * @parent: parent of new message,
+ * @fd: file descriptor to read from,
+ * @len: maximum message size.
+ *
+ * Allocates a new NihIoMessage structure and fills it with a message
+ * received on the @fd given, which has an upper limit of @len bytes.
+ * The child buffers are allocated with nih_alloc as children of the
+ * message itself, so are freed when the message is.
+ *
+ * If the message received is larger than @len bytes, the
+ * NIH_TRUNCATED_MESSAGE error will be raised; likewise if there is more
+ * control information than expected, NIH_TRUNCATED_CONTROL will be raised.
+ *
+ * The message structure is allocated using nih_alloc() and normally
+ * stored in a linked list, a default destructor is set that removes the
+ * message from the list.  Removal of the message can be performed by
+ * freeing it.
+ *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned string will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the nih_alloc_set_destructor() function.
+ *
+ * Returns: new message, or NULL on raised error.
+ */
+NihIoMessage *
+nih_io_message_recv  (const void *parent,
+		      int         fd,
+		      size_t      len)
+{
+	NihIoMessage  *message;
+	struct msghdr  msghdr;
+	struct iovec   iov[1];
+	ssize_t        recv_len;
+
+	nih_assert (fd >= 0);
+
+	message = nih_io_message_new (parent);
+	if (! message)
+		nih_return_system_error (NULL);
+
+	/* Reserve enough space to hold the name based on the socket type */
+	switch (nih_io_get_family (fd)) {
+	case PF_UNIX:
+		message->addrlen = sizeof (struct sockaddr_un);
+		break;
+	case PF_INET:
+		message->addrlen = sizeof (struct sockaddr_in);
+		break;
+	case PF_INET6:
+		message->addrlen = sizeof (struct sockaddr_in6);
+		break;
+	default:
+		message->addrlen = 0;
+	}
+
+	if (message->addrlen) {
+		message->addr = nih_alloc (message, message->addrlen);
+		if (! message->addr)
+			goto error;
+
+		msghdr.msg_name = message->addr;
+		msghdr.msg_namelen = message->addrlen;
+	} else {
+		msghdr.msg_name = NULL;
+		msghdr.msg_namelen = 0;
+	}
+
+	/* Allocate the message buffer and resize it so it'll fit at least
+	 * the number of bytes expected, receive the data directly into it.
+	 */
+	message->msg_buf = nih_io_buffer_new (message);
+	if (! message->msg_buf)
+		goto error;
+
+	if (nih_io_buffer_resize (message->msg_buf, len) < 0)
+		goto error;
+
+	msghdr.msg_iov = iov;
+	msghdr.msg_iovlen = 1;
+	iov[0].iov_base = message->msg_buf->buf;
+	iov[0].iov_len = message->msg_buf->size;
+
+	/* Allocate the control buffer with ample space to receive any
+	 * control information that we might get, and receive the data
+	 * directly into it as well.
+	 */
+	message->ctrl_buf = nih_io_buffer_new (message);
+	if (! message->ctrl_buf)
+		goto error;
+
+	if (nih_io_buffer_resize (message->ctrl_buf, BUFSIZ) < 0)
+		goto error;
+
+	msghdr.msg_control = message->ctrl_buf->buf;
+	msghdr.msg_controllen = message->ctrl_buf->size;
+
+	msghdr.msg_flags = 0;
+
+	/* Receive the message, update the length of the message and control
+	 * buffers and check for truncated messages */
+	recv_len = recvmsg (fd, &msghdr, 0);
+	if (recv_len < 0)
+		goto error;
+
+	/* Copy the lengths back out of the msghdr structure into the buffers
+	 * so they're right.
+	 */
+	message->msg_buf->len = recv_len;
+	message->ctrl_buf->len = msghdr.msg_controllen;
+	message->addrlen = msghdr.msg_namelen;
+
+	if ((msghdr.msg_flags & MSG_TRUNC)
+	    || (msghdr.msg_flags & MSG_CTRUNC)) {
+		nih_error_raise (NIH_TRUNCATED_MESSAGE,
+				 _(NIH_TRUNCATED_MESSAGE_STR));
+		nih_free (message);
+		return NULL;
+	}
+
+	return message;
+
+error:
+	nih_error_raise_system ();
+	nih_free (message);
+	return NULL;
+}
+
+/**
+ * nih_io_message_send:
+ * @message: message to be sent,
+ * @fd: file descriptor to send to.
+ *
+ * Send a @message as a single message to the file descriptor or socket @fd.
+ *
+ * Returns: zero on success, negative value on raised error.
+ **/
+int
+nih_io_message_send (NihIoMessage *message,
+		     int           fd)
+{
+	struct msghdr msghdr;
+	struct iovec  iov[1];
+
+	nih_assert (message != NULL);
+	nih_assert (fd >= 0);
+
+	msghdr.msg_name = message->addr;
+	msghdr.msg_namelen = message->addrlen;
+
+	if (message->msg_buf) {
+		msghdr.msg_iov = iov;
+		msghdr.msg_iovlen = 1;
+		iov[0].iov_base = message->msg_buf->buf;
+		iov[0].iov_len = message->msg_buf->len;
+	} else {
+		msghdr.msg_iov = NULL;
+		msghdr.msg_iovlen = 0;
+	}
+
+	if (message->ctrl_buf) {
+		msghdr.msg_control = message->ctrl_buf->buf;
+		msghdr.msg_controllen = message->ctrl_buf->len;
+	} else {
+		msghdr.msg_control = NULL;
+		msghdr.msg_controllen = 0;
+	}
+
+	msghdr.msg_flags = 0;
+
+	if (sendmsg (fd, &msghdr, 0) < 0)
+		nih_return_system_error (-1);
+
+	return 0;
 }
 
 
@@ -980,4 +1164,33 @@ nih_io_set_cloexec (int fd)
 		nih_return_system_error (-1);
 
 	return 0;
+}
+
+/**
+ * nih_io_get_family:
+ * @fd: file descriptor to check.
+ *
+ * Queries the socket so that the family it belongs to (PF_UNIX, PF_INET,
+ * PF_INET6) can be found.
+ *
+ * Returns: the family of the socket, or -1 on error.
+ **/
+ssize_t
+nih_io_get_family (int fd)
+{
+	socklen_t socklen;
+	union {
+		sa_family_t         family;
+		struct sockaddr_un  un;
+		struct sockaddr_in  in;
+		struct sockaddr_in6 in6;
+	} addr;
+
+	nih_assert (fd >= 0);
+
+	socklen = sizeof (addr);
+	if (getsockname (fd, (struct sockaddr *)&addr, &socklen) < 0)
+		return -1;
+
+	return addr.family;
 }

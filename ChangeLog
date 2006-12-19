@@ -1,3 +1,16 @@
+2006-12-19  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/io.c (nih_io_message_recv, nih_io_message_send): Functions
+	to send and receive a message over a socket, hiding the difficult
+	bits of dealing with msghdr/iovec.
+	(nih_io_get_family): Function to detect the family of a socket.
+	* nih/io.h: Update.
+	* nih/errors.h: Add truncated message error.
+	* nih/tests/test_io.c (test_message_recv, test_message_send): Check
+	that we can send and receive messages by using socket pairs.
+	(test_get_family): Check that we can get the families of the standard
+	three socket types.
+
 2006-12-18  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/io.h (NihIoMessage): Structure that represents an individual

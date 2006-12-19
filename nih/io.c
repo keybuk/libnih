@@ -56,6 +56,7 @@ static void        nih_io_stream_watcher (NihIo *io, NihIoWatch *watch,
 					  NihIoEvents events);
 static void        nih_io_closed         (NihIo *io);
 static void        nih_io_error          (NihIo *io);
+static void        nih_io_maybe_shutdown (NihIo *io);
 
 
 /**
@@ -918,8 +919,7 @@ nih_io_stream_watcher (NihIo       *io,
 	}
 
 	/* Shut down the socket if it has empty buffers */
-	if (io->shutdown && (! io->send_buf->len) && (! io->recv_buf->len))
-		nih_io_closed (io);
+	nih_io_maybe_shutdown (io);
 }
 
 
@@ -998,6 +998,40 @@ nih_io_shutdown (NihIo *io)
 	nih_assert (io != NULL);
 
 	io->shutdown = TRUE;
+
+	nih_io_maybe_shutdown (io);
+}
+
+/**
+ * nih_io_maybe_shutdown:
+ * @io: structure to be closed.
+ *
+ * Checks whether the NihIo structure is set to be shutdown, and has now
+ * reached the point to be closed.  Call whenever you remove data from a
+ * buffer.
+ **/
+static void
+nih_io_maybe_shutdown (NihIo *io)
+{
+	nih_assert (io != NULL);
+
+	if (! io->shutdown)
+		return;
+
+	switch (io->type) {
+	case NIH_IO_STREAM:
+		if ((! io->send_buf->len) && (! io->recv_buf->len))
+			nih_io_closed (io);
+
+		break;
+	case NIH_IO_MESSAGE:
+		if (NIH_LIST_EMPTY (io->send_q) && NIH_LIST_EMPTY (io->recv_q))
+			nih_io_closed (io);
+
+		break;
+	default:
+		nih_assert_notreached ();
+	}
 }
 
 /**

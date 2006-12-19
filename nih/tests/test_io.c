@@ -911,6 +911,26 @@ test_shutdown (void)
 	TEST_EQ (errno, EBADF);
 
 	close (fds[1]);
+
+
+	/* Check that shutting down a socket with no data in the buffer
+	 * results in it being immediately closed and freed.
+	 */
+	TEST_FEATURE ("with no data in the buffer");
+	pipe (fds);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
+			    NULL, NULL, NULL, NULL);
+
+	free_called = 0;
+	nih_alloc_set_destructor (io, destructor_called);
+
+	nih_io_shutdown (io);
+
+	TEST_TRUE (free_called);
+	TEST_LT (fcntl (fds[0], F_GETFD), 0);
+	TEST_EQ (errno, EBADF);
+
+	close (fds[1]);
 }
 
 void

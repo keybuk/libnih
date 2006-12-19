@@ -1,5 +1,11 @@
 2006-12-19  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_io.c (test_shutdown): Make sure the socket is
+	shut down immediately.
+	* nih/io.c (nih_io_shutdown): Bugfix, should close the socket
+	immediately if there's nothing in the queue, otherwise it may
+	hang around forever if it never polls.
+
 	* nih/io.c (nih_io_reopen): Receive the type from the arguments,
 	instead of hard-coding to be stream.  Set up the structure accordingly.
 	* nih/io.h: Update prototype.

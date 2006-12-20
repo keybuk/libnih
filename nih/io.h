@@ -282,32 +282,35 @@ NihIoMessage *nih_io_message_recv         (const void *parent, int fd,
 int           nih_io_message_send         (NihIoMessage *message, int fd);
 
 
-NihIo *      nih_io_reopen                (const void *parent, int fd,
+NihIo *       nih_io_reopen               (const void *parent, int fd,
 					   NihIoType type, NihIoReader reader,
 					   NihIoCloseHandler close_handler,
 					   NihIoErrorHandler error_handler,
 					   void *data);
-void         nih_io_shutdown              (NihIo *io);
-void         nih_io_close                 (NihIo *io);
+void          nih_io_shutdown             (NihIo *io);
+void          nih_io_close                (NihIo *io);
 
-char *       nih_io_read                  (const void *parent, NihIo *io,
+NihIoMessage *nih_io_read_message         (const void *parent, NihIo *io);
+void          nih_io_send_message         (NihIo *io, NihIoMessage *message);
+
+char *        nih_io_read                 (const void *parent, NihIo *io,
 					   size_t *len)
 	__attribute__ ((warn_unused_result, malloc));
-int          nih_io_write                 (NihIo *io, const char *str,
+int           nih_io_write                (NihIo *io, const char *str,
 					   size_t len);
 
-char *       nih_io_get                   (const void *parent, NihIo *io,
+char *        nih_io_get                  (const void *parent, NihIo *io,
 					   const char *delim)
 	__attribute__ ((warn_unused_result, malloc));
 
-ssize_t      nih_io_printf                (NihIo *io, const char *format, ...)
+ssize_t       nih_io_printf               (NihIo *io, const char *format, ...)
 	__attribute__ ((format (printf, 2, 3)));
 
 
-int          nih_io_set_nonblock          (int fd);
-int          nih_io_set_cloexec           (int fd);
+int           nih_io_set_nonblock         (int fd);
+int           nih_io_set_cloexec          (int fd);
 
-ssize_t      nih_io_get_family            (int fd);
+ssize_t       nih_io_get_family           (int fd);
 
 NIH_END_EXTERN
 

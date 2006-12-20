@@ -52,11 +52,12 @@
 
 
 /* Prototypes for static functions */
-static void        nih_io_watcher        (NihIo *io, NihIoWatch *watch,
-					  NihIoEvents events);
-static void        nih_io_closed         (NihIo *io);
-static void        nih_io_error          (NihIo *io);
-static void        nih_io_shutdown_check (NihIo *io);
+static void          nih_io_watcher        (NihIo *io, NihIoWatch *watch,
+					    NihIoEvents events);
+static void          nih_io_closed         (NihIo *io);
+static void          nih_io_error          (NihIo *io);
+static void          nih_io_shutdown_check (NihIo *io);
+static NihIoMessage *nih_io_first_message  (NihIo *io);
 
 
 /**
@@ -1101,6 +1102,100 @@ nih_io_close (NihIo *io)
 	}
 
 	nih_free (io);
+}
+
+
+/**
+ * nih_io_first_message:
+ * @io: structure to read from.
+ *
+ * Used to obtain the oldest message in the receive queue of @io, the
+ * returned message is not removed from the queue, so this can be used
+ * to "peek" at the message or manipulate it.
+ *
+ * The message can be removed from the queue with nih_list_remove(),
+ * nih_list_free() or just nih_free() if an alternate destructor has not
+ * been set.
+ *
+ * This may only be used when @io is in message mode.
+ *
+ * Returns: message in queue, or NULL if the queue is empty.
+ **/
+static NihIoMessage *
+nih_io_first_message (NihIo *io)
+{
+	nih_assert (io != NULL);
+	nih_assert (io->type == NIH_IO_MESSAGE);
+
+	if (NIH_LIST_EMPTY (io->recv_q))
+		return NULL;
+
+	return (NihIoMessage *)io->recv_q->next;
+}
+
+/**
+ * nih_io_read_message:
+ * @parent: parent of new message,
+ * @io: structure to read from.
+ *
+ * Obtains the oldest message in the receive queue of @io, removes it
+ * from the queue and returns it reparented.
+ *
+ * This may only be used when @io is in message mode.
+ *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned string will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the nih_alloc_set_destructor() function.
+ *
+ * Returns: message from queue, or NULL if the queue is empty.
+ **/
+NihIoMessage *
+nih_io_read_message (const void *parent,
+		     NihIo      *io)
+{
+	NihIoMessage *message;
+
+	nih_assert (io != NULL);
+	nih_assert (io->type == NIH_IO_MESSAGE);
+
+	message = nih_io_first_message (io);
+	if (message) {
+		nih_list_remove (&message->entry);
+
+		nih_alloc_reparent (message, parent);
+	}
+
+	return message;
+}
+
+/**
+ * nih_io_send_message:
+ * @io: structure to write to,
+ * @message: message to write.
+ *
+ * Appends message to the send queue of @io so that it will be sent in
+ * turn when possible.
+ *
+ * @message itself is added to the queue, and freed once written; if
+ * freed before, its destructor should ensure it's removed from the queue.
+ *
+ * When called on a message already in the send queue, this moves it to
+ * the end of the queue.  It's entirely permitted to call this on messages
+ * taken from the receive queue (usually of another NihIo).
+ *
+ * This may only be used when @io is in message mode.
+ **/
+void
+nih_io_send_message (NihIo        *io,
+		     NihIoMessage *message)
+{
+	nih_assert (io != NULL);
+	nih_assert (io->type == NIH_IO_MESSAGE);
+	nih_assert (message != NULL);
+
+	nih_list_add (io->send_q, &message->entry);
 }
 
 

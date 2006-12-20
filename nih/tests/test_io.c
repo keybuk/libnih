@@ -1409,6 +1409,85 @@ test_watcher (void)
 
 
 void
+test_read_message (void)
+{
+	NihIo        *io;
+	NihIoMessage *msg, *ptr;
+
+	TEST_FUNCTION ("nih_io_read_message");
+	io = nih_io_reopen (NULL, 0, NIH_IO_MESSAGE, NULL, NULL, NULL, NULL);
+
+	msg = nih_io_message_new (io);
+	nih_io_buffer_push (msg->msg_buf, "this is a test", 14);
+	nih_list_add (io->recv_q, &msg->entry);
+
+	/* Check that we can read a message in the NihIo receive queue,
+	 * the message returned should be the same message we queued and
+	 * should be reparented as well as removed from the queue.
+	 */
+	TEST_FEATURE ("with message in queue");
+	ptr = nih_io_read_message (NULL, io);
+
+	TEST_EQ_P (ptr, msg);
+	TEST_ALLOC_PARENT (msg, NULL);
+	TEST_LIST_EMPTY (&msg->entry);
+	TEST_LIST_EMPTY (io->recv_q);
+
+	nih_free (msg);
+
+
+	/* Check that we get NULL when the receive queue is empty. */
+	TEST_FEATURE ("with empty queue");
+	msg = nih_io_read_message (NULL, io);
+
+	TEST_EQ_P (msg, NULL);
+
+	nih_free (io);
+}
+
+void
+test_send_message (void)
+{
+	NihIo        *io;
+	NihIoMessage *msg1, *msg2;
+
+	TEST_FUNCTION ("nih_io_send_message");
+	io = nih_io_reopen (NULL, 0, NIH_IO_MESSAGE, NULL, NULL, NULL, NULL);
+
+
+	/* Check that we can send a message into the empty send queue, it
+	 * should be added directly to the send queue, and not changed or
+	 * reparented, etc.
+	 */
+	TEST_FEATURE ("with empty send queue");
+	msg1 = nih_io_message_new (NULL);
+	nih_io_buffer_push (msg1->msg_buf, "this is a test", 14);
+
+	nih_io_send_message (io, msg1);
+
+	TEST_EQ_P (io->send_q->next, &msg1->entry);
+	TEST_ALLOC_PARENT (msg1, NULL);
+
+
+	/* Check that we can send a message when there's already one in
+	 * the send queue, it should be appended to the queue.
+	 */
+	TEST_FEATURE ("with message already in send queue");
+	msg2 = nih_io_message_new (NULL);
+	nih_io_buffer_push (msg2->msg_buf, "this is a test", 14);
+
+	nih_io_send_message (io, msg2);
+
+	TEST_EQ_P (io->send_q->next, &msg1->entry);
+	TEST_EQ_P (io->send_q->prev, &msg2->entry);
+
+	nih_free (msg1);
+	nih_free (msg2);
+	nih_free (io);
+}
+
+
+void
 test_read (void)
 {
 	NihIo  *io;
@@ -1698,6 +1777,8 @@ main (int   argc,
 	test_shutdown ();
 	test_close ();
 	test_watcher ();
+	test_read_message ();
+	test_send_message ();
 	test_read ();
 	test_write ();
 	test_get ();

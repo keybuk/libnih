@@ -1,5 +1,14 @@
 2006-12-20  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.c (nih_io_first_message): Simple static function to obtain
+	the oldest message in the receive queue.
+	(nih_io_read_message, nih_io_send_message): Functions to take the
+	oldest message out of the receive queue and append a message to the
+	send queue.
+	* nih/io.h: Add prototypes.
+	* nih/tests/test_io.c (test_read_message, test_send_message): Check
+	the new functions do what they say on the tin.
+
 	General clean-up of nih_io, fixing a few API issues and making it
 	more suitable for using in message mode.
 

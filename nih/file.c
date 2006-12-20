@@ -228,7 +228,7 @@ nih_file_reader (void       *data,
 		 * next inotify event.
 		 */
 		NIH_MUST (event = (struct inotify_event *)nih_io_read (
-				  NULL, io, sz));
+				  NULL, io, &sz));
 		len -= sz;
 
 		/* Handle it */

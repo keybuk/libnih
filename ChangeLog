@@ -1,5 +1,52 @@
 2006-12-20  Scott James Remnant  <scott@netsplit.com>
 
+	General clean-up of nih_io, fixing a few API issues and making it
+	more suitable for using in message mode.
+
+	* nih/io.c (nih_io_buffer_pop, nih_io_buffer_shrink): Remove the
+	silly restrictions that these cannot be called with a length greater
+	than the buffer size, instead just truncate it to the buffer size.
+	(nih_io_buffer_pop): Length is now updated to the actual number of
+	bytes being returned.
+	(nih_io_message_add_control): Rename to nih_io_message_push_control.
+	(nih_io_message_recv): Change the len parameter to a pointer that's
+	updated with the actual number of bytes read.
+	(nih_io_stream_watcher): Rename back to nih_io_watcher.
+	(nih_io_reopen): Use a single watcher function again, initialise close
+	to NULL.  Treat failure to set a descriptor non-blocking as a failure
+	to open; otherwise we'll end up screwing up the main loop.
+	(nih_io_watcher): Remove the restriction that this is only called
+	when in the stream mode.  Leave data in the receive buffer if there's
+	no reader function, it's now valid to query the buffer size and read
+	by other means.  Catch the ENOMEM error and ignore it.  Set and keep
+	an eye on the structure close member, if it is TRUE before we return,
+	close the socket.  This also means we check for shutdown sockets in
+	the case of error, which we probably should have done.
+	(nih_io_maybe_shutdown): Rename to nih_io_shutdown_check.
+	(nih_io_close): If the close member of the structure is not NULL
+	we're inside a watcher function, so need to set the variable this
+	points to to TRUE instead of closing or freeing the structure.
+	(nih_io_read): Change the len parameter to be updated with the
+	actual number of bytes being returned.
+	* nih/io.h: Renamed function prototype.  Updated documentation for
+	function typedefs to clarify that they may all call nih_io_close,
+	but may not call nih_free.
+	* nih/errors.h: Rename NIH_TRUNCATED_MESSAGE to
+	NIH_IO_MESSAGE_TRUNCATED, we should probably namespace these.
+	* nih/tests/test_io.c (test_buffer_pop, test_buffer_shrink): Check
+	that we can pop or shrink the entire buffer if we ask for more.
+	(test_message_add_control): Rename to test_push_control.
+	(test_message_recv): Check that the cases of remote end closed,
+	error received or truncated message are handled properly.
+	(test_message_send): Check that an error is handled.
+	(test_stream_watcher): Rename back to test_watcher.
+	(test_reopen): Check that the socket is not being shutdown or closed.
+	(test_shutdown): Drain the buffer before calling handle on it, as
+	it's not done automatically now.
+	(test_close): Check that a lazy close is performed if io->close is
+	not NULL.
+	* nih/file.c (nih_file_reader): Update call to nih_io_read.
+
 	* nih/logging.h (nih_assert_notreached): Rename to
 	nih_assert_not_reached, this was annoying me.
 

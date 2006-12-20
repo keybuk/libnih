@@ -38,6 +38,7 @@
 #include <nih/io.h>
 #include <nih/logging.h>
 #include <nih/error.h>
+#include <nih/errors.h>
 
 
 static int watcher_called = 0;
@@ -302,6 +303,7 @@ test_buffer_pop (void)
 {
 	NihIoBuffer *buf;
 	char        *str;
+	size_t       len;
 
 	TEST_FUNCTION ("nih_io_buffer_pop");
 	buf = nih_io_buffer_new (NULL);
@@ -313,8 +315,10 @@ test_buffer_pop (void)
 	 * The buffer should be shrunk appropriately and moved up.
 	 */
 	TEST_FEATURE ("with full buffer");
-	str = nih_io_buffer_pop (NULL, buf, 14);
+	len = 14;
+	str = nih_io_buffer_pop (NULL, buf, &len);
 
+	TEST_EQ (len, 14);
 	TEST_ALLOC_SIZE (str, 15);
 	TEST_EQ (str[14], '\0');
 	TEST_EQ_STR (str, "this is a test");
@@ -327,8 +331,10 @@ test_buffer_pop (void)
 
 	/* Check that we can empty the buffer and the buffer is freed. */
 	TEST_FEATURE ("with request to empty buffer");
-	str = nih_io_buffer_pop (NULL, buf, 19);
+	len = 19;
+	str = nih_io_buffer_pop (NULL, buf, &len);
 
+	TEST_EQ (len, 19);
 	TEST_ALLOC_SIZE (str, 20);
 	TEST_EQ (str[19], '\0');
 	TEST_EQ_STR (str, " of the buffer code");
@@ -338,6 +344,29 @@ test_buffer_pop (void)
 	TEST_EQ_P (buf->buf, NULL);
 
 	nih_free (str);
+
+
+	/* Check that we can request more data than is in the buffer.
+	 * We should get everything's there, and len should be updated to
+	 * indicate the shortfall.
+	 */
+	TEST_FEATURE ("with request for more than buffer size");
+	nih_io_buffer_push (buf, "another test", 12);
+
+	len = 20;
+	str = nih_io_buffer_pop (NULL, buf, &len);
+
+	TEST_EQ (len, 12);
+	TEST_ALLOC_SIZE (str, 13);
+	TEST_EQ (str[12], '\0');
+	TEST_EQ_STR (str, "another test");
+
+	TEST_EQ (buf->len, 0);
+	TEST_EQ (buf->size, 0);
+	TEST_EQ_P (buf->buf, NULL);
+
+	nih_free (str);
+
 
 	nih_free (buf);
 }
@@ -363,6 +392,19 @@ test_buffer_shrink (void)
 	/* Check that we can empty the buffer and the buffer is freed. */
 	TEST_FEATURE ("with request to empty buffer");
 	nih_io_buffer_shrink (buf, 19);
+
+	TEST_EQ (buf->len, 0);
+	TEST_EQ (buf->size, 0);
+	TEST_EQ_P (buf->buf, NULL);
+
+
+	/* Check that we can shrink the buffer by more bytes than its length
+	 * and just end up freeing it.
+	 */
+	TEST_FEATURE ("with request larger than buffer size");
+	nih_io_buffer_push (buf, "another test", 12);
+
+	nih_io_buffer_shrink (buf, 20);
 
 	TEST_EQ (buf->len, 0);
 	TEST_EQ (buf->size, 0);
@@ -430,14 +472,14 @@ test_message_new (void)
 }
 
 void
-test_message_add_control (void)
+test_message_push_control (void)
 {
 	NihIoMessage   *msg;
 	struct cmsghdr *cmsg;
 	struct ucred    cred;
 	int             ret, value;
 
-	TEST_FUNCTION ("nih_io_message_add_control");
+	TEST_FUNCTION ("nih_io_message_push_control");
 	msg = nih_io_message_new (NULL);
 
 	/* Check that we can add a control message to a message that doesn't
@@ -446,8 +488,8 @@ test_message_add_control (void)
 	 */
 	TEST_FEATURE ("with empty message");
 	value = 0;
-	ret = nih_io_message_add_control (msg, SOL_SOCKET, SCM_RIGHTS,
-					  sizeof (int), &value);
+	ret = nih_io_message_push_control (msg, SOL_SOCKET, SCM_RIGHTS,
+					   sizeof (int), &value);
 
 	TEST_ALLOC_PARENT (msg->ctrl_buf->buf, msg->ctrl_buf);
 	TEST_ALLOC_SIZE (msg->ctrl_buf->buf, BUFSIZ);
@@ -467,8 +509,8 @@ test_message_add_control (void)
 	 */
 	TEST_FEATURE ("with existing control data");
 	cred.pid = cred.uid = cred.gid = 1;
-	ret = nih_io_message_add_control (msg, SOL_SOCKET, SCM_CREDENTIALS,
-					  sizeof (cred), &cred);
+	ret = nih_io_message_push_control (msg, SOL_SOCKET, SCM_CREDENTIALS,
+					   sizeof (cred), &cred);
 
 	TEST_ALLOC_PARENT (msg->ctrl_buf->buf, msg->ctrl_buf);
 	TEST_ALLOC_SIZE (msg->ctrl_buf->buf, BUFSIZ);
@@ -490,12 +532,13 @@ test_message_add_control (void)
 void
 test_message_recv (void)
 {
+	NihError           *err;
 	NihIoMessage       *msg;
 	struct sockaddr_un  addr0, addr1;
-	size_t              addr0len, addr1len;
+	size_t              addr0len, addr1len, len;
 	struct msghdr       msghdr;
 	struct iovec        iov[1];
-	char                buf[BUFSIZ], cbuf[CMSG_SPACE(sizeof (int))];
+	char                buf[BUFSIZ * 2], cbuf[CMSG_SPACE(sizeof (int))];
 	struct cmsghdr     *cmsg;
 	int                 fds[2], *fdptr;
 
@@ -523,11 +566,13 @@ test_message_recv (void)
 
 	sendmsg (fds[0], &msghdr, 0);
 
-	msg = nih_io_message_recv (NULL, fds[1], 4);
+	len = 4;
+	msg = nih_io_message_recv (NULL, fds[1], &len);
 
 	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
 	TEST_LIST_EMPTY (&msg->entry);
 
+	TEST_EQ (len, 4);
 	TEST_EQ (msg->msg_buf->len, 4);
 	TEST_EQ_MEM (msg->msg_buf->buf, "test", 4);
 
@@ -553,11 +598,13 @@ test_message_recv (void)
 
 	sendmsg (fds[0], &msghdr, 0);
 
-	msg = nih_io_message_recv (NULL, fds[1], 4);
+	len = 4;
+	msg = nih_io_message_recv (NULL, fds[1], &len);
 
 	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
 	TEST_LIST_EMPTY (&msg->entry);
 
+	TEST_EQ (len, 4);
 	TEST_EQ (msg->msg_buf->len, 4);
 	TEST_EQ_MEM (msg->msg_buf->buf, "test", 4);
 
@@ -568,7 +615,50 @@ test_message_recv (void)
 
 	nih_free (msg);
 
+	msghdr.msg_control = NULL;
+	msghdr.msg_controllen = 0;
+
+
+	/* Check that we get the NIH_IO_MESSAGE_TRUNCATED error if we try
+	 * and get fewer bytes than are sent in the message.
+	 */
+	TEST_FEATURE ("with message that will be truncated");
+	memset (buf, ' ', BUFSIZ * 2);
+	iov[0].iov_len = BUFSIZ * 2;
+
+	sendmsg (fds[0], &msghdr, 0);
+
+	len = 4;
+	msg = nih_io_message_recv (NULL, fds[1], &len);
+
+	TEST_EQ_P (msg, NULL);
+
+	err = nih_error_get ();
+	TEST_EQ (err->number, NIH_IO_MESSAGE_TRUNCATED);
+	nih_free (err);
+
+
+	/* Check that we get an empty message and len is zero if we try and
+	 * receive from a socket when the remote end is closed.
+	 */
+	TEST_FEATURE ("with remote end closed");
 	close (fds[0]);
+	close (fds[1]);
+
+	socketpair (PF_UNIX, SOCK_STREAM, 0, fds);
+	close (fds[0]);
+
+	len = 4;
+	msg = nih_io_message_recv (NULL, fds[1], &len);
+
+	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+	TEST_LIST_EMPTY (&msg->entry);
+
+	TEST_EQ (len, 0);
+	TEST_EQ (msg->msg_buf->len, 0);
+
+	nih_free (msg);
+
 	close (fds[1]);
 
 
@@ -599,12 +689,13 @@ test_message_recv (void)
 	msghdr.msg_name = (struct sockaddr *)&addr1;
 	msghdr.msg_namelen = addr1len;
 
-	msghdr.msg_control = NULL;
-	msghdr.msg_controllen = 0;
+	memcpy (buf, "test", 4);
+	iov[0].iov_len = 4;
 
 	sendmsg (fds[0], &msghdr, 0);
 
-	msg = nih_io_message_recv (NULL, fds[1], 4);
+	len = 4;
+	msg = nih_io_message_recv (NULL, fds[1], &len);
 
 	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
 	TEST_LIST_EMPTY (&msg->entry);
@@ -622,11 +713,25 @@ test_message_recv (void)
 
 	close (fds[0]);
 	close (fds[1]);
+
+
+	/* Check that we get an error if the socket is closed.
+	 */
+	TEST_FEATURE ("with closed socket");
+	len = 4;
+	msg = nih_io_message_recv (NULL, fds[1], &len);
+
+	TEST_EQ_P (msg, NULL);
+
+	err = nih_error_get ();
+	TEST_EQ (err->number, EBADF);
+	nih_free (err);
 }
 
 void
 test_message_send (void)
 {
+	NihError           *err;
 	NihIoMessage       *msg;
 	struct sockaddr_un  addr;
 	size_t              addrlen;
@@ -737,8 +842,23 @@ test_message_send (void)
 	TEST_EQ (len, 4);
 	TEST_EQ_MEM (buf, "test", 4);
 
+	nih_free (msg);
+
 	close (fds[0]);
 	close (fds[1]);
+
+
+	/* Check that we get an error if the socket is closed. */
+	msg = nih_io_message_new (NULL);
+	nih_io_buffer_push (msg->msg_buf, "test", 4);
+
+	ret = nih_io_message_send (msg, fds[0]);
+
+	TEST_LT (ret, 0);
+
+	err = nih_error_get ();
+	TEST_EQ (err->number, EBADF);
+	nih_free (err);
 
 	nih_free (msg);
 }
@@ -757,6 +877,9 @@ my_reader (void       *data,
 	   const char *str,
 	   size_t      len)
 {
+	if (! data)
+		nih_io_close (io);
+
 	read_called++;
 	last_data = data;
 	last_str = str;
@@ -810,6 +933,8 @@ test_reopen (void)
 	TEST_EQ_P (io->close_handler, my_close_handler);
 	TEST_EQ_P (io->error_handler, my_error_handler);
 	TEST_EQ_P (io->data, &io);
+	TEST_FALSE (io->shutdown);
+	TEST_EQ_P (io->close, NULL);
 
 	TEST_ALLOC_PARENT (io->watch, io);
 	TEST_EQ (io->watch->fd, fds[0]);
@@ -839,6 +964,8 @@ test_reopen (void)
 	TEST_EQ_P (io->close_handler, my_close_handler);
 	TEST_EQ_P (io->error_handler, my_error_handler);
 	TEST_EQ_P (io->data, &io);
+	TEST_FALSE (io->shutdown);
+	TEST_EQ_P (io->close, NULL);
 
 	TEST_ALLOC_PARENT (io->watch, io);
 	TEST_EQ (io->watch->fd, fds[0]);
@@ -904,6 +1031,7 @@ test_shutdown (void)
 	FD_ZERO (&writefds);
 	FD_ZERO (&exceptfds);
 	FD_SET (fds[0], &readfds);
+	nih_io_buffer_shrink (io->recv_buf, 9);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
 	TEST_TRUE (free_called);
@@ -937,7 +1065,7 @@ void
 test_close (void)
 {
 	NihIo *io;
-	int    fds[2];
+	int    fds[2], lazy_close;
 
 	TEST_FUNCTION ("nih_io_close");
 
@@ -990,17 +1118,46 @@ test_close (void)
 	nih_free (last_error);
 
 	close (fds[1]);
+
+
+	/* Check that closing the file descriptor during a watcher function
+	 * (when io->close is non-NULL) just causes TRUE to be stored in
+	 * that variable.
+	 */
+	TEST_FEATURE ("with close flag variable set");
+	pipe (fds);
+	error_called = 0;
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
+			    NULL, NULL, my_error_handler, &io);
+
+	free_called = 0;
+	nih_alloc_set_destructor (io, destructor_called);
+
+	lazy_close = FALSE;
+	io->close = &lazy_close;
+
+	nih_io_close (io);
+
+	TEST_TRUE (lazy_close);
+	TEST_FALSE (error_called);
+	TEST_FALSE (free_called);
+	TEST_EQ (fcntl (fds[0], F_GETFD), 0);
+
+	nih_free (io);
+
+	close (fds[0]);
+	close (fds[1]);
 }
 
 void
-test_stream_watcher (void)
+test_watcher (void)
 {
 	NihIo  *io;
 	int     fds[2];
 	fd_set  readfds, writefds, exceptfds;
 	FILE   *output;
 
-	TEST_FUNCTION ("nih_io_stream_watcher");
+	TEST_FUNCTION ("nih_io_watcher");
 
 	/* Check that data to be read on a socket watched by NihIo ends up
 	 * in the receive buffer, and results in the reader function being
@@ -1056,10 +1213,37 @@ test_stream_watcher (void)
 		     33);
 
 
+	/* Check that the reader function can call nih_io_close(), resulting
+	 * in the structure being closed once it has finished the watcher
+	 * function.
+	 */
+	TEST_FEATURE ("with close called in reader");
+	io->data = NULL;
+
+	free_called = 0;
+	nih_alloc_set_destructor (io, destructor_called);
+
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_TRUE (free_called);
+	TEST_LT (fcntl (fds[0], F_GETFD), 0);
+	TEST_EQ (errno, EBADF);
+
+	close (fds[1]);
+
+
 	/* Check that the reader function is also closed when the remote end
 	 * has been closed; along with the close function.
 	 */
 	TEST_FEATURE ("with remote end closed");
+	pipe (fds);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
+			    my_reader, my_close_handler, my_error_handler,
+			    &io);
+
+	nih_io_buffer_push (io->recv_buf,
+			    "this is a test of the callback code", 33);
+
 	read_called = 0;
 	close_called = 0;
 	last_data = NULL;
@@ -1227,8 +1411,9 @@ test_stream_watcher (void)
 void
 test_read (void)
 {
-	NihIo *io;
-	char  *str;
+	NihIo  *io;
+	char   *str;
+	size_t  len;
 
 	TEST_FUNCTION ("nih_io_read");
 	io = nih_io_reopen (NULL, 0, NIH_IO_STREAM, NULL, NULL, NULL, NULL);
@@ -1240,8 +1425,10 @@ test_read (void)
 	 * removed from the front of the receive buffer itself.
 	 */
 	TEST_FEATURE ("with full buffer");
-	str = nih_io_read (NULL, io, 14);
+	len = 14;
+	str = nih_io_read (NULL, io, &len);
 
+	TEST_EQ (len, 14);
 	TEST_ALLOC_SIZE (str, 15);
 	TEST_EQ (str[14], '\0');
 	TEST_EQ_STR (str, "this is a test");
@@ -1255,11 +1442,33 @@ test_read (void)
 	 * buffer, which results in the buffer being freed.
 	 */
 	TEST_FEATURE ("with request to empty buffer");
-	str = nih_io_read (NULL, io, 15);
+	len = 15;
+	str = nih_io_read (NULL, io, &len);
 
+	TEST_EQ (len, 15);
 	TEST_ALLOC_SIZE (str, 16);
 	TEST_EQ (str[15], '\0');
 	TEST_EQ_STR (str, " of the io code");
+	TEST_EQ (io->recv_buf->len, 0);
+	TEST_EQ (io->recv_buf->size, 0);
+	TEST_EQ_P (io->recv_buf->buf, NULL);
+
+	nih_free (str);
+
+
+	/* Check that we can request more data than is in the buffer, and
+	 * get a short read with len updated.
+	 */
+	TEST_FEATURE ("with larger request than buffer");
+	nih_io_buffer_push (io->recv_buf, "another test", 12);
+
+	len = 20;
+	str = nih_io_read (NULL, io, &len);
+
+	TEST_EQ (len, 12);
+	TEST_ALLOC_SIZE (str, 13);
+	TEST_EQ (str[12], '\0');
+	TEST_EQ_STR (str, "another test");
 	TEST_EQ (io->recv_buf->len, 0);
 	TEST_EQ (io->recv_buf->size, 0);
 	TEST_EQ_P (io->recv_buf->buf, NULL);
@@ -1482,13 +1691,13 @@ main (int   argc,
 	test_buffer_shrink ();
 	test_buffer_push ();
 	test_message_new ();
-	test_message_add_control ();
+	test_message_push_control ();
 	test_message_recv ();
 	test_message_send ();
 	test_reopen ();
 	test_shutdown ();
 	test_close ();
-	test_stream_watcher ();
+	test_watcher ();
 	test_read ();
 	test_write ();
 	test_get ();

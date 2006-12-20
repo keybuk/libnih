@@ -52,11 +52,11 @@
 
 
 /* Prototypes for static functions */
-static void        nih_io_stream_watcher (NihIo *io, NihIoWatch *watch,
+static void        nih_io_watcher        (NihIo *io, NihIoWatch *watch,
 					  NihIoEvents events);
 static void        nih_io_closed         (NihIo *io);
 static void        nih_io_error          (NihIo *io);
-static void        nih_io_maybe_shutdown (NihIo *io);
+static void        nih_io_shutdown_check (NihIo *io);
 
 
 /**
@@ -93,7 +93,7 @@ nih_io_init (void)
  * of @events occur @watcher will be called.  @events is a bit mask
  * of the different events we care about.
  *
- * This is the simplest form of watch and satisfies most purposes.
+ * This is the simplest form of watch and satisfies most basic purposes.
  *
  * The watch structure is allocated using nih_alloc() and stored in a linked
  * list, a default destructor is set that removes the watch from the list.
@@ -233,13 +233,11 @@ nih_io_handle_fds (fd_set *readfds,
  * nih_io_buffer_new:
  * @parent: parent of new buffer.
  *
- * Allocates a new NihIoBuffer structure containing an empty buffer,
- * all functions that use the buffer ensure that the internal data is
- * an nih_alloc() child of the buffer, so this may be freed using
- * nih_free().
+ * Allocates a new NihIoBuffer structure containing an empty buffer.
  *
- * The buffer is allocated using nih_alloc(), it can be freed using
- * nih_free().
+ * The buffer is allocated using nih_alloc() and all functions that use the
+ * buffer ensure that the internal data is an nih_alloc() child of the buffer
+ * itself, so this can be freed using nih_free().
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
@@ -324,9 +322,13 @@ nih_io_buffer_resize (NihIoBuffer *buffer,
  *
  * Takes @len bytes from the start of @buffer, reducing the size if
  * necessary, and returns them in a new string allocated with nih_alloc().
+ * @len is updated to contain the actual number of bytes returned.
  *
  * The returned string is always NULL terminated, even if there was
  * not a NULL in the buffer.
+ *
+ * If there are not @len bytes in the buffer, the maximum amount there is
+ * will be returned, if there is nothing you'll get a zero-length string.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
@@ -334,30 +336,29 @@ nih_io_buffer_resize (NihIoBuffer *buffer,
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
- * It is illegal to request more bytes than are available in the buffer.
- *
  * Returns: newly allocated data pointer, or NULL if insufficient memory.
  **/
 char *
 nih_io_buffer_pop (const void  *parent,
 		   NihIoBuffer *buffer,
-		   size_t       len)
+		   size_t      *len)
 {
 	char *str;
 
 	nih_assert (buffer != NULL);
-	nih_assert (len <= buffer->len);
 
-	str = nih_alloc (parent, len + 1);
+	*len = MIN (*len, buffer->len);
+
+	str = nih_alloc (parent, *len + 1);
 	if (! str)
 		return NULL;
 
 	/* Copy the data into the new string and add NULL */
-	memcpy (str, buffer->buf, len);
-	str[len] = '\0';
+	memcpy (str, buffer->buf, *len);
+	str[*len] = '\0';
 
 	/* Move the buffer up */
-	nih_io_buffer_shrink (buffer, len);
+	nih_io_buffer_shrink (buffer, *len);
 
 	return str;
 }
@@ -375,7 +376,8 @@ nih_io_buffer_shrink (NihIoBuffer *buffer,
 		      size_t       len)
 {
 	nih_assert (buffer != NULL);
-	nih_assert (len <= buffer->len);
+
+	len = MIN (len, buffer->len);
 
 	memmove (buffer->buf, buffer->buf + len, buffer->len - len);
 	buffer->len -= len;
@@ -420,14 +422,16 @@ nih_io_buffer_push (NihIoBuffer *buffer,
  * nih_io_message_new:
  * @parent: parent of new message.
  *
- * Allocates a new empty NihIoMessage structure.  All functions that use
- * the message structure ensure that the internal data is an nih_alloc()
- * child of the message, so this may be freed using nih_list_free().
+ * Allocates a new NihIoMessage structure with empty buffers.
  *
  * The message structure is allocated using nih_alloc() and normally
  * stored in a linked list, a default destructor is set that removes the
  * message from the list.  Removal of the message can be performed by
  * freeing it.
+ *
+ * All functions that use the message structure ensure that the internal
+ * data is an nih_alloc() child of the message or its buffers, so the entire
+ * message freed using nih_list_free() or nih_free().
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
@@ -453,39 +457,40 @@ nih_io_message_new (const void *parent)
 	message->addrlen = 0;
 
 	message->msg_buf = nih_io_buffer_new (message);
-	if (! message->msg_buf) {
-		nih_free (message);
-		return NULL;
-	}
+	if (! message->msg_buf)
+		goto error;
 
 	message->ctrl_buf = nih_io_buffer_new (message);
-	if (! message->ctrl_buf) {
-		nih_free (message);
-		return NULL;
-	}
+	if (! message->ctrl_buf)
+		goto error;
 
 	return message;
+
+error:
+	nih_free (message);
+	return NULL;
 }
 
 /**
- * nih_io_message_add_control:
+ * nih_io_message_push_control:
  * @message: message to extend,
  * @level: level of control message,
  * @type: protocol-specific type,
  * @len: length of control data,
  * @data: control data.
  *
- * Adds a new control message to @message, with the @level and @type given.
- * The control data is specified in @data and should be @len bytes long.
+ * Pushes a new control message with the @level and @type given onto the end
+ * of the @message control buffer.  The control data is copied from @data
+ * into the message and should be @len bytes long.
  *
  * Returns: zero on success, negative value if insufficient memory.
  **/
 int
-nih_io_message_add_control (NihIoMessage *message,
-			    int           level,
-			    int           type,
-			    socklen_t     len,
-			    const void   *data)
+nih_io_message_push_control (NihIoMessage *message,
+			     int           level,
+			     int           type,
+			     socklen_t     len,
+			     const void   *data)
 {
 	struct cmsghdr *cmsg;
 
@@ -522,19 +527,25 @@ nih_io_message_add_control (NihIoMessage *message,
  * @fd: file descriptor to read from,
  * @len: maximum message size.
  *
- * Allocates a new NihIoMessage structure and fills it with a message
- * received on the @fd given, which has an upper limit of @len bytes.
- * The child buffers are allocated with nih_alloc as children of the
- * message itself, so are freed when the message is.
+ * Allocates a new NihIoMessage structure with a message buffer size of
+ * @len bytes, and fills it with a message received on @fd with recvmsg().
+ * @len is updated to contain the actual number of bytes read.
  *
- * If the message received is larger than @len bytes, the
- * NIH_TRUNCATED_MESSAGE error will be raised; likewise if there is more
- * control information than expected, NIH_TRUNCATED_CONTROL will be raised.
+ * If the message received is larger than @len bytes, or there is more
+ * control information than it is possible to process (8KB), the
+ * NIH_IO_MESSAGE_TRUNCATED error will be raised.
  *
  * The message structure is allocated using nih_alloc() and normally
  * stored in a linked list, a default destructor is set that removes the
  * message from the list.  Removal of the message can be performed by
  * freeing it.
+ *
+ * If the remote end of the socket being read from has closed, an empty
+ * message will be returned and @len will be set to zero.
+ *
+ * All functions that use the message structure ensure that the internal
+ * data is an nih_alloc() child of the message or its buffers, so the entire
+ * message freed using nih_list_free() or nih_free().
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
@@ -547,7 +558,7 @@ nih_io_message_add_control (NihIoMessage *message,
 NihIoMessage *
 nih_io_message_recv  (const void *parent,
 		      int         fd,
-		      size_t      len)
+		      size_t     *len)
 {
 	NihIoMessage  *message;
 	struct msghdr  msghdr;
@@ -590,7 +601,7 @@ nih_io_message_recv  (const void *parent,
 	/* Resize the message buffer it so it'll fit at least the number
 	 * of bytes expected, receive the data directly into it.
 	 */
-	if (nih_io_buffer_resize (message->msg_buf, len) < 0)
+	if (nih_io_buffer_resize (message->msg_buf, *len) < 0)
 		goto error;
 
 	msghdr.msg_iov = iov;
@@ -616,6 +627,8 @@ nih_io_message_recv  (const void *parent,
 	if (recv_len < 0)
 		goto error;
 
+	*len = recv_len;
+
 	/* Copy the lengths back out of the msghdr structure into the buffers
 	 * so they're right.
 	 */
@@ -625,8 +638,8 @@ nih_io_message_recv  (const void *parent,
 
 	if ((msghdr.msg_flags & MSG_TRUNC)
 	    || (msghdr.msg_flags & MSG_CTRUNC)) {
-		nih_error_raise (NIH_TRUNCATED_MESSAGE,
-				 _(NIH_TRUNCATED_MESSAGE_STR));
+		nih_error_raise (NIH_IO_MESSAGE_TRUNCATED,
+				 _(NIH_IO_MESSAGE_TRUNCATED_STR));
 		nih_free (message);
 		return NULL;
 	}
@@ -644,7 +657,13 @@ error:
  * @message: message to be sent,
  * @fd: file descriptor to send to.
  *
- * Send a @message as a single message to the file descriptor or socket @fd.
+ * Send @message, an already allocated and filled NihIoMessage structure
+ * to the file descriptor or socket @fd using sendmsg().
+ *
+ * If @fd is not connected, the destination for the message can be specified
+ * in the addr and addrlen members of the structure.  The message data itself
+ * should be pushed into the msg_buf member, and any control data pushed into
+ * the ctrl_buf member (usually using nih_io_message_push_control()).
  *
  * Returns: zero on success, negative value on raised error.
  **/
@@ -688,7 +707,7 @@ nih_io_message_send (NihIoMessage *message,
  * @error_handler: function to call on error,
  * @data: data to pass to functions.
  *
- * This allocates a new NihIo structure using nih_alloc, used to manage an
+ * This allocates a new NihIo structure using nih_alloc(), used to manage an
  * already opened file descriptor.  The descriptor is set to be non-blocking
  * if it hasn't already been and the SIGPIPE signal is set to be ignored.
  *
@@ -698,18 +717,19 @@ nih_io_message_send (NihIoMessage *message,
  * managed in message mode; individual messages are queued to be sent and
  * are received into a queue as discreet messages.
  *
- * If @reader is given then all data is automatically read from the
- * file descriptor and stored in a buffer and this function is called
- * whenever there is new data available.  In stream mode, the function is
- * under no obligation to remove any data, it's perfectly valid to leave it
- * in the buffer until next time.  In message mode, the data must be processed
- * or lost, as the next time it is called will be for the next message.
+ * Data is automatically read from the file descriptor whenever it is
+ * available, and stored in the receive buffer or queue.  If @reader is
+ * given, this function is called whenever new data has been received.
+ * In stream mode, this function is under no obligation to remove any data,
+ * it's perfectly valid to leave it in the buffer until more data is added.
+ * In message mode, the message must be processed as even if more messages
+ * are read, the reader will only be called with the first one in the queue.
  *
  * If @close_handler is given then it is called whenever the remote end of the
  * file descriptor is closed, otherwise the local end is closed and the
  * entire structure freed (which may be surprising to you).
  *
- * If @error_handler is given then any it is called whenever any errors are
+ * If @error_handler is given then it is called whenever any errors are
  * raised, otherwise the @close_handler is called or the same action taken
  * if that is not given either.
  *
@@ -730,8 +750,7 @@ nih_io_reopen (const void        *parent,
 	       NihIoErrorHandler  error_handler,
 	       void              *data)
 {
-	NihIo        *io;
-	NihIoWatcher  watcher;
+	NihIo *io;
 
 	nih_assert (fd >= 0);
 
@@ -745,11 +764,10 @@ nih_io_reopen (const void        *parent,
 	io->error_handler = error_handler;
 	io->data = data;
 	io->shutdown = FALSE;
+	io->close = NULL;
 
 	switch (io->type) {
 	case NIH_IO_STREAM:
-		watcher = (NihIoWatcher)nih_io_stream_watcher;
-
 		io->send_buf = nih_io_buffer_new (io);
 		if (! io->send_buf)
 			goto error;
@@ -770,13 +788,12 @@ nih_io_reopen (const void        *parent,
 
 		break;
 	default:
-		nih_assert_notreached ();
+		nih_assert_not_reached ();
 	}
 
-	/* The most appropriate watcher function is selected above based
-	 * on the mode.
-	 */
-	io->watch = nih_io_add_watch (io, fd, NIH_IO_READ, watcher, io);
+	/* Watcher function is called at first only if we have data to read */
+	io->watch = nih_io_add_watch (io, fd, NIH_IO_READ,
+				      (NihIoWatcher)nih_io_watcher, io);
 	if (! io->watch)
 		goto error;
 
@@ -791,15 +808,8 @@ nih_io_reopen (const void        *parent,
 	 * don't want to end up blocking; so set the socket so that
 	 * doesn't happen.
 	 */
-	if (nih_io_set_nonblock (fd) < 0) {
-		NihError *err;
-
-		err = nih_error_get ();
-		nih_error ("%s: %s",
-			   _("Unable to set descriptor non-blocking"),
-			   err->message);
-		nih_free (err);
-	}
+	if (nih_io_set_nonblock (fd) < 0)
+		goto error;
 
 	return io;
 error:
@@ -809,25 +819,39 @@ error:
 
 
 /**
- * nih_io_stream_watcher:
+ * nih_io_watcher:
  * @io: NihIo structure,
  * @watch: NihIoWatch for which an event occurred,
  * @events: events that occurred.
  *
- * This is the watcher function associated with all file descriptors
- * in the stream mode being managed by NihIo.  It ensures that data is
- * read from the file descriptor into the recv buffer and the reader
- * called, any data in the send buffer is written to the socket
- * and any errors are handled
+ * This is the watcher function associated with all file descriptors being
+ * managed by NihIo.  It ensures that any data or messages available are
+ * read and placed into the receive buffer or queue, and the reader function
+ * is called if set.
+ *
+ * Any data or messaages in the send buffer or queue are written out if the
+ * @events includes NIH_IO_WRITE.
+ *
+ * Errors are handled when data is read, and result in the error handled
+ * function being called if set, otherwise the close handler is called if
+ * set and the socket closed.
  **/
 static void
-nih_io_stream_watcher (NihIo       *io,
-		       NihIoWatch  *watch,
-		       NihIoEvents  events)
+nih_io_watcher (NihIo       *io,
+		NihIoWatch  *watch,
+		NihIoEvents  events)
 {
+	int lazy_close;
+
 	nih_assert (io != NULL);
-	nih_assert (io->type == NIH_IO_STREAM);
 	nih_assert (watch != NULL);
+
+	/* Use the structure's close member to turn all attempts to close/free
+	 * the structure into lazy ones.
+	 */
+	lazy_close = FALSE;
+	if (! io->close)
+		io->close = &lazy_close;
 
 	/* There's data to be read */
 	if (events & NIH_IO_READ) {
@@ -841,7 +865,7 @@ nih_io_stream_watcher (NihIo       *io,
 		 */
 		do {
 			if (nih_io_buffer_resize (io->recv_buf, 80) < 0)
-				return;
+				goto finish;
 
 			len = read (watch->fd,
 				    io->recv_buf->buf + io->recv_buf->len,
@@ -858,16 +882,9 @@ nih_io_stream_watcher (NihIo       *io,
 		 * but it means we give it one last chance to process.
 		 */
 		nih_error_push_context();
-		if (io->recv_buf->len) {
-			if (io->reader) {
-				io->reader (io->data, io, io->recv_buf->buf,
-					     io->recv_buf->len);
-			} else {
-				/* No reader, just discard */
-				nih_io_buffer_shrink (io->recv_buf,
-						      io->recv_buf->len);
-			}
-		}
+		if (io->recv_buf->len && io->reader)
+			io->reader (io->data, io, io->recv_buf->buf,
+				    io->recv_buf->len);
 		nih_error_pop_context();
 
 		/* Deal with errors */
@@ -875,22 +892,31 @@ nih_io_stream_watcher (NihIo       *io,
 			NihError *err;
 
 			err = nih_error_get ();
-			if ((err->number != EAGAIN)
-			    && (err->number != EINTR)) {
+			switch (err->number) {
+			case EAGAIN:
+			case EINTR:
+			case ENOMEM:
+				nih_free (err);
+				break;
+			default:
 				nih_error_raise_again (err);
 				nih_io_error (io);
-				return;
-			} else {
-				nih_free (err);
+				goto finish;
 			}
 		}
 
 		/* Deal with socket being closed */
 		if (! len) {
 			nih_io_closed (io);
-			return;
+			goto finish;
 		}
 	}
+
+	/* Don't bother trying to write data if the socket is going to be
+	 * closed.
+	 */
+	if (lazy_close)
+		goto finish;
 
 	/* There's room to write data, send as much as we can */
 	if (events & NIH_IO_WRITE) {
@@ -918,8 +944,18 @@ nih_io_stream_watcher (NihIo       *io,
 			watch->events &= ~NIH_IO_WRITE;
 	}
 
-	/* Shut down the socket if it has empty buffers */
-	nih_io_maybe_shutdown (io);
+finish:
+	/* Shut down the socket if it is empty */
+	nih_io_shutdown_check (io);
+
+	/* Check whether nih_io_close was called anywhere during the handling
+	 * of this socket (including by nested watchers, maybe); if so, close
+	 * it now that we don't need it anymore.
+	 */
+	if (io->close == &lazy_close)
+		io->close = NULL;
+	if (lazy_close)
+		nih_io_close (io);
 }
 
 
@@ -999,11 +1035,11 @@ nih_io_shutdown (NihIo *io)
 
 	io->shutdown = TRUE;
 
-	nih_io_maybe_shutdown (io);
+	nih_io_shutdown_check (io);
 }
 
 /**
- * nih_io_maybe_shutdown:
+ * nih_io_shutdown_check:
  * @io: structure to be closed.
  *
  * Checks whether the NihIo structure is set to be shutdown, and has now
@@ -1011,7 +1047,7 @@ nih_io_shutdown (NihIo *io)
  * buffer.
  **/
 static void
-nih_io_maybe_shutdown (NihIo *io)
+nih_io_shutdown_check (NihIo *io)
 {
 	nih_assert (io != NULL);
 
@@ -1030,7 +1066,7 @@ nih_io_maybe_shutdown (NihIo *io)
 
 		break;
 	default:
-		nih_assert_notreached ();
+		nih_assert_not_reached ();
 	}
 }
 
@@ -1043,11 +1079,21 @@ nih_io_maybe_shutdown (NihIo *io)
  * it is the error handler is called instead of the error being raised;
  * this allows you to group your error handling in one place rather than
  * special-case close.
+ *
+ * If this function is called from within a reader function, it only
+ * marks the structure to be closed; it will not actually be done until
+ * the function returns.  You should take care not to accidentally free
+ * the structure before this happens.
  **/
 void
 nih_io_close (NihIo *io)
 {
 	nih_assert (io != NULL);
+
+	if (io->close) {
+		*(io->close) = TRUE;
+		return;
+	}
 
 	if ((close (io->watch->fd) < 0) && io->error_handler) {
 		nih_error_raise_system ();
@@ -1084,10 +1130,9 @@ nih_io_close (NihIo *io)
 char *
 nih_io_read (const void *parent,
 	     NihIo      *io,
-	     size_t      len)
+	     size_t     *len)
 {
 	nih_assert (io != NULL);
-	nih_assert (io->type == NIH_IO_STREAM);
 
 	return nih_io_buffer_pop (parent, io->recv_buf, len);
 }
@@ -1176,7 +1221,7 @@ nih_io_get (const void *parent,
 			char *str;
 
 			/* Remove the string, and then the delimiter */
-			str = nih_io_buffer_pop (parent, io->recv_buf, i);
+			str = nih_io_buffer_pop (parent, io->recv_buf, &i);
 			nih_io_buffer_shrink (io->recv_buf, 1);
 			return str;
 		}

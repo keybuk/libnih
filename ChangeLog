@@ -1,5 +1,12 @@
 2006-12-20  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.c (nih_io_read): Extend so that it can be called in
+	message mode, it reads from the first message until it has been
+	exhausted; at which point it frees the message and the next call
+	would read from the next.
+	* nih/tests/test_io.c (test_read): Check that the new functionality
+	works properly.
+
 	* nih/io.c (nih_io_first_message): Simple static function to obtain
 	the oldest message in the receive queue.
 	(nih_io_read_message, nih_io_send_message): Functions to take the

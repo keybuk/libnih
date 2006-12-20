@@ -347,6 +347,7 @@ nih_io_buffer_pop (const void  *parent,
 	char *str;
 
 	nih_assert (buffer != NULL);
+	nih_assert (len != NULL);
 
 	*len = MIN (*len, buffer->len);
 
@@ -567,6 +568,7 @@ nih_io_message_recv  (const void *parent,
 	ssize_t        recv_len;
 
 	nih_assert (fd >= 0);
+	nih_assert (len != NULL);
 
 	message = nih_io_message_new (parent);
 	if (! message)
@@ -1205,20 +1207,21 @@ nih_io_send_message (NihIo        *io,
  * @io: structure to read from,
  * @len: number of bytes to read.
  *
- * Reads @len bytes from the receive buffer of @io and returns the data
- * in a new string allocated with nih_alloc() that is always NULL terminated
- * even if there was not a NULL in the buffer.
+ * Reads @len bytes from the receive buffer of @io or the oldest message
+ * in the receive queue and returns the data in a new string allocated with
+ * nih_alloc() that is always NULL terminated even if there was not a NULL
+ * in the buffer.
  *
- * This may only be used when @io is in stream mode; if in message mode,
- * use nih_io_read_message().
+ * @len is updated to contain the actual number of bytes returned.
+ *
+ * If there are not @len bytes in the buffer, the maximum amount there is
+ * will be returned, if there is nothing you'll get a zero-length string.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
  * is freed, the returned string will be freed too.  If you have clean-up
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
- *
- * It is illegal to request more bytes than exist in the bufferr.
  *
  * Returns: newly allocated string, or NULL if insufficient memory.
  **/
@@ -1227,9 +1230,40 @@ nih_io_read (const void *parent,
 	     NihIo      *io,
 	     size_t     *len)
 {
-	nih_assert (io != NULL);
+	NihIoMessage *message;
+	NihIoBuffer  *buf;
+	char         *str;
 
-	return nih_io_buffer_pop (parent, io->recv_buf, len);
+	nih_assert (io != NULL);
+	nih_assert (len != NULL);
+
+	switch (io->type) {
+	case NIH_IO_STREAM:
+		message = NULL;
+		buf = io->recv_buf;
+		break;
+	case NIH_IO_MESSAGE:
+		/* Need to return a zero-length string if there's no message
+		 * in the queue.
+		 */
+		message = nih_io_first_message (io);
+		if (! message) {
+			*len = 0;
+			return nih_strdup (parent, "");
+		}
+
+		buf = message->msg_buf;
+		break;
+	default:
+		nih_assert_not_reached ();
+	}
+
+	str = nih_io_buffer_pop (parent, buf, len);
+
+	if (message && (! message->msg_buf->len))
+		nih_list_free (&message->entry);
+
+	return str;
 }
 
 /**

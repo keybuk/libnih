@@ -1490,9 +1490,10 @@ test_send_message (void)
 void
 test_read (void)
 {
-	NihIo  *io;
-	char   *str;
-	size_t  len;
+	NihIo        *io;
+	NihIoMessage *msg;
+	char         *str;
+	size_t        len;
 
 	TEST_FUNCTION ("nih_io_read");
 	io = nih_io_reopen (NULL, 0, NIH_IO_STREAM, NULL, NULL, NULL, NULL);
@@ -1551,6 +1552,65 @@ test_read (void)
 	TEST_EQ (io->recv_buf->len, 0);
 	TEST_EQ (io->recv_buf->size, 0);
 	TEST_EQ_P (io->recv_buf->buf, NULL);
+
+	nih_free (str);
+
+	nih_free (io);
+
+
+	/* Check that we can request data while in message mode, and receive
+	 * data from the first message; which should have its buffer shrunk.
+	 */
+	TEST_FEATURE ("with full message in queue");
+	io = nih_io_reopen (NULL, 0, NIH_IO_MESSAGE, NULL, NULL, NULL, NULL);
+
+	msg = nih_io_message_new (io);
+	nih_io_buffer_push (msg->msg_buf, "this is a test of the io code", 29);
+	nih_list_add (io->recv_q, &msg->entry);
+
+	len = 14;
+	str = nih_io_read (NULL, io, &len);
+
+	TEST_EQ (len, 14);
+	TEST_ALLOC_SIZE (str, 15);
+	TEST_EQ (str[14], '\0');
+	TEST_EQ_STR (str, "this is a test");
+	TEST_EQ (msg->msg_buf->len, 15);
+	TEST_EQ_MEM (msg->msg_buf->buf, " of the io code", 15);
+
+	nih_free (str);
+
+
+	/* Check that when we empty the buffer of the message, it is freed
+	 * and removed from the receive queue.
+	 */
+	TEST_FEATURE ("with request to empty message buffer");
+	free_called = 0;
+	nih_alloc_set_destructor (msg, destructor_called);
+
+	len = 15;
+	str = nih_io_read (NULL, io, &len);
+
+	TEST_EQ (len, 15);
+	TEST_ALLOC_SIZE (str, 16);
+	TEST_EQ (str[15], '\0');
+	TEST_EQ_STR (str, " of the io code");
+	TEST_TRUE (free_called);
+	TEST_LIST_EMPTY (io->recv_q);
+
+	nih_free (str);
+
+
+	/* Check that we receive a zero-length string and len is set to
+	 * zero if there is no message in the queue.
+	 */
+	TEST_FEATURE ("with empty message queue");
+	len = 10;
+	str = nih_io_read (NULL, io, &len);
+
+	TEST_EQ (len, 0);
+	TEST_ALLOC_SIZE (str, 1);
+	TEST_EQ (str[0], '\0');
 
 	nih_free (str);
 

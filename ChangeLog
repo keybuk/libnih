@@ -1,5 +1,10 @@
 2006-12-21  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.c (nih_io_get): Extend so that this can operate in message
+	mode on the oldest message in the queue.
+	* nih/tests/test_io.c (test_get): Check that this works properly
+	in message mode; complete with shutdown check.
+
 	* nih/io.c (nih_io_message_new): Do not assign a default list
 	destructor, it's not in a hidden list and there are bad consequences
 	of freeing a child with a default destructor if the list its in gets

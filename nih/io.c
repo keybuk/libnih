@@ -1213,8 +1213,13 @@ nih_io_send_message (NihIo        *io,
  *
  * @len is updated to contain the actual number of bytes returned.
  *
- * If there are not @len bytes in the buffer, the maximum amount there is
- * will be returned, if there is nothing you'll get a zero-length string.
+ * If there are not @len bytes in the buffer or message, the maximum amount
+ * there is will be returned, if there is nothing you'll get a zero-length
+ * string.
+ *
+ * If the message has no more data in the buffer, it is removed from the
+ * receive queue, and the next call to this function will operate on the
+ * next oldest message in the queue.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
@@ -1313,18 +1318,19 @@ nih_io_write (NihIo      *io,
  * @io: structure to read from,
  * @delim: character to read until.
  *
- * Reads from the receive buffer of @io until a character in @delim or
- * the NULL terminator is found, and returns a new string allocated with
- * nih_alloc() that contains a copy of the buffer up to, but not including,
- * the delimiter.
+ * Reads from the receive buffer of @io or the oldest message in the
+ * receive queue until a character in @delim or the NULL terminator is
+ * found, and returns a new string allocated with nih_alloc() that contains
+ * a copy of the string up to, but not including, the delimiter.
  *
  * @delim may be the empty string if only the NULL terminator is considered
  * a delimiter.
  *
- * The string and the delimiter are removed from the buffer.
+ * The string and the delimiter are removed from the buffer or message.
  *
- * This may only be used when @io is in stream mode; if in message mode,
- * use nih_io_read_message().
+ * If the message has no more data in the buffer, it is removed from the
+ * receive queue, and the next call to this function will operate on the
+ * next oldest message in the queue.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
@@ -1340,26 +1346,46 @@ nih_io_get (const void *parent,
 	    NihIo      *io,
 	    const char *delim)
 {
-	char   *str;
-	size_t  i;
+	NihIoMessage *message;
+	NihIoBuffer  *buf;
+	char         *str;
+	size_t        i;
 
 	nih_assert (io != NULL);
-	nih_assert (io->type == NIH_IO_STREAM);
 	nih_assert (delim != NULL);
 
 	str = NULL;
 
-	for (i = 0; i < io->recv_buf->len; i++) {
-		/* Found end of string */
-		if (strchr (delim, io->recv_buf->buf[i])
-		    || (io->recv_buf->buf[i] == '\0')) {
+	switch (io->type) {
+	case NIH_IO_STREAM:
+		message = NULL;
+		buf = io->recv_buf;
+		break;
+	case NIH_IO_MESSAGE:
+		message = nih_io_first_message (io);
+		if (! message)
+			goto finish;
+
+		buf = message->msg_buf;
+		break;
+	default:
+		nih_assert_not_reached ();
+	}
+
+	/* Find the end of the string */
+	for (i = 0; i < buf->len; i++) {
+		if (strchr (delim, buf->buf[i]) || (buf->buf[i] == '\0')) {
 			/* Remove the string, and then the delimiter */
-			str = nih_io_buffer_pop (parent, io->recv_buf, &i);
-			nih_io_buffer_shrink (io->recv_buf, 1);
+			str = nih_io_buffer_pop (parent, buf, &i);
+			nih_io_buffer_shrink (buf, 1);
 			break;
 		}
 	}
 
+	if (message && (! message->msg_buf->len))
+		nih_list_free (&message->entry);
+
+finish:
 	nih_io_shutdown_check (io);
 
 	return str;

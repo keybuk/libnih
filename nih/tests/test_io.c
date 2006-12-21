@@ -1790,9 +1790,10 @@ test_write (void)
 void
 test_get (void)
 {
-	NihIo *io;
-	char  *str;
-	int    fds[2];
+	NihIo        *io;
+	NihIoMessage *msg;
+	char         *str;
+	int           fds[2];
 
 	TEST_FUNCTION ("nih_io_get");
 	pipe (fds);
@@ -1813,6 +1814,9 @@ test_get (void)
 	TEST_ALLOC_SIZE (str, 10);
 	TEST_EQ_STR (str, "some data");
 
+	TEST_EQ (io->recv_buf->len, 27);
+	TEST_EQ_MEM (io->recv_buf->buf, "and another line\nincomplete", 27);
+
 	nih_free (str);
 
 
@@ -1822,6 +1826,9 @@ test_get (void)
 
 	TEST_ALLOC_SIZE (str, 17);
 	TEST_EQ_STR (str, "and another line");
+
+	TEST_EQ (io->recv_buf->len, 10);
+	TEST_EQ_MEM (io->recv_buf->buf, "incomplete", 10);
 
 	nih_free (str);
 
@@ -1833,6 +1840,9 @@ test_get (void)
 	str = nih_io_get (NULL, io, "\n");
 
 	TEST_EQ_P (str, NULL);
+
+	TEST_EQ (io->recv_buf->len, 10);
+	TEST_EQ_MEM (io->recv_buf->buf, "incomplete", 10);
 
 
 	/* Check that a NULL terminator is sufficient to return the data
@@ -1858,6 +1868,108 @@ test_get (void)
 	nih_alloc_set_destructor (io, destructor_called);
 
 	nih_io_buffer_push (io->recv_buf, "some data\n", 10);
+	nih_io_shutdown (io);
+	str = nih_io_get (NULL, io, "\n");
+
+	TEST_ALLOC_SIZE (str, 10);
+	TEST_EQ_STR (str, "some data");
+
+	TEST_TRUE (free_called);
+	TEST_LT (fcntl (fds[0], F_GETFD), 0);
+	TEST_EQ (errno, EBADF);
+
+	nih_free (str);
+
+
+	/* Check that we can operate in message mode and receive data from
+	 * the oldest message.
+	 */
+	TEST_FEATURE ("with full message in queue");
+	pipe (fds);
+	close (fds[1]);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
+			    NULL, NULL, NULL, NULL);
+
+	msg = nih_io_message_new (io);
+	nih_io_buffer_push (msg->msg_buf, "some data\n", 10);
+	nih_io_buffer_push (msg->msg_buf, "and another line\n", 17);
+	nih_io_buffer_push (msg->msg_buf, "incomplete", 10);
+	nih_list_add (io->recv_q, &msg->entry);
+
+	str = nih_io_get (NULL, io, "\n");
+
+	TEST_ALLOC_SIZE (str, 10);
+	TEST_EQ_STR (str, "some data");
+
+	TEST_EQ (msg->msg_buf->len, 27);
+	TEST_EQ_MEM (msg->msg_buf->buf, "and another line\nincomplete", 27);
+
+	nih_free (str);
+
+
+	/* Check that we can read up to the next line line. */
+	TEST_FEATURE ("with part-full message in queue");
+	str = nih_io_get (NULL, io, "\n");
+
+	TEST_ALLOC_SIZE (str, 17);
+	TEST_EQ_STR (str, "and another line");
+
+	TEST_EQ (msg->msg_buf->len, 10);
+	TEST_EQ_MEM (msg->msg_buf->buf, "incomplete", 10);
+
+	nih_free (str);
+
+
+	/* Check that NULL is returned if the data in the buffer doesn't
+	 * contain the delimeter or a NULL terminator.
+	 */
+	TEST_FEATURE ("with incomplete line in message");
+	str = nih_io_get (NULL, io, "\n");
+
+	TEST_EQ_P (str, NULL);
+
+	TEST_EQ (msg->msg_buf->len, 10);
+	TEST_EQ_MEM (msg->msg_buf->buf, "incomplete", 10);
+
+
+	/* Check that a NULL terminator is sufficient to return the data
+	 * in the buffer, which should now be empty.  This should result
+	 * in the message being removed from the queue and freed.
+	 */
+	TEST_FEATURE ("with null-terminated string in message");
+	free_called = 0;
+	nih_alloc_set_destructor (msg, destructor_called);
+
+	nih_io_buffer_push (msg->msg_buf, "\0", 1);
+	str = nih_io_get (NULL, io, "\n");
+
+	TEST_ALLOC_SIZE (str, 11);
+	TEST_EQ_STR (str, "incomplete");
+
+	TEST_TRUE (free_called);
+	TEST_LIST_EMPTY (io->recv_q);
+
+	nih_free (str);
+
+
+	/* Check that we get NULL if there is no message in the queue. */
+	TEST_FEATURE ("with empty message queue");
+	str = nih_io_get (NULL, io, "\n");
+
+	TEST_EQ_P (str, NULL);
+
+
+	/* Check that if we empty the buffer of a shutdown socket, the
+	 * socket is closed and freed.
+	 */
+	TEST_FEATURE ("with shutdown socket and emptied message");
+	free_called = 0;
+	nih_alloc_set_destructor (io, destructor_called);
+
+	msg = nih_io_message_new (io);
+	nih_io_buffer_push (msg->msg_buf, "some data\n", 10);
+	nih_list_add (io->recv_q, &msg->entry);
+
 	nih_io_shutdown (io);
 	str = nih_io_get (NULL, io, "\n");
 

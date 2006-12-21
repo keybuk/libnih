@@ -1197,6 +1197,8 @@ nih_io_send_message (NihIo        *io,
 	nih_assert (message != NULL);
 
 	nih_list_add (io->send_q, &message->entry);
+
+	io->watch->events |= NIH_IO_WRITE;
 }
 
 
@@ -1280,14 +1282,12 @@ finish:
  * @str: data to write,
  * @len: length of @str.
  *
- * Writes @len bytes from @str into the send buffer of @io, the data will
- * not be sent immediately but whenever possible.
+ * Writes @len bytes from @str into the send buffer of @io, or into a new
+ * message placed in the send queue.  The data will not be sent immediately
+ * but whenever possible.
  *
  * Care should be taken to ensure @len does not include the NULL
  * terminator unless you really want that sent.
- *
- * This may only be used when @io is in stream mode; if in message mode,
- * use nih_io_send_message().
  *
  * Returns: zero on success, negative value if insufficient memory.
  **/
@@ -1296,19 +1296,42 @@ nih_io_write (NihIo      *io,
 	      const char *str,
 	      size_t      len)
 {
-	int ret;
+	NihIoMessage *message;
+	NihIoBuffer  *buf;
 
 	nih_assert (io != NULL);
-	nih_assert (io->type == NIH_IO_STREAM);
 	nih_assert (str != NULL);
 
-	ret = nih_io_buffer_push (io->send_buf, str, len);
+	switch (io->type) {
+	case NIH_IO_STREAM:
+		message = NULL;
+		buf = io->send_buf;
+		break;
+	case NIH_IO_MESSAGE:
+		message = nih_io_message_new (io);
+		if (! message)
+			return -1;
 
-	/* If we have data to write, ensure we watch for writability */
-	if (io->send_buf->len)
+		buf = message->msg_buf;
+		break;
+	default:
+		nih_assert_not_reached ();
+	}
+
+	if (nih_io_buffer_push (buf, str, len) < 0) {
+		if (message)
+			nih_free (message);
+
+		return -1;
+	}
+
+	if (message) {
+		nih_io_send_message (io, message);
+	} else if (buf->len) {
 		io->watch->events |= NIH_IO_WRITE;
+	}
 
-	return ret;
+	return 0;
 }
 
 
@@ -1397,11 +1420,8 @@ finish:
  * @format: printf format string.
  *
  * Writes data formatted according to the printf-style @format string to
- * the send buffer of @io, the data will not be sent immediately but
- * whenever possible.
- *
- * This may only be used when @io is in stream mode; if in message mode,
- * use nih_io_send_message().
+ * the send buffer of @io, or into a new message placed in the send queue.
+ * The data will not be sent immediately but whenever possible.
  *
  * Returns: number of bytes written, negative value if insufficient memory.
  **/
@@ -1415,7 +1435,6 @@ nih_io_printf (NihIo      *io,
 	ssize_t  len;
 
 	nih_assert (io != NULL);
-	nih_assert (io->type == NIH_IO_STREAM);
 	nih_assert (format != NULL);
 
 	va_start (args, format);

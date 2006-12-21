@@ -1554,6 +1554,8 @@ test_send_message (void)
 	TEST_EQ_P (io->send_q->next, &msg1->entry);
 	TEST_ALLOC_PARENT (msg1, NULL);
 
+	TEST_TRUE (io->watch->events & NIH_IO_WRITE);
+
 
 	/* Check that we can send a message when there's already one in
 	 * the send queue, it should be appended to the queue.
@@ -1756,7 +1758,8 @@ test_read (void)
 void
 test_write (void)
 {
-	NihIo *io;
+	NihIo        *io;
+	NihIoMessage *msg;
 
 	TEST_FUNCTION ("nih_io_write");
 	io = nih_io_reopen (NULL, 0, NIH_IO_STREAM, NULL, NULL, NULL, NULL);
@@ -1783,6 +1786,52 @@ test_write (void)
 
 	TEST_EQ (io->send_buf->len, 14);
 	TEST_EQ_MEM (io->send_buf->buf, "testing the io", 14);
+
+	nih_free (io);
+
+
+	/* Check that we can write data into a message mode NihIo, and
+	 * have it made into a new message in the send queue.
+	 */
+	TEST_FEATURE ("with empty send queue");
+	io = nih_io_reopen (NULL, 0, NIH_IO_MESSAGE, NULL, NULL, NULL, NULL);
+	nih_io_write (io, "test", 4);
+
+	TEST_LIST_NOT_EMPTY (io->send_q);
+
+	msg = (NihIoMessage *)io->send_q->next;
+
+	TEST_ALLOC_PARENT (msg, io);
+	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+	TEST_ALLOC_SIZE (msg->msg_buf->buf, BUFSIZ);
+	TEST_EQ (msg->msg_buf->size, BUFSIZ);
+	TEST_EQ (msg->msg_buf->len, 4);
+	TEST_EQ_MEM (msg->msg_buf->buf, "test", 4);
+	TEST_TRUE (io->watch->events & NIH_IO_WRITE);
+
+
+	/* Check that we can write more data as another new message onto
+	 * the send queue.
+	 */
+	TEST_FEATURE ("with message in the send queue");
+	nih_io_write (io, "ing the io code", 10);
+
+	TEST_LIST_NOT_EMPTY (io->send_q);
+
+	msg = (NihIoMessage *)io->send_q->next;
+
+	TEST_EQ (msg->msg_buf->len, 4);
+	TEST_EQ_MEM (msg->msg_buf->buf, "test", 4);
+
+	msg = (NihIoMessage *)io->send_q->next->next;
+
+	TEST_ALLOC_PARENT (msg, io);
+	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+	TEST_ALLOC_SIZE (msg->msg_buf->buf, BUFSIZ);
+	TEST_EQ (msg->msg_buf->size, BUFSIZ);
+	TEST_EQ (msg->msg_buf->len, 10);
+	TEST_EQ_MEM (msg->msg_buf->buf, "ing the io code", 10);
+	TEST_TRUE (io->watch->events & NIH_IO_WRITE);
 
 	nih_free (io);
 }
@@ -1986,7 +2035,8 @@ test_get (void)
 void
 test_printf (void)
 {
-	NihIo *io;
+	NihIo        *io;
+	NihIoMessage *msg;
 
 	TEST_FUNCTION ("nih_io_printf");
 	io = nih_io_reopen (NULL, 0, NIH_IO_STREAM, NULL, NULL, NULL, NULL);
@@ -2015,6 +2065,53 @@ test_printf (void)
 	TEST_EQ_MEM (io->send_buf->buf,
 		     "this is a 4 format test\nand this is another line\n",
 		     49);
+
+	nih_free (io);
+
+
+	/* Check that we can write a line of formatted data when we're in
+	 * message mode, and have it put in a new message and placed into
+	 * the send queue.
+	 */
+	TEST_FEATURE ("with empty send queue");
+	io = nih_io_reopen (NULL, 0, NIH_IO_MESSAGE, NULL, NULL, NULL, NULL);
+	nih_io_printf (io, "this is a %d %s test\n", 4, "format");
+
+	TEST_LIST_NOT_EMPTY (io->send_q);
+
+	msg = (NihIoMessage *)io->send_q->next;
+
+	TEST_ALLOC_PARENT (msg, io);
+	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+	TEST_ALLOC_SIZE (msg->msg_buf->buf, BUFSIZ);
+	TEST_EQ (msg->msg_buf->size, BUFSIZ);
+	TEST_EQ (msg->msg_buf->len, 24);
+	TEST_EQ_MEM (msg->msg_buf->buf, "this is a 4 format test\n", 24);
+	TEST_TRUE (io->watch->events & NIH_IO_WRITE);
+
+
+	/* Check that we can append a further line of formatted data into
+	 * the send queue as another new message.
+	 */
+	TEST_FEATURE ("with message in the queue");
+	nih_io_printf (io, "and this is %s line\n", "another");
+
+	TEST_LIST_NOT_EMPTY (io->send_q);
+
+	msg = (NihIoMessage *)io->send_q->next;
+
+	TEST_EQ (msg->msg_buf->len, 24);
+	TEST_EQ_MEM (msg->msg_buf->buf, "this is a 4 format test\n", 24);
+
+	msg = (NihIoMessage *)io->send_q->next->next;
+
+	TEST_ALLOC_PARENT (msg, io);
+	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+	TEST_ALLOC_SIZE (msg->msg_buf->buf, BUFSIZ);
+	TEST_EQ (msg->msg_buf->size, BUFSIZ);
+	TEST_EQ (msg->msg_buf->len, 25);
+	TEST_EQ_MEM (msg->msg_buf->buf, "and this is another line\n", 25);
+	TEST_TRUE (io->watch->events & NIH_IO_WRITE);
 
 	nih_free (io);
 }

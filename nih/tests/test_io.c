@@ -998,9 +998,10 @@ destructor_called (void *ptr)
 void
 test_shutdown (void)
 {
-	NihIo  *io;
-	int     fds[2];
-	fd_set  readfds, writefds, exceptfds;
+	NihIo        *io;
+	NihIoMessage *msg;
+	int           fds[2];
+	fd_set        readfds, writefds, exceptfds;
 
 	TEST_FUNCTION ("nih_io_shutdown");
 	pipe (fds);
@@ -1046,7 +1047,72 @@ test_shutdown (void)
 	 */
 	TEST_FEATURE ("with no data in the buffer");
 	pipe (fds);
+	close (fds[1]);
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
+			    NULL, NULL, NULL, NULL);
+
+	free_called = 0;
+	nih_alloc_set_destructor (io, destructor_called);
+
+	nih_io_shutdown (io);
+
+	TEST_TRUE (free_called);
+	TEST_LT (fcntl (fds[0], F_GETFD), 0);
+	TEST_EQ (errno, EBADF);
+
+
+	/* Check that shutting down a socket with a message in the receive
+	 * queue merely marks it as shutdown and neither closes the socket
+	 * or frees the structure.
+	 */
+	TEST_FEATURE ("with message in the queue");
+	pipe (fds);
+	close (fds[1]);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
+			    NULL, NULL, NULL, NULL);
+
+	msg = nih_io_message_new (io);
+	nih_io_buffer_push (msg->msg_buf, "some data", 9);
+	nih_list_add (io->recv_q, &msg->entry);
+
+	free_called = 0;
+	nih_alloc_set_destructor (io, destructor_called);
+
+	nih_io_shutdown (io);
+
+	TEST_FALSE (free_called);
+	TEST_TRUE (io->shutdown);
+	TEST_GE (fcntl (fds[0], F_GETFD), 0);
+
+
+	/* FIXME: disabled until we support calling the watcher */
+#if 0
+	/* Check that removing the message from the queue, emptying it, causes
+	 * the shutdown socket to be closed and the structure to be freed.
+	 */
+	TEST_FEATURE ("with message being handled");
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+	FD_SET (fds[0], &readfds);
+	nih_list_free (&msg->entry);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_TRUE (free_called);
+	TEST_LT (fcntl (fds[0], F_GETFD), 0);
+	TEST_EQ (errno, EBADF);
+#endif
+
+	nih_free (io);
+	close (fds[0]);
+
+
+	/* Check that shutting down a socket with no message in the queue
+	 * results in it being immediately closed and freed.
+	 */
+	TEST_FEATURE ("with no message in the queue");
+	pipe (fds);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
 			    NULL, NULL, NULL, NULL);
 
 	free_called = 0;
@@ -1413,9 +1479,13 @@ test_read_message (void)
 {
 	NihIo        *io;
 	NihIoMessage *msg, *ptr;
+	int           fds[2];
 
 	TEST_FUNCTION ("nih_io_read_message");
-	io = nih_io_reopen (NULL, 0, NIH_IO_MESSAGE, NULL, NULL, NULL, NULL);
+	pipe (fds);
+	close (fds[1]);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
+			    NULL, NULL, NULL, NULL);
 
 	msg = nih_io_message_new (io);
 	nih_io_buffer_push (msg->msg_buf, "this is a test", 14);
@@ -1433,16 +1503,32 @@ test_read_message (void)
 	TEST_LIST_EMPTY (&msg->entry);
 	TEST_LIST_EMPTY (io->recv_q);
 
-	nih_free (msg);
-
 
 	/* Check that we get NULL when the receive queue is empty. */
 	TEST_FEATURE ("with empty queue");
-	msg = nih_io_read_message (NULL, io);
+	ptr = nih_io_read_message (NULL, io);
 
-	TEST_EQ_P (msg, NULL);
+	TEST_EQ_P (ptr, NULL);
 
-	nih_free (io);
+
+	/* Check that the socket is closed and the structure freed when
+	 * we take the last data from a shutdown socket.
+	 */
+	TEST_FEATURE ("with shutdown socket");
+	free_called = 0;
+	nih_alloc_set_destructor (io, destructor_called);
+
+	nih_list_add (io->recv_q, &msg->entry);
+	nih_io_shutdown (io);
+	ptr = nih_io_read_message (NULL, io);
+
+	TEST_EQ_P (ptr, msg);
+
+	TEST_TRUE (free_called);
+	TEST_LT (fcntl (fds[0], F_GETFD), 0);
+	TEST_EQ (errno, EBADF);
+
+	nih_free (msg);
 }
 
 void
@@ -1494,9 +1580,13 @@ test_read (void)
 	NihIoMessage *msg;
 	char         *str;
 	size_t        len;
+	int           fds[2];
 
 	TEST_FUNCTION ("nih_io_read");
-	io = nih_io_reopen (NULL, 0, NIH_IO_STREAM, NULL, NULL, NULL, NULL);
+	pipe (fds);
+	close (fds[1]);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
+			    NULL, NULL, NULL, NULL);
 	nih_io_buffer_push (io->recv_buf, "this is a test of the io code", 29);
 
 
@@ -1555,14 +1645,37 @@ test_read (void)
 
 	nih_free (str);
 
-	nih_free (io);
+
+	/* Check that the socket is closed and the structure freed when
+	 * we take the last data from a shutdown socket.
+	 */
+	TEST_FEATURE ("with shutdown socket and last data");
+	free_called = 0;
+	nih_alloc_set_destructor (io, destructor_called);
+
+	nih_io_buffer_push (io->recv_buf, "this is a test", 14);
+	nih_io_shutdown (io);
+	len = 14;
+	str = nih_io_read (NULL, io, &len);
+
+	TEST_EQ (len, 14);
+	TEST_NE_P (str, NULL);
+
+	TEST_TRUE (free_called);
+	TEST_LT (fcntl (fds[0], F_GETFD), 0);
+	TEST_EQ (errno, EBADF);
+
+	nih_free (str);
 
 
 	/* Check that we can request data while in message mode, and receive
 	 * data from the first message; which should have its buffer shrunk.
 	 */
 	TEST_FEATURE ("with full message in queue");
-	io = nih_io_reopen (NULL, 0, NIH_IO_MESSAGE, NULL, NULL, NULL, NULL);
+	pipe (fds);
+	close (fds[1]);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
+			    NULL, NULL, NULL, NULL);
 
 	msg = nih_io_message_new (io);
 	nih_io_buffer_push (msg->msg_buf, "this is a test of the io code", 29);
@@ -1614,7 +1727,30 @@ test_read (void)
 
 	nih_free (str);
 
-	nih_free (io);
+
+	/* Check that the socket is closed and the structure freed when
+	 * we take the last data from a shutdown socket.
+	 */
+	TEST_FEATURE ("with shutdown socket and last message");
+	free_called = 0;
+	nih_alloc_set_destructor (io, destructor_called);
+
+	msg = nih_io_message_new (io);
+	nih_io_buffer_push (msg->msg_buf, "this is a test", 14);
+	nih_list_add (io->recv_q, &msg->entry);
+
+	nih_io_shutdown (io);
+	len = 14;
+	str = nih_io_read (NULL, io, &len);
+
+	TEST_EQ (len, 14);
+	TEST_NE_P (str, NULL);
+
+	TEST_TRUE (free_called);
+	TEST_LT (fcntl (fds[0], F_GETFD), 0);
+	TEST_EQ (errno, EBADF);
+
+	nih_free (str);
 }
 
 void
@@ -1656,9 +1792,13 @@ test_get (void)
 {
 	NihIo *io;
 	char  *str;
+	int    fds[2];
 
 	TEST_FUNCTION ("nih_io_get");
-	io = nih_io_reopen (NULL, 0, NIH_IO_STREAM, NULL, NULL, NULL, NULL);
+	pipe (fds);
+	close (fds[1]);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
+			    NULL, NULL, NULL, NULL);
 	nih_io_buffer_push (io->recv_buf, "some data\n", 10);
 	nih_io_buffer_push (io->recv_buf, "and another line\n", 17);
 	nih_io_buffer_push (io->recv_buf, "incomplete", 10);
@@ -1709,7 +1849,26 @@ test_get (void)
 
 	nih_free (str);
 
-	nih_free (io);
+
+	/* Check that if we empty the buffer of a shutdown socket, the
+	 * socket is closed and freed.
+	 */
+	TEST_FEATURE ("with shutdown socket and emptied buffer");
+	free_called = 0;
+	nih_alloc_set_destructor (io, destructor_called);
+
+	nih_io_buffer_push (io->recv_buf, "some data\n", 10);
+	nih_io_shutdown (io);
+	str = nih_io_get (NULL, io, "\n");
+
+	TEST_ALLOC_SIZE (str, 10);
+	TEST_EQ_STR (str, "some data");
+
+	TEST_TRUE (free_called);
+	TEST_LT (fcntl (fds[0], F_GETFD), 0);
+	TEST_EQ (errno, EBADF);
+
+	nih_free (str);
 }
 
 void

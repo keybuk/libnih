@@ -426,11 +426,6 @@ nih_io_buffer_push (NihIoBuffer *buffer,
  *
  * Allocates a new NihIoMessage structure with empty buffers.
  *
- * The message structure is allocated using nih_alloc() and normally
- * stored in a linked list, a default destructor is set that removes the
- * message from the list.  Removal of the message can be performed by
- * freeing it.
- *
  * All functions that use the message structure ensure that the internal
  * data is an nih_alloc() child of the message or its buffers, so the entire
  * message freed using nih_list_free() or nih_free().
@@ -453,7 +448,6 @@ nih_io_message_new (const void *parent)
 		return NULL;
 
 	nih_list_init (&message->entry);
-	nih_alloc_set_destructor (message, (NihDestructor)nih_list_destructor);
 
 	message->addr = NULL;
 	message->addrlen = 0;
@@ -1012,6 +1006,9 @@ nih_io_closed (NihIo *io)
 {
 	nih_assert (io != NULL);
 
+	if (io->close && *io->close)
+		return;
+
 	if (io->close_handler) {
 		io->close_handler (io->data, io);
 	} else {
@@ -1169,6 +1166,8 @@ nih_io_read_message (const void *parent,
 		nih_alloc_reparent (message, parent);
 	}
 
+	nih_io_shutdown_check (io);
+
 	return message;
 }
 
@@ -1249,7 +1248,8 @@ nih_io_read (const void *parent,
 		message = nih_io_first_message (io);
 		if (! message) {
 			*len = 0;
-			return nih_strdup (parent, "");
+			str = nih_strdup (parent, "");
+			goto finish;
 		}
 
 		buf = message->msg_buf;
@@ -1262,6 +1262,9 @@ nih_io_read (const void *parent,
 
 	if (message && (! message->msg_buf->len))
 		nih_list_free (&message->entry);
+
+finish:
+	nih_io_shutdown_check (io);
 
 	return str;
 }
@@ -1337,26 +1340,29 @@ nih_io_get (const void *parent,
 	    NihIo      *io,
 	    const char *delim)
 {
-	size_t i;
+	char   *str;
+	size_t  i;
 
 	nih_assert (io != NULL);
 	nih_assert (io->type == NIH_IO_STREAM);
 	nih_assert (delim != NULL);
 
+	str = NULL;
+
 	for (i = 0; i < io->recv_buf->len; i++) {
 		/* Found end of string */
 		if (strchr (delim, io->recv_buf->buf[i])
 		    || (io->recv_buf->buf[i] == '\0')) {
-			char *str;
-
 			/* Remove the string, and then the delimiter */
 			str = nih_io_buffer_pop (parent, io->recv_buf, &i);
 			nih_io_buffer_shrink (io->recv_buf, 1);
-			return str;
+			break;
 		}
 	}
 
-	return NULL;
+	nih_io_shutdown_check (io);
+
+	return str;
 }
 
 /**

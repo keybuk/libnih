@@ -1,3 +1,21 @@
+2006-12-21  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/io.c (nih_io_message_new): Do not assign a default list
+	destructor, it's not in a hidden list and there are bad consequences
+	of freeing a child with a default destructor if the list its in gets
+	freed first; new rule - default destructors only if the list is hidden
+	and never freed!
+	(nih_io_closed, nih_io_shutdown): Don't call the close handler if
+	the structure is already marked to be closed; there seems little
+	point, and we could accidentally call it multiple times.
+	(nih_io_read_message, nih_io_read, nih_io_get): Check whether we
+	need to shutdown the socket here, in case the watcher isn't polled
+	again.
+	* nih/tests/test_io.c (test_shutdown): Check that shutdown works
+ 	with message-mode structures (part of this disabled for now).
+	(test_read_message, test_read, test_get): Check that a shutdown
+	socket is closed when these are called.
+
 2006-12-20  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/io.c (nih_io_read): Extend so that it can be called in

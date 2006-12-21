@@ -1,5 +1,23 @@
 2006-12-21  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.c (nih_io_message_send): Change to return the ssize_t
+	received from sendmsg(), rather than an int.
+	(nih_io_watcher_read): Move read functionality out of
+	nih_io_watcher into a separate function that can deal with both
+	stream and message mode.
+	(nih_io_watcher_write): Move write functionality out of nih_io_watcher
+	into a separate function that can deal with both stream and message
+	mode.
+	(nih_io_watcher): Call the separate functions, and handle calling
+	the reader when in message mode.  In addition, we now check the
+	error code when writing to a socket as well; there are useful errors
+	there (like ECONNREFUSED).
+	* nih/io.h: Update prototype of nih_io_message_send.
+	* nih/tests/test_io.c (test_message_send): Update return checks.
+	(test_watcher): Test that the error handled can now be called when
+	writing data to a socket, as well as just when reading.  Test
+	message mode behaviour.
+
 	* nih/io.c (nih_io_send_message): Watch socket for writability.
 	(nih_io_write): Extend this function to work in message mode;
 	it allocates a new message, stores the data in that buffer, and

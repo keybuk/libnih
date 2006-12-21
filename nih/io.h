@@ -279,7 +279,7 @@ int           nih_io_message_push_control (NihIoMessage *message, int level,
 NihIoMessage *nih_io_message_recv         (const void *parent, int fd,
 					   size_t *len)
 	__attribute__ ((warn_unused_result, malloc));
-int           nih_io_message_send         (NihIoMessage *message, int fd);
+ssize_t       nih_io_message_send         (NihIoMessage *message, int fd);
 
 
 NihIo *       nih_io_reopen               (const void *parent, int fd,

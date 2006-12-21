@@ -739,8 +739,8 @@ test_message_send (void)
 	struct iovec        iov[1];
 	char                buf[BUFSIZ], cbuf[CMSG_SPACE(sizeof (int))];
 	struct cmsghdr     *cmsg;
-	ssize_t             len;
-	int                 fds[2], ret, *fdptr;
+	ssize_t             len, ret;
+	int                 fds[2], *fdptr;
 
 	TEST_FUNCTION ("nih_io_message_send");
 	socketpair (PF_UNIX, SOCK_DGRAM, 0, fds);
@@ -765,7 +765,7 @@ test_message_send (void)
 
 	ret = nih_io_message_send (msg, fds[0]);
 
-	TEST_EQ (ret, 0);
+	TEST_EQ (ret, 4);
 
 	len = recvmsg (fds[1], &msghdr, 0);
 
@@ -791,7 +791,7 @@ test_message_send (void)
 
 	ret = nih_io_message_send (msg, fds[0]);
 
-	TEST_EQ (ret, 0);
+	TEST_EQ (ret, 4);
 
 	msghdr.msg_control = cbuf;
 	msghdr.msg_controllen = sizeof (cbuf);
@@ -832,7 +832,7 @@ test_message_send (void)
 
 	ret = nih_io_message_send (msg, fds[0]);
 
-	TEST_EQ (ret, 0);
+	TEST_EQ (ret, 4);
 
 	msghdr.msg_control = NULL;
 	msghdr.msg_controllen = 0;
@@ -854,7 +854,7 @@ test_message_send (void)
 
 	ret = nih_io_message_send (msg, fds[0]);
 
-	TEST_LT (ret, 0);
+	TEST_LT (ret, 4);
 
 	err = nih_error_get ();
 	TEST_EQ (err->number, EBADF);
@@ -871,16 +871,25 @@ static NihError *last_error = NULL;
 static const char *last_str = NULL;
 static size_t last_len = 0;
 
+static int remove_message = 0;
+
 static void
 my_reader (void       *data,
 	   NihIo      *io,
 	   const char *str,
 	   size_t      len)
 {
+	read_called++;
+
+	if (remove_message) {
+		nih_free (nih_io_read_message (NULL, io));
+		remove_message = 0;
+		return;
+	}
+
 	if (! data)
 		nih_io_close (io);
 
-	read_called++;
 	last_data = data;
 	last_str = str;
 	last_len = len;
@@ -1218,10 +1227,15 @@ test_close (void)
 void
 test_watcher (void)
 {
-	NihIo  *io;
-	int     fds[2];
-	fd_set  readfds, writefds, exceptfds;
-	FILE   *output;
+	NihIo         *io;
+	NihIoMessage  *msg;
+	int            fds[2];
+	ssize_t        len;
+	struct msghdr  msghdr;
+	struct iovec   iov[1];
+	char           buf[BUFSIZ * 2];
+	fd_set         readfds, writefds, exceptfds;
+	FILE          *output;
 
 	TEST_FUNCTION ("nih_io_watcher");
 
@@ -1298,7 +1312,7 @@ test_watcher (void)
 	close (fds[1]);
 
 
-	/* Check that the reader function is also closed when the remote end
+	/* Check that the reader function is also called when the remote end
 	 * has been closed; along with the close function.
 	 */
 	TEST_FEATURE ("with remote end closed");
@@ -1315,6 +1329,9 @@ test_watcher (void)
 	last_data = NULL;
 	last_str = NULL;
 	last_len = 0;
+
+	FD_ZERO (&readfds);
+	FD_SET (fds[0], &readfds);
 
 	close (fds[1]);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
@@ -1393,15 +1410,13 @@ test_watcher (void)
 	FD_ZERO (&readfds);
 	FD_SET (fds[0], &readfds);
 
-	nih_log_set_priority (NIH_LOG_FATAL);
+ 	nih_log_set_priority (NIH_LOG_FATAL);
 	close (fds[0]);
 	close (fds[1]);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 	nih_log_set_priority (NIH_LOG_DEBUG);
 
 	TEST_TRUE (free_called);
-
-	FD_ZERO (&readfds);
 
 
 	/* Check that data in the send buffer is written to the file
@@ -1415,6 +1430,7 @@ test_watcher (void)
 
 	nih_io_printf (io, "this is a test\n");
 
+	FD_ZERO (&readfds);
 	FD_SET (fileno (output), &writefds);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
@@ -1453,7 +1469,8 @@ test_watcher (void)
 
 
 	/* Check that an attempt to write to a closed file results in the
-	 * error handler being called.
+	 * error handler being called directly, rather than needing to wait
+	 * for a read again.
 	 */
 	TEST_FEATURE ("with closed file");
 	error_called = 0;
@@ -1461,8 +1478,470 @@ test_watcher (void)
 	last_error = NULL;
 
 	nih_io_printf (io, "this write fails\n");
-	FD_SET (fds[0], &readfds);
+
+	FD_ZERO (&writefds);
+	FD_SET (fds[0], &writefds);
+
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_EQ (io->send_buf->len, 17);
+	TEST_EQ_MEM (io->send_buf->buf, "this write fails\n", 17);
+
+	TEST_TRUE (error_called);
+	TEST_EQ (last_error->number, EBADF);
+	TEST_EQ_P (last_data, &io);
+
+	nih_free (last_error);
+
+	nih_free (io);
+
+
+	/* Check that a message to be read on a socket watched by NihIo ends
+	 * up in the receive queue, and results in the reader function being
+	 * called just once with the right arguments.
+	 */
+	TEST_FEATURE ("with message to read");
+	socketpair (PF_UNIX, SOCK_DGRAM, 0, fds);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
+			    my_reader, my_close_handler, my_error_handler,
+			    &io);
+
+	msghdr.msg_name = NULL;
+	msghdr.msg_namelen = 0;
+	msghdr.msg_iov = iov;
+	msghdr.msg_iovlen = 1;;
+	msghdr.msg_control = NULL;
+	msghdr.msg_controllen = 0;
+	msghdr.msg_flags = 0;
+
+	iov[0].iov_base = buf;
+	iov[0].iov_len = sizeof (buf);
+
+	memcpy (buf, "this is a test", 14);
+	iov[0].iov_len = 14;
+
+	sendmsg (fds[1], &msghdr, 0);
+
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+	FD_SET (fds[0], &readfds);
+
+	read_called = 0;
+	last_data = NULL;
+	last_str = NULL;
+	last_len = 0;
+
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_LIST_NOT_EMPTY (io->recv_q);
+
+	msg = (NihIoMessage *)io->recv_q->next;
+
+	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+	TEST_ALLOC_PARENT (msg, io);
+
+	TEST_EQ (msg->msg_buf->len, 14);
+	TEST_EQ_MEM (msg->msg_buf->buf, "this is a test", 14);
+
+	TEST_EQ (read_called, 1);
+	TEST_EQ_P (last_data, &io);
+	TEST_EQ_P (last_str, msg->msg_buf->buf);
+	TEST_EQ (last_len, msg->msg_buf->len);
+
+
+	/* Check that the reader function is called again when more data
+	 * comes in, but that it is only called once with the data in
+	 * the older message, not the newer.
+	 */
+	TEST_FEATURE ("with another message to read");
+	memcpy (buf, "another test", 12);
+	iov[0].iov_len = 12;
+
+	sendmsg (fds[1], &msghdr, 0);
+
+	read_called = 0;
+	last_data = NULL;
+	last_str = NULL;
+	last_len = 0;
+
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_LIST_NOT_EMPTY (io->recv_q);
+
+	msg = (NihIoMessage *)io->recv_q->next;
+
+	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+	TEST_ALLOC_PARENT (msg, io);
+
+	TEST_EQ (msg->msg_buf->len, 14);
+	TEST_EQ_MEM (msg->msg_buf->buf, "this is a test", 14);
+
+	TEST_EQ (read_called, 1);
+	TEST_EQ_P (last_data, &io);
+	TEST_EQ_P (last_str, msg->msg_buf->buf);
+	TEST_EQ (last_len, msg->msg_buf->len);
+
+	msg = (NihIoMessage *)io->recv_q->next->next;
+
+	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+	TEST_ALLOC_PARENT (msg, io);
+
+	TEST_EQ (msg->msg_buf->len, 12);
+	TEST_EQ_MEM (msg->msg_buf->buf, "another test", 12);
+
+
+	/* Check that the reader is called twice if the first invocation
+	 * removes the oldest message, the second invocation should be with
+	 * the new message.
+	 */
+	TEST_FEATURE ("with message removed during call");
+	read_called = 0;
+	remove_message = 1;
+
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_LIST_NOT_EMPTY (io->recv_q);
+
+	msg = (NihIoMessage *)io->recv_q->next;
+
+	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+	TEST_ALLOC_PARENT (msg, io);
+
+	TEST_EQ (msg->msg_buf->len, 12);
+	TEST_EQ_MEM (msg->msg_buf->buf, "another test", 12);
+
+	TEST_EQ (read_called, 2);
+	TEST_EQ_P (last_data, &io);
+	TEST_EQ_P (last_str, msg->msg_buf->buf);
+	TEST_EQ (last_len, msg->msg_buf->len);
+
+
+	/* Check that the reader is only called once if the message is
+	 * removed, and that has no ill effect.
+	 */
+	TEST_FEATURE ("with last message removed during call");
+	read_called = 0;
+	remove_message = 1;
+
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_LIST_EMPTY (io->recv_q);
+
+	TEST_EQ (read_called, 1);
+
+
+	/* Check that the reader function can call nih_io_close(), resulting
+	 * in the structure being closed once it has finished the watcher
+	 * function.
+	 */
+	TEST_FEATURE ("with close called in reader for message");
+	io->data = NULL;
+
+	free_called = 0;
+	nih_alloc_set_destructor (io, destructor_called);
+
+	memcpy (buf, "test with close", 15);
+	iov[0].iov_len = 15;
+
+	sendmsg (fds[1], &msghdr, 0);
+
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_TRUE (free_called);
+	TEST_LT (fcntl (fds[0], F_GETFD), 0);
+	TEST_EQ (errno, EBADF);
+
+	close (fds[1]);
+
+
+	/* Check that the error handler is called for the
+	 * NIH_IO_MESSAGE_TRUNCATED error if a message larger than BUFSIZ
+	 * is received.
+	 */
+	TEST_FEATURE ("with oversized message");
+	socketpair (PF_UNIX, SOCK_DGRAM, 0, fds);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
+			    my_reader, my_close_handler, my_error_handler,
+			    &io);
+
+	memset (buf, ' ', BUFSIZ * 2);
+	iov[0].iov_len = BUFSIZ * 2;
+
+	sendmsg (fds[1], &msghdr, 0);
+
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+	FD_SET (fds[0], &readfds);
+
+	error_called = 0;
+	last_error = NULL;
+	last_data = NULL;
+
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_TRUE (error_called);
+	TEST_EQ (last_error->number, NIH_IO_MESSAGE_TRUNCATED);
+	TEST_EQ_P (last_data, &io);
+
+	nih_free (last_error);
+	nih_free (io);
+
+
+	/* Check that the close handler is called if the remote end of a
+	 * socket is closed.  The reader should also be called with the
+	 * oldest message currently in the queue.
+	 */
+	TEST_FEATURE ("with remote end closed");
+	socketpair (PF_UNIX, SOCK_STREAM, 0, fds);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
+			    my_reader, my_close_handler, my_error_handler,
+			    &io);
+
+	msg = nih_io_message_new (io);
+	nih_io_buffer_push (msg->msg_buf, "this is a test", 14);
+	nih_list_add (io->recv_q, &msg->entry);
+
+	read_called = 0;
+	close_called = 0;
+	last_data = NULL;
+	last_str = NULL;
+	last_len = 0;
+
+	FD_ZERO (&readfds);
+	FD_SET (fds[0], &readfds);
+
+	close (fds[1]);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_LIST_NOT_EMPTY (io->recv_q);
+
+	msg = (NihIoMessage *)io->recv_q->next;
+
+	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+	TEST_ALLOC_PARENT (msg, io);
+
+	TEST_EQ (msg->msg_buf->len, 14);
+	TEST_EQ_MEM (msg->msg_buf->buf, "this is a test", 14);
+
+	TEST_EQ (read_called, 1);
+	TEST_EQ_P (last_data, &io);
+	TEST_EQ_P (last_str, msg->msg_buf->buf);
+	TEST_EQ (last_len, msg->msg_buf->len);
+
+	TEST_TRUE (close_called);
+
+
+	/* Check that the error handler is called if the local end of a
+	 * socket is closed (we should get EBADF).  The reader should also
+	 * be called with the oldest message currently in the queue.
+	 */
+	TEST_FEATURE ("with local end closed");
+	error_called = 0;
+	last_error = NULL;
+	read_called = 0;
+	last_data = NULL;
+	last_str = NULL;
+	last_len = 0;
+
+	close (fds[0]);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_LIST_NOT_EMPTY (io->recv_q);
+
+	msg = (NihIoMessage *)io->recv_q->next;
+
+	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+	TEST_ALLOC_PARENT (msg, io);
+
+	TEST_EQ (msg->msg_buf->len, 14);
+	TEST_EQ_MEM (msg->msg_buf->buf, "this is a test", 14);
+
+	TEST_EQ (read_called, 1);
+	TEST_EQ_P (last_data, &io);
+	TEST_EQ_P (last_str, msg->msg_buf->buf);
+	TEST_EQ (last_len, msg->msg_buf->len);
+
+	TEST_TRUE (error_called);
+	TEST_EQ (last_error->number, EBADF);
+
+	nih_free (last_error);
+
+	nih_free (io);
+
+
+	/* Check that if the remote end of a socket is closed, and there's
+	 * no close handler, the local end is closed and the structure freed.
+	 */
+	TEST_FEATURE ("with no close handler");
+	socketpair (PF_UNIX, SOCK_STREAM, 0, fds);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
+			    my_reader, NULL, NULL, &io);
+
+	free_called = 0;
+	nih_alloc_set_destructor (io, destructor_called);
+
+	FD_ZERO (&readfds);
+	FD_SET (fds[0], &readfds);
+
+	close (fds[1]);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_TRUE (free_called);
+	TEST_LT (fcntl (fds[0], F_GETFD), 0);
+	TEST_EQ (errno, EBADF);
+
+
+	/* Check that if the local end of a socket is closed, and there's
+	 * no error handler, the structure freed.
+	 */
+	TEST_FEATURE ("with no error handler");
+	socketpair (PF_UNIX, SOCK_STREAM, 0, fds);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
+			    my_reader, NULL, NULL, &io);
+
+	free_called = 0;
+	nih_alloc_set_destructor (io, destructor_called);
+
+	FD_ZERO (&readfds);
+	FD_SET (fds[0], &readfds);
+
+ 	nih_log_set_priority (NIH_LOG_FATAL);
+	close (fds[0]);
+	close (fds[1]);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+ 	nih_log_set_priority (NIH_LOG_DEBUG);
+
+	TEST_TRUE (free_called);
+
+
+	/* Check that a message in the send queue is written to the socket
+	 * if it's pollable for writing, removed from the queue and that
+	 * the socket is no longer watched for writability.
+	 */
+	TEST_FEATURE ("with message to write");
+	socketpair (PF_UNIX, SOCK_DGRAM, 0, fds);
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
+			    my_reader, my_close_handler, my_error_handler,
+			    &io);
+
+	msg = nih_io_message_new (io);
+	nih_io_buffer_push (msg->msg_buf, "this is a test", 14);
+	nih_io_send_message (io, msg);
+
+	free_called = 0;
+	nih_alloc_set_destructor (msg, destructor_called);
+
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_SET (fds[0], &writefds);
+
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	iov[0].iov_base = buf;
+	iov[0].iov_len = sizeof (buf);
+
+	TEST_LIST_EMPTY (io->send_q);
+	TEST_FALSE (io->watch->events & NIH_IO_WRITE);
+	TEST_TRUE (free_called);
+
+	len = recvmsg (fds[1], &msghdr, 0);
+
+	TEST_EQ (len, 14);
+	TEST_EQ_MEM (buf, "this is a test\n", 14);
+
+
+	/* Check that we can write another message to the send queue, which
+	 * should also go straight out and have the writability cleared.
+	 */
+	TEST_FEATURE ("with another message to write");
+	msg = nih_io_message_new (io);
+	nih_io_buffer_push (msg->msg_buf, "another test", 12);
+	nih_io_send_message (io, msg);
+
+	free_called = 0;
+	nih_alloc_set_destructor (msg, destructor_called);
+
+	FD_ZERO (&writefds);
+	FD_SET (fds[0], &writefds);
+
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_LIST_EMPTY (io->send_q);
+	TEST_FALSE (io->watch->events & NIH_IO_WRITE);
+	TEST_TRUE (free_called);
+
+	len = recvmsg (fds[1], &msghdr, 0);
+
+	TEST_EQ (len, 12);
+	TEST_EQ_MEM (buf, "another test", 12);
+
+
+	/* Check that we can place multiple messages in the send queue and
+	 * have them all go straight out.
+	 */
+	TEST_FEATURE ("with multiple messages to write");
+	msg = nih_io_message_new (io);
+	nih_io_buffer_push (msg->msg_buf, "this is a test", 14);
+	nih_io_send_message (io, msg);
+
+	free_called = 0;
+	nih_alloc_set_destructor (msg, destructor_called);
+
+	msg = nih_io_message_new (io);
+	nih_io_buffer_push (msg->msg_buf, "another test", 12);
+	nih_io_send_message (io, msg);
+
+	nih_alloc_set_destructor (msg, destructor_called);
+
+	FD_ZERO (&writefds);
+	FD_SET (fds[0], &writefds);
+
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_LIST_EMPTY (io->send_q);
+	TEST_FALSE (io->watch->events & NIH_IO_WRITE);
+	TEST_EQ (free_called, 2);
+
+	len = recvmsg (fds[1], &msghdr, 0);
+
+	TEST_EQ (len, 14);
+	TEST_EQ_MEM (buf, "this is a test", 14);
+
+	len = recvmsg (fds[1], &msghdr, 0);
+
+	TEST_EQ (len, 12);
+	TEST_EQ_MEM (buf, "another test", 12);
+
+
+	/* Check that an attempt to write to a closed descriptor results in
+	 * the error handler being called directly, rather than needing to
+	 * wait for a read again.
+	 */
+	TEST_FEATURE ("with closed socket");
+	error_called = 0;
+	last_data = NULL;
+	last_error = NULL;
+
+	msg = nih_io_message_new (io);
+	nih_io_buffer_push (msg->msg_buf, "one more test", 13);
+	nih_io_send_message (io, msg);
+
+	free_called = 0;
+	nih_alloc_set_destructor (msg, destructor_called);
+
+	FD_ZERO (&writefds);
+	FD_SET (fds[0], &writefds);
+
+	close (fds[0]);
+	close (fds[1]);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_FALSE (free_called);
+	TEST_LIST_NOT_EMPTY (io->send_q);
+	TEST_EQ_P (io->send_q->next, &msg->entry);
+	TEST_TRUE (io->watch->events & NIH_IO_WRITE);
 
 	TEST_TRUE (error_called);
 	TEST_EQ (last_error->number, EBADF);

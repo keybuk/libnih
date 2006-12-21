@@ -52,12 +52,14 @@
 
 
 /* Prototypes for static functions */
-static void          nih_io_watcher        (NihIo *io, NihIoWatch *watch,
-					    NihIoEvents events);
-static void          nih_io_closed         (NihIo *io);
-static void          nih_io_error          (NihIo *io);
-static void          nih_io_shutdown_check (NihIo *io);
-static NihIoMessage *nih_io_first_message  (NihIo *io);
+static void           nih_io_watcher        (NihIo *io, NihIoWatch *watch,
+					     NihIoEvents events);
+static inline ssize_t nih_io_watcher_read   (NihIo *io, NihIoWatch *watch);
+static inline ssize_t nih_io_watcher_write  (NihIo *io, NihIoWatch *watch);
+static void           nih_io_closed         (NihIo *io);
+static void           nih_io_error          (NihIo *io);
+static void           nih_io_shutdown_check (NihIo *io);
+static NihIoMessage * nih_io_first_message  (NihIo *io);
 
 
 /**
@@ -662,14 +664,15 @@ error:
  * should be pushed into the msg_buf member, and any control data pushed into
  * the ctrl_buf member (usually using nih_io_message_push_control()).
  *
- * Returns: zero on success, negative value on raised error.
+ * Returns: length of message sent, negative value on raised error.
  **/
-int
+ssize_t
 nih_io_message_send (NihIoMessage *message,
 		     int           fd)
 {
 	struct msghdr msghdr;
 	struct iovec  iov[1];
+	ssize_t       len;
 
 	nih_assert (message != NULL);
 	nih_assert (fd >= 0);
@@ -687,10 +690,12 @@ nih_io_message_send (NihIoMessage *message,
 
 	msghdr.msg_flags = 0;
 
-	if (sendmsg (fd, &msghdr, 0) < 0)
+	len = sendmsg (fd, &msghdr, 0);
+
+	if (len < 0)
 		nih_return_system_error (-1);
 
-	return 0;
+	return len;
 }
 
 
@@ -854,35 +859,46 @@ nih_io_watcher (NihIo       *io,
 	if (events & NIH_IO_READ) {
 		ssize_t len;
 
-		/* Read directly into the buffer to save hauling temporary
-		 * blocks around; always make sure there's room for at
-		 * least 80 bytes (random minimum read).  Make sure we call
-		 * read as many times as necessary to exhaust the socket
-		 * so we can get maximum throughput.
-		 */
-		do {
-			if (nih_io_buffer_resize (io->recv_buf, 80) < 0)
-				goto finish;
+		len = nih_io_watcher_read (io, watch);
 
-			len = read (watch->fd,
-				    io->recv_buf->buf + io->recv_buf->len,
-				    io->recv_buf->size - io->recv_buf->len);
-			if (len < 0) {
-				nih_error_raise_system ();
-			} else if (len > 0) {
-				io->recv_buf->len += len;
+		/* We want to call the reader if we have any data in the
+		 * buffer or messages in the receive queue, even if the
+		 * remote end is closed or there was an error.  In the
+		 * latter case, it means we give it once last chance to
+		 * process the messages.
+		 */
+		if (io->reader) {
+			nih_error_push_context();
+
+			switch (io->type) {
+			case NIH_IO_STREAM:
+				if (io->recv_buf->len)
+					io->reader (io->data, io,
+						    io->recv_buf->buf,
+						    io->recv_buf->len);
+				break;
+			case NIH_IO_MESSAGE: {
+				NihIoMessage *last = NULL, *message;
+
+				/* Call reader until the first message on the
+				 * queue does not change.
+				 */
+				last = NULL;
+				while (((message = nih_io_first_message (io))
+					!= last) && message) {
+					io->reader (io->data, io,
+						    message->msg_buf->buf,
+						    message->msg_buf->len);
+					last = message;
+				}
+				break;
 			}
-		} while (len > 0);
+			default:
+				nih_assert_not_reached();
+			}
 
-		/* Call the reader if we have any data in the buffer.
-		 * This could be called simply because we're about to error,
-		 * but it means we give it one last chance to process.
-		 */
-		nih_error_push_context();
-		if (io->recv_buf->len && io->reader)
-			io->reader (io->data, io, io->recv_buf->buf,
-				    io->recv_buf->len);
-		nih_error_pop_context();
+			nih_error_pop_context();
+		}
 
 		/* Deal with errors */
 		if (len < 0) {
@@ -919,26 +935,25 @@ nih_io_watcher (NihIo       *io,
 	if (events & NIH_IO_WRITE) {
 		ssize_t len;
 
-		/* Write directly from the buffer to save hauling temporary
-		 * blocks around, and call write() as many times as necessary
-		 * to exhaust the buffer so we can get maximum throughput.
-		 */
-		while (io->send_buf->len) {
-			len = write (watch->fd, io->send_buf->buf,
-				     io->send_buf->len);
+		len = nih_io_watcher_write (io, watch);
 
-			/* Don't bother checking errors, we catch them
-			 * using read
-			 */
-			if (len <= 0)
+		/* Deal with errors */
+		if (len < 0) {
+			NihError *err;
+
+			err = nih_error_get ();
+			switch (err->number) {
+			case EAGAIN:
+			case EINTR:
+			case ENOMEM:
+				nih_free (err);
 				break;
-
-			nih_io_buffer_shrink (io->send_buf, len);
+			default:
+				nih_error_raise_again (err);
+				nih_io_error (io);
+				goto finish;
+			}
 		}
-
-		/* Don't check for writability if we have nothing to write */
-		if (! io->send_buf->len)
-			watch->events &= ~NIH_IO_WRITE;
 	}
 
 finish:
@@ -953,6 +968,141 @@ finish:
 		io->close = NULL;
 	if (lazy_close)
 		nih_io_close (io);
+}
+
+/**
+ * nih_io_watcher_read:
+ * @io: NihIo structure,
+ * @watch: NihIoWatch for which an event occurred.
+ *
+ * Read data from the socket directly into the buffer or receive queue to
+ * save hauling temporary blocks around.  This function will call read()
+ * or recvmsg() as many times as possible to keep the kernel-side buffers
+ * small.
+ *
+ * It returns once a call errors or returns zero to indicate that the
+ * remote end closed.
+ *
+ * Returns: size of last read, zero if remote end closed and negative
+ * value on raised error.
+ **/
+static inline ssize_t
+nih_io_watcher_read (NihIo      *io,
+		     NihIoWatch *watch)
+{
+	ssize_t len;
+
+	nih_assert (io != NULL);
+	nih_assert (watch != NULL);
+
+	do {
+		NihIoMessage *message;
+
+		switch (io->type) {
+		case NIH_IO_STREAM:
+			/* Make sure there's room for at least 80 bytes
+			 * (random minimum read).
+			 */
+			if (nih_io_buffer_resize (io->recv_buf, 80) < 0)
+				nih_return_system_error (-1);
+
+			len = read (watch->fd,
+				    io->recv_buf->buf + io->recv_buf->len,
+				    io->recv_buf->size - io->recv_buf->len);
+			if (len < 0) {
+				nih_return_system_error (-1);
+			} else if (len > 0) {
+				io->recv_buf->len += len;
+			}
+
+			break;
+		case NIH_IO_MESSAGE:
+			/* Use BUFSIZ as the maximum message size. */
+			len = BUFSIZ;
+			message = nih_io_message_recv (io, watch->fd,
+						       (size_t *)&len);
+			if (! message) {
+				return -1;
+			} else if (! len) {
+				nih_free (message);
+			} else {
+				nih_list_add (io->recv_q, &message->entry);
+			}
+
+			break;
+		default:
+			nih_assert_not_reached ();
+		}
+	} while (len > 0);
+
+	return len;
+}
+
+/**
+ * nih_io_watcher_write:
+ * @io: NihIo structure,
+ * @watch: NihIoWatch for which an event occurred.
+ *
+ * Write data directly from the buffer or receive queue into the socket to
+ * save hauling temporary blocks around.  This function will call write()
+ * or sendmsg() as many times as possible to keep the buffer or queue
+ * small.
+ *
+ * It returns once a call errors or returns zero to indicate that the
+ * remote end closed.
+ *
+ * Returns: size of last write, zero if remote end closed and negative
+ * value on raised error.
+ **/
+static inline ssize_t
+nih_io_watcher_write (NihIo      *io,
+		      NihIoWatch *watch)
+{
+	ssize_t len;
+
+	nih_assert (io != NULL);
+	nih_assert (watch != NULL);
+
+	switch (io->type) {
+	case NIH_IO_STREAM:
+		while (io->send_buf->len) {
+			len = write (watch->fd, io->send_buf->buf,
+				     io->send_buf->len);
+
+			if (len < 0)
+				nih_return_system_error (-1);
+
+			nih_io_buffer_shrink (io->send_buf, len);
+		}
+
+		/* Don't check for writability if we have nothing to write */
+		if (! io->send_buf->len)
+			watch->events &= ~NIH_IO_WRITE;
+
+		break;
+	case NIH_IO_MESSAGE:
+		while (! NIH_LIST_EMPTY (io->send_q)) {
+			NihIoMessage *message;
+
+			message = (NihIoMessage *)io->send_q->next;
+			len = nih_io_message_send (message, watch->fd);
+
+			if (len < 0)
+				return -1;
+
+			nih_list_free (&message->entry);
+		}
+
+		/* Don't check for writability if we have nothing to write */
+		if (NIH_LIST_EMPTY (io->send_q))
+			watch->events &= ~NIH_IO_WRITE;
+
+		break;
+	default:
+		nih_assert_not_reached ();
+	}
+
+	return len;
 }
 
 

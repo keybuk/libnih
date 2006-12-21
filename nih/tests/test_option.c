@@ -1240,6 +1240,8 @@ test_verbose (void)
 	TEST_EQ_P (args[0], NULL);
 	TEST_EQ (logger_called, 3);
 
+	nih_free (args);
+
 
 	/* Check that the -v option has the same effect. */
 	TEST_FEATURE ("with short option");

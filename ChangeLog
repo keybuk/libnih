@@ -1,3 +1,11 @@
+2006-12-29  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/io.c (nih_io_message_recv): Loop over a call to recvmsg() with
+	MSG_PEEK in its arguments to avoid ever returning truncated messages.
+	* nih/tests/test_io.c (test_message_recv): Adjust test for truncated
+	messages to make sure they do in fact work.
+	(test_watcher): Remove the oversized message error check.
+
 2006-12-21  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/tests/test_option.c (test_verbose): Add missing call to free

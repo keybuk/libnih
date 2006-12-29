@@ -523,15 +523,12 @@ nih_io_message_push_control (NihIoMessage *message,
  * nih_io_message_recv:
  * @parent: parent of new message,
  * @fd: file descriptor to read from,
- * @len: maximum message size.
+ * @len: number of bytes read.
  *
- * Allocates a new NihIoMessage structure with a message buffer size of
- * @len bytes, and fills it with a message received on @fd with recvmsg().
- * @len is updated to contain the actual number of bytes read.
- *
- * If the message received is larger than @len bytes, or there is more
- * control information than it is possible to process (8KB), the
- * NIH_IO_MESSAGE_TRUNCATED error will be raised.
+ * Allocates a new NihIoMessage structure and fills it with a message
+ * received on @fd with recvmsg().  The buffer is increased in size until
+ * all of the message can fit within it.  @len is set to contain the actual
+ * number of bytes read.
  *
  * The message structure is allocated using nih_alloc() and normally
  * stored in a linked list, a default destructor is set that removes the
@@ -597,51 +594,57 @@ nih_io_message_recv  (const void *parent,
 		msghdr.msg_namelen = 0;
 	}
 
-	/* Resize the message buffer it so it'll fit at least the number
-	 * of bytes expected, receive the data directly into it.
+	/* Set the flags to indicate a truncated message so that we allocate
+	 * some initial buffer space.
 	 */
-	if (nih_io_buffer_resize (message->msg_buf, *len) < 0)
-		goto error;
+	msghdr.msg_flags = MSG_TRUNC | MSG_CTRUNC;
 
-	msghdr.msg_iov = iov;
-	msghdr.msg_iovlen = 1;
-	iov[0].iov_base = message->msg_buf->buf;
-	iov[0].iov_len = message->msg_buf->size;
+	do {
+		/* Increase the size of the message buffer */
+		if ((msghdr.msg_flags & MSG_TRUNC)
+		    && (nih_io_buffer_resize (message->msg_buf,
+					      (message->msg_buf->size
+					       + BUFSIZ)) < 0))
+			goto error;
 
-	/* Provide the control buffer with ample space to receive any
-	 * control information that we might get, and receive the data
-	 * directly into it as well.
-	 */
-	if (nih_io_buffer_resize (message->ctrl_buf, BUFSIZ) < 0)
-		goto error;
+		msghdr.msg_iov = iov;
+		msghdr.msg_iovlen = 1;
+		iov[0].iov_base = message->msg_buf->buf;
+		iov[0].iov_len = message->msg_buf->size;
 
-	msghdr.msg_control = message->ctrl_buf->buf;
-	msghdr.msg_controllen = message->ctrl_buf->size;
+		/* Increase the size of the control buffer */
+		if ((msghdr.msg_flags & MSG_CTRUNC)
+		    && (nih_io_buffer_resize (message->ctrl_buf,
+					      (message->ctrl_buf->size
+					       + BUFSIZ)) < 0))
+			goto error;
 
-	msghdr.msg_flags = 0;
+		msghdr.msg_control = message->ctrl_buf->buf;
+		msghdr.msg_controllen = message->ctrl_buf->size;
 
-	/* Receive the message, update the length of the message and control
-	 * buffers and check for truncated messages */
+		msghdr.msg_flags = 0;
+
+		/* Peek at the message to determine whether or not it has
+		 * been truncated.
+		 */
+		recv_len = recvmsg (fd, &msghdr, MSG_PEEK);
+		if (recv_len < 0)
+			goto error;
+	} while ((msghdr.msg_flags & MSG_TRUNC)
+		 || (msghdr.msg_flags & MSG_CTRUNC));
+
+	/* Receive properly this time */
 	recv_len = recvmsg (fd, &msghdr, 0);
 	if (recv_len < 0)
 		goto error;
 
-	*len = recv_len;
-
-	/* Copy the lengths back out of the msghdr structure into the buffers
-	 * so they're right.
+	/* Update the lengths, both to the caller and of the message structure
+	 * buffers based on what was actually received.
 	 */
+	*len = recv_len;
 	message->msg_buf->len = recv_len;
 	message->ctrl_buf->len = msghdr.msg_controllen;
 	message->addrlen = msghdr.msg_namelen;
-
-	if ((msghdr.msg_flags & MSG_TRUNC)
-	    || (msghdr.msg_flags & MSG_CTRUNC)) {
-		nih_error_raise (NIH_IO_MESSAGE_TRUNCATED,
-				 _(NIH_IO_MESSAGE_TRUNCATED_STR));
-		nih_free (message);
-		return NULL;
-	}
 
 	return message;
 

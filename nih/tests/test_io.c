@@ -566,7 +566,7 @@ test_message_recv (void)
 
 	sendmsg (fds[0], &msghdr, 0);
 
-	len = 4;
+	len = 0;
 	msg = nih_io_message_recv (NULL, fds[1], &len);
 
 	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
@@ -598,7 +598,7 @@ test_message_recv (void)
 
 	sendmsg (fds[0], &msghdr, 0);
 
-	len = 4;
+	len = 0;
 	msg = nih_io_message_recv (NULL, fds[1], &len);
 
 	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
@@ -619,23 +619,23 @@ test_message_recv (void)
 	msghdr.msg_controllen = 0;
 
 
-	/* Check that we get the NIH_IO_MESSAGE_TRUNCATED error if we try
-	 * and get fewer bytes than are sent in the message.
-	 */
-	TEST_FEATURE ("with message that will be truncated");
+	/* Check that we can get messages larger than the usual buffer size */
+	TEST_FEATURE ("with message that would be truncated");
 	memset (buf, ' ', BUFSIZ * 2);
 	iov[0].iov_len = BUFSIZ * 2;
 
 	sendmsg (fds[0], &msghdr, 0);
 
-	len = 4;
+	len = 0;
 	msg = nih_io_message_recv (NULL, fds[1], &len);
 
-	TEST_EQ_P (msg, NULL);
+	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+	TEST_LIST_EMPTY (&msg->entry);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, NIH_IO_MESSAGE_TRUNCATED);
-	nih_free (err);
+	TEST_EQ (len, BUFSIZ * 2);
+	TEST_EQ (msg->msg_buf->len, BUFSIZ * 2);
+
+	nih_free (msg);
 
 
 	/* Check that we get an empty message and len is zero if we try and
@@ -648,7 +648,7 @@ test_message_recv (void)
 	socketpair (PF_UNIX, SOCK_STREAM, 0, fds);
 	close (fds[0]);
 
-	len = 4;
+	len = 0;
 	msg = nih_io_message_recv (NULL, fds[1], &len);
 
 	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
@@ -694,7 +694,7 @@ test_message_recv (void)
 
 	sendmsg (fds[0], &msghdr, 0);
 
-	len = 4;
+	len = 0;
 	msg = nih_io_message_recv (NULL, fds[1], &len);
 
 	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
@@ -718,7 +718,7 @@ test_message_recv (void)
 	/* Check that we get an error if the socket is closed.
 	 */
 	TEST_FEATURE ("with closed socket");
-	len = 4;
+	len = 0;
 	msg = nih_io_message_recv (NULL, fds[1], &len);
 
 	TEST_EQ_P (msg, NULL);
@@ -1653,40 +1653,6 @@ test_watcher (void)
 	TEST_EQ (errno, EBADF);
 
 	close (fds[1]);
-
-
-	/* Check that the error handler is called for the
-	 * NIH_IO_MESSAGE_TRUNCATED error if a message larger than BUFSIZ
-	 * is received.
-	 */
-	TEST_FEATURE ("with oversized message");
-	socketpair (PF_UNIX, SOCK_DGRAM, 0, fds);
-	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
-			    my_reader, my_close_handler, my_error_handler,
-			    &io);
-
-	memset (buf, ' ', BUFSIZ * 2);
-	iov[0].iov_len = BUFSIZ * 2;
-
-	sendmsg (fds[1], &msghdr, 0);
-
-	FD_ZERO (&readfds);
-	FD_ZERO (&writefds);
-	FD_ZERO (&exceptfds);
-	FD_SET (fds[0], &readfds);
-
-	error_called = 0;
-	last_error = NULL;
-	last_data = NULL;
-
-	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
-
-	TEST_TRUE (error_called);
-	TEST_EQ (last_error->number, NIH_IO_MESSAGE_TRUNCATED);
-	TEST_EQ_P (last_data, &io);
-
-	nih_free (last_error);
-	nih_free (io);
 
 
 	/* Check that the close handler is called if the remote end of a

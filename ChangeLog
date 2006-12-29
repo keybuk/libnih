@@ -1,5 +1,7 @@
 2006-12-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/errors.h: Drop the NIH_IO_MESSAGE_TRUNCATED error.
+
 	* nih/io.h (NihIoMessage): Rename msg_buf member to data, and change
 	ctrl_buf member to be an array of cmsg structures called control.
 	* nih/io.c: Update references to NihIoMessage members.

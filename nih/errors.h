@@ -32,7 +32,6 @@ enum {
 
 	/* 0x10000 thru 0x1FFFF reserved for libnih */
 	NIH_ERROR_LIBNIH_START = 0x10000L,
-	NIH_IO_MESSAGE_TRUNCATED,
 
 	/* 0x20000 thru 0x2FFFF reserved for applications */
 	NIH_ERROR_APPLICATION_START = 0x20000L,
@@ -42,6 +41,5 @@ enum {
 };
 
 /* Error strings for defined messages */
-#define NIH_IO_MESSAGE_TRUNCATED_STR	N_("Truncated message received")
 
 #endif /* NIH_ERRORS_H */

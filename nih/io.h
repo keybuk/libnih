@@ -171,20 +171,20 @@ typedef struct nih_io_buffer {
  * @entry: list header,
  * @addr: address received from or to be sent to,
  * @addrlen: length of @addr,
- * @msg_buf: buffer for message,
- * @ctrl_buf: buffer for control data.
+ * @data: buffer for message data,
+ * @control: NULL-terminated array of control messages.
  *
  * This structure is used to represent an individual message waiting in
  * a queue to be sent or processed.
  **/
 typedef struct nih_io_message {
-	NihList          entry;
+	NihList           entry;
 
-	struct sockaddr *addr;
-	socklen_t        addrlen;
+	struct sockaddr  *addr;
+	socklen_t         addrlen;
 
-	NihIoBuffer     *msg_buf;
-	NihIoBuffer     *ctrl_buf;
+	NihIoBuffer      *data;
+	struct cmsghdr  **control;
 } NihIoMessage;
 
 /**
@@ -246,71 +246,70 @@ struct nih_io {
 
 NIH_BEGIN_EXTERN
 
-NihIoWatch *  nih_io_add_watch            (const void *parent, int fd,
-					   NihIoEvents events,
-					   NihIoWatcher watcher, void *data);
+NihIoWatch *  nih_io_add_watch           (const void *parent, int fd,
+					  NihIoEvents events,
+					  NihIoWatcher watcher, void *data);
 
-void          nih_io_select_fds           (int *nfds, fd_set *readfds,
-					   fd_set *writefds,
-					   fd_set *exceptfds);
-void          nih_io_handle_fds           (fd_set *readfds, fd_set *writewfds,
-					   fd_set *exceptfds);
+void          nih_io_select_fds          (int *nfds, fd_set *readfds,
+					  fd_set *writefds, fd_set *exceptfds);
+void          nih_io_handle_fds          (fd_set *readfds, fd_set *writewfds,
+					  fd_set *exceptfds);
 
 
-NihIoBuffer * nih_io_buffer_new           (const void *parent)
+NihIoBuffer * nih_io_buffer_new          (const void *parent)
 	__attribute__ ((warn_unused_result, malloc));
 
-int           nih_io_buffer_resize        (NihIoBuffer *buffer, size_t grow);
-char *        nih_io_buffer_pop           (const void *parent,
-					   NihIoBuffer *buffer, size_t *len)
+int           nih_io_buffer_resize       (NihIoBuffer *buffer, size_t grow);
+char *        nih_io_buffer_pop          (const void *parent,
+					  NihIoBuffer *buffer, size_t *len)
 	__attribute__ ((warn_unused_result, malloc));
-void          nih_io_buffer_shrink        (NihIoBuffer *buffer, size_t len);
-int           nih_io_buffer_push          (NihIoBuffer *buffer,
-					   const char *str, size_t len);
+void          nih_io_buffer_shrink       (NihIoBuffer *buffer, size_t len);
+int           nih_io_buffer_push         (NihIoBuffer *buffer,
+					  const char *str, size_t len);
 
 
-NihIoMessage *nih_io_message_new          (const void *parent)
-	__attribute__ ((warn_unused_result, malloc));
-
-int           nih_io_message_push_control (NihIoMessage *message, int level,
-					   int type, socklen_t len,
-					   const void *data);
-
-NihIoMessage *nih_io_message_recv         (const void *parent, int fd,
-					   size_t *len)
-	__attribute__ ((warn_unused_result, malloc));
-ssize_t       nih_io_message_send         (NihIoMessage *message, int fd);
-
-
-NihIo *       nih_io_reopen               (const void *parent, int fd,
-					   NihIoType type, NihIoReader reader,
-					   NihIoCloseHandler close_handler,
-					   NihIoErrorHandler error_handler,
-					   void *data);
-void          nih_io_shutdown             (NihIo *io);
-void          nih_io_close                (NihIo *io);
-
-NihIoMessage *nih_io_read_message         (const void *parent, NihIo *io);
-void          nih_io_send_message         (NihIo *io, NihIoMessage *message);
-
-char *        nih_io_read                 (const void *parent, NihIo *io,
-					   size_t *len)
-	__attribute__ ((warn_unused_result, malloc));
-int           nih_io_write                (NihIo *io, const char *str,
-					   size_t len);
-
-char *        nih_io_get                  (const void *parent, NihIo *io,
-					   const char *delim)
+NihIoMessage *nih_io_message_new         (const void *parent)
 	__attribute__ ((warn_unused_result, malloc));
 
-ssize_t       nih_io_printf               (NihIo *io, const char *format, ...)
+int           nih_io_message_add_control (NihIoMessage *message, int level,
+					  int type, socklen_t len,
+					  const void *data);
+
+NihIoMessage *nih_io_message_recv        (const void *parent, int fd,
+					  size_t *len)
+	__attribute__ ((warn_unused_result, malloc));
+ssize_t       nih_io_message_send        (NihIoMessage *message, int fd);
+
+
+NihIo *       nih_io_reopen              (const void *parent, int fd,
+					  NihIoType type, NihIoReader reader,
+					  NihIoCloseHandler close_handler,
+					  NihIoErrorHandler error_handler,
+					  void *data);
+void          nih_io_shutdown            (NihIo *io);
+void          nih_io_close               (NihIo *io);
+
+NihIoMessage *nih_io_read_message        (const void *parent, NihIo *io);
+void          nih_io_send_message        (NihIo *io, NihIoMessage *message);
+
+char *        nih_io_read                (const void *parent, NihIo *io,
+					  size_t *len)
+	__attribute__ ((warn_unused_result, malloc));
+int           nih_io_write               (NihIo *io, const char *str,
+					  size_t len);
+
+char *        nih_io_get                 (const void *parent, NihIo *io,
+					  const char *delim)
+	__attribute__ ((warn_unused_result, malloc));
+
+ssize_t       nih_io_printf              (NihIo *io, const char *format, ...)
 	__attribute__ ((format (printf, 2, 3)));
 
 
-int           nih_io_set_nonblock         (int fd);
-int           nih_io_set_cloexec          (int fd);
+int           nih_io_set_nonblock        (int fd);
+int           nih_io_set_cloexec         (int fd);
 
-ssize_t       nih_io_get_family           (int fd);
+ssize_t       nih_io_get_family          (int fd);
 
 NIH_END_EXTERN
 

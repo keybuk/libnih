@@ -454,13 +454,15 @@ nih_io_message_new (const void *parent)
 	message->addr = NULL;
 	message->addrlen = 0;
 
-	message->msg_buf = nih_io_buffer_new (message);
-	if (! message->msg_buf)
+	message->data = nih_io_buffer_new (message);
+	if (! message->data)
 		goto error;
 
-	message->ctrl_buf = nih_io_buffer_new (message);
-	if (! message->ctrl_buf)
+	message->control = nih_new (message, struct cmsghdr *);
+	if (! message->control)
 		goto error;
+
+	message->control[0] = NULL;
 
 	return message;
 
@@ -470,50 +472,59 @@ error:
 }
 
 /**
- * nih_io_message_push_control:
- * @message: message to extend,
+ * nih_io_message_add_control:
+ * @message: message to add control message to,
  * @level: level of control message,
  * @type: protocol-specific type,
  * @len: length of control data,
  * @data: control data.
  *
- * Pushes a new control message with the @level and @type given onto the end
- * of the @message control buffer.  The control data is copied from @data
- * into the message and should be @len bytes long.
+ * Adds a new control message with the @level and @type given to @message.
+ * The control data is copied from @data into the message and should be @len
+ * bytes long.
  *
  * Returns: zero on success, negative value if insufficient memory.
  **/
 int
-nih_io_message_push_control (NihIoMessage *message,
-			     int           level,
-			     int           type,
-			     socklen_t     len,
-			     const void   *data)
+nih_io_message_add_control (NihIoMessage *message,
+			    int           level,
+			    int           type,
+			    socklen_t     len,
+			    const void   *data)
 {
-	struct cmsghdr *cmsg;
+	struct cmsghdr *cmsg, **ptr;
+	size_t          cmsglen = 0;
 
 	nih_assert (message != NULL);
 	nih_assert (data != NULL);
 
-	/* Extend the control buffer to have sufficient space for a new
-	 * control message */
-	if (nih_io_buffer_resize (message->ctrl_buf, CMSG_SPACE (len)) < 0)
+	/* Allocate the control message first */
+	cmsg = nih_alloc (message->control, CMSG_SPACE (len));
+	if (! cmsg)
 		return -1;
 
-	/* Place it immediately after the current length (this is supposedly
-	 * guaranteed to be aligned).  Increment the length to the next
-	 * alignment point.
+	/* Then increase the size of the array, if this fails then we can
+	 * still leave things in a consistent state.
 	 */
-	cmsg = (struct cmsghdr *)(message->ctrl_buf->buf
-				  + message->ctrl_buf->len);
+	for (ptr = message->control; *ptr; ptr++)
+		cmsglen++;
+
+	ptr = nih_realloc (message->control, message,
+			   sizeof (struct cmsghdr *) * (cmsglen + 2));
+	if (! ptr) {
+		nih_free (cmsg);
+		return -1;
+	}
+
+	message->control = ptr;
+	message->control[cmsglen++] = cmsg;
+	message->control[cmsglen] = NULL;
 
 	cmsg->cmsg_level = level;
 	cmsg->cmsg_type = type;
 	cmsg->cmsg_len = CMSG_LEN (len);
 
 	memcpy (CMSG_DATA (cmsg), data, len);
-
-	message->ctrl_buf->len += CMSG_SPACE (len);
 
 	return 0;
 }
@@ -555,17 +566,24 @@ nih_io_message_recv  (const void *parent,
 		      int         fd,
 		      size_t     *len)
 {
-	NihIoMessage  *message;
-	struct msghdr  msghdr;
-	struct iovec   iov[1];
-	ssize_t        recv_len;
+	NihIoMessage   *message;
+	NihIoBuffer    *ctrl_buf;
+	struct msghdr   msghdr;
+	struct iovec    iov[1];
+	struct cmsghdr *cmsg;
+	ssize_t         recv_len;
 
 	nih_assert (fd >= 0);
 	nih_assert (len != NULL);
 
 	message = nih_io_message_new (parent);
 	if (! message)
-		nih_return_system_error (NULL);
+		goto error;
+
+	/* Allocate a buffer to store received control messages in */
+	ctrl_buf = nih_io_buffer_new (NULL);
+	if (! ctrl_buf)
+		goto error;
 
 	/* Reserve enough space to hold the name based on the socket type */
 	switch (nih_io_get_family (fd)) {
@@ -602,25 +620,24 @@ nih_io_message_recv  (const void *parent,
 	do {
 		/* Increase the size of the message buffer */
 		if ((msghdr.msg_flags & MSG_TRUNC)
-		    && (nih_io_buffer_resize (message->msg_buf,
-					      (message->msg_buf->size
+		    && (nih_io_buffer_resize (message->data,
+					      (message->data->size
 					       + BUFSIZ)) < 0))
 			goto error;
 
 		msghdr.msg_iov = iov;
 		msghdr.msg_iovlen = 1;
-		iov[0].iov_base = message->msg_buf->buf;
-		iov[0].iov_len = message->msg_buf->size;
+		iov[0].iov_base = message->data->buf;
+		iov[0].iov_len = message->data->size;
 
 		/* Increase the size of the control buffer */
 		if ((msghdr.msg_flags & MSG_CTRUNC)
-		    && (nih_io_buffer_resize (message->ctrl_buf,
-					      (message->ctrl_buf->size
-					       + BUFSIZ)) < 0))
+		    && (nih_io_buffer_resize (ctrl_buf, (ctrl_buf->size
+							 + BUFSIZ)) < 0))
 			goto error;
 
-		msghdr.msg_control = message->ctrl_buf->buf;
-		msghdr.msg_controllen = message->ctrl_buf->size;
+		msghdr.msg_control = ctrl_buf->buf;
+		msghdr.msg_controllen = ctrl_buf->size;
 
 		msghdr.msg_flags = 0;
 
@@ -642,15 +659,32 @@ nih_io_message_recv  (const void *parent,
 	 * buffers based on what was actually received.
 	 */
 	*len = recv_len;
-	message->msg_buf->len = recv_len;
-	message->ctrl_buf->len = msghdr.msg_controllen;
+	message->data->len = recv_len;
 	message->addrlen = msghdr.msg_namelen;
+
+	/* Copy control messages out of the buffer and add them to the
+	 * message.
+	 */
+	for (cmsg = CMSG_FIRSTHDR (&msghdr); cmsg;
+	     cmsg = CMSG_NXTHDR (&msghdr, cmsg)) {
+		size_t len;
+
+		len = cmsg->cmsg_len - CMSG_ALIGN (sizeof (struct cmsghdr));
+		NIH_MUST (nih_io_message_add_control (
+				  message, cmsg->cmsg_level, cmsg->cmsg_type,
+				  len, CMSG_DATA (cmsg)) == 0);
+	}
+
+	nih_free (ctrl_buf);
 
 	return message;
 
 error:
 	nih_error_raise_system ();
-	nih_free (message);
+	if (ctrl_buf)
+		nih_free (ctrl_buf);
+	if (message)
+		nih_free (message);
 	return NULL;
 }
 
@@ -664,8 +698,8 @@ error:
  *
  * If @fd is not connected, the destination for the message can be specified
  * in the addr and addrlen members of the structure.  The message data itself
- * should be pushed into the msg_buf member, and any control data pushed into
- * the ctrl_buf member (usually using nih_io_message_push_control()).
+ * should be pushed into the data member, and any control data added to the
+ * control member (usually using nih_io_message_add_control()).
  *
  * Returns: length of message sent, negative value on raised error.
  **/
@@ -673,9 +707,11 @@ ssize_t
 nih_io_message_send (NihIoMessage *message,
 		     int           fd)
 {
-	struct msghdr msghdr;
-	struct iovec  iov[1];
-	ssize_t       len;
+	NihIoBuffer     *ctrl_buf;
+	struct msghdr    msghdr;
+	struct iovec     iov[1];
+	struct cmsghdr **ptr;
+	ssize_t          len;
 
 	nih_assert (message != NULL);
 	nih_assert (fd >= 0);
@@ -685,20 +721,45 @@ nih_io_message_send (NihIoMessage *message,
 
 	msghdr.msg_iov = iov;
 	msghdr.msg_iovlen = 1;
-	iov[0].iov_base = message->msg_buf->buf;
-	iov[0].iov_len = message->msg_buf->len;
+	iov[0].iov_base = message->data->buf;
+	iov[0].iov_len = message->data->len;
 
-	msghdr.msg_control = message->ctrl_buf->buf;
-	msghdr.msg_controllen = message->ctrl_buf->len;
+	/* Allocate a buffer in which we store the control messages that we
+	 * need to send.
+	 */
+	ctrl_buf = nih_io_buffer_new (NULL);
+	if (! ctrl_buf)
+		nih_return_system_error (-1);
+
+	for (ptr = message->control; *ptr; ptr++) {
+		size_t len;
+
+		len = CMSG_SPACE ((*ptr)->cmsg_len
+				  - CMSG_ALIGN (sizeof (struct cmsghdr)));
+		if (nih_io_buffer_resize (ctrl_buf, len) < 0)
+			goto error;
+
+		memcpy (ctrl_buf->buf + ctrl_buf->len, *ptr, (*ptr)->cmsg_len);
+		ctrl_buf->len += len;
+	}
+
+	msghdr.msg_control = ctrl_buf->buf;
+	msghdr.msg_controllen = ctrl_buf->len;
 
 	msghdr.msg_flags = 0;
 
 	len = sendmsg (fd, &msghdr, 0);
-
 	if (len < 0)
-		nih_return_system_error (-1);
+		goto error;
+
+	nih_free (ctrl_buf);
 
 	return len;
+
+error:
+	nih_error_raise_system ();
+	nih_free (ctrl_buf);
+	return -1;
 }
 
 
@@ -890,8 +951,8 @@ nih_io_watcher (NihIo       *io,
 				while (((message = nih_io_first_message (io))
 					!= last) && message) {
 					io->reader (io->data, io,
-						    message->msg_buf->buf,
-						    message->msg_buf->len);
+						    message->data->buf,
+						    message->data->len);
 					last = message;
 				}
 				break;
@@ -1412,7 +1473,7 @@ nih_io_read (const void *parent,
 			goto finish;
 		}
 
-		buf = message->msg_buf;
+		buf = message->data;
 		break;
 	default:
 		nih_assert_not_reached ();
@@ -1420,7 +1481,7 @@ nih_io_read (const void *parent,
 
 	str = nih_io_buffer_pop (parent, buf, len);
 
-	if (message && (! message->msg_buf->len))
+	if (message && (! message->data->len))
 		nih_list_free (&message->entry);
 
 finish:
@@ -1465,7 +1526,7 @@ nih_io_write (NihIo      *io,
 		if (! message)
 			return -1;
 
-		buf = message->msg_buf;
+		buf = message->data;
 		break;
 	default:
 		nih_assert_not_reached ();
@@ -1542,7 +1603,7 @@ nih_io_get (const void *parent,
 		if (! message)
 			goto finish;
 
-		buf = message->msg_buf;
+		buf = message->data;
 		break;
 	default:
 		nih_assert_not_reached ();
@@ -1558,7 +1619,7 @@ nih_io_get (const void *parent,
 		}
 	}
 
-	if (message && (! message->msg_buf->len))
+	if (message && (! message->data->len))
 		nih_list_free (&message->entry);
 
 finish:

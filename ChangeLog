@@ -1,5 +1,22 @@
 2006-12-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.h (NihIoMessage): Rename msg_buf member to data, and change
+	ctrl_buf member to be an array of cmsg structures called control.
+	* nih/io.c: Update references to NihIoMessage members.
+	(nih_io_message_push_control): Rename to nih_io_message_add_control
+	(nih_io_message_add_control): Rewrite to add the control message
+	header onto the end of an array, rather than a control buffer,
+	(nih_io_message_recv): After receiving the message, extract all
+	control messages and put them into the array.
+	(nih_io_message_send): Take control messages from the array into a
+	single buffer and send them.
+
+	* nih/tests/test_io.c: Update references to NihIoMessage members.
+	(test_message_new): Check that the control member is initialised to
+	a one-element array containing NULL.
+	(test_message_push_control): Rename to test_message_add_control.
+	(test_message_add_control): Check the array is extended.
+
 	* nih/io.c (nih_io_message_recv): Loop over a call to recvmsg() with
 	MSG_PEEK in its arguments to avoid ever returning truncated messages.
 	* nih/tests/test_io.c (test_message_recv): Adjust test for truncated

@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -170,8 +170,8 @@
  **/
 #define TEST_EQ_MEM(_a, _b, _l) \
 	if (memcmp ((_a), (_b), (_l))) \
-		TEST_FAILED ("wrong %d bytes at %p (%s), expected %p (%s)", \
-			     (_l), (_a), #_a, (_b), #_b)
+		TEST_FAILED ("wrong %zu bytes at %p (%s), expected %p (%s)", \
+			     (size_t)(_l), (_a), #_a, (_b), #_b)
 
 /**
  * TEST_NE:
@@ -247,8 +247,8 @@
  **/
 #define TEST_NE_MEM(_a, _b, _l) \
 	if (! memcmp ((_a), (_b), (_l))) \
-		TEST_FAILED ("wrong %d bytes at %p (%s), got unexpected %p (%s)", \
-			     (_l), (_a), #_a, (_b), #_b)
+		TEST_FAILED ("wrong %zu bytes at %p (%s), got unexpected %p (%s)", \
+			     (size_t)(_l), (_a), #_a, (_b), #_b)
 
 /**
  * TEST_LT:

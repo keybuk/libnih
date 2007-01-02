@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,8 +53,8 @@ typedef struct nih_file_watch NihFileWatch;
  * It is safe to remove a watch with nih_file_remove_watch() from this
  * function.
  **/
-typedef void (*NihFileWatcher) (void *, NihFileWatch *, uint32_t events,
-				const char *name);
+typedef void (*NihFileWatcher) (void *data, NihFileWatch *watch,
+				uint32_t events, const char *name);
 
 
 /**

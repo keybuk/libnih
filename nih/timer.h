@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@
  * nih_list_remove() or similar; this happens automatically for timeouts.
  **/
 typedef struct nih_timer NihTimer;
-typedef void (*NihTimerCb) (void *, NihTimer *);
+typedef void (*NihTimerCb) (void *data, NihTimer *timer);
 
 
 /**

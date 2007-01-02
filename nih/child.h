@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@
  * until these functions have been called, so it still exists in the process
  * table.
  **/
-typedef void (*NihReaper) (void *, pid_t, int, int);
+typedef void (*NihReaper) (void *data, pid_t pid, int killed, int status);
 
 /**
  * NihChildWatch:

@@ -1,5 +1,10 @@
 2007-01-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.h, nih/child.h, nih/command.h, nih/file.h, nih/hash.h:
+	nih/io.h, nih/logging.h, nih/main.h, nih/option.h, nih/signal.h:
+	nih/timer.h: Give names for all arguments in function pointer typedefs
+	so the documentation strings make more sense.
+
 	* nih/test.h (TEST_EQ_MEM, TEST_NE_MEM): Cast argument for number
 	of bytes to size_t.
 

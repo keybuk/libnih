@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@
  * to abort parsing.
  **/
 typedef struct nih_option NihOption;
-typedef int (*NihOptionSetter) (NihOption *, const char *);
+typedef int (*NihOptionSetter) (NihOption *option, const char *arg);
 
 
 /**

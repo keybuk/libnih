@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@
  * it can be removed if desired.
  **/
 typedef struct nih_signal NihSignal;
-typedef void (*NihSignalHandler) (void *, NihSignal *);
+typedef void (*NihSignalHandler) (void *data, NihSignal *signal);
 
 /**
  * NihSignal:

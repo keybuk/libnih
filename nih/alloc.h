@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@
  * and return it to the system (or cache it, etc.)  The behaviour should
  * be the same of that as the standard realloc() function.
  **/
-typedef void *(*NihAllocator) (void *, size_t);
+typedef void *(*NihAllocator) (void *ptr, size_t size);
 
 /**
  * NihDestructor:
@@ -45,7 +45,7 @@ typedef void *(*NihAllocator) (void *, size_t);
  * This can be used, for example, to close a file descriptor when the
  * structure for it is being closed.
  **/
-typedef int (*NihDestructor) (void *);
+typedef int (*NihDestructor) (void *ptr);
 
 
 /**

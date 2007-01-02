@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
  * The @loop pointer can be used to remove the callback.
  **/
 typedef struct nih_main_loop_func NihMainLoopFunc;
-typedef void (*NihMainLoopCb) (void *, NihMainLoopFunc *);
+typedef void (*NihMainLoopCb) (void *data, NihMainLoopFunc *loop);
 
 /**
  * NihMainLoopFunc:

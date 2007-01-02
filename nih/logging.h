@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ typedef enum {
  * The logger may return non-zero to indicate that it was not able to
  * output the message.
  **/
-typedef int (*NihLogger) (NihLogLevel, const char *);
+typedef int (*NihLogger) (NihLogLevel priority, const char *message);
 
 
 /**

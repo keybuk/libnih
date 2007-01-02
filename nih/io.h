@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -66,7 +66,8 @@ typedef struct nih_io       NihIo;
  * on a file descriptor or socket being watched.  It is safe for the
  * watcher to remove the watch during the call.
  **/
-typedef void (*NihIoWatcher) (void *, NihIoWatch *, NihIoEvents);
+typedef void (*NihIoWatcher) (void *data, NihIoWatch *watch,
+			      NihIoEvents events);
 
 /**
  * NihIoReader:
@@ -94,7 +95,8 @@ typedef void (*NihIoWatcher) (void *, NihIoWatch *, NihIoEvents);
  * that invokes it has finished.  You must not nih_free() @io or cause it
  * to be freed from within this function, except by nih_io_close().
  **/
-typedef void (*NihIoReader) (void *, NihIo *, const char *, size_t);
+typedef void (*NihIoReader) (void *data, NihIo *io,
+			     const char *buf, size_t len);
 
 /**
  * NihIoCloseHandler:
@@ -109,7 +111,7 @@ typedef void (*NihIoReader) (void *, NihIo *, const char *, size_t);
  * file descriptor with nih_io_close().  You must not nih_free() @io or
  * cause it to be freed from within this function, except by nih_io_close().
  **/
-typedef void (*NihIoCloseHandler) (void *, NihIo *);
+typedef void (*NihIoCloseHandler) (void *data, NihIo *io);
 
 /**
  * NihIoErrorHandler:
@@ -124,7 +126,7 @@ typedef void (*NihIoCloseHandler) (void *, NihIo *);
  * file descriptor with nih_io_close().  You must not nih_free() @io or
  * cause it to be freed from within this function, except by nih_io_close().
  **/
-typedef void (*NihIoErrorHandler) (void *, NihIo *);
+typedef void (*NihIoErrorHandler) (void *data, NihIo *io);
 
 
 /**

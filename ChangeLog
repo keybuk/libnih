@@ -1,5 +1,13 @@
 2007-01-05  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.c (nih_io_message_recv): Remove note about the remote end
+	being closed; when in message mode, this doesn't usually happen.
+	(nih_io_watcher): Only check for a zero length return if we're in
+	stream mode, otherwise it just means we got a zero length message.
+	(nih_io_watcher_read): Accept zero length messages and return them.
+	* nih/tests/test_io.c (test_watcher): Remove tests that tried to
+	mix a message-mode io and a dgram socket, that way lies disaster.
+
 	* nih/io.c (nih_io_watcher_read, nih_io_watcher_write): Initialise
 	len to zero, as valgrind can be fussy about this when we call things
 	directly.

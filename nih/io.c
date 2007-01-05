@@ -546,9 +546,6 @@ nih_io_message_add_control (NihIoMessage *message,
  * message from the list.  Removal of the message can be performed by
  * freeing it.
  *
- * If the remote end of the socket being read from has closed, an empty
- * message will be returned and @len will be set to zero.
- *
  * All functions that use the message structure ensure that the internal
  * data is an nih_alloc() child of the message or its buffers, so the entire
  * message freed using nih_list_free() or nih_free().
@@ -983,7 +980,7 @@ nih_io_watcher (NihIo       *io,
 		}
 
 		/* Deal with socket being closed */
-		if (! len) {
+		if ((io->type == NIH_IO_STREAM) && (! len)) {
 			nih_io_closed (io);
 			goto finish;
 		}
@@ -1059,7 +1056,7 @@ nih_io_watcher_read (NihIo      *io,
 	nih_assert (io != NULL);
 	nih_assert (watch != NULL);
 
-	do {
+	for (;;) {
 		NihIoMessage *message;
 
 		switch (io->type) {
@@ -1077,6 +1074,8 @@ nih_io_watcher_read (NihIo      *io,
 				nih_return_system_error (-1);
 			} else if (len > 0) {
 				io->recv_buf->len += len;
+			} else {
+				return 0;
 			}
 
 			break;
@@ -1087,8 +1086,6 @@ nih_io_watcher_read (NihIo      *io,
 						       (size_t *)&len);
 			if (! message) {
 				return -1;
-			} else if (! len) {
-				nih_free (message);
 			} else {
 				nih_list_add (io->recv_q, &message->entry);
 			}
@@ -1097,7 +1094,7 @@ nih_io_watcher_read (NihIo      *io,
 		default:
 			nih_assert_not_reached ();
 		}
-	} while (len > 0);
+	}
 
 	return len;
 }

@@ -653,30 +653,6 @@ test_message_recv (void)
 	nih_free (msg);
 
 
-	/* Check that we get an empty message and len is zero if we try and
-	 * receive from a socket when the remote end is closed.
-	 */
-	TEST_FEATURE ("with remote end closed");
-	close (fds[0]);
-	close (fds[1]);
-
-	socketpair (PF_UNIX, SOCK_STREAM, 0, fds);
-	close (fds[0]);
-
-	len = 0;
-	msg = nih_io_message_recv (NULL, fds[1], &len);
-
-	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
-	TEST_LIST_EMPTY (&msg->entry);
-
-	TEST_EQ (len, 0);
-	TEST_EQ (msg->data->len, 0);
-
-	nih_free (msg);
-
-	close (fds[1]);
-
-
 	/* Check that we can receive a message from a non-specific source
 	 * over an unconnected socket.
 	 */
@@ -1662,12 +1638,12 @@ test_watcher (void)
 	close (fds[1]);
 
 
-	/* Check that the close handler is called if the remote end of a
-	 * socket is closed.  The reader should also be called with the
-	 * oldest message currently in the queue.
+	/* Check that the error handler is called if the local end of a
+	 * socket is closed (we should get EBADF).  The reader should also
+	 * be called with the oldest message currently in the queue.
 	 */
-	TEST_FEATURE ("with remote end closed");
-	socketpair (PF_UNIX, SOCK_STREAM, 0, fds);
+	TEST_FEATURE ("with local end closed");
+	socketpair (PF_UNIX, SOCK_DGRAM, 0, fds);
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
 			    my_reader, my_close_handler, my_error_handler,
 			    &io);
@@ -1676,41 +1652,6 @@ test_watcher (void)
 	nih_io_buffer_push (msg->data, "this is a test", 14);
 	nih_list_add (io->recv_q, &msg->entry);
 
-	read_called = 0;
-	close_called = 0;
-	last_data = NULL;
-	last_str = NULL;
-	last_len = 0;
-
-	FD_ZERO (&readfds);
-	FD_SET (fds[0], &readfds);
-
-	close (fds[1]);
-	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
-
-	TEST_LIST_NOT_EMPTY (io->recv_q);
-
-	msg = (NihIoMessage *)io->recv_q->next;
-
-	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
-	TEST_ALLOC_PARENT (msg, io);
-
-	TEST_EQ (msg->data->len, 14);
-	TEST_EQ_MEM (msg->data->buf, "this is a test", 14);
-
-	TEST_EQ (read_called, 1);
-	TEST_EQ_P (last_data, &io);
-	TEST_EQ_P (last_str, msg->data->buf);
-	TEST_EQ (last_len, msg->data->len);
-
-	TEST_TRUE (close_called);
-
-
-	/* Check that the error handler is called if the local end of a
-	 * socket is closed (we should get EBADF).  The reader should also
-	 * be called with the oldest message currently in the queue.
-	 */
-	TEST_FEATURE ("with local end closed");
 	error_called = 0;
 	last_error = NULL;
 	read_called = 0;
@@ -1744,33 +1685,11 @@ test_watcher (void)
 	nih_free (io);
 
 
-	/* Check that if the remote end of a socket is closed, and there's
-	 * no close handler, the local end is closed and the structure freed.
-	 */
-	TEST_FEATURE ("with no close handler");
-	socketpair (PF_UNIX, SOCK_STREAM, 0, fds);
-	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
-			    my_reader, NULL, NULL, &io);
-
-	free_called = 0;
-	nih_alloc_set_destructor (io, destructor_called);
-
-	FD_ZERO (&readfds);
-	FD_SET (fds[0], &readfds);
-
-	close (fds[1]);
-	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
-
-	TEST_TRUE (free_called);
-	TEST_LT (fcntl (fds[0], F_GETFD), 0);
-	TEST_EQ (errno, EBADF);
-
-
 	/* Check that if the local end of a socket is closed, and there's
 	 * no error handler, the structure freed.
 	 */
 	TEST_FEATURE ("with no error handler");
-	socketpair (PF_UNIX, SOCK_STREAM, 0, fds);
+	socketpair (PF_UNIX, SOCK_DGRAM, 0, fds);
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
 			    my_reader, NULL, NULL, &io);
 

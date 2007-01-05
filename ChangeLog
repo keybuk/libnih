@@ -1,3 +1,9 @@
+2007-01-05  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/io.h (NihIoMessage): Add a user data field to the message
+	structure so we can carry the pid around when queuing notification
+	messages in upstart.
+
 2007-01-02  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/alloc.h, nih/child.h, nih/command.h, nih/file.h, nih/hash.h:

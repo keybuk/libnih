@@ -174,10 +174,18 @@ typedef struct nih_io_buffer {
  * @addr: address received from or to be sent to,
  * @addrlen: length of @addr,
  * @data: buffer for message data,
- * @control: NULL-terminated array of control messages.
+ * @control: NULL-terminated array of control messages,
+ * @int_data: user-supplied integer data,
+ * @ptr_data: user-supplied pointer data.
  *
  * This structure is used to represent an individual message waiting in
  * a queue to be sent or processed.
+ *
+ * When a message is in the queue, it is sometimes useful to be able to
+ * associate it with the source or destination of the message, for example
+ * when handling errors.  You may use the @int_data or @ptr_member to store
+ * an integer or pointer value that is useful to you.  These are not usually
+ * initialised.
  **/
 typedef struct nih_io_message {
 	NihList           entry;
@@ -187,6 +195,11 @@ typedef struct nih_io_message {
 
 	NihIoBuffer      *data;
 	struct cmsghdr  **control;
+
+	union {
+		int32_t  int_data;
+		void    *ptr_data;
+	};
 } NihIoMessage;
 
 /**

@@ -1,5 +1,8 @@
 2007-01-05  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_io.c (test_shutdown): Uncomment the test for
+	shutdown when all messages are processed by the watcher.
+
 	* nih/io.c (nih_io_message_recv): Remove note about the remote end
 	being closed; when in message mode, this doesn't usually happen.
 	(nih_io_watcher): Only check for a zero length return if we're in

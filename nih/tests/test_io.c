@@ -1077,26 +1077,22 @@ test_shutdown (void)
 	TEST_GE (fcntl (fds[0], F_GETFD), 0);
 
 
-	/* FIXME: disabled until we support calling the watcher */
-#if 0
 	/* Check that removing the message from the queue, emptying it, causes
 	 * the shutdown socket to be closed and the structure to be freed.
 	 */
 	TEST_FEATURE ("with message being handled");
+	nih_list_free (&msg->entry);
+
 	FD_ZERO (&readfds);
 	FD_ZERO (&writefds);
 	FD_ZERO (&exceptfds);
 	FD_SET (fds[0], &readfds);
-	nih_list_free (&msg->entry);
+
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
 	TEST_TRUE (free_called);
 	TEST_LT (fcntl (fds[0], F_GETFD), 0);
 	TEST_EQ (errno, EBADF);
-#endif
-
-	nih_free (io);
-	close (fds[0]);
 
 
 	/* Check that shutting down a socket with no message in the queue

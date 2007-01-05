@@ -1,5 +1,9 @@
 2007-01-05  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.c (nih_io_watcher_read, nih_io_watcher_write): Initialise
+	len to zero, as valgrind can be fussy about this when we call things
+	directly.
+
 	* nih/io.h (NihIoMessage): Add a user data field to the message
 	structure so we can carry the pid around when queuing notification
 	messages in upstart.

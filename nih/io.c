@@ -1054,7 +1054,7 @@ static inline ssize_t
 nih_io_watcher_read (NihIo      *io,
 		     NihIoWatch *watch)
 {
-	ssize_t len;
+	ssize_t len = 0;
 
 	nih_assert (io != NULL);
 	nih_assert (watch != NULL);
@@ -1122,7 +1122,7 @@ static inline ssize_t
 nih_io_watcher_write (NihIo      *io,
 		      NihIoWatch *watch)
 {
-	ssize_t len;
+	ssize_t len = 0;
 
 	nih_assert (io != NULL);
 	nih_assert (watch != NULL);

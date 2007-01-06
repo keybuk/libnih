@@ -1,3 +1,7 @@
+2007-01-06  Scott James Remnant  <scott@netsplit.com>
+
+	* POTFILES.in: Add command.c
+
 2006-08-24  Scott James Remnant  <scott@netsplit.com>
 
 	* POTFILES.in: Add file.c

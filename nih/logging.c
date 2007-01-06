@@ -64,7 +64,7 @@ nih_log_init (void)
 	if (! logger)
 		nih_log_set_logger (nih_logger_printf);
 	if (! min_priority)
-		nih_log_set_priority (NIH_LOG_WARN);
+		nih_log_set_priority (NIH_LOG_MESSAGE);
 }
 
 /**
@@ -214,6 +214,9 @@ nih_logger_syslog (NihLogLevel  priority,
 		break;
 	case NIH_LOG_INFO:
 		level = LOG_INFO;
+		break;
+	case NIH_LOG_MESSAGE:
+		level = LOG_NOTICE;
 		break;
 	case NIH_LOG_WARN:
 		level = LOG_WARNING;

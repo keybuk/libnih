@@ -54,7 +54,7 @@ test_set_logger (void)
 	 * function is called for the logging macros that follow.
 	 */
 	TEST_FUNCTION ("nih_log_set_logger");
-	nih_log_set_priority (NIH_LOG_WARN);
+	nih_log_set_priority (NIH_LOG_MESSAGE);
 	nih_log_set_logger (my_logger);
 
 	last_priority = NIH_LOG_UNKNOWN;
@@ -87,7 +87,7 @@ test_set_priority (void)
 	nih_free (last_message);
 
 	nih_log_set_logger (nih_logger_printf);
-	nih_log_set_priority (NIH_LOG_WARN);
+	nih_log_set_priority (NIH_LOG_MESSAGE);
 }
 
 void
@@ -187,8 +187,7 @@ test_log_message (void)
 	nih_free (last_message);
 
 
-	/* Check that the nih_message macro wraps the call properly,
-	 * behaving the same as nih_warn.
+	/* Check that the nih_message macro wraps the call properly.
 	 */
 	TEST_FUNCTION ("nih_message");
 	last_priority = NIH_LOG_UNKNOWN;
@@ -197,7 +196,7 @@ test_log_message (void)
 	ret = nih_message ("%d formatted %s", -24, "string");
 
 	TEST_EQ (ret, 0);
-	TEST_EQ (last_priority, NIH_LOG_WARN);
+	TEST_EQ (last_priority, NIH_LOG_MESSAGE);
 	TEST_EQ_STR (last_message, "-24 formatted string");
 
 	nih_free (last_message);
@@ -231,7 +230,7 @@ test_log_message (void)
 	nih_free (last_message);
 
 
-	nih_log_set_priority (NIH_LOG_WARN);
+	nih_log_set_priority (NIH_LOG_MESSAGE);
 	nih_log_set_logger (nih_logger_printf);
 }
 
@@ -253,6 +252,42 @@ test_logger_printf (void)
 	TEST_FEATURE ("with low priority message");
 	TEST_DIVERT_STDOUT (output) {
 		ret = nih_log_message (NIH_LOG_DEBUG,
+				       "message with %s %d formatting",
+				       "some", 20);
+	}
+	rewind (output);
+
+	TEST_EQ (ret, 0);
+	TEST_FILE_EQ (output, "test: message with some 20 formatting\n");
+	TEST_FILE_END (output);
+
+	TEST_FILE_RESET (output);
+
+
+	/* Check that ordinary messages are output on stdout and formatted
+	 * correctly, with the program name prefixed on the front.
+	 */
+	TEST_FEATURE ("with ordinary message");
+	TEST_DIVERT_STDOUT (output) {
+		ret = nih_log_message (NIH_LOG_MESSAGE,
+				       "message with %s %d formatting",
+				       "some", 20);
+	}
+	rewind (output);
+
+	TEST_EQ (ret, 0);
+	TEST_FILE_EQ (output, "test: message with some 20 formatting\n");
+	TEST_FILE_END (output);
+
+	TEST_FILE_RESET (output);
+
+
+	/* Check that warning messages are output on stderr and formatted
+	 * correctly, with the program name prefixed on the front.
+	 */
+	TEST_FEATURE ("with ordinary message");
+	TEST_DIVERT_STDERR (output) {
+		ret = nih_log_message (NIH_LOG_WARN,
 				       "message with %s %d formatting",
 				       "some", 20);
 	}
@@ -315,7 +350,7 @@ test_logger_printf (void)
 
 
 	fclose (output);
-	nih_log_set_priority (NIH_LOG_WARN);
+	nih_log_set_priority (NIH_LOG_MESSAGE);
 }
 
 

@@ -1162,12 +1162,13 @@ test_quiet (void)
 	argv[argc] = NULL;
 
 	logger_called = 0;
-	nih_log_set_priority (NIH_LOG_WARN);
+	nih_log_set_priority (NIH_LOG_MESSAGE);
 
 	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	nih_debug ("test message");
 	nih_info ("test message");
+	nih_message ("test message");
 	nih_warn ("test message");
 	nih_error ("test message");
 
@@ -1186,12 +1187,13 @@ test_quiet (void)
 	argv[argc] = NULL;
 
 	logger_called = 0;
-	nih_log_set_priority (NIH_LOG_WARN);
+	nih_log_set_priority (NIH_LOG_MESSAGE);
 
 	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	nih_debug ("test message");
 	nih_info ("test message");
+	nih_message ("test message");
 	nih_warn ("test message");
 	nih_error ("test message");
 
@@ -1202,7 +1204,7 @@ test_quiet (void)
 	nih_free (args);
 
 
-	nih_log_set_priority (NIH_LOG_INFO);
+	nih_log_set_priority (NIH_LOG_MESSAGE);
 	nih_log_set_logger (nih_logger_printf);
 }
 
@@ -1227,18 +1229,19 @@ test_verbose (void)
 	argv[argc] = NULL;
 
 	logger_called = 0;
-	nih_log_set_priority (NIH_LOG_WARN);
+	nih_log_set_priority (NIH_LOG_MESSAGE);
 
 	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	nih_debug ("test message");
 	nih_info ("test message");
+	nih_message ("test message");
 	nih_warn ("test message");
 	nih_error ("test message");
 
 	TEST_NE_P (args, NULL);
 	TEST_EQ_P (args[0], NULL);
-	TEST_EQ (logger_called, 3);
+	TEST_EQ (logger_called, 4);
 
 	nih_free (args);
 
@@ -1251,23 +1254,24 @@ test_verbose (void)
 	argv[argc] = NULL;
 
 	logger_called = 0;
-	nih_log_set_priority (NIH_LOG_WARN);
+	nih_log_set_priority (NIH_LOG_MESSAGE);
 
 	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	nih_debug ("test message");
 	nih_info ("test message");
+	nih_message ("test message");
 	nih_warn ("test message");
 	nih_error ("test message");
 
 	TEST_NE_P (args, NULL);
 	TEST_EQ_P (args[0], NULL);
-	TEST_EQ (logger_called, 3);
+	TEST_EQ (logger_called, 4);
 
 	nih_free (args);
 
 
-	nih_log_set_priority (NIH_LOG_INFO);
+	nih_log_set_priority (NIH_LOG_MESSAGE);
 	nih_log_set_logger (nih_logger_printf);
 }
 
@@ -1291,22 +1295,23 @@ test_debug (void)
 	argv[argc] = NULL;
 
 	logger_called = 0;
-	nih_log_set_priority (NIH_LOG_WARN);
+	nih_log_set_priority (NIH_LOG_MESSAGE);
 
 	args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
 	nih_debug ("test message");
 	nih_info ("test message");
+	nih_message ("test message");
 	nih_warn ("test message");
 	nih_error ("test message");
 
 	TEST_NE_P (args, NULL);
 	TEST_EQ_P (args[0], NULL);
-	TEST_EQ (logger_called, 4);
+	TEST_EQ (logger_called, 5);
 
 	nih_free (args);
 
-	nih_log_set_priority (NIH_LOG_INFO);
+	nih_log_set_priority (NIH_LOG_MESSAGE);
 	nih_log_set_logger (nih_logger_printf);
 }
 

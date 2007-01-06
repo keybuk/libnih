@@ -144,7 +144,7 @@ test_raise_again (void)
 	error2->message = strerror (ENODEV);
 
 	was_logged = 0;
-	nih_log_set_priority (NIH_LOG_WARN);
+	nih_log_set_priority (NIH_LOG_MESSAGE);
 	nih_log_set_logger (logger_called);
 
 	nih_error_raise_again (error2);
@@ -248,7 +248,7 @@ test_push_context (void)
 	nih_error_raise_again (error);
 
 	was_logged = 0;
-	nih_log_set_priority (NIH_LOG_WARN);
+	nih_log_set_priority (NIH_LOG_MESSAGE);
 	nih_log_set_logger (logger_called);
 
 	nih_error_pop_context ();

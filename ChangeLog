@@ -1,3 +1,24 @@
+2007-01-06  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/logging.h (NihLogLevel): Add a message level between info
+	and warn, as we can't just re-use warn as that goes to stderr!
+	(nih_message): Change to use the new message level.
+	* nih/logging.c (nih_logger_syslog): Output messages at the notice
+	level, rather than the warning level.
+	(nih_log_init): Change the default priority to message.
+	* nih/tests/test_logging.c (test_log_message): Check that messages
+	are logged with the new message priority; reset to the new default.
+	(test_logger_printf): Make sure that ordinary messages go to stdout
+	and warning messages go to stderr.
+	(test_set_logger, test_set_priority): Reset to the new default.
+	* nih/tests/test_option.c (test_quiet, test_verbose, test_debug):
+	Check that messages are also logged, as well as warning; and set
+	the new default priority.
+	* nih/tests/test_error.c (test_raise_again, test_push_context):
+	Set log priority to the new default.
+	* nih/tests/test_io.c (test_watcher): Reset priority to the new
+	default.
+
 2007-01-05  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/tests/test_io.c (test_shutdown): Uncomment the test for

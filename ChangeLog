@@ -1,5 +1,8 @@
 2007-01-06  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_io.c (test_watcher): Missing a priority that needed
+	changing to message.
+
 	* nih/logging.h (NihLogLevel): Add a message level between info
 	and warn, as we can't just re-use warn as that goes to stderr!
 	(nih_message): Change to use the new message level.

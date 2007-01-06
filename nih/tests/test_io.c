@@ -1699,7 +1699,7 @@ test_watcher (void)
 	close (fds[0]);
 	close (fds[1]);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
- 	nih_log_set_priority (NIH_LOG_DEBUG);
+ 	nih_log_set_priority (NIH_LOG_MESSAGE);
 
 	TEST_TRUE (free_called);
 

@@ -108,7 +108,8 @@ int         nih_command_parser (const void *parent, int argc, char *argv[],
 				NihOption *options, NihCommand *commands);
 
 NihCommand *nih_command_join   (const void *parent,
-				NihCommand *a, NihCommand *b);
+				NihCommand *a, NihCommand *b)
+	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN
 

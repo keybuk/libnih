@@ -1,5 +1,11 @@
 2007-01-07  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/config.c (nih_config_parse_stanza): Take a data pointer and
+	pass it to the handler, otherwise we can't fill in structures.
+	* nih/config.h: Update.
+	* nih/tests/test_config.c (test_parse_stanza): Check the data
+	pointer is passed properly.
+
 	* nih/tests/test_option.c (test_version, test_help): Capture the
 	return value from nih_option_parser, as we've set gcc attributes to
 	not let us do otherwise.

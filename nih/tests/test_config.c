@@ -1144,6 +1144,7 @@ test_parse_block (void)
 
 
 static int handler_called = 0;
+static void *last_data = NULL;
 static NihConfigStanza *last_stanza = NULL;
 static const char *last_filename = NULL;
 static ssize_t last_lineno = 0;
@@ -1152,7 +1153,8 @@ static ssize_t last_len = 0;
 static ssize_t last_pos = 0;
 
 static int
-my_handler (NihConfigStanza *stanza,
+my_handler (void            *data,
+	    NihConfigStanza *stanza,
 	    const char      *filename,
 	    ssize_t         *lineno,
 	    const char      *file,
@@ -1161,6 +1163,7 @@ my_handler (NihConfigStanza *stanza,
 {
 	handler_called++;
 
+	last_data = data;
 	last_stanza = stanza;
 	last_filename = filename;
 	if (lineno) {
@@ -1207,6 +1210,7 @@ test_parse_stanza (void)
 	strcpy (buf, "foo this is a test\nwibble\n");
 
 	handler_called = 0;
+	last_data = NULL;
 	last_filename = NULL;
 	last_lineno = 0;
 	last_file = NULL;
@@ -1214,9 +1218,10 @@ test_parse_stanza (void)
 	last_pos = -1;
 
 	ret = nih_config_parse_stanza (NULL, NULL, buf, strlen (buf), NULL,
-				       stanzas);
+				       stanzas, &ret);
 
 	TEST_TRUE (handler_called);
+	TEST_EQ_P (last_data, &ret);
 	TEST_EQ_P (last_filename, NULL);
 	TEST_EQ (last_lineno, -1);
 	TEST_EQ_P (last_file, buf);
@@ -1234,6 +1239,7 @@ test_parse_stanza (void)
 	pos = 6;
 
 	handler_called = 0;
+	last_data = NULL;
 	last_filename = NULL;
 	last_lineno = 0;
 	last_file = NULL;
@@ -1241,9 +1247,10 @@ test_parse_stanza (void)
 	last_pos = -1;
 
 	ret = nih_config_parse_stanza (NULL, NULL, buf, strlen (buf), &pos,
-				       stanzas);
+				       stanzas, &ret);
 
 	TEST_TRUE (handler_called);
+	TEST_EQ_P (last_data, &ret);
 	TEST_EQ_P (last_filename, NULL);
 	TEST_EQ (last_lineno, -1);
 	TEST_EQ_P (last_file, buf);
@@ -1263,6 +1270,7 @@ test_parse_stanza (void)
 	lineno = 1;
 
 	handler_called = 0;
+	last_data = NULL;
 	last_filename = NULL;
 	last_lineno = 0;
 	last_file = NULL;
@@ -1270,9 +1278,10 @@ test_parse_stanza (void)
 	last_pos = -1;
 
 	ret = nih_config_parse_stanza (NULL, &lineno, buf, strlen (buf), &pos,
-				       stanzas);
+				       stanzas, &ret);
 
 	TEST_TRUE (handler_called);
+	TEST_EQ_P (last_data, &ret);
 	TEST_EQ_P (last_filename, NULL);
 	TEST_EQ (last_lineno, 1);
 	TEST_EQ_P (last_file, buf);
@@ -1294,7 +1303,7 @@ test_parse_stanza (void)
 	handler_called = 0;
 
 	ret = nih_config_parse_stanza (NULL, NULL, buf, strlen (buf), &pos,
-				       stanzas);
+				       stanzas, &ret);
 
 	TEST_FALSE (handler_called);
 	TEST_EQ (ret, 0);
@@ -1315,7 +1324,7 @@ test_parse_stanza (void)
 	TEST_DIVERT_STDERR (output) {
 		ret = nih_config_parse_stanza ("foo", &lineno,
 					       buf, strlen (buf), &pos,
-					       stanzas);
+					       stanzas, &ret);
 	}
 	rewind (output);
 
@@ -1340,7 +1349,7 @@ test_parse_stanza (void)
 	handler_called = 0;
 
 	ret = nih_config_parse_stanza (NULL, &lineno, buf, strlen (buf), &pos,
-				       stanzas);
+				       stanzas, &ret);
 
 	TEST_FALSE (handler_called);
 	TEST_EQ (ret, 0);

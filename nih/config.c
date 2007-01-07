@@ -872,7 +872,8 @@ nih_config_parse_stanza (const char      *filename,
 			 const char      *file,
 			 ssize_t          len,
 			 ssize_t         *pos,
-			 NihConfigStanza *stanzas)
+			 NihConfigStanza *stanzas,
+			 void            *data)
 {
 	NihConfigStanza *stanza;
 	char            *name;
@@ -894,7 +895,7 @@ nih_config_parse_stanza (const char      *filename,
 	/* Lookup the stanza for it */
 	stanza = nih_config_get_stanza (name, stanzas);
 	if (stanza) {
-		ret = stanza->handler (stanza, filename, lineno,
+		ret = stanza->handler (data, stanza, filename, lineno,
 				       file, len, &p);
 	} else {
 		if (filename)

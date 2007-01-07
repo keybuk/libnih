@@ -27,6 +27,7 @@
 
 /**
  * NihConfigHandler:
+ * @data: data passed to parser,
  * @stanza: stanza found,
  * @filename: name of file being parsed,
  * @lineno: line number,
@@ -55,9 +56,9 @@
  * is not NULL.
  **/
 typedef struct nih_config_stanza NihConfigStanza;
-typedef int (*NihConfigHandler) (NihConfigStanza *stanza, const char *filename,
-				 ssize_t *lineno, const char *file,
-				 ssize_t len, ssize_t *pos);
+typedef int (*NihConfigHandler) (void *data, NihConfigStanza *stanza,
+				 const char *filename, ssize_t *lineno,
+				 const char *file, ssize_t len, ssize_t *pos);
 
 
 /**
@@ -115,7 +116,8 @@ char *    nih_config_parse_block   (const void *parent, const char *filename,
 
 int       nih_config_parse_stanza  (const char *filename, ssize_t *lineno,
 				    const char *file, ssize_t len,
-				    ssize_t *pos, NihConfigStanza *stanzas);
+				    ssize_t *pos, NihConfigStanza *stanzas,
+				    void *data);
 
 NIH_END_EXTERN
 

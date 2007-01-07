@@ -1339,7 +1339,10 @@ test_version (void)
 	output = tmpfile ();
 	TEST_CHILD (pid) {
 		TEST_DIVERT_STDOUT (output) {
-			nih_option_parser (NULL, argc, argv, options, FALSE);
+			char **args;
+
+			args = nih_option_parser (NULL, argc, argv,
+						  options, FALSE);
 			exit (1);
 		}
 	}
@@ -1412,7 +1415,10 @@ test_help (void)
 		unsetenv ("COLUMNS");
 
 		TEST_DIVERT_STDOUT (output) {
-			nih_option_parser (NULL, argc, argv, options, FALSE);
+			char **args;
+
+			args = nih_option_parser (NULL, argc, argv,
+						  options, FALSE);
 			exit (1);
 		}
 	}

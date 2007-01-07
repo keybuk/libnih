@@ -1,5 +1,9 @@
 2007-01-07  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_option.c (test_version, test_help): Capture the
+	return value from nih_option_parser, as we've set gcc attributes to
+	not let us do otherwise.
+
 	* nih/config.h: Add structures, typedefs and macros to allow lists
 	of configuration stanzas to be built up.
 	* nih/config.c (nih_config_parse_args): Split argument parsing into

@@ -54,11 +54,13 @@
  * If you encounter errors, you should use the usual logging functions to
  * output warnings using both @filename and @lineno, but only if @filename
  * is not NULL.
+ *
+ * Returns: zero on success, negative value on raised error.
  **/
 typedef struct nih_config_stanza NihConfigStanza;
 typedef int (*NihConfigHandler) (void *data, NihConfigStanza *stanza,
-				 const char *filename, ssize_t *lineno,
-				 const char *file, ssize_t len, ssize_t *pos);
+				 const char *file, size_t len, size_t *pos,
+				 size_t *lineno);
 
 
 /**
@@ -87,43 +89,39 @@ struct nih_config_stanza {
 
 NIH_BEGIN_EXTERN
 
-ssize_t   nih_config_next_token    (const char *filename, ssize_t *lineno,
-				    const char *file, ssize_t len,
-				    ssize_t *pos, char *dest,
+ssize_t   nih_config_next_token    (const char *file, size_t len, size_t *pos,
+				    size_t *lineno, char *dest,
 				    const char *delim, int dequote);
-char *    nih_config_next_arg      (const void *parent, const char *filename,
-				    ssize_t *lineno, const char *file,
-				    ssize_t len, ssize_t *pos)
+char *    nih_config_next_arg      (const void *parent,
+				    const char *file, size_t len, size_t *pos,
+				    size_t *lineno)
 	__attribute__ ((warn_unused_result, malloc));
-void      nih_config_next_line     (const char *filename, ssize_t *lineno,
-				    const char *file, ssize_t len,
-				    ssize_t *pos);
+void      nih_config_next_line     (const char *file, size_t len, size_t *pos,
+				    size_t *lineno);
 
-char **   nih_config_parse_args    (const void *parent, const char *filename,
-				    ssize_t *lineno, const char *file,
-				    ssize_t len, ssize_t *pos)
+char **   nih_config_parse_args    (const void *parent,
+				    const char *file, size_t len, size_t *pos,
+				    size_t *lineno)
 	__attribute__ ((warn_unused_result, malloc));
-char *    nih_config_parse_command (const void *parent, const char *filename,
-				    ssize_t *lineno, const char *file,
-				    ssize_t len, ssize_t *pos)
-	__attribute__ ((warn_unused_result, malloc));
-
-char *    nih_config_parse_block   (const void *parent, const char *filename,
-				    ssize_t *lineno, const char *file,
-				    ssize_t len, ssize_t *pos,
-				    const char *type)
+char *    nih_config_parse_command (const void *parent,
+				    const char *file, size_t len, size_t *pos,
+				    size_t *lineno)
 	__attribute__ ((warn_unused_result, malloc));
 
-int       nih_config_parse_stanza  (const char *filename, ssize_t *lineno,
-				    const char *file, ssize_t len,
-				    ssize_t *pos, NihConfigStanza *stanzas,
+char *    nih_config_parse_block   (const void *parent,
+				    const char *file, size_t len, size_t *pos,
+				    size_t *lineno, const char *type)
+	__attribute__ ((warn_unused_result, malloc));
+
+int       nih_config_parse_stanza  (const char *file, size_t len, size_t *pos,
+				    size_t *lineno, NihConfigStanza *stanzas,
 				    void *data);
 
-void      nih_config_parse_file    (const char *filename, ssize_t *lineno,
-				    const char *file, ssize_t len,
-				    ssize_t *pos, NihConfigStanza *stanzas,
+int       nih_config_parse_file    (const char *file, size_t len, size_t *pos,
+				    size_t *lineno, NihConfigStanza *stanzas,
 				    void *data);
 int       nih_config_parse         (const char *filename,
+				    size_t *pos, size_t *lineno,
 				    NihConfigStanza *stanzas, void *data);
 
 NIH_END_EXTERN

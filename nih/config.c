@@ -26,6 +26,7 @@
 
 #include <sys/types.h>
 
+#include <limits.h>
 #include <string.h>
 
 #include <nih/macros.h>
@@ -34,6 +35,7 @@
 #include <nih/config.h>
 #include <nih/logging.h>
 #include <nih/error.h>
+#include <nih/errors.h>
 
 
 /**
@@ -61,20 +63,19 @@
 
 
 /* Prototypes for static functions */
-static ssize_t          nih_config_block_end  (ssize_t *lineno,
-					       const char *file, ssize_t len,
-					       ssize_t *pos, const char *type);
+static ssize_t          nih_config_block_end  (const char *file, size_t len,
+					       size_t *lineno, size_t *pos,
+					       const char *type);
 static NihConfigStanza *nih_config_get_stanza (const char *name,
 					       NihConfigStanza *stanzas);
 
 
 /**
  * nih_config_next_token:
- * @filename: name of file being parsed,
- * @lineno: line number,
  * @file: file or string to parse,
  * @len: length of @file,
  * @pos: offset within @file,
+ * @lineno: line number,
  * @dest: destination to copy to,
  * @delim: characters to stop on,
  * @dequote: remove quotes and escapes.
@@ -96,10 +97,6 @@ static NihConfigStanza *nih_config_get_stanza (const char *name,
  * If @lineno is given it will be incremented each time a new line is
  * discovered in the file.
  *
- * If you want warnings to be output, pass both @filename and @lineno, which
- * will be used to output the warning message using the usual logging
- * functions.
- *
  * To copy the token into another string, collapsing any newlines and
  * surrounding whitespace to a single space, pass @dest which should be
  * pre-allocated to the right size (obtained by calling this function
@@ -108,22 +105,22 @@ static NihConfigStanza *nih_config_get_stanza (const char *name,
  * If you also want quotes to be removed and escaped characters to be
  * replaced with the character itself, set @dequote to TRUE.
  *
- * Returns: the length of the token as it was/would be copied into @dest.
+ * Returns: the length of the token as it was/would be copied into @dest,
+ * or negative value on raised error.
  **/
 ssize_t
-nih_config_next_token (const char *filename,
-		       ssize_t    *lineno,
-		       const char *file,
-		       ssize_t     len,
-		       ssize_t    *pos,
+nih_config_next_token (const char *file,
+		       size_t      len,
+		       size_t     *pos,
+		       size_t     *lineno,
 		       char       *dest,
 		       const char *delim,
 		       int         dequote)
 {
-	ssize_t  ws = 0, nlws = 0, qc = 0, i = 0, p, ret;
-	int      slash = FALSE, quote = 0, nl = FALSE;
+	size_t  p, ws = 0, nlws = 0, qc = 0, i = 0;
+	ssize_t ret;
+	int     slash = FALSE, quote = 0, nl = FALSE;
 
-	nih_assert ((filename == NULL) || (lineno != NULL));
 	nih_assert (file != NULL);
 	nih_assert (len > 0);
 	nih_assert (delim != NULL);
@@ -220,25 +217,20 @@ nih_config_next_token (const char *filename,
 		dest[i++] = '\0';
 
 
-	/* A trailing slash on the end of the file makes no sense, we'll
-	 * assume they intended there to be a newline after it and ignore
-	 * the character by treating it as whitespace.
-	 */
+	/* A trailing slash on the end of the file makes no sense. */
 	if (slash) {
-		if (filename)
-			nih_warn ("%s:%zi: %s", filename, *lineno,
-				  _("ignored trailing slash"));
-
-		ws++;
+		nih_error_raise (NIH_CONFIG_TRAILING_SLASH,
+				 _(NIH_CONFIG_TRAILING_SLASH_STR));
+		ret = -1;
+		goto finish;
 	}
 
-	/* Leaving quotes open is generally bad, close it at the last
-	 * piece of whitespace (ie. do nothing :p)
-	 */
+	/* Leaving quotes open is also generally bad. */
 	if (quote) {
-		if (filename)
-			nih_warn ("%s:%zi: %s", filename, *lineno,
-				  _("unterminated quoted string"));
+		nih_error_raise (NIH_CONFIG_UNTERMINATED_QUOTE,
+				 _(NIH_CONFIG_UNTERMINATED_QUOTE_STR));
+		ret = -1;
+		goto finish;
 	}
 
 
@@ -249,6 +241,8 @@ nih_config_next_token (const char *filename,
 	 * The actual end of the text read is returned in *pos.
 	 */
 	ret = p - (pos ? *pos : 0) - ws - nlws - qc;
+
+finish:
 	if (pos)
 		*pos = p;
 
@@ -258,11 +252,10 @@ nih_config_next_token (const char *filename,
 /**
  * nih_config_next_arg:
  * @parent: parent of returned argument,
- * @filename: name of file being parsed,
- * @lineno: line number,
  * @file: file or string to parse,
  * @len: length of @file,
- * @pos: offset within @file.
+ * @pos: offset within @file,
+ * @lineno: line number.
  *
  * Extracts a single argument from @file, a dequoted token that is stopped
  * on any comment, space or newline character that is not quoted or escaped
@@ -280,38 +273,39 @@ nih_config_next_token (const char *filename,
  * If @lineno is given it will be incremented each time a new line is
  * discovered in the file.
  *
- * If you want warnings to be output, pass both @filename and @lineno, which
- * will be used to output the warning message using the usual logging
- * functions.
- *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
  * is freed, the returned block will be freed too.  If you have clean-up
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
- * Returns: the argument found or NULL if there wasn't one at this position.
+ * Returns: the argument found (which may be empty if there is no argument
+ * at this position) or NULL on raised error.
  **/
 char *
 nih_config_next_arg (const void *parent,
-		     const char *filename,
-		     ssize_t    *lineno,
 		     const char *file,
-		     ssize_t     len,
-		     ssize_t    *pos)
+		     size_t      len,
+		     size_t     *pos,
+		     size_t     *lineno)
 {
-	ssize_t  p, arg_start, arg_len, arg_end;
+	size_t   p, arg_start, arg_end;
+	ssize_t  arg_len;
 	char    *arg;
 
-	nih_assert ((filename == NULL) || (lineno != NULL));
 	nih_assert (file != NULL);
 	nih_assert (len > 0);
 
 	p = (pos ? *pos : 0);
 	arg_start = p;
-	arg_len = nih_config_next_token (filename, lineno, file, len,
-					 &p, NULL, CNLWS, TRUE);
+	arg_len = nih_config_next_token (file, len, &p, lineno,
+					 NULL, CNLWS, TRUE);
 	arg_end = p;
+
+	if (arg_len < 0) {
+		arg = NULL;
+		goto finish;
+	}
 
 	/* Skip any amount of whitespace between them, we also need to
 	 * detect an escaped newline here.
@@ -338,31 +332,29 @@ nih_config_next_arg (const void *parent,
 		p++;
 	}
 
-	if (pos)
-		*pos = p;
-
-
-	/* If there's nothing to copy, bail out now */
-	if (! arg_len)
-		return NULL;
-
 	/* Copy in the new token */
 	NIH_MUST (arg = nih_alloc (parent, arg_len + 1));
 
-	nih_config_next_token (NULL, NULL,
-			       file + arg_start, arg_end - arg_start,
-			       NULL, arg, CNLWS, TRUE);
+	if (arg_len) {
+		nih_config_next_token (file + arg_start, arg_end - arg_start,
+				       NULL, NULL, arg, CNLWS, TRUE);
+	} else {
+		arg[0] = '\0';
+	}
+
+finish:
+	if (pos)
+		*pos = p;
 
 	return arg;
 }
 
 /**
  * nih_config_next_line:
- * @filename: name of file being parsed,
- * @lineno: line number,
  * @file: file or string to parse,
  * @len: length of @file,
- * @pos: offset within @file.
+ * @pos: offset within @file,
+ * @lineno: line number.
  *
  * Skips to the end of the current line in @file.
  *
@@ -375,19 +367,13 @@ nih_config_next_arg (const void *parent,
  *
  * If @lineno is given it will be incremented each time a new line is
  * discovered in the file.
- *
- * If you want warnings to be output, pass both @filename and @lineno, which
- * will be used to output the warning message using the usual logging
- * functions.
  **/
 void
-nih_config_next_line (const char *filename,
-		      ssize_t    *lineno,
-		      const char *file,
-		      ssize_t     len,
-		      ssize_t    *pos)
+nih_config_next_line (const char *file,
+		      size_t      len,
+		      size_t     *pos,
+		      size_t     *lineno)
 {
-	nih_assert ((filename == NULL) || (lineno != NULL));
 	nih_assert (file != NULL);
 	nih_assert (len > 0);
 	nih_assert (pos != NULL);
@@ -408,11 +394,10 @@ nih_config_next_line (const char *filename,
 /**
  * nih_config_parse_args:
  * @parent: parent of returned array,
- * @filename: name of file being parsed,
- * @lineno: line number,
  * @file: file or string to parse,
  * @len: length of @file,
- * @pos: offset within @file.
+ * @pos: offset within @file,
+ * @lineno: line number.
  *
  * Extracts a list of arguments from @file, each argument is separated
  * by whitespace and parsing is stopped when a newline is encountered
@@ -429,10 +414,6 @@ nih_config_next_line (const char *filename,
  * If @lineno is given it will be incremented each time a new line is
  * discovered in the file.
  *
- * If you want warnings to be output, pass both @filename and @lineno, which
- * will be used to output the warning message using the usual logging
- * functions.
- *
  * The arguments are returned as a NULL-terminated array, with each argument
  * dequoted before being returned.
  *
@@ -442,21 +423,18 @@ nih_config_next_line (const char *filename,
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
- * Returns: the list of arguments found.
+ * Returns: the list of arguments found or NULL on raised error.
  **/
 char **
 nih_config_parse_args (const void *parent,
-		       const char *filename,
-		       ssize_t    *lineno,
 		       const char *file,
-		       ssize_t     len,
-		       ssize_t    *pos)
+		       size_t      len,
+		       size_t     *pos,
+		       size_t     *lineno)
 {
-	char    **args;
-	ssize_t   p;
-	size_t    nargs;
+	char   **args;
+	size_t   p, nargs;
 
-	nih_assert ((filename == NULL) || (lineno != NULL));
 	nih_assert (file != NULL);
 	nih_assert (len > 0);
 
@@ -468,14 +446,16 @@ nih_config_parse_args (const void *parent,
 	/* Loop through the arguments until we hit a comment or newline */
 	p = (pos ? *pos : 0);
 	while ((p < len) && (! strchr (CNL, file[p]))) {
-		char    **new_args, *arg;
+		char  **new_args, *arg;
 
-		arg = nih_config_next_arg (args, filename, lineno,
-					   file, len, &p);
-		if (! arg)
-			continue;
+		arg = nih_config_next_arg (args, file, len, &p, lineno);
+		if (! arg) {
+			nih_free (args);
+			args = NULL;
+			goto finish;
+		}
 
-		/* Extend the array and allocate room for the args */
+		/* Extend the array and add the new argument. */
 		NIH_MUST (new_args = nih_realloc (args, parent,
 						  (sizeof (char *)
 						   * (nargs + 2))));
@@ -486,8 +466,9 @@ nih_config_parse_args (const void *parent,
 
 	}
 
-	nih_config_next_line (filename, lineno, file, len, &p);
+	nih_config_next_line (file, len, &p, lineno);
 
+finish:
 	if (pos)
 		*pos = p;
 
@@ -497,11 +478,10 @@ nih_config_parse_args (const void *parent,
 /**
  * nih_config_parse_command:
  * @parent: parent of returned string,
- * @filename: name of file being parsed,
- * @lineno: line number,
  * @file: file or string to parse,
  * @len: length of @file,
- * @pos: offset within @file.
+ * @pos: offset within @file,
+ * @lineno: line number,
  *
  * Extracts a command and its arguments from @file, stopping when a
  * newline is encountered outside of a quoted string and not escaped
@@ -518,10 +498,6 @@ nih_config_parse_args (const void *parent,
  * If @lineno is given it will be incremented each time a new line is
  * discovered in the file.
  *
- * If you want warnings to be output, pass both @filename and @lineno, which
- * will be used to output the warning message using the usual logging
- * functions.
- *
  * The command is returned as a string allocated with nih_alloc().
  *
  * If @parent is not NULL, it should be a pointer to another allocated
@@ -530,20 +506,20 @@ nih_config_parse_args (const void *parent,
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
- * Returns: the command string found or NULL if one was not present.
+ * Returns: the command found (which may be empty if there is no command
+ * at this position) or NULL on raised error.
  **/
 char *
 nih_config_parse_command (const void *parent,
-			  const char *filename,
-			  ssize_t    *lineno,
 			  const char *file,
-			  ssize_t     len,
-			  ssize_t    *pos)
+			  size_t      len,
+			  size_t     *pos,
+			  size_t     *lineno)
 {
 	char    *cmd;
-	ssize_t  p, cmd_start, cmd_len, cmd_end;
+	size_t   p, cmd_start, cmd_end;
+	ssize_t  cmd_len;
 
-	nih_assert ((filename == NULL) || (lineno != NULL));
 	nih_assert (file != NULL);
 	nih_assert (len > 0);
 
@@ -552,25 +528,30 @@ nih_config_parse_command (const void *parent,
 	 */
 	p = (pos ? *pos : 0);
 	cmd_start = p;
-	cmd_len = nih_config_next_token (filename, lineno, file, len,
-					 &p, NULL, CNL, FALSE);
+	cmd_len = nih_config_next_token (file, len, &p, lineno,
+					 NULL, CNL, FALSE);
 	cmd_end = p;
 
-	nih_config_next_line (filename, lineno, file, len, &p);
+	if (cmd_len < 0) {
+		cmd = NULL;
+		goto finish;
+	}
 
-	if (pos)
-		*pos = p;
-
-	/* If there's nothing to copy, bail out now */
-	if (! cmd_len)
-		return NULL;
-
+	nih_config_next_line (file, len, &p, lineno);
 
 	/* Now copy the string into the destination. */
 	NIH_MUST (cmd = nih_alloc (parent, cmd_len + 1));
-	nih_config_next_token (NULL, NULL,
-			       file + cmd_start, cmd_end - cmd_start,
-			       NULL, cmd, CNL, FALSE);
+
+	if (cmd_len) {
+		nih_config_next_token (file + cmd_start, cmd_end - cmd_start,
+				       NULL, NULL, cmd, CNL, FALSE);
+	} else {
+		cmd[0] = '\0';
+	}
+
+finish:
+	if (pos)
+		*pos = p;
 
 	return cmd;
 }
@@ -579,11 +560,10 @@ nih_config_parse_command (const void *parent,
 /**
  * nih_config_parse_block:
  * @parent: parent of returned string,
- * @filename: name of file being parsed,
- * @lineno: line number,
  * @file: file or string to parse,
  * @len: length of @file,
  * @pos: offset within @file,
+ * @lineno: line number,
  * @type: block identifier.
  *
  * Extracts a block of text from @line, stopping when the pharse "end @type"
@@ -603,10 +583,6 @@ nih_config_parse_command (const void *parent,
  * If @lineno is given it will be incremented each time a new line is
  * discovered in the file.
  *
- * If you want warnings to be output, pass both @filename and @lineno, which
- * will be used to output the warning message using the usual logging
- * functions.
- *
  * The block is returned as a string allocated with nih_alloc().
  *
  * If @parent is not NULL, it should be a pointer to another allocated
@@ -615,22 +591,21 @@ nih_config_parse_command (const void *parent,
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
- * Returns: the text contained within the block.
+ * Returns: the text contained within the block or NULL on raised error.
  **/
 char *
 nih_config_parse_block (const void *parent,
-			const char *filename,
-			ssize_t    *lineno,
 			const char *file,
-			ssize_t     len,
-			ssize_t    *pos,
+			size_t      len,
+			size_t     *pos,
+			size_t     *lineno,
 			const char *type)
 {
 	char    *block;
-	ssize_t  p, sh_start, sh_end, sh_len, ws;
+	size_t   p, pp, sh_start, sh_len;
+	ssize_t  sh_end, ws;
 	int      lines;
 
-	nih_assert ((filename == NULL) || (lineno != NULL));
 	nih_assert (file != NULL);
 	nih_assert (len > 0);
 	nih_assert (type != NULL);
@@ -650,9 +625,9 @@ nih_config_parse_block (const void *parent,
 	ws = -1;
 	lines = 0;
 
-	while ((sh_end = nih_config_block_end (lineno, file, len,
-					       &p, type)) < 0) {
-		ssize_t line_start;
+	while ((sh_end = nih_config_block_end (file, len, &p,
+					       lineno, type)) < 0) {
+		size_t line_start;
 
 		lines++;
 		line_start = p;
@@ -675,53 +650,50 @@ nih_config_parse_block (const void *parent,
 				ws = p - line_start;
 		}
 
-		nih_config_next_line (filename, lineno, file, len, &p);
+		nih_config_next_line (file, len, &p, lineno);
 
 		if (p >= len) {
-			sh_end = p;
-			if (filename)
-				nih_warn ("%s:%zi: %s", filename, *lineno,
-					  _("end of block expected"));
-			break;
+			nih_error_raise (NIH_CONFIG_UNTERMINATED_BLOCK,
+					 _(NIH_CONFIG_UNTERMINATED_BLOCK_STR));
+			block = NULL;
+			goto finish;
 		}
 	}
 
-	if (pos)
-		*pos = p;
-
-
-	/*
-	 * Copy the fragment into a string, removing common whitespace from
+	/* Copy the fragment into a string, removing common whitespace from
 	 * the start.  We can be less strict here because we already know
 	 * the contents, etc.
 	 */
-
 	sh_len = sh_end - sh_start - (ws * lines);
 	NIH_MUST (block = nih_alloc (parent, sh_len + 1));
 	block[0] = '\0';
 
-	p = sh_start;
-	while (p < sh_end) {
+	pp = sh_start;
+	while (pp < sh_end) {
 		size_t line_start;
 
-		p += ws;
-		line_start = p;
+		pp += ws;
+		line_start = pp;
 
-		while (file[p++] != '\n')
+		while (file[pp++] != '\n')
 			;
 
-		strncat (block, file + line_start, p - line_start);
+		strncat (block, file + line_start, pp - line_start);
 	}
+
+finish:
+	if (pos)
+		*pos = p;
 
 	return block;
 }
 
 /**
  * nih_config_block_end:
- * @lineno: line number,
  * @file: file or string to parse,
  * @len: length of @file,
  * @pos: offset within @file,
+ * @lineno: line number,
  * @type: block identifier.
  *
  * Determines whether the current line contains an end of block marker.
@@ -737,13 +709,14 @@ nih_config_parse_block (const void *parent,
  * function was called) or -1 if it is not on this line.
  **/
 static ssize_t
-nih_config_block_end (ssize_t    *lineno,
-		      const char *file,
-		      ssize_t     len,
-		      ssize_t    *pos,
+nih_config_block_end (const char *file,
+		      size_t      len,
+		      size_t     *pos,
+		      size_t     *lineno,
 		      const char *type)
 {
-	ssize_t p, end;
+	size_t  p;
+	ssize_t end;
 
 	nih_assert (file != NULL);
 	nih_assert (len > 0);
@@ -836,11 +809,10 @@ nih_config_get_stanza (const char      *name,
 
 /**
  * nih_config_parse_stanza:
- * @filename: name of file being parsed,
- * @lineno: line number,
  * @file: file or string to parse,
  * @len: length of @file,
  * @pos: offset within @file,
+ * @lineno: line number,
  * @stanzas: table of stanza handlers,
  * @data: pointer to pass to stanza handler.
  *
@@ -859,30 +831,24 @@ nih_config_get_stanza (const char      *name,
  * If @lineno is given it will be incremented each time a new line is
  * discovered in the file.
  *
- * If you want warnings to be output, pass both @filename and @lineno, which
- * will be used to output the warning message using the usual logging
- * functions.
- *
  * A warning is output if no stanza is found, and the position is moved
  * past the end of the line.  This may result in inconsistent parsing.
  *
- * Returns: return value from handler or zero if no handler found.
+ * Returns: zero on success or negative value on raised error.
  **/
 int
-nih_config_parse_stanza (const char      *filename,
-			 ssize_t         *lineno,
-			 const char      *file,
-			 ssize_t          len,
-			 ssize_t         *pos,
+nih_config_parse_stanza (const char      *file,
+			 size_t           len,
+			 size_t          *pos,
+			 size_t          *lineno,
 			 NihConfigStanza *stanzas,
 			 void            *data)
 {
 	NihConfigStanza *stanza;
 	char            *name;
-	ssize_t          p;
+	size_t           p;
 	int              ret = 0;
 
-	nih_assert ((filename == NULL) || (lineno != NULL));
 	nih_assert (file != NULL);
 	nih_assert (len > 0);
 	nih_assert (stanzas != NULL);
@@ -890,24 +856,33 @@ nih_config_parse_stanza (const char      *filename,
 	p = (pos ? *pos : 0);
 
 	/* Get the next dequoted argument from the file */
-	name = nih_config_next_arg (NULL, filename, lineno, file, len, &p);
-	if (! name)
-		return 0;
+	name = nih_config_next_arg (NULL, file, len, &p, lineno);
+	if (! name) {
+		ret = -1;
+		goto finish;
+	}
+
+	if (! strlen (name)) {
+		nih_error_raise (NIH_CONFIG_EXPECTED_STANZA,
+				 _(NIH_CONFIG_EXPECTED_STANZA_STR));
+		ret = -1;
+		goto finish;
+	}
 
 	/* Lookup the stanza for it */
 	stanza = nih_config_get_stanza (name, stanzas);
-	if (stanza) {
-		ret = stanza->handler (data, stanza, filename, lineno,
-				       file, len, &p);
-	} else {
-		if (filename)
-			nih_warn ("%s:%zi: %s: %s", filename, *lineno,
-				  _("ignored unknown stanza"), name);
-
-		nih_config_next_line (filename, lineno, file, len, &p);
+	if (! stanza) {
+		nih_error_raise (NIH_CONFIG_UNKNOWN_STANZA,
+				 _(NIH_CONFIG_UNKNOWN_STANZA_STR));
+		ret = -1;
+		goto finish;
 	}
 
-	nih_free (name);
+	ret = stanza->handler (data, stanza, file, len, &p, lineno);
+
+finish:
+	if (name)
+		nih_free (name);
 
 	if (pos)
 		*pos = p;
@@ -918,11 +893,10 @@ nih_config_parse_stanza (const char      *filename,
 
 /**
  * nih_config_parse_file:
- * @filename: name of file being parsed,
- * @lineno: line number,
  * @file: file or string to parse,
  * @len: length of @file,
  * @pos: offset within @file,
+ * @lineno: line number,
  * @stanzas: table of stanza handlers,
  * @data: pointer to pass to stanza handler.
  *
@@ -941,22 +915,19 @@ nih_config_parse_stanza (const char      *filename,
  * If @lineno is given it will be incremented each time a new line is
  * discovered in the file.
  *
- * If you want warnings to be output, pass both @filename and @lineno, which
- * will be used to output the warning message using the usual logging
- * functions.
+ * Returns: zero on success, negative value on raised error.
  **/
-void
-nih_config_parse_file (const char      *filename,
-		       ssize_t         *lineno,
-		       const char      *file,
-		       ssize_t          len,
-		       ssize_t         *pos,
+int
+nih_config_parse_file (const char      *file,
+		       size_t           len,
+		       size_t          *pos,
+		       size_t          *lineno,
 		       NihConfigStanza *stanzas,
 		       void            *data)
 {
-	ssize_t p;
+	int    ret = 0;
+	size_t p;
 
-	nih_assert ((filename == NULL) || (lineno != NULL));
 	nih_assert (file != NULL);
 	nih_assert (len > 0);
 	nih_assert (stanzas != NULL);
@@ -983,54 +954,74 @@ nih_config_parse_file (const char      *filename,
 		}
 
 		/* Must have a stanza, parse it */
-		if (p < len)
-			nih_config_parse_stanza (filename, lineno, file, len,
-						 &p, stanzas, data);
+		if (p < len) {
+			if (nih_config_parse_stanza (file, len, &p, lineno,
+						     stanzas, data) < 0) {
+				ret = -1;
+				goto finish;
+			}
+		}
 	}
 
+finish:
 	if (pos)
 		*pos = p;
+
+	return ret;
 }
 
 /**
  * nih_config_parse:
  * @filename: name of file to parse,
+ * @pos: offset within @file,
+ * @lineno: line number,
  * @stanzas: table of stanza handlers,
  * @data: pointer to pass to stanza handler.
  *
  * Maps @filename into memory and them parses configuration lines from it
  * using nih_config_parse_file().
  *
- * Parser errors are only treated as warnings and are output using the
- * usual logging functions, prefixed with both the filename and line number
- * that the error was found.
+ * If @pos is given then it will be used as the offset within @file to
+ * begin (otherwise the start is assumed), and will be updated to point
+ * to @delim or past the end of the file.
  *
- * The only raised errors from this function are those caused by failure
- * to map or unmap the file.
+ * If @lineno is given it will be incremented each time a new line is
+ * discovered in the file.
  *
  * Returns: zero on success, negative value on raised error.
  **/
 int
 nih_config_parse (const char      *filename,
+		  size_t          *pos,
+		  size_t          *lineno,
 		  NihConfigStanza *stanzas,
 		  void            *data)
 {
 	const char *file;
-	ssize_t     len, pos, lineno;
+	size_t      len;
+	int         ret;
 
 	nih_assert (filename != NULL);
 
-	file = nih_file_map (filename, O_RDONLY | O_NOCTTY, (size_t *)&len);
+	file = nih_file_map (filename, O_RDONLY | O_NOCTTY, &len);
 	if (! file)
 		return -1;
 
-	pos = 0;
-	lineno = 1;
-	nih_config_parse_file (filename, &lineno, file, len, &pos,
-			       stanzas, data);
+	if (len > SSIZE_MAX) {
+		nih_error_raise (NIH_CONFIG_TOO_LONG,
+				 _(NIH_CONFIG_TOO_LONG_STR));
+		ret = -1;
+		goto finish;
+	}
 
+	if (lineno)
+		*lineno = 1;
+
+	ret = nih_config_parse_file (file, len, pos, lineno, stanzas, data);
+
+finish:
 	if (nih_file_unmap ((void *)file, len) < 0)
 		return -1;
 
-	return 0;
+	return ret;
 }

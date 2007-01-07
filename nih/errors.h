@@ -33,6 +33,13 @@ enum {
 	/* 0x10000 thru 0x1FFFF reserved for libnih */
 	NIH_ERROR_LIBNIH_START = 0x10000L,
 
+	NIH_CONFIG_TOO_LONG,
+	NIH_CONFIG_TRAILING_SLASH,
+	NIH_CONFIG_UNTERMINATED_QUOTE,
+	NIH_CONFIG_UNTERMINATED_BLOCK,
+	NIH_CONFIG_EXPECTED_STANZA,
+	NIH_CONFIG_UNKNOWN_STANZA,
+
 	/* 0x20000 thru 0x2FFFF reserved for applications */
 	NIH_ERROR_APPLICATION_START = 0x20000L,
 
@@ -41,5 +48,11 @@ enum {
 };
 
 /* Error strings for defined messages */
+#define NIH_CONFIG_TOO_LONG_STR            N_("file is too long")
+#define NIH_CONFIG_TRAILING_SLASH_STR	   N_("trailing slash in file")
+#define NIH_CONFIG_UNTERMINATED_QUOTE_STR  N_("unterminated quoted string")
+#define NIH_CONFIG_UNTERMINATED_BLOCK_STR  N_("unterminated block")
+#define NIH_CONFIG_EXPECTED_STANZA_STR     N_("expected stanza")
+#define NIH_CONFIG_UNKNOWN_STANZA_STR	   N_("unknown stanza")
 
 #endif /* NIH_ERRORS_H */

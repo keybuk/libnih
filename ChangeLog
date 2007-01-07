@@ -1,5 +1,14 @@
 2007-01-07  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/config.c: Convert this file to use size_t where appropriate
+	instead of ssize_t, and raise exceptions for parsing errors rather
+	than logging them.
+	(nih_config_parse): Check a size is not greater then SSIZE_MAX (2GB)
+	to avoid overflows.
+	* nih/config.h: Update prototypes and handler function typedef.
+	* nih/errors.h: Add new error codes and strings.
+	* nih/tests/test_config.c: Adjust test cases.
+
 	* nih/config.c (nih_config_parse_file): Function to parse a mapped
 	file or string line-by-line starting from the given position.
 	(nih_config_parse): Function to map a file into memory and parse it

@@ -1,4 +1,43 @@
+2007-01-07  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/config.h: Add structures, typedefs and macros to allow lists
+	of configuration stanzas to be built up.
+	* nih/config.c (nih_config_parse_args): Split argument parsing into
+	(nih_config_next_arg): This new function that wraps next_token and
+	also skips following whitespace.
+	(nih_config_next_line): Another new function that skips to the end
+	of the line, replacing severael copies of this code.
+	(nih_config_get_stanza): Simple function to find a stanza in a table
+	by its name.
+	(nih_config_parse_stanza): Simple stanza dispatch function; parses an
+	argument at the current position, looks it up in the table, then
+	calls the function.
+	* nih/tests/test_config.c (test_next_arg): Check this function works,
+	we know it does because it was covered by other tests, but it's worth
+	having its own as well.
+	(test_next_line): Check this function works too.
+	(test_parse_stanza): Make sure the dispatcher works properly.
+	* nih/config.c: Write from the code that was used for upstart,
+	making them exported functions to act as a configuration file kit.
+	(nih_config_parse_args): Fix a bug where lineno wasn't incremented
+	for an embedded newline in between arguments.  Fix another bug where
+	a line containing only whitespace or whitespace and a comment would
+	hit an assertion - not a problem in practice, but it's a bug.
+	* nih/config.h: Function prototypes.
+	* nih/libnih.h: Include config.h
+	* nih/tests/test_config.c: Write an all new test suite that tests
+	the individual parsing functions for their functionality, rather
+	than trying to squeeze it into something larger.
+	* nih/Makefile.am (libnih_la_SOURCES): Build and link config.c
+	(nihinclude_HEADERS): Install config.h
+	(TESTS): Build and run config test suite
+	(test_config_SOURCES, test_config_LDFLAGS, test_config_LDADD): Config
+	test suite binary details.
+
 2007-01-06  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/tests/test_io.c (test_watcher): Missing a priority that needed
+	changing to message.
 
 	* nih/command.h: Warn against unused results.
 

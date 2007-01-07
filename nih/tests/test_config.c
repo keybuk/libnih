@@ -1,0 +1,1365 @@
+/* libnih
+ *
+ * test_config.c - test suite for nih/config.c
+ *
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
+ */
+
+#include <nih/test.h>
+
+#include <stdio.h>
+
+#include <nih/macros.h>
+#include <nih/alloc.h>
+#include <nih/config.h>
+#include <nih/main.h>
+
+
+void
+test_next_token (void)
+{
+	FILE    *output;
+	char     buf[1024], dest[1024];
+	ssize_t  ret, pos, lineno;
+
+	TEST_FUNCTION ("nih_config_next_token");
+	program_name = "test";
+
+	/* Check that we can obtain the length of the first simple token
+	 * in a string, and that the position is updated past it.  The
+	 * length of the token should be returned.
+	 */
+	TEST_FEATURE ("with token at start of string");
+	strcpy (buf, "this is a test");
+	pos = 0;
+
+	ret = nih_config_next_token (NULL, NULL, buf, strlen (buf), &pos,
+				     NULL, " ", FALSE);
+
+	TEST_EQ (ret, 4);
+	TEST_EQ (pos, 4);
+
+
+	/* Check that we can obtain a length of a token that entirely fills
+	 * the remainder of the file.
+	 */
+	TEST_FEATURE ("with token filling string");
+	strcpy (buf, "wibble");
+	pos = 0;
+	ret = nih_config_next_token (NULL, NULL, buf, strlen (buf), &pos,
+				     NULL, " ", FALSE);
+
+	TEST_EQ (ret, 6);
+	TEST_EQ (pos, 6);
+
+
+	/* Check that we can extract a token from the string and have it
+	 * copied into our destination buffer.
+	 */
+	TEST_FEATURE ("with token to extract");
+	strcpy (buf, "this is a test");
+	ret = nih_config_next_token (NULL, NULL, buf, strlen (buf), NULL,
+				     dest, " ", FALSE);
+
+	TEST_EQ (ret, 4);
+	TEST_EQ_STR (dest, "this");
+
+
+	/* Check that we can obtain the length of a simple token inside the
+	 * string, and the the position is updated past it.
+	 */
+	TEST_FEATURE ("with token inside string");
+	pos = 5;
+	ret = nih_config_next_token (NULL, NULL, buf, strlen (buf), &pos,
+				     NULL, " ", FALSE);
+
+	TEST_EQ (ret, 2);
+	TEST_EQ (pos, 7);
+
+
+	/* Check that we can obtain the length of a token that contains
+	 * double quotes around the delimeter, the length should include
+	 * the quoted part at the quotes.
+	 */
+	TEST_FEATURE ("with double quotes inside token");
+	strcpy (buf, "\"this is a\" test");
+	pos = 0;
+	ret = nih_config_next_token (NULL, NULL, buf, strlen (buf), &pos,
+				     NULL, " ", FALSE);
+
+	TEST_EQ (ret, 11);
+	TEST_EQ (pos, 11);
+
+
+	/* Check that we can extract a token that is surrounded by double
+	 * quotes, we should still get those.
+	 */
+	TEST_FEATURE ("with double quotes around token to extract");
+	ret = nih_config_next_token (NULL, NULL, buf, strlen (buf), NULL,
+				     dest, " ", FALSE);
+
+	TEST_EQ (ret, 11);
+	TEST_EQ_STR (dest, "\"this is a\"");
+
+
+	/* Check that we can obtain the length of the quoted portion, with
+	 * the quotes removed; the position should still point past it.
+	 */
+	TEST_FEATURE ("with double quotes and dequoting");
+	pos = 0;
+	ret = nih_config_next_token (NULL, NULL, buf, strlen (buf), &pos,
+				     NULL, " ", TRUE);
+
+	TEST_EQ (ret, 9);
+	TEST_EQ (pos, 11);
+
+
+	/* Check that we can extract a quoted token and have the quotes
+	 * removed.
+	 */
+	TEST_FEATURE ("with double quotes and extract with dequoting");
+	ret = nih_config_next_token (NULL, NULL, buf, strlen (buf), NULL,
+				     dest, " ", TRUE);
+
+	TEST_EQ (ret, 9);
+	TEST_EQ_STR (dest, "this is a");
+
+
+	/* Check that we can obtain the length of a token that contains
+	 * single quotes around the delimeter, the length should include
+	 * the quoted part at the quotes.
+	 */
+	TEST_FEATURE ("with single quotes inside token");
+	strcpy (buf, "\'this is a\' test");
+	pos = 0;
+	ret = nih_config_next_token (NULL, NULL, buf, strlen (buf), &pos,
+				     NULL, " ", FALSE);
+
+	TEST_EQ (ret, 11);
+	TEST_EQ (pos, 11);
+
+
+	/* Check that we can obtain the length of a token that contains
+	 * escaped spaces around the delimeter, the length should include
+	 * the backslashes.
+	 */
+	TEST_FEATURE ("with escaped spaces inside token");
+	strcpy (buf, "this\\ is\\ a test");
+	pos = 0;
+	ret = nih_config_next_token (NULL, NULL, buf, strlen (buf), &pos,
+				     NULL, " ", FALSE);
+
+	TEST_EQ (ret, 11);
+	TEST_EQ (pos, 11);
+
+
+	/* Check that we can extract a token that contains escaped spaces
+	 * around the delimiter.
+	 */
+	TEST_FEATURE ("with escaped spaces within extracted token");
+	ret = nih_config_next_token (NULL, NULL, buf, strlen (buf), NULL,
+				     dest, " ", FALSE);
+
+	TEST_EQ (ret, 11);
+	TEST_EQ_STR (dest, "this\\ is\\ a");
+
+
+	/* Check that we can obtain the length of a token that contains
+	 * escaped spaces around the delimeter, without the blackslashes.
+	 */
+	TEST_FEATURE ("with escaped spaces inside token and dequoting");
+	pos = 0;
+	ret = nih_config_next_token (NULL, NULL, buf, strlen (buf), &pos,
+				     NULL, " ", TRUE);
+
+	TEST_EQ (ret, 9);
+	TEST_EQ (pos, 11);
+
+
+	/* Check that we can extract a token that contains escaped spaces
+	 * around the delimiter, while removing them.
+	 */
+	TEST_FEATURE ("with escaped spaces within extracted dequoted token");
+	ret = nih_config_next_token (NULL, NULL, buf, strlen (buf), NULL,
+				     dest, " ", TRUE);
+
+	TEST_EQ (ret, 9);
+	TEST_EQ_STR (dest, "this is a");
+
+
+	/* Check that a newline inside a quoted string, and surrounding
+	 * whitespace, is treated as a single space character.
+	 */
+	TEST_FEATURE ("with newline inside quoted string");
+	strcpy (buf, "\"this is \n a\" test");
+	pos = 0;
+	lineno = 1;
+	ret = nih_config_next_token (NULL, &lineno, buf, strlen (buf), &pos,
+				     NULL, " ", FALSE);
+
+	TEST_EQ (ret, 11);
+	TEST_EQ (pos, 13);
+	TEST_EQ (lineno, 2);
+
+
+	/* Check that extracting a token with a newline inside a quoted
+	 * string only returns a single space for the newline.
+	 */
+	TEST_FEATURE ("with newline inside extracted quoted string");
+	ret = nih_config_next_token (NULL, NULL, buf, strlen (buf), NULL,
+				     dest, " ", FALSE);
+
+	TEST_EQ (ret, 11);
+	TEST_EQ_STR (dest, "\"this is a\"");
+
+
+	/* Check that lineno is incremented when we encounter a newline
+	 * inside a quoted string.
+	 */
+	TEST_FEATURE ("with newline inside quoted string and lineno set");
+	pos = 0;
+	lineno = 1;
+	ret = nih_config_next_token (NULL, &lineno, buf, strlen (buf), &pos,
+				     NULL, " ", FALSE);
+
+	TEST_EQ (ret, 11);
+	TEST_EQ (pos, 13);
+	TEST_EQ (lineno, 2);
+
+
+	/* Check that an escaped newline, and surrounding whitespace, is
+	 * treated as a single space character.
+	 */
+	TEST_FEATURE ("with escaped newline");
+	strcpy (buf, "this \\\n is a:test");
+	pos = 0;
+	lineno = 1;
+	ret = nih_config_next_token (NULL, &lineno, buf, strlen (buf), &pos,
+				     NULL, ":", FALSE);
+
+	TEST_EQ (ret, 9);
+	TEST_EQ (pos, 12);
+	TEST_EQ (lineno, 2);
+
+
+	/* Check that extracting a token with an escaped newline inside it only
+	 * returns a single space for the newline.
+	 */
+	TEST_FEATURE ("with escaped newline inside extracted string");
+	ret = nih_config_next_token (NULL, NULL, buf, strlen (buf), NULL,
+				     dest, ":", FALSE);
+
+	TEST_EQ (ret, 9);
+	TEST_EQ_STR (dest, "this is a");
+
+
+	/* Check that lineno is incremented when we encounter an escaped
+	 * newline
+	 */
+	TEST_FEATURE ("with escaped newline inside string and lineno set");
+	pos = 0;
+	lineno = 1;
+	ret = nih_config_next_token (NULL, &lineno, buf, strlen (buf), &pos,
+				     NULL, ":", FALSE);
+
+	TEST_EQ (ret, 9);
+	TEST_EQ (pos, 12);
+	TEST_EQ (lineno, 2);
+
+
+	/* Check that a slash at the end of the file is ignored and not
+	 * returned as part of the string.
+	 */
+	TEST_FEATURE ("with token filling string");
+	strcpy (buf, "wibble\\");
+	pos = 0;
+	ret = nih_config_next_token (NULL, NULL, buf, strlen (buf), &pos,
+				     NULL, " ", FALSE);
+
+	TEST_EQ (ret, 6);
+	TEST_EQ (pos, 7);
+
+
+	/* Check that an unclosed quote is ignored, but is returned as
+	 * part of the string.
+	 */
+	TEST_FEATURE ("with unterminated quote");
+	strcpy (buf, "\"wibble");
+	pos = 0;
+	ret = nih_config_next_token (NULL, NULL, buf, strlen (buf), &pos,
+				     NULL, " ", FALSE);
+
+	TEST_EQ (ret, 7);
+	TEST_EQ (pos, 7);
+
+
+	/* Check that a slash at the end of the file causes a warning to be
+	 * output.
+	 */
+	TEST_FEATURE ("with token filling string and filename set");
+	strcpy (buf, "wibble\\");
+	pos = 0;
+	lineno = 1;
+
+	output = tmpfile ();
+	TEST_DIVERT_STDERR (output) {
+		ret = nih_config_next_token ("foo", &lineno, buf, strlen (buf),
+					     &pos, NULL, " ", FALSE);
+	}
+
+	rewind (output);
+
+	TEST_FILE_EQ (output, "test:foo:1: ignored trailing slash\n");
+	TEST_FILE_END (output);
+
+	TEST_FILE_RESET (output);
+
+
+	/* Check that an unclosed quote causes a warning to be output.
+	 */
+	TEST_FEATURE ("with unterminated quote and filename set");
+	strcpy (buf, "\"wibble");
+	pos = 0;
+
+	TEST_DIVERT_STDERR (output) {
+		ret = nih_config_next_token ("foo", &lineno, buf, strlen (buf),
+					     &pos, NULL, " ", FALSE);
+	}
+
+	rewind (output);
+
+	TEST_FILE_EQ (output, "test:foo:1: unterminated quoted string\n");
+	TEST_FILE_END (output);
+
+	fclose (output);
+
+
+	/* Check that an empty token results in the position left unchanged
+	 * and zero being returned,
+	 */
+	TEST_FEATURE ("with empty token");
+	strcpy (buf, " wibble");
+	pos = 0;
+	ret = nih_config_next_token (NULL, NULL, buf, strlen (buf), &pos,
+				     NULL, " ", FALSE);
+
+	TEST_EQ (ret, 0);
+	TEST_EQ (pos, 0);
+}
+
+void
+test_next_arg (void)
+{
+	char     buf[1024];
+	char    *str;
+	ssize_t  pos, lineno;
+
+	TEST_FUNCTION ("nih_config_next_arg");
+
+	/* Check that we can extract an argument at the start of a string,
+	 * and have the position pointing past the whitespace to the next
+	 * argument.
+	 */
+	TEST_FEATURE ("with argument at start of string");
+	strcpy (buf, "this is a test");
+	pos = 0;
+
+	str = nih_config_next_arg (NULL, NULL, NULL, buf, strlen (buf), &pos);
+
+	TEST_EQ (pos, 5);
+	TEST_ALLOC_SIZE (str, 5);
+	TEST_EQ_STR (str, "this");
+
+
+	/* Check that we can extract an argument inside a string
+	 */
+	TEST_FEATURE ("with argument inside string");
+	strcpy (buf, "this is a test");
+	pos = 5;
+
+	str = nih_config_next_arg (NULL, NULL, NULL, buf, strlen (buf), &pos);
+
+	TEST_EQ (pos, 8);
+	TEST_ALLOC_SIZE (str, 3);
+	TEST_EQ_STR (str, "is");
+
+
+	/* Check that all trailing whitespace is eaten after the argument. */
+	TEST_FEATURE ("with consecutive whitespace after argument");
+	strcpy (buf, "this \t  is a test");
+	pos = 0;
+
+	str = nih_config_next_arg (NULL, NULL, NULL, buf, strlen (buf), &pos);
+
+	TEST_EQ (pos, 8);
+	TEST_ALLOC_SIZE (str, 5);
+	TEST_EQ_STR (str, "this");
+
+
+	/* Check that any escaped newlines in the whitespace are skipped
+	 * over
+	 */
+	TEST_FEATURE ("with escaped newlines in whitespace");
+	strcpy (buf, "this \\\n is a test");
+	pos = 0;
+
+	str = nih_config_next_arg (NULL, NULL, NULL, buf, strlen (buf), &pos);
+
+	TEST_EQ (pos, 8);
+	TEST_ALLOC_SIZE (str, 5);
+	TEST_EQ_STR (str, "this");
+
+
+	/* Check that the line number is incremented for any escaped newlines
+	 * in the whitespace.
+	 */
+	TEST_FEATURE ("with line number set");
+	pos = 0;
+	lineno = 1;
+
+	str = nih_config_next_arg (NULL, NULL, &lineno,
+				   buf, strlen (buf), &pos);
+
+	TEST_EQ (pos, 8);
+	TEST_EQ (lineno, 2);
+	TEST_ALLOC_SIZE (str, 5);
+	TEST_EQ_STR (str, "this");
+
+
+	/* Check that the returned argument is thoroughly dequoted and any
+	 * whitespace around an embedded newline collapsed to a single
+	 * space.
+	 */
+	TEST_FEATURE ("with quoted whitespace and newline in arg");
+	strcpy (buf, "\"this \\\n is\" a test");
+	pos = 0;
+
+	str = nih_config_next_arg (NULL, NULL, NULL, buf, strlen (buf), &pos);
+
+	TEST_EQ (pos, 13);
+	TEST_ALLOC_SIZE (str, 8);
+	TEST_EQ_STR (str, "this is");
+
+
+	/* Check that if there is no argument at the position, NULL is
+	 * returned.
+	 */
+	TEST_FEATURE ("with empty line");
+	strcpy (buf, "\nthis is a test");
+	pos = 0;
+
+	str = nih_config_next_arg (NULL, NULL, NULL, buf, strlen (buf), &pos);
+
+	TEST_EQ (pos, 0);
+	TEST_EQ_P (str, NULL);
+}
+
+void
+test_next_line (void)
+{
+	char    buf[1024];
+	ssize_t pos, lineno;
+
+	TEST_FUNCTION ("nih_config_next_line");
+
+	/* Check that we can skip a number of characters until the newline,
+	 * pointing pos past it.
+	 */
+	TEST_FEATURE ("with simple string");
+	strcpy (buf, "this is a test\nand so is this\n");
+	pos = 0;
+
+	nih_config_next_line (NULL, NULL, buf, strlen (buf), &pos);
+
+	TEST_EQ (pos, 15);
+
+
+	/* Check that lineno is incremented when we step over it.
+	 */
+	TEST_FEATURE ("with line number set");
+	pos = 0;
+	lineno = 1;
+
+	nih_config_next_line (NULL, &lineno, buf, strlen (buf), &pos);
+
+	TEST_EQ (pos, 15);
+	TEST_EQ (lineno, 2);
+
+
+	/* Check that the end of file can be reached without error.
+	 */
+	TEST_FEATURE ("with no newline before end of file");
+	strcpy (buf, "this is a test");
+	pos = 0;
+
+	nih_config_next_line (NULL, NULL, buf, strlen (buf), &pos);
+
+	TEST_EQ (pos, 14);
+}
+
+
+void
+test_parse_args (void)
+{
+	char      buf[1024];
+	char    **args;
+	ssize_t   pos, lineno;
+
+	TEST_FUNCTION ("nih_config_parse_args");
+
+	/* Check that we can parse a list of arguments from the start of
+	 * a simple string.  They should be returned as a NULL-terminated
+	 * array of strings, and the position should be updated to point to
+	 * the start of the next line.
+	 */
+	TEST_FEATURE ("with args at start of simple string");
+	strcpy (buf, "this is a test\nand so is this\n");
+	pos = 0;
+
+	args = nih_config_parse_args (NULL, NULL, NULL, buf, strlen (buf),
+				      &pos);
+
+	TEST_EQ (pos, 15);
+	TEST_ALLOC_SIZE (args, sizeof (char *) * 5);
+	TEST_ALLOC_PARENT (args[0], args);
+	TEST_ALLOC_PARENT (args[1], args);
+	TEST_ALLOC_PARENT (args[2], args);
+	TEST_ALLOC_PARENT (args[3], args);
+	TEST_EQ_STR (args[0], "this");
+	TEST_EQ_STR (args[1], "is");
+	TEST_EQ_STR (args[2], "a");
+	TEST_EQ_STR (args[3], "test");
+	TEST_EQ_P (args[4], NULL);
+
+	nih_free (args);
+
+
+	/* Check that we can parse a list of arguments from a position
+	 * inside an existing string.
+	 */
+	TEST_FEATURE ("with args inside simple string");
+	pos = 5;
+
+	args = nih_config_parse_args (NULL, NULL, NULL, buf, strlen (buf),
+				      &pos);
+
+	TEST_EQ (pos, 15);
+	TEST_ALLOC_SIZE (args, sizeof (char *) * 4);
+	TEST_EQ_STR (args[0], "is");
+	TEST_EQ_STR (args[1], "a");
+	TEST_EQ_STR (args[2], "test");
+	TEST_EQ_P (args[3], NULL);
+
+	nih_free (args);
+
+
+	/* Check that we can parse a list of arguments up to the end of the
+	 * file, which doesn't have a newline.
+	 */
+	TEST_FEATURE ("with args up to end of string");
+	strcpy (buf, "this is a test");
+	pos = 0;
+
+	args = nih_config_parse_args (NULL, NULL, NULL, buf, strlen (buf),
+				      &pos);
+
+	TEST_EQ (pos, 14);
+	TEST_ALLOC_SIZE (args, sizeof (char *) * 5);
+	TEST_EQ_STR (args[0], "this");
+	TEST_EQ_STR (args[1], "is");
+	TEST_EQ_STR (args[2], "a");
+	TEST_EQ_STR (args[3], "test");
+	TEST_EQ_P (args[4], NULL);
+
+	nih_free (args);
+
+
+	/* Check that we can ignore a comment at the end of the line, the
+	 * position should be updated past the comment onto the next line.
+	 */
+	TEST_FEATURE ("with args up to comment");
+	strcpy (buf, "this is a test # comment\nand so is this\n");
+	pos = 0;
+
+	args = nih_config_parse_args (NULL, NULL, NULL, buf, strlen (buf),
+				      &pos);
+
+	TEST_EQ (pos, 25);
+	TEST_ALLOC_SIZE (args, sizeof (char *) * 5);
+	TEST_EQ_STR (args[0], "this");
+	TEST_EQ_STR (args[1], "is");
+	TEST_EQ_STR (args[2], "a");
+	TEST_EQ_STR (args[3], "test");
+	TEST_EQ_P (args[4], NULL);
+
+	nih_free (args);
+
+
+	/* Check that we can ignore a comment at the end of the file, the
+	 * position should be updated past the end.
+	 */
+	TEST_FEATURE ("with args up to comment at end of file");
+	strcpy (buf, "this is a test # comment");
+	pos = 0;
+
+	args = nih_config_parse_args (NULL, NULL, NULL, buf, strlen (buf),
+				      &pos);
+
+	TEST_EQ (pos, 24);
+	TEST_ALLOC_SIZE (args, sizeof (char *) * 5);
+	TEST_EQ_STR (args[0], "this");
+	TEST_EQ_STR (args[1], "is");
+	TEST_EQ_STR (args[2], "a");
+	TEST_EQ_STR (args[3], "test");
+	TEST_EQ_P (args[4], NULL);
+
+	nih_free (args);
+
+
+	/* Check that the line number is incremented when a new line is
+	 * encountered.
+	 */
+	TEST_FEATURE ("with line number given");
+	strcpy (buf, "this is a test\nand so is this\n");
+	pos = 0;
+	lineno = 1;
+
+	args = nih_config_parse_args (NULL, NULL, &lineno, buf, strlen (buf),
+				      &pos);
+
+	TEST_EQ (pos, 15);
+	TEST_EQ (lineno, 2);
+
+	nih_free (args);
+
+
+	/* Check that consecutive whitespace, including escaped newlines,
+	 * are treated as a single delimeter.  The line number should be
+	 * incremented for both the embedded one and final one.
+	 */
+	TEST_FEATURE ("with multiple whitespace between arguments");
+	strcpy (buf, "this   is \t  a  \\\n test\nand so is this\n");
+	pos = 0;
+	lineno = 1;
+
+	args = nih_config_parse_args (NULL, NULL, &lineno, buf, strlen (buf),
+				      &pos);
+
+	TEST_EQ (pos, 24);
+	TEST_EQ (lineno, 3);
+	TEST_ALLOC_SIZE (args, sizeof (char *) * 5);
+	TEST_EQ_STR (args[0], "this");
+	TEST_EQ_STR (args[1], "is");
+	TEST_EQ_STR (args[2], "a");
+	TEST_EQ_STR (args[3], "test");
+	TEST_EQ_P (args[4], NULL);
+
+	nih_free (args);
+
+
+	/* Check that each argument can be delimited by quotes, contain
+	 * quoted newlines, and each is dequoted before being stored in the
+	 * args array,
+	 */
+	TEST_FEATURE ("with whitespace inside arguments");
+	strcpy (buf, "\"this is\" \"a\ntest\" \\\n and so\nis this\n");
+	pos = 0;
+	lineno = 1;
+
+	args = nih_config_parse_args (NULL, NULL, &lineno, buf, strlen (buf),
+				      &pos);
+
+	TEST_EQ (pos, 29);
+	TEST_EQ (lineno, 4);
+	TEST_ALLOC_SIZE (args, sizeof (char *) * 5);
+	TEST_EQ_STR (args[0], "this is");
+	TEST_EQ_STR (args[1], "a test");
+	TEST_EQ_STR (args[2], "and");
+	TEST_EQ_STR (args[3], "so");
+	TEST_EQ_P (args[4], NULL);
+
+	nih_free (args);
+
+
+	/* Check that an empty line results in a one element array being
+	 * returned containing only NULL, and the position being incremented
+	 * past the empty line.
+	 */
+	TEST_FEATURE ("with empty line");
+	strcpy (buf, "\nand so is this\n");
+	pos = 0;
+
+	args = nih_config_parse_args (NULL, NULL, NULL, buf, strlen (buf),
+				      &pos);
+
+	TEST_EQ (pos, 1);
+	TEST_ALLOC_SIZE (args, sizeof (char *) * 1);
+	TEST_EQ_P (args[0], NULL);
+
+	nih_free (args);
+
+
+	/* Check that a line containing only whitespace results in a one
+	 * element array being returned containing only NULL, and the
+	 * position being incremented past the empty line.
+	 */
+	TEST_FEATURE ("with only whitespace in line");
+	strcpy (buf, "  \t  \nand so is this\n");
+	pos = 0;
+
+	args = nih_config_parse_args (NULL, NULL, NULL, buf, strlen (buf),
+				      &pos);
+
+	TEST_EQ (pos, 6);
+	TEST_ALLOC_SIZE (args, sizeof (char *) * 1);
+	TEST_EQ_P (args[0], NULL);
+
+	nih_free (args);
+
+
+	/* Check that a line containing only a comment results in a one
+	 * element array being returned containing only NULL, and the
+	 * position being incremented past the comment and newline.
+	 */
+	TEST_FEATURE ("with only comment in line");
+	strcpy (buf, "# line with comment\nand so is this\n");
+	pos = 0;
+
+	args = nih_config_parse_args (NULL, NULL, NULL, buf, strlen (buf),
+				      &pos);
+
+	TEST_EQ (pos, 20);
+	TEST_ALLOC_SIZE (args, sizeof (char *) * 1);
+	TEST_EQ_P (args[0], NULL);
+
+	nih_free (args);
+
+
+	/* Check that a line containing a comment after some whitespace
+	 * results in a one element array being returned containing only
+	 * NULL, and the position being incremented past the comment and
+	 * newline.
+	 */
+	TEST_FEATURE ("with comment and whitespace in line");
+	strcpy (buf, "  # line with comment\nand so is this\n");
+	pos = 0;
+
+	args = nih_config_parse_args (NULL, NULL, NULL, buf, strlen (buf),
+				      &pos);
+
+	TEST_EQ (pos, 22);
+	TEST_ALLOC_SIZE (args, sizeof (char *) * 1);
+	TEST_EQ_P (args[0], NULL);
+
+	nih_free (args);
+}
+
+void
+test_parse_command (void)
+{
+	char     buf[1024];
+	char    *str;
+	ssize_t  pos, lineno;
+
+	TEST_FUNCTION ("nih_config_parse_command");
+
+	/* Check that we can parse a command from the start of a simple
+	 * string.  It should be returned as an allocated string and the
+	 * position should be updated to point to the start of the next line.
+	 */
+	TEST_FEATURE ("with command at start of simple string");
+	strcpy (buf, "this is a test\nand so is this\n");
+	pos = 0;
+
+	str = nih_config_parse_command (NULL, NULL, NULL, buf, strlen (buf),
+					&pos);
+
+	TEST_EQ (pos, 15);
+	TEST_ALLOC_SIZE (str, 15);
+	TEST_EQ_STR (str, "this is a test");
+
+	nih_free (str);
+
+
+	/* Check that we can parse a command from inside a string.
+	 */
+	TEST_FEATURE ("with command inside simple string");
+	strcpy (buf, "this is a test\nand so is this\n");
+	pos = 5;
+
+	str = nih_config_parse_command (NULL, NULL, NULL, buf, strlen (buf),
+					&pos);
+
+	TEST_EQ (pos, 15);
+	TEST_ALLOC_SIZE (str, 10);
+	TEST_EQ_STR (str, "is a test");
+
+	nih_free (str);
+
+
+	/* Check that we can parse a command that ends with the end of file.
+	 */
+	TEST_FEATURE ("with command at end of file");
+	strcpy (buf, "this is a test");
+	pos = 0;
+
+	str = nih_config_parse_command (NULL, NULL, NULL, buf, strlen (buf),
+					&pos);
+
+	TEST_EQ (pos, 14);
+	TEST_ALLOC_SIZE (str, 15);
+	TEST_EQ_STR (str, "this is a test");
+
+	nih_free (str);
+
+
+	/* Check that we can parse a command that ends with a comment,
+	 * but the position should be incremented past the end of the comment.
+	 */
+	TEST_FEATURE ("with command up to comment");
+	strcpy (buf, "this is a test # this is a comment\nand so is this\n");
+	pos = 0;
+	lineno = 1;
+
+	str = nih_config_parse_command (NULL, NULL, &lineno, buf, strlen (buf),
+					&pos);
+
+	TEST_EQ (pos, 35);
+	TEST_EQ (lineno, 2);
+	TEST_ALLOC_SIZE (str, 15);
+	TEST_EQ_STR (str, "this is a test");
+
+	nih_free (str);
+
+
+	/* Check that we can parse a command that ends with a comment which
+	 * runs up to the end of file.
+	 */
+	TEST_FEATURE ("with command up to comment at end of file");
+	strcpy (buf, "this is a test # this is a comment");
+	pos = 0;
+	lineno = 1;
+
+	str = nih_config_parse_command (NULL, NULL, &lineno, buf, strlen (buf),
+					&pos);
+
+	TEST_EQ (pos, 34);
+	TEST_EQ (lineno, 1);
+	TEST_ALLOC_SIZE (str, 15);
+	TEST_EQ_STR (str, "this is a test");
+
+	nih_free (str);
+
+
+	/* Check that the command is returned including any quotes,
+	 * consecutive whitespace, but with any whitespace around a quoted
+	 * or escaped newline collapsed to a single space.
+	 */
+	TEST_FEATURE ("with quotes, whitespace and newlines in string");
+	strcpy (buf, "\"this   is\" a \"test \\\n of\" \\\n commands\nfoo\n");
+	pos = 0;
+	lineno = 1;
+
+	str = nih_config_parse_command (NULL, NULL, &lineno, buf, strlen (buf),
+					&pos);
+
+	TEST_EQ (pos, 39);
+	TEST_EQ (lineno, 4);
+	TEST_ALLOC_SIZE (str, 33);
+	TEST_EQ_STR (str, "\"this   is\" a \"test of\" commands");
+
+	nih_free (str);
+
+
+	/* Check that we can parse an empty line, and have just NULL
+	 * returned.  The position should be updated past the newline.
+	 */
+	TEST_FEATURE ("with empty line");
+	strcpy (buf, "\nthis is a test\n");
+	pos = 0;
+
+	str = nih_config_parse_command (NULL, NULL, NULL, buf, strlen (buf),
+					&pos);
+
+	TEST_EQ (pos, 1);
+	TEST_EQ_P (str, NULL);
+
+
+	/* Check that we can parse a line containing only whitespace, and
+	 * have just NULL returned.  The position should be updated past
+	 * the newline.
+	 */
+	TEST_FEATURE ("with only whitespace in line");
+	strcpy (buf, "  \t  \nthis is a test\n");
+	pos = 0;
+
+	str = nih_config_parse_command (NULL, NULL, NULL, buf, strlen (buf),
+					&pos);
+
+	TEST_EQ (pos, 6);
+	TEST_EQ_P (str, NULL);
+
+
+	/* Check that we can parse a line with a comment in it, and have
+	 * just NULL returned.  The position should be updated past
+	 * the newline.
+	 */
+	TEST_FEATURE ("with only comment in line");
+	strcpy (buf, "# this is a test\nthis is a test\n");
+	pos = 0;
+
+	str = nih_config_parse_command (NULL, NULL, NULL, buf, strlen (buf),
+					&pos);
+
+	TEST_EQ (pos, 17);
+	TEST_EQ_P (str, NULL);
+
+
+	/* Check that we can parse a line with whitespace before a comment,
+	 * and have just NULL returned.  The position should be updated past
+	 * the newline.
+	 */
+	TEST_FEATURE ("with whitespace and comment in line");
+	strcpy (buf, "  # this is a test\nthis is a test\n");
+	pos = 0;
+
+	str = nih_config_parse_command (NULL, NULL, NULL, buf, strlen (buf),
+					&pos);
+
+	TEST_EQ (pos, 19);
+	TEST_EQ_P (str, NULL);
+}
+
+
+void
+test_parse_block (void)
+{
+	FILE    *output;
+	char     buf[1024];
+	char    *str;
+	ssize_t  pos, lineno;
+
+	TEST_FUNCTION ("nih_config_parse_block");
+	program_name = "test";
+
+
+	/* Check that we can parse consecutive lines until we reach one
+	 * that ends the block.  The block should be returned as an allocated
+	 * string with each line in it, except the terminator; the position
+	 * should be positioned after the end of the terminator.
+	 */
+	TEST_FEATURE ("with simple block");
+	strcpy (buf, "this is\na test\nend foo\nblah\n");
+	pos = 0;
+
+	str = nih_config_parse_block (NULL, NULL, NULL, buf, strlen (buf),
+				      &pos, "foo");
+
+	TEST_EQ (pos, 23);
+	TEST_ALLOC_SIZE (str, 16);
+	TEST_EQ_STR (str, "this is\na test\n");
+
+	nih_free (str);
+
+
+	/* Check that the line number is incremented for each line that we
+	 * discover in the block, including the terminating line.
+	 */
+	TEST_FEATURE ("with line number set");
+	pos = 0;
+	lineno = 2;
+
+	str = nih_config_parse_block (NULL, NULL, &lineno, buf, strlen (buf),
+				      &pos, "foo");
+
+	TEST_EQ (pos, 23);
+	TEST_EQ (lineno, 5);
+	TEST_ALLOC_SIZE (str, 16);
+	TEST_EQ_STR (str, "this is\na test\n");
+
+	nih_free (str);
+
+
+	/* Check that the common initial whitespace from each line is stripped,
+	 * where common is defined as identical character sequences, not number
+	 * of whitespace chars.
+	 */
+	TEST_FEATURE ("with whitespace at start of block");
+	strcpy (buf, "    this is\n  \t a test\nend foo\nblah\n");
+	pos = 0;
+
+	str = nih_config_parse_block (NULL, NULL, NULL, buf, strlen (buf),
+				      &pos, "foo");
+
+	TEST_EQ (pos, 31);
+	TEST_ALLOC_SIZE (str, 20);
+	TEST_EQ_STR (str, "  this is\n\t a test\n");
+
+	nih_free (str);
+
+
+	/* Check that we can parse a block that ends in a terminator with
+	 * extraneous whitespace around the words.
+	 */
+	TEST_FEATURE ("with whitespace in terminator");
+	strcpy (buf, "this is\na test\n  end \t foo  \nblah\n");
+	pos = 0;
+
+	str = nih_config_parse_block (NULL, NULL, NULL, buf, strlen (buf),
+				      &pos, "foo");
+
+	TEST_EQ (pos, 29);
+	TEST_ALLOC_SIZE (str, 16);
+	TEST_EQ_STR (str, "this is\na test\n");
+
+	nih_free (str);
+
+
+	/* Check that we can parse a block that ends in a terminator which
+	 * is at the end of the file.
+	 */
+	TEST_FEATURE ("with terminator at end of file");
+	strcpy (buf, "this is\na test\nend foo");
+	pos = 0;
+
+	str = nih_config_parse_block (NULL, NULL, NULL, buf, strlen (buf),
+				      &pos, "foo");
+
+	TEST_EQ (pos, 22);
+	TEST_ALLOC_SIZE (str, 16);
+	TEST_EQ_STR (str, "this is\na test\n");
+
+	nih_free (str);
+
+
+	/* Check that we can parse a block that ends in a terminator which
+	 * has a comment following it.
+	 */
+	TEST_FEATURE ("with terminator and comment");
+	strcpy (buf, "this is\na test\nend foo # comment\ntest\n");
+	pos = 0;
+
+	str = nih_config_parse_block (NULL, NULL, NULL, buf, strlen (buf),
+				      &pos, "foo");
+
+	TEST_EQ (pos, 33);
+	TEST_ALLOC_SIZE (str, 16);
+	TEST_EQ_STR (str, "this is\na test\n");
+
+	nih_free (str);
+
+
+	/* Check that we can parse a block that ends in a terminator which
+	 * has a comment and then the end of file.
+	 */
+	TEST_FEATURE ("with terminator and comment at end of file");
+	strcpy (buf, "this is\na test\nend foo # comment");
+	pos = 0;
+
+	str = nih_config_parse_block (NULL, NULL, NULL, buf, strlen (buf),
+				      &pos, "foo");
+
+	TEST_EQ (pos, 32);
+	TEST_ALLOC_SIZE (str, 16);
+	TEST_EQ_STR (str, "this is\na test\n");
+
+	nih_free (str);
+
+
+	/* Check that various bogus forms of terminator are ignored.
+	 */
+	TEST_FEATURE ("with various things that aren't terminators");
+	strcpy (buf, "endfoo\nend a\nend fooish\nend foo\ntest\n");
+	pos = 0;
+
+	str = nih_config_parse_block (NULL, NULL, NULL, buf, strlen (buf),
+				      &pos, "foo");
+
+	TEST_EQ (pos, 32);
+	TEST_ALLOC_SIZE (str, 25);
+	TEST_EQ_STR (str, "endfoo\nend a\nend fooish\n");
+
+	nih_free (str);
+
+
+	/* Check that reaching end of file is ignored, and the block returned
+	 * anyway.
+	 */
+	TEST_FEATURE ("with no terminator before end of file");
+	strcpy (buf, "this is\na test\n");
+	pos = 0;
+
+	str = nih_config_parse_block (NULL, NULL, NULL, buf, strlen (buf),
+				      &pos, "foo");
+
+	TEST_EQ (pos, 15);
+	TEST_ALLOC_SIZE (str, 16);
+	TEST_EQ_STR (str, "this is\na test\n");
+
+	nih_free (str);
+
+
+	/* Check that reaching end of file produces a warning if the
+	 * filename is given.
+	 */
+	TEST_FEATURE ("with no terminator before end of file and filename");
+	strcpy (buf, "this is\na test\n");
+	pos = 0;
+	lineno = 2;
+
+	output = tmpfile ();
+	TEST_DIVERT_STDERR (output) {
+		str = nih_config_parse_block (NULL, "foo", &lineno,
+					      buf, strlen (buf),
+					      &pos, "foo");
+	}
+
+	rewind (output);
+
+	TEST_EQ (pos, 15);
+	TEST_ALLOC_SIZE (str, 16);
+	TEST_EQ_STR (str, "this is\na test\n");
+
+	nih_free (str);
+
+	TEST_FILE_EQ (output, "test:foo:4: end of block expected\n");
+	TEST_FILE_END (output);
+
+	fclose (output);
+}
+
+
+static int handler_called = 0;
+static NihConfigStanza *last_stanza = NULL;
+static const char *last_filename = NULL;
+static ssize_t last_lineno = 0;
+static const char *last_file = NULL;
+static ssize_t last_len = 0;
+static ssize_t last_pos = 0;
+
+static int
+my_handler (NihConfigStanza *stanza,
+	    const char      *filename,
+	    ssize_t         *lineno,
+	    const char      *file,
+	    ssize_t          len,
+	    ssize_t         *pos)
+{
+	handler_called++;
+
+	last_stanza = stanza;
+	last_filename = filename;
+	if (lineno) {
+		last_lineno = *lineno;
+	} else {
+		last_lineno = -1;
+	}
+	last_file = file;
+	last_len = len;
+	last_pos = *pos;
+
+	if (! strcmp (stanza->name, "bar"))
+		nih_config_next_line (filename, lineno, file, len, pos);
+
+	return 100;
+}
+
+static NihConfigStanza stanzas[] = {
+	{ "foo", my_handler },
+	{ "bar", my_handler },
+
+	NIH_CONFIG_LAST
+};
+
+
+void
+test_parse_stanza (void)
+{
+	FILE    *output;
+	char     buf[1024];
+	ssize_t  pos, lineno;
+	int      ret;
+
+	TEST_FUNCTION ("nih_config_stanza");
+	program_name = "test";
+
+
+	/* Check that the handler is called with all of the right arguments
+	 * if the stanza is found at the start of the string.  The pos should
+	 * only be incremented up to the point after the first argument,
+	 * leaving it up to the stanza handler to increment it.
+	 */
+	TEST_FEATURE ("with stanza at start of string");
+	strcpy (buf, "foo this is a test\nwibble\n");
+
+	handler_called = 0;
+	last_filename = NULL;
+	last_lineno = 0;
+	last_file = NULL;
+	last_len = 0;
+	last_pos = -1;
+
+	ret = nih_config_parse_stanza (NULL, NULL, buf, strlen (buf), NULL,
+				       stanzas);
+
+	TEST_TRUE (handler_called);
+	TEST_EQ_P (last_filename, NULL);
+	TEST_EQ (last_lineno, -1);
+	TEST_EQ_P (last_file, buf);
+	TEST_EQ (last_len, strlen (buf));
+	TEST_EQ (last_pos, 4);
+
+	TEST_EQ (ret, 100);
+
+
+	/* Check that the handler can be called with a position inside the
+	 * string.
+	 */
+	TEST_FEATURE ("with stanza inside string");
+	strcpy (buf, "snarf foo this is a test\nwibble\n");
+	pos = 6;
+
+	handler_called = 0;
+	last_filename = NULL;
+	last_lineno = 0;
+	last_file = NULL;
+	last_len = 0;
+	last_pos = -1;
+
+	ret = nih_config_parse_stanza (NULL, NULL, buf, strlen (buf), &pos,
+				       stanzas);
+
+	TEST_TRUE (handler_called);
+	TEST_EQ_P (last_filename, NULL);
+	TEST_EQ (last_lineno, -1);
+	TEST_EQ_P (last_file, buf);
+	TEST_EQ (last_len, strlen (buf));
+	TEST_EQ (last_pos, 10);
+
+	TEST_EQ (ret, 100);
+	TEST_EQ (pos, 10);
+
+
+	/* Check that the position can be updated by the handler function
+	 * to point wherever it thinks the stanza ends.
+	 */
+	TEST_FEATURE ("with position moved by stanza");
+	strcpy (buf, "bar this is a test\nwibble\n");
+	pos = 0;
+	lineno = 1;
+
+	handler_called = 0;
+	last_filename = NULL;
+	last_lineno = 0;
+	last_file = NULL;
+	last_len = 0;
+	last_pos = -1;
+
+	ret = nih_config_parse_stanza (NULL, &lineno, buf, strlen (buf), &pos,
+				       stanzas);
+
+	TEST_TRUE (handler_called);
+	TEST_EQ_P (last_filename, NULL);
+	TEST_EQ (last_lineno, 1);
+	TEST_EQ_P (last_file, buf);
+	TEST_EQ (last_len, strlen (buf));
+	TEST_EQ (last_pos, 4);
+
+	TEST_EQ (ret, 100);
+	TEST_EQ (pos, 19);
+	TEST_EQ (lineno, 2);
+
+
+	/* Check that an unknown stanza is ignored if the filename isn't
+	 * set; the position should be moved to the end of the entire line.
+	 */
+	TEST_FEATURE ("with unknown stanza");
+	strcpy (buf, "wibble this is a test\nwibble\n");
+	pos = 0;
+
+	handler_called = 0;
+
+	ret = nih_config_parse_stanza (NULL, NULL, buf, strlen (buf), &pos,
+				       stanzas);
+
+	TEST_FALSE (handler_called);
+	TEST_EQ (ret, 0);
+	TEST_EQ (pos, 22);
+
+
+	/* Check that an unknown stanza produces a warning if the filename
+	 * is set.
+	 */
+	TEST_FEATURE ("with unknown stanza and filename set");
+	strcpy (buf, "wibble this is a test\nwibble\n");
+	pos = 0;
+	lineno = 1;
+
+	handler_called = 0;
+
+	output = tmpfile ();
+	TEST_DIVERT_STDERR (output) {
+		ret = nih_config_parse_stanza ("foo", &lineno,
+					       buf, strlen (buf), &pos,
+					       stanzas);
+	}
+	rewind (output);
+
+	TEST_FALSE (handler_called);
+	TEST_EQ (ret, 0);
+	TEST_EQ (pos, 22);
+
+	TEST_FILE_EQ (output, "test:foo:1: ignored unknown stanza: wibble\n");
+	TEST_FILE_END (output);
+
+	fclose (output);
+
+
+	/* Check that zero is returned if there is no stanza at this
+	 * position.
+	 */
+	TEST_FEATURE ("with empty line");
+	strcpy (buf, "\nfoo this is a test\n");
+	pos = 0;
+	lineno = 1;
+
+	handler_called = 0;
+
+	ret = nih_config_parse_stanza (NULL, &lineno, buf, strlen (buf), &pos,
+				       stanzas);
+
+	TEST_FALSE (handler_called);
+	TEST_EQ (ret, 0);
+	TEST_EQ (pos, 0);
+	TEST_EQ (lineno, 1);
+}
+
+
+int
+main (int   argc,
+      char *argv[])
+{
+	test_next_token ();
+	test_next_arg ();
+	test_next_line ();
+	test_parse_args ();
+	test_parse_command ();
+	test_parse_block ();
+	test_parse_stanza ();
+
+	return 0;
+}

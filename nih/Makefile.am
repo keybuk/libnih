@@ -21,6 +21,7 @@ libnih_la_SOURCES = \
 	main.c \
 	option.c \
 	command.c \
+	config.c \
 	logging.c \
 	error.c
 
@@ -52,6 +53,7 @@ nihinclude_HEADERS = \
 	main.h \
 	option.h \
 	command.h \
+	config.h \
 	logging.h \
 	error.h \
 	errors.h \
@@ -72,6 +74,7 @@ TESTS = \
 	test_main \
 	test_option \
 	test_command \
+	test_config \
 	test_logging \
 	test_error
 
@@ -124,6 +127,10 @@ test_option_LDADD = libnih.la
 test_command_SOURCES = tests/test_command.c
 test_command_LDFLAGS = -static
 test_command_LDADD = libnih.la
+
+test_config_SOURCES = tests/test_config.c
+test_config_LDFLAGS = -static
+test_config_LDADD = libnih.la
 
 test_logging_SOURCES = tests/test_logging.c
 test_logging_LDFLAGS = -static

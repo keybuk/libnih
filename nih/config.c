@@ -30,6 +30,7 @@
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
+#include <nih/file.h>
 #include <nih/config.h>
 #include <nih/logging.h>
 #include <nih/error.h>
@@ -840,7 +841,8 @@ nih_config_get_stanza (const char      *name,
  * @file: file or string to parse,
  * @len: length of @file,
  * @pos: offset within @file,
- * @stanzas: table of stanza handlers.
+ * @stanzas: table of stanza handlers,
+ * @data: pointer to pass to stanza handler.
  *
  * Extracts a configuration stanza from @file and calls the handler
  * function for that stanza found in the @stanzas table to handle the
@@ -911,4 +913,124 @@ nih_config_parse_stanza (const char      *filename,
 		*pos = p;
 
 	return ret;
+}
+
+
+/**
+ * nih_config_parse_file:
+ * @filename: name of file being parsed,
+ * @lineno: line number,
+ * @file: file or string to parse,
+ * @len: length of @file,
+ * @pos: offset within @file,
+ * @stanzas: table of stanza handlers,
+ * @data: pointer to pass to stanza handler.
+ *
+ * Parses configuration file lines from @file, skipping initial whitespace,
+ * blank lines and comments while calling nih_config_parse_stanza() for
+ * anything else.
+ *
+ * @file may be a memory mapped file, in which case @pos should be given
+ * as the offset within and @len should be the length of the file as a
+ * whole.
+ *
+ * If @pos is given then it will be used as the offset within @file to
+ * begin (otherwise the start is assumed), and will be updated to point
+ * to @delim or past the end of the file.
+ *
+ * If @lineno is given it will be incremented each time a new line is
+ * discovered in the file.
+ *
+ * If you want warnings to be output, pass both @filename and @lineno, which
+ * will be used to output the warning message using the usual logging
+ * functions.
+ **/
+void
+nih_config_parse_file (const char      *filename,
+		       ssize_t         *lineno,
+		       const char      *file,
+		       ssize_t          len,
+		       ssize_t         *pos,
+		       NihConfigStanza *stanzas,
+		       void            *data)
+{
+	ssize_t p;
+
+	nih_assert ((filename == NULL) || (lineno != NULL));
+	nih_assert (file != NULL);
+	nih_assert (len > 0);
+	nih_assert (stanzas != NULL);
+
+	p = (pos ? *pos : 0);
+
+	while (p < len) {
+		/* Skip initial whitespace */
+		while ((p < len) && strchr (WS, file[p]))
+			p++;
+
+		/* Skip over comment until end of line */
+		if ((p < len) && (file[p] == '#'))
+			while ((p < len) && (file[p] != '\n'))
+				p++;
+
+		/* Ignore blank lines */
+		if ((p < len) && (file[p] == '\n')) {
+			if (lineno)
+				(*lineno)++;
+
+			p++;
+			continue;
+		}
+
+		/* Must have a stanza, parse it */
+		if (p < len)
+			nih_config_parse_stanza (filename, lineno, file, len,
+						 &p, stanzas, data);
+	}
+
+	if (pos)
+		*pos = p;
+}
+
+/**
+ * nih_config_parse:
+ * @filename: name of file to parse,
+ * @stanzas: table of stanza handlers,
+ * @data: pointer to pass to stanza handler.
+ *
+ * Maps @filename into memory and them parses configuration lines from it
+ * using nih_config_parse_file().
+ *
+ * Parser errors are only treated as warnings and are output using the
+ * usual logging functions, prefixed with both the filename and line number
+ * that the error was found.
+ *
+ * The only raised errors from this function are those caused by failure
+ * to map or unmap the file.
+ *
+ * Returns: zero on success, negative value on raised error.
+ **/
+int
+nih_config_parse (const char      *filename,
+		  NihConfigStanza *stanzas,
+		  void            *data)
+{
+	const char *file;
+	ssize_t     len, pos, lineno;
+
+	nih_assert (filename != NULL);
+
+	file = nih_file_map (filename, O_RDONLY | O_NOCTTY, (size_t *)&len);
+	if (! file)
+		return -1;
+
+	pos = 0;
+	lineno = 1;
+	nih_config_parse_file (filename, &lineno, file, len, &pos,
+			       stanzas, data);
+
+	if (nih_file_unmap ((void *)file, len) < 0)
+		return -1;
+
+	return 0;
 }

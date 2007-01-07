@@ -1,5 +1,14 @@
 2007-01-07  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/config.c (nih_config_parse_file): Function to parse a mapped
+	file or string line-by-line starting from the given position.
+	(nih_config_parse): Function to map a file into memory and parse it
+	* nih/config.h: Add prototypes.
+	* nih/tests/test_config.c (test_parse_file): Test the function with
+	a small variety of different valid files.
+	(test_parse): Check we can parse a file, and get an error if it
+	doesn't exist.
+
 	* nih/config.c (nih_config_parse_stanza): Take a data pointer and
 	pass it to the handler, otherwise we can't fill in structures.
 	* nih/config.h: Update.

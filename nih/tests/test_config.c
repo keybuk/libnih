@@ -21,12 +21,15 @@
 
 #include <nih/test.h>
 
+#include <errno.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
 #include <nih/config.h>
 #include <nih/main.h>
+#include <nih/error.h>
 
 
 void
@@ -1175,7 +1178,7 @@ my_handler (void            *data,
 	last_len = len;
 	last_pos = *pos;
 
-	if (! strcmp (stanza->name, "bar"))
+	if (strcmp (stanza->name, "foo"))
 		nih_config_next_line (filename, lineno, file, len, pos);
 
 	return 100;
@@ -1184,6 +1187,9 @@ my_handler (void            *data,
 static NihConfigStanza stanzas[] = {
 	{ "foo", my_handler },
 	{ "bar", my_handler },
+
+	{ "frodo", my_handler },
+	{ "bilbo", my_handler },
 
 	NIH_CONFIG_LAST
 };
@@ -1358,6 +1364,277 @@ test_parse_stanza (void)
 }
 
 
+void
+test_parse_file (void)
+{
+	char     buf[1024];
+	ssize_t  pos, lineno;
+
+	TEST_FUNCTION ("nih_config_parse_file");
+
+
+	/* Check that a simple sequence of stanzas is parsed, with the
+	 * handler being called for each.  When finished, the position
+	 * should be past the end of the file.
+	 */
+	TEST_FEATURE ("with simple lines");
+	strcpy (buf, "frodo test\nbilbo test\n");
+	pos = 0;
+	lineno = 1;
+
+	handler_called = 0;
+	last_data = NULL;
+	last_filename = NULL;
+	last_lineno = 0;
+	last_file = NULL;
+	last_len = 0;
+	last_pos = -1;
+
+	nih_config_parse_file (NULL, &lineno, buf, strlen (buf), &pos,
+			       stanzas, &buf);
+
+	TEST_EQ (pos, 22);
+
+	TEST_EQ (handler_called, 2);
+	TEST_EQ_P (last_data, &buf);
+	TEST_EQ_P (last_filename, NULL);
+	TEST_EQ (last_lineno, 2);
+	TEST_EQ_P (last_file, buf);
+	TEST_EQ (last_len, strlen (buf));
+	TEST_EQ (last_pos, 17);
+
+
+	/* Check that a line ending in a comment can be parsed, with the
+	 * comment skipped.
+	 */
+	TEST_FEATURE ("with comment at end of line");
+	strcpy (buf, "frodo test # foo comment\nbilbo test\n");
+	pos = 0;
+	lineno = 1;
+
+	handler_called = 0;
+	last_data = NULL;
+	last_filename = NULL;
+	last_lineno = 0;
+	last_file = NULL;
+	last_len = 0;
+	last_pos = -1;
+
+	nih_config_parse_file (NULL, &lineno, buf, strlen (buf), &pos,
+			       stanzas, &buf);
+
+	TEST_EQ (pos, 36);
+
+	TEST_EQ (handler_called, 2);
+	TEST_EQ_P (last_data, &buf);
+	TEST_EQ_P (last_filename, NULL);
+	TEST_EQ (last_lineno, 2);
+	TEST_EQ_P (last_file, buf);
+	TEST_EQ (last_len, strlen (buf));
+	TEST_EQ (last_pos, 31);
+
+
+	/* Check that whitespace at the start of a line is skipped. */
+	TEST_FEATURE ("with whitespace at start of line");
+	strcpy (buf, "    frodo test\n  \t \t bilbo test\n");
+	pos = 0;
+	lineno = 1;
+
+	handler_called = 0;
+	last_data = NULL;
+	last_filename = NULL;
+	last_lineno = 0;
+	last_file = NULL;
+	last_len = 0;
+	last_pos = -1;
+
+	nih_config_parse_file (NULL, &lineno, buf, strlen (buf), &pos,
+			       stanzas, &buf);
+
+	TEST_EQ (pos, 32);
+
+	TEST_EQ (handler_called, 2);
+	TEST_EQ_P (last_data, &buf);
+	TEST_EQ_P (last_filename, NULL);
+	TEST_EQ (last_lineno, 2);
+	TEST_EQ_P (last_file, buf);
+	TEST_EQ (last_len, strlen (buf));
+	TEST_EQ (last_pos, 27);
+
+
+	/* Check that an empty line is skipped over properly. */
+	TEST_FEATURE ("with empty line");
+	strcpy (buf, "\nfrodo test\nbilbo test\n");
+	pos = 0;
+	lineno = 1;
+
+	handler_called = 0;
+	last_data = NULL;
+	last_filename = NULL;
+	last_lineno = 0;
+	last_file = NULL;
+	last_len = 0;
+	last_pos = -1;
+
+	nih_config_parse_file (NULL, &lineno, buf, strlen (buf), &pos,
+			       stanzas, &buf);
+
+	TEST_EQ (pos, 23);
+
+	TEST_EQ (handler_called, 2);
+	TEST_EQ_P (last_data, &buf);
+	TEST_EQ_P (last_filename, NULL);
+	TEST_EQ (last_lineno, 3);
+	TEST_EQ_P (last_file, buf);
+	TEST_EQ (last_len, strlen (buf));
+	TEST_EQ (last_pos, 18);
+
+
+	/* Check that a line containing whitespace is skipped over. */
+	TEST_FEATURE ("with line containing only whitespace");
+	strcpy (buf, "  \t  \nfrodo test\nbilbo test\n");
+	pos = 0;
+	lineno = 1;
+
+	handler_called = 0;
+	last_data = NULL;
+	last_filename = NULL;
+	last_lineno = 0;
+	last_file = NULL;
+	last_len = 0;
+	last_pos = -1;
+
+	nih_config_parse_file (NULL, &lineno, buf, strlen (buf), &pos,
+			       stanzas, &buf);
+
+	TEST_EQ (pos, 28);
+
+	TEST_EQ (handler_called, 2);
+	TEST_EQ_P (last_data, &buf);
+	TEST_EQ_P (last_filename, NULL);
+	TEST_EQ (last_lineno, 3);
+	TEST_EQ_P (last_file, buf);
+	TEST_EQ (last_len, strlen (buf));
+	TEST_EQ (last_pos, 23);
+
+
+	/* Check that a line containing a comment is skipped over. */
+	TEST_FEATURE ("with line containing only a comment");
+	strcpy (buf, "# hello\nfrodo test\nbilbo test\n");
+	pos = 0;
+	lineno = 1;
+
+	handler_called = 0;
+	last_data = NULL;
+	last_filename = NULL;
+	last_lineno = 0;
+	last_file = NULL;
+	last_len = 0;
+	last_pos = -1;
+
+	nih_config_parse_file (NULL, &lineno, buf, strlen (buf), &pos,
+			       stanzas, &buf);
+
+	TEST_EQ (pos, 30);
+
+	TEST_EQ (handler_called, 2);
+	TEST_EQ_P (last_data, &buf);
+	TEST_EQ_P (last_filename, NULL);
+	TEST_EQ (last_lineno, 3);
+	TEST_EQ_P (last_file, buf);
+	TEST_EQ (last_len, strlen (buf));
+	TEST_EQ (last_pos, 25);
+
+
+	/* Check that a line containing a comment after some whitespace
+	 * is skipped over.
+	 */
+	TEST_FEATURE ("with line containing a comment and whitespace");
+	strcpy (buf, "  \t  # hello\nfrodo test\nbilbo test\n");
+	pos = 0;
+	lineno = 1;
+
+	handler_called = 0;
+	last_data = NULL;
+	last_filename = NULL;
+	last_lineno = 0;
+	last_file = NULL;
+	last_len = 0;
+	last_pos = -1;
+
+	nih_config_parse_file (NULL, &lineno, buf, strlen (buf), &pos,
+			       stanzas, &buf);
+
+	TEST_EQ (pos, 35);
+
+	TEST_EQ (handler_called, 2);
+	TEST_EQ_P (last_data, &buf);
+	TEST_EQ_P (last_filename, NULL);
+	TEST_EQ (last_lineno, 3);
+	TEST_EQ_P (last_file, buf);
+	TEST_EQ (last_len, strlen (buf));
+	TEST_EQ (last_pos, 30);
+}
+
+void
+test_parse (void)
+{
+	FILE     *fd;
+	char      filename[PATH_MAX];
+	NihError *err;
+	int       ret;
+
+	TEST_FUNCTION ("nih_config_parse");
+
+	/* Check that a file that exists is parsed, with the handlers
+	 * called and zero returned.
+	 */
+	TEST_FEATURE ("with existing file");
+	TEST_FILENAME (filename);
+
+	fd = fopen (filename, "w");
+	fprintf (fd, "frodo test\n");
+	fprintf (fd, "bilbo test\n");
+	fclose (fd);
+
+	handler_called = 0;
+	last_data = NULL;
+	last_filename = NULL;
+	last_lineno = 0;
+	last_file = NULL;
+	last_len = 0;
+	last_pos = -1;
+
+	ret = nih_config_parse (filename, stanzas, &ret);
+
+	TEST_EQ (ret, 0);
+
+	TEST_EQ (handler_called, 2);
+	TEST_EQ_P (last_data, &ret);
+	TEST_EQ_P (last_filename, filename);
+	TEST_EQ (last_lineno, 2);
+	TEST_NE_P (last_file, NULL);
+	TEST_EQ (last_len, 22);
+	TEST_EQ (last_pos, 17);
+
+	unlink (filename);
+
+
+	/* Check that an error is raised if the file doesn't exist. */
+	TEST_FEATURE ("with non-existant file");
+	handler_called = 0;
+
+	ret = nih_config_parse (filename, stanzas, &ret);
+
+	TEST_LT (ret, 0);
+	TEST_FALSE (handler_called);
+
+	err = nih_error_get ();
+	TEST_EQ (err->number, ENOENT);
+	nih_free (err);
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -1369,6 +1646,8 @@ main (int   argc,
 	test_parse_command ();
 	test_parse_block ();
 	test_parse_stanza ();
+	test_parse_file ();
+	test_parse ();
 
 	return 0;
 }

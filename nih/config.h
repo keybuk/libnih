@@ -119,6 +119,13 @@ int       nih_config_parse_stanza  (const char *filename, ssize_t *lineno,
 				    ssize_t *pos, NihConfigStanza *stanzas,
 				    void *data);
 
+void      nih_config_parse_file    (const char *filename, ssize_t *lineno,
+				    const char *file, ssize_t len,
+				    ssize_t *pos, NihConfigStanza *stanzas,
+				    void *data);
+int       nih_config_parse         (const char *filename,
+				    NihConfigStanza *stanzas, void *data);
+
 NIH_END_EXTERN
 
 #endif /* NIH_CONFIG_H */

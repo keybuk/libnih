@@ -71,6 +71,49 @@ static NihConfigStanza *nih_config_get_stanza (const char *name,
 
 
 /**
+ * nih_config_has_token:
+ * @file: file or string to parse,
+ * @len: length of @file,
+ * @pos: offset within @file,
+ * @lineno: line number.
+ *
+ * Checks the current position in @file to see whether it has a parseable
+ * token at this position; ie. we're not at the end of file, and the
+ * current character is neither a comment or newline character.
+ *
+ * If this returns FALSE, it's normal to call nih_config_skip_comment()
+ * to move to the next parseable point and check again.
+ *
+ * @file may be a memory mapped file, in which case @pos should be given
+ * as the offset within and @len should be the length of the file as a
+ * whole.
+ *
+ * @pos is used as the offset within @file to begin, otherwise the start
+ * is assumed.
+ *
+ * Returns: TRUE if the current character is before the end of file and
+ * is neither a comment or newline, FALSE otherwise.
+ **/
+int
+nih_config_has_token (const char *file,
+		      size_t      len,
+		      size_t     *pos,
+		      size_t     *lineno)
+{
+	size_t p;
+
+	nih_assert (file != NULL);
+
+	p = (pos ? *pos : 0);
+	if ((p < len) && (! strchr (CNL, file[p]))) {
+		return TRUE;
+	} else {
+		return FALSE;
+	}
+}
+
+
+/**
  * nih_config_next_token:
  * @file: file or string to parse,
  * @len: length of @file,
@@ -418,7 +461,7 @@ nih_config_skip_comment (const char *file,
 	nih_assert (file != NULL);
 	nih_assert (pos != NULL);
 
-	if ((*pos < len) && (! strchr (CNL, file[*pos]))) {
+	if (nih_config_has_token (file, len, pos, lineno)) {
 		nih_error_raise (NIH_CONFIG_UNEXPECTED_TOKEN,
 				 _(NIH_CONFIG_UNEXPECTED_TOKEN_STR));
 		return -1;
@@ -483,7 +526,7 @@ nih_config_parse_args (const void *parent,
 
 	/* Loop through the arguments until we hit a comment or newline */
 	p = (pos ? *pos : 0);
-	while ((p < len) && (! strchr (CNL, file[p]))) {
+	while (nih_config_has_token (file, len, &p, lineno)) {
 		char  **new_args, *arg;
 
 		arg = nih_config_next_arg (args, file, len, &p, lineno);
@@ -959,7 +1002,7 @@ nih_config_parse_file (const char      *file,
 			p++;
 
 		/* Skip lines with only comments in them */
-		if ((p < len) && strchr (CNL, file[p])) {
+		if (! nih_config_has_token (file, len, &p, lineno)) {
 			if (nih_config_skip_comment (file, len,
 						     &p, lineno) < 0)
 				goto finish;

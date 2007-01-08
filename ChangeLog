@@ -1,5 +1,13 @@
 2007-01-08  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/config.c (nih_config_has_token): add a very small test function
+	so parsers can peek to see whether there is a next argument or not.
+	(nih_config_skip_comment, nih_config_parse_args) 
+	(nih_config_parse_file): Use the new test function to make it more
+	obvious what we're doing.
+	* nih/config.h: Add prototype.
+	* nih/tests/test_config.c (test_has_token): Add test cases.
+
 	* nih/config.c: Allow all functions to be called with a zero length
 	file, we're completely guarded against pos going past the length,
 	so this cannot be a bad thing.  Plus this allows zero-length tokens

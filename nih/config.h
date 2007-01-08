@@ -89,6 +89,9 @@ struct nih_config_stanza {
 
 NIH_BEGIN_EXTERN
 
+int       nih_config_has_token     (const char *file, size_t len, size_t *pos,
+				    size_t *lineno);
+
 ssize_t   nih_config_next_token    (const char *file, size_t len, size_t *pos,
 				    size_t *lineno, char *dest,
 				    const char *delim, int dequote);

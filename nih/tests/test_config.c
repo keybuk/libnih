@@ -33,6 +33,72 @@
 
 
 void
+test_has_token (void)
+{
+	char   buf[1024];
+	size_t pos;
+	int    ret;
+
+	TEST_FUNCTION ("nih_config_has_token");
+	strcpy (buf, "this is a test # comment\n");
+
+	/* Check that an ordinary token character at the start of the line
+	 * causes the function to return TRUE.
+	 */
+	TEST_FEATURE ("with token at start of string");
+	ret = nih_config_has_token (buf, strlen (buf), NULL, NULL);
+
+	TEST_TRUE (ret);
+
+
+	/* Check that an ordinary token inside the string causes the function
+	 * to return TRUE.
+	 */
+	TEST_FEATURE ("with token inside string");
+	pos = 5;
+	ret = nih_config_has_token (buf, strlen (buf), &pos, NULL);
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a piece of whitespace causes the function to return TRUE.
+	 */
+	TEST_FEATURE ("with whitespace");
+	pos = 7;
+	ret = nih_config_has_token (buf, strlen (buf), &pos, NULL);
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a comment character causes the function to return FALSE.
+	 */
+	TEST_FEATURE ("with start of comment");
+	pos = 15;
+	ret = nih_config_has_token (buf, strlen (buf), &pos, NULL);
+
+	TEST_FALSE (ret);
+
+
+	/* Check that a newline character causes the function to return FALSE.
+	 */
+	TEST_FEATURE ("with newline");
+	pos = 24;
+	ret = nih_config_has_token (buf, strlen (buf), &pos, NULL);
+
+	TEST_FALSE (ret);
+
+
+	/* Check that the end of file causes the function to return FALSE.
+	 */
+	TEST_FEATURE ("at end of file");
+	pos = 25;
+	ret = nih_config_has_token (buf, strlen (buf), &pos, NULL);
+
+	TEST_FALSE (ret);
+}
+
+
+void
 test_next_token (void)
 {
 	char      buf[1024], dest[1024];
@@ -1764,6 +1830,7 @@ int
 main (int   argc,
       char *argv[])
 {
+	test_has_token ();
 	test_next_token ();
 	test_next_arg ();
 	test_next_line ();

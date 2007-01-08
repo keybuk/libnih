@@ -1,5 +1,25 @@
 2007-01-08  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/config.c: Allow all functions to be called with a zero length
+	file, we're completely guarded against pos going past the length,
+	so this cannot be a bad thing.  Plus this allows zero-length tokens
+	to be extracted trivially.
+	(nih_config_next_arg): Raise an error if called in a position where
+	there is no argument.  If you want to speculatively check for args,
+	peek first.
+	(nih_config_parse_stanza): No need to check for an empty stanza now,
+	nih_config_next_arg() handles that for us.
+	(nih_config_skip_comment): Function to allow us to skip only a
+	comment, while raising an error if we hit anything else.
+	(nih_config_parse_args, nih_config_parse_command): Skip comment only,
+	to guard against parser errors.
+	* nih/config.h: Update.
+	* nih/tests/test_config.c (test_next_arg): Check the new error is
+	raised, instead of the empty string being returned.
+	(test_parse_stanza): Check the expected token error is raised.
+	(test_skip_comment): Test the new function.
+	* nih/errors.h: Add new errors.
+
 	* nih/errors.h: Fix capitalisation of error messages.
 
 	* nih/tests/test_config.c (test_parse_command): Add missing free

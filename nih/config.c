@@ -122,7 +122,6 @@ nih_config_next_token (const char *file,
 	int     slash = FALSE, quote = 0, nl = FALSE;
 
 	nih_assert (file != NULL);
-	nih_assert (len > 0);
 	nih_assert (delim != NULL);
 
 	/* We keep track of the following:
@@ -279,8 +278,7 @@ finish:
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
- * Returns: the argument found (which may be empty if there is no argument
- * at this position) or NULL on raised error.
+ * Returns: the argument found or NULL on raised error.
  **/
 char *
 nih_config_next_arg (const void *parent,
@@ -291,10 +289,9 @@ nih_config_next_arg (const void *parent,
 {
 	size_t   p, arg_start, arg_end;
 	ssize_t  arg_len;
-	char    *arg;
+	char    *arg = NULL;
 
 	nih_assert (file != NULL);
-	nih_assert (len > 0);
 
 	p = (pos ? *pos : 0);
 	arg_start = p;
@@ -303,7 +300,10 @@ nih_config_next_arg (const void *parent,
 	arg_end = p;
 
 	if (arg_len < 0) {
-		arg = NULL;
+		goto finish;
+	} else if (! arg_len) {
+		nih_error_raise (NIH_CONFIG_EXPECTED_TOKEN,
+				 _(NIH_CONFIG_EXPECTED_TOKEN_STR));
 		goto finish;
 	}
 
@@ -334,13 +334,8 @@ nih_config_next_arg (const void *parent,
 
 	/* Copy in the new token */
 	NIH_MUST (arg = nih_alloc (parent, arg_len + 1));
-
-	if (arg_len) {
-		nih_config_next_token (file + arg_start, arg_end - arg_start,
-				       NULL, NULL, arg, CNLWS, TRUE);
-	} else {
-		arg[0] = '\0';
-	}
+	nih_config_next_token (file + arg_start, arg_end - arg_start, NULL,
+			       NULL, arg, CNLWS, TRUE);
 
 finish:
 	if (pos)
@@ -356,7 +351,9 @@ finish:
  * @pos: offset within @file,
  * @lineno: line number.
  *
- * Skips to the end of the current line in @file.
+ * Skips to the end of the current line in @file, ignoring any tokens,
+ * comments, etc. along the way.  If you want to ensure that no arguments
+ * are missed, use nih_config_skip_comment() instead.
  *
  * @file may be a memory mapped file, in which case @pos should be given
  * as the offset within and @len should be the length of the file as a
@@ -375,7 +372,6 @@ nih_config_next_line (const char *file,
 		      size_t     *lineno)
 {
 	nih_assert (file != NULL);
-	nih_assert (len > 0);
 	nih_assert (pos != NULL);
 
 	/* Spool forwards until the end of the line */
@@ -388,6 +384,49 @@ nih_config_next_line (const char *file,
 			(*lineno)++;
 		(*pos)++;
 	}
+}
+
+/**
+ * nih_config_skip_comment:
+ * @file: file or string to parse,
+ * @len: length of @file,
+ * @pos: offset within @file,
+ * @lineno: line number.
+ *
+ * Skips a comment and finds the end of the current line in @file.  If the
+ * current position does not point to the end of a line, or a comment,
+ * then an error is raised.
+ *
+ * @file may be a memory mapped file, in which case @pos should be given
+ * as the offset within and @len should be the length of the file as a
+ * whole.
+ *
+ * @pos is used as the offset within @file to begin, and will be updated
+ * to point to past the end of the line or file.
+ *
+ * If @lineno is given it will be incremented each time a new line is
+ * discovered in the file.
+ *
+ * Returns: zero on success, negative value on raised error.
+ **/
+int
+nih_config_skip_comment (const char *file,
+			 size_t      len,
+			 size_t     *pos,
+			 size_t     *lineno)
+{
+	nih_assert (file != NULL);
+	nih_assert (pos != NULL);
+
+	if ((*pos < len) && (! strchr (CNL, file[*pos]))) {
+		nih_error_raise (NIH_CONFIG_UNEXPECTED_TOKEN,
+				 _(NIH_CONFIG_UNEXPECTED_TOKEN_STR));
+		return -1;
+	}
+
+	nih_config_next_line (file, len, pos, lineno);
+
+	return 0;
 }
 
 
@@ -436,7 +475,6 @@ nih_config_parse_args (const void *parent,
 	size_t   p, nargs;
 
 	nih_assert (file != NULL);
-	nih_assert (len > 0);
 
 	/* Begin with an empty array */
 	NIH_MUST (args = nih_alloc (parent, sizeof (char *)));
@@ -466,7 +504,11 @@ nih_config_parse_args (const void *parent,
 
 	}
 
-	nih_config_next_line (file, len, &p, lineno);
+	if (nih_config_skip_comment (file, len, &p, lineno) < 0) {
+		nih_free (args);
+		args = NULL;
+		goto finish;
+	}
 
 finish:
 	if (pos)
@@ -506,8 +548,7 @@ finish:
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
- * Returns: the command found (which may be empty if there is no command
- * at this position) or NULL on raised error.
+ * Returns: the command found or NULL on raised error.
  **/
 char *
 nih_config_parse_command (const void *parent,
@@ -516,12 +557,11 @@ nih_config_parse_command (const void *parent,
 			  size_t     *pos,
 			  size_t     *lineno)
 {
-	char    *cmd;
+	char    *cmd = NULL;
 	size_t   p, cmd_start, cmd_end;
 	ssize_t  cmd_len;
 
 	nih_assert (file != NULL);
-	nih_assert (len > 0);
 
 	/* Find the length of string up to the first unescaped comment
 	 * or newline.
@@ -532,22 +572,16 @@ nih_config_parse_command (const void *parent,
 					 NULL, CNL, FALSE);
 	cmd_end = p;
 
-	if (cmd_len < 0) {
-		cmd = NULL;
+	if (cmd_len < 0)
 		goto finish;
-	}
 
-	nih_config_next_line (file, len, &p, lineno);
+	if (nih_config_skip_comment (file, len, &p, lineno) < 0)
+		goto finish;
 
 	/* Now copy the string into the destination. */
 	NIH_MUST (cmd = nih_alloc (parent, cmd_len + 1));
-
-	if (cmd_len) {
-		nih_config_next_token (file + cmd_start, cmd_end - cmd_start,
-				       NULL, NULL, cmd, CNL, FALSE);
-	} else {
-		cmd[0] = '\0';
-	}
+	nih_config_next_token (file + cmd_start, cmd_end - cmd_start, NULL,
+			       NULL, cmd, CNL, FALSE);
 
 finish:
 	if (pos)
@@ -601,13 +635,12 @@ nih_config_parse_block (const void *parent,
 			size_t     *lineno,
 			const char *type)
 {
-	char    *block;
+	char    *block = NULL;
 	size_t   p, pp, sh_start, sh_len;
 	ssize_t  sh_end, ws;
 	int      lines;
 
 	nih_assert (file != NULL);
-	nih_assert (len > 0);
 	nih_assert (type != NULL);
 
 	/* We need to find the end of the block which is a line that looks
@@ -655,7 +688,6 @@ nih_config_parse_block (const void *parent,
 		if (p >= len) {
 			nih_error_raise (NIH_CONFIG_UNTERMINATED_BLOCK,
 					 _(NIH_CONFIG_UNTERMINATED_BLOCK_STR));
-			block = NULL;
 			goto finish;
 		}
 	}
@@ -719,7 +751,6 @@ nih_config_block_end (const char *file,
 	ssize_t end;
 
 	nih_assert (file != NULL);
-	nih_assert (len > 0);
 	nih_assert (pos != NULL);
 	nih_assert (type != NULL);
 
@@ -847,34 +878,23 @@ nih_config_parse_stanza (const char      *file,
 	NihConfigStanza *stanza;
 	char            *name;
 	size_t           p;
-	int              ret = 0;
+	int              ret = -1;
 
 	nih_assert (file != NULL);
-	nih_assert (len > 0);
 	nih_assert (stanzas != NULL);
 
 	p = (pos ? *pos : 0);
 
 	/* Get the next dequoted argument from the file */
 	name = nih_config_next_arg (NULL, file, len, &p, lineno);
-	if (! name) {
-		ret = -1;
+	if (! name)
 		goto finish;
-	}
-
-	if (! strlen (name)) {
-		nih_error_raise (NIH_CONFIG_EXPECTED_STANZA,
-				 _(NIH_CONFIG_EXPECTED_STANZA_STR));
-		ret = -1;
-		goto finish;
-	}
 
 	/* Lookup the stanza for it */
 	stanza = nih_config_get_stanza (name, stanzas);
 	if (! stanza) {
 		nih_error_raise (NIH_CONFIG_UNKNOWN_STANZA,
 				 _(NIH_CONFIG_UNKNOWN_STANZA_STR));
-		ret = -1;
 		goto finish;
 	}
 
@@ -925,11 +945,10 @@ nih_config_parse_file (const char      *file,
 		       NihConfigStanza *stanzas,
 		       void            *data)
 {
-	int    ret = 0;
+	int    ret = -1;
 	size_t p;
 
 	nih_assert (file != NULL);
-	nih_assert (len > 0);
 	nih_assert (stanzas != NULL);
 
 	p = (pos ? *pos : 0);
@@ -939,29 +958,24 @@ nih_config_parse_file (const char      *file,
 		while ((p < len) && strchr (WS, file[p]))
 			p++;
 
-		/* Skip over comment until end of line */
-		if ((p < len) && (file[p] == '#'))
-			while ((p < len) && (file[p] != '\n'))
-				p++;
+		/* Skip lines with only comments in them */
+		if ((p < len) && strchr (CNL, file[p])) {
+			if (nih_config_skip_comment (file, len,
+						     &p, lineno) < 0)
+				goto finish;
 
-		/* Ignore blank lines */
-		if ((p < len) && (file[p] == '\n')) {
-			if (lineno)
-				(*lineno)++;
-
-			p++;
 			continue;
 		}
 
 		/* Must have a stanza, parse it */
 		if (p < len) {
 			if (nih_config_parse_stanza (file, len, &p, lineno,
-						     stanzas, data) < 0) {
-				ret = -1;
+						     stanzas, data) < 0)
 				goto finish;
-			}
 		}
 	}
+
+	ret = 0;
 
 finish:
 	if (pos)

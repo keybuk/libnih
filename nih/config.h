@@ -98,6 +98,8 @@ char *    nih_config_next_arg      (const void *parent,
 	__attribute__ ((warn_unused_result, malloc));
 void      nih_config_next_line     (const char *file, size_t len, size_t *pos,
 				    size_t *lineno);
+int       nih_config_skip_comment  (const char *file, size_t len, size_t *pos,
+				    size_t *lineno);
 
 char **   nih_config_parse_args    (const void *parent,
 				    const char *file, size_t len, size_t *pos,

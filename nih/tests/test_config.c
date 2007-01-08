@@ -444,20 +444,23 @@ test_next_arg (void)
 	nih_free (str);
 
 
-	/* Check that if there is no argument at the position, the empty
-	 * string is returned.
+	/* Check that an error is raised if there is no argument at that
+	 * position.
 	 */
 	TEST_FEATURE ("with empty line");
 	strcpy (buf, "\nthis is a test");
 	pos = 0;
+	lineno = 1;
 
-	str = nih_config_next_arg (NULL, buf, strlen (buf), &pos, NULL);
+	str = nih_config_next_arg (NULL, buf, strlen (buf), &pos, &lineno);
 
+	TEST_EQ_P (str, NULL);
 	TEST_EQ (pos, 0);
-	TEST_ALLOC_SIZE (str, 1);
-	TEST_EQ_STR (str, "");
+	TEST_EQ (lineno, 1);
 
-	nih_free (str);
+	err = nih_error_get ();
+	TEST_EQ (err->number, NIH_CONFIG_EXPECTED_TOKEN);
+	nih_free (err);
 
 
 	/* Check that a parse error being found with the argument causes an
@@ -511,6 +514,20 @@ test_next_line (void)
 	TEST_EQ (lineno, 2);
 
 
+	/* Check that pos is only incremented by a single step if the
+	 * character underneath is a newline.
+	 */
+	TEST_FEATURE ("with newline at position");
+	strcpy (buf, "\nthis is a test");
+	pos = 0;
+	lineno = 1;
+
+	nih_config_next_line (buf, strlen (buf), &pos, &lineno);
+
+	TEST_EQ (pos, 1);
+	TEST_EQ (lineno, 2);
+
+
 	/* Check that the end of file can be reached without error.
 	 */
 	TEST_FEATURE ("with no newline before end of file");
@@ -520,6 +537,86 @@ test_next_line (void)
 	nih_config_next_line (buf, strlen (buf), &pos, NULL);
 
 	TEST_EQ (pos, 14);
+}
+
+void
+test_skip_comment (void)
+{
+	char      buf[1024];
+	size_t    pos, lineno;
+	int       ret;
+	NihError *err;
+
+	TEST_FUNCTION ("nih_config_next_line");
+
+	/* Check that we can skip a number of comment characters until the
+	 * newline,  pointing pos past it.
+	 */
+	TEST_FEATURE ("with simple string");
+	strcpy (buf, "# this is a test\nand so is this\n");
+	pos = 0;
+
+	ret = nih_config_skip_comment (buf, strlen (buf), &pos, NULL);
+
+	TEST_EQ (ret, 0);
+	TEST_EQ (pos, 17);
+
+
+	/* Check that lineno is incremented when we step over it.
+	 */
+	TEST_FEATURE ("with line number set");
+	pos = 0;
+	lineno = 1;
+
+	ret = nih_config_skip_comment (buf, strlen (buf), &pos, &lineno);
+
+	TEST_EQ (ret, 0);
+	TEST_EQ (pos, 17);
+	TEST_EQ (lineno, 2);
+
+
+	/* Check that pos is only incremented by a single step if the
+	 * character underneath is a newline.
+	 */
+	TEST_FEATURE ("with newline at position");
+	strcpy (buf, "\nthis is a test");
+	pos = 0;
+	lineno = 1;
+
+	ret = nih_config_skip_comment (buf, strlen (buf), &pos, &lineno);
+
+	TEST_EQ (ret, 0);
+	TEST_EQ (pos, 1);
+	TEST_EQ (lineno, 2);
+
+
+	/* Check that the end of file can be reached without error.
+	 */
+	TEST_FEATURE ("with no newline before end of file");
+	strcpy (buf, "# this is a test");
+	pos = 0;
+
+	ret = nih_config_skip_comment (buf, strlen (buf), &pos, NULL);
+
+	TEST_EQ (ret, 0);
+	TEST_EQ (pos, 16);
+
+
+	/* Check that attempting to skip an ordinary argument results in
+	 * an error.
+	 */
+	TEST_FEATURE ("with attempt to skip argument");
+	strcpy (buf, "this is a test\nand so it this\n");
+	pos = 0;
+
+	ret = nih_config_skip_comment (buf, strlen (buf), &pos, NULL);
+
+	TEST_LT (ret, 0);
+	TEST_EQ (pos, 0);
+
+	err = nih_error_get ();
+	TEST_EQ (err->number, NIH_CONFIG_UNEXPECTED_TOKEN);
+	nih_free (err);
 }
 
 
@@ -1313,7 +1410,7 @@ test_parse_stanza (void)
 	TEST_EQ (lineno, 1);
 
 	err = nih_error_get ();
-	TEST_EQ (err->number, NIH_CONFIG_EXPECTED_STANZA);
+	TEST_EQ (err->number, NIH_CONFIG_EXPECTED_TOKEN);
 	nih_free (err);
 }
 
@@ -1670,6 +1767,7 @@ main (int   argc,
 	test_next_token ();
 	test_next_arg ();
 	test_next_line ();
+	test_skip_comment ();
 	test_parse_args ();
 	test_parse_command ();
 	test_parse_block ();

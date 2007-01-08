@@ -1,3 +1,8 @@
+2007-01-08  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/tests/test_config.c (test_parse_command): Add missing free
+	calls to strings obtained.
+
 2007-01-07  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/config.c: Convert this file to use size_t where appropriate

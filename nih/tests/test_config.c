@@ -880,6 +880,8 @@ test_parse_command (void)
 	TEST_ALLOC_SIZE (str, 1);
 	TEST_EQ_STR (str, "");
 
+	nih_free (str);
+
 
 	/* Check that we can parse a line containing only whitespace, and
 	 * have the empty string returned.  The position should be updated
@@ -894,6 +896,8 @@ test_parse_command (void)
 	TEST_EQ (pos, 6);
 	TEST_ALLOC_SIZE (str, 1);
 	TEST_EQ_STR (str, "");
+
+	nih_free (str);
 
 
 	/* Check that we can parse a line with a comment in it, and have
@@ -910,6 +914,8 @@ test_parse_command (void)
 	TEST_ALLOC_SIZE (str, 1);
 	TEST_EQ_STR (str, "");
 
+	nih_free (str);
+
 
 	/* Check that we can parse a line with whitespace before a comment,
 	 * and have the empty string returned.  The position should be updated
@@ -924,6 +930,8 @@ test_parse_command (void)
 	TEST_EQ (pos, 19);
 	TEST_ALLOC_SIZE (str, 1);
 	TEST_EQ_STR (str, "");
+
+	nih_free (str);
 
 
 	/* Check that a parser error while reading the command results in

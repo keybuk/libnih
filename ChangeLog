@@ -1,3 +1,8 @@
+2007-01-09  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/test.h (TEST_FILENAME): Use dashes not colons, to make things
+	more clear.
+
 2007-01-08  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/config.c (nih_config_has_token): add a very small test function

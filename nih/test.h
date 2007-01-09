@@ -455,7 +455,7 @@
  **/
 #define TEST_FILENAME(_var) \
 	do { \
-		snprintf ((_var), sizeof (_var), "/tmp/%s:%s:%d:%d", \
+		snprintf ((_var), sizeof (_var), "/tmp/%s-%s-%d-%d", \
 			  strrchr (__FILE__, '/') ? strrchr (__FILE__, '/') + 1 : __FILE__, \
 			  __FUNCTION__, __LINE__, getpid ()); \
 		unlink (_var); \

@@ -1335,6 +1335,11 @@ static NihConfigStanza stanzas[] = {
 	NIH_CONFIG_LAST
 };
 
+static NihConfigStanza any_stanzas[] = {
+	{ "", my_handler },
+
+	NIH_CONFIG_LAST
+};
 
 void
 test_parse_stanza (void)
@@ -1455,6 +1460,32 @@ test_parse_stanza (void)
 	err = nih_error_get ();
 	TEST_EQ (err->number, NIH_CONFIG_UNKNOWN_STANZA);
 	nih_free (err);
+
+
+	/* Check that unknown stanzas can be handled by an entry in the
+	 * table with a zero-length name.
+	 */
+	TEST_FEATURE ("with unknown stanza and catch-all");
+	pos = 0;
+
+	handler_called = 0;
+	last_data = NULL;
+	last_file = NULL;
+	last_len = 0;
+	last_pos = -1;
+	last_lineno = 0;
+
+	ret = nih_config_parse_stanza (buf, strlen (buf), NULL, NULL,
+				       any_stanzas, &ret);
+
+	TEST_TRUE (handler_called);
+	TEST_EQ_P (last_data, &ret);
+	TEST_EQ_P (last_file, buf);
+	TEST_EQ (last_len, strlen (buf));
+	TEST_EQ (last_pos, 7);
+	TEST_EQ (last_lineno, -1);
+
+	TEST_EQ (ret, 100);
 
 
 	/* Check that an error is raised if there is no stanza at this

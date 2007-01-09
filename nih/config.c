@@ -865,20 +865,26 @@ nih_config_block_end (const char *file,
  * last entry in the table should have NULL for both the name and handler
  * function pointers.
  *
+ * If any entry exists with the stanza name "", this is returned instead
+ * of NULL if no specific entry is found.
+ *
  * Returns: stanza found or NULL if no handler for @name.
  **/
 static NihConfigStanza *
 nih_config_get_stanza (const char      *name,
 		       NihConfigStanza *stanzas)
 {
-	NihConfigStanza *stanza;
+	NihConfigStanza *stanza, *catch = NULL;
 
 	for (stanza = stanzas; (stanza->name && stanza->handler); stanza++) {
+		if (! strlen (stanza->name))
+			catch = stanza;
+
 		if (! strcmp (stanza->name, name))
 			return stanza;
 	}
 
-	return NULL;
+	return catch;
 }
 
 /**

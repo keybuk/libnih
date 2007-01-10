@@ -38,18 +38,21 @@ static int watcher_called = 0;
 static void *last_data = NULL;
 static NihFileWatch *last_watch = NULL;
 static uint32_t last_events = 0;
+static uint32_t last_cookie = 0;
 static const char *last_name = NULL;
 
 static void
 my_watcher (void         *data,
 	    NihFileWatch *watch,
 	    uint32_t      events,
+	    uint32_t      cookie,
 	    const char   *name)
 {
 	watcher_called++;
 	last_data = data;
 	last_watch = watch;
 	last_events = events;
+	last_cookie = cookie;
 	last_name = name ? nih_strdup (watch, name) : NULL;
 }
 
@@ -59,7 +62,7 @@ test_add_watch (void)
 	NihFileWatch *watch;
 	FILE         *fd;
 	fd_set        readfds, writefds, exceptfds;
-	char          filename[PATH_MAX], dirname[PATH_MAX];
+	char          filename[PATH_MAX], dirname[PATH_MAX], newname[PATH_MAX];
 	int           nfds = 0;
 
 	TEST_FUNCTION ("nih_file_add_watch");
@@ -93,6 +96,7 @@ test_add_watch (void)
 	last_data = NULL;
 	last_watch = NULL;
 	last_events = 0;
+	last_cookie = 0;
 	last_name = NULL;
 
 	fd = fopen (filename, "w");
@@ -110,6 +114,7 @@ test_add_watch (void)
 	TEST_EQ_P (last_data, &watch);
 	TEST_EQ_P (last_watch, watch);
 	TEST_TRUE (last_events & IN_OPEN);
+	TEST_EQ (last_cookie, 0);
 	TEST_EQ_P (last_name, NULL);
 
 	nih_free (watch);
@@ -128,6 +133,7 @@ test_add_watch (void)
 	last_data = NULL;
 	last_watch = NULL;
 	last_events = 0;
+	last_cookie = 0;
 	last_name = NULL;
 
 	watch = nih_file_add_watch (NULL, dirname, IN_CREATE,
@@ -148,10 +154,52 @@ test_add_watch (void)
 	TEST_EQ_P (last_data, &watch);
 	TEST_EQ_P (last_watch, watch);
 	TEST_TRUE (last_events & IN_CREATE);
+	TEST_EQ (last_cookie, 0);
 	TEST_EQ_STR (last_name, "foo");
 
 	nih_free (watch);
 	unlink (filename);
+
+
+	/* Check that a rename of a file within a directory has the cookie
+	 * set.
+	 */
+	TEST_FEATURE ("with rename");
+	watcher_called = 0;
+	last_data = NULL;
+	last_watch = NULL;
+	last_events = 0;
+	last_cookie = 0;
+	last_name = NULL;
+
+	fd = fopen (filename, "w");
+	fprintf (fd, "test\n");
+	fclose (fd);
+
+	watch = nih_file_add_watch (NULL, dirname, IN_MOVE,
+				    my_watcher, &watch);
+
+	strcpy (newname, dirname);
+	strcat (newname, "/bar");
+
+	rename (filename, newname);
+
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_EQ (watcher_called, 2);
+	TEST_EQ_P (last_data, &watch);
+	TEST_EQ_P (last_watch, watch);
+	TEST_TRUE (last_events & IN_MOVED_TO);
+	TEST_NE (last_cookie, 0);
+	TEST_EQ_STR (last_name, "bar");
+
+	nih_free (watch);
+	unlink (newname);
 	rmdir (dirname);
 }
 

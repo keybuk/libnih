@@ -1,5 +1,10 @@
 2007-01-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/file.c (nih_file_reader): Pass the cookie to the watcher.
+	* nih/file.h (NihFileWatcher): Add cookie argument.
+	* nih/tests/test_file.c (test_add_watch): Check the cookie is
+	passed for a rename.
+
 	* nih/file.c (nih_file_add_watch): Fix this to not add the inotify
 	watch unless it can allocate memory to handle it.
 

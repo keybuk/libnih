@@ -34,12 +34,14 @@
 
 /* Predefine the typedefs as we use them in the callbacks */
 typedef struct nih_file_watch NihFileWatch;
+typedef struct nih_dir_watch  NihDirWatch;
 
 /**
  * NihFileWatcher:
  * @data: data pointer given when registered,
  * @watch: NihFileWatch for which an event occurred,
  * @events: event mask that occurred,
+ * @cookie: cookie to identify renames,
  * @name: optional name.
  *
  * A file watcher is a function that is called whenever a file event that
@@ -54,7 +56,8 @@ typedef struct nih_file_watch NihFileWatch;
  * function.
  **/
 typedef void (*NihFileWatcher) (void *data, NihFileWatch *watch,
-				uint32_t events, const char *name);
+				uint32_t events, uint32_t cookie,
+				const char *name);
 
 
 /**

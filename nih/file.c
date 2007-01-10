@@ -240,6 +240,7 @@ nih_file_reader (void       *data,
 				continue;
 
 			watch->watcher (watch->data, watch, event->mask,
+					event->cookie,
 					event->len ? event->name : NULL);
 		}
 

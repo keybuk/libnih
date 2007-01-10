@@ -26,6 +26,9 @@
 # include <nih/inotify.h>
 #endif /* HAVE_SYS_INOTIFY_H */
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include <nih/macros.h>
 #include <nih/list.h>
 
@@ -35,6 +38,30 @@
 /* Predefine the typedefs as we use them in the callbacks */
 typedef struct nih_file_watch NihFileWatch;
 typedef struct nih_dir_watch  NihDirWatch;
+
+/**
+ * NihFileFilter:
+ * @path: path to file.
+ *
+ * A file filter is a function that can be called to determine whether
+ * a particular path should be ignored because of its filename,
+ *
+ * Returns: TRUE if the path should be ignored, FALSE otherwise.
+ **/
+typedef int (*NihFileFilter) (const char *path);
+
+/**
+ * NihFileVisitor:
+ * @data: data pointer given to nih_dir_walk(),
+ * @path: path to file.
+ *
+ * A file visitor is a function that is called for each file, directory or
+ * other object visited by nih_dir_walk() that is does not match the
+ * filter given to that function but does match the types argument.
+ *
+ * Returns: zero on success, negative value on raised error.
+ **/
+typedef int (*NihFileVisitor) (void *data, const char *path);
 
 /**
  * NihFileWatcher:
@@ -97,6 +124,10 @@ NihFileWatch *nih_file_add_watch    (const void *parent, const char *path,
 				     uint32_t events, NihFileWatcher watcher,
 				     void *data);
 void          nih_file_remove_watch (NihFileWatch *watch);
+
+int           nih_dir_walk          (const char *path, mode_t types,
+				     NihFileFilter filter,
+				     NihFileVisitor visitor, void *data);
 
 void *        nih_file_map          (const char *path, int flags,
 				     size_t *length);

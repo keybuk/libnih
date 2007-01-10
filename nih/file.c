@@ -2,7 +2,7 @@
  *
  * file.c - file watching
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@
 
 #include <fcntl.h>
 #include <errno.h>
+#include <dirent.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -246,6 +247,102 @@ nih_file_reader (void       *data,
 
 		nih_free (event);
 	}
+}
+
+
+/**
+ * nih_dir_walk:
+ * @path: path to walk,
+ * @types: object types to call @visitor for,
+ * @filter: path filter for both @visitor and iteration,
+ * @visitor: function to call for each path,
+ * @data: data to pass to @visitor.
+ *
+ * Iterates the directory tree starting at @path, calling @visitor for
+ * each file, directory or other object found.  Sub-directories are
+ * descended into, and the same @visitor called for those.
+ *
+ * @visitor is not called for @path itself.
+ *
+ * @filter can be used to restrict both the sub-directories iterated and
+ * the objects that @visitor is called for.  It is passed the full path
+ * of the object, and if it returns TRUE, the object is ignored.
+ *
+ * @visitor is additionally only called for objects whose type is given
+ * in @types, a bitmask of file modes and types as used by stat().
+ * Leaving S_IFDIR out of @types only prevents @visitor being called for
+ * directories, it does not prevent iteration into sub-directories.
+ *
+ * Returns: zero on success, negative value on error.
+ **/
+int
+nih_dir_walk (const char    *path,
+	      mode_t         types,
+	      NihFileFilter  filter,
+	      NihFileVisitor visitor,
+	      void          *data)
+{
+	DIR           *dir;
+	struct dirent *ent;
+	int            ret = 0;
+
+	nih_assert (path != NULL);
+	nih_assert (types != 0);
+	nih_assert (visitor != NULL);
+
+	dir = opendir (path);
+	if (! dir)
+		nih_return_system_error (-1);
+
+	while ((ent = readdir (dir)) != NULL) {
+		struct stat  statbuf;
+		char        *subpath;
+
+		/* Always ignore '.' and '..' */
+		if ((! strcmp (ent->d_name, "."))
+		    || (! strcmp (ent->d_name, "..")))
+			continue;
+
+		NIH_MUST (subpath = nih_sprintf (NULL, "%s/%s",
+						 path, ent->d_name));
+
+		/* Check the filter */
+		if (filter && filter (subpath)) {
+			nih_free (subpath);
+			continue;
+		}
+
+		/* Not much we can do here if we can't at least stat it */
+		if (stat (subpath, &statbuf) < 0) {
+			nih_free (subpath);
+			continue;
+		}
+
+		/* Call the handler if types match. */
+		if (statbuf.st_mode & types) {
+			ret = visitor (data, subpath);
+			if (ret < 0) {
+				nih_free (subpath);
+				break;
+			}
+		}
+
+		/* Iterate into sub-directories */
+		if (S_ISDIR (statbuf.st_mode)) {
+			ret = nih_dir_walk (subpath, types, filter,
+					    visitor, data);
+			if (ret < 0) {
+				nih_free (subpath);
+				break;
+			}
+		}
+
+		nih_free (subpath);
+	}
+
+	closedir (dir);
+
+	return ret;
 }
 
 

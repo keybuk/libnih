@@ -1,5 +1,11 @@
 2007-01-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/file.c (nih_dir_walk): Function to walk a directory tree
+	calling a function for each object found.
+	* nih/file.h (NihFileFilter, NihFileVisitor): typedefs for
+	function pointers used for nih_dir_walk.
+	* nih/tests/test_file.c (test_walk): Test the walker.
+
 	* nih/file.c (nih_file_reader): Pass the cookie to the watcher.
 	* nih/file.h (NihFileWatcher): Add cookie argument.
 	* nih/tests/test_file.c (test_add_watch): Check the cookie is

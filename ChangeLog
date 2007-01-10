@@ -1,3 +1,8 @@
+2007-01-10  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/file.c (nih_file_add_watch): Fix this to not add the inotify
+	watch unless it can allocate memory to handle it.
+
 2007-01-09  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/config.c (nih_config_get_stanza): Catch entries with a zero

@@ -101,7 +101,7 @@ nih_file_init (void)
  * @watcher: function to call,
  * @data: data to pass to @watcher.
  *
- * Begins watches @path for the list of @events given which should be a
+ * Begins watching @path for the list of @events given which should be a
  * bitmask as described in inotify(7).  When any of the listed events
  * occur, @watcher is called.
  *
@@ -126,17 +126,12 @@ nih_file_add_watch (const void     *parent,
 		    void           *data)
 {
 	NihFileWatch *watch;
-	int           wd;
 
 	nih_assert (path != NULL);
 	nih_assert (events != 0);
 
 	nih_file_init ();
 	if (inotify_fd < 0)
-		nih_return_system_error (NULL);
-
-	wd = inotify_add_watch (inotify_fd, path, events);
-	if (wd < 0)
 		nih_return_system_error (NULL);
 
 	watch = nih_new (parent, NihFileWatch);
@@ -146,7 +141,13 @@ nih_file_add_watch (const void     *parent,
 	nih_list_init (&watch->entry);
 	nih_alloc_set_destructor (watch, (NihDestructor)nih_file_remove_watch);
 
-	watch->wd = wd;
+	watch->wd = inotify_add_watch (inotify_fd, path, events);
+	if (watch->wd < 0) {
+		nih_error_raise_system ();
+		nih_free (watch);
+		return NULL;
+	}
+
 	watch->path = nih_strdup (watch, path);
 	watch->events = events;
 

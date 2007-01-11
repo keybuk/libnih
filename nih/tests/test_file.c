@@ -35,6 +35,7 @@
 #include <nih/io.h>
 #include <nih/file.h>
 #include <nih/error.h>
+#include <nih/logging.h>
 
 
 static int watcher_called = 0;
@@ -70,7 +71,8 @@ test_add_watch (void)
 
 	TEST_FUNCTION ("nih_file_add_watch");
 
-	/* Check that we can add a watch on a filename, and that the returned
+
+ 	/* Check that we can add a watch on a filename, and that the returned
 	 * structure is all filled out correctly.
 	 */
 	TEST_FEATURE ("with file");
@@ -91,6 +93,7 @@ test_add_watch (void)
 	TEST_EQ_P (watch->watcher, my_watcher);
 	TEST_EQ_P (watch->data, &watch);
 	TEST_LIST_NOT_EMPTY (&watch->entry);
+
 
 	/* Check that a modification to that file results in the watcher
 	 * being called with appropriate parameters.
@@ -497,6 +500,8 @@ test_dir_walk (void)
 	TEST_EQ (err->number, EINVAL);
 	nih_free (err);
 
+	nih_free (visited);
+
 
 	/* Check that we get a ENOTDIR error if we try and walk a file.
 	 */
@@ -505,7 +510,6 @@ test_dir_walk (void)
 	strcat (filename, "/foo");
 
 	visitor_called = 0;
-	visited = nih_list_new (NULL);
 
 	ret = nih_dir_walk (filename, S_IFREG | S_IFDIR, my_filter,
 			    my_visitor, &ret);
@@ -538,8 +542,665 @@ test_dir_walk (void)
 	strcat (filename, "/baz");
 	rmdir (filename);
 
+	strcpy (filename, dirname);
+	strcat (filename, "/frodo/baggins");
+	unlink (filename);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/frodo");
+	rmdir (filename);
+
 	rmdir (dirname);
 }
+
+
+static int create_called = 0;
+static int modify_called = 0;
+static int delete_called = 0;
+static NihDirWatch *last_dir_watch = NULL;
+static char *last_path = NULL;
+
+static void
+my_create_handler (void        *data,
+		   NihDirWatch *watch,
+		   const char  *path)
+{
+	create_called++;
+	last_data = data;
+	last_dir_watch = watch;
+	if (last_path) {
+		char *old;
+
+		old = last_path;
+		last_path = nih_sprintf (NULL, "%s::%s", old, path);
+		nih_free (old);
+	} else {
+		last_path = nih_strdup (NULL, path);
+	}
+}
+
+static void
+my_modify_handler (void        *data,
+		   NihDirWatch *watch,
+		   const char  *path)
+{
+	modify_called++;
+	last_data = data;
+	last_dir_watch = watch;
+	if (last_path)
+		nih_free (last_path);
+
+	last_path = nih_strdup (NULL, path);
+}
+
+static void
+my_delete_handler (void        *data,
+		   NihDirWatch *watch,
+		   const char  *path)
+{
+	delete_called++;
+	last_data = data;
+	last_dir_watch = watch;
+	if (last_path)
+		nih_free (last_path);
+
+	if (path) {
+		last_path = nih_strdup (NULL, path);
+	} else {
+		last_path = NULL;
+	}
+}
+
+static int
+my_logger (NihLogLevel  priority,
+	   const char  *message)
+{
+	return 0;
+}
+
+void
+test_dir_add_watch (void)
+{
+	FILE         *fd;
+	char          dirname[PATH_MAX], filename[PATH_MAX];
+	NihDirWatch  *watch;
+	NihFileWatch *fwatch;
+	NihList      *watches;
+	NihError     *err;
+
+	TEST_FUNCTION ("nih_dir_walk");
+	TEST_FILENAME (dirname);
+	mkdir (dirname, 0755);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/foo");
+
+	fd = fopen (filename, "w");
+	fprintf (fd, "test\n");
+	fclose (fd);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/bar");
+
+	mkdir (filename, 0755);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/bar/frodo");
+
+	fd = fopen (filename, "w");
+	fprintf (fd, "test\n");
+	fclose (fd);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/bar/bilbo");
+
+	fd = fopen (filename, "w");
+	fprintf (fd, "test\n");
+	fclose (fd);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/baz");
+
+	mkdir (filename, 0755);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/frodo");
+
+	mkdir (filename, 0755);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/frodo/baggins");
+
+	fd = fopen (filename, "w");
+	fprintf (fd, "test\n");
+	fclose (fd);
+
+	/* Naughty way of grabbing the file watch list */
+	fwatch = nih_file_add_watch (NULL, filename, IN_MODIFY,
+				     my_watcher, NULL);
+	watches = fwatch->entry.prev;
+	nih_free (fwatch);
+
+
+	/* Check that we can add a watch on the top-level directory of a
+	 * tree.  We should get a structure returned that's correctly filled
+	 * in, we should also be able to see individual file watches on each
+	 * directory within it.
+	 *
+	 * Anything matching the filter should be excluded.
+	 */
+	TEST_FEATURE ("with top-level directory");
+	watch = nih_dir_add_watch (NULL, dirname, TRUE, my_filter,
+				   my_create_handler, my_modify_handler,
+				   my_delete_handler, &watch);
+
+	TEST_ALLOC_SIZE (watch, sizeof (NihDirWatch));
+	TEST_ALLOC_PARENT (watch->path, watch);
+	TEST_ALLOC_SIZE (watch->path, strlen (dirname) + 1);
+	TEST_EQ_STR (watch->path, dirname);
+	TEST_EQ (watch->subdirs, TRUE);
+	TEST_EQ_P (watch->filter, my_filter);
+	TEST_EQ_P (watch->create_handler, my_create_handler);
+	TEST_EQ_P (watch->modify_handler, my_modify_handler);
+	TEST_EQ_P (watch->delete_handler, my_delete_handler);
+	TEST_EQ_P (watch->data, &watch);
+
+	TEST_LIST_NOT_EMPTY (watches);
+
+	fwatch = (NihFileWatch *)watches->next;
+	TEST_ALLOC_SIZE (fwatch, sizeof (NihFileWatch));
+	TEST_ALLOC_PARENT (fwatch, watch);
+	TEST_EQ_STR (fwatch->path, dirname);
+	nih_list_remove (&fwatch->entry);
+
+	fwatch = (NihFileWatch *)watches->next;
+	TEST_ALLOC_SIZE (fwatch, sizeof (NihFileWatch));
+	TEST_ALLOC_PARENT (fwatch, watch);
+	strcpy (filename, dirname);
+	strcat (filename, "/bar");
+	TEST_EQ_STR (fwatch->path, filename);
+	nih_list_remove (&fwatch->entry);
+
+	fwatch = (NihFileWatch *)watches->next;
+	TEST_ALLOC_SIZE (fwatch, sizeof (NihFileWatch));
+	TEST_ALLOC_PARENT (fwatch, watch);
+	strcpy (filename, dirname);
+	strcat (filename, "/baz");
+	TEST_EQ_STR (fwatch->path, filename);
+	nih_list_remove (&fwatch->entry);
+
+	TEST_LIST_EMPTY (watches);
+
+	nih_free (watch);
+
+
+	/* Check that we can add a watch without sub-directories included
+	 * in the tree; we should only get a watch on the top-level.
+	 */
+	TEST_FEATURE ("with no sub-directories");
+	watch = nih_dir_add_watch (NULL, dirname, FALSE, NULL,
+				   my_create_handler, my_modify_handler,
+				   my_delete_handler, &watch);
+
+	TEST_ALLOC_SIZE (watch, sizeof (NihDirWatch));
+	TEST_ALLOC_PARENT (watch->path, watch);
+	TEST_ALLOC_SIZE (watch->path, strlen (dirname) + 1);
+	TEST_EQ_STR (watch->path, dirname);
+	TEST_EQ (watch->subdirs, FALSE);
+
+	TEST_LIST_NOT_EMPTY (watches);
+
+	fwatch = (NihFileWatch *)watches->next;
+	TEST_ALLOC_SIZE (fwatch, sizeof (NihFileWatch));
+	TEST_ALLOC_PARENT (fwatch, watch);
+	TEST_EQ_STR (fwatch->path, dirname);
+	nih_list_remove (&fwatch->entry);
+
+	TEST_LIST_EMPTY (watches);
+
+	nih_free (watch);
+
+
+	/* Check that we get a ENOTDIR error if we try and watch something
+	 * that's not a directory.
+	 */
+	TEST_FEATURE ("with non-directory");
+	strcpy (filename, dirname);
+	strcat (filename, "/foo");
+
+	watch = nih_dir_add_watch (NULL, filename, TRUE, NULL,
+				   NULL, NULL, NULL, &watch);
+
+	TEST_EQ_P (watch, NULL);
+
+	TEST_LIST_EMPTY (watches);
+
+	err = nih_error_get ();
+	TEST_EQ (err->number, ENOTDIR);
+	nih_free (err);
+
+
+	/* Check that a failure to walk the tree results in all of the
+	 * watches being aborted, as we're in an inconsitent state.
+	 */
+	TEST_FEATURE ("with error in sub-directory");
+	strcpy (filename, dirname);
+	strcat (filename, "/baz");
+
+	chmod (filename, 0000);
+
+	nih_log_set_logger (my_logger);
+	watch = nih_dir_add_watch (NULL, dirname, TRUE, NULL,
+				   my_create_handler, my_modify_handler,
+				   my_delete_handler, &watch);
+	nih_log_set_logger (nih_logger_printf);
+
+	TEST_EQ_P (watch, NULL);
+
+	TEST_LIST_EMPTY (watches);
+
+	err = nih_error_get ();
+	TEST_EQ (err->number, EACCES);
+	nih_free (err);
+
+
+	strcpy (filename, dirname);
+	strcat (filename, "/foo");
+	unlink (filename);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/bar/frodo");
+	unlink (filename);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/bar/bilbo");
+	unlink (filename);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/bar");
+	rmdir (filename);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/baz");
+	rmdir (filename);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/frodo/baggins");
+	unlink (filename);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/frodo");
+	rmdir (filename);
+
+	rmdir (dirname);
+}
+
+static int destructor_called = 0;
+
+static int
+my_destructor (void *ptr)
+{
+	destructor_called++;
+
+	return 0;
+}
+
+void
+test_dir_watcher (void)
+{
+	FILE         *fd;
+	char          dirname[PATH_MAX], filename[PATH_MAX], newname[PATH_MAX];
+	NihDirWatch  *watch;
+	NihFileWatch *fwatch;
+	NihList      *watches;
+	fd_set        readfds, writefds, exceptfds;
+	int           nfds;
+
+	TEST_FUNCTION ("nih_dir_watcher");
+	TEST_FILENAME (dirname);
+	mkdir (dirname, 0755);
+
+	/* Naughty way of grabbing the file watch list */
+	fwatch = nih_file_add_watch (NULL, dirname, IN_MODIFY,
+				     my_watcher, NULL);
+	watches = fwatch->entry.prev;
+	nih_free (fwatch);
+
+	watch = nih_dir_add_watch (NULL, dirname, TRUE, NULL,
+				   my_create_handler, my_modify_handler,
+				   my_delete_handler, &watch);
+
+
+	/* Check that the create handler is called if a new file is
+	 * created in the directory, and is passed the full path.
+	 */
+	TEST_FEATURE ("with creation of a file");
+	strcpy (filename, dirname);
+	strcat (filename, "/foo");
+
+	fd = fopen (filename, "w");
+	fprintf (fd, "test\n");
+	fclose (fd);
+
+	create_called = 0;
+	last_data = NULL;
+	last_dir_watch = NULL;
+	last_path = NULL;
+
+	nfds = 0;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_TRUE (create_called);
+	TEST_EQ_P (last_data, &watch);
+	TEST_EQ_P (last_dir_watch, watch);
+	TEST_EQ_STR (last_path, filename);
+
+	nih_free (last_path);
+
+
+	/* Check that the modify handler is called if we modify the file. */
+	TEST_FEATURE ("with modification to a file");
+	fd = fopen (filename, "w");
+	fprintf (fd, "another test\n");
+	fclose (fd);
+
+	modify_called = 0;
+	last_data = NULL;
+	last_dir_watch = NULL;
+	last_path = NULL;
+
+	nfds = 0;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_TRUE (modify_called);
+	TEST_EQ_P (last_data, &watch);
+	TEST_EQ_P (last_dir_watch, watch);
+	TEST_EQ_STR (last_path, filename);
+
+	nih_free (last_path);
+
+
+	/* Check that both delete and create are called if we rename the
+	 * file to something else.
+	 */
+	TEST_FEATURE ("with renaming of a file");
+	strcpy (newname, dirname);
+	strcat (newname, "/bar");
+
+	rename (filename, newname);
+
+	delete_called = 0;
+	create_called = 0;
+	last_data = NULL;
+	last_dir_watch = NULL;
+	last_path = NULL;
+
+	nfds = 0;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_TRUE (delete_called);
+	TEST_TRUE (create_called);
+	TEST_EQ_P (last_data, &watch);
+	TEST_EQ_P (last_dir_watch, watch);
+
+	strcpy (newname, dirname);
+	strcat (newname, "/foo::");
+	strcat (newname, dirname);
+	strcat (newname, "/bar");
+	TEST_EQ_STR (last_path, newname);
+
+	nih_free (last_path);
+
+
+	/* Check that we just get delete called if we delete it. */
+	TEST_FEATURE ("with deletion of a file");
+	strcpy (filename, dirname);
+	strcat (filename, "/bar");
+
+	unlink (filename);
+
+	delete_called = 0;
+	last_data = NULL;
+	last_dir_watch = NULL;
+	last_path = NULL;
+
+	nfds = 0;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_TRUE (delete_called);
+	TEST_EQ_P (last_data, &watch);
+	TEST_EQ_P (last_dir_watch, watch);
+	TEST_EQ_STR (last_path, filename);
+
+	nih_free (last_path);
+
+
+	/* Check that creating a sub-directory when subdirs is TRUE results
+	 * in a watch being added for that sub-directory, as well as the
+	 * create handler being called.
+	 */
+	TEST_FEATURE ("with creation of a sub-directory");
+	strcpy (filename, dirname);
+	strcat (filename, "/meep");
+
+	mkdir (filename, 0755);
+
+	create_called = 0;
+	last_data = NULL;
+	last_dir_watch = NULL;
+	last_path = NULL;
+
+	nfds = 0;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_TRUE (create_called);
+	TEST_EQ_P (last_data, &watch);
+	TEST_EQ_P (last_dir_watch, watch);
+	TEST_EQ_STR (last_path, filename);
+
+	fwatch = (NihFileWatch *)watches->next->next;
+	TEST_ALLOC_SIZE (fwatch, sizeof (NihFileWatch));
+	TEST_ALLOC_PARENT (fwatch, watch);
+	TEST_EQ_STR (fwatch->path, filename);
+
+	nih_free (last_path);
+
+
+	/* Check that a sub-directory being moved results in it being
+	 * deleted and created again.
+	 */
+	TEST_FEATURE ("with move of a sub-directory");
+	strcpy (newname, dirname);
+	strcat (newname, "/mope");
+
+	rename (filename, newname);
+
+	delete_called = 0;
+	create_called = 0;
+	last_data = NULL;
+	last_dir_watch = NULL;
+	last_path = NULL;
+
+	nfds = 0;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_TRUE (delete_called);
+	TEST_TRUE (create_called);
+	TEST_EQ_P (last_data, &watch);
+	TEST_EQ_P (last_dir_watch, watch);
+	strcpy (newname, dirname);
+	strcat (newname, "/meep::");
+	strcat (newname, dirname);
+	strcat (newname, "/mope");
+	TEST_EQ_STR (last_path, newname);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/mope");
+
+	fwatch = (NihFileWatch *)watches->next->next;
+	TEST_ALLOC_SIZE (fwatch, sizeof (NihFileWatch));
+	TEST_ALLOC_PARENT (fwatch, watch);
+	TEST_EQ_STR (fwatch->path, filename);
+
+	nih_free (last_path);
+
+
+	/* Check that the create handler is called if we create a file
+	 * inside that directory.
+	 */
+	TEST_FEATURE ("with creation of a file in subdir");
+	strcpy (filename, dirname);
+	strcat (filename, "/mope/whee");
+
+	fd = fopen (filename, "w");
+	fprintf (fd, "test\n");
+	fclose (fd);
+
+	create_called = 0;
+	last_data = NULL;
+	last_dir_watch = NULL;
+	last_path = NULL;
+
+	nfds = 0;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_TRUE (create_called);
+	TEST_EQ_P (last_data, &watch);
+	TEST_EQ_P (last_dir_watch, watch);
+	TEST_EQ_STR (last_path, filename);
+
+	nih_free (last_path);
+
+
+	/* Check that we just get delete called if we delete a file in a
+	 * sub-directory.
+	 */
+	TEST_FEATURE ("with deletion of a file from subdir");
+	unlink (filename);
+
+	delete_called = 0;
+	last_data = NULL;
+	last_dir_watch = NULL;
+	last_path = NULL;
+
+	nfds = 0;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_TRUE (delete_called);
+	TEST_EQ_P (last_data, &watch);
+	TEST_EQ_P (last_dir_watch, watch);
+	TEST_EQ_STR (last_path, filename);
+
+	nih_free (last_path);
+
+
+	/* Check that we just get delete called if we remove the sub-directory
+	 * itself, we should also lose the watch on it.
+	 */
+	TEST_FEATURE ("with deletion of sub-directory");
+	strcpy (filename, dirname);
+	strcat (filename, "/mope");
+
+	rmdir (filename);
+
+	delete_called = 0;
+	last_data = NULL;
+	last_dir_watch = NULL;
+	last_path = NULL;
+
+	nfds = 0;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_TRUE (delete_called);
+	TEST_EQ_P (last_data, &watch);
+	TEST_EQ_P (last_dir_watch, watch);
+	TEST_EQ_STR (last_path, filename);
+
+	fwatch = (NihFileWatch *)watches->next->next;
+	TEST_ALLOC_SIZE (fwatch, sizeof (NihList));
+
+	nih_free (last_path);
+
+
+	/* Check that delete is called with the special NULL argument if
+	 * we remove the top-level directory, that we lose the watch on
+	 * it, and that the structure itself is freed.
+	 */
+	TEST_FEATURE ("with deletion of top-level directory");
+	rmdir (dirname);
+
+	destructor_called = 0;
+	nih_alloc_set_destructor (watch, my_destructor);
+
+	delete_called = 0;
+	last_data = NULL;
+	last_dir_watch = NULL;
+	last_path = NULL;
+
+	nfds = 0;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_TRUE (delete_called);
+	TEST_EQ_P (last_data, &watch);
+	TEST_EQ_P (last_dir_watch, watch);
+	TEST_EQ_P (last_path, NULL);
+
+	fwatch = (NihFileWatch *)watches->next;
+	TEST_ALLOC_SIZE (fwatch, sizeof (NihList));
+
+	TEST_TRUE (destructor_called);
+}
+
 
 void
 test_map (void)
@@ -639,6 +1300,8 @@ main (int   argc,
 {
 	test_add_watch ();
 	test_dir_walk ();
+	test_dir_add_watch ();
+	test_dir_watcher ();
 	test_map ();
 	test_unmap ();
 

@@ -1,3 +1,21 @@
+2007-01-11  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/file.h (NihDirWatch): New structure that defines a high-level
+	watch on a directory with various handlers to be called.
+	(NihCreateHandler, NihChangeHandler, NihDeleteHandler): Typedefs.
+	* nih/file.c (nih_dir_add_watch): Function to create an NihDirWatch
+	structure and fill it in.
+	(nih_dir_add_file_watch): Add a watch on a single directory,
+	catching errors and logging a warning if we can't watch it.
+	(nih_dir_watcher): Deal with inotify events within a directory tree,
+	taking care of issues such as re-organising of the directory structure
+	without ending up with duplicate watches.
+	(nih_file_reader): Only call the first matching watcher; we hit a
+	limitation in the inotify API caused by our usage of a single
+	descriptor.  Will fix that shortly.
+	* nih/tests/test_file.c (test_dir_add_watch): Test that we can add
+	watches and have everything filled in nicely.
+
 2007-01-10  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/file.c (nih_dir_walk): Function to walk a directory tree

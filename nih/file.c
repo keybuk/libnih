@@ -51,9 +51,21 @@
 #include <nih/error.h>
 
 
+/**
+ * DIR_EVENTS:
+ *
+ * The standard set of inotify events used for the dir_watcher function.
+ **/
+#define DIR_EVENTS (IN_CREATE | IN_DELETE | IN_MODIFY | IN_MOVE | IN_MOVE_SELF)
+
+
 /* Prototypes for static functions */
-static void nih_file_reader (void *data, NihIo *io,
-			     const char *buf, size_t len);
+static void nih_file_reader        (void *data, NihIo *io,
+				    const char *buf, size_t len);
+static int  nih_dir_add_file_watch (NihDirWatch *watch, const char *path);
+static void nih_dir_watcher        (NihDirWatch *dir_watch,
+				    NihFileWatch *file_watch, uint32_t events,
+				    uint32_t cookie, const char *name);
 
 
 /**
@@ -130,6 +142,7 @@ nih_file_add_watch (const void     *parent,
 
 	nih_assert (path != NULL);
 	nih_assert (events != 0);
+	nih_assert (watcher != NULL);
 
 	nih_file_init ();
 	if (inotify_fd < 0)
@@ -233,8 +246,12 @@ nih_file_reader (void       *data,
 				  NULL, io, &sz));
 		len -= sz;
 
-		/* Handle it */
-		NIH_LIST_FOREACH_SAFE (file_watches, iter) {
+		/* Only call the first watcher that matches.  This is a
+		 * limitation of the inotify API, we can't hold multiple
+		 * watches on a path and have different watch descriptors
+		 * or masks for it.
+		 */
+		NIH_LIST_FOREACH (file_watches, iter) {
 			NihFileWatch *watch = (NihFileWatch *)iter;
 
 			if (watch->wd != event->wd)
@@ -243,6 +260,7 @@ nih_file_reader (void       *data,
 			watch->watcher (watch->data, watch, event->mask,
 					event->cookie,
 					event->len ? event->name : NULL);
+			break;
 		}
 
 		nih_free (event);
@@ -343,6 +361,252 @@ nih_dir_walk (const char    *path,
 	closedir (dir);
 
 	return ret;
+}
+
+
+/**
+ * nih_dir_add_watch:
+ * @parent: parent of watch,
+ * @path: path to watch,
+ * @subdirs: recurse into sub-directories,
+ * @filter: filter function,
+ * @create_handler: function to call when a file is created,
+ * @modify_handler: function to call when a file is changed,
+ * @delete_handler: function to call when a file is deleted,
+ * @data: data to pass to functions.
+ *
+ * Begins watching the @path directory for any changes to its contents
+ * and, if @subdirs is TRUE, any sub-directories as well.
+ *
+ * This abstracts almost all inotify handling to three basic operations;
+ * files being created or added to the directory, files being modified
+ * and files being deleted or removed from the directory.
+ *
+ * If @subdirs is TRUE, operations on sub-directories are handled
+ * automatically using the same watch structure.
+ *
+ * If @filter is given, it is called on any file before the handler
+ * function is called and must return FALSE for the function to be
+ * called.
+ *
+ * If you need finer-grained control, use nih_file_add_watch() instead.
+ *
+ * The directory watch structure is allocated using nih_alloc(), all
+ * associated child watches are allocated as children and retain their
+ * destructor, so the watch can be destroyed by treeing it which will
+ * automatically cancel any watches.
+ *
+ * If the directory being watched is deleted or renamed, @delete_handler
+ * is called with a NULL name.
+ *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned string will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the nih_alloc_set_destructor() function.
+ *
+ * Returns: new NihDirWatch structure or NULL on raised error.
+ **/
+NihDirWatch *
+nih_dir_add_watch (const void       *parent,
+		   const char       *path,
+		   int               subdirs,
+		   NihFileFilter     filter,
+		   NihCreateHandler  create_handler,
+		   NihModifyHandler  modify_handler,
+		   NihDeleteHandler  delete_handler,
+		   void             *data)
+{
+	NihDirWatch *watch;
+	struct stat  statbuf;
+
+	nih_assert (path != NULL);
+
+	if (stat (path, &statbuf) < 0)
+		nih_return_system_error (NULL);
+
+	if (! S_ISDIR (statbuf.st_mode)) {
+		errno = ENOTDIR;
+		nih_return_system_error (NULL);
+	}
+
+	watch = nih_new (parent, NihDirWatch);
+	if (! watch)
+		nih_return_system_error (NULL);
+
+	watch->path = nih_strdup (watch, path);
+	watch->subdirs = subdirs;
+
+	watch->filter = filter;
+	watch->create_handler = create_handler;
+	watch->modify_handler = modify_handler;
+	watch->delete_handler = delete_handler;
+	watch->data = data;
+
+	/* Add a file watch for the top-level */
+	if (! nih_file_add_watch (watch, path, DIR_EVENTS,
+				  (NihFileWatcher)nih_dir_watcher, watch)) {
+		nih_free (watch);
+
+		return NULL;
+	}
+
+	/* Only warn if we have a problem iterating */
+	if (subdirs
+	    && (nih_dir_walk (path, S_IFDIR, watch->filter,
+			      (NihFileVisitor)nih_dir_add_file_watch,
+			      watch) < 0)) {
+		nih_free (watch);
+
+		return NULL;
+	}
+
+	return watch;
+}
+
+/**
+ * nih_dir_add_file_watch:
+ * @watch: parent NihDirWatch,
+ * @path: path under @watch to be added.
+ *
+ * This function is called for each sub-directory iterated while creating
+ * an NihDirWatch.  It creates an NihFileWatch for @path as a child of
+ * @watch, should that fail, it only emits a warning.
+ *
+ * Returns: zero on success, negative value on error.
+ **/
+static int
+nih_dir_add_file_watch (NihDirWatch *watch,
+			const char  *path)
+{
+	if (! nih_file_add_watch (watch, path, DIR_EVENTS,
+				  (NihFileWatcher)nih_dir_watcher, watch)) {
+		NihError *err;
+
+		err = nih_error_get ();
+		nih_warn ("%s: %s: %s", path,
+			  _("Unable to watch directory"), err->message);
+		nih_free (err);
+	}
+
+	return 0;
+}
+
+/**
+ * nih_dir_watcher:
+ * @dir_watch: NihDirWatch for top-level,
+ * @file_watch: NihFileWatch for which an event occurred,
+ * @events: event mask that occurred,
+ * @cookie: rename cookie,
+ * @name: optional filename.
+ *
+ * This function is called for every inotify event within the directory tree
+ * being watched by @dir_watch; a combination of the information in
+ * @file_watch (which is for the actual sub-directory) and @name is used
+ * to call the most appropriate @dir_watch handler function.
+ **/
+static void
+nih_dir_watcher (NihDirWatch  *dir_watch,
+		 NihFileWatch *file_watch,
+		 uint32_t      events,
+		 uint32_t      cookie,
+		 const char   *name)
+{
+	char *path;
+
+	nih_assert (dir_watch != NULL);
+	nih_assert (file_watch != NULL);
+	nih_assert (events != 0);
+
+	/* Find out whether the event is that the directory we're watching
+	 * has gone away or been moved.  We treat being moved specially
+	 * because we automatically rearrange watches for such things.
+	 */
+	if ((events & IN_IGNORED) || (events & IN_MOVE_SELF)) {
+		nih_debug ("Ceasing watch on %s", file_watch->path);
+
+		if (! strcmp (file_watch->path, dir_watch->path)) {
+			/* Top-level directory has gone away, call the
+			 * delete handler with the special NULL argument,
+			 * then free the watch.
+			 */
+			if (dir_watch->delete_handler)
+				dir_watch->delete_handler (dir_watch->data,
+							   dir_watch, NULL);
+
+			nih_free (dir_watch);
+		} else {
+			int found = 0;
+
+			/* A lower level directory has gone away; we need to
+			 * free it up, but we don't want to remove the watch
+			 * if someone else has taken it up!
+			 */
+			NIH_LIST_FOREACH (file_watches, iter) {
+				NihFileWatch *fw = (NihFileWatch *)iter;
+
+				if ((fw != file_watch)
+				    && (fw->wd == file_watch->wd))
+					found = 1;
+			}
+
+			if (found) {
+				nih_alloc_set_destructor (file_watch, NULL);
+				nih_list_free (&file_watch->entry);
+			} else {
+				nih_file_remove_watch (file_watch);
+				nih_free (file_watch);
+			}
+		}
+
+		return;
+	}
+
+	/* Every other event must come with a name. */
+	nih_assert (name != NULL);
+	NIH_MUST (path = nih_sprintf (dir_watch, "%s/%s",
+				      file_watch->path, name));
+
+	/* Filter out unwanted paths */
+	if (dir_watch->filter && dir_watch->filter (path))
+		goto finish;
+
+
+	if ((events & IN_CREATE) || (events & IN_MOVED_TO)) {
+		struct stat statbuf;
+
+		if (dir_watch->create_handler)
+			dir_watch->create_handler (dir_watch->data, dir_watch,
+						   path);
+
+		/* If we're watching an entire directory tree, make sure we
+		 * add a watch for this new sub directory and anything under
+		 * it too.
+		 */
+		if (dir_watch->subdirs
+		    && (stat (path, &statbuf) == 0)
+		    && S_ISDIR (statbuf.st_mode)) {
+			nih_dir_add_file_watch (dir_watch, path);
+
+			if (nih_dir_walk (path, S_IFDIR, dir_watch->filter,
+					  (NihFileVisitor)nih_dir_add_file_watch,
+					  dir_watch) < 0)
+				nih_free (nih_error_get ());
+		}
+
+	} else if (events & IN_MODIFY) {
+		if (dir_watch->modify_handler)
+			dir_watch->modify_handler (dir_watch->data, dir_watch,
+						   path);
+
+	} else if ((events & IN_DELETE) || (events & IN_MOVED_FROM)) {
+		if (dir_watch->delete_handler)
+			dir_watch->delete_handler (dir_watch->data, dir_watch,
+						   path);
+	}
+
+finish:
+	nih_free (path);
 }
 
 

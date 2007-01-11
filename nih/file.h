@@ -86,6 +86,58 @@ typedef void (*NihFileWatcher) (void *data, NihFileWatch *watch,
 				uint32_t events, uint32_t cookie,
 				const char *name);
 
+/**
+ * NihCreateHandler:
+ * @data: data pointer given when registered,
+ * @watch: NihDirWatch for directory tree,
+ * @path: full path to file.
+ *
+ * A create handler is a function that is called whenever a file or other
+ * object is created under or moved into a directory tree being watched.
+ * @path contains the path to the file, including the directory prefix
+ * which can be found in @watch.
+ *
+ * It is safe to remove the watch with nih_free() from this function.
+ **/
+typedef void (*NihCreateHandler) (void *data, NihDirWatch *watch,
+				  const char *path);
+
+/**
+ * NihModifyHandler:
+ * @data: data pointer given when registered,
+ * @watch: NihDirWatch for directory tree,
+ * @path: full path to file.
+ *
+ * A modify handler is a function that is called whenever a file or other
+ * object is changed within a directory tree being watched.  @path contains
+ * the path to the file, including the directory prefix which can be
+ * found in @watch.
+ *
+ * It is safe to remove the watch with nih_free() from this function.
+ **/
+typedef void (*NihModifyHandler) (void *data, NihDirWatch *watch,
+				  const char *path);
+
+/**
+ * NihDeleteHandler:
+ * @data: data pointer given when registered,
+ * @watch: NihDirWatch for directory tree,
+ * @path: full path to file.
+ *
+ * A delete handler is a function that is called whenever a file or other
+ * object is deleted from or moved out of a directory tree being watched.
+ * @path contains the path to the file, including the directory prefix
+ * which can be found in @watch.
+ *
+ * If the directory being watched itself is deleted, the function is called
+ * with NULL for @path.  The watch is automatically freed once the function
+ * returns.
+ *
+ * It is safe to remove the watch with nih_free() from this function.
+ **/
+typedef void (*NihDeleteHandler) (void *data, NihDirWatch *watch,
+				  const char *path);
+
 
 /**
  * NihFileWatch:
@@ -117,6 +169,34 @@ struct nih_file_watch {
 	void           *data;
 };
 
+/**
+ * NihDirWatch:
+ * @path: top-level path being watched,
+ * @subdirs: whether sub-directories are also watched,
+ * @filter: function called to filer path names,
+ * @create_handler: function called when a file is created,
+ * @modify_handler: function called when a file is changed,
+ * @delete_handler: function called when a file is deleted,
+ * @data: data passed to handler functions.
+ *
+ * This structure represents an inotify watch on a directory tree
+ * beginning at @path.  The watches themselves are represented by
+ * NihFileWatch structures which are children of this structure,
+ * so the watch may be terminated by using nih_free().
+ **/
+struct nih_dir_watch {
+	char             *path;
+	int               subdirs;
+
+	NihFileFilter     filter;
+
+	NihCreateHandler  create_handler;
+	NihModifyHandler  modify_handler;
+	NihDeleteHandler  delete_handler;
+
+	void             *data;
+};
+
 
 NIH_BEGIN_EXTERN
 
@@ -128,6 +208,13 @@ void          nih_file_remove_watch (NihFileWatch *watch);
 int           nih_dir_walk          (const char *path, mode_t types,
 				     NihFileFilter filter,
 				     NihFileVisitor visitor, void *data);
+
+NihDirWatch * nih_dir_add_watch     (const void *parent, const char *path,
+				     int subdirs, NihFileFilter filter,
+				     NihCreateHandler create_handler,
+				     NihModifyHandler modify_handler,
+				     NihDeleteHandler delete_handler,
+				     void *data);
 
 void *        nih_file_map          (const char *path, int flags,
 				     size_t *length);

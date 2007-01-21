@@ -564,7 +564,7 @@ nih_io_message_recv  (const void *parent,
 		      size_t     *len)
 {
 	NihIoMessage   *message;
-	NihIoBuffer    *ctrl_buf;
+	NihIoBuffer    *ctrl_buf = NULL;
 	struct msghdr   msghdr;
 	struct iovec    iov[1];
 	struct cmsghdr *cmsg;
@@ -1611,6 +1611,9 @@ nih_io_get (const void *parent,
 		if (strchr (delim, buf->buf[i]) || (buf->buf[i] == '\0')) {
 			/* Remove the string, and then the delimiter */
 			str = nih_io_buffer_pop (parent, buf, &i);
+			if (! str)
+				return NULL;
+
 			nih_io_buffer_shrink (buf, 1);
 			break;
 		}
@@ -1634,16 +1637,16 @@ finish:
  * the send buffer of @io, or into a new message placed in the send queue.
  * The data will not be sent immediately but whenever possible.
  *
- * Returns: number of bytes written, negative value if insufficient memory.
+ * Returns: zero on success, negative value if insufficient memory.
  **/
-ssize_t
+int
 nih_io_printf (NihIo      *io,
 	       const char *format,
 	       ...)
 {
 	char    *str;
 	va_list  args;
-	ssize_t  len;
+	int      ret;
 
 	nih_assert (io != NULL);
 	nih_assert (format != NULL);
@@ -1655,10 +1658,10 @@ nih_io_printf (NihIo      *io,
 	if (! str)
 		return -1;
 
-	len = nih_io_write (io, str, strlen (str));
+	ret = nih_io_write (io, str, strlen (str));
 	nih_free (str);
 
-	return len;
+	return ret;
 }
 
 

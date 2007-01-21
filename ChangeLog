@@ -1,3 +1,69 @@
+2007-01-21  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/test.h (TEST_ALLOC_FAIL): Macro that loops over a block of code
+	as many times as malloc is called within it, causing each malloc in
+	turn to be failed so we can increase code coverage.
+	(nih_test_allocator): Support function for the above; allows dumping
+	of malloc calls.
+	* nih/tests/test_child.c (test_add_watch): Use TEST_ALLOC_FAIL
+	and call nih_child_poll() first to not debug the init function
+	(test_poll): Remove race conditions by making sure the signal
+	has reached the child using waitid().  Test the "child we don't
+	know about has died" branch, along with waitid returning 0 with no
+	pid (needs a child process).
+	* nih/tests/test_command.c (test_parser, test_help): Use
+	TEST_ALLOC_FAIL
+	* nih/tests/test_config.c (test_next_arg, test_parse_args) 
+	(test_parse_command, test_parse_block): Use TEST_ALLOC_FAIL
+	* nih/tests/test_error.c (test_raise, test_raise_printf) 
+	(test_push_context, test_return_error): Use TEST_ALLOC_FAIL, to
+	make sure allocations are retried.
+	(test_pop_context): Split out from test_push_context.
+	* nih/tests/test_hash.c (test_new): Use TEST_ALLOC_FAIL
+	* nih/tests/test_io.c (test_add_watch, test_buffer_new) 
+	(test_buffer_resize, test_buffer_pop, test_buffer_shrink) 
+	(test_buffer_push, test_message_new, test_message_add_control) 
+	(test_message_recv, test_message_send, test_reopen, test_watcher) 
+	(test_read, test_write, test_get, test_printf): Use TEST_ALLOC_FAIL
+	liberally, make sure every code path involving a malloc gets tested.
+	* nih/tests/test_list.c (test_new): Use TEST_ALLOC_FAIL
+	* nih/tests/test_logging.c (test_log_message): Use TEST_ALLOC_FAIL
+	* nih/tests/test_main.c (test_main_loop_add_func): Use TEST_ALLOC_FAIL
+	(test_package_string): Use TEST_ALLOC_FAIL and also check repeated
+	calls return the same string.
+	(test_version): Use TEST_ALLOC_FAIL to check that allocation can
+	never fail.
+	* nih/tests/test_option.c (test_parser, test_version, test_help):
+	Use TEST_ALLOC_FAIL to make sure we behave
+	* nih/tests/test_signal.c (test_add_handler): Use TEST_ALLOC_FAIL
+	and call nih_signal_poll() first to not debug the init function
+	* nih/tests/test_string.c (test_sprintf, test_vsprintf) 
+	(test_strdup, test_strndup, test_str_split, test_str_wrap) 
+	(test_str_screen_wrap): Use TEST_ALLOC_FAIL
+	(test_str_screen_width): Check that we discard an illegal columns
+	variable.
+	* nih/tests/test_timer.c (test_add_timeout, test_add_periodic) 
+	(test_add_scheduled): Use TEST_ALLOC_FAIL and call nih_timer_poll()
+	first to make sure we don't debug the init function
+	* nih/config.c (nih_config_next_arg, nih_config_parse_args) 
+	(nih_config_parse_command, nih_config_parse_block): Allow us to fail
+	reading a configuration file because we run out of memory; it's not
+	that important.
+	* nih/io.c (nih_io_get): Catch failure to remove the string, and
+	don't remove the delimiter if that happens.
+	(nih_io_printf): Fix doc, this returns zero, not a length.
+	* nih/io.h: Fix prototype of nih_io_printf
+	* nih/logging.c (nih_log_message): Potentially failing message output
+	is crazy; loop until the alloc succeeds.
+	* nih/option.c (nih_option_handle): Free the options and arguments
+	before exiting; not really necessary, but makes valgrind happier.
+	* nih/string.c (nih_strndup): Failed to correctly detect a failed
+	allocation.
+	(nih_str_split): Correct some mistakes with allocations not
+	being checked.
+	* nih/libnih.supp: Add tmpfile.
+	* TODO: Update.
+
 2007-01-11  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/file.h (NihDirWatch): New structure that defines a high-level

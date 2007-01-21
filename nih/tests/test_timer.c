@@ -2,7 +2,7 @@
  *
  * test_timer.c - test suite for nih/timer.c
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,25 +51,31 @@ test_add_timeout (void)
 	 * returned is correctly populated and placed in the timers list.
 	 */
 	TEST_FUNCTION ("nih_timer_add_timeout");
-	t1 = time (NULL);
-	timer = nih_timer_add_timeout (NULL, 10, my_callback, &timer);
-	t2 = time (NULL);
+	nih_timer_poll ();
+	TEST_ALLOC_FAIL {
+		t1 = time (NULL);
+		timer = nih_timer_add_timeout (NULL, 10, my_callback, &timer);
+		t2 = time (NULL);
 
-	TEST_ALLOC_SIZE (timer, sizeof (NihTimer));
-	TEST_LIST_NOT_EMPTY (&timer->entry);
-	TEST_EQ (timer->type, NIH_TIMER_TIMEOUT);
-	TEST_GE (timer->due, t1 + 10);
-	TEST_LE (timer->due, t2 + 10);
-	TEST_EQ (timer->timeout, 10);
-	TEST_EQ_P (timer->callback, my_callback);
-	TEST_EQ_P (timer->data, &timer);
+		if (test_alloc_failed) {
+			TEST_EQ_P (timer, NULL);
+			continue;
+		}
 
+		TEST_ALLOC_SIZE (timer, sizeof (NihTimer));
+		TEST_LIST_NOT_EMPTY (&timer->entry);
+		TEST_EQ (timer->type, NIH_TIMER_TIMEOUT);
+		TEST_GE (timer->due, t1 + 10);
+		TEST_LE (timer->due, t2 + 10);
+		TEST_EQ (timer->timeout, 10);
+		TEST_EQ_P (timer->callback, my_callback);
+		TEST_EQ_P (timer->data, &timer);
 
-	/* Check that the timer is the next one due. */
-	TEST_EQ_P (nih_timer_next_due (), timer);
+		/* Check that the timer is the next one due. */
+		TEST_EQ_P (nih_timer_next_due (), timer);
 
-
-	nih_list_free (&timer->entry);
+		nih_list_free (&timer->entry);
+	}
 }
 
 void
@@ -82,25 +88,31 @@ test_add_periodic (void)
 	 * returned is correctly populated and placed in the timers list.
 	 */
 	TEST_FUNCTION ("nih_timer_add_periodic");
-	t1 = time (NULL);
-	timer = nih_timer_add_periodic (NULL, 25, my_callback, &timer);
-	t2 = time (NULL);
+	nih_timer_poll ();
+	TEST_ALLOC_FAIL {
+		t1 = time (NULL);
+		timer = nih_timer_add_periodic (NULL, 25, my_callback, &timer);
+		t2 = time (NULL);
 
-	TEST_ALLOC_SIZE (timer, sizeof (NihTimer));
-	TEST_LIST_NOT_EMPTY (&timer->entry);
-	TEST_EQ (timer->type, NIH_TIMER_PERIODIC);
-	TEST_GE (timer->due, t1 + 25);
-	TEST_LE (timer->due, t2 + 25);
-	TEST_EQ (timer->timeout, 25);
-	TEST_EQ_P (timer->callback, my_callback);
-	TEST_EQ_P (timer->data, &timer);
+		if (test_alloc_failed) {
+			TEST_EQ_P (timer, NULL);
+			continue;
+		}
 
+		TEST_ALLOC_SIZE (timer, sizeof (NihTimer));
+		TEST_LIST_NOT_EMPTY (&timer->entry);
+		TEST_EQ (timer->type, NIH_TIMER_PERIODIC);
+		TEST_GE (timer->due, t1 + 25);
+		TEST_LE (timer->due, t2 + 25);
+		TEST_EQ (timer->timeout, 25);
+		TEST_EQ_P (timer->callback, my_callback);
+		TEST_EQ_P (timer->data, &timer);
 
-	/* Check that the timer is the next one due. */
-	TEST_EQ_P (nih_timer_next_due (), timer);
+		/* Check that the timer is the next one due. */
+		TEST_EQ_P (nih_timer_next_due (), timer);
 
-
-	nih_list_free (&timer->entry);
+		nih_list_free (&timer->entry);
+	}
 }
 
 void
@@ -115,30 +127,36 @@ test_add_scheduled (void)
 	 * from the structure we gave and placed in the timers list.
 	 */
 	TEST_FUNCTION ("nih_timer_add_scheduled");
+	nih_timer_poll ();
+	TEST_ALLOC_FAIL {
+		memset (&schedule, 0, sizeof (NihTimerSchedule));
 
-	memset (&schedule, 0, sizeof (NihTimerSchedule));
+		t1 = time (NULL);
+		timer = nih_timer_add_scheduled (NULL, &schedule,
+						 my_callback, &timer);
+		t2 = time (NULL);
 
-	t1 = time (NULL);
-	timer = nih_timer_add_scheduled (NULL, &schedule, my_callback, &timer);
-	t2 = time (NULL);
+		if (test_alloc_failed) {
+			TEST_EQ_P (timer, NULL);
+			continue;
+		}
 
-	TEST_ALLOC_SIZE (timer, sizeof (NihTimer));
-	TEST_LIST_NOT_EMPTY (&timer->entry);
-	TEST_EQ (timer->type, NIH_TIMER_SCHEDULED);
-	TEST_EQ (timer->schedule.minutes, schedule.minutes);
-	TEST_EQ (timer->schedule.hours, schedule.hours);
-	TEST_EQ (timer->schedule.mdays, schedule.mdays);
-	TEST_EQ (timer->schedule.months, schedule.months);
-	TEST_EQ (timer->schedule.wdays, schedule.wdays);
-	TEST_EQ_P (timer->callback, my_callback);
-	TEST_EQ_P (timer->data, &timer);
+		TEST_ALLOC_SIZE (timer, sizeof (NihTimer));
+		TEST_LIST_NOT_EMPTY (&timer->entry);
+		TEST_EQ (timer->type, NIH_TIMER_SCHEDULED);
+		TEST_EQ (timer->schedule.minutes, schedule.minutes);
+		TEST_EQ (timer->schedule.hours, schedule.hours);
+		TEST_EQ (timer->schedule.mdays, schedule.mdays);
+		TEST_EQ (timer->schedule.months, schedule.months);
+		TEST_EQ (timer->schedule.wdays, schedule.wdays);
+		TEST_EQ_P (timer->callback, my_callback);
+		TEST_EQ_P (timer->data, &timer);
 
+		/* Check that the timer is the next one due. */
+		TEST_EQ_P (nih_timer_next_due (), timer);
 
-	/* Check that the timer is the next one due. */
-	TEST_EQ_P (nih_timer_next_due (), timer);
-
-
-	nih_list_free (&timer->entry);
+		nih_list_free (&timer->entry);
+	}
 }
 
 

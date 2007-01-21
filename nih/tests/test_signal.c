@@ -2,7 +2,7 @@
  *
  * test_signal.c - test suite for nih/signal.c
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -145,15 +145,24 @@ test_add_handler (void)
 	 * the callbacks list.
 	 */
 	TEST_FUNCTION ("nih_signal_add_handler");
-	signal = nih_signal_add_handler (NULL, SIGUSR1, my_handler, &signal);
+	nih_signal_poll ();
+	TEST_ALLOC_FAIL {
+		signal = nih_signal_add_handler (NULL, SIGUSR1,
+						 my_handler, &signal);
 
-	TEST_ALLOC_SIZE (signal, sizeof (NihSignal));
-	TEST_LIST_NOT_EMPTY (&signal->entry);
-	TEST_EQ (signal->signum, SIGUSR1);
-	TEST_EQ_P (signal->handler, my_handler);
-	TEST_EQ_P (signal->data, &signal);
+		if (test_alloc_failed) {
+			TEST_EQ_P (signal, NULL);
+			continue;
+		}
 
-	nih_list_free (&signal->entry);
+		TEST_ALLOC_SIZE (signal, sizeof (NihSignal));
+		TEST_LIST_NOT_EMPTY (&signal->entry);
+		TEST_EQ (signal->signum, SIGUSR1);
+		TEST_EQ_P (signal->handler, my_handler);
+		TEST_EQ_P (signal->data, &signal);
+
+		nih_list_free (&signal->entry);
+	}
 }
 
 void

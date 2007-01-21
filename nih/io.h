@@ -317,7 +317,7 @@ char *        nih_io_get                 (const void *parent, NihIo *io,
 					  const char *delim)
 	__attribute__ ((warn_unused_result, malloc));
 
-ssize_t       nih_io_printf              (NihIo *io, const char *format, ...)
+int           nih_io_printf              (NihIo *io, const char *format, ...)
 	__attribute__ ((format (printf, 2, 3)));
 
 

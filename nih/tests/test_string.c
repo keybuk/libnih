@@ -2,7 +2,7 @@
  *
  * test_string.c - test suite for nih/string.c
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,21 +47,41 @@ test_sprintf (void)
 	 * it should be allocated with nih_alloc and be the right length.
 	 */
 	TEST_FEATURE ("with no parent");
-	str1 = nih_sprintf (NULL, "this %s a test %d", "is", 54321);
+	TEST_ALLOC_FAIL {
+		str1 = nih_sprintf (NULL, "this %s a test %d", "is", 54321);
 
-	TEST_ALLOC_PARENT (str1, NULL);
-	TEST_ALLOC_SIZE (str1, strlen (str1) + 1);
-	TEST_EQ_STR (str1, "this is a test 54321");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str1, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_PARENT (str1, NULL);
+		TEST_ALLOC_SIZE (str1, strlen (str1) + 1);
+		TEST_EQ_STR (str1, "this is a test 54321");
+
+		nih_free (str1);
+	}
 
 
 	/* Check that we can create a string with a parent. */
 	TEST_FEATURE ("with a parent");
-	str2 = nih_sprintf (str1, "another %d test %s", 12345, "string");
+	str1 = nih_sprintf (NULL, "this %s a test %d", "is", 54321);
 
-	TEST_ALLOC_PARENT (str2, str1);
-	TEST_ALLOC_SIZE (str2, strlen (str2) + 1);
-	TEST_EQ_STR (str2, "another 12345 test string");
+	TEST_ALLOC_FAIL {
+		str2 = nih_sprintf (str1, "another %d test %s",
+				    12345, "string");
 
+		if (test_alloc_failed) {
+			TEST_EQ_P (str2, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_PARENT (str2, str1);
+		TEST_ALLOC_SIZE (str2, strlen (str2) + 1);
+		TEST_EQ_STR (str2, "another 12345 test string");
+
+		nih_free (str2);
+	}
 
 	nih_free (str1);
 }
@@ -93,21 +113,41 @@ test_vsprintf (void)
 	 * first with no parent.
 	 */
 	TEST_FEATURE ("with no parent");
-	str1 = my_vsprintf (NULL, "this %s a test %d", "is", 54321);
+	TEST_ALLOC_FAIL {
+		str1 = my_vsprintf (NULL, "this %s a test %d", "is", 54321);
 
-	TEST_ALLOC_PARENT (str1, NULL);
-	TEST_ALLOC_SIZE (str1, strlen (str1) + 1);
-	TEST_EQ_STR (str1, "this is a test 54321");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str1, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_PARENT (str1, NULL);
+		TEST_ALLOC_SIZE (str1, strlen (str1) + 1);
+		TEST_EQ_STR (str1, "this is a test 54321");
+
+		nih_free (str1);
+	}
 
 
 	/* And then with a parent. */
 	TEST_FEATURE ("with a parent");
-	str2 = my_vsprintf (str1, "another %d test %s", 12345, "string");
+	str1 = my_vsprintf (NULL, "this %s a test %d", "is", 54321);
 
-	TEST_ALLOC_PARENT (str2, str1);
-	TEST_ALLOC_SIZE (str2, strlen (str2) + 1);
-	TEST_EQ_STR (str2, "another 12345 test string");
+	TEST_ALLOC_FAIL {
+		str2 = my_vsprintf (str1, "another %d test %s",
+				    12345, "string");
 
+		if (test_alloc_failed) {
+			TEST_EQ_P (str2, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_PARENT (str2, str1);
+		TEST_ALLOC_SIZE (str2, strlen (str2) + 1);
+		TEST_EQ_STR (str2, "another 12345 test string");
+
+		nih_free (str2);
+	}
 
 	nih_free (str1);
 }
@@ -123,21 +163,40 @@ test_strdup (void)
 	 * allocated with nih_alloc and no parent.
 	 */
 	TEST_FEATURE ("with no parent");
-	str1 = nih_strdup (NULL, "this is a test");
+	TEST_ALLOC_FAIL {
+		str1 = nih_strdup (NULL, "this is a test");
 
-	TEST_ALLOC_PARENT (str1, NULL);
-	TEST_ALLOC_SIZE (str1, strlen (str1) + 1);
-	TEST_EQ_STR (str1, "this is a test");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str1, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_PARENT (str1, NULL);
+		TEST_ALLOC_SIZE (str1, strlen (str1) + 1);
+		TEST_EQ_STR (str1, "this is a test");
+
+		nih_free (str1);
+	}
 
 
 	/* And check we can allocate with a parent. */
 	TEST_FEATURE ("with a parent");
-	str2 = nih_strdup (str1, "another test string");
+	str1 = nih_strdup (NULL, "this is a test");
 
-	TEST_ALLOC_PARENT (str2, str1);
-	TEST_ALLOC_SIZE (str2, strlen (str2) + 1);
-	TEST_EQ_STR (str2, "another test string");
+	TEST_ALLOC_FAIL {
+		str2 = nih_strdup (str1, "another test string");
 
+		if (test_alloc_failed) {
+			TEST_EQ_P (str2, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_PARENT (str2, str1);
+		TEST_ALLOC_SIZE (str2, strlen (str2) + 1);
+		TEST_EQ_STR (str2, "another test string");
+
+		nih_free (str2);
+	}
 
 	nih_free (str1);
 }
@@ -154,20 +213,40 @@ test_strndup (void)
 	 * new string should still include a NULL byte.
 	 */
 	TEST_FEATURE ("with no parent");
-	str1 = nih_strndup (NULL, "this is a test", 7);
+	TEST_ALLOC_FAIL {
+		str1 = nih_strndup (NULL, "this is a test", 7);
 
-	TEST_ALLOC_PARENT (str1, NULL);
-	TEST_ALLOC_SIZE (str1, 8);
-	TEST_EQ_STR (str1, "this is");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str1, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_PARENT (str1, NULL);
+		TEST_ALLOC_SIZE (str1, 8);
+		TEST_EQ_STR (str1, "this is");
+
+		nih_free (str1);
+	}
 
 
 	/* Check that it works with a parent. */
 	TEST_FEATURE ("with a parent");
-	str2 = nih_strndup (str1, "another test string", 12);
+	str1 = nih_strndup (NULL, "this is a test", 7);
 
-	TEST_ALLOC_PARENT (str2, str1);
-	TEST_ALLOC_SIZE (str2, 13);
-	TEST_EQ_STR (str2, "another test");
+	TEST_ALLOC_FAIL {
+		str2 = nih_strndup (str1, "another test string", 12);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str2, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_PARENT (str2, str1);
+		TEST_ALLOC_SIZE (str2, 13);
+		TEST_EQ_STR (str2, "another test");
+
+		nih_free (str2);
+	}
 
 	nih_free (str1);
 
@@ -177,12 +256,19 @@ test_strndup (void)
 	 * with the complete string copied in.
 	 */
 	TEST_FEATURE ("with larger length than string");
-	str1 = nih_strndup (NULL, "small string", 20);
+	TEST_ALLOC_FAIL {
+		str1 = nih_strndup (NULL, "small string", 20);
 
-	TEST_ALLOC_SIZE (str1, 21);
-	TEST_EQ_STR (str1, "small string");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str1, NULL);
+			continue;
+		}
 
-	nih_free (str1);
+		TEST_ALLOC_SIZE (str1, 21);
+		TEST_EQ_STR (str1, "small string");
+
+		nih_free (str1);
+	}
 }
 
 void
@@ -199,51 +285,72 @@ test_str_split (void)
 	 * their parent.
 	 */
 	TEST_FEATURE ("with no repeat");
-	array = nih_str_split (NULL, "this is  a\ttest", " \t", FALSE);
+	TEST_ALLOC_FAIL {
+		array = nih_str_split (NULL, "this is  a\ttest", " \t", FALSE);
 
-	TEST_ALLOC_SIZE (array, sizeof (char *) * 6);
-	for (i = 0; i < 5; i++)
-		TEST_ALLOC_PARENT (array[i], array);
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
 
-	TEST_EQ_STR (array[0], "this");
-	TEST_EQ_STR (array[1], "is");
-	TEST_EQ_STR (array[2], "");
-	TEST_EQ_STR (array[3], "a");
-	TEST_EQ_STR (array[4], "test");
-	TEST_EQ_P (array[5], NULL);
+		TEST_ALLOC_SIZE (array, sizeof (char *) * 6);
+		for (i = 0; i < 5; i++)
+			TEST_ALLOC_PARENT (array[i], array);
 
-	nih_free (array);
+		TEST_EQ_STR (array[0], "this");
+		TEST_EQ_STR (array[1], "is");
+		TEST_EQ_STR (array[2], "");
+		TEST_EQ_STR (array[3], "a");
+		TEST_EQ_STR (array[4], "test");
+		TEST_EQ_P (array[5], NULL);
+
+		nih_free (array);
+	}
 
 
 	/* Check that we can split a string treating multiple consecutive
 	 * matching characters as a single separator to be skipped.
 	 */
 	TEST_FEATURE ("with repeat");
-	array = nih_str_split (NULL, "this is  a\ttest", " \t", TRUE);
+	TEST_ALLOC_FAIL {
+		array = nih_str_split (NULL, "this is  a\ttest", " \t", TRUE);
 
-	TEST_ALLOC_SIZE (array, sizeof (char *) * 5);
-	for (i = 0; i < 4; i++)
-		TEST_ALLOC_PARENT (array[i], array);
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
 
-	TEST_EQ_STR (array[0], "this");
-	TEST_EQ_STR (array[1], "is");
-	TEST_EQ_STR (array[2], "a");
-	TEST_EQ_STR (array[3], "test");
-	TEST_EQ_P (array[4], NULL);
+		TEST_ALLOC_SIZE (array, sizeof (char *) * 5);
+		for (i = 0; i < 4; i++)
+			TEST_ALLOC_PARENT (array[i], array);
 
-	nih_free (array);
+		TEST_EQ_STR (array[0], "this");
+		TEST_EQ_STR (array[1], "is");
+		TEST_EQ_STR (array[2], "a");
+		TEST_EQ_STR (array[3], "test");
+		TEST_EQ_P (array[4], NULL);
+
+		nih_free (array);
+	}
 
 
 	/* Check that we can give an empty string, and end up with a
 	 * one-element array that only contains a NULL pointer.
 	 */
 	TEST_FEATURE ("with empty string");
-	array = nih_str_split (NULL, "", " ", FALSE);
+	TEST_ALLOC_FAIL {
+		array = nih_str_split (NULL, "", " ", FALSE);
 
-	TEST_ALLOC_SIZE (array, sizeof (char *));
-	TEST_EQ_P (array[0], NULL);
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
 
-	nih_free (array);
+		TEST_ALLOC_SIZE (array, sizeof (char *));
+		TEST_EQ_P (array[0], NULL);
+
+		nih_free (array);
+	}
 }
 
 void
@@ -278,75 +385,117 @@ test_str_wrap (void)
 	 * unaltered.
 	 */
 	TEST_FEATURE ("with no wrapping");
-	str = nih_str_wrap (NULL, "this is a test", 80, 0, 0);
+	TEST_ALLOC_FAIL {
+		str = nih_str_wrap (NULL, "this is a test", 80, 0, 0);
 
-	TEST_EQ_STR (str, "this is a test");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
 
-	nih_free (str);
+		TEST_EQ_STR (str, "this is a test");
+
+		nih_free (str);
+	}
 
 
 	/* Check that a string with embedded new lines is returned with
 	 * the line breaks preserved.
 	 */
 	TEST_FEATURE ("with embedded newlines");
-	str = nih_str_wrap (NULL, "this is\na test", 80, 0, 0);
+	TEST_ALLOC_FAIL {
+		str = nih_str_wrap (NULL, "this is\na test", 80, 0, 0);
 
-	TEST_EQ_STR (str, "this is\na test");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
 
-	nih_free (str);
+		TEST_EQ_STR (str, "this is\na test");
+
+		nih_free (str);
+	}
 
 
 	/* Check that a smaller string is indented if one is given. */
 	TEST_FEATURE ("with no wrapping and indent");
-	str = nih_str_wrap (NULL, "this is a test", 80, 2, 0);
+	TEST_ALLOC_FAIL {
+		str = nih_str_wrap (NULL, "this is a test", 80, 2, 0);
 
-	TEST_EQ_STR (str, "  this is a test");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
 
-	nih_free (str);
+		TEST_EQ_STR (str, "  this is a test");
+
+		nih_free (str);
+	}
 
 
 	/* Check that a string with embedded newlines gets an indent on
 	 * each new line.
 	 */
 	TEST_FEATURE ("with embedded newlines and indent");
-	str = nih_str_wrap (NULL, "this is\na test", 80, 4, 2);
+	TEST_ALLOC_FAIL {
+		str = nih_str_wrap (NULL, "this is\na test", 80, 4, 2);
 
-	TEST_EQ_STR (str, "    this is\n  a test");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
 
-	nih_free (str);
+		TEST_EQ_STR (str, "    this is\n  a test");
+
+		nih_free (str);
+	}
 
 
 	/* Check that a long string is split at the wrap point. */
 	TEST_FEATURE ("with simple wrapping");
-	str = nih_str_wrap (NULL, "this is an example of a string that will "
-			    "need wrapping to fit the line length we set",
-			    20, 0, 0);
+	TEST_ALLOC_FAIL {
+		str = nih_str_wrap (NULL, "this is an example of a string "
+				    "that will need wrapping to fit the line "
+				    "length we set", 20, 0, 0);
 
-	TEST_EQ_STR (str, ("this is an example\n"
-			   "of a string that\n"
-			   "will need wrapping\n"
-			   "to fit the line\n"
-			   "length we set"));
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
 
-	nih_free (str);
+		TEST_EQ_STR (str, ("this is an example\n"
+				   "of a string that\n"
+				   "will need wrapping\n"
+				   "to fit the line\n"
+				   "length we set"));
+
+		nih_free (str);
+	}
 
 
 	/* Check that a long string is split at the wrap point, and each
 	 * new line indented, with the first line given a different indent.
 	 */
 	TEST_FEATURE ("with wrapping and indents");
-	str = nih_str_wrap (NULL, "this is an example of a string that will "
-			    "need wrapping to fit the line length we set",
-			    20, 4, 2);
+	TEST_ALLOC_FAIL {
+		str = nih_str_wrap (NULL, "this is an example of a string "
+				    "that will need wrapping to fit the line "
+				    "length we set", 20, 4, 2);
 
-	TEST_EQ_STR (str, ("    this is an\n"
-			   "  example of a\n"
-			   "  string that will\n"
-			   "  need wrapping to\n"
-			   "  fit the line\n"
-			   "  length we set"));
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
 
-	nih_free (str);
+		TEST_EQ_STR (str, ("    this is an\n"
+				   "  example of a\n"
+				   "  string that will\n"
+				   "  need wrapping to\n"
+				   "  fit the line\n"
+				   "  length we set"));
+
+		nih_free (str);
+	}
 
 
 	/* Check that a long string that would be split inside a long word
@@ -354,34 +503,50 @@ test_str_wrap (void)
 	 * is still too long.
 	 */
 	TEST_FEATURE ("with split inside word");
-	str = nih_str_wrap (NULL, ("this string is supercalifragilisticexpi"
-				   "alidocious even though the sound of it "
-				   "is something quite atrocious"), 30, 0, 0);
+	TEST_ALLOC_FAIL {
+		str = nih_str_wrap (NULL, ("this string is supercalifragilis"
+					   "ticexpialidocious even though the "
+					   "sound of it is something quite "
+					   "atrocious"), 30, 0, 0);
 
-	TEST_EQ_STR (str, ("this string is\n"
-			   "supercalifragilisticexpialidoc\n"
-			   "ious even though the sound of\n"
-			   "it is something quite\n"
-			   "atrocious"));
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
 
-	nih_free (str);
+		TEST_EQ_STR (str, ("this string is\n"
+				   "supercalifragilisticexpialidoc\n"
+				   "ious even though the sound of\n"
+				   "it is something quite\n"
+				   "atrocious"));
+
+		nih_free (str);
+	}
 
 
 	/* Check that an indent is still applied if the split occurs inside
 	 * a word.
 	 */
 	TEST_FEATURE ("with split inside word and indents");
-	str = nih_str_wrap (NULL, ("this string is supercalifragilisticexpi"
-				   "alidocious even though the sound of it "
-				   "is something quite atrocious"), 30, 4, 2);
+	TEST_ALLOC_FAIL {
+		str = nih_str_wrap (NULL, ("this string is supercalifragilis"
+					   "ticexpialidocious even though the "
+					   "sound of it is something quite "
+					   "atrocious"), 30, 4, 2);
 
-	TEST_EQ_STR (str, ("    this string is\n"
-			   "  supercalifragilisticexpialid\n"
-			   "  ocious even though the sound\n"
-			   "  of it is something quite\n"
-			   "  atrocious"));
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
 
-	nih_free (str);
+		TEST_EQ_STR (str, ("    this string is\n"
+				   "  supercalifragilisticexpialid\n"
+				   "  ocious even though the sound\n"
+				   "  of it is something quite\n"
+				   "  atrocious"));
+
+		nih_free (str);
+	}
 }
 
 void
@@ -423,6 +588,16 @@ test_str_screen_width (void)
 
 	TEST_EQ (len, 30);
 
+
+	/* Check that we ignore a COLUMNS variable that's not an integer */
+	TEST_FEATURE ("with illegal COLUMNS variable");
+	putenv ("COLUMNS=30pt");
+	TEST_DIVERT_STDOUT_FD (pts) {
+		len = nih_str_screen_width ();
+	}
+
+	TEST_EQ (len, 40);
+
 	unsetenv ("COLUMNS");
 	close (pts);
 	close (pty);
@@ -462,19 +637,27 @@ test_str_screen_wrap (void)
 	 * when it is available.
 	 */
 	TEST_FEATURE ("with screen width");
-	TEST_DIVERT_STDOUT_FD (pts) {
-		str = nih_str_screen_wrap (NULL, ("this is a string that "
-						  "should need wrapping at "
-						  "any different screen width "
-						  "that we choose to set"),
-					   0, 0);
+	TEST_ALLOC_FAIL {
+		TEST_DIVERT_STDOUT_FD (pts) {
+			str = nih_str_screen_wrap (
+				NULL, ("this is a string that "
+				       "should need wrapping at "
+				       "any different screen width "
+				       "that we choose to set"),
+				0, 0);
+		}
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("this is a string that should need\n"
+				   "wrapping at any different screen width\n"
+				   "that we choose to set"));
+
+		nih_free (str);
 	}
-
-	TEST_EQ_STR (str, ("this is a string that should need\n"
-			   "wrapping at any different screen width\n"
-			   "that we choose to set"));
-
-	nih_free (str);
 
 
 	/* Check that we wrap at the number specified in the COLUMNS
@@ -482,20 +665,28 @@ test_str_screen_wrap (void)
 	 */
 	TEST_FEATURE ("with COLUMNS variable");
 	putenv ("COLUMNS=30");
-	TEST_DIVERT_STDOUT_FD (pts) {
-		str = nih_str_screen_wrap (NULL, ("this is a string that "
-						  "should need wrapping at "
-						  "any different screen width "
-						  "that we choose to set"),
-					   0, 0);
+	TEST_ALLOC_FAIL {
+		TEST_DIVERT_STDOUT_FD (pts) {
+			str = nih_str_screen_wrap (
+				NULL, ("this is a string that "
+				       "should need wrapping at "
+				       "any different screen width "
+				       "that we choose to set"),
+				0, 0);
+		}
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("this is a string that should\n"
+				   "need wrapping at any\n"
+				   "different screen width that\n"
+				   "we choose to set"));
+
+		nih_free (str);
 	}
-
-	TEST_EQ_STR (str, ("this is a string that should\n"
-			   "need wrapping at any\n"
-			   "different screen width that\n"
-			   "we choose to set"));
-
-	nih_free (str);
 
 	unsetenv ("COLUMNS");
 	close (pts);
@@ -507,19 +698,29 @@ test_str_screen_wrap (void)
 	 */
 	TEST_FEATURE ("with fallback to 80 columns");
 	pts = open ("/dev/null", O_RDWR | O_NOCTTY);
-	TEST_DIVERT_STDOUT_FD (pts) {
-		str = nih_str_screen_wrap (NULL, ("this is a string that "
-						  "should need wrapping at "
-						  "any different screen width "
-						  "that we choose to set"),
-					   0, 0);
+
+	TEST_ALLOC_FAIL {
+		TEST_DIVERT_STDOUT_FD (pts) {
+			str = nih_str_screen_wrap (
+				NULL, ("this is a string that "
+				       "should need wrapping at "
+				       "any different screen width "
+				       "that we choose to set"),
+				0, 0);
+		}
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("this is a string that should need "
+				   "wrapping at any different screen width "
+				   "that\n"
+				   "we choose to set"));
+
+		nih_free (str);
 	}
-
-	TEST_EQ_STR (str, ("this is a string that should need wrapping at "
-			   "any different screen width that\n"
-			   "we choose to set"));
-
-	nih_free (str);
 
 	close (pts);
 }

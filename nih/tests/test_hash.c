@@ -2,7 +2,7 @@
  *
  * test_hash.c - test suite for nih/hash.c
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -66,51 +66,72 @@ test_new (void)
 	 * bins should be allocated as a child of the hash table.
 	 */
 	TEST_FEATURE ("with zero size");
-	hash = nih_hash_new (NULL, 0, key_function);
+	TEST_ALLOC_FAIL {
+		hash = nih_hash_new (NULL, 0, key_function);
 
-	TEST_ALLOC_SIZE (hash, sizeof(NihHash));
-	TEST_EQ_P (hash->key_function, key_function);
+		if (test_alloc_failed) {
+			TEST_EQ_P (hash, NULL);
+			continue;
+		}
 
-	TEST_EQ (hash->size, 17);
-	TEST_NE_P (hash->bins, NULL);
-	TEST_ALLOC_PARENT (hash->bins, hash);
+		TEST_ALLOC_SIZE (hash, sizeof(NihHash));
+		TEST_EQ_P (hash->key_function, key_function);
 
-	for (i = 0; i < hash->size; i++)
-		TEST_LIST_EMPTY (&hash->bins[i]);
+		TEST_EQ (hash->size, 17);
+		TEST_NE_P (hash->bins, NULL);
+		TEST_ALLOC_PARENT (hash->bins, hash);
 
-	nih_free (hash);
+		for (i = 0; i < hash->size; i++)
+			TEST_LIST_EMPTY (&hash->bins[i]);
+
+		nih_free (hash);
+	}
 
 
 	/* Check again with a medium size, which should pick a medium prime
 	 * number.
 	 */
 	TEST_FEATURE ("with medium size");
-	hash = nih_hash_new (NULL, 650, key_function);
+	TEST_ALLOC_FAIL {
+		hash = nih_hash_new (NULL, 650, key_function);
 
-	TEST_EQ (hash->size, 331);
-	TEST_NE_P (hash->bins, NULL);
-	TEST_ALLOC_PARENT (hash->bins, hash);
+		if (test_alloc_failed) {
+			TEST_EQ_P (hash, NULL);
+			continue;
+		}
 
-	for (i = 0; i < hash->size; i++)
-		TEST_LIST_EMPTY (&hash->bins[i]);
+		TEST_EQ (hash->size, 331);
+		TEST_NE_P (hash->bins, NULL);
+		TEST_ALLOC_PARENT (hash->bins, hash);
 
-	nih_free (hash);
+		for (i = 0; i < hash->size; i++)
+			TEST_LIST_EMPTY (&hash->bins[i]);
+
+		nih_free (hash);
+	}
 
 
 	/* Check with a much larger size, which should pick the largest prime
 	 * that we know of.
 	 */
 	TEST_FEATURE ("with large size");
-	hash = nih_hash_new (NULL, 40000000, key_function);
+	TEST_ALLOC_FAIL {
+		hash = nih_hash_new (NULL, 40000000, key_function);
 
-	TEST_EQ (hash->size, 10250323);
-	TEST_NE_P (hash->bins, NULL);
-	TEST_ALLOC_PARENT (hash->bins, hash);
+		if (test_alloc_failed) {
+			TEST_EQ_P (hash, NULL);
+			continue;
+		}
 
-	for (i = 0; i < hash->size; i++)
-		TEST_LIST_EMPTY (&hash->bins[i]);
+		TEST_EQ (hash->size, 10250323);
+		TEST_NE_P (hash->bins, NULL);
+		TEST_ALLOC_PARENT (hash->bins, hash);
 
-	nih_free (hash);
+		for (i = 0; i < hash->size; i++)
+			TEST_LIST_EMPTY (&hash->bins[i]);
+
+		nih_free (hash);
+	}
 }
 
 void

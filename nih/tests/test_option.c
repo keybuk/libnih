@@ -50,7 +50,7 @@ my_setter (NihOption *option, const char *arg)
 {
 	was_called++;
 
-	last_option = nih_new (NULL, NihOption);
+	last_option = malloc (sizeof (NihOption));
 	memcpy (last_option, option, sizeof (NihOption));
 
 	last_arg = arg;
@@ -108,132 +108,144 @@ test_parser (void)
 	 * NULL in the array.
 	 */
 	TEST_FEATURE ("with no arguments");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc] = NULL;
 
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_P (args[0], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_P (args[0], NULL);
 
-	nih_free (args);
+		nih_free (args);
+	}
 
 
 	/* Check that all non-option arguments are passed through into the
 	 * returned NULL-terminated array.
 	 */
 	TEST_FEATURE ("with all non-option arguments");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "foo";
-	argv[argc++] = "bar";
-	argv[argc++] = "baz";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "foo";
+		argv[argc++] = "bar";
+		argv[argc++] = "baz";
+		argv[argc] = NULL;
 
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_STR (args[0], "foo");
-	TEST_EQ_STR (args[1], "bar");
-	TEST_EQ_STR (args[2], "baz");
-	TEST_EQ_P (args[3], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_STR (args[0], "foo");
+		TEST_EQ_STR (args[1], "bar");
+		TEST_EQ_STR (args[2], "baz");
+		TEST_EQ_P (args[3], NULL);
 
-	nih_free (args);
+		nih_free (args);
+	}
 
 
 	/* Check that a single short option is taken from the arguments and
 	 * the appropriate variable set.
 	 */
 	TEST_FEATURE ("with single short option");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "-d";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "-d";
+		argv[argc] = NULL;
 
-	daemonise = 0;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		daemonise = 0;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_P (args[0], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_P (args[0], NULL);
 
-	TEST_TRUE (daemonise);
+		TEST_TRUE (daemonise);
 
-	nih_free (args);
+		nih_free (args);
+	}
 
 
 	/* Check that all short options are taken from the arguments and
 	 * all of the appropriate variables set.
 	 */
 	TEST_FEATURE ("with multiple short options");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "-d";
-	argv[argc++] = "-R";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "-d";
+		argv[argc++] = "-R";
+		argv[argc] = NULL;
 
-	daemonise = 0;
-	recursive = 0;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		daemonise = 0;
+		recursive = 0;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_P (args[0], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_P (args[0], NULL);
 
-	TEST_TRUE (daemonise);
-	TEST_TRUE (recursive);
+		TEST_TRUE (daemonise);
+		TEST_TRUE (recursive);
 
-	nih_free (args);
+		nih_free (args);
+	}
 
 
 	/* Check that multiple short options can be combined into a single
 	 * argument, and that they're all handled.
 	 */
 	TEST_FEATURE ("with combined short options");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "-dR";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "-dR";
+		argv[argc] = NULL;
 
-	daemonise = 0;
-	recursive = 0;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		daemonise = 0;
+		recursive = 0;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_P (args[0], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_P (args[0], NULL);
 
-	TEST_TRUE (daemonise);
-	TEST_TRUE (recursive);
+		TEST_TRUE (daemonise);
+		TEST_TRUE (recursive);
 
-	nih_free (args);
+		nih_free (args);
+	}
 
 
 	/* Check that short options and ordinary arguments can be intermixed,
 	 * the arguments are returned in the array and the option values set.
 	 */
 	TEST_FEATURE ("with intermixed short options and arguments");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "foo";
-	argv[argc++] = "-d";
-	argv[argc++] = "bar";
-	argv[argc++] = "-R";
-	argv[argc++] = "baz";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "foo";
+		argv[argc++] = "-d";
+		argv[argc++] = "bar";
+		argv[argc++] = "-R";
+		argv[argc++] = "baz";
+		argv[argc] = NULL;
 
-	daemonise = 0;
-	recursive = 0;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		daemonise = 0;
+		recursive = 0;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_STR (args[0], "foo");
-	TEST_EQ_STR (args[1], "bar");
-	TEST_EQ_STR (args[2], "baz");
-	TEST_EQ_P (args[3], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_STR (args[0], "foo");
+		TEST_EQ_STR (args[1], "bar");
+		TEST_EQ_STR (args[2], "baz");
+		TEST_EQ_P (args[3], NULL);
 
-	TEST_TRUE (daemonise);
-	TEST_TRUE (recursive);
+		TEST_TRUE (daemonise);
+		TEST_TRUE (recursive);
 
-	nih_free (args);
+		nih_free (args);
+	}
 
 
 	/* Check that the first non-option argument can terminate the
@@ -242,31 +254,33 @@ test_parser (void)
 	 * set.
 	 */
 	TEST_FEATURE ("with command-mode short options and arguments");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "foo";
-	argv[argc++] = "-d";
-	argv[argc++] = "bar";
-	argv[argc++] = "-R";
-	argv[argc++] = "baz";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "foo";
+		argv[argc++] = "-d";
+		argv[argc++] = "bar";
+		argv[argc++] = "-R";
+		argv[argc++] = "baz";
+		argv[argc] = NULL;
 
-	daemonise = 0;
-	recursive = 0;
-	args = nih_option_parser (NULL, argc, argv, options, TRUE);
+		daemonise = 0;
+		recursive = 0;
+		args = nih_option_parser (NULL, argc, argv, options, TRUE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_STR (args[0], "foo");
-	TEST_EQ_STR (args[1], "-d");
-	TEST_EQ_STR (args[2], "bar");
-	TEST_EQ_STR (args[3], "-R");
-	TEST_EQ_STR (args[4], "baz");
-	TEST_EQ_P (args[5], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_STR (args[0], "foo");
+		TEST_EQ_STR (args[1], "-d");
+		TEST_EQ_STR (args[2], "bar");
+		TEST_EQ_STR (args[3], "-R");
+		TEST_EQ_STR (args[4], "baz");
+		TEST_EQ_P (args[5], NULL);
 
-	TEST_FALSE (daemonise);
-	TEST_FALSE (recursive);
+		TEST_FALSE (daemonise);
+		TEST_FALSE (recursive);
 
-	nih_free (args);
+		nih_free (args);
+	}
 
 
 	/* Check that option processing can be terminated by a double-dash,
@@ -274,31 +288,33 @@ test_parser (void)
 	 * values NOT set.
 	 */
 	TEST_FEATURE ("with short options and terminator");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "foo";
-	argv[argc++] = "-d";
-	argv[argc++] = "--";
-	argv[argc++] = "bar";
-	argv[argc++] = "-R";
-	argv[argc++] = "baz";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "foo";
+		argv[argc++] = "-d";
+		argv[argc++] = "--";
+		argv[argc++] = "bar";
+		argv[argc++] = "-R";
+		argv[argc++] = "baz";
+		argv[argc] = NULL;
 
-	daemonise = 0;
-	recursive = 0;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		daemonise = 0;
+		recursive = 0;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_STR (args[0], "foo");
-	TEST_EQ_STR (args[1], "bar");
-	TEST_EQ_STR (args[2], "-R");
-	TEST_EQ_STR (args[3], "baz");
-	TEST_EQ_P (args[4], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_STR (args[0], "foo");
+		TEST_EQ_STR (args[1], "bar");
+		TEST_EQ_STR (args[2], "-R");
+		TEST_EQ_STR (args[3], "baz");
+		TEST_EQ_P (args[4], NULL);
 
-	TEST_TRUE (daemonise);
-	TEST_FALSE (recursive);
+		TEST_TRUE (daemonise);
+		TEST_FALSE (recursive);
 
-	nih_free (args);
+		nih_free (args);
+	}
 
 
 	/* Check that a short option can eat the next non-option argument
@@ -306,48 +322,52 @@ test_parser (void)
 	 * returned in the array.
 	 */
 	TEST_FEATURE ("with short argument option");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "-f";
-	argv[argc++] = "foo";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "-f";
+		argv[argc++] = "foo";
+		argv[argc] = NULL;
 
-	filename = NULL;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		filename = NULL;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_P (args[0], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_P (args[0], NULL);
 
-	TEST_EQ_STR (filename, "foo");
+		TEST_EQ_STR (filename, "foo");
 
-	nih_free (filename);
-	nih_free (args);
+		nih_free (filename);
+		nih_free (args);
+	}
 
 
 	/* Check that only the next non-option argument is eaten, and the
 	 * rest of the arguments are returned in the array.
 	 */
 	TEST_FEATURE ("with short argument option and other arguments");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "-f";
-	argv[argc++] = "foo";
-	argv[argc++] = "bar";
-	argv[argc++] = "baz";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "-f";
+		argv[argc++] = "foo";
+		argv[argc++] = "bar";
+		argv[argc++] = "baz";
+		argv[argc] = NULL;
 
-	filename = NULL;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		filename = NULL;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_STR (args[0], "bar");
-	TEST_EQ_STR (args[1], "baz");
-	TEST_EQ_P (args[2], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_STR (args[0], "bar");
+		TEST_EQ_STR (args[1], "baz");
+		TEST_EQ_P (args[2], NULL);
 
-	TEST_EQ_STR (filename, "foo");
+		TEST_EQ_STR (filename, "foo");
 
-	nih_free (filename);
-	nih_free (args);
+		nih_free (filename);
+		nih_free (args);
+	}
 
 
 	/* Stress test all the various ways of dealing with short options
@@ -355,35 +375,37 @@ test_parser (void)
 	 * eats the first argument after the terminator.
 	 */
 	TEST_FEATURE ("with random mix of short options and arguments");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "wibble";
-	argv[argc++] = "-df";
-	argv[argc++] = "--";
-	argv[argc++] = "foo";
-	argv[argc++] = "-R";
-	argv[argc++] = "bar";
-	argv[argc++] = "baz";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "wibble";
+		argv[argc++] = "-df";
+		argv[argc++] = "--";
+		argv[argc++] = "foo";
+		argv[argc++] = "-R";
+		argv[argc++] = "bar";
+		argv[argc++] = "baz";
+		argv[argc] = NULL;
 
-	daemonise = 0;
-	recursive = 0;
-	filename = NULL;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		daemonise = 0;
+		recursive = 0;
+		filename = NULL;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_STR (args[0], "wibble");
-	TEST_EQ_STR (args[1], "-R");
-	TEST_EQ_STR (args[2], "bar");
-	TEST_EQ_STR (args[3], "baz");
-	TEST_EQ_P (args[4], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_STR (args[0], "wibble");
+		TEST_EQ_STR (args[1], "-R");
+		TEST_EQ_STR (args[2], "bar");
+		TEST_EQ_STR (args[3], "baz");
+		TEST_EQ_P (args[4], NULL);
 
-	TEST_TRUE (daemonise);
-	TEST_FALSE (recursive);
-	TEST_EQ_STR (filename, "foo");
+		TEST_TRUE (daemonise);
+		TEST_FALSE (recursive);
+		TEST_EQ_STR (filename, "foo");
 
-	nih_free (filename);
-	nih_free (args);
+		nih_free (filename);
+		nih_free (args);
+	}
 
 
 	/* Check that the argument for a short option can immediately
@@ -391,23 +413,25 @@ test_parser (void)
 	 * of this word aren't treated as options.
 	 */
 	TEST_FEATURE ("with short option and embedded argument");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "-fROOT";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "-fROOT";
+		argv[argc] = NULL;
 
-	filename = NULL;
-	recursive = 0;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		filename = NULL;
+		recursive = 0;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_P (args[0], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_P (args[0], NULL);
 
-	TEST_EQ_STR (filename, "ROOT");
-	TEST_FALSE (recursive);
+		TEST_EQ_STR (filename, "ROOT");
+		TEST_FALSE (recursive);
 
-	nih_free (filename);
-	nih_free (args);
+		nih_free (filename);
+		nih_free (args);
+	}
 
 
 	/* Check that the short option may be inside a sequence of short
@@ -415,26 +439,28 @@ test_parser (void)
 	 * is considered, not the remainder of the option argument.
 	 */
 	TEST_FEATURE ("with short option and non-embedded argument");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "-dfR";
-	argv[argc++] = "foo";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "-dfR";
+		argv[argc++] = "foo";
+		argv[argc] = NULL;
 
-	filename = NULL;
-	daemonise = 0;
-	recursive = 0;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		filename = NULL;
+		daemonise = 0;
+		recursive = 0;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_P (args[0], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_P (args[0], NULL);
 
-	TEST_TRUE (daemonise);
-	TEST_TRUE (recursive);
-	TEST_EQ_STR (filename, "foo");
+		TEST_TRUE (daemonise);
+		TEST_TRUE (recursive);
+		TEST_EQ_STR (filename, "foo");
 
-	nih_free (filename);
-	nih_free (args);
+		nih_free (filename);
+		nih_free (args);
+	}
 
 
 	/* Check that multiple short options which accept arguments each
@@ -442,99 +468,107 @@ test_parser (void)
 	 * argument.
 	 */
 	TEST_FEATURE ("with multiple short argument options");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "-f";
-	argv[argc++] = "-o";
-	argv[argc++] = "foo";
-	argv[argc++] = "bar";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "-f";
+		argv[argc++] = "-o";
+		argv[argc++] = "foo";
+		argv[argc++] = "bar";
+		argv[argc] = NULL;
 
-	filename = NULL;
-	option = NULL;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		filename = NULL;
+		option = NULL;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_P (args[0], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_P (args[0], NULL);
 
-	TEST_EQ_STR (filename, "foo");
-	TEST_EQ_STR (option, "bar");
+		TEST_EQ_STR (filename, "foo");
+		TEST_EQ_STR (option, "bar");
 
-	nih_free (filename);
-	nih_free (option);
-	nih_free (args);
+		nih_free (filename);
+		nih_free (option);
+		nih_free (args);
+	}
 
 
 	/* Check that a single long option is taken from the arguments and
 	 * the appropriate variable set.
 	 */
 	TEST_FEATURE ("with single long option");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--wibble";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--wibble";
+		argv[argc] = NULL;
 
-	wibble = 0;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		wibble = 0;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_P (args[0], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_P (args[0], NULL);
 
-	TEST_TRUE (wibble);
+		TEST_TRUE (wibble);
 
-	nih_free (args);
+		nih_free (args);
+	}
 
 
 	/* Check that multiple long options are taken from the arguments
 	 * and the appropriate variables set.
 	 */
 	TEST_FEATURE ("with multiple long options");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--wibble";
-	argv[argc++] = "--recursive";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--wibble";
+		argv[argc++] = "--recursive";
+		argv[argc] = NULL;
 
-	wibble = 0;
-	recursive = 0;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		wibble = 0;
+		recursive = 0;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_P (args[0], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_P (args[0], NULL);
 
-	TEST_TRUE (wibble);
-	TEST_TRUE (recursive);
+		TEST_TRUE (wibble);
+		TEST_TRUE (recursive);
 
-	nih_free (args);
+		nih_free (args);
+	}
 
 
 	/* Check that only the long options are taken from the arguments,
 	 * and the non-option arguments are returned in the array.
 	 */
 	TEST_FEATURE ("with intermixed long options and arguments");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "foo";
-	argv[argc++] = "--wibble";
-	argv[argc++] = "bar";
-	argv[argc++] = "--recursive";
-	argv[argc++] = "baz";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "foo";
+		argv[argc++] = "--wibble";
+		argv[argc++] = "bar";
+		argv[argc++] = "--recursive";
+		argv[argc++] = "baz";
+		argv[argc] = NULL;
 
-	wibble = 0;
-	recursive = 0;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		wibble = 0;
+		recursive = 0;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_STR (args[0], "foo");
-	TEST_EQ_STR (args[1], "bar");
-	TEST_EQ_STR (args[2], "baz");
-	TEST_EQ_P (args[3], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_STR (args[0], "foo");
+		TEST_EQ_STR (args[1], "bar");
+		TEST_EQ_STR (args[2], "baz");
+		TEST_EQ_P (args[3], NULL);
 
-	TEST_TRUE (wibble);
-	TEST_TRUE (recursive);
+		TEST_TRUE (wibble);
+		TEST_TRUE (recursive);
 
-	nih_free (args);
+		nih_free (args);
+	}
 
 
 	/* Check that long options after the first non-option argument can
@@ -542,84 +576,90 @@ test_parser (void)
 	 * their value NOT being set.
 	 */
 	TEST_FEATURE ("with command-mode long options and arguments");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "foo";
-	argv[argc++] = "--wibble";
-	argv[argc++] = "bar";
-	argv[argc++] = "--recursive";
-	argv[argc++] = "baz";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "foo";
+		argv[argc++] = "--wibble";
+		argv[argc++] = "bar";
+		argv[argc++] = "--recursive";
+		argv[argc++] = "baz";
+		argv[argc] = NULL;
 
-	wibble = 0;
-	recursive = 0;
-	args = nih_option_parser (NULL, argc, argv, options, TRUE);
+		wibble = 0;
+		recursive = 0;
+		args = nih_option_parser (NULL, argc, argv, options, TRUE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_STR (args[0], "foo");
-	TEST_EQ_STR (args[1], "--wibble");
-	TEST_EQ_STR (args[2], "bar");
-	TEST_EQ_STR (args[3], "--recursive");
-	TEST_EQ_STR (args[4], "baz");
-	TEST_EQ_P (args[5], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_STR (args[0], "foo");
+		TEST_EQ_STR (args[1], "--wibble");
+		TEST_EQ_STR (args[2], "bar");
+		TEST_EQ_STR (args[3], "--recursive");
+		TEST_EQ_STR (args[4], "baz");
+		TEST_EQ_P (args[5], NULL);
 
-	TEST_FALSE (wibble);
-	TEST_FALSE (recursive);
+		TEST_FALSE (wibble);
+		TEST_FALSE (recursive);
 
-	nih_free (args);
+		nih_free (args);
+	}
 
 
 	/* Check that long options after the double-dash terminator are
 	 * ignored and returned in the array without their value being set.
 	 */
 	TEST_FEATURE ("with long options and terminator");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "foo";
-	argv[argc++] = "--wibble";
-	argv[argc++] = "--";
-	argv[argc++] = "bar";
-	argv[argc++] = "--recursive";
-	argv[argc++] = "baz";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "foo";
+		argv[argc++] = "--wibble";
+		argv[argc++] = "--";
+		argv[argc++] = "bar";
+		argv[argc++] = "--recursive";
+		argv[argc++] = "baz";
+		argv[argc] = NULL;
 
-	wibble = 0;
-	recursive = 0;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		wibble = 0;
+		recursive = 0;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_STR (args[0], "foo");
-	TEST_EQ_STR (args[1], "bar");
-	TEST_EQ_STR (args[2], "--recursive");
-	TEST_EQ_STR (args[3], "baz");
-	TEST_EQ_P (args[4], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_STR (args[0], "foo");
+		TEST_EQ_STR (args[1], "bar");
+		TEST_EQ_STR (args[2], "--recursive");
+		TEST_EQ_STR (args[3], "baz");
+		TEST_EQ_P (args[4], NULL);
 
-	TEST_TRUE (wibble);
-	TEST_FALSE (recursive);
+		TEST_TRUE (wibble);
+		TEST_FALSE (recursive);
 
-	nih_free (args);
+		nih_free (args);
+	}
 
 
 	/* Check that a long option may take an argument, which eats the
 	 * next non-option argument and stores that in the value instead.
 	 */
 	TEST_FEATURE ("with long argument option");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--filename";
-	argv[argc++] = "foo";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--filename";
+		argv[argc++] = "foo";
+		argv[argc] = NULL;
 
-	filename = NULL;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		filename = NULL;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_P (args[0], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_P (args[0], NULL);
 
-	TEST_EQ_STR (filename, "foo");
+		TEST_EQ_STR (filename, "foo");
 
-	nih_free (filename);
-	nih_free (args);
+		nih_free (filename);
+		nih_free (args);
+	}
 
 
 	/* Check that only the first non-option argument is eaten by a long
@@ -627,26 +667,28 @@ test_parser (void)
 	 * array.
 	 */
 	TEST_FEATURE ("with long argument option and other arguments");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--filename";
-	argv[argc++] = "foo";
-	argv[argc++] = "bar";
-	argv[argc++] = "baz";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--filename";
+		argv[argc++] = "foo";
+		argv[argc++] = "bar";
+		argv[argc++] = "baz";
+		argv[argc] = NULL;
 
-	filename = NULL;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		filename = NULL;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_STR (args[0], "bar");
-	TEST_EQ_STR (args[1], "baz");
-	TEST_EQ_P (args[2], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_STR (args[0], "bar");
+		TEST_EQ_STR (args[1], "baz");
+		TEST_EQ_P (args[2], NULL);
 
-	TEST_EQ_STR (filename, "foo");
+		TEST_EQ_STR (filename, "foo");
 
-	nih_free (filename);
-	nih_free (args);
+		nih_free (filename);
+		nih_free (args);
+	}
 
 
 	/* Stress test all the various ways of dealing with long options
@@ -654,160 +696,180 @@ test_parser (void)
 	 * eats the first argument after the terminator.
 	 */
 	TEST_FEATURE ("with random mix of long options and arguments");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "wibble";
-	argv[argc++] = "--wibble";
-	argv[argc++] = "--filename";
-	argv[argc++] = "--";
-	argv[argc++] = "foo";
-	argv[argc++] = "--recursive";
-	argv[argc++] = "bar";
-	argv[argc++] = "baz";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "wibble";
+		argv[argc++] = "--wibble";
+		argv[argc++] = "--filename";
+		argv[argc++] = "--";
+		argv[argc++] = "foo";
+		argv[argc++] = "--recursive";
+		argv[argc++] = "bar";
+		argv[argc++] = "baz";
+		argv[argc] = NULL;
 
-	wibble = 0;
-	recursive = 0;
-	filename = NULL;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		wibble = 0;
+		recursive = 0;
+		filename = NULL;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_STR (args[0], "wibble");
-	TEST_EQ_STR (args[1], "--recursive");
-	TEST_EQ_STR (args[2], "bar");
-	TEST_EQ_STR (args[3], "baz");
-	TEST_EQ_P (args[4], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_STR (args[0], "wibble");
+		TEST_EQ_STR (args[1], "--recursive");
+		TEST_EQ_STR (args[2], "bar");
+		TEST_EQ_STR (args[3], "baz");
+		TEST_EQ_P (args[4], NULL);
 
-	TEST_TRUE (wibble);
-	TEST_FALSE (recursive);
-	TEST_EQ_STR (filename, "foo");
+		TEST_TRUE (wibble);
+		TEST_FALSE (recursive);
+		TEST_EQ_STR (filename, "foo");
 
-	nih_free (filename);
-	nih_free (args);
+		nih_free (filename);
+		nih_free (args);
+	}
 
 
 	/* Check that the argument to a long option may be embedded into
 	 * it, following an equals sign.
 	 */
 	TEST_FEATURE ("with long option and embedded argument");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--filename=ROOT";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--filename=ROOT";
+		argv[argc] = NULL;
 
-	filename = NULL;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		filename = NULL;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_P (args[0], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_P (args[0], NULL);
 
-	TEST_EQ_STR (filename, "ROOT");
+		TEST_EQ_STR (filename, "ROOT");
 
-	nih_free (filename);
-	nih_free (args);
+		nih_free (filename);
+		nih_free (args);
+	}
 
 
 	/* Check that multiple long options with arguments each eat the
 	 * next non-option argument, not the same one.
 	 */
 	TEST_FEATURE ("with multiple long argument options");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--filename";
-	argv[argc++] = "--option";
-	argv[argc++] = "foo";
-	argv[argc++] = "bar";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--filename";
+		argv[argc++] = "--option";
+		argv[argc++] = "foo";
+		argv[argc++] = "bar";
+		argv[argc] = NULL;
 
-	filename = NULL;
-	option = NULL;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		filename = NULL;
+		option = NULL;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_P (args[0], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_P (args[0], NULL);
 
-	TEST_EQ_STR (filename, "foo");
-	TEST_EQ_STR (option, "bar");
+		TEST_EQ_STR (filename, "foo");
+		TEST_EQ_STR (option, "bar");
 
-	nih_free (filename);
-	nih_free (option);
-	nih_free (args);
+		nih_free (filename);
+		nih_free (option);
+		nih_free (args);
+	}
 
 
 	/* Check that an invalid short option causes an error message to
 	 * be output with a suggestion of help, and NULL to be returned.
 	 */
 	TEST_FEATURE ("with invalid short option");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "-z";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "-z";
+		argv[argc] = NULL;
 
-	TEST_DIVERT_STDERR (output) {
-		args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		TEST_DIVERT_STDERR (output) {
+			args = nih_option_parser (NULL, argc, argv,
+						  options, FALSE);
+		}
+		rewind (output);
+
+		TEST_EQ_P (args, NULL);
+
+		TEST_FILE_EQ (output, "test: invalid option: -z\n");
+		TEST_FILE_EQ (output,
+			      "Try `test --help' for more information.\n");
+		TEST_FILE_END (output);
+
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (args, NULL);
-
-	TEST_FILE_EQ (output, "test: invalid option: -z\n");
-	TEST_FILE_EQ (output, "Try `test --help' for more information.\n");
-	TEST_FILE_END (output);
-
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an invalid short option is ignored if there's a
 	 * catch-all option in the list.
 	 */
 	TEST_FEATURE ("with invalid short option and catch-all");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "-z";
-	argv[argc] = NULL;
-	args = nih_option_parser (NULL, argc, argv, catch_options, FALSE);
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "-z";
+		argv[argc] = NULL;
+		args = nih_option_parser (NULL, argc, argv,
+					  catch_options, FALSE);
 
-	TEST_NE_P (args, NULL);
+		TEST_NE_P (args, NULL);
 
-	nih_free (args);
+		nih_free (args);
+	}
 
 
 	/* Check that an invalid long option causes an error message to
 	 * be output with a suggestion of help, and NULL to be returned.
 	 */
 	TEST_FEATURE ("with invalid long option");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--zoiks";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--zoiks";
+		argv[argc] = NULL;
 
-	TEST_DIVERT_STDERR (output) {
-		args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		TEST_DIVERT_STDERR (output) {
+			args = nih_option_parser (NULL, argc, argv,
+						  options, FALSE);
+		}
+		rewind (output);
+
+		TEST_EQ_P (args, NULL);
+
+		TEST_FILE_EQ (output, "test: invalid option: --zoiks\n");
+		TEST_FILE_EQ (output,
+			      "Try `test --help' for more information.\n");
+		TEST_FILE_END (output);
+
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (args, NULL);
-
-	TEST_FILE_EQ (output, "test: invalid option: --zoiks\n");
-	TEST_FILE_EQ (output, "Try `test --help' for more information.\n");
-	TEST_FILE_END (output);
-
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an invalid long option is ignored if there's a
 	 * catch-all option in the list.
 	 */
 	TEST_FEATURE ("with invalid long option and catch-all");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--zoiks";
-	argv[argc] = NULL;
-	args = nih_option_parser (NULL, argc, argv, catch_options, FALSE);
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--zoiks";
+		argv[argc] = NULL;
+		args = nih_option_parser (NULL, argc, argv,
+					  catch_options, FALSE);
 
-	TEST_NE_P (args, NULL);
+		TEST_NE_P (args, NULL);
 
-	nih_free (args);
+		nih_free (args);
+	}
 
 
 	/* Check that an unexpected argument to a long option causes an
@@ -815,23 +877,28 @@ test_parser (void)
 	 * to be returned.
 	 */
 	TEST_FEATURE ("with unexpected long option argument");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--wibble=woo";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--wibble=woo";
+		argv[argc] = NULL;
 
-	TEST_DIVERT_STDERR (output) {
-		args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		TEST_DIVERT_STDERR (output) {
+			args = nih_option_parser (NULL, argc, argv,
+						  options, FALSE);
+		}
+		rewind (output);
+
+		TEST_EQ_P (args, NULL);
+
+		TEST_FILE_EQ (output,
+			      "test: unexpected argument: --wibble=woo\n");
+		TEST_FILE_EQ (output,
+			      "Try `test --help' for more information.\n");
+		TEST_FILE_END (output);
+
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (args, NULL);
-
-	TEST_FILE_EQ (output, "test: unexpected argument: --wibble=woo\n");
-	TEST_FILE_EQ (output, "Try `test --help' for more information.\n");
-	TEST_FILE_END (output);
-
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an missing argument to a short option causes an error
@@ -839,23 +906,26 @@ test_parser (void)
 	 * returned.
 	 */
 	TEST_FEATURE ("with missing short option argument");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "-f";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "-f";
+		argv[argc] = NULL;
 
-	TEST_DIVERT_STDERR (output) {
-		args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		TEST_DIVERT_STDERR (output) {
+			args = nih_option_parser (NULL, argc, argv,
+						  options, FALSE);
+		}
+		rewind (output);
+
+		TEST_EQ_P (args, NULL);
+
+		TEST_FILE_EQ (output, "test: missing argument: -f\n");
+		TEST_FILE_EQ (output, "Try `test --help' for more information.\n");
+		TEST_FILE_END (output);
+
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (args, NULL);
-
-	TEST_FILE_EQ (output, "test: missing argument: -f\n");
-	TEST_FILE_EQ (output, "Try `test --help' for more information.\n");
-	TEST_FILE_END (output);
-
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an missing argument to a long option causes an error
@@ -863,50 +933,55 @@ test_parser (void)
 	 * returned.
 	 */
 	TEST_FEATURE ("with missing long option argument");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--filename";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--filename";
+		argv[argc] = NULL;
 
-	TEST_DIVERT_STDERR (output) {
-		args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		TEST_DIVERT_STDERR (output) {
+			args = nih_option_parser (NULL, argc, argv,
+						  options, FALSE);
+		}
+		rewind (output);
+
+		TEST_EQ_P (args, NULL);
+
+		TEST_FILE_EQ (output, "test: missing argument: --filename\n");
+		TEST_FILE_EQ (output, "Try `test --help' for more information.\n");
+		TEST_FILE_END (output);
+
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (args, NULL);
-
-	TEST_FILE_EQ (output, "test: missing argument: --filename\n");
-	TEST_FILE_EQ (output, "Try `test --help' for more information.\n");
-	TEST_FILE_END (output);
-
-	TEST_FILE_RESET (output);
 
 
 	/* Check that a short option may result in a function call, and
 	 * that the arguments to that call are correct.
 	 */
 	TEST_FEATURE ("with short setter option");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "-x";
-	argv[argc++] = "foo";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "-x";
+		argv[argc++] = "foo";
+		argv[argc] = NULL;
 
-	was_called = 0;
-	last_option = NULL;
-	last_arg = NULL;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		was_called = 0;
+		last_option = NULL;
+		last_arg = NULL;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_STR (args[0], "foo");
-	TEST_EQ_P (args[1], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_STR (args[0], "foo");
+		TEST_EQ_P (args[1], NULL);
 
-	TEST_TRUE (was_called);
-	TEST_EQ (last_option->option, options[6].option);
-	TEST_EQ_P (last_arg, NULL);
+		TEST_TRUE (was_called);
+		TEST_EQ (last_option->option, options[6].option);
+		TEST_EQ_P (last_arg, NULL);
 
-	nih_free (args);
-	nih_free (last_option);
+		nih_free (args);
+		free (last_option);
+	}
 
 
 	/* Check that a short option that takens an argument can result in
@@ -914,78 +989,84 @@ test_parser (void)
 	 * function call.
 	 */
 	TEST_FEATURE ("with short setter argument option");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "-s";
-	argv[argc++] = "foo";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "-s";
+		argv[argc++] = "foo";
+		argv[argc] = NULL;
 
-	was_called = 0;
-	last_option = NULL;
-	last_arg = NULL;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		was_called = 0;
+		last_option = NULL;
+		last_arg = NULL;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_P (args[0], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_P (args[0], NULL);
 
-	TEST_TRUE (was_called);
-	TEST_EQ (last_option->option, options[5].option);
-	TEST_EQ_STR (last_arg, "foo");
+		TEST_TRUE (was_called);
+		TEST_EQ (last_option->option, options[5].option);
+		TEST_EQ_STR (last_arg, "foo");
 
-	nih_free (args);
-	nih_free (last_option);
+		nih_free (args);
+		free (last_option);
+	}
 
 
 	/* Check that the setter function is stilled correctly if the
 	 * argument to the short option is embedded within it.
 	 */
 	TEST_FEATURE ("with short setter embedded argument option");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "-sfoo";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "-sfoo";
+		argv[argc] = NULL;
 
-	was_called = 0;
-	last_option = NULL;
-	last_arg = NULL;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		was_called = 0;
+		last_option = NULL;
+		last_arg = NULL;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_P (args[0], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_P (args[0], NULL);
 
-	TEST_TRUE (was_called);
-	TEST_EQ (last_option->option, options[5].option);
-	TEST_EQ_STR (last_arg, "foo");
+		TEST_TRUE (was_called);
+		TEST_EQ (last_option->option, options[5].option);
+		TEST_EQ_STR (last_arg, "foo");
 
-	nih_free (args);
-	nih_free (last_option);
+		nih_free (args);
+		free (last_option);
+	}
 
 
 	/* Check that a long option may result in a function call, and
 	 * that the arguments to that call are correct.
 	 */
 	TEST_FEATURE ("with long setter option");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--execute";
-	argv[argc++] = "foo";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--execute";
+		argv[argc++] = "foo";
+		argv[argc] = NULL;
 
-	was_called = 0;
-	last_option = NULL;
-	last_arg = NULL;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		was_called = 0;
+		last_option = NULL;
+		last_arg = NULL;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_STR (args[0], "foo");
-	TEST_EQ_P (args[1], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_STR (args[0], "foo");
+		TEST_EQ_P (args[1], NULL);
 
-	TEST_TRUE (was_called);
-	TEST_EQ (last_option->option, options[6].option);
-	TEST_EQ_P (last_arg, NULL);
+		TEST_TRUE (was_called);
+		TEST_EQ (last_option->option, options[6].option);
+		TEST_EQ_P (last_arg, NULL);
 
-	nih_free (args);
-	nih_free (last_option);
+		nih_free (args);
+		free (last_option);
+	}
 
 
 	/* Check that a short option that takens an argument can result in
@@ -993,50 +1074,54 @@ test_parser (void)
 	 * function call.
 	 */
 	TEST_FEATURE ("with long setter argument option");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--special";
-	argv[argc++] = "foo";
-	argv[argc] = NULL;
-	was_called = 0;
-	last_option = NULL;
-	last_arg = NULL;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--special";
+		argv[argc++] = "foo";
+		argv[argc] = NULL;
+		was_called = 0;
+		last_option = NULL;
+		last_arg = NULL;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_P (args[0], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_P (args[0], NULL);
 
-	TEST_TRUE (was_called);
-	TEST_EQ (last_option->option, options[5].option);
-	TEST_EQ_STR (last_arg, "foo");
+		TEST_TRUE (was_called);
+		TEST_EQ (last_option->option, options[5].option);
+		TEST_EQ_STR (last_arg, "foo");
 
-	nih_free (args);
-	nih_free (last_option);
+		nih_free (args);
+		free (last_option);
+	}
 
 
 	/* Check that the setter function is stilled correctly if the
 	 * argument to the short option is embedded within it.
 	 */
 	TEST_FEATURE ("with long setter embedded argument option");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--special=foo";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--special=foo";
+		argv[argc] = NULL;
 
-	was_called = 0;
-	last_option = NULL;
-	last_arg = NULL;
-	args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		was_called = 0;
+		last_option = NULL;
+		last_arg = NULL;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
 
-	TEST_NE_P (args, NULL);
-	TEST_EQ_P (args[0], NULL);
+		TEST_NE_P (args, NULL);
+		TEST_EQ_P (args[0], NULL);
 
-	TEST_TRUE (was_called);
-	TEST_EQ (last_option->option, options[5].option);
-	TEST_EQ_STR (last_arg, "foo");
+		TEST_TRUE (was_called);
+		TEST_EQ (last_option->option, options[5].option);
+		TEST_EQ_STR (last_arg, "foo");
 
-	nih_free (args);
-	nih_free (last_option);
+		nih_free (args);
+		free (last_option);
+	}
 
 
 	/* Check that an error code returned from a setter function for a
@@ -1044,30 +1129,33 @@ test_parser (void)
 	 * no error message output (that's left up to the function).
 	 */
 	TEST_FEATURE ("with short setter embedded argument error");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "-sfail";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "-sfail";
+		argv[argc] = NULL;
 
-	was_called = 0;
-	last_option = NULL;
-	last_arg = NULL;
+		was_called = 0;
+		last_option = NULL;
+		last_arg = NULL;
 
-	TEST_DIVERT_STDERR (output) {
-		args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		TEST_DIVERT_STDERR (output) {
+			args = nih_option_parser (NULL, argc, argv,
+						  options, FALSE);
+		}
+		rewind (output);
+
+		TEST_EQ_P (args, NULL);
+
+		TEST_TRUE (was_called);
+		TEST_EQ (last_option->option, options[5].option);
+		TEST_EQ_STR (last_arg, "fail");
+
+		TEST_FILE_END (output);
+
+		TEST_FILE_RESET (output);
+		free (last_option);
 	}
-	rewind (output);
-
-	TEST_EQ_P (args, NULL);
-
-	TEST_TRUE (was_called);
-	TEST_EQ (last_option->option, options[5].option);
-	TEST_EQ_STR (last_arg, "fail");
-
-	TEST_FILE_END (output);
-
-	TEST_FILE_RESET (output);
-	nih_free (last_option);
 
 
 	/* Check that an error code returned from a setter function for a
@@ -1075,29 +1163,32 @@ test_parser (void)
 	 * no error message output (that's left up to the function).
 	 */
 	TEST_FEATURE ("with long setter embedded argument error");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--special=fail";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--special=fail";
+		argv[argc] = NULL;
 
-	was_called = 0;
-	last_option = NULL;
-	last_arg = NULL;
+		was_called = 0;
+		last_option = NULL;
+		last_arg = NULL;
 
-	TEST_DIVERT_STDERR (output) {
-		args = nih_option_parser (NULL, argc, argv, options, FALSE);
+		TEST_DIVERT_STDERR (output) {
+			args = nih_option_parser (NULL, argc, argv,
+						  options, FALSE);
+		}
+		rewind (output);
+
+		TEST_EQ_P (args, NULL);
+
+		TEST_TRUE (was_called);
+		TEST_EQ (last_option->option, options[5].option);
+		TEST_EQ_STR (last_arg, "fail");
+
+		TEST_FILE_END (output);
+
+		free (last_option);
 	}
-	rewind (output);
-
-	TEST_EQ_P (args, NULL);
-
-	TEST_TRUE (was_called);
-	TEST_EQ (last_option->option, options[5].option);
-	TEST_EQ_STR (last_arg, "fail");
-
-	TEST_FILE_END (output);
-
-	nih_free (last_option);
 
 	fclose (output);
 }
@@ -1331,36 +1422,38 @@ test_version (void)
 	nih_main_init_full ("test", "wibble", "1.0",
 			    "foo@bar.com", "Copyright Message");
 
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--version";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--version";
+		argv[argc] = NULL;
 
-	output = tmpfile ();
-	TEST_CHILD (pid) {
-		TEST_DIVERT_STDOUT (output) {
-			char **args;
+		output = tmpfile ();
+		TEST_CHILD (pid) {
+			TEST_DIVERT_STDOUT (output) {
+				char **args;
 
-			args = nih_option_parser (NULL, argc, argv,
-						  options, FALSE);
-			exit (1);
+				args = nih_option_parser (NULL, argc, argv,
+							  options, FALSE);
+				exit (1);
+			}
 		}
+
+		waitpid (pid, &status, 0);
+		rewind (output);
+
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		TEST_FILE_EQ (output, "test (wibble 1.0)\n");
+		TEST_FILE_EQ (output, "Copyright Message\n");
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ_N (output, "This is free software;");
+		TEST_FILE_EQ_N (output, "warranty; not even for");
+		TEST_FILE_END (output);
+
+		fclose (output);
 	}
-
-	waitpid (pid, &status, 0);
-	rewind (output);
-
-	TEST_TRUE (WIFEXITED (status));
-	TEST_EQ (WEXITSTATUS (status), 0);
-
-	TEST_FILE_EQ (output, "test (wibble 1.0)\n");
-	TEST_FILE_EQ (output, "Copyright Message\n");
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ_N (output, "This is free software;");
-	TEST_FILE_EQ_N (output, "warranty; not even for");
-	TEST_FILE_END (output);
-
-	fclose (output);
 }
 
 void
@@ -1405,82 +1498,90 @@ test_help (void)
 	nih_main_init_full ("test", "wibble", "1.0",
 			    "foo@bar.com", "Copyright Message");
 
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--help";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--help";
+		argv[argc] = NULL;
 
-	output = tmpfile ();
-	TEST_CHILD (pid) {
-		unsetenv ("COLUMNS");
+		output = tmpfile ();
+		TEST_CHILD (pid) {
+			unsetenv ("COLUMNS");
 
-		TEST_DIVERT_STDOUT (output) {
-			char **args;
+			TEST_DIVERT_STDOUT (output) {
+				char **args;
 
-			args = nih_option_parser (NULL, argc, argv,
-						  options, FALSE);
-			exit (1);
+				args = nih_option_parser (NULL, argc, argv,
+							  options, FALSE);
+				exit (1);
+			}
 		}
+
+		waitpid (pid, &status, 0);
+		rewind (output);
+
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		TEST_FILE_EQ (output, "Usage: test [OPT]... CMD [ARG]...\n");
+		TEST_FILE_EQ (output, ("Frobnicates bars carefully, taking "
+				       "into account things that are "
+				       "important when\n"));
+		TEST_FILE_EQ (output, ("doing that\n"));
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, "First test group options:\n");
+		TEST_FILE_EQ (output, ("  -d                          "
+				       "become daemon\n"));
+		TEST_FILE_EQ (output, ("  -f, --filename=FILENAME     "
+				       "read this file\n"));
+		TEST_FILE_EQ (output, ("  -x, --execute               "
+				       "run something, give this a really "
+				       "long help\n"));
+		TEST_FILE_EQ (output, ("                              "
+				       "  message so that it word wraps\n"));
+		TEST_FILE_EQ (output, ("  -I DIRECTORY                "
+				       "add directory to include list\n"));
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, "Second test group options:\n");
+		TEST_FILE_EQ (output, ("  -R, --recursive             "
+				       "descend into sub-directories\n"));
+		TEST_FILE_EQ (output, ("      --wibble                "
+				       "bored of inventing names\n"));
+		TEST_FILE_EQ (output, ("  -o, --option=OPTION         "
+				       "extended options\n"));
+		TEST_FILE_EQ (output, ("  -s, --special=SPECIAL-LONG-"
+				       "ARGUMENT-NAME\n"));
+		TEST_FILE_EQ (output, ("                              "
+				       "something with special treatment\n"));
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, "Other options:\n");
+		TEST_FILE_EQ (output, ("  -q, --quiet                 "
+				       "reduce output to errors only\n"));
+		TEST_FILE_EQ (output, ("  -v, --verbose               "
+				       "increase output to include "
+				       "informational messages\n"));
+		TEST_FILE_EQ (output, ("      --help                  "
+				       "display this help and exit\n"));
+		TEST_FILE_EQ (output, ("      --version               "
+				       "output version information and "
+				       "exit\n"));
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, ("This is the help text for the bar "
+				       "frobnication program.\n"));
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, ("It is also wrapped to the screen "
+				       "width, so it can be as long as "
+				       "we like, and\n"));
+		TEST_FILE_EQ (output, ("can also include paragraph breaks "
+				       "and stuff.\n"));
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, "Go away!\n");
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, "Report bugs to <foo@bar.com>\n");
+		TEST_FILE_END (output);
+
+		fclose (output);
 	}
-
-	waitpid (pid, &status, 0);
-	rewind (output);
-
-	TEST_TRUE (WIFEXITED (status));
-	TEST_EQ (WEXITSTATUS (status), 0);
-
-	TEST_FILE_EQ (output, "Usage: test [OPT]... CMD [ARG]...\n");
-	TEST_FILE_EQ (output, ("Frobnicates bars carefully, taking into "
-			       "account things that are important when\n"));
-	TEST_FILE_EQ (output, ("doing that\n"));
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ (output, "First test group options:\n");
-	TEST_FILE_EQ (output, ("  -d                          "
-			       "become daemon\n"));
-	TEST_FILE_EQ (output, ("  -f, --filename=FILENAME     "
-			       "read this file\n"));
-	TEST_FILE_EQ (output, ("  -x, --execute               "
-			       "run something, give this a really long help\n"));
-	TEST_FILE_EQ (output, ("                              "
-			       "  message so that it word wraps\n"));
-	TEST_FILE_EQ (output, ("  -I DIRECTORY                "
-			       "add directory to include list\n"));
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ (output, "Second test group options:\n");
-	TEST_FILE_EQ (output, ("  -R, --recursive             "
-			       "descend into sub-directories\n"));
-	TEST_FILE_EQ (output, ("      --wibble                "
-			       "bored of inventing names\n"));
-	TEST_FILE_EQ (output, ("  -o, --option=OPTION         "
-			       "extended options\n"));
-	TEST_FILE_EQ (output, ("  -s, --special=SPECIAL-LONG-ARGUMENT-NAME\n"));
-	TEST_FILE_EQ (output, ("                              "
-			       "something with special treatment\n"));
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ (output, "Other options:\n");
-	TEST_FILE_EQ (output, ("  -q, --quiet                 "
-			       "reduce output to errors only\n"));
-	TEST_FILE_EQ (output, ("  -v, --verbose               "
-			       "increase output to include informational "
-			       "messages\n"));
-	TEST_FILE_EQ (output, ("      --help                  "
-			       "display this help and exit\n"));
-	TEST_FILE_EQ (output, ("      --version               "
-			       "output version information and exit\n"));
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ (output, ("This is the help text for the bar frobnication "
-			       "program.\n"));
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ (output, ("It is also wrapped to the screen width, so it "
-			       "can be as long as we like, and\n"));
-	TEST_FILE_EQ (output, "can also include paragraph breaks and stuff.\n");
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ (output, "Go away!\n");
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ (output, "Report bugs to <foo@bar.com>\n");
-	TEST_FILE_END (output);
-
-	fclose (output);
 }
 
 

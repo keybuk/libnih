@@ -2,7 +2,7 @@
  *
  * option.c - command-line argument and option parsing
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -468,11 +468,15 @@ nih_option_handle (NihOptionCtx *ctx,
 	if (opt->long_option && (! strcmp (opt->long_option, "help"))) {
 		/* --help */
 		nih_option_help (ctx->options);
+		nih_free (ctx->options);
+		nih_free (ctx->args);
 		exit (0);
 	} else if (opt->long_option
 		   && (! strcmp (opt->long_option, "version"))) {
 		/* --version */
 		nih_main_version ();
+		nih_free (ctx->options);
+		nih_free (ctx->args);
 		exit (0);
 	}
 

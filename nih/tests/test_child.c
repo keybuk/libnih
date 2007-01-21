@@ -2,7 +2,7 @@
  *
  * test_child.c - test suite for nih/child.c
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,35 +55,52 @@ test_add_watch (void)
 	NihChildWatch *watch;
 
 	TEST_FUNCTION ("nih_child_add_watch");
+	nih_child_poll ();
+
 
 	/* Check that we can add a watch on a specific pid, and that the
 	 * structure is filled in correctly and part of a list.
 	 */
 	TEST_FEATURE ("with pid");
-	watch = nih_child_add_watch (NULL, getpid (), my_reaper, &watch);
+	TEST_ALLOC_FAIL {
+		watch = nih_child_add_watch (NULL, getpid (),
+					     my_reaper, &watch);
 
-	TEST_ALLOC_SIZE (watch, sizeof (NihChildWatch));
-	TEST_EQ (watch->pid, getpid ());
-	TEST_EQ_P (watch->reaper, my_reaper);
-	TEST_EQ_P (watch->data, &watch);
-	TEST_LIST_NOT_EMPTY (&watch->entry);
+		if (test_alloc_failed) {
+			TEST_EQ_P (watch, NULL);
+			continue;
+		}
 
-	nih_list_free (&watch->entry);
+		TEST_ALLOC_SIZE (watch, sizeof (NihChildWatch));
+		TEST_EQ (watch->pid, getpid ());
+		TEST_EQ_P (watch->reaper, my_reaper);
+		TEST_EQ_P (watch->data, &watch);
+		TEST_LIST_NOT_EMPTY (&watch->entry);
+
+		nih_list_free (&watch->entry);
+	}
 
 
 	/* Check that we can add a watch on a pid of -1, which represents
 	 * any child.
 	 */
 	TEST_FEATURE ("with -1 for pid");
-	watch = nih_child_add_watch (NULL, -1, my_reaper, &watch);
+	TEST_ALLOC_FAIL {
+		watch = nih_child_add_watch (NULL, -1, my_reaper, &watch);
 
-	TEST_ALLOC_SIZE (watch, sizeof (NihChildWatch));
-	TEST_EQ (watch->pid, -1);
-	TEST_EQ_P (watch->reaper, my_reaper);
-	TEST_EQ_P (watch->data, &watch);
-	TEST_LIST_NOT_EMPTY (&watch->entry);
+		if (test_alloc_failed) {
+			TEST_EQ_P (watch, NULL);
+			continue;
+		}
 
-	nih_list_free (&watch->entry);
+		TEST_ALLOC_SIZE (watch, sizeof (NihChildWatch));
+		TEST_EQ (watch->pid, -1);
+		TEST_EQ_P (watch->reaper, my_reaper);
+		TEST_EQ_P (watch->data, &watch);
+		TEST_LIST_NOT_EMPTY (&watch->entry);
+
+		nih_list_free (&watch->entry);
+	}
 }
 
 
@@ -101,6 +118,7 @@ void
 test_poll (void)
 {
 	NihChildWatch *watch1, *watch2;
+	siginfo_t      siginfo;
 	pid_t          pid;
 
 	TEST_FUNCTION ("nih_child_poll");
@@ -129,9 +147,9 @@ test_poll (void)
 	last_status = 0;
 
 	kill (pid, SIGTERM);
+	waitid (P_PID, pid, &siginfo, WEXITED | WNOWAIT);
 
-	while (reaper_called < 2)
-		nih_child_poll ();
+	nih_child_poll ();
 
 	TEST_EQ (reaper_called, 2);
 	TEST_EQ (last_pid, pid);
@@ -155,9 +173,9 @@ test_poll (void)
 	last_status = 0;
 
 	kill (pid, SIGTERM);
+	waitid (P_PID, pid, &siginfo, WEXITED | WNOWAIT);
 
-	while (reaper_called < 1)
-		nih_child_poll ();
+	nih_child_poll ();
 
 	TEST_EQ (reaper_called, 1);
 	TEST_EQ (last_pid, pid);
@@ -166,14 +184,65 @@ test_poll (void)
 	TEST_EQ_P (last_data, &watch1);
 	TEST_FALSE (destroyed);
 
+	nih_list_free (&watch1->entry);
 
-	/* Finally check that a poll when nothing has died does nothing. */
+
+	/* Check that if we poll with an unknown pid, and no catch-all,
+	 * nothing is triggered and the watch is not removed.
+	 */
+	TEST_FEATURE ("with pid-specific watcher and wrong pid");
+
+	TEST_CHILD (pid) {
+		pause ();
+	}
+
+	watch1 = nih_child_add_watch (NULL, pid - 1, my_reaper, &watch1);
+	nih_alloc_set_destructor (watch1, my_destructor);
+
+	reaper_called = 0;
+	destroyed = 0;
+	last_data = NULL;
+	last_pid = 0;
+	last_killed = FALSE;
+	last_status = 0;
+
+	kill (pid, SIGTERM);
+	waitid (P_PID, pid, &siginfo, WEXITED | WNOWAIT);
+
+	nih_child_poll ();
+
+	TEST_FALSE (reaper_called);
+	TEST_FALSE (destroyed);
+
+	nih_list_free (&watch1->entry);
+
+
+	/* Check that a poll when nothing has died does nothing. */
+	TEST_FEATURE ("with nothing dead");
+
+	TEST_CHILD (pid) {
+		pause ();
+	}
+
+	watch1 = nih_child_add_watch (NULL, -1, my_reaper, &watch1);
+	nih_alloc_set_destructor (watch1, my_destructor);
+
 	reaper_called = 0;
 	nih_child_poll ();
 
-	TEST_EQ (reaper_called, 0);
+	TEST_FALSE (reaper_called);
 
-	nih_free (watch1);
+	kill (pid, SIGTERM);
+
+
+	/* Check that a poll when there are no child processes does nothing */
+	TEST_FEATURE ("with no children");
+	reaper_called = 0;
+	nih_child_poll ();
+
+	TEST_FALSE (reaper_called);
+
+	nih_list_free (&watch1->entry);
 }
 
 

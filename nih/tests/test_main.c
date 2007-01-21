@@ -2,7 +2,7 @@
  *
  * test_main.c - test suite for nih/main.c
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -115,24 +115,53 @@ test_init (void)
 void
 test_package_string (void)
 {
+	const char *str;
+
 	TEST_FUNCTION ("nih_package_string");
 
 	/* Check that the package string outputs just the program name and
-	 * version if the program and package names match.
+	 * version if the program and package names match.  If the allocation
+	 * fails, the program name should be returned.
 	 */
 	TEST_FEATURE ("with same program and package names");
-	nih_main_init_full ("test", "test", "1.0", "bugreport", "copyright");
+	TEST_ALLOC_FAIL {
+		nih_main_init_full ("test", "test", "1.0",
+				    "bugreport", "copyright");
+		str = nih_main_package_string ();
 
-	TEST_EQ_STR (nih_main_package_string (), "test 1.0");
+		if (test_alloc_failed) {
+			TEST_EQ_STR (str, "test");
+			continue;
+		}
+
+		TEST_EQ_STR (str, "test 1.0");
+	}
 
 
 	/* Check that the package string includes the package name if it
 	 * differs from the program name.
 	 */
 	TEST_FEATURE ("with different program and package names");
+	TEST_ALLOC_FAIL {
+		nih_main_init_full ("test", "wibble", "1.0",
+				    "bugreport", "copyright");
+		str = nih_main_package_string ();
+
+		if (test_alloc_failed) {
+			TEST_EQ_STR (str, "test");
+			continue;
+		}
+
+		TEST_EQ_STR (str, "test (wibble 1.0)");
+	}
+
+
+	/* Check that a repeated call returns the same pointer */
+	TEST_FEATURE ("with repeated call");
 	nih_main_init_full ("test", "wibble", "1.0", "bugreport", "copyright");
 
-	TEST_EQ_STR (nih_main_package_string (), "test (wibble 1.0)");
+	str = nih_main_package_string ();
+	TEST_EQ_P (nih_main_package_string (), str);
 }
 
 void
@@ -170,21 +199,24 @@ test_version (void)
 	nih_main_init_full ("test", "wibble", "1.0", NULL,
 			    "Copyright Message");
 
-	unsetenv ("COLUMNS");
-	output = tmpfile ();
-	TEST_DIVERT_STDOUT (output) {
-		nih_main_version ();
+	TEST_ALLOC_FAIL {
+
+		unsetenv ("COLUMNS");
+		output = tmpfile ();
+		TEST_DIVERT_STDOUT (output) {
+			nih_main_version ();
+		}
+		rewind (output);
+
+		TEST_FILE_EQ (output, "test (wibble 1.0)\n");
+		TEST_FILE_EQ (output, "Copyright Message\n");
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ_N (output, "This is free software;");
+		TEST_FILE_EQ_N (output, "warranty; not even for");
+		TEST_FILE_END (output);
+
+		fclose (output);
 	}
-	rewind (output);
-
-	TEST_FILE_EQ (output, "test (wibble 1.0)\n");
-	TEST_FILE_EQ (output, "Copyright Message\n");
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ_N (output, "This is free software;");
-	TEST_FILE_EQ_N (output, "warranty; not even for");
-	TEST_FILE_END (output);
-
-	fclose (output);
 }
 
 void
@@ -288,14 +320,21 @@ test_main_loop_add_func (void)
 	 * placed in a list.
 	 */
 	TEST_FUNCTION ("nih_main_loop_add_func");
-	func = nih_main_loop_add_func (NULL, my_callback, &func);
+	TEST_ALLOC_FAIL {
+		func = nih_main_loop_add_func (NULL, my_callback, &func);
 
-	TEST_ALLOC_SIZE (func, sizeof (NihMainLoopFunc));
-	TEST_LIST_NOT_EMPTY (&func->entry);
-	TEST_EQ_P (func->callback, my_callback);
-	TEST_EQ_P (func->data, &func);
+		if (test_alloc_failed) {
+			TEST_EQ_P (func, NULL);
+			continue;
+		}
 
-	nih_list_free (&func->entry);
+		TEST_ALLOC_SIZE (func, sizeof (NihMainLoopFunc));
+		TEST_LIST_NOT_EMPTY (&func->entry);
+		TEST_EQ_P (func->callback, my_callback);
+		TEST_EQ_P (func->data, &func);
+
+		nih_list_free (&func->entry);
+	}
 }
 
 

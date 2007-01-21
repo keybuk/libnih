@@ -419,78 +419,144 @@ test_next_arg (void)
 	 * argument.
 	 */
 	TEST_FEATURE ("with argument at start of string");
-	strcpy (buf, "this is a test");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is a test");
+		pos = 0;
 
-	str = nih_config_next_arg (NULL, buf, strlen (buf), &pos, NULL);
+		str = nih_config_next_arg (NULL, buf,
+					   strlen (buf), &pos, NULL);
 
-	TEST_EQ (pos, 5);
-	TEST_ALLOC_SIZE (str, 5);
-	TEST_EQ_STR (str, "this");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 5);
+		TEST_ALLOC_SIZE (str, 5);
+		TEST_EQ_STR (str, "this");
+
+		nih_free (str);
+	}
 
 
 	/* Check that we can extract an argument inside a string
 	 */
 	TEST_FEATURE ("with argument inside string");
-	strcpy (buf, "this is a test");
-	pos = 5;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is a test");
+		pos = 5;
 
-	str = nih_config_next_arg (NULL, buf, strlen (buf), &pos, NULL);
+		str = nih_config_next_arg (NULL, buf,
+					   strlen (buf), &pos, NULL);
 
-	TEST_EQ (pos, 8);
-	TEST_ALLOC_SIZE (str, 3);
-	TEST_EQ_STR (str, "is");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 5);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 8);
+		TEST_ALLOC_SIZE (str, 3);
+		TEST_EQ_STR (str, "is");
+
+		nih_free (str);
+	}
 
 
 	/* Check that all trailing whitespace is eaten after the argument. */
 	TEST_FEATURE ("with consecutive whitespace after argument");
-	strcpy (buf, "this \t  is a test");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this \t  is a test");
+		pos = 0;
 
-	str = nih_config_next_arg (NULL, buf, strlen (buf), &pos, NULL);
+		str = nih_config_next_arg (NULL, buf,
+					   strlen (buf), &pos, NULL);
 
-	TEST_EQ (pos, 8);
-	TEST_ALLOC_SIZE (str, 5);
-	TEST_EQ_STR (str, "this");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 8);
+		TEST_ALLOC_SIZE (str, 5);
+		TEST_EQ_STR (str, "this");
+
+		nih_free (str);
+	}
 
 
 	/* Check that any escaped newlines in the whitespace are skipped
 	 * over
 	 */
 	TEST_FEATURE ("with escaped newlines in whitespace");
-	strcpy (buf, "this \\\n is a test");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this \\\n is a test");
+		pos = 0;
 
-	str = nih_config_next_arg (NULL, buf, strlen (buf), &pos, NULL);
+		str = nih_config_next_arg (NULL, buf,
+					   strlen (buf), &pos, NULL);
 
-	TEST_EQ (pos, 8);
-	TEST_ALLOC_SIZE (str, 5);
-	TEST_EQ_STR (str, "this");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 8);
+		TEST_ALLOC_SIZE (str, 5);
+		TEST_EQ_STR (str, "this");
+
+		nih_free (str);
+	}
 
 
 	/* Check that the line number is incremented for any escaped newlines
 	 * in the whitespace.
 	 */
 	TEST_FEATURE ("with line number set");
-	pos = 0;
-	lineno = 1;
+	TEST_ALLOC_FAIL {
+		pos = 0;
+		lineno = 1;
 
-	str = nih_config_next_arg (NULL, buf, strlen (buf), &pos, &lineno);
+		str = nih_config_next_arg (NULL, buf,
+					   strlen (buf), &pos, &lineno);
 
-	TEST_EQ (pos, 8);
-	TEST_EQ (lineno, 2);
-	TEST_ALLOC_SIZE (str, 5);
-	TEST_EQ_STR (str, "this");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
+			TEST_EQ (lineno, 2);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 8);
+		TEST_EQ (lineno, 2);
+		TEST_ALLOC_SIZE (str, 5);
+		TEST_EQ_STR (str, "this");
+
+		nih_free (str);
+	}
 
 
 	/* Check that the returned argument is thoroughly dequoted and any
@@ -498,54 +564,73 @@ test_next_arg (void)
 	 * space.
 	 */
 	TEST_FEATURE ("with quoted whitespace and newline in arg");
-	strcpy (buf, "\"this \\\n is\" a test");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "\"this \\\n is\" a test");
+		pos = 0;
 
-	str = nih_config_next_arg (NULL, buf, strlen (buf), &pos, NULL);
+		str = nih_config_next_arg (NULL, buf,
+					   strlen (buf), &pos, NULL);
 
-	TEST_EQ (pos, 13);
-	TEST_ALLOC_SIZE (str, 8);
-	TEST_EQ_STR (str, "this is");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 13);
+		TEST_ALLOC_SIZE (str, 8);
+		TEST_EQ_STR (str, "this is");
+
+		nih_free (str);
+	}
 
 
 	/* Check that an error is raised if there is no argument at that
 	 * position.
 	 */
 	TEST_FEATURE ("with empty line");
-	strcpy (buf, "\nthis is a test");
-	pos = 0;
-	lineno = 1;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "\nthis is a test");
+		pos = 0;
+		lineno = 1;
 
-	str = nih_config_next_arg (NULL, buf, strlen (buf), &pos, &lineno);
+		str = nih_config_next_arg (NULL, buf,
+					   strlen (buf), &pos, &lineno);
 
-	TEST_EQ_P (str, NULL);
-	TEST_EQ (pos, 0);
-	TEST_EQ (lineno, 1);
+		TEST_EQ_P (str, NULL);
+		TEST_EQ (pos, 0);
+		TEST_EQ (lineno, 1);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, NIH_CONFIG_EXPECTED_TOKEN);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, NIH_CONFIG_EXPECTED_TOKEN);
+		nih_free (err);
+	}
 
 
 	/* Check that a parse error being found with the argument causes an
 	 * error to be raised, with pos and lineno at the site of the error.
 	 */
 	TEST_FEATURE ("with parser error");
-	strcpy (buf, "\"this is a test\nand so is this");
-	pos = 0;
-	lineno = 1;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "\"this is a test\nand so is this");
+		pos = 0;
+		lineno = 1;
 
-	str = nih_config_next_arg (NULL, buf, strlen (buf), &pos, &lineno);
+		str = nih_config_next_arg (NULL, buf,
+					   strlen (buf), &pos, &lineno);
 
-	TEST_EQ_P (str, NULL);
-	TEST_EQ (pos, 30);
-	TEST_EQ (lineno, 2);
+		TEST_EQ_P (str, NULL);
+		TEST_EQ (pos, 30);
+		TEST_EQ (lineno, 2);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, NIH_CONFIG_UNTERMINATED_QUOTE);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, NIH_CONFIG_UNTERMINATED_QUOTE);
+		nih_free (err);
+	}
 }
 
 void
@@ -702,118 +787,190 @@ test_parse_args (void)
 	 * the start of the next line.
 	 */
 	TEST_FEATURE ("with args at start of simple string");
-	strcpy (buf, "this is a test\nand so is this\n");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is a test\nand so is this\n");
+		pos = 0;
 
-	args = nih_config_parse_args (NULL, buf, strlen (buf), &pos, NULL);
+		args = nih_config_parse_args (NULL, buf,
+					      strlen (buf), &pos, NULL);
 
-	TEST_EQ (pos, 15);
-	TEST_ALLOC_SIZE (args, sizeof (char *) * 5);
-	TEST_ALLOC_PARENT (args[0], args);
-	TEST_ALLOC_PARENT (args[1], args);
-	TEST_ALLOC_PARENT (args[2], args);
-	TEST_ALLOC_PARENT (args[3], args);
-	TEST_EQ_STR (args[0], "this");
-	TEST_EQ_STR (args[1], "is");
-	TEST_EQ_STR (args[2], "a");
-	TEST_EQ_STR (args[3], "test");
-	TEST_EQ_P (args[4], NULL);
+		if (test_alloc_failed) {
+			TEST_EQ_P (args, NULL);
 
-	nih_free (args);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 15);
+		TEST_ALLOC_SIZE (args, sizeof (char *) * 5);
+		TEST_ALLOC_PARENT (args[0], args);
+		TEST_ALLOC_PARENT (args[1], args);
+		TEST_ALLOC_PARENT (args[2], args);
+		TEST_ALLOC_PARENT (args[3], args);
+		TEST_EQ_STR (args[0], "this");
+		TEST_EQ_STR (args[1], "is");
+		TEST_EQ_STR (args[2], "a");
+		TEST_EQ_STR (args[3], "test");
+		TEST_EQ_P (args[4], NULL);
+
+		nih_free (args);
+	}
 
 
 	/* Check that we can parse a list of arguments from a position
 	 * inside an existing string.
 	 */
 	TEST_FEATURE ("with args inside simple string");
-	pos = 5;
+	TEST_ALLOC_FAIL {
+		pos = 5;
 
-	args = nih_config_parse_args (NULL, buf, strlen (buf), &pos, NULL);
+		args = nih_config_parse_args (NULL, buf,
+					      strlen (buf), &pos, NULL);
 
-	TEST_EQ (pos, 15);
-	TEST_ALLOC_SIZE (args, sizeof (char *) * 4);
-	TEST_EQ_STR (args[0], "is");
-	TEST_EQ_STR (args[1], "a");
-	TEST_EQ_STR (args[2], "test");
-	TEST_EQ_P (args[3], NULL);
+		if (test_alloc_failed) {
+			TEST_EQ_P (args, NULL);
 
-	nih_free (args);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 15);
+		TEST_ALLOC_SIZE (args, sizeof (char *) * 4);
+		TEST_EQ_STR (args[0], "is");
+		TEST_EQ_STR (args[1], "a");
+		TEST_EQ_STR (args[2], "test");
+		TEST_EQ_P (args[3], NULL);
+
+		nih_free (args);
+	}
 
 
 	/* Check that we can parse a list of arguments up to the end of the
 	 * file, which doesn't have a newline.
 	 */
 	TEST_FEATURE ("with args up to end of string");
-	strcpy (buf, "this is a test");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is a test");
+		pos = 0;
 
-	args = nih_config_parse_args (NULL, buf, strlen (buf), &pos, NULL);
+		args = nih_config_parse_args (NULL, buf,
+					      strlen (buf), &pos, NULL);
 
-	TEST_EQ (pos, 14);
-	TEST_ALLOC_SIZE (args, sizeof (char *) * 5);
-	TEST_EQ_STR (args[0], "this");
-	TEST_EQ_STR (args[1], "is");
-	TEST_EQ_STR (args[2], "a");
-	TEST_EQ_STR (args[3], "test");
-	TEST_EQ_P (args[4], NULL);
+		if (test_alloc_failed) {
+			TEST_EQ_P (args, NULL);
 
-	nih_free (args);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 14);
+		TEST_ALLOC_SIZE (args, sizeof (char *) * 5);
+		TEST_EQ_STR (args[0], "this");
+		TEST_EQ_STR (args[1], "is");
+		TEST_EQ_STR (args[2], "a");
+		TEST_EQ_STR (args[3], "test");
+		TEST_EQ_P (args[4], NULL);
+
+		nih_free (args);
+	}
 
 
 	/* Check that we can ignore a comment at the end of the line, the
 	 * position should be updated past the comment onto the next line.
 	 */
 	TEST_FEATURE ("with args up to comment");
-	strcpy (buf, "this is a test # comment\nand so is this\n");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is a test # comment\nand so is this\n");
+		pos = 0;
 
-	args = nih_config_parse_args (NULL, buf, strlen (buf), &pos, NULL);
+		args = nih_config_parse_args (NULL, buf,
+					      strlen (buf), &pos, NULL);
 
-	TEST_EQ (pos, 25);
-	TEST_ALLOC_SIZE (args, sizeof (char *) * 5);
-	TEST_EQ_STR (args[0], "this");
-	TEST_EQ_STR (args[1], "is");
-	TEST_EQ_STR (args[2], "a");
-	TEST_EQ_STR (args[3], "test");
-	TEST_EQ_P (args[4], NULL);
+		if (test_alloc_failed) {
+			TEST_EQ_P (args, NULL);
 
-	nih_free (args);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 25);
+		TEST_ALLOC_SIZE (args, sizeof (char *) * 5);
+		TEST_EQ_STR (args[0], "this");
+		TEST_EQ_STR (args[1], "is");
+		TEST_EQ_STR (args[2], "a");
+		TEST_EQ_STR (args[3], "test");
+		TEST_EQ_P (args[4], NULL);
+
+		nih_free (args);
+	}
 
 
 	/* Check that we can ignore a comment at the end of the file, the
 	 * position should be updated past the end.
 	 */
 	TEST_FEATURE ("with args up to comment at end of file");
-	strcpy (buf, "this is a test # comment");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is a test # comment");
+		pos = 0;
 
-	args = nih_config_parse_args (NULL, buf, strlen (buf), &pos, NULL);
+		args = nih_config_parse_args (NULL, buf,
+					      strlen (buf), &pos, NULL);
 
-	TEST_EQ (pos, 24);
-	TEST_ALLOC_SIZE (args, sizeof (char *) * 5);
-	TEST_EQ_STR (args[0], "this");
-	TEST_EQ_STR (args[1], "is");
-	TEST_EQ_STR (args[2], "a");
-	TEST_EQ_STR (args[3], "test");
-	TEST_EQ_P (args[4], NULL);
+		if (test_alloc_failed) {
+			TEST_EQ_P (args, NULL);
 
-	nih_free (args);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 24);
+		TEST_ALLOC_SIZE (args, sizeof (char *) * 5);
+		TEST_EQ_STR (args[0], "this");
+		TEST_EQ_STR (args[1], "is");
+		TEST_EQ_STR (args[2], "a");
+		TEST_EQ_STR (args[3], "test");
+		TEST_EQ_P (args[4], NULL);
+
+		nih_free (args);
+	}
 
 
 	/* Check that the line number is incremented when a new line is
 	 * encountered.
 	 */
 	TEST_FEATURE ("with line number given");
-	strcpy (buf, "this is a test\nand so is this\n");
-	pos = 0;
-	lineno = 1;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is a test\nand so is this\n");
+		pos = 0;
+		lineno = 1;
 
-	args = nih_config_parse_args (NULL, buf, strlen (buf), &pos, &lineno);
+		args = nih_config_parse_args (NULL, buf,
+					      strlen (buf), &pos, &lineno);
 
-	TEST_EQ (pos, 15);
-	TEST_EQ (lineno, 2);
+		if (test_alloc_failed) {
+			TEST_EQ_P (args, NULL);
 
-	nih_free (args);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 15);
+		TEST_EQ (lineno, 2);
+
+		nih_free (args);
+	}
 
 
 	/* Check that consecutive whitespace, including escaped newlines,
@@ -821,22 +978,34 @@ test_parse_args (void)
 	 * incremented for both the embedded one and final one.
 	 */
 	TEST_FEATURE ("with multiple whitespace between arguments");
-	strcpy (buf, "this   is \t  a  \\\n test\nand so is this\n");
-	pos = 0;
-	lineno = 1;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this   is \t  a  \\\n test\nand so is this\n");
+		pos = 0;
+		lineno = 1;
 
-	args = nih_config_parse_args (NULL, buf, strlen (buf), &pos, &lineno);
+		args = nih_config_parse_args (NULL, buf,
+					      strlen (buf), &pos, &lineno);
 
-	TEST_EQ (pos, 24);
-	TEST_EQ (lineno, 3);
-	TEST_ALLOC_SIZE (args, sizeof (char *) * 5);
-	TEST_EQ_STR (args[0], "this");
-	TEST_EQ_STR (args[1], "is");
-	TEST_EQ_STR (args[2], "a");
-	TEST_EQ_STR (args[3], "test");
-	TEST_EQ_P (args[4], NULL);
+		if (test_alloc_failed) {
+			TEST_EQ_P (args, NULL);
 
-	nih_free (args);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 24);
+		TEST_EQ (lineno, 3);
+		TEST_ALLOC_SIZE (args, sizeof (char *) * 5);
+		TEST_EQ_STR (args[0], "this");
+		TEST_EQ_STR (args[1], "is");
+		TEST_EQ_STR (args[2], "a");
+		TEST_EQ_STR (args[3], "test");
+		TEST_EQ_P (args[4], NULL);
+
+		nih_free (args);
+	}
 
 
 	/* Check that each argument can be delimited by quotes, contain
@@ -844,22 +1013,34 @@ test_parse_args (void)
 	 * args array,
 	 */
 	TEST_FEATURE ("with whitespace inside arguments");
-	strcpy (buf, "\"this is\" \"a\ntest\" \\\n and so\nis this\n");
-	pos = 0;
-	lineno = 1;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "\"this is\" \"a\ntest\" \\\n and so\nis this\n");
+		pos = 0;
+		lineno = 1;
 
-	args = nih_config_parse_args (NULL, buf, strlen (buf), &pos, &lineno);
+		args = nih_config_parse_args (NULL, buf,
+					      strlen (buf), &pos, &lineno);
 
-	TEST_EQ (pos, 29);
-	TEST_EQ (lineno, 4);
-	TEST_ALLOC_SIZE (args, sizeof (char *) * 5);
-	TEST_EQ_STR (args[0], "this is");
-	TEST_EQ_STR (args[1], "a test");
-	TEST_EQ_STR (args[2], "and");
-	TEST_EQ_STR (args[3], "so");
-	TEST_EQ_P (args[4], NULL);
+		if (test_alloc_failed) {
+			TEST_EQ_P (args, NULL);
 
-	nih_free (args);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 29);
+		TEST_EQ (lineno, 4);
+		TEST_ALLOC_SIZE (args, sizeof (char *) * 5);
+		TEST_EQ_STR (args[0], "this is");
+		TEST_EQ_STR (args[1], "a test");
+		TEST_EQ_STR (args[2], "and");
+		TEST_EQ_STR (args[3], "so");
+		TEST_EQ_P (args[4], NULL);
+
+		nih_free (args);
+	}
 
 
 	/* Check that an empty line results in a one element array being
@@ -867,16 +1048,28 @@ test_parse_args (void)
 	 * past the empty line.
 	 */
 	TEST_FEATURE ("with empty line");
-	strcpy (buf, "\nand so is this\n");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "\nand so is this\n");
+		pos = 0;
 
-	args = nih_config_parse_args (NULL, buf, strlen (buf), &pos, NULL);
+		args = nih_config_parse_args (NULL, buf,
+					      strlen (buf), &pos, NULL);
 
-	TEST_EQ (pos, 1);
-	TEST_ALLOC_SIZE (args, sizeof (char *) * 1);
-	TEST_EQ_P (args[0], NULL);
+		if (test_alloc_failed) {
+			TEST_EQ_P (args, NULL);
 
-	nih_free (args);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 1);
+		TEST_ALLOC_SIZE (args, sizeof (char *) * 1);
+		TEST_EQ_P (args[0], NULL);
+
+		nih_free (args);
+	}
 
 
 	/* Check that a line containing only a comment results in a one
@@ -884,35 +1077,53 @@ test_parse_args (void)
 	 * position being incremented past the comment and newline.
 	 */
 	TEST_FEATURE ("with only comment in line");
-	strcpy (buf, "# line with comment\nand so is this\n");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "# line with comment\nand so is this\n");
+		pos = 0;
 
-	args = nih_config_parse_args (NULL, buf, strlen (buf), &pos, NULL);
+		args = nih_config_parse_args (NULL, buf,
+					      strlen (buf), &pos, NULL);
 
-	TEST_EQ (pos, 20);
-	TEST_ALLOC_SIZE (args, sizeof (char *) * 1);
-	TEST_EQ_P (args[0], NULL);
+		if (test_alloc_failed) {
+			TEST_EQ_P (args, NULL);
 
-	nih_free (args);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 20);
+		TEST_ALLOC_SIZE (args, sizeof (char *) * 1);
+		TEST_EQ_P (args[0], NULL);
+
+		nih_free (args);
+	}
 
 
 	/* Check that an error parsing the arguments results in NULL being
 	 * returned and the error raised.
 	 */
 	TEST_FEATURE ("with parser error");
-	strcpy (buf, "this is a \"test\nand so is this\n");
-	pos = 0;
-	lineno = 1;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is a \"test\nand so is this\n");
+		pos = 0;
+		lineno = 1;
 
-	args = nih_config_parse_args (NULL, buf, strlen (buf), &pos, &lineno);
+		args = nih_config_parse_args (NULL, buf,
+					      strlen (buf), &pos, &lineno);
 
-	TEST_EQ_P (args, NULL);
-	TEST_EQ (pos, 31);
-	TEST_EQ (lineno, 3);
+		TEST_EQ_P (args, NULL);
+		if (! test_alloc_failed) {
+			TEST_EQ (pos, 31);
+			TEST_EQ (lineno, 3);
+		}
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, NIH_CONFIG_UNTERMINATED_QUOTE);
-	nih_free (err);
+		err = nih_error_get ();
+		if (! test_alloc_failed)
+			TEST_EQ (err->number, NIH_CONFIG_UNTERMINATED_QUOTE);
+		nih_free (err);
+	}
 }
 
 void
@@ -930,84 +1141,150 @@ test_parse_command (void)
 	 * position should be updated to point to the start of the next line.
 	 */
 	TEST_FEATURE ("with command at start of simple string");
-	strcpy (buf, "this is a test\nand so is this\n");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is a test\nand so is this\n");
+		pos = 0;
 
-	str = nih_config_parse_command (NULL, buf, strlen (buf), &pos, NULL);
+		str = nih_config_parse_command (NULL, buf,
+						strlen (buf), &pos, NULL);
 
-	TEST_EQ (pos, 15);
-	TEST_ALLOC_SIZE (str, 15);
-	TEST_EQ_STR (str, "this is a test");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 15);
+		TEST_ALLOC_SIZE (str, 15);
+		TEST_EQ_STR (str, "this is a test");
+
+		nih_free (str);
+	}
 
 
 	/* Check that we can parse a command from inside a string.
 	 */
 	TEST_FEATURE ("with command inside simple string");
-	strcpy (buf, "this is a test\nand so is this\n");
-	pos = 5;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is a test\nand so is this\n");
+		pos = 5;
 
-	str = nih_config_parse_command (NULL, buf, strlen (buf), &pos, NULL);
+		str = nih_config_parse_command (NULL, buf,
+						strlen (buf), &pos, NULL);
 
-	TEST_EQ (pos, 15);
-	TEST_ALLOC_SIZE (str, 10);
-	TEST_EQ_STR (str, "is a test");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 5);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 15);
+		TEST_ALLOC_SIZE (str, 10);
+		TEST_EQ_STR (str, "is a test");
+
+		nih_free (str);
+	}
 
 
 	/* Check that we can parse a command that ends with the end of file.
 	 */
 	TEST_FEATURE ("with command at end of file");
-	strcpy (buf, "this is a test");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is a test");
+		pos = 0;
 
-	str = nih_config_parse_command (NULL, buf, strlen (buf), &pos, NULL);
+		str = nih_config_parse_command (NULL, buf,
+						strlen (buf), &pos, NULL);
 
-	TEST_EQ (pos, 14);
-	TEST_ALLOC_SIZE (str, 15);
-	TEST_EQ_STR (str, "this is a test");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 14);
+		TEST_ALLOC_SIZE (str, 15);
+		TEST_EQ_STR (str, "this is a test");
+
+		nih_free (str);
+	}
 
 
 	/* Check that we can parse a command that ends with a comment,
 	 * but the position should be incremented past the end of the comment.
 	 */
 	TEST_FEATURE ("with command up to comment");
-	strcpy (buf, "this is a test # this is a comment\nand so is this\n");
-	pos = 0;
-	lineno = 1;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, ("this is a test # this is a comment\n"
+			      "and so is this\n"));
+		pos = 0;
+		lineno = 1;
 
-	str = nih_config_parse_command (NULL, buf, strlen (buf), &pos,
-					&lineno);
+		str = nih_config_parse_command (NULL, buf, strlen (buf), &pos,
+						&lineno);
 
-	TEST_EQ (pos, 35);
-	TEST_EQ (lineno, 2);
-	TEST_ALLOC_SIZE (str, 15);
-	TEST_EQ_STR (str, "this is a test");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
+			TEST_EQ (lineno, 2);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 35);
+		TEST_EQ (lineno, 2);
+		TEST_ALLOC_SIZE (str, 15);
+		TEST_EQ_STR (str, "this is a test");
+
+		nih_free (str);
+	}
 
 
 	/* Check that we can parse a command that ends with a comment which
 	 * runs up to the end of file.
 	 */
 	TEST_FEATURE ("with command up to comment at end of file");
-	strcpy (buf, "this is a test # this is a comment");
-	pos = 0;
-	lineno = 1;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is a test # this is a comment");
+		pos = 0;
+		lineno = 1;
 
-	str = nih_config_parse_command (NULL, buf, strlen (buf), &pos,
-					&lineno);
+		str = nih_config_parse_command (NULL, buf, strlen (buf), &pos,
+						&lineno);
 
-	TEST_EQ (pos, 34);
-	TEST_EQ (lineno, 1);
-	TEST_ALLOC_SIZE (str, 15);
-	TEST_EQ_STR (str, "this is a test");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
+			TEST_EQ (lineno, 1);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 34);
+		TEST_EQ (lineno, 1);
+		TEST_ALLOC_SIZE (str, 15);
+		TEST_EQ_STR (str, "this is a test");
+
+		nih_free (str);
+	}
 
 
 	/* Check that the command is returned including any quotes,
@@ -1015,35 +1292,61 @@ test_parse_command (void)
 	 * or escaped newline collapsed to a single space.
 	 */
 	TEST_FEATURE ("with quotes, whitespace and newlines in string");
-	strcpy (buf, "\"this   is\" a \"test \\\n of\" \\\n commands\nfoo\n");
-	pos = 0;
-	lineno = 1;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, ("\"this   is\" a \"test \\\n of\" \\\n "
+			      "commands\nfoo\n"));
+		pos = 0;
+		lineno = 1;
 
-	str = nih_config_parse_command (NULL, buf, strlen (buf), &pos,
-					&lineno);
+		str = nih_config_parse_command (NULL, buf, strlen (buf), &pos,
+						&lineno);
 
-	TEST_EQ (pos, 39);
-	TEST_EQ (lineno, 4);
-	TEST_ALLOC_SIZE (str, 33);
-	TEST_EQ_STR (str, "\"this   is\" a \"test of\" commands");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 39);
+		TEST_EQ (lineno, 4);
+		TEST_ALLOC_SIZE (str, 33);
+		TEST_EQ_STR (str, "\"this   is\" a \"test of\" commands");
+
+		nih_free (str);
+	}
 
 
 	/* Check that we can parse an empty line, and have the empty string
 	 * returned.  The position should be updated past the newline.
 	 */
 	TEST_FEATURE ("with empty line");
-	strcpy (buf, "\nthis is a test\n");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "\nthis is a test\n");
+		pos = 0;
 
-	str = nih_config_parse_command (NULL, buf, strlen (buf), &pos, NULL);
+		str = nih_config_parse_command (NULL, buf,
+						strlen (buf), &pos, NULL);
 
-	TEST_EQ (pos, 1);
-	TEST_ALLOC_SIZE (str, 1);
-	TEST_EQ_STR (str, "");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 1);
+		TEST_ALLOC_SIZE (str, 1);
+		TEST_EQ_STR (str, "");
+
+		nih_free (str);
+	}
 
 
 	/* Check that we can parse a line containing only whitespace, and
@@ -1051,16 +1354,29 @@ test_parse_command (void)
 	 * past the newline.
 	 */
 	TEST_FEATURE ("with only whitespace in line");
-	strcpy (buf, "  \t  \nthis is a test\n");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "  \t  \nthis is a test\n");
+		pos = 0;
 
-	str = nih_config_parse_command (NULL, buf, strlen (buf), &pos, NULL);
+		str = nih_config_parse_command (NULL, buf,
+						strlen (buf), &pos, NULL);
 
-	TEST_EQ (pos, 6);
-	TEST_ALLOC_SIZE (str, 1);
-	TEST_EQ_STR (str, "");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 6);
+		TEST_ALLOC_SIZE (str, 1);
+		TEST_EQ_STR (str, "");
+
+		nih_free (str);
+	}
 
 
 	/* Check that we can parse a line with a comment in it, and have
@@ -1068,16 +1384,29 @@ test_parse_command (void)
 	 * the newline.
 	 */
 	TEST_FEATURE ("with only comment in line");
-	strcpy (buf, "# this is a test\nthis is a test\n");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "# this is a test\nthis is a test\n");
+		pos = 0;
 
-	str = nih_config_parse_command (NULL, buf, strlen (buf), &pos, NULL);
+		str = nih_config_parse_command (NULL, buf,
+						strlen (buf), &pos, NULL);
 
-	TEST_EQ (pos, 17);
-	TEST_ALLOC_SIZE (str, 1);
-	TEST_EQ_STR (str, "");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 17);
+		TEST_ALLOC_SIZE (str, 1);
+		TEST_EQ_STR (str, "");
+
+		nih_free (str);
+	}
 
 
 	/* Check that we can parse a line with whitespace before a comment,
@@ -1085,36 +1414,51 @@ test_parse_command (void)
 	 * past the newline.
 	 */
 	TEST_FEATURE ("with whitespace and comment in line");
-	strcpy (buf, "  # this is a test\nthis is a test\n");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "  # this is a test\nthis is a test\n");
+		pos = 0;
 
-	str = nih_config_parse_command (NULL, buf, strlen (buf), &pos, NULL);
+		str = nih_config_parse_command (NULL, buf,
+						strlen (buf), &pos, NULL);
 
-	TEST_EQ (pos, 19);
-	TEST_ALLOC_SIZE (str, 1);
-	TEST_EQ_STR (str, "");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 19);
+		TEST_ALLOC_SIZE (str, 1);
+		TEST_EQ_STR (str, "");
+
+		nih_free (str);
+	}
 
 
 	/* Check that a parser error while reading the command results in
 	 * NULL being returned and the error raised.
 	 */
 	TEST_FEATURE ("with parser error");
-	strcpy (buf, "this is a \"test\nand so is this\n");
-	pos = 0;
-	lineno = 1;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is a \"test\nand so is this\n");
+		pos = 0;
+		lineno = 1;
 
-	str = nih_config_parse_command (NULL, buf, strlen (buf), &pos,
-					&lineno);
+		str = nih_config_parse_command (NULL, buf, strlen (buf), &pos,
+						&lineno);
 
-	TEST_EQ_P (str, NULL);
-	TEST_EQ (pos, 31);
-	TEST_EQ (lineno, 3);
+		TEST_EQ_P (str, NULL);
+		TEST_EQ (pos, 31);
+		TEST_EQ (lineno, 3);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, NIH_CONFIG_UNTERMINATED_QUOTE);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, NIH_CONFIG_UNTERMINATED_QUOTE);
+		nih_free (err);
+	}
 }
 
 
@@ -1136,35 +1480,60 @@ test_parse_block (void)
 	 * should be positioned after the end of the terminator.
 	 */
 	TEST_FEATURE ("with simple block");
-	strcpy (buf, "this is\na test\nend foo\nblah\n");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is\na test\nend foo\nblah\n");
+		pos = 0;
 
-	str = nih_config_parse_block (NULL, buf, strlen (buf), &pos, NULL,
-				      "foo");
+		str = nih_config_parse_block (NULL, buf,
+					      strlen (buf), &pos, NULL, "foo");
 
-	TEST_EQ (pos, 23);
-	TEST_ALLOC_SIZE (str, 16);
-	TEST_EQ_STR (str, "this is\na test\n");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 23);
+		TEST_ALLOC_SIZE (str, 16);
+		TEST_EQ_STR (str, "this is\na test\n");
+
+		nih_free (str);
+	}
 
 
 	/* Check that the line number is incremented for each line that we
 	 * discover in the block, including the terminating line.
 	 */
 	TEST_FEATURE ("with line number set");
-	pos = 0;
-	lineno = 2;
+	TEST_ALLOC_FAIL {
+		pos = 0;
+		lineno = 2;
 
-	str = nih_config_parse_block (NULL, buf, strlen (buf), &pos, &lineno,
-				      "foo");
+		str = nih_config_parse_block (NULL, buf,
+					      strlen (buf), &pos, &lineno,
+					      "foo");
 
-	TEST_EQ (pos, 23);
-	TEST_EQ (lineno, 5);
-	TEST_ALLOC_SIZE (str, 16);
-	TEST_EQ_STR (str, "this is\na test\n");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 23);
+		TEST_EQ (lineno, 5);
+		TEST_ALLOC_SIZE (str, 16);
+		TEST_EQ_STR (str, "this is\na test\n");
+
+		nih_free (str);
+	}
 
 
 	/* Check that the common initial whitespace from each line is stripped,
@@ -1172,121 +1541,196 @@ test_parse_block (void)
 	 * of whitespace chars.
 	 */
 	TEST_FEATURE ("with whitespace at start of block");
-	strcpy (buf, "    this is\n  \t a test\nend foo\nblah\n");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "    this is\n  \t a test\nend foo\nblah\n");
+		pos = 0;
 
-	str = nih_config_parse_block (NULL, buf, strlen (buf), &pos, NULL,
-				      "foo");
+		str = nih_config_parse_block (NULL, buf,
+					      strlen (buf), &pos, NULL, "foo");
 
-	TEST_EQ (pos, 31);
-	TEST_ALLOC_SIZE (str, 20);
-	TEST_EQ_STR (str, "  this is\n\t a test\n");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 31);
+		TEST_ALLOC_SIZE (str, 20);
+		TEST_EQ_STR (str, "  this is\n\t a test\n");
+
+		nih_free (str);
+	}
 
 
 	/* Check that we can parse a block that ends in a terminator with
 	 * extraneous whitespace around the words.
 	 */
 	TEST_FEATURE ("with whitespace in terminator");
-	strcpy (buf, "this is\na test\n  end \t foo  \nblah\n");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is\na test\n  end \t foo  \nblah\n");
+		pos = 0;
 
-	str = nih_config_parse_block (NULL, buf, strlen (buf), &pos, NULL,
-				      "foo");
+		str = nih_config_parse_block (NULL, buf,
+					      strlen (buf), &pos, NULL, "foo");
 
-	TEST_EQ (pos, 29);
-	TEST_ALLOC_SIZE (str, 16);
-	TEST_EQ_STR (str, "this is\na test\n");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 29);
+		TEST_ALLOC_SIZE (str, 16);
+		TEST_EQ_STR (str, "this is\na test\n");
+
+		nih_free (str);
+	}
 
 
 	/* Check that we can parse a block that ends in a terminator which
 	 * is at the end of the file.
 	 */
 	TEST_FEATURE ("with terminator at end of file");
-	strcpy (buf, "this is\na test\nend foo");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is\na test\nend foo");
+		pos = 0;
 
-	str = nih_config_parse_block (NULL, buf, strlen (buf), &pos, NULL,
-				      "foo");
+		str = nih_config_parse_block (NULL, buf,
+					      strlen (buf), &pos, NULL, "foo");
 
-	TEST_EQ (pos, 22);
-	TEST_ALLOC_SIZE (str, 16);
-	TEST_EQ_STR (str, "this is\na test\n");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 22);
+		TEST_ALLOC_SIZE (str, 16);
+		TEST_EQ_STR (str, "this is\na test\n");
+
+		nih_free (str);
+	}
 
 
 	/* Check that we can parse a block that ends in a terminator which
 	 * has a comment following it.
 	 */
 	TEST_FEATURE ("with terminator and comment");
-	strcpy (buf, "this is\na test\nend foo # comment\ntest\n");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is\na test\nend foo # comment\ntest\n");
+		pos = 0;
 
-	str = nih_config_parse_block (NULL, buf, strlen (buf), &pos, NULL,
-				      "foo");
+		str = nih_config_parse_block (NULL, buf,
+					      strlen (buf), &pos, NULL, "foo");
 
-	TEST_EQ (pos, 33);
-	TEST_ALLOC_SIZE (str, 16);
-	TEST_EQ_STR (str, "this is\na test\n");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 33);
+		TEST_ALLOC_SIZE (str, 16);
+		TEST_EQ_STR (str, "this is\na test\n");
+
+		nih_free (str);
+	}
 
 
 	/* Check that we can parse a block that ends in a terminator which
 	 * has a comment and then the end of file.
 	 */
 	TEST_FEATURE ("with terminator and comment at end of file");
-	strcpy (buf, "this is\na test\nend foo # comment");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is\na test\nend foo # comment");
+		pos = 0;
 
-	str = nih_config_parse_block (NULL, buf, strlen (buf), &pos, NULL,
-				      "foo");
+		str = nih_config_parse_block (NULL, buf,
+					      strlen (buf), &pos, NULL, "foo");
 
-	TEST_EQ (pos, 32);
-	TEST_ALLOC_SIZE (str, 16);
-	TEST_EQ_STR (str, "this is\na test\n");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 32);
+		TEST_ALLOC_SIZE (str, 16);
+		TEST_EQ_STR (str, "this is\na test\n");
+
+		nih_free (str);
+	}
 
 
 	/* Check that various bogus forms of terminator are ignored.
 	 */
 	TEST_FEATURE ("with various things that aren't terminators");
-	strcpy (buf, "endfoo\nend a\nend fooish\nend foo\ntest\n");
-	pos = 0;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "endfoo\nend a\nend fooish\nend foo\ntest\n");
+		pos = 0;
 
-	str = nih_config_parse_block (NULL, buf, strlen (buf), &pos, NULL,
-				      "foo");
+		str = nih_config_parse_block (NULL, buf,
+					      strlen (buf), &pos, NULL, "foo");
 
-	TEST_EQ (pos, 32);
-	TEST_ALLOC_SIZE (str, 25);
-	TEST_EQ_STR (str, "endfoo\nend a\nend fooish\n");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
 
-	nih_free (str);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 32);
+		TEST_ALLOC_SIZE (str, 25);
+		TEST_EQ_STR (str, "endfoo\nend a\nend fooish\n");
+
+		nih_free (str);
+	}
 
 
 	/* Check that reaching the end of the file without finding the block
 	 * terminator causes an error to be raised and NULL to be returned.
 	 */
 	TEST_FEATURE ("with no terminator before end of file");
-	strcpy (buf, "this is\na test\n");
-	pos = 0;
-	lineno = 2;
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is\na test\n");
+		pos = 0;
+		lineno = 2;
 
-	str = nih_config_parse_block (NULL, buf, strlen (buf), &pos, &lineno,
-				      "foo");
+		str = nih_config_parse_block (NULL, buf,
+					      strlen (buf), &pos, &lineno,
+					      "foo");
 
-	TEST_EQ_P (str, NULL);
-	TEST_EQ (pos, 15);
-	TEST_EQ (lineno, 4);
+		TEST_EQ_P (str, NULL);
+		TEST_EQ (pos, 15);
+		TEST_EQ (lineno, 4);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, NIH_CONFIG_UNTERMINATED_BLOCK);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, NIH_CONFIG_UNTERMINATED_BLOCK);
+		nih_free (err);
+	}
 }
 
 

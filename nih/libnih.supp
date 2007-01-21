@@ -90,3 +90,13 @@
    fun:nih_sprintf
    fun:nih_main_package_string
 }
+
+# tmpfile is used by some test cases ... valgrind doesn't have a built-in
+# suppression for it.
+{
+   glibc-tmpfile
+   Memcheck:Leak
+   fun:malloc
+   fun:fdopen
+   fun:tmpfile
+}

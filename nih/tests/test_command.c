@@ -2,7 +2,7 @@
  *
  * test_command.c - test suite for nih/command.c
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,13 +49,13 @@ my_action (NihCommand *command, char * const *args)
 {
 	was_called++;
 
-	last_command = nih_alloc (NULL, sizeof (NihCommand));
+	last_command = malloc (sizeof (NihCommand));
 	memcpy (last_command, command, sizeof (NihCommand));
 
 	if (args[0]) {
-		last_arg0 = nih_strdup (NULL, args[0]);
+		last_arg0 = strdup (args[0]);
 		if (args[1]) {
-			last_arg1 = nih_strdup (NULL, args[1]);
+			last_arg1 = strdup (args[1]);
 		} else {
 			last_arg1 = NULL;
 		}
@@ -135,133 +135,143 @@ test_parser (void)
 	 * when there are no arguments, just passes in a NULL array.
 	 */
 	TEST_FEATURE ("with just command");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "foo";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "foo";
+		argv[argc] = NULL;
 
-	was_called = 0;
-	last_command = NULL;
-	last_arg0 = NULL;
-	last_arg1 = NULL;
+		was_called = 0;
+		last_command = NULL;
+		last_arg0 = NULL;
+		last_arg1 = NULL;
 
-	ret = nih_command_parser (NULL, argc, argv, options, commands);
+		ret = nih_command_parser (NULL, argc, argv, options, commands);
 
-	TEST_EQ (ret, 0);
-	TEST_TRUE (was_called);
-	TEST_EQ_STR (last_command->command, "foo");
-	TEST_EQ_P (last_arg0, NULL);
+		TEST_EQ (ret, 0);
+		TEST_TRUE (was_called);
+		TEST_EQ_STR (last_command->command, "foo");
+		TEST_EQ_P (last_arg0, NULL);
 
-	nih_free (last_command);
+		free (last_command);
+	}
 
 
 	/* Check that a global option that appears before a command is
 	 * honoured.
 	 */
 	TEST_FEATURE ("with global option followed by command");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "-n";
-	argv[argc++] = "foo";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "-n";
+		argv[argc++] = "foo";
+		argv[argc] = NULL;
 
-	dry_run = 0;
-	was_called = 0;
-	last_command = NULL;
-	last_arg0 = NULL;
-	last_arg1 = NULL;
+		dry_run = 0;
+		was_called = 0;
+		last_command = NULL;
+		last_arg0 = NULL;
+		last_arg1 = NULL;
 
-	ret = nih_command_parser (NULL, argc, argv, options, commands);
+		ret = nih_command_parser (NULL, argc, argv, options, commands);
 
-	TEST_EQ (ret, 0);
-	TEST_TRUE (dry_run);
-	TEST_TRUE (was_called);
-	TEST_EQ_STR (last_command->command, "foo");
-	TEST_EQ_P (last_arg0, NULL);
+		TEST_EQ (ret, 0);
+		TEST_TRUE (dry_run);
+		TEST_TRUE (was_called);
+		TEST_EQ_STR (last_command->command, "foo");
+		TEST_EQ_P (last_arg0, NULL);
 
-	nih_free (last_command);
+		free (last_command);
+	}
 
 
 	/* Check that a global option that appears after a command is
 	 * still honoured, despite not being in the command's own options.
 	 */
 	TEST_FEATURE ("with command followed by global option");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "foo";
-	argv[argc++] = "-n";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "foo";
+		argv[argc++] = "-n";
+		argv[argc] = NULL;
 
-	dry_run = 0;
-	was_called = 0;
-	last_command = NULL;
-	last_arg0 = NULL;
-	last_arg1 = NULL;
+		dry_run = 0;
+		was_called = 0;
+		last_command = NULL;
+		last_arg0 = NULL;
+		last_arg1 = NULL;
 
-	ret = nih_command_parser (NULL, argc, argv, options, commands);
+		ret = nih_command_parser (NULL, argc, argv, options, commands);
 
-	TEST_EQ (ret, 0);
-	TEST_TRUE (dry_run);
-	TEST_TRUE (was_called);
-	TEST_EQ_STR (last_command->command, "foo");
-	TEST_EQ_P (last_arg0, NULL);
+		TEST_EQ (ret, 0);
+		TEST_TRUE (dry_run);
+		TEST_TRUE (was_called);
+		TEST_EQ_STR (last_command->command, "foo");
+		TEST_EQ_P (last_arg0, NULL);
 
-	nih_free (last_command);
+		free (last_command);
+	}
 
 
 	/* Check that a command's own options are also honoured. */
 	TEST_FEATURE ("with command followed by specific option");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "wibble";
-	argv[argc++] = "--wobble";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "wibble";
+		argv[argc++] = "--wobble";
+		argv[argc] = NULL;
 
-	wobble = 0;
-	was_called = 0;
-	last_command = NULL;
-	last_arg0 = NULL;
-	last_arg1 = NULL;
+		wobble = 0;
+		was_called = 0;
+		last_command = NULL;
+		last_arg0 = NULL;
+		last_arg1 = NULL;
 
-	ret = nih_command_parser (NULL, argc, argv, options, commands);
+		ret = nih_command_parser (NULL, argc, argv, options, commands);
 
-	TEST_EQ (ret, 0);
-	TEST_TRUE (wobble);
-	TEST_TRUE (was_called);
-	TEST_EQ_STR (last_command->command, "wibble");
-	TEST_EQ_P (last_arg0, NULL);
+		TEST_EQ (ret, 0);
+		TEST_TRUE (wobble);
+		TEST_TRUE (was_called);
+		TEST_EQ_STR (last_command->command, "wibble");
+		TEST_EQ_P (last_arg0, NULL);
 
-	nih_free (last_command);
+		free (last_command);
+	}
 
 
 	/* Check that global options and command-specific options can be
 	 * both given at once.
 	 */
 	TEST_FEATURE ("with global option, command, then specific option");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--dry-run";
-	argv[argc++] = "wibble";
-	argv[argc++] = "--wobble";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--dry-run";
+		argv[argc++] = "wibble";
+		argv[argc++] = "--wobble";
+		argv[argc] = NULL;
 
-	wobble = 0;
-	dry_run = 0;
-	was_called = 0;
-	last_command = NULL;
-	last_arg0 = NULL;
-	last_arg1 = NULL;
+		wobble = 0;
+		dry_run = 0;
+		was_called = 0;
+		last_command = NULL;
+		last_arg0 = NULL;
+		last_arg1 = NULL;
 
-	ret = nih_command_parser (NULL, argc, argv, options, commands);
+		ret = nih_command_parser (NULL, argc, argv, options, commands);
 
-	TEST_EQ (ret, 0);
-	TEST_TRUE (wobble);
-	TEST_TRUE (dry_run);
-	TEST_TRUE (was_called);
-	TEST_EQ_STR (last_command->command, "wibble");
-	TEST_EQ_P (last_arg0, NULL);
+		TEST_EQ (ret, 0);
+		TEST_TRUE (wobble);
+		TEST_TRUE (dry_run);
+		TEST_TRUE (was_called);
+		TEST_EQ_STR (last_command->command, "wibble");
+		TEST_EQ_P (last_arg0, NULL);
 
-	nih_free (last_command);
+		free (last_command);
+	}
 
 
 	/* Check that a double-dash terminator may appear before a command,
@@ -269,31 +279,33 @@ test_parser (void)
 	 * ones.
 	 */
 	TEST_FEATURE ("with terminator before command");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--dry-run";
-	argv[argc++] = "--";
-	argv[argc++] = "wibble";
-	argv[argc++] = "--wobble";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--dry-run";
+		argv[argc++] = "--";
+		argv[argc++] = "wibble";
+		argv[argc++] = "--wobble";
+		argv[argc] = NULL;
 
-	wobble = 0;
-	dry_run = 0;
-	was_called = 0;
-	last_command = NULL;
-	last_arg0 = NULL;
-	last_arg1 = NULL;
+		wobble = 0;
+		dry_run = 0;
+		was_called = 0;
+		last_command = NULL;
+		last_arg0 = NULL;
+		last_arg1 = NULL;
 
-	ret = nih_command_parser (NULL, argc, argv, options, commands);
+		ret = nih_command_parser (NULL, argc, argv, options, commands);
 
-	TEST_EQ (ret, 0);
-	TEST_TRUE (wobble);
-	TEST_TRUE (dry_run);
-	TEST_TRUE (was_called);
-	TEST_EQ_STR (last_command->command, "wibble");
-	TEST_EQ_P (last_arg0, NULL);
+		TEST_EQ (ret, 0);
+		TEST_TRUE (wobble);
+		TEST_TRUE (dry_run);
+		TEST_TRUE (was_called);
+		TEST_EQ_STR (last_command->command, "wibble");
+		TEST_EQ_P (last_arg0, NULL);
 
-	nih_free (last_command);
+		free (last_command);
+	}
 
 
 	/* Check that a double-dash terminator may appear after a command,
@@ -302,90 +314,96 @@ test_parser (void)
 	 * argument in the array.
 	 */
 	TEST_FEATURE ("with terminator before and after command");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--dry-run";
-	argv[argc++] = "--";
-	argv[argc++] = "wibble";
-	argv[argc++] = "--";
-	argv[argc++] = "--wobble";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--dry-run";
+		argv[argc++] = "--";
+		argv[argc++] = "wibble";
+		argv[argc++] = "--";
+		argv[argc++] = "--wobble";
+		argv[argc] = NULL;
 
-	wobble = 0;
-	dry_run = 0;
-	was_called = 0;
-	last_command = NULL;
-	last_arg0 = NULL;
-	last_arg1 = NULL;
+		wobble = 0;
+		dry_run = 0;
+		was_called = 0;
+		last_command = NULL;
+		last_arg0 = NULL;
+		last_arg1 = NULL;
 
-	ret = nih_command_parser (NULL, argc, argv, options, commands);
+		ret = nih_command_parser (NULL, argc, argv, options, commands);
 
-	TEST_EQ (ret, 0);
-	TEST_FALSE (wobble);
-	TEST_TRUE (dry_run);
-	TEST_TRUE (was_called);
-	TEST_EQ_STR (last_command->command, "wibble");
-	TEST_EQ_STR (last_arg0, "--wobble");
-	TEST_EQ_P (last_arg1, NULL);
+		TEST_EQ (ret, 0);
+		TEST_FALSE (wobble);
+		TEST_TRUE (dry_run);
+		TEST_TRUE (was_called);
+		TEST_EQ_STR (last_command->command, "wibble");
+		TEST_EQ_STR (last_arg0, "--wobble");
+		TEST_EQ_P (last_arg1, NULL);
 
-	nih_free (last_arg0);
-	nih_free (last_command);
+		free (last_arg0);
+		free (last_command);
+	}
 
 
 	/* Check that non-option arguments may follow a command, they're
 	 * collected and passed to the function in a NULL-terminated array.
 	 */
 	TEST_FEATURE ("with command and single argument");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "bar";
-	argv[argc++] = "snarf";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "bar";
+		argv[argc++] = "snarf";
+		argv[argc] = NULL;
 
-	was_called = 0;
-	last_command = NULL;
-	last_arg0 = NULL;
-	last_arg1 = NULL;
+		was_called = 0;
+		last_command = NULL;
+		last_arg0 = NULL;
+		last_arg1 = NULL;
 
-	ret = nih_command_parser (NULL, argc, argv, options, commands);
+		ret = nih_command_parser (NULL, argc, argv, options, commands);
 
-	TEST_EQ (ret, 0);
-	TEST_TRUE (was_called);
-	TEST_EQ_STR (last_command->command, "bar");
-	TEST_EQ_STR (last_arg0, "snarf");
-	TEST_EQ_P (last_arg1, NULL);
+		TEST_EQ (ret, 0);
+		TEST_TRUE (was_called);
+		TEST_EQ_STR (last_command->command, "bar");
+		TEST_EQ_STR (last_arg0, "snarf");
+		TEST_EQ_P (last_arg1, NULL);
 
-	nih_free (last_arg0);
-	nih_free (last_command);
+		free (last_arg0);
+		free (last_command);
+	}
 
 
 	/* Check that multiple arguments after the command are all passed
 	 * in the array.
 	 */
 	TEST_FEATURE ("with command and multiple arguments");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "wibble";
-	argv[argc++] = "snarf";
-	argv[argc++] = "lick";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "wibble";
+		argv[argc++] = "snarf";
+		argv[argc++] = "lick";
+		argv[argc] = NULL;
 
-	was_called = 0;
-	last_command = NULL;
-	last_arg0 = NULL;
-	last_arg1 = NULL;
+		was_called = 0;
+		last_command = NULL;
+		last_arg0 = NULL;
+		last_arg1 = NULL;
 
-	ret = nih_command_parser (NULL, argc, argv, options, commands);
+		ret = nih_command_parser (NULL, argc, argv, options, commands);
 
-	TEST_EQ (ret, 0);
-	TEST_TRUE (was_called);
-	TEST_EQ_STR (last_command->command, "wibble");
-	TEST_EQ_STR (last_arg0, "snarf");
-	TEST_EQ_STR (last_arg1, "lick");
+		TEST_EQ (ret, 0);
+		TEST_TRUE (was_called);
+		TEST_EQ_STR (last_command->command, "wibble");
+		TEST_EQ_STR (last_arg0, "snarf");
+		TEST_EQ_STR (last_arg1, "lick");
 
-	nih_free (last_arg0);
-	nih_free (last_arg1);
-	nih_free (last_command);
+		free (last_arg0);
+		free (last_arg1);
+		free (last_command);
+	}
 
 
 	/* Check that an invalid global option appearing results in the
@@ -393,27 +411,31 @@ test_parser (void)
 	 * message to stderr with a suggestion about help.
 	 */
 	TEST_FEATURE ("with invalid global option before command");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "-z";
-	argv[argc++] = "foo";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "-z";
+		argv[argc++] = "foo";
+		argv[argc] = NULL;
 
-	was_called = 0;
+		was_called = 0;
 
-	TEST_DIVERT_STDERR (output) {
-		ret = nih_command_parser (NULL, argc, argv, options, commands);
+		TEST_DIVERT_STDERR (output) {
+			ret = nih_command_parser (NULL, argc, argv,
+						  options, commands);
+		}
+		rewind (output);
+
+		TEST_LT (ret, 0);
+		TEST_FALSE (was_called);
+
+		TEST_FILE_EQ (output, "test: invalid option: -z\n");
+		TEST_FILE_EQ (output,
+			      "Try `test --help' for more information.\n");
+		TEST_FILE_END (output);
+
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_LT (ret, 0);
-	TEST_FALSE (was_called);
-
-	TEST_FILE_EQ (output, "test: invalid option: -z\n");
-	TEST_FILE_EQ (output, "Try `test --help' for more information.\n");
-	TEST_FILE_END (output);
-
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an invalid option appearing after the command also
@@ -421,78 +443,89 @@ test_parser (void)
 	 * command function.
 	 */
 	TEST_FEATURE ("with invalid option after command");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "foo";
-	argv[argc++] = "-z";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "foo";
+		argv[argc++] = "-z";
+		argv[argc] = NULL;
 
-	was_called = 0;
+		was_called = 0;
 
-	TEST_DIVERT_STDERR (output) {
-		ret = nih_command_parser (NULL, argc, argv, options, commands);
+		TEST_DIVERT_STDERR (output) {
+			ret = nih_command_parser (NULL, argc, argv,
+						  options, commands);
+		}
+		rewind (output);
+
+		TEST_LT (ret, 0);
+		TEST_FALSE (was_called);
+
+		TEST_FILE_EQ (output, "test: invalid option: -z\n");
+		TEST_FILE_EQ (output, "Try `test --help' for more information.\n");
+		TEST_FILE_END (output);
+
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_LT (ret, 0);
-	TEST_FALSE (was_called);
-
-	TEST_FILE_EQ (output, "test: invalid option: -z\n");
-	TEST_FILE_EQ (output, "Try `test --help' for more information.\n");
-	TEST_FILE_END (output);
-
-	TEST_FILE_RESET (output);
 
 
 	/* Check that a missing command entirely results in the parser
 	 * terminating with an error and outputting a message.
 	 */
 	TEST_FEATURE ("with missing command");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc] = NULL;
 
-	was_called = 0;
+		was_called = 0;
 
-	TEST_DIVERT_STDERR (output) {
-		ret = nih_command_parser (NULL, argc, argv, options, commands);
+		TEST_DIVERT_STDERR (output) {
+			ret = nih_command_parser (NULL, argc, argv,
+						  options, commands);
+		}
+		rewind (output);
+
+		TEST_LT (ret, 0);
+		TEST_FALSE (was_called);
+
+		TEST_FILE_EQ (output, "test: missing command\n");
+		TEST_FILE_EQ (output,
+			      "Try `test --help' for more information.\n");
+		TEST_FILE_END (output);
+
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_LT (ret, 0);
-	TEST_FALSE (was_called);
-
-	TEST_FILE_EQ (output, "test: missing command\n");
-	TEST_FILE_EQ (output, "Try `test --help' for more information.\n");
-	TEST_FILE_END (output);
-
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an invalid command results in the parser returning
 	 * an error and outputting a message.
 	 */
 	TEST_FEATURE ("with invalid command");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "lick";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "lick";
+		argv[argc] = NULL;
 
-	was_called = 0;
+		was_called = 0;
 
-	TEST_DIVERT_STDERR (output) {
-		ret = nih_command_parser (NULL, argc, argv, options, commands);
+		TEST_DIVERT_STDERR (output) {
+			ret = nih_command_parser (NULL, argc, argv,
+						  options, commands);
+		}
+		rewind (output);
+
+		TEST_LT (ret, 0);
+		TEST_FALSE (was_called);
+
+		TEST_FILE_EQ (output, "test: invalid command: lick\n");
+		TEST_FILE_EQ (output,
+			      "Try `test --help' for more information.\n");
+		TEST_FILE_END (output);
+
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_LT (ret, 0);
-	TEST_FALSE (was_called);
-
-	TEST_FILE_EQ (output, "test: invalid command: lick\n");
-	TEST_FILE_EQ (output, "Try `test --help' for more information.\n");
-	TEST_FILE_END (output);
-
-	TEST_FILE_RESET (output);
 
 
 	/* Check that the command may appear in the program name instead,
@@ -500,36 +533,38 @@ test_parser (void)
 	 * all options considered to be both global and command options.
 	 */
 	TEST_FEATURE ("with command in program name");
-	program_name = "wibble";
+	TEST_ALLOC_FAIL {
+		program_name = "wibble";
 
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "snarf";
-	argv[argc++] = "lick";
-	argv[argc++] = "--wobble";
-	argv[argc++] = "-n";
-	argv[argc] = NULL;
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "snarf";
+		argv[argc++] = "lick";
+		argv[argc++] = "--wobble";
+		argv[argc++] = "-n";
+		argv[argc] = NULL;
 
-	dry_run = 0;
-	wobble = 0;
-	was_called = 0;
-	last_command = NULL;
-	last_arg0 = NULL;
-	last_arg1 = NULL;
+		dry_run = 0;
+		wobble = 0;
+		was_called = 0;
+		last_command = NULL;
+		last_arg0 = NULL;
+		last_arg1 = NULL;
 
-	ret = nih_command_parser (NULL, argc, argv, options, commands);
+		ret = nih_command_parser (NULL, argc, argv, options, commands);
 
-	TEST_EQ (ret, 0);
-	TEST_TRUE (dry_run);
-	TEST_TRUE (wobble);
-	TEST_TRUE (was_called);
-	TEST_EQ_STR (last_command->command, "wibble");
-	TEST_EQ_STR (last_arg0, "snarf");
-	TEST_EQ_STR (last_arg1, "lick");
+		TEST_EQ (ret, 0);
+		TEST_TRUE (dry_run);
+		TEST_TRUE (wobble);
+		TEST_TRUE (was_called);
+		TEST_EQ_STR (last_command->command, "wibble");
+		TEST_EQ_STR (last_arg0, "snarf");
+		TEST_EQ_STR (last_arg1, "lick");
 
-	nih_free (last_arg0);
-	nih_free (last_arg1);
-	nih_free (last_command);
+		free (last_arg0);
+		free (last_arg1);
+		free (last_command);
+	}
 
 
 	fclose (output);
@@ -552,50 +587,52 @@ test_help (void)
 	TEST_FUNCTION ("nih_command_help");
 	nih_main_init_full ("test", "wibble", "1.0",
 			    "foo@bar.com", "Copyright Message");
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "help";
+		argv[argc] = NULL;
 
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "help";
-	argv[argc] = NULL;
+		output = tmpfile ();
+		TEST_CHILD (pid) {
+			unsetenv ("COLUMNS");
 
-	output = tmpfile ();
-	TEST_CHILD (pid) {
-		unsetenv ("COLUMNS");
-
-		TEST_DIVERT_STDOUT (output) {
-			nih_command_parser (NULL, argc, argv,
-					    options, commands);
-			exit (1);
+			TEST_DIVERT_STDOUT (output) {
+				nih_command_parser (NULL, argc, argv,
+						    options, commands);
+				exit (1);
+			}
 		}
+
+		waitpid (pid, &status, 0);
+		rewind (output);
+
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		TEST_FILE_EQ (output, "First test group commands:\n");
+		TEST_FILE_EQ (output, ("  foo                         "
+				       "do something fooish\n"));
+		TEST_FILE_EQ (output, ("  bar                         "
+				       "do something barish to a file\n"));
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, "Second test group commands:\n");
+		TEST_FILE_EQ (output, ("  baz                         "
+				       "do something bazish\n"));
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, "Other commands:\n");
+		TEST_FILE_EQ (output, ("  wibble                      "
+				       "wibble a file from one place to "
+				       "another\n"));
+		TEST_FILE_EQ (output, ("  help                        "
+				       "display list of commands\n"));
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, ("For more information on a command, "
+				       "try `test COMMAND --help'.\n"));
+		TEST_FILE_END (output);
+
+		TEST_FILE_RESET (output);
 	}
-
-	waitpid (pid, &status, 0);
-	rewind (output);
-
-	TEST_TRUE (WIFEXITED (status));
-	TEST_EQ (WEXITSTATUS (status), 0);
-
-	TEST_FILE_EQ (output, "First test group commands:\n");
-	TEST_FILE_EQ (output, ("  foo                         "
-			       "do something fooish\n"));
-	TEST_FILE_EQ (output, ("  bar                         "
-			       "do something barish to a file\n"));
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ (output, "Second test group commands:\n");
-	TEST_FILE_EQ (output, ("  baz                         "
-			       "do something bazish\n"));
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ (output, "Other commands:\n");
-	TEST_FILE_EQ (output, ("  wibble                      "
-			       "wibble a file from one place to another\n"));
-	TEST_FILE_EQ (output, ("  help                        "
-			       "display list of commands\n"));
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ (output, ("For more information on a command, try "
-			       "`test COMMAND --help'.\n"));
-	TEST_FILE_END (output);
-
-	TEST_FILE_RESET (output);
 
 
 	/* Check that the command functions sufficiently wrap the
@@ -606,55 +643,59 @@ test_help (void)
 	TEST_FUNCTION ("nih_option_help");
 
 	TEST_FEATURE ("with no command");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--help";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--help";
+		argv[argc] = NULL;
 
-	nih_option_set_synopsis ("This is my program");
-	nih_option_set_help ("Some help text");
+		nih_option_set_synopsis ("This is my program");
+		nih_option_set_help ("Some help text");
 
-	TEST_CHILD (pid) {
-		unsetenv ("COLUMNS");
+		TEST_CHILD (pid) {
+			unsetenv ("COLUMNS");
 
-		TEST_DIVERT_STDOUT (output) {
-			nih_command_parser (NULL, argc, argv,
-					    options, commands);
-			exit (1);
+			TEST_DIVERT_STDOUT (output) {
+				nih_command_parser (NULL, argc, argv,
+						    options, commands);
+				exit (1);
+			}
 		}
+
+		waitpid (pid, &status, 0);
+		rewind (output);
+
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		TEST_FILE_EQ (output, ("Usage: test [OPTION]... "
+				       "COMMAND [OPTION]... [ARG]...\n"));
+		TEST_FILE_EQ (output, "This is my program\n");
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, "Options:\n");
+		TEST_FILE_EQ (output, ("  -n, --dry-run               "
+				       "simulate and output actions only\n"));
+		TEST_FILE_EQ (output, ("  -q, --quiet                 "
+				       "reduce output to errors only\n"));
+		TEST_FILE_EQ (output, ("  -v, --verbose               "
+				       "increase output to include "
+				       "informational messages\n"));
+		TEST_FILE_EQ (output, ("      --help                  "
+				       "display this help and exit\n"));
+		TEST_FILE_EQ (output, ("      --version               "
+				       "output version information and "
+				       "exit\n"));
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, "Some help text\n");
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, ("For a list of commands, "
+				       "try `test help'.\n"));
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, "Report bugs to <foo@bar.com>\n");
+		TEST_FILE_END (output);
+
+		TEST_FILE_RESET (output);
 	}
-
-	waitpid (pid, &status, 0);
-	rewind (output);
-
-	TEST_TRUE (WIFEXITED (status));
-	TEST_EQ (WEXITSTATUS (status), 0);
-
-	TEST_FILE_EQ (output, ("Usage: test [OPTION]... "
-			       "COMMAND [OPTION]... [ARG]...\n"));
-	TEST_FILE_EQ (output, "This is my program\n");
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ (output, "Options:\n");
-	TEST_FILE_EQ (output, ("  -n, --dry-run               "
-			       "simulate and output actions only\n"));
-	TEST_FILE_EQ (output, ("  -q, --quiet                 "
-			       "reduce output to errors only\n"));
-	TEST_FILE_EQ (output, ("  -v, --verbose               "
-			       "increase output to include informational "
-			       "messages\n"));
-	TEST_FILE_EQ (output, ("      --help                  "
-			       "display this help and exit\n"));
-	TEST_FILE_EQ (output, ("      --version               "
-			       "output version information and exit\n"));
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ (output, "Some help text\n");
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ (output, "For a list of commands, try `test help'.\n");
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ (output, "Report bugs to <foo@bar.com>\n");
-	TEST_FILE_END (output);
-
-	TEST_FILE_RESET (output);
 
 
 	/* Check that the wrapping is sufficient that following a command
@@ -662,55 +703,61 @@ test_help (void)
 	 * the global options in the list.
 	 */
 	TEST_FEATURE ("with a command");
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "wibble";
-	argv[argc++] = "--help";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "wibble";
+		argv[argc++] = "--help";
+		argv[argc] = NULL;
 
-	TEST_CHILD (pid) {
-		unsetenv ("COLUMNS");
+		TEST_CHILD (pid) {
+			unsetenv ("COLUMNS");
 
-		TEST_DIVERT_STDOUT (output) {
-			nih_command_parser (NULL, argc, argv,
-					    options, commands);
-			exit (1);
+			TEST_DIVERT_STDOUT (output) {
+				nih_command_parser (NULL, argc, argv,
+						    options, commands);
+				exit (1);
+			}
 		}
+
+		waitpid (pid, &status, 0);
+		rewind (output);
+
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		TEST_FILE_EQ (output, ("Usage: test wibble [OPTION]... "
+				       "SRC DEST\n"));
+		TEST_FILE_EQ (output, ("wibble a file from one place "
+				       "to another\n"));
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, "Options:\n");
+		TEST_FILE_EQ (output, ("      --wobble                "
+				       "wobble file while wibbling\n"));
+		TEST_FILE_EQ (output, ("  -n, --dry-run               "
+				       "simulate and output actions only\n"));
+		TEST_FILE_EQ (output, ("  -q, --quiet                 "
+				       "reduce output to errors only\n"));
+		TEST_FILE_EQ (output, ("  -v, --verbose               "
+				       "increase output to include "
+				       "informational messages\n"));
+		TEST_FILE_EQ (output, ("      --help                  "
+				       "display this help and exit\n"));
+		TEST_FILE_EQ (output, ("      --version               "
+				       "output version information "
+				       "and exit\n"));
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, ("Takes the file from SRC, wibbles it "
+				       "until any loose pieces fall off, and "
+				       "until\n"));
+		TEST_FILE_EQ (output, ("it reaches DEST.  SRC and DEST may "
+				       "not be the same location.\n"));
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, "Report bugs to <foo@bar.com>\n");
+		TEST_FILE_END (output);
+
+		TEST_FILE_RESET (output);
 	}
-
-	waitpid (pid, &status, 0);
-	rewind (output);
-
-	TEST_TRUE (WIFEXITED (status));
-	TEST_EQ (WEXITSTATUS (status), 0);
-
-	TEST_FILE_EQ (output, "Usage: test wibble [OPTION]... SRC DEST\n");
-	TEST_FILE_EQ (output, "wibble a file from one place to another\n");
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ (output, "Options:\n");
-	TEST_FILE_EQ (output, ("      --wobble                "
-			       "wobble file while wibbling\n"));
-	TEST_FILE_EQ (output, ("  -n, --dry-run               "
-			       "simulate and output actions only\n"));
-	TEST_FILE_EQ (output, ("  -q, --quiet                 "
-			       "reduce output to errors only\n"));
-	TEST_FILE_EQ (output, ("  -v, --verbose               "
-			       "increase output to include informational "
-			       "messages\n"));
-	TEST_FILE_EQ (output, ("      --help                  "
-			       "display this help and exit\n"));
-	TEST_FILE_EQ (output, ("      --version               "
-			       "output version information and exit\n"));
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ (output, ("Takes the file from SRC, wibbles it until any "
-			       "loose pieces fall off, and until\n"));
-	TEST_FILE_EQ (output, ("it reaches DEST.  SRC and DEST may not be the "
-			       "same location.\n"));
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ (output, "Report bugs to <foo@bar.com>\n");
-	TEST_FILE_END (output);
-
-	TEST_FILE_RESET (output);
 
 
 	/* Check that --help works if the program name itself is the name
@@ -719,53 +766,58 @@ test_help (void)
 	 * usage strings, etc. should make sense.
 	 */
 	TEST_FEATURE ("with command in program_name");
-	program_name = "wibble";
-	argc = 0;
-	argv[argc++] = "ignored";
-	argv[argc++] = "--help";
-	argv[argc] = NULL;
+	TEST_ALLOC_FAIL {
+		program_name = "wibble";
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--help";
+		argv[argc] = NULL;
 
-	TEST_CHILD (pid) {
-		unsetenv ("COLUMNS");
+		TEST_CHILD (pid) {
+			unsetenv ("COLUMNS");
 
-		TEST_DIVERT_STDOUT (output) {
-			nih_command_parser (NULL, argc, argv,
-					    options, commands);
-			exit (1);
+			TEST_DIVERT_STDOUT (output) {
+				nih_command_parser (NULL, argc, argv,
+						    options, commands);
+				exit (1);
+			}
 		}
+
+		waitpid (pid, &status, 0);
+		rewind (output);
+
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		TEST_FILE_EQ (output, "Usage: wibble [OPTION]... SRC DEST\n");
+		TEST_FILE_EQ (output, ("wibble a file from one place to "
+				       "another\n"));
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, "Options:\n");
+		TEST_FILE_EQ (output, ("      --wobble                "
+				       "wobble file while wibbling\n"));
+		TEST_FILE_EQ (output, ("  -n, --dry-run               "
+				       "simulate and output actions only\n"));
+		TEST_FILE_EQ (output, ("  -q, --quiet                 "
+				       "reduce output to errors only\n"));
+		TEST_FILE_EQ (output, ("  -v, --verbose               "
+				       "increase output to include "
+				       "informational messages\n"));
+		TEST_FILE_EQ (output, ("      --help                  "
+				       "display this help and exit\n"));
+		TEST_FILE_EQ (output, ("      --version               "
+				       "output version information and "
+				       "exit\n"));
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, ("Takes the file from SRC, wibbles it "
+				       "until any loose pieces fall off, and "
+				       "until\n"));
+		TEST_FILE_EQ (output, ("it reaches DEST.  SRC and DEST may "
+				       "not be the same location.\n"));
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, "Report bugs to <foo@bar.com>\n");
+		TEST_FILE_END (output);
 	}
-
-	waitpid (pid, &status, 0);
-	rewind (output);
-
-	TEST_TRUE (WIFEXITED (status));
-	TEST_EQ (WEXITSTATUS (status), 0);
-
-	TEST_FILE_EQ (output, "Usage: wibble [OPTION]... SRC DEST\n");
-	TEST_FILE_EQ (output, "wibble a file from one place to another\n");
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ (output, "Options:\n");
-	TEST_FILE_EQ (output, ("      --wobble                "
-			       "wobble file while wibbling\n"));
-	TEST_FILE_EQ (output, ("  -n, --dry-run               "
-			       "simulate and output actions only\n"));
-	TEST_FILE_EQ (output, ("  -q, --quiet                 "
-			       "reduce output to errors only\n"));
-	TEST_FILE_EQ (output, ("  -v, --verbose               "
-			       "increase output to include informational "
-			       "messages\n"));
-	TEST_FILE_EQ (output, ("      --help                  "
-			       "display this help and exit\n"));
-	TEST_FILE_EQ (output, ("      --version               "
-			       "output version information and exit\n"));
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ (output, ("Takes the file from SRC, wibbles it until any "
-			       "loose pieces fall off, and until\n"));
-	TEST_FILE_EQ (output, ("it reaches DEST.  SRC and DEST may not be the "
-			       "same location.\n"));
-	TEST_FILE_EQ (output, "\n");
-	TEST_FILE_EQ (output, "Report bugs to <foo@bar.com>\n");
-	TEST_FILE_END (output);
 
 	fclose (output);
 }

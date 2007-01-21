@@ -59,26 +59,40 @@ void
 test_add_watch (void)
 {
 	NihIoWatch *watch;
-	int         fds[2];
+	fd_set      readfds, writefds, exceptfds;
+	int         nfds, fds[2];
 
 	/* Check that we can add a watch on a file descriptor and that the
 	 * structure is properly filled in and placed in a list.
 	 */
 	TEST_FUNCTION ("nih_io_add_watch");
-	pipe (fds);
-	watch = nih_io_add_watch (NULL, fds[0], NIH_IO_READ,
-				  my_watcher, &watch);
+	nfds = 0;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
 
-	TEST_ALLOC_SIZE (watch, sizeof (NihIoWatch));
-	TEST_EQ (watch->fd, fds[0]);
-	TEST_EQ (watch->events, NIH_IO_READ);
-	TEST_EQ_P (watch->watcher, my_watcher);
-	TEST_EQ_P (watch->data, &watch);
+	TEST_ALLOC_FAIL {
+		pipe (fds);
+		watch = nih_io_add_watch (NULL, fds[0], NIH_IO_READ,
+					  my_watcher, &watch);
 
-	nih_list_free (&watch->entry);
+		if (test_alloc_failed) {
+			TEST_EQ_P (watch, NULL);
+			continue;
+		}
 
-	close (fds[0]);
-	close (fds[1]);
+		TEST_ALLOC_SIZE (watch, sizeof (NihIoWatch));
+		TEST_EQ (watch->fd, fds[0]);
+		TEST_EQ (watch->events, NIH_IO_READ);
+		TEST_EQ_P (watch->watcher, my_watcher);
+		TEST_EQ_P (watch->data, &watch);
+
+		nih_list_free (&watch->entry);
+
+		close (fds[0]);
+		close (fds[1]);
+	}
 }
 
 
@@ -211,89 +225,152 @@ test_buffer_new (void)
 	 * structure members are correct.
 	 */
 	TEST_FUNCTION ("nih_io_buffer_new");
-	buf = nih_io_buffer_new (NULL);
+	TEST_ALLOC_FAIL {
+		buf = nih_io_buffer_new (NULL);
 
-	TEST_ALLOC_SIZE (buf, sizeof (NihIoBuffer));
-	TEST_EQ_P (buf->buf, NULL);
-	TEST_EQ (buf->size, 0);
-	TEST_EQ (buf->len, 0);
+		if (test_alloc_failed) {
+			TEST_EQ_P (buf, NULL);
+			continue;
+		}
 
-	nih_free (buf);
+		TEST_ALLOC_SIZE (buf, sizeof (NihIoBuffer));
+		TEST_EQ_P (buf->buf, NULL);
+		TEST_EQ (buf->size, 0);
+		TEST_EQ (buf->len, 0);
+
+		nih_free (buf);
+	}
 }
 
 void
 test_buffer_resize (void)
 {
 	NihIoBuffer *buf;
+	int          ret;
 
 	TEST_FUNCTION ("nih_io_buffer_resize");
-	buf = nih_io_buffer_new (NULL);
 
 	/* Check that we can resize a NULL buffer; we ask for half a page
 	 * and expect to get a full page allocated as a child of the buffer
 	 * itself.
 	 */
 	TEST_FEATURE ("with empty buffer and half increase");
-	nih_io_buffer_resize (buf, BUFSIZ / 2);
+	buf = nih_io_buffer_new (NULL);
 
-	TEST_ALLOC_PARENT (buf->buf, buf);
-	TEST_ALLOC_SIZE (buf->buf, BUFSIZ);
-	TEST_EQ (buf->size, BUFSIZ);
-	TEST_EQ (buf->len, 0);
+	TEST_ALLOC_FAIL {
+		buf->size = 0;
+		ret = nih_io_buffer_resize (buf, BUFSIZ / 2);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+		TEST_ALLOC_PARENT (buf->buf, buf);
+		TEST_ALLOC_SIZE (buf->buf, BUFSIZ);
+		TEST_EQ (buf->size, BUFSIZ);
+		TEST_EQ (buf->len, 0);
+	}
 
 
 	/* Check that we can increase the size by a full page, and not
 	 * have anything change because there's no space used yet.
 	 */
 	TEST_FEATURE ("with empty but alloc'd buffer and full increase");
-	nih_io_buffer_resize (buf, BUFSIZ);
+	TEST_ALLOC_FAIL {
+		buf->size = BUFSIZ;
+		ret = nih_io_buffer_resize (buf, BUFSIZ);
 
-	TEST_ALLOC_SIZE (buf->buf, BUFSIZ);
-	TEST_EQ (buf->size, BUFSIZ);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+		TEST_ALLOC_SIZE (buf->buf, BUFSIZ);
+		TEST_EQ (buf->size, BUFSIZ);
+	}
 
 
 	/* Check that we can increase the size beyond a full page, and
 	 * get another page of allocated space.
 	 */
 	TEST_FEATURE ("with empty but alloc'd buffer and larger increase");
-	nih_io_buffer_resize (buf, BUFSIZ + BUFSIZ / 2);
+	TEST_ALLOC_FAIL {
+		buf->size = BUFSIZ;
+		ret = nih_io_buffer_resize (buf, BUFSIZ + BUFSIZ / 2);
 
-	TEST_ALLOC_SIZE (buf->buf, BUFSIZ * 2);
-	TEST_EQ (buf->size, BUFSIZ * 2);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+		TEST_ALLOC_SIZE (buf->buf, BUFSIZ * 2);
+		TEST_EQ (buf->size, BUFSIZ * 2);
+	}
 
 
 	/* Check that we can drop the size of an allocated but empty buffer
 	 * back to zero and have the buffer freed.
 	 */
 	TEST_FEATURE ("with alloc'd buffer and no data");
-	nih_io_buffer_resize (buf, 0);
+	TEST_ALLOC_FAIL {
+		buf->size = BUFSIZ * 2;
+		ret = nih_io_buffer_resize (buf, 0);
 
-	TEST_EQ (buf->size, 0);
-	TEST_EQ_P (buf->buf, NULL);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+		TEST_EQ (buf->size, 0);
+		TEST_EQ_P (buf->buf, NULL);
+	}
 
 
 	/* Check that asking for a page more space when we claim to be
 	 * using half a page gives us a full two pages of space.
 	 */
 	TEST_FEATURE ("with part-full buffer and increase");
-	buf->len = BUFSIZ / 2;
-	nih_io_buffer_resize (buf, BUFSIZ);
+	TEST_ALLOC_FAIL {
+		buf->size = 0;
+		buf->len = BUFSIZ / 2;
+		ret = nih_io_buffer_resize (buf, BUFSIZ);
 
-	TEST_ALLOC_SIZE (buf->buf, BUFSIZ * 2);
-	TEST_EQ (buf->size, BUFSIZ * 2);
-	TEST_EQ (buf->len, BUFSIZ / 2);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+		TEST_ALLOC_SIZE (buf->buf, BUFSIZ * 2);
+		TEST_EQ (buf->size, BUFSIZ * 2);
+		TEST_EQ (buf->len, BUFSIZ / 2);
+	}
 
 
 	/* Check that asking for an increase smaller than the difference
 	 * between the buffer size and length has no effect.
 	 */
 	TEST_FEATURE ("with no change");
-	buf->len = BUFSIZ + BUFSIZ / 2;
-	nih_io_buffer_resize (buf, 80);
+	TEST_ALLOC_FAIL {
+		buf->size = BUFSIZ * 2;
+		buf->len = BUFSIZ + BUFSIZ / 2;
+		ret = nih_io_buffer_resize (buf, 80);
 
-	TEST_ALLOC_SIZE (buf->buf, BUFSIZ * 2);
-	TEST_EQ (buf->size, BUFSIZ * 2);
-	TEST_EQ (buf->len, BUFSIZ + BUFSIZ / 2);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+		TEST_ALLOC_SIZE (buf->buf, BUFSIZ * 2);
+		TEST_EQ (buf->size, BUFSIZ * 2);
+		TEST_EQ (buf->len, BUFSIZ + BUFSIZ / 2);
+	}
 
 	nih_free (buf);
 }
@@ -315,35 +392,56 @@ test_buffer_pop (void)
 	 * The buffer should be shrunk appropriately and moved up.
 	 */
 	TEST_FEATURE ("with full buffer");
-	len = 14;
-	str = nih_io_buffer_pop (NULL, buf, &len);
+	TEST_ALLOC_FAIL {
+		len = 14;
+		str = nih_io_buffer_pop (NULL, buf, &len);
 
-	TEST_EQ (len, 14);
-	TEST_ALLOC_SIZE (str, 15);
-	TEST_EQ (str[14], '\0');
-	TEST_EQ_STR (str, "this is a test");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
 
-	TEST_EQ (buf->len, 19);
-	TEST_EQ_MEM (buf->buf, " of the buffer code", 19);
+			TEST_EQ (buf->len, 19);
+			TEST_EQ_MEM (buf->buf, " of the buffer code", 19);
+			continue;
+		}
 
-	nih_free (str);
+		TEST_EQ (len, 14);
+		TEST_ALLOC_SIZE (str, 15);
+		TEST_EQ (str[14], '\0');
+		TEST_EQ_STR (str, "this is a test");
+
+		TEST_EQ (buf->len, 19);
+		TEST_EQ_MEM (buf->buf, " of the buffer code", 19);
+
+		nih_free (str);
+	}
 
 
 	/* Check that we can empty the buffer and the buffer is freed. */
 	TEST_FEATURE ("with request to empty buffer");
-	len = 19;
-	str = nih_io_buffer_pop (NULL, buf, &len);
+	TEST_ALLOC_FAIL {
+		len = 19;
+		str = nih_io_buffer_pop (NULL, buf, &len);
 
-	TEST_EQ (len, 19);
-	TEST_ALLOC_SIZE (str, 20);
-	TEST_EQ (str[19], '\0');
-	TEST_EQ_STR (str, " of the buffer code");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
 
-	TEST_EQ (buf->len, 0);
-	TEST_EQ (buf->size, 0);
-	TEST_EQ_P (buf->buf, NULL);
+			TEST_EQ (buf->len, 0);
+			TEST_EQ (buf->size, 0);
+			TEST_EQ_P (buf->buf, NULL);
+			continue;
+		}
 
-	nih_free (str);
+		TEST_EQ (len, 19);
+		TEST_ALLOC_SIZE (str, 20);
+		TEST_EQ (str[19], '\0');
+		TEST_EQ_STR (str, " of the buffer code");
+
+		TEST_EQ (buf->len, 0);
+		TEST_EQ (buf->size, 0);
+		TEST_EQ_P (buf->buf, NULL);
+
+		nih_free (str);
+	}
 
 
 	/* Check that we can request more data than is in the buffer.
@@ -352,20 +450,30 @@ test_buffer_pop (void)
 	 */
 	TEST_FEATURE ("with request for more than buffer size");
 	nih_io_buffer_push (buf, "another test", 12);
+	TEST_ALLOC_FAIL {
+		len = 20;
+		str = nih_io_buffer_pop (NULL, buf, &len);
 
-	len = 20;
-	str = nih_io_buffer_pop (NULL, buf, &len);
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
 
-	TEST_EQ (len, 12);
-	TEST_ALLOC_SIZE (str, 13);
-	TEST_EQ (str[12], '\0');
-	TEST_EQ_STR (str, "another test");
+			TEST_EQ (buf->len, 0);
+			TEST_EQ (buf->size, 0);
+			TEST_EQ_P (buf->buf, NULL);
+			continue;
+		}
 
-	TEST_EQ (buf->len, 0);
-	TEST_EQ (buf->size, 0);
-	TEST_EQ_P (buf->buf, NULL);
+		TEST_EQ (len, 12);
+		TEST_ALLOC_SIZE (str, 13);
+		TEST_EQ (str[12], '\0');
+		TEST_EQ_STR (str, "another test");
 
-	nih_free (str);
+		TEST_EQ (buf->len, 0);
+		TEST_EQ (buf->size, 0);
+		TEST_EQ_P (buf->buf, NULL);
+
+		nih_free (str);
+	}
 
 
 	nih_free (buf);
@@ -383,19 +491,23 @@ test_buffer_shrink (void)
 
 	/* Check that we can shrink the buffer by a small number of bytes. */
 	TEST_FEATURE ("with full buffer");
-	nih_io_buffer_shrink (buf, 14);
+	TEST_ALLOC_FAIL {
+		nih_io_buffer_shrink (buf, 14);
 
-	TEST_EQ (buf->len, 19);
-	TEST_EQ_MEM (buf->buf, " of the buffer code", 19);
+		TEST_EQ (buf->len, 19);
+		TEST_EQ_MEM (buf->buf, " of the buffer code", 19);
+	}
 
 
 	/* Check that we can empty the buffer and the buffer is freed. */
 	TEST_FEATURE ("with request to empty buffer");
-	nih_io_buffer_shrink (buf, 19);
+	TEST_ALLOC_FAIL {
+		nih_io_buffer_shrink (buf, 19);
 
-	TEST_EQ (buf->len, 0);
-	TEST_EQ (buf->size, 0);
-	TEST_EQ_P (buf->buf, NULL);
+		TEST_EQ (buf->len, 0);
+		TEST_EQ (buf->size, 0);
+		TEST_EQ_P (buf->buf, NULL);
+	}
 
 
 	/* Check that we can shrink the buffer by more bytes than its length
@@ -403,12 +515,13 @@ test_buffer_shrink (void)
 	 */
 	TEST_FEATURE ("with request larger than buffer size");
 	nih_io_buffer_push (buf, "another test", 12);
+	TEST_ALLOC_FAIL {
+		nih_io_buffer_shrink (buf, 20);
 
-	nih_io_buffer_shrink (buf, 20);
-
-	TEST_EQ (buf->len, 0);
-	TEST_EQ (buf->size, 0);
-	TEST_EQ_P (buf->buf, NULL);
+		TEST_EQ (buf->len, 0);
+		TEST_EQ (buf->size, 0);
+		TEST_EQ_P (buf->buf, NULL);
+	}
 
 	nih_free (buf);
 }
@@ -417,6 +530,7 @@ void
 test_buffer_push (void)
 {
 	NihIoBuffer *buf;
+	int          ret;
 
 	TEST_FUNCTION ("nih_io_buffer_push");
 	buf = nih_io_buffer_new (NULL);
@@ -425,24 +539,44 @@ test_buffer_push (void)
 	 * store it in the buffer.
 	 */
 	TEST_FEATURE ("with empty buffer");
-	nih_io_buffer_push (buf, "test", 4);
+	TEST_ALLOC_FAIL {
+		buf->len = 0;
+		buf->size = 0;
+		ret = nih_io_buffer_push (buf, "test", 4);
 
-	TEST_ALLOC_SIZE (buf->buf, BUFSIZ);
-	TEST_EQ (buf->size, BUFSIZ);
-	TEST_EQ (buf->len, 4);
-	TEST_EQ_MEM (buf->buf, "test", 4);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+		TEST_ALLOC_SIZE (buf->buf, BUFSIZ);
+		TEST_EQ (buf->size, BUFSIZ);
+		TEST_EQ (buf->len, 4);
+		TEST_EQ_MEM (buf->buf, "test", 4);
+	}
 
 
 	/* Check that we can push more data into that buffer, which will
 	 * append it to the data already there.
 	 */
 	TEST_FEATURE ("with data in the buffer");
-	nih_io_buffer_push (buf, "ing the buffer code", 14);
+	TEST_ALLOC_FAIL {
+		buf->len = 4;
+		buf->size = BUFSIZ;
+		ret = nih_io_buffer_push (buf, "ing the buffer code", 14);
 
-	TEST_ALLOC_SIZE (buf->buf, BUFSIZ);
-	TEST_EQ (buf->size, BUFSIZ);
-	TEST_EQ (buf->len, 18);
-	TEST_EQ_MEM (buf->buf, "testing the buffer code", 18);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+		TEST_ALLOC_SIZE (buf->buf, BUFSIZ);
+		TEST_EQ (buf->size, BUFSIZ);
+		TEST_EQ (buf->len, 18);
+		TEST_EQ_MEM (buf->buf, "testing the buffer code", 18);
+	}
 
 	nih_free (buf);
 }
@@ -457,19 +591,26 @@ test_message_new (void)
 	 * in any list and with the structure and msghdr members correct.
 	 */
 	TEST_FUNCTION ("nih_io_message_new");
-	msg = nih_io_message_new (NULL);
+	TEST_ALLOC_FAIL {
+		msg = nih_io_message_new (NULL);
 
-	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
-	TEST_LIST_EMPTY (&msg->entry);
-	TEST_EQ_P (msg->addr, NULL);
-	TEST_EQ (msg->addrlen, 0);
-	TEST_ALLOC_SIZE (msg->data, sizeof (NihIoBuffer));
-	TEST_ALLOC_PARENT (msg->data, msg);
-	TEST_ALLOC_SIZE (msg->control, sizeof (struct cmsghdr *));
-	TEST_ALLOC_PARENT (msg->control, msg);
-	TEST_EQ_P (msg->control[0], NULL);
+		if (test_alloc_failed) {
+			TEST_EQ_P (msg, NULL);
+			continue;
+		}
 
-	nih_free (msg);
+		TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+		TEST_LIST_EMPTY (&msg->entry);
+		TEST_EQ_P (msg->addr, NULL);
+		TEST_EQ (msg->addrlen, 0);
+		TEST_ALLOC_SIZE (msg->data, sizeof (NihIoBuffer));
+		TEST_ALLOC_PARENT (msg->data, msg);
+		TEST_ALLOC_SIZE (msg->control, sizeof (struct cmsghdr *));
+		TEST_ALLOC_PARENT (msg->control, msg);
+		TEST_EQ_P (msg->control[0], NULL);
+
+		nih_free (msg);
+	}
 }
 
 void
@@ -480,59 +621,82 @@ test_message_add_control (void)
 	int            ret, value;
 
 	TEST_FUNCTION ("nih_io_message_add_control");
+	test_alloc_failed = 0;
+	nih_alloc_set_allocator (_test_allocator);
 	msg = nih_io_message_new (NULL);
+	nih_alloc_set_allocator (realloc);
 
 	/* Check that we can add a control message header to a message that
 	 * doesn't yet have one.  The array should be increased in size and
 	 * the messages should be children of it underneath.
 	 */
 	TEST_FEATURE ("with empty message");
-	value = 0;
-	ret = nih_io_message_add_control (msg, SOL_SOCKET, SCM_RIGHTS,
-					  sizeof (int), &value);
+	TEST_ALLOC_FAIL {
+		value = 0;
+		ret = nih_io_message_add_control (msg, SOL_SOCKET, SCM_RIGHTS,
+						  sizeof (int), &value);
 
-	TEST_ALLOC_PARENT (msg->control, msg);
-	TEST_ALLOC_SIZE (msg->control, sizeof (struct cmsghdr *) * 2);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+			continue;
+		}
 
-	TEST_ALLOC_PARENT (msg->control[0], msg->control);
-	TEST_ALLOC_SIZE (msg->control[0], CMSG_SPACE (sizeof (int)));
+		TEST_EQ (ret, 0);
 
-	TEST_EQ (msg->control[0]->cmsg_level, SOL_SOCKET);
-	TEST_EQ (msg->control[0]->cmsg_type, SCM_RIGHTS);
-	TEST_EQ (msg->control[0]->cmsg_len, CMSG_LEN (sizeof (int)));
-	TEST_EQ_MEM (CMSG_DATA (msg->control[0]), &value, sizeof (int));
+		TEST_ALLOC_PARENT (msg->control, msg);
+		TEST_ALLOC_SIZE (msg->control, sizeof (struct cmsghdr *) * 2);
 
-	TEST_EQ_P (msg->control[1], NULL);
+		TEST_ALLOC_PARENT (msg->control[0], msg->control);
+		TEST_ALLOC_SIZE (msg->control[0], CMSG_SPACE (sizeof (int)));
+
+		TEST_EQ (msg->control[0]->cmsg_level, SOL_SOCKET);
+		TEST_EQ (msg->control[0]->cmsg_type, SCM_RIGHTS);
+		TEST_EQ (msg->control[0]->cmsg_len, CMSG_LEN (sizeof (int)));
+		TEST_EQ_MEM (CMSG_DATA (msg->control[0]), &value,
+			     sizeof (int));
+
+		TEST_EQ_P (msg->control[1], NULL);
+	}
 
 
 	/* Check that we can append more control data onto the end of an
 	 * existing message.  The array should include both messages.
 	 */
 	TEST_FEATURE ("with existing control data");
-	cred.pid = cred.uid = cred.gid = 1;
-	ret = nih_io_message_add_control (msg, SOL_SOCKET, SCM_CREDENTIALS,
-					  sizeof (cred), &cred);
+	TEST_ALLOC_FAIL {
+		cred.pid = cred.uid = cred.gid = 1;
+		ret = nih_io_message_add_control (msg, SOL_SOCKET,
+						  SCM_CREDENTIALS,
+						  sizeof (cred), &cred);
 
-	TEST_ALLOC_PARENT (msg->control, msg);
-	TEST_ALLOC_SIZE (msg->control, sizeof (struct cmsghdr *) * 3);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+			continue;
+		}
 
-	TEST_ALLOC_PARENT (msg->control[0], msg->control);
-	TEST_ALLOC_SIZE (msg->control[0], CMSG_SPACE (sizeof (int)));
+		TEST_EQ (ret, 0);
 
-	TEST_EQ (msg->control[0]->cmsg_level, SOL_SOCKET);
-	TEST_EQ (msg->control[0]->cmsg_type, SCM_RIGHTS);
-	TEST_EQ (msg->control[0]->cmsg_len, CMSG_LEN (sizeof (int)));
-	TEST_EQ_MEM (CMSG_DATA (msg->control[0]), &value, sizeof (int));
+		TEST_ALLOC_PARENT (msg->control, msg);
+		TEST_ALLOC_SIZE (msg->control, sizeof (struct cmsghdr *) * 3);
 
-	TEST_ALLOC_PARENT (msg->control[1], msg->control);
-	TEST_ALLOC_SIZE (msg->control[1], CMSG_SPACE (sizeof (cred)));
+		TEST_ALLOC_PARENT (msg->control[0], msg->control);
+		TEST_ALLOC_SIZE (msg->control[0], CMSG_SPACE (sizeof (int)));
 
-	TEST_EQ (msg->control[1]->cmsg_level, SOL_SOCKET);
-	TEST_EQ (msg->control[1]->cmsg_type, SCM_CREDENTIALS);
-	TEST_EQ (msg->control[1]->cmsg_len, CMSG_LEN (sizeof (cred)));
-	TEST_EQ_MEM (CMSG_DATA (msg->control[1]), &cred, sizeof (cred));
+		TEST_EQ (msg->control[0]->cmsg_level, SOL_SOCKET);
+		TEST_EQ (msg->control[0]->cmsg_type, SCM_RIGHTS);
+		TEST_EQ (msg->control[0]->cmsg_len, CMSG_LEN (sizeof (int)));
+		TEST_EQ_MEM (CMSG_DATA (msg->control[0]), &value, sizeof (int));
 
-	TEST_EQ_P (msg->control[2], NULL);
+		TEST_ALLOC_PARENT (msg->control[1], msg->control);
+		TEST_ALLOC_SIZE (msg->control[1], CMSG_SPACE (sizeof (cred)));
+
+		TEST_EQ (msg->control[1]->cmsg_level, SOL_SOCKET);
+		TEST_EQ (msg->control[1]->cmsg_type, SCM_CREDENTIALS);
+		TEST_EQ (msg->control[1]->cmsg_len, CMSG_LEN (sizeof (cred)));
+		TEST_EQ_MEM (CMSG_DATA (msg->control[1]), &cred, sizeof (cred));
+
+		TEST_EQ_P (msg->control[2], NULL);
+	}
 
 	nih_free (msg);
 }
@@ -566,91 +730,137 @@ test_message_recv (void)
 
 	/* Check that we can receive a message from a socket with just
 	 * text, and no control data.  The message structure should be
-	 * allocated and filled properly.
+	 * allocated and filled properly.  If we run out of memory, NULL
+	 * should be returned, and the message should be left in the socket.
 	 */
 	TEST_FEATURE ("with no control data");
-	memcpy (buf, "test", 4);
-	iov[0].iov_len = 4;
+	TEST_ALLOC_FAIL {
+		memcpy (buf, "test", 4);
+		iov[0].iov_len = 4;
 
-	sendmsg (fds[0], &msghdr, 0);
+		sendmsg (fds[0], &msghdr, 0);
 
-	len = 0;
-	msg = nih_io_message_recv (NULL, fds[1], &len);
+		len = 0;
+		msg = nih_io_message_recv (NULL, fds[1], &len);
 
-	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
-	TEST_LIST_EMPTY (&msg->entry);
+		if (test_alloc_failed) {
+			TEST_EQ_P (msg, NULL);
 
-	TEST_EQ (len, 4);
-	TEST_EQ (msg->data->len, 4);
-	TEST_EQ_MEM (msg->data->buf, "test", 4);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
 
-	nih_free (msg);
+			TEST_EQ (read (fds[1], buf, sizeof (buf)), 4);
+
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+		TEST_LIST_EMPTY (&msg->entry);
+
+		TEST_EQ (len, 4);
+		TEST_EQ (msg->data->len, 4);
+		TEST_EQ_MEM (msg->data->buf, "test", 4);
+
+		nih_free (msg);
+	}
 
 
 	/* Check that we can receive a message that contains control data,
 	 * and that it's put in the structure.
 	 */
 	TEST_FEATURE ("with control data");
-	msghdr.msg_control = cbuf;
-	msghdr.msg_controllen = sizeof (cbuf);
+	TEST_ALLOC_FAIL {
+		msghdr.msg_control = cbuf;
+		msghdr.msg_controllen = sizeof (cbuf);
 
-	cmsg = CMSG_FIRSTHDR (&msghdr);
-	cmsg->cmsg_level = SOL_SOCKET;
-	cmsg->cmsg_type = SCM_RIGHTS;
-	cmsg->cmsg_len = CMSG_LEN (sizeof (int));
+		cmsg = CMSG_FIRSTHDR (&msghdr);
+		cmsg->cmsg_level = SOL_SOCKET;
+		cmsg->cmsg_type = SCM_RIGHTS;
+		cmsg->cmsg_len = CMSG_LEN (sizeof (int));
 
-	fdptr = (int *)CMSG_DATA (cmsg);
-	memcpy (fdptr, &fds[0], sizeof (int));
+		fdptr = (int *)CMSG_DATA (cmsg);
+		memcpy (fdptr, &fds[0], sizeof (int));
 
-	msghdr.msg_controllen = cmsg->cmsg_len;
+		msghdr.msg_controllen = cmsg->cmsg_len;
 
-	sendmsg (fds[0], &msghdr, 0);
+		sendmsg (fds[0], &msghdr, 0);
 
-	len = 0;
-	msg = nih_io_message_recv (NULL, fds[1], &len);
+		len = 0;
+		msg = nih_io_message_recv (NULL, fds[1], &len);
 
-	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
-	TEST_LIST_EMPTY (&msg->entry);
+		/* 8th alloc onwards is control data, and we mandate that
+		 * always succeeds.
+		 */
+		if (test_alloc_failed && (test_alloc_failed < 8)) {
+			TEST_EQ_P (msg, NULL);
 
-	TEST_EQ (len, 4);
-	TEST_EQ (msg->data->len, 4);
-	TEST_EQ_MEM (msg->data->buf, "test", 4);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
 
-	TEST_ALLOC_SIZE (msg->control, sizeof (struct cmsghdr *) * 2);
-	TEST_ALLOC_PARENT (msg->control, msg);
+			TEST_EQ (read (fds[1], buf, sizeof (buf)), 4);
 
-	TEST_ALLOC_SIZE (msg->control[0], CMSG_SPACE (sizeof (int)));
-	TEST_ALLOC_PARENT (msg->control[0], msg->control);
+			continue;
+		}
 
-	TEST_EQ (msg->control[0]->cmsg_level, SOL_SOCKET);
-	TEST_EQ (msg->control[0]->cmsg_type, SCM_RIGHTS);
-	TEST_EQ (msg->control[0]->cmsg_len, CMSG_LEN (sizeof (int)));
+		TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+		TEST_LIST_EMPTY (&msg->entry);
 
-	TEST_EQ_P (msg->control[1], NULL);
+		TEST_EQ (len, 4);
+		TEST_EQ (msg->data->len, 4);
+		TEST_EQ_MEM (msg->data->buf, "test", 4);
 
-	nih_free (msg);
+		TEST_ALLOC_SIZE (msg->control, sizeof (struct cmsghdr *) * 2);
+		TEST_ALLOC_PARENT (msg->control, msg);
 
-	msghdr.msg_control = NULL;
-	msghdr.msg_controllen = 0;
+		TEST_ALLOC_SIZE (msg->control[0], CMSG_SPACE (sizeof (int)));
+		TEST_ALLOC_PARENT (msg->control[0], msg->control);
+
+		TEST_EQ (msg->control[0]->cmsg_level, SOL_SOCKET);
+		TEST_EQ (msg->control[0]->cmsg_type, SCM_RIGHTS);
+		TEST_EQ (msg->control[0]->cmsg_len, CMSG_LEN (sizeof (int)));
+
+		TEST_EQ_P (msg->control[1], NULL);
+
+		nih_free (msg);
+
+		msghdr.msg_control = NULL;
+		msghdr.msg_controllen = 0;
+	}
 
 
 	/* Check that we can get messages larger than the usual buffer size */
 	TEST_FEATURE ("with message that would be truncated");
-	memset (buf, ' ', BUFSIZ * 2);
-	iov[0].iov_len = BUFSIZ * 2;
+	TEST_ALLOC_FAIL {
+		memset (buf, ' ', BUFSIZ * 2);
+		iov[0].iov_len = BUFSIZ * 2;
 
-	sendmsg (fds[0], &msghdr, 0);
+		sendmsg (fds[0], &msghdr, 0);
 
-	len = 0;
-	msg = nih_io_message_recv (NULL, fds[1], &len);
+		len = 0;
+		msg = nih_io_message_recv (NULL, fds[1], &len);
 
-	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
-	TEST_LIST_EMPTY (&msg->entry);
+		if (test_alloc_failed) {
+			TEST_EQ_P (msg, NULL);
 
-	TEST_EQ (len, BUFSIZ * 2);
-	TEST_EQ (msg->data->len, BUFSIZ * 2);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
 
-	nih_free (msg);
+			TEST_EQ (read (fds[1], buf, sizeof (buf)), BUFSIZ * 2);
+
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+		TEST_LIST_EMPTY (&msg->entry);
+
+		TEST_EQ (len, BUFSIZ * 2);
+		TEST_EQ (msg->data->len, BUFSIZ * 2);
+
+		nih_free (msg);
+	}
 
 
 	/* Check that we can receive a message from a non-specific source
@@ -661,8 +871,10 @@ test_message_recv (void)
 	addr0.sun_path[0] = '\0';
 
 	addr0len = offsetof (struct sockaddr_un, sun_path) + 1;
-	addr0len += snprintf (addr0.sun_path + 1, sizeof (addr0.sun_path) - 1,
-			      "/com/netsplit/libnih/test_io/%d.0", getpid ());
+	addr0len += snprintf (addr0.sun_path + 1,
+			      sizeof (addr0.sun_path) - 1,
+			      "/com/netsplit/libnih/test_io/%d.0",
+			      getpid ());
 
 	fds[0] = socket (PF_UNIX, SOCK_DGRAM, 0);
 	bind (fds[0], (struct sockaddr *)&addr0, addr0len);
@@ -671,8 +883,10 @@ test_message_recv (void)
 	addr1.sun_path[0] = '\0';
 
 	addr1len = offsetof (struct sockaddr_un, sun_path) + 1;
-	addr1len += snprintf (addr1.sun_path + 1, sizeof (addr1.sun_path) - 1,
-			      "/com/netsplit/libnih/test_io/%d.1", getpid ());
+	addr1len += snprintf (addr1.sun_path + 1,
+			      sizeof (addr1.sun_path) - 1,
+			      "/com/netsplit/libnih/test_io/%d.1",
+			      getpid ());
 
 	fds[1] = socket (PF_UNIX, SOCK_DGRAM, 0);
 	bind (fds[1], (struct sockaddr *)&addr1, addr1len);
@@ -683,24 +897,39 @@ test_message_recv (void)
 	memcpy (buf, "test", 4);
 	iov[0].iov_len = 4;
 
-	sendmsg (fds[0], &msghdr, 0);
+	TEST_ALLOC_FAIL {
+		sendmsg (fds[0], &msghdr, 0);
 
-	len = 0;
-	msg = nih_io_message_recv (NULL, fds[1], &len);
+		len = 0;
+		msg = nih_io_message_recv (NULL, fds[1], &len);
 
-	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
-	TEST_LIST_EMPTY (&msg->entry);
+		if (test_alloc_failed) {
+			TEST_EQ_P (msg, NULL);
 
-	TEST_EQ (msg->data->len, 4);
-	TEST_EQ_MEM (msg->data->buf, "test", 4);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
 
-	TEST_EQ (msg->addrlen, addr0len);
-	TEST_EQ (msg->addr->sa_family, PF_UNIX);
-	TEST_EQ_MEM (((struct sockaddr_un *)msg->addr)->sun_path,
-		     addr0.sun_path,
-		     addr0len - offsetof (struct sockaddr_un, sun_path));
+			TEST_EQ (read (fds[1], buf, sizeof (buf)), 4);
 
-	nih_free (msg);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+		TEST_LIST_EMPTY (&msg->entry);
+
+		TEST_EQ (msg->data->len, 4);
+		TEST_EQ_MEM (msg->data->buf, "test", 4);
+
+		TEST_EQ (msg->addrlen, addr0len);
+		TEST_EQ (msg->addr->sa_family, PF_UNIX);
+		TEST_EQ_MEM (((struct sockaddr_un *)msg->addr)->sun_path,
+			     addr0.sun_path,
+			     addr0len - offsetof (struct sockaddr_un,
+						  sun_path));
+
+		nih_free (msg);
+	}
 
 	close (fds[0]);
 	close (fds[1]);
@@ -709,14 +938,20 @@ test_message_recv (void)
 	/* Check that we get an error if the socket is closed.
 	 */
 	TEST_FEATURE ("with closed socket");
-	len = 0;
-	msg = nih_io_message_recv (NULL, fds[1], &len);
+	TEST_ALLOC_FAIL {
+		len = 0;
+		msg = nih_io_message_recv (NULL, fds[1], &len);
 
-	TEST_EQ_P (msg, NULL);
+		TEST_EQ_P (msg, NULL);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, EBADF);
-	nih_free (err);
+		err = nih_error_get ();
+		if (test_alloc_failed && (test_alloc_failed < 7)) {
+			TEST_EQ (err->number, ENOMEM);
+		} else {
+			TEST_EQ (err->number, EBADF);
+		}
+		nih_free (err);
+	}
 }
 
 void
@@ -754,14 +989,26 @@ test_message_send (void)
 	msg = nih_io_message_new (NULL);
 	nih_io_buffer_push (msg->data, "test", 4);
 
-	ret = nih_io_message_send (msg, fds[0]);
+	TEST_ALLOC_FAIL {
+		ret = nih_io_message_send (msg, fds[0]);
 
-	TEST_EQ (ret, 4);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
 
-	len = recvmsg (fds[1], &msghdr, 0);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
 
-	TEST_EQ (len, 4);
-	TEST_EQ_MEM (buf, "test", 4);
+			continue;
+		}
+
+		TEST_EQ (ret, 4);
+
+		len = recvmsg (fds[1], &msghdr, 0);
+
+		TEST_EQ (len, 4);
+		TEST_EQ_MEM (buf, "test", 4);
+	}
 
 
 	/* Check that we can include control message information in the
@@ -771,22 +1018,34 @@ test_message_send (void)
 	nih_io_message_add_control (msg, SOL_SOCKET, SCM_RIGHTS,
 				    sizeof (int), &fds[0]);
 
-	ret = nih_io_message_send (msg, fds[0]);
+	TEST_ALLOC_FAIL {
+		ret = nih_io_message_send (msg, fds[0]);
 
-	TEST_EQ (ret, 4);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
 
-	msghdr.msg_control = cbuf;
-	msghdr.msg_controllen = sizeof (cbuf);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
 
-	len = recvmsg (fds[1], &msghdr, 0);
+			continue;
+		}
 
-	TEST_EQ (len, 4);
-	TEST_EQ_MEM (buf, "test", 4);
+		TEST_EQ (ret, 4);
 
-	cmsg = CMSG_FIRSTHDR (&msghdr);
-	TEST_EQ (cmsg->cmsg_level, SOL_SOCKET);
-	TEST_EQ (cmsg->cmsg_type, SCM_RIGHTS);
-	TEST_EQ (cmsg->cmsg_len, CMSG_LEN (sizeof (int)));
+		msghdr.msg_control = cbuf;
+		msghdr.msg_controllen = sizeof (cbuf);
+
+		len = recvmsg (fds[1], &msghdr, 0);
+
+		TEST_EQ (len, 4);
+		TEST_EQ_MEM (buf, "test", 4);
+
+		cmsg = CMSG_FIRSTHDR (&msghdr);
+		TEST_EQ (cmsg->cmsg_level, SOL_SOCKET);
+		TEST_EQ (cmsg->cmsg_type, SCM_RIGHTS);
+		TEST_EQ (cmsg->cmsg_len, CMSG_LEN (sizeof (int)));
+	}
 
 	close (fds[0]);
 	close (fds[1]);
@@ -813,17 +1072,28 @@ test_message_send (void)
 	msg->addr = (struct sockaddr *)&addr;
 	msg->addrlen = addrlen;
 
-	ret = nih_io_message_send (msg, fds[0]);
+	TEST_ALLOC_FAIL {
+		ret = nih_io_message_send (msg, fds[0]);
 
-	TEST_EQ (ret, 4);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
 
-	msghdr.msg_control = NULL;
-	msghdr.msg_controllen = 0;
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
 
-	len = recvmsg (fds[1], &msghdr, 0);
+		TEST_EQ (ret, 4);
 
-	TEST_EQ (len, 4);
-	TEST_EQ_MEM (buf, "test", 4);
+		msghdr.msg_control = NULL;
+		msghdr.msg_controllen = 0;
+
+		len = recvmsg (fds[1], &msghdr, 0);
+
+		TEST_EQ (len, 4);
+		TEST_EQ_MEM (buf, "test", 4);
+	}
 
 	nih_free (msg);
 
@@ -832,16 +1102,23 @@ test_message_send (void)
 
 
 	/* Check that we get an error if the socket is closed. */
+	TEST_FEATURE ("with closed socket");
 	msg = nih_io_message_new (NULL);
 	nih_io_buffer_push (msg->data, "test", 4);
 
-	ret = nih_io_message_send (msg, fds[0]);
+	TEST_ALLOC_FAIL {
+		ret = nih_io_message_send (msg, fds[0]);
 
-	TEST_LT (ret, 4);
+		TEST_LT (ret, 0);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, EBADF);
-	nih_free (err);
+		err = nih_error_get ();
+		if (test_alloc_failed && (test_alloc_failed < 2)) {
+			TEST_EQ (err->number, ENOMEM);
+		} else {
+			TEST_EQ (err->number, EBADF);
+		}
+		nih_free (err);
+	}
 
 	nih_free (msg);
 }
@@ -911,29 +1188,36 @@ test_reopen (void)
 	 * should be altered so that it is non-blocking.
 	 */
 	TEST_FEATURE ("with stream mode");
-	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
-			    my_reader, my_close_handler, my_error_handler,
-			    &io);
+	TEST_ALLOC_FAIL {
+		io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
+				    my_reader, my_close_handler,
+				    my_error_handler, &io);
 
-	TEST_ALLOC_SIZE (io, sizeof (NihIo));
-	TEST_ALLOC_PARENT (io->send_buf, io);
-	TEST_ALLOC_SIZE (io->send_buf, sizeof (NihIoBuffer));
-	TEST_ALLOC_PARENT (io->recv_buf, io);
-	TEST_ALLOC_SIZE (io->recv_buf, sizeof (NihIoBuffer));
-	TEST_EQ (io->type, NIH_IO_STREAM);
-	TEST_EQ_P (io->reader, my_reader);
-	TEST_EQ_P (io->close_handler, my_close_handler);
-	TEST_EQ_P (io->error_handler, my_error_handler);
-	TEST_EQ_P (io->data, &io);
-	TEST_FALSE (io->shutdown);
-	TEST_EQ_P (io->close, NULL);
+		if (test_alloc_failed) {
+			TEST_EQ_P (io, NULL);
+			continue;
+		}
 
-	TEST_ALLOC_PARENT (io->watch, io);
-	TEST_EQ (io->watch->fd, fds[0]);
-	TEST_EQ (io->watch->events, NIH_IO_READ);
-	TEST_TRUE (fcntl (fds[0], F_GETFL) & O_NONBLOCK);
+		TEST_ALLOC_SIZE (io, sizeof (NihIo));
+		TEST_ALLOC_PARENT (io->send_buf, io);
+		TEST_ALLOC_SIZE (io->send_buf, sizeof (NihIoBuffer));
+		TEST_ALLOC_PARENT (io->recv_buf, io);
+		TEST_ALLOC_SIZE (io->recv_buf, sizeof (NihIoBuffer));
+		TEST_EQ (io->type, NIH_IO_STREAM);
+		TEST_EQ_P (io->reader, my_reader);
+		TEST_EQ_P (io->close_handler, my_close_handler);
+		TEST_EQ_P (io->error_handler, my_error_handler);
+		TEST_EQ_P (io->data, &io);
+		TEST_FALSE (io->shutdown);
+		TEST_EQ_P (io->close, NULL);
 
-	nih_free (io);
+		TEST_ALLOC_PARENT (io->watch, io);
+		TEST_EQ (io->watch->fd, fds[0]);
+		TEST_EQ (io->watch->events, NIH_IO_READ);
+		TEST_TRUE (fcntl (fds[0], F_GETFL) & O_NONBLOCK);
+
+		nih_free (io);
+	}
 
 
 	/* Check that we can create a message mode NihIo structure from an
@@ -942,29 +1226,36 @@ test_reopen (void)
 	 * should be altered so that it is non-blocking.
 	 */
 	TEST_FEATURE ("with message mode");
-	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
-			    my_reader, my_close_handler, my_error_handler,
-			    &io);
+	TEST_ALLOC_FAIL {
+		io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
+				    my_reader, my_close_handler,
+				    my_error_handler, &io);
 
-	TEST_ALLOC_SIZE (io, sizeof (NihIo));
-	TEST_ALLOC_PARENT (io->send_q, io);
-	TEST_ALLOC_SIZE (io->send_q, sizeof (NihList));
-	TEST_ALLOC_PARENT (io->recv_q, io);
-	TEST_ALLOC_SIZE (io->recv_q, sizeof (NihList));
-	TEST_EQ (io->type, NIH_IO_MESSAGE);
-	TEST_EQ_P (io->reader, my_reader);
-	TEST_EQ_P (io->close_handler, my_close_handler);
-	TEST_EQ_P (io->error_handler, my_error_handler);
-	TEST_EQ_P (io->data, &io);
-	TEST_FALSE (io->shutdown);
-	TEST_EQ_P (io->close, NULL);
+		if (test_alloc_failed) {
+			TEST_EQ_P (io, NULL);
+			continue;
+		}
 
-	TEST_ALLOC_PARENT (io->watch, io);
-	TEST_EQ (io->watch->fd, fds[0]);
-	TEST_EQ (io->watch->events, NIH_IO_READ);
-	TEST_TRUE (fcntl (fds[0], F_GETFL) & O_NONBLOCK);
+		TEST_ALLOC_SIZE (io, sizeof (NihIo));
+		TEST_ALLOC_PARENT (io->send_q, io);
+		TEST_ALLOC_SIZE (io->send_q, sizeof (NihList));
+		TEST_ALLOC_PARENT (io->recv_q, io);
+		TEST_ALLOC_SIZE (io->recv_q, sizeof (NihList));
+		TEST_EQ (io->type, NIH_IO_MESSAGE);
+		TEST_EQ_P (io->reader, my_reader);
+		TEST_EQ_P (io->close_handler, my_close_handler);
+		TEST_EQ_P (io->error_handler, my_error_handler);
+		TEST_EQ_P (io->data, &io);
+		TEST_FALSE (io->shutdown);
+		TEST_EQ_P (io->close, NULL);
 
-	nih_free (io);
+		TEST_ALLOC_PARENT (io->watch, io);
+		TEST_EQ (io->watch->fd, fds[0]);
+		TEST_EQ (io->watch->events, NIH_IO_READ);
+		TEST_TRUE (fcntl (fds[0], F_GETFL) & O_NONBLOCK);
+
+		nih_free (io);
+	}
 
 
 	close (fds[0]);
@@ -1228,48 +1519,66 @@ test_watcher (void)
 			    my_reader, my_close_handler, my_error_handler,
 			    &io);
 
-	write (fds[1], "this is a test", 14);
+	TEST_ALLOC_FAIL {
+		io->recv_buf->len = 0;
+		io->recv_buf->size = 0;
 
-	FD_ZERO (&readfds);
-	FD_ZERO (&writefds);
-	FD_ZERO (&exceptfds);
-	FD_SET (fds[0], &readfds);
+		write (fds[1], "this is a test", 14);
 
-	read_called = 0;
-	last_data = NULL;
-	last_str = NULL;
-	last_len = 0;
+		FD_ZERO (&readfds);
+		FD_ZERO (&writefds);
+		FD_ZERO (&exceptfds);
+		FD_SET (fds[0], &readfds);
 
-	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+		read_called = 0;
+		last_data = NULL;
+		last_str = NULL;
+		last_len = 0;
 
-	TEST_TRUE (read_called);
-	TEST_EQ_P (last_data, &io);
-	TEST_EQ_P (last_str, io->recv_buf->buf);
-	TEST_EQ (last_len, io->recv_buf->len);
-	TEST_EQ (io->recv_buf->len, 14);
-	TEST_EQ_MEM (io->recv_buf->buf, "this is a test", 14);
+		nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+		if (test_alloc_failed == 1) {
+			TEST_FALSE (read_called);
+
+			TEST_EQ (read (fds[0], buf, sizeof (buf)), 14);
+			continue;
+		}
+
+		TEST_TRUE (read_called);
+		TEST_EQ_P (last_data, &io);
+		TEST_EQ_P (last_str, io->recv_buf->buf);
+		TEST_EQ (last_len, io->recv_buf->len);
+		TEST_EQ (io->recv_buf->len, 14);
+		TEST_EQ_MEM (io->recv_buf->buf, "this is a test", 14);
+	}
 
 
 	/* Check that the reader function is called again when more data
-	 * comes in, and that the buffer contains both sets of data.
+	 * comes in, and that the buffer contains both sets of data.  This
+	 * should be true even if we're out of memory.
 	 */
 	TEST_FEATURE ("with more data to read");
-	write (fds[1], " of the callback code", 19);
+	TEST_ALLOC_FAIL {
+		io->recv_buf->len = 14;
+		io->recv_buf->size = BUFSIZ;
 
-	read_called = 0;
-	last_data = NULL;
-	last_str = NULL;
-	last_len = 0;
+		write (fds[1], " of the callback code", 19);
 
-	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+		read_called = 0;
+		last_data = NULL;
+		last_str = NULL;
+		last_len = 0;
 
-	TEST_TRUE (read_called);
-	TEST_EQ_P (last_data, &io);
-	TEST_EQ_P (last_str, io->recv_buf->buf);
-	TEST_EQ (last_len, io->recv_buf->len);
-	TEST_EQ (io->recv_buf->len, 33);
-	TEST_EQ_MEM (io->recv_buf->buf, "this is a test of the callback code",
-		     33);
+		nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+		TEST_TRUE (read_called);
+		TEST_EQ_P (last_data, &io);
+		TEST_EQ_P (last_str, io->recv_buf->buf);
+		TEST_EQ (last_len, io->recv_buf->len);
+		TEST_EQ (io->recv_buf->len, 33);
+		TEST_EQ_MEM (io->recv_buf->buf,
+			     "this is a test of the callback code", 33);
+	}
 
 
 	/* Check that the reader function can call nih_io_close(), resulting
@@ -1407,42 +1716,46 @@ test_watcher (void)
 	io = nih_io_reopen (NULL, fileno (output), NIH_IO_STREAM,
 			    NULL, my_close_handler, my_error_handler, &io);
 
-	nih_io_printf (io, "this is a test\n");
+	TEST_ALLOC_FAIL {
+		nih_io_printf (io, "this is a test\n");
 
-	FD_ZERO (&readfds);
-	FD_SET (fileno (output), &writefds);
-	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+		FD_ZERO (&readfds);
+		FD_SET (fileno (output), &writefds);
+		nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	rewind (output);
+		rewind (output);
 
-	TEST_FILE_EQ (output, "this is a test\n");
-	TEST_FILE_END (output);
+		TEST_FILE_EQ (output, "this is a test\n");
+		TEST_FILE_END (output);
 
-	TEST_EQ (io->send_buf->len, 0);
-	TEST_EQ (io->send_buf->size, 0);
-	TEST_EQ_P (io->send_buf->buf, NULL);
+		TEST_EQ (io->send_buf->len, 0);
+		TEST_EQ (io->send_buf->size, 0);
+		TEST_EQ_P (io->send_buf->buf, NULL);
 
-	TEST_FALSE (io->watch->events & NIH_IO_WRITE);
+		TEST_FALSE (io->watch->events & NIH_IO_WRITE);
+	}
 
 
 	/* Check that we can write more data and that is send out to the
 	 * file descriptor as well.
 	 */
 	TEST_FEATURE ("with more data to write");
-	nih_io_printf (io, "so is this\n");
-	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+	TEST_ALLOC_FAIL {
+		nih_io_printf (io, "so is this\n");
+		nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	rewind (output);
+		rewind (output);
 
-	TEST_FILE_EQ (output, "this is a test\n");
-	TEST_FILE_EQ (output, "so is this\n");
-	TEST_FILE_END (output);
+		TEST_FILE_EQ (output, "this is a test\n");
+		TEST_FILE_EQ (output, "so is this\n");
+		TEST_FILE_END (output);
 
-	TEST_EQ (io->send_buf->len, 0);
-	TEST_EQ (io->send_buf->size, 0);
-	TEST_EQ_P (io->send_buf->buf, NULL);
+		TEST_EQ (io->send_buf->len, 0);
+		TEST_EQ (io->send_buf->size, 0);
+		TEST_EQ_P (io->send_buf->buf, NULL);
 
-	TEST_FALSE (io->watch->events & NIH_IO_WRITE);
+		TEST_FALSE (io->watch->events & NIH_IO_WRITE);
+	}
 
 	fclose (output);
 
@@ -1485,48 +1798,60 @@ test_watcher (void)
 			    my_reader, my_close_handler, my_error_handler,
 			    &io);
 
-	msghdr.msg_name = NULL;
-	msghdr.msg_namelen = 0;
-	msghdr.msg_iov = iov;
-	msghdr.msg_iovlen = 1;;
-	msghdr.msg_control = NULL;
-	msghdr.msg_controllen = 0;
-	msghdr.msg_flags = 0;
+	TEST_ALLOC_FAIL {
+		msghdr.msg_name = NULL;
+		msghdr.msg_namelen = 0;
+		msghdr.msg_iov = iov;
+		msghdr.msg_iovlen = 1;;
+		msghdr.msg_control = NULL;
+		msghdr.msg_controllen = 0;
+		msghdr.msg_flags = 0;
 
-	iov[0].iov_base = buf;
-	iov[0].iov_len = sizeof (buf);
+		iov[0].iov_base = buf;
+		iov[0].iov_len = sizeof (buf);
 
-	memcpy (buf, "this is a test", 14);
-	iov[0].iov_len = 14;
+		memcpy (buf, "this is a test", 14);
+		iov[0].iov_len = 14;
 
-	sendmsg (fds[1], &msghdr, 0);
+		sendmsg (fds[1], &msghdr, 0);
 
-	FD_ZERO (&readfds);
-	FD_ZERO (&writefds);
-	FD_ZERO (&exceptfds);
-	FD_SET (fds[0], &readfds);
+		FD_ZERO (&readfds);
+		FD_ZERO (&writefds);
+		FD_ZERO (&exceptfds);
+		FD_SET (fds[0], &readfds);
 
-	read_called = 0;
-	last_data = NULL;
-	last_str = NULL;
-	last_len = 0;
+		read_called = 0;
+		last_data = NULL;
+		last_str = NULL;
+		last_len = 0;
 
-	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+		nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	TEST_LIST_NOT_EMPTY (io->recv_q);
+		if (test_alloc_failed && (test_alloc_failed < 8)) {
+			TEST_EQ (recvmsg (fds[0], &msghdr, 0), 14);
+			continue;
+		} else if (test_alloc_failed) {
+			msg = (NihIoMessage *)io->recv_q->prev;
 
-	msg = (NihIoMessage *)io->recv_q->next;
+			nih_list_free (&msg->entry);
+			continue;
+		}
 
-	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
-	TEST_ALLOC_PARENT (msg, io);
+		TEST_LIST_NOT_EMPTY (io->recv_q);
 
-	TEST_EQ (msg->data->len, 14);
-	TEST_EQ_MEM (msg->data->buf, "this is a test", 14);
+		msg = (NihIoMessage *)io->recv_q->next;
 
-	TEST_EQ (read_called, 1);
-	TEST_EQ_P (last_data, &io);
-	TEST_EQ_P (last_str, msg->data->buf);
-	TEST_EQ (last_len, msg->data->len);
+		TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+		TEST_ALLOC_PARENT (msg, io);
+
+		TEST_EQ (msg->data->len, 14);
+		TEST_EQ_MEM (msg->data->buf, "this is a test", 14);
+
+		TEST_EQ (read_called, 1);
+		TEST_EQ_P (last_data, &io);
+		TEST_EQ_P (last_str, msg->data->buf);
+		TEST_EQ (last_len, msg->data->len);
+	}
 
 
 	/* Check that the reader function is called again when more data
@@ -1714,30 +2039,43 @@ test_watcher (void)
 			    my_reader, my_close_handler, my_error_handler,
 			    &io);
 
-	msg = nih_io_message_new (io);
-	nih_io_buffer_push (msg->data, "this is a test", 14);
-	nih_io_send_message (io, msg);
+	TEST_ALLOC_FAIL {
+		nih_alloc_set_allocator (realloc);
+		msg = nih_io_message_new (io);
+		nih_io_buffer_push (msg->data, "this is a test", 14);
+		nih_io_send_message (io, msg);
+		nih_alloc_set_allocator (_test_allocator);
 
-	free_called = 0;
-	nih_alloc_set_destructor (msg, destructor_called);
+		free_called = 0;
+		nih_alloc_set_destructor (msg, destructor_called);
 
-	FD_ZERO (&readfds);
-	FD_ZERO (&writefds);
-	FD_SET (fds[0], &writefds);
+		FD_ZERO (&readfds);
+		FD_ZERO (&writefds);
+		FD_SET (fds[0], &writefds);
 
-	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+		nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	iov[0].iov_base = buf;
-	iov[0].iov_len = sizeof (buf);
+		if (test_alloc_failed) {
+			TEST_LIST_NOT_EMPTY (io->send_q);
+			TEST_TRUE (io->watch->events & NIH_IO_WRITE);
+			TEST_FALSE (free_called);
 
-	TEST_LIST_EMPTY (io->send_q);
-	TEST_FALSE (io->watch->events & NIH_IO_WRITE);
-	TEST_TRUE (free_called);
+			nih_list_free (&msg->entry);
+			continue;
+		}
 
-	len = recvmsg (fds[1], &msghdr, 0);
+		iov[0].iov_base = buf;
+		iov[0].iov_len = sizeof (buf);
 
-	TEST_EQ (len, 14);
-	TEST_EQ_MEM (buf, "this is a test\n", 14);
+		TEST_LIST_EMPTY (io->send_q);
+		TEST_FALSE (io->watch->events & NIH_IO_WRITE);
+		TEST_TRUE (free_called);
+
+		len = recvmsg (fds[1], &msghdr, 0);
+
+		TEST_EQ (len, 14);
+		TEST_EQ_MEM (buf, "this is a test\n", 14);
+	}
 
 
 	/* Check that we can write another message to the send queue, which
@@ -1964,35 +2302,49 @@ test_read (void)
 	 * removed from the front of the receive buffer itself.
 	 */
 	TEST_FEATURE ("with full buffer");
-	len = 14;
-	str = nih_io_read (NULL, io, &len);
+	TEST_ALLOC_FAIL {
+		len = 14;
+		str = nih_io_read (NULL, io, &len);
 
-	TEST_EQ (len, 14);
-	TEST_ALLOC_SIZE (str, 15);
-	TEST_EQ (str[14], '\0');
-	TEST_EQ_STR (str, "this is a test");
-	TEST_EQ (io->recv_buf->len, 15);
-	TEST_EQ_MEM (io->recv_buf->buf, " of the io code", 15);
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
 
-	nih_free (str);
+		TEST_EQ (len, 14);
+		TEST_ALLOC_SIZE (str, 15);
+		TEST_EQ (str[14], '\0');
+		TEST_EQ_STR (str, "this is a test");
+		TEST_EQ (io->recv_buf->len, 15);
+		TEST_EQ_MEM (io->recv_buf->buf, " of the io code", 15);
+
+		nih_free (str);
+	}
 
 
 	/* Check that we can empty all of the data from the NihIo receive
 	 * buffer, which results in the buffer being freed.
 	 */
 	TEST_FEATURE ("with request to empty buffer");
-	len = 15;
-	str = nih_io_read (NULL, io, &len);
+	TEST_ALLOC_FAIL {
+		len = 15;
+		str = nih_io_read (NULL, io, &len);
 
-	TEST_EQ (len, 15);
-	TEST_ALLOC_SIZE (str, 16);
-	TEST_EQ (str[15], '\0');
-	TEST_EQ_STR (str, " of the io code");
-	TEST_EQ (io->recv_buf->len, 0);
-	TEST_EQ (io->recv_buf->size, 0);
-	TEST_EQ_P (io->recv_buf->buf, NULL);
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
 
-	nih_free (str);
+		TEST_EQ (len, 15);
+		TEST_ALLOC_SIZE (str, 16);
+		TEST_EQ (str[15], '\0');
+		TEST_EQ_STR (str, " of the io code");
+		TEST_EQ (io->recv_buf->len, 0);
+		TEST_EQ (io->recv_buf->size, 0);
+		TEST_EQ_P (io->recv_buf->buf, NULL);
+
+		nih_free (str);
+	}
 
 
 	/* Check that we can request more data than is in the buffer, and
@@ -2001,18 +2353,25 @@ test_read (void)
 	TEST_FEATURE ("with larger request than buffer");
 	nih_io_buffer_push (io->recv_buf, "another test", 12);
 
-	len = 20;
-	str = nih_io_read (NULL, io, &len);
+	TEST_ALLOC_FAIL {
+		len = 20;
+		str = nih_io_read (NULL, io, &len);
 
-	TEST_EQ (len, 12);
-	TEST_ALLOC_SIZE (str, 13);
-	TEST_EQ (str[12], '\0');
-	TEST_EQ_STR (str, "another test");
-	TEST_EQ (io->recv_buf->len, 0);
-	TEST_EQ (io->recv_buf->size, 0);
-	TEST_EQ_P (io->recv_buf->buf, NULL);
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
 
-	nih_free (str);
+		TEST_EQ (len, 12);
+		TEST_ALLOC_SIZE (str, 13);
+		TEST_EQ (str[12], '\0');
+		TEST_EQ_STR (str, "another test");
+		TEST_EQ (io->recv_buf->len, 0);
+		TEST_EQ (io->recv_buf->size, 0);
+		TEST_EQ_P (io->recv_buf->buf, NULL);
+
+		nih_free (str);
+	}
 
 
 	/* Check that the socket is closed and the structure freed when
@@ -2050,17 +2409,24 @@ test_read (void)
 	nih_io_buffer_push (msg->data, "this is a test of the io code", 29);
 	nih_list_add (io->recv_q, &msg->entry);
 
-	len = 14;
-	str = nih_io_read (NULL, io, &len);
+	TEST_ALLOC_FAIL {
+		len = 14;
+		str = nih_io_read (NULL, io, &len);
 
-	TEST_EQ (len, 14);
-	TEST_ALLOC_SIZE (str, 15);
-	TEST_EQ (str[14], '\0');
-	TEST_EQ_STR (str, "this is a test");
-	TEST_EQ (msg->data->len, 15);
-	TEST_EQ_MEM (msg->data->buf, " of the io code", 15);
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
 
-	nih_free (str);
+		TEST_EQ (len, 14);
+		TEST_ALLOC_SIZE (str, 15);
+		TEST_EQ (str[14], '\0');
+		TEST_EQ_STR (str, "this is a test");
+		TEST_EQ (msg->data->len, 15);
+		TEST_EQ_MEM (msg->data->buf, " of the io code", 15);
+
+		nih_free (str);
+	}
 
 
 	/* Check that when we empty the buffer of the message, it is freed
@@ -2070,31 +2436,45 @@ test_read (void)
 	free_called = 0;
 	nih_alloc_set_destructor (msg, destructor_called);
 
-	len = 15;
-	str = nih_io_read (NULL, io, &len);
+	TEST_ALLOC_FAIL {
+		len = 15;
+		str = nih_io_read (NULL, io, &len);
 
-	TEST_EQ (len, 15);
-	TEST_ALLOC_SIZE (str, 16);
-	TEST_EQ (str[15], '\0');
-	TEST_EQ_STR (str, " of the io code");
-	TEST_TRUE (free_called);
-	TEST_LIST_EMPTY (io->recv_q);
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
 
-	nih_free (str);
+		TEST_EQ (len, 15);
+		TEST_ALLOC_SIZE (str, 16);
+		TEST_EQ (str[15], '\0');
+		TEST_EQ_STR (str, " of the io code");
+		TEST_TRUE (free_called);
+		TEST_LIST_EMPTY (io->recv_q);
+
+		nih_free (str);
+	}
 
 
 	/* Check that we receive a zero-length string and len is set to
 	 * zero if there is no message in the queue.
 	 */
 	TEST_FEATURE ("with empty message queue");
-	len = 10;
-	str = nih_io_read (NULL, io, &len);
+	TEST_ALLOC_FAIL {
+		len = 10;
+		str = nih_io_read (NULL, io, &len);
 
-	TEST_EQ (len, 0);
-	TEST_ALLOC_SIZE (str, 1);
-	TEST_EQ (str[0], '\0');
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
 
-	nih_free (str);
+		TEST_EQ (len, 0);
+		TEST_ALLOC_SIZE (str, 1);
+		TEST_EQ (str[0], '\0');
+
+		nih_free (str);
+	}
 
 
 	/* Check that the socket is closed and the structure freed when
@@ -2127,6 +2507,7 @@ test_write (void)
 {
 	NihIo        *io;
 	NihIoMessage *msg;
+	int           ret;
 
 	TEST_FUNCTION ("nih_io_write");
 	io = nih_io_reopen (NULL, 0, NIH_IO_STREAM, NULL, NULL, NULL, NULL);
@@ -2136,25 +2517,45 @@ test_write (void)
 	 * watch should also now be looking for writability.
 	 */
 	TEST_FEATURE ("with empty buffer");
-	nih_io_write (io, "test", 4);
+	TEST_ALLOC_FAIL {
+		io->send_buf->len = 0;
+		io->send_buf->size = 0;
+		ret = nih_io_write (io, "test", 4);
 
-	TEST_ALLOC_SIZE (io->send_buf->buf, BUFSIZ);
-	TEST_EQ (io->send_buf->size, BUFSIZ);
-	TEST_EQ (io->send_buf->len, 4);
-	TEST_EQ_MEM (io->send_buf->buf, "test", 4);
-	TEST_TRUE (io->watch->events & NIH_IO_WRITE);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+		TEST_ALLOC_SIZE (io->send_buf->buf, BUFSIZ);
+		TEST_EQ (io->send_buf->size, BUFSIZ);
+		TEST_EQ (io->send_buf->len, 4);
+		TEST_EQ_MEM (io->send_buf->buf, "test", 4);
+		TEST_TRUE (io->watch->events & NIH_IO_WRITE);
+	}
 
 
 	/* Check that we can write more data onto the end of the NihIo
 	 * send buffer, which increases its size.
 	 */
 	TEST_FEATURE ("with data in the buffer");
-	nih_io_write (io, "ing the io code", 10);
+	TEST_ALLOC_FAIL {
+		io->send_buf->len = 4;
+		io->send_buf->size = BUFSIZ;
+		ret = nih_io_write (io, "ing the io code", 10);
 
-	TEST_EQ (io->send_buf->len, 14);
-	TEST_EQ_MEM (io->send_buf->buf, "testing the io", 14);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+			continue;
+		}
 
-	nih_free (io);
+		TEST_EQ (ret, 0);
+		TEST_EQ (io->send_buf->len, 14);
+		TEST_EQ_MEM (io->send_buf->buf, "testing the io", 14);
+
+		nih_free (io);
+	}
 
 
 	/* Check that we can write data into a message mode NihIo, and
@@ -2162,43 +2563,59 @@ test_write (void)
 	 */
 	TEST_FEATURE ("with empty send queue");
 	io = nih_io_reopen (NULL, 0, NIH_IO_MESSAGE, NULL, NULL, NULL, NULL);
-	nih_io_write (io, "test", 4);
+	TEST_ALLOC_FAIL {
+		ret = nih_io_write (io, "test", 4);
 
-	TEST_LIST_NOT_EMPTY (io->send_q);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+			continue;
+		}
 
-	msg = (NihIoMessage *)io->send_q->next;
+		TEST_EQ (ret, 0);
+		TEST_LIST_NOT_EMPTY (io->send_q);
 
-	TEST_ALLOC_PARENT (msg, io);
-	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
-	TEST_ALLOC_SIZE (msg->data->buf, BUFSIZ);
-	TEST_EQ (msg->data->size, BUFSIZ);
-	TEST_EQ (msg->data->len, 4);
-	TEST_EQ_MEM (msg->data->buf, "test", 4);
-	TEST_TRUE (io->watch->events & NIH_IO_WRITE);
+		msg = (NihIoMessage *)io->send_q->next;
+
+		TEST_ALLOC_PARENT (msg, io);
+		TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+		TEST_ALLOC_SIZE (msg->data->buf, BUFSIZ);
+		TEST_EQ (msg->data->size, BUFSIZ);
+		TEST_EQ (msg->data->len, 4);
+		TEST_EQ_MEM (msg->data->buf, "test", 4);
+		TEST_TRUE (io->watch->events & NIH_IO_WRITE);
+	}
 
 
 	/* Check that we can write more data as another new message onto
 	 * the send queue.
 	 */
 	TEST_FEATURE ("with message in the send queue");
-	nih_io_write (io, "ing the io code", 10);
+	TEST_ALLOC_FAIL {
+		ret = nih_io_write (io, "ing the io code", 10);
 
-	TEST_LIST_NOT_EMPTY (io->send_q);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+			continue;
+		}
 
-	msg = (NihIoMessage *)io->send_q->next;
+		TEST_EQ (ret, 0);
+		TEST_LIST_NOT_EMPTY (io->send_q);
 
-	TEST_EQ (msg->data->len, 4);
-	TEST_EQ_MEM (msg->data->buf, "test", 4);
+		msg = (NihIoMessage *)io->send_q->next;
 
-	msg = (NihIoMessage *)io->send_q->next->next;
+		TEST_EQ (msg->data->len, 4);
+		TEST_EQ_MEM (msg->data->buf, "test", 4);
 
-	TEST_ALLOC_PARENT (msg, io);
-	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
-	TEST_ALLOC_SIZE (msg->data->buf, BUFSIZ);
-	TEST_EQ (msg->data->size, BUFSIZ);
-	TEST_EQ (msg->data->len, 10);
-	TEST_EQ_MEM (msg->data->buf, "ing the io code", 10);
-	TEST_TRUE (io->watch->events & NIH_IO_WRITE);
+		msg = (NihIoMessage *)io->send_q->next->next;
+
+		TEST_ALLOC_PARENT (msg, io);
+		TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+		TEST_ALLOC_SIZE (msg->data->buf, BUFSIZ);
+		TEST_EQ (msg->data->size, BUFSIZ);
+		TEST_EQ (msg->data->len, 10);
+		TEST_EQ_MEM (msg->data->buf, "ing the io code", 10);
+		TEST_TRUE (io->watch->events & NIH_IO_WRITE);
+	}
 
 	nih_free (io);
 }
@@ -2225,28 +2642,50 @@ test_get (void)
 	 * buffer shuffled up.
 	 */
 	TEST_FEATURE ("with full buffer");
-	str = nih_io_get (NULL, io, "\n");
+	TEST_ALLOC_FAIL {
+		str = nih_io_get (NULL, io, "\n");
 
-	TEST_ALLOC_SIZE (str, 10);
-	TEST_EQ_STR (str, "some data");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
 
-	TEST_EQ (io->recv_buf->len, 27);
-	TEST_EQ_MEM (io->recv_buf->buf, "and another line\nincomplete", 27);
+			TEST_EQ (io->recv_buf->len, 27);
+			TEST_EQ_MEM (io->recv_buf->buf,
+				     "and another line\nincomplete", 27);
+			continue;
+		}
 
-	nih_free (str);
+		TEST_ALLOC_SIZE (str, 10);
+		TEST_EQ_STR (str, "some data");
+
+		TEST_EQ (io->recv_buf->len, 27);
+		TEST_EQ_MEM (io->recv_buf->buf, "and another line\nincomplete",
+			     27);
+
+		nih_free (str);
+	}
 
 
 	/* Check that we can read up to the next line line. */
 	TEST_FEATURE ("with part-full buffer");
-	str = nih_io_get (NULL, io, "\n");
+	TEST_ALLOC_FAIL {
+		str = nih_io_get (NULL, io, "\n");
 
-	TEST_ALLOC_SIZE (str, 17);
-	TEST_EQ_STR (str, "and another line");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
 
-	TEST_EQ (io->recv_buf->len, 10);
-	TEST_EQ_MEM (io->recv_buf->buf, "incomplete", 10);
+			TEST_EQ (io->recv_buf->len, 10);
+			TEST_EQ_MEM (io->recv_buf->buf, "incomplete", 10);
+			continue;
+		}
 
-	nih_free (str);
+		TEST_ALLOC_SIZE (str, 17);
+		TEST_EQ_STR (str, "and another line");
+
+		TEST_EQ (io->recv_buf->len, 10);
+		TEST_EQ_MEM (io->recv_buf->buf, "incomplete", 10);
+
+		nih_free (str);
+	}
 
 
 	/* Check that NULL is returned if the data in the buffer doesn't
@@ -2259,7 +2698,6 @@ test_get (void)
 
 	TEST_EQ (io->recv_buf->len, 10);
 	TEST_EQ_MEM (io->recv_buf->buf, "incomplete", 10);
-
 
 	/* Check that a NULL terminator is sufficient to return the data
 	 * in the buffer, which should now be empty.
@@ -2312,28 +2750,50 @@ test_get (void)
 	nih_io_buffer_push (msg->data, "incomplete", 10);
 	nih_list_add (io->recv_q, &msg->entry);
 
-	str = nih_io_get (NULL, io, "\n");
+	TEST_ALLOC_FAIL {
+		str = nih_io_get (NULL, io, "\n");
 
-	TEST_ALLOC_SIZE (str, 10);
-	TEST_EQ_STR (str, "some data");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
 
-	TEST_EQ (msg->data->len, 27);
-	TEST_EQ_MEM (msg->data->buf, "and another line\nincomplete", 27);
+			TEST_EQ (msg->data->len, 27);
+			TEST_EQ_MEM (msg->data->buf,
+				     "and another line\nincomplete", 27);
+			continue;
+		}
 
-	nih_free (str);
+		TEST_ALLOC_SIZE (str, 10);
+		TEST_EQ_STR (str, "some data");
+
+		TEST_EQ (msg->data->len, 27);
+		TEST_EQ_MEM (msg->data->buf, "and another line\nincomplete",
+			     27);
+
+		nih_free (str);
+	}
 
 
 	/* Check that we can read up to the next line line. */
 	TEST_FEATURE ("with part-full message in queue");
-	str = nih_io_get (NULL, io, "\n");
+	TEST_ALLOC_FAIL {
+		str = nih_io_get (NULL, io, "\n");
 
-	TEST_ALLOC_SIZE (str, 17);
-	TEST_EQ_STR (str, "and another line");
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
 
-	TEST_EQ (msg->data->len, 10);
-	TEST_EQ_MEM (msg->data->buf, "incomplete", 10);
+			TEST_EQ (msg->data->len, 10);
+			TEST_EQ_MEM (msg->data->buf, "incomplete", 10);
+			continue;
+		}
 
-	nih_free (str);
+		TEST_ALLOC_SIZE (str, 17);
+		TEST_EQ_STR (str, "and another line");
+
+		TEST_EQ (msg->data->len, 10);
+		TEST_EQ_MEM (msg->data->buf, "incomplete", 10);
+
+		nih_free (str);
+	}
 
 
 	/* Check that NULL is returned if the data in the buffer doesn't
@@ -2404,6 +2864,7 @@ test_printf (void)
 {
 	NihIo        *io;
 	NihIoMessage *msg;
+	int           ret;
 
 	TEST_FUNCTION ("nih_io_printf");
 	io = nih_io_reopen (NULL, 0, NIH_IO_STREAM, NULL, NULL, NULL, NULL);
@@ -2413,25 +2874,48 @@ test_printf (void)
 	 * The watch should also look for writability.
 	 */
 	TEST_FEATURE ("with empty buffer");
-	nih_io_printf (io, "this is a %d %s test\n", 4, "format");
+	TEST_ALLOC_FAIL {
+		io->send_buf->len = 0;
+		io->send_buf->size = 0;
+		ret = nih_io_printf (io, "this is a %d %s test\n",
+				     4, "format");
 
-	TEST_ALLOC_SIZE (io->send_buf->buf, BUFSIZ);
-	TEST_EQ (io->send_buf->size, BUFSIZ);
-	TEST_EQ (io->send_buf->len, 24);
-	TEST_EQ_MEM (io->send_buf->buf, "this is a 4 format test\n", 24);
-	TEST_TRUE (io->watch->events & NIH_IO_WRITE);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+		TEST_ALLOC_SIZE (io->send_buf->buf, BUFSIZ);
+		TEST_EQ (io->send_buf->size, BUFSIZ);
+		TEST_EQ (io->send_buf->len, 24);
+		TEST_EQ_MEM (io->send_buf->buf,
+			     "this is a 4 format test\n", 24);
+		TEST_TRUE (io->watch->events & NIH_IO_WRITE);
+	}
 
 
 	/* Check that we can append a further line of formatted data into
 	 * the send buffer
 	 */
 	TEST_FEATURE ("with data in the buffer");
-	nih_io_printf (io, "and this is %s line\n", "another");
+	TEST_ALLOC_FAIL {
+		io->send_buf->len = 24;
+		io->send_buf->size = BUFSIZ;
+		ret = nih_io_printf (io, "and this is %s line\n", "another");
 
-	TEST_EQ (io->send_buf->len, 49);
-	TEST_EQ_MEM (io->send_buf->buf,
-		     "this is a 4 format test\nand this is another line\n",
-		     49);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+		TEST_EQ (io->send_buf->len, 49);
+		TEST_EQ_MEM (io->send_buf->buf,
+			     ("this is a 4 format test\n"
+			      "and this is another line\n"),
+			     49);
+	}
 
 	nih_free (io);
 
@@ -2442,43 +2926,63 @@ test_printf (void)
 	 */
 	TEST_FEATURE ("with empty send queue");
 	io = nih_io_reopen (NULL, 0, NIH_IO_MESSAGE, NULL, NULL, NULL, NULL);
-	nih_io_printf (io, "this is a %d %s test\n", 4, "format");
+	TEST_ALLOC_FAIL {
+		ret = nih_io_printf (io, "this is a %d %s test\n",
+				     4, "format");
 
-	TEST_LIST_NOT_EMPTY (io->send_q);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+			continue;
+		}
 
-	msg = (NihIoMessage *)io->send_q->next;
+		TEST_EQ (ret, 0);
 
-	TEST_ALLOC_PARENT (msg, io);
-	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
-	TEST_ALLOC_SIZE (msg->data->buf, BUFSIZ);
-	TEST_EQ (msg->data->size, BUFSIZ);
-	TEST_EQ (msg->data->len, 24);
-	TEST_EQ_MEM (msg->data->buf, "this is a 4 format test\n", 24);
-	TEST_TRUE (io->watch->events & NIH_IO_WRITE);
+		TEST_LIST_NOT_EMPTY (io->send_q);
+
+		msg = (NihIoMessage *)io->send_q->next;
+
+		TEST_ALLOC_PARENT (msg, io);
+		TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+		TEST_ALLOC_SIZE (msg->data->buf, BUFSIZ);
+		TEST_EQ (msg->data->size, BUFSIZ);
+		TEST_EQ (msg->data->len, 24);
+		TEST_EQ_MEM (msg->data->buf, "this is a 4 format test\n", 24);
+		TEST_TRUE (io->watch->events & NIH_IO_WRITE);
+	}
 
 
 	/* Check that we can append a further line of formatted data into
 	 * the send queue as another new message.
 	 */
 	TEST_FEATURE ("with message in the queue");
-	nih_io_printf (io, "and this is %s line\n", "another");
+	TEST_ALLOC_FAIL {
+		ret = nih_io_printf (io, "and this is %s line\n", "another");
 
-	TEST_LIST_NOT_EMPTY (io->send_q);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+			continue;
+		}
 
-	msg = (NihIoMessage *)io->send_q->next;
+		TEST_EQ (ret, 0);
 
-	TEST_EQ (msg->data->len, 24);
-	TEST_EQ_MEM (msg->data->buf, "this is a 4 format test\n", 24);
+		TEST_LIST_NOT_EMPTY (io->send_q);
 
-	msg = (NihIoMessage *)io->send_q->next->next;
+		msg = (NihIoMessage *)io->send_q->next;
 
-	TEST_ALLOC_PARENT (msg, io);
-	TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
-	TEST_ALLOC_SIZE (msg->data->buf, BUFSIZ);
-	TEST_EQ (msg->data->size, BUFSIZ);
-	TEST_EQ (msg->data->len, 25);
-	TEST_EQ_MEM (msg->data->buf, "and this is another line\n", 25);
-	TEST_TRUE (io->watch->events & NIH_IO_WRITE);
+		TEST_EQ (msg->data->len, 24);
+		TEST_EQ_MEM (msg->data->buf, "this is a 4 format test\n", 24);
+
+		msg = (NihIoMessage *)io->send_q->next->next;
+
+		TEST_ALLOC_PARENT (msg, io);
+		TEST_ALLOC_SIZE (msg, sizeof (NihIoMessage));
+		TEST_ALLOC_SIZE (msg->data->buf, BUFSIZ);
+		TEST_EQ (msg->data->size, BUFSIZ);
+		TEST_EQ (msg->data->len, 25);
+		TEST_EQ_MEM (msg->data->buf, "and this is another line\n", 25);
+		TEST_TRUE (io->watch->events & NIH_IO_WRITE);
+
+	}
 
 	nih_free (io);
 }

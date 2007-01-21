@@ -376,7 +376,10 @@ nih_config_next_arg (const void *parent,
 	}
 
 	/* Copy in the new token */
-	NIH_MUST (arg = nih_alloc (parent, arg_len + 1));
+	arg = nih_alloc (parent, arg_len + 1);
+	if (! arg)
+		nih_return_system_error (NULL);
+
 	nih_config_next_token (file + arg_start, arg_end - arg_start, NULL,
 			       NULL, arg, CNLWS, TRUE);
 
@@ -520,7 +523,10 @@ nih_config_parse_args (const void *parent,
 	nih_assert (file != NULL);
 
 	/* Begin with an empty array */
-	NIH_MUST (args = nih_alloc (parent, sizeof (char *)));
+	args = nih_alloc (parent, sizeof (char *));
+	if (! args)
+		nih_return_system_error (NULL);
+
 	args[0] = NULL;
 	nargs = 0;
 
@@ -537,9 +543,12 @@ nih_config_parse_args (const void *parent,
 		}
 
 		/* Extend the array and add the new argument. */
-		NIH_MUST (new_args = nih_realloc (args, parent,
-						  (sizeof (char *)
-						   * (nargs + 2))));
+		new_args = nih_realloc (args, parent,
+					(sizeof (char *) * (nargs + 2)));
+		if (! new_args) {
+			nih_free (args);
+			nih_return_system_error (NULL);
+		}
 
 		args = new_args;
 		args[nargs++] = arg;
@@ -622,7 +631,10 @@ nih_config_parse_command (const void *parent,
 		goto finish;
 
 	/* Now copy the string into the destination. */
-	NIH_MUST (cmd = nih_alloc (parent, cmd_len + 1));
+	cmd = nih_alloc (parent, cmd_len + 1);
+	if (! cmd)
+		nih_return_system_error (NULL);
+
 	nih_config_next_token (file + cmd_start, cmd_end - cmd_start, NULL,
 			       NULL, cmd, CNL, FALSE);
 
@@ -740,7 +752,10 @@ nih_config_parse_block (const void *parent,
 	 * the contents, etc.
 	 */
 	sh_len = sh_end - sh_start - (ws * lines);
-	NIH_MUST (block = nih_alloc (parent, sh_len + 1));
+	block = nih_alloc (parent, sh_len + 1);
+	if (! block)
+		nih_return_system_error (NULL);
+
 	block[0] = '\0';
 
 	pp = sh_start;

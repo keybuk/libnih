@@ -2,7 +2,7 @@
  *
  * test_list.c - test suite for nih/list.c
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,16 +47,24 @@ test_new (void)
 	NihList *list;
 
 	/* Check that nih_list_new allocates a new empty list with nih_alloc
-	 * and that it is initialised with pointers pointing to itself.
+	 * and that it is initialised with pointers pointing to itself.  If
+	 * allocation fails, we should get NULL returned.
 	 */
 	TEST_FUNCTION ("nih_list_new");
-	list = nih_list_new (NULL);
+	TEST_ALLOC_FAIL {
+		list = nih_list_new (NULL);
 
-	TEST_ALLOC_SIZE (list, sizeof (NihList));
-	TEST_EQ_P (list->prev, list);
-	TEST_EQ_P (list->next, list);
+		if (test_alloc_failed) {
+			TEST_EQ_P (list, NULL);
+			continue;
+		}
 
-	nih_free (list);
+		TEST_ALLOC_SIZE (list, sizeof (NihList));
+		TEST_EQ_P (list->prev, list);
+		TEST_EQ_P (list->next, list);
+
+		nih_free (list);
+	}
 }
 
 void

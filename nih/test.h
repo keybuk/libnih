@@ -27,6 +27,7 @@
 
 #include <sys/types.h>
 
+#include <errno.h>
 #include <stdio.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -595,6 +596,82 @@
 		TEST_FAILED ("wrong parent of block %p (%s), expected %p (%s) got %p", \
 			     (_ptr), #_ptr, (_parent), #_parent, \
 			     nih_alloc_parent (_ptr))
+
+/**
+ * test_alloc_failed:
+ *
+ * Variable used by TEST_ALLOC_FAIL as the loop counter.
+ **/
+static int test_alloc_failed = 0;
+
+/**
+ * _test_alloc_count:
+ *
+ * Number of times malloc is called by the TEST_ALLOC_FAIL macro.
+ **/
+static int _test_alloc_count = 0;
+
+/**
+ * _test_alloc_call:
+ *
+ * Number of times malloc has been called during each cycle.
+ **/
+static int _test_alloc_call = 0;
+
+/**
+ * _test_allocator:
+ *
+ * Allocator used by TEST_ALLOC_FAIL; when test_alloc_failed is zero, it
+ * increments test_alloc_count and returns whatever realloc does.  Otherwise
+ * it internally counts the number of times it is called, and if that matches
+ * test_alloc_failed, then it returns NULL.
+ **/
+static inline void *
+_test_allocator (void   *ptr,
+		 size_t  size)
+{
+	if (! size)
+		return realloc (ptr, size);
+
+	if (! test_alloc_failed) {
+		_test_alloc_count++;
+
+		return realloc (ptr, size);
+	}
+
+	_test_alloc_call++;
+	if (test_alloc_failed == _test_alloc_call) {
+		errno = ENOMEM;
+		return NULL;
+	} else {
+		return realloc (ptr, size);
+	}
+}
+
+/**
+ * TEST_ALLOC_FAIL:
+ *
+ * This macro expands to code that runs the following block repeatedly; the
+ * first time (when the special test_alloc_failed variable is zero) is
+ * used to determine how many allocations are performed by the following block;
+ * subsequent calls (when test_alloc_failed is a positive integer) mean that
+ * the test_alloc_failedth call to realloc has failed.
+ *
+ * This cannot be nested as it relies on setting an alternate allocator
+ * and sharing a global state.
+ **/
+#define TEST_ALLOC_FAIL \
+	for (test_alloc_failed = -1; \
+	     test_alloc_failed <= (_test_alloc_count + 1); \
+	     test_alloc_failed++, _test_alloc_call = 0) \
+		if (test_alloc_failed < 0) { \
+			_test_alloc_count = 0; \
+			nih_alloc_set_allocator (_test_allocator); \
+		} else if (test_alloc_failed \
+			   && (test_alloc_failed == \
+			       (_test_alloc_count + 1))) { \
+			nih_alloc_set_allocator (realloc); \
+		} else
 
 
 /**

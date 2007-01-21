@@ -39,13 +39,17 @@ test_raise (void)
 	 * the number and message are what we gave.
 	 */
 	TEST_FUNCTION ("nih_error_raise");
-	nih_error_raise (0x20001, "Test error");
-	error = nih_error_get ();
+	nih_error_push_context ();
+	TEST_ALLOC_FAIL {
+		nih_error_raise (0x20001, "Test error");
+		error = nih_error_get ();
 
-	TEST_EQ (error->number, 0x20001);
-	TEST_EQ_STR (error->message, "Test error");
+		TEST_EQ (error->number, 0x20001);
+		TEST_EQ_STR (error->message, "Test error");
 
-	nih_free (error);
+		nih_free (error);
+	}
+	nih_error_pop_context ();
 }
 
 void
@@ -58,14 +62,19 @@ test_raise_printf (void)
 	 * that the string is a child of the error object.
 	 */
 	TEST_FUNCTION ("nih_error_raise_printf");
-	nih_error_raise_printf (0x20002, "This is a %s error %d", "test", 123);
-	error = nih_error_get ();
+	nih_error_push_context ();
+	TEST_ALLOC_FAIL {
+		nih_error_raise_printf (0x20002, "This is a %s error %d",
+					"test", 123);
+		error = nih_error_get ();
 
-	TEST_EQ (error->number, 0x20002);
-	TEST_EQ_STR (error->message, "This is a test error 123");
-	TEST_ALLOC_PARENT (error->message, error);
+		TEST_EQ (error->number, 0x20002);
+		TEST_EQ_STR (error->message, "This is a test error 123");
+		TEST_ALLOC_PARENT (error->message, error);
 
-	nih_free (error);
+		nih_free (error);
+	}
+	nih_error_pop_context ();
 }
 
 void
@@ -77,15 +86,19 @@ test_raise_system (void)
 	 * message from the errno table.
 	 */
 	TEST_FUNCTION ("nih_error_raise_system");
-	errno = ENOENT;
-	nih_error_raise_system ();
-	error = nih_error_get ();
+	nih_error_push_context ();
+	TEST_ALLOC_FAIL {
+		errno = ENOENT;
+		nih_error_raise_system ();
+		error = nih_error_get ();
 
-	TEST_EQ (error->number, ENOENT);
-	TEST_EQ_STR (error->message, strerror (ENOENT));
-	TEST_ALLOC_PARENT (error->message, error);
+		TEST_EQ (error->number, ENOENT);
+		TEST_EQ_STR (error->message, strerror (ENOENT));
+		TEST_ALLOC_PARENT (error->message, error);
 
-	nih_free (error);
+		nih_free (error);
+	}
+	nih_error_pop_context ();
 }
 
 
@@ -179,14 +192,18 @@ test_return_error (void)
 	 * function does just that.
 	 */
 	TEST_FUNCTION ("nih_return_error");
-	ret = call_return_error (-1, 0x20001, "Test error");
-	error = nih_error_get ();
+	nih_error_push_context ();
+	TEST_ALLOC_FAIL {
+		ret = call_return_error (-1, 0x20001, "Test error");
+		error = nih_error_get ();
 
-	TEST_EQ (ret, -1);
-	TEST_EQ (error->number, 0x20001);
-	TEST_EQ_STR (error->message, "Test error");
+		TEST_EQ (ret, -1);
+		TEST_EQ (error->number, 0x20001);
+		TEST_EQ_STR (error->message, "Test error");
 
-	nih_free (error);
+		nih_free (error);
+	}
+	nih_error_pop_context ();
 }
 
 
@@ -206,15 +223,19 @@ test_return_system_error (void)
 	 * errno and return from a function does just that.
 	 */
 	TEST_FUNCTION ("nih_return_system_error");
-	errno = ENOENT;
-	ret = call_return_system_error (-1);
-	error = nih_error_get ();
+	nih_error_push_context ();
+	TEST_ALLOC_FAIL {
+		errno = ENOENT;
+		ret = call_return_system_error (-1);
+		error = nih_error_get ();
 
-	TEST_EQ (ret, -1);
-	TEST_EQ (error->number, ENOENT);
-	TEST_EQ_STR (error->message, strerror (ENOENT));
+		TEST_EQ (ret, -1);
+		TEST_EQ (error->number, ENOENT);
+		TEST_EQ_STR (error->message, strerror (ENOENT));
 
-	nih_free (error);
+		nih_free (error);
+	}
+	nih_error_pop_context ();
 }
 
 
@@ -228,21 +249,39 @@ test_push_context (void)
 	 * afterwards, we get the newer one.
 	 */
 	TEST_FUNCTION ("nih_error_push_context");
-	nih_error_raise (0x20003, "Error in default context");
-	nih_error_push_context ();
-	nih_error_raise (0x20004, "Error in new context");
-	error = nih_error_get ();
+	TEST_ALLOC_FAIL {
+		nih_error_raise (0x20003, "Error in default context");
+		nih_error_push_context ();
+		nih_error_raise (0x20004, "Error in new context");
+		error = nih_error_get ();
 
-	TEST_EQ (error->number, 0x20004);
+		TEST_EQ (error->number, 0x20004);
 
+		nih_free (error);
+
+		nih_error_pop_context ();
+		nih_free (nih_error_get ());
+	}
+}
+
+void
+test_pop_context (void)
+{
+	NihError *error;
 
 	TEST_FUNCTION ("nih_error_pop_context");
+	nih_error_raise (0x20003, "Error in default context");
 
 	/* Check that we can pop the error context; when doing so, if an
 	 * unhandled error exists, an error is logged through the usual
 	 * mechanism and the error destroyed.
 	 */
 	TEST_FEATURE ("with unhandled error in context");
+	nih_error_push_context ();
+
+	nih_error_raise (0x20004, "Error in new context");
+	error = nih_error_get ();
+
 	was_destroyed = 0;
 	nih_alloc_set_destructor (error, destructor_called);
 	nih_error_raise_again (error);
@@ -281,7 +320,8 @@ main (int   argc,
 	test_raise_again ();
 	test_return_error ();
 	test_return_system_error ();
-	test_push_context();
+	test_push_context ();
+	test_pop_context ();
 
 	return 0;
 }

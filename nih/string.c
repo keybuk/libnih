@@ -2,7 +2,7 @@
  *
  * string.c - useful string utility functions
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -170,7 +170,7 @@ nih_strndup (const void *parent,
 	nih_assert (str != NULL);
 
 	dup = nih_alloc (parent, len + 1);
-	if (! str)
+	if (! dup)
 		return NULL;
 
 	memset (dup, '\0', len + 1);
@@ -216,13 +216,16 @@ nih_str_split (const void *parent,
 	nih_assert (str != NULL);
 	nih_assert (delim != NULL);
 
+	array = nih_alloc (parent, sizeof (char *));
+	if (! array)
+		return NULL;
+
 	i = 0;
-	array = nih_alloc (parent, sizeof (char *) * (i + 1));
-	array[0] = NULL;
+	array[i] = NULL;
 
 	while (*str) {
 		const char  *ptr;
-		char       **new_array;
+		char       **new_array, *value;
 
 		/* Skip initial delimiters */
 		while (repeat && strchr (delim, *str))
@@ -243,7 +246,13 @@ nih_str_split (const void *parent,
 		array = new_array;
 
 		/* Fill in the new value */
-		array[i++] = nih_strndup (array, ptr, str - ptr);
+		value = nih_strndup (array, ptr, str - ptr);
+		if (! value) {
+			nih_free (array);
+			return NULL;
+		}
+
+		array[i++] = value;
 		array[i] = NULL;
 
 		/* Skip over the delimiter */

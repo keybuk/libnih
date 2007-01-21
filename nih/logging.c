@@ -62,9 +62,9 @@ static inline void
 nih_log_init (void)
 {
 	if (! logger)
-		nih_log_set_logger (nih_logger_printf);
+		logger =  nih_logger_printf;
 	if (! min_priority)
-		nih_log_set_priority (NIH_LOG_MESSAGE);
+		min_priority = NIH_LOG_MESSAGE;
 }
 
 /**
@@ -78,6 +78,8 @@ void
 nih_log_set_logger (NihLogger new_logger)
 {
 	nih_assert (new_logger != NULL);
+
+	nih_log_init ();
 
 	logger = new_logger;
 }
@@ -93,6 +95,8 @@ void
 nih_log_set_priority (NihLogLevel new_priority)
 {
 	nih_assert (new_priority > NIH_LOG_UNKNOWN);
+
+	nih_log_init ();
 
 	min_priority = new_priority;
 }
@@ -129,11 +133,7 @@ nih_log_message (NihLogLevel  priority,
 		return 1;
 
 	va_start (args, format);
-
-	message = nih_vsprintf (NULL, format, args);
-	if (! message)
-		return -1;
-
+	NIH_MUST (message = nih_vsprintf (NULL, format, args));
 	va_end (args);
 
 	/* Output the message */

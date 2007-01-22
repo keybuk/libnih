@@ -118,6 +118,19 @@ static NihCommand commands[] = {
 	NIH_COMMAND_LAST
 };
 
+static NihCommand commands2[] = {
+	{ "really-overly-long-command-name", NULL,
+	  N_("does something irrelevant, and the synopsis is long enough to "
+	     "wrap across multiple lines"),
+	  NULL,
+	  NULL,
+	  NULL,
+	  NULL },
+
+	{ "hidden", NULL, NULL, NULL, NULL, NULL, NULL },
+
+	NIH_COMMAND_LAST
+};
 
 void
 test_parser (void)
@@ -579,12 +592,14 @@ test_help (void)
 	pid_t  pid;
 	int    argc, status;
 
+	TEST_FUNCTION ("nih_command_help");
+
 	/* Check that we can obtain a list of command using the "help"
 	 * command; which terminates the process with exit code 0.  The
 	 * output should be grouped according to the command group, and
 	 * each command indented with the text alongside and wrapped.
 	 */
-	TEST_FUNCTION ("nih_command_help");
+	TEST_FEATURE ("with multiple groups");
 	nih_main_init_full ("test", "wibble", "1.0",
 			    "foo@bar.com", "Copyright Message");
 	TEST_ALLOC_FAIL {
@@ -624,6 +639,56 @@ test_help (void)
 		TEST_FILE_EQ (output, ("  wibble                      "
 				       "wibble a file from one place to "
 				       "another\n"));
+		TEST_FILE_EQ (output, ("  help                        "
+				       "display list of commands\n"));
+		TEST_FILE_EQ (output, "\n");
+		TEST_FILE_EQ (output, ("For more information on a command, "
+				       "try `test COMMAND --help'.\n"));
+		TEST_FILE_END (output);
+
+		TEST_FILE_RESET (output);
+	}
+
+
+	/* Check that if there's only a single group, the title is different;
+	 * also check that an overly long command name is wrapped properly,
+	 * synopsis is wrapped to multiple lines and a command without a
+	 * synopsis is not output at all.
+	 */
+	TEST_FEATURE ("with single group and long name");
+	nih_main_init_full ("test", "wibble", "1.0",
+			    "foo@bar.com", "Copyright Message");
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "help";
+		argv[argc] = NULL;
+
+		output = tmpfile ();
+		TEST_CHILD (pid) {
+			unsetenv ("COLUMNS");
+
+			TEST_DIVERT_STDOUT (output) {
+				nih_command_parser (NULL, argc, argv,
+						    options, commands2);
+				exit (1);
+			}
+		}
+
+		waitpid (pid, &status, 0);
+		rewind (output);
+
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		TEST_FILE_EQ (output, "Commands:\n");
+		TEST_FILE_EQ (output, "  really-overly-long-command-name\n");
+		TEST_FILE_EQ (output, ("                              "
+				       "does something irrelevant, and the "
+				       "synopsis is\n"));
+		TEST_FILE_EQ (output, ("                                "
+				       "long enough to wrap across multiple "
+				       "lines\n"));
 		TEST_FILE_EQ (output, ("  help                        "
 				       "display list of commands\n"));
 		TEST_FILE_EQ (output, "\n");

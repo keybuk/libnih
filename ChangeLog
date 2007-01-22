@@ -1,5 +1,8 @@
 2007-01-22  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_command.c (test_help): Check a few missing pieces
+	of the command help output to make sure it's right.
+
 	* nih/file.c (nih_dir_walk): Correct doc string to indicate that
 	this function raises errors.
 

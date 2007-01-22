@@ -342,6 +342,32 @@ test_parser (void)
 	}
 
 
+	/* Check that a short option with an argument can be specified
+	 * multiple times, with only the last one being kept.
+	 */
+	TEST_FEATURE ("with repeated short argument option");
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "-f";
+		argv[argc++] = "foo";
+		argv[argc++] = "-f";
+		argv[argc++] = "bar";
+		argv[argc] = NULL;
+
+		filename = NULL;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
+
+		TEST_NE_P (args, NULL);
+		TEST_EQ_P (args[0], NULL);
+
+		TEST_EQ_STR (filename, "bar");
+
+		nih_free (filename);
+		nih_free (args);
+	}
+
+
 	/* Check that only the next non-option argument is eaten, and the
 	 * rest of the arguments are returned in the array.
 	 */
@@ -656,6 +682,32 @@ test_parser (void)
 		TEST_EQ_P (args[0], NULL);
 
 		TEST_EQ_STR (filename, "foo");
+
+		nih_free (filename);
+		nih_free (args);
+	}
+
+
+	/* Check that a long option with an argument may be repeated,
+	 * with only the lat value being taken.
+	 */
+	TEST_FEATURE ("with repeated long argument option");
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "--filename";
+		argv[argc++] = "foo";
+		argv[argc++] = "--filename";
+		argv[argc++] = "bar";
+		argv[argc] = NULL;
+
+		filename = NULL;
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
+
+		TEST_NE_P (args, NULL);
+		TEST_EQ_P (args[0], NULL);
+
+		TEST_EQ_STR (filename, "bar");
 
 		nih_free (filename);
 		nih_free (args);

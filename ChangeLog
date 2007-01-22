@@ -1,5 +1,8 @@
 2007-01-22  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_io.c (test_shutdown): Test NIH_IO_MESSAGE using
+	AF_UNIX socketpairs, not pipes.
+
 	* HACKING: Document the requirements for function attributes and
 	using TEST_ALLOC_FAIL in test cases.
 	* TODO: Update.

@@ -1370,7 +1370,7 @@ test_shutdown (void)
 	 * or frees the structure.
 	 */
 	TEST_FEATURE ("with message in the queue");
-	pipe (fds);
+	socketpair (PF_UNIX, SOCK_DGRAM, 0, fds);
 	close (fds[1]);
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
 			    NULL, NULL, NULL, NULL);
@@ -1411,7 +1411,7 @@ test_shutdown (void)
 	 * results in it being immediately closed and freed.
 	 */
 	TEST_FEATURE ("with no message in the queue");
-	pipe (fds);
+	socketpair (PF_UNIX, SOCK_DGRAM, 0, fds);
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
 			    NULL, NULL, NULL, NULL);
 

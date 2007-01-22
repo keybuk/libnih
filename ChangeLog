@@ -1,5 +1,9 @@
 2007-01-22  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_io.c (test_reopen): Make sure that we can't reopen
+	a closed file descriptor.
+	(test_set_nonblock, test_set_cloexec): Check with closed descriptors.
+
 	* nih/config.c: When we call nih_config_skip_comment, we can usually
 	assert that this will never fail; so do so.
 

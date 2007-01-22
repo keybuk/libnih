@@ -25,6 +25,9 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#include <netinet/in.h>
+#include <netinet/ip.h>
+
 #include <fcntl.h>
 #include <errno.h>
 #include <stdio.h>
@@ -868,7 +871,7 @@ test_message_recv (void)
 	/* Check that we can receive a message from a non-specific source
 	 * over an unconnected socket.
 	 */
-	TEST_FEATURE ("with unconnected sockets");
+	TEST_FEATURE ("with unconnected AF_UNIX sockets");
 	addr0.sun_family = AF_UNIX;
 	addr0.sun_path[0] = '\0';
 
@@ -1180,6 +1183,7 @@ test_reopen (void)
 	NihIo            *io;
 	int               fds[2];
 	struct sigaction  oldact;
+	NihError         *err;
 
 	TEST_FUNCTION ("nih_io_reopen");
 	pipe (fds);
@@ -1267,6 +1271,21 @@ test_reopen (void)
 	/* Check that the SIGPIPE signal will now be ignored */
 	sigaction (SIGPIPE, NULL, &oldact);
 	TEST_EQ (oldact.sa_handler, SIG_IGN);
+
+
+	/* Check that we get EBADF raised if we try and reopen a file that
+	 * is closed.
+	 */
+	TEST_FEATURE ("with closed file");
+	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
+			    my_reader, my_close_handler,
+			    my_error_handler, &io);
+
+	TEST_EQ_P (io, NULL);
+
+	err = nih_error_get ();
+	TEST_EQ (err->number, EBADF);
+	nih_free (err);
 }
 
 
@@ -3002,33 +3021,53 @@ test_printf (void)
 void
 test_set_nonblock (void)
 {
-	int fds[2];
+	int fds[2], ret;
+
+	TEST_FUNCTION ("nih_io_set_nonblock");
 
 	/* Check that we can trivially mark a socket to be non-blocking. */
-	TEST_FUNCTION ("nih_io_set_nonblock");
+	TEST_FEATURE ("with valid descriptor");
 	pipe (fds);
-	nih_io_set_nonblock (fds[0]);
+	ret = nih_io_set_nonblock (fds[0]);
 
+	TEST_EQ (ret, 0);
 	TEST_TRUE (fcntl (fds[0], F_GETFL) & O_NONBLOCK);
 
 	close (fds[0]);
 	close (fds[1]);
+
+
+	/* Check that we get -1 if the file descriptor is closed. */
+	TEST_FEATURE ("with closed descriptor");
+	ret = nih_io_set_nonblock (fds[0]);
+
+	TEST_LT (ret, 0);
 }
 
 void
 test_set_cloexec (void)
 {
-	int fds[2];
+	int fds[2], ret;
+
+	TEST_FUNCTION ("nih_io_set_cloexec");
 
 	/* Check that we can trivially mark a socket to be closed on exec. */
-	TEST_FUNCTION ("nih_io_set_cloexec");
+	TEST_FEATURE ("with valid descriptor");
 	pipe (fds);
-	nih_io_set_cloexec (fds[0]);
+	ret = nih_io_set_cloexec (fds[0]);
 
+	TEST_EQ (ret, 0);
 	TEST_TRUE (fcntl (fds[0], F_GETFD) & FD_CLOEXEC);
 
 	close (fds[0]);
 	close (fds[1]);
+
+
+	/* Check that we get -1 if the file descriptor is closed. */
+	TEST_FEATURE ("with closed descriptor");
+	ret = nih_io_set_cloexec (fds[0]);
+
+	TEST_LT (ret, 0);
 }
 
 void

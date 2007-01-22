@@ -558,11 +558,11 @@ nih_config_parse_args (const void *parent,
 
 	}
 
-	if (nih_config_skip_comment (file, len, &p, lineno) < 0) {
-		nih_free (args);
-		args = NULL;
-		goto finish;
-	}
+	/* nih_config_has_token has returned FALSE, we must be either past
+	 * the end of the file, or at a comment or newline.
+	 */
+	if (nih_config_skip_comment (file, len, &p, lineno) < 0)
+		nih_assert_not_reached ();
 
 finish:
 	if (pos)
@@ -629,8 +629,11 @@ nih_config_parse_command (const void *parent,
 	if (cmd_len < 0)
 		goto finish;
 
+	/* nih_config_next_token will eat up to the end of the file, a comment
+	 * or a newline; so this must always succeed.
+	 */
 	if (nih_config_skip_comment (file, len, &p, lineno) < 0)
-		goto finish;
+		nih_assert_not_reached ();
 
 	/* Now copy the string into the destination. */
 	cmd = nih_alloc (parent, cmd_len + 1);
@@ -1025,21 +1028,22 @@ nih_config_parse_file (const char      *file,
 		while ((p < len) && strchr (WS, file[p]))
 			p++;
 
-		/* Skip lines with only comments in them */
+		/* Skip lines with only comments in them; because has_token
+		 * returns FALSE we know we're either past the end of the
+		 * file, at a comment, or a newline.
+		 */
 		if (! nih_config_has_token (file, len, &p, lineno)) {
 			if (nih_config_skip_comment (file, len,
 						     &p, lineno) < 0)
-				goto finish;
+				nih_assert_not_reached ();
 
 			continue;
 		}
 
 		/* Must have a stanza, parse it */
-		if (p < len) {
-			if (nih_config_parse_stanza (file, len, &p, lineno,
+		if (nih_config_parse_stanza (file, len, &p, lineno,
 						     stanzas, data) < 0)
-				goto finish;
-		}
+			goto finish;
 	}
 
 	ret = 0;

@@ -1,5 +1,9 @@
 2007-01-22  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_signal.c (test_set_handler): Check that SIGCHLD
+	gets the SA_NOCLDSTOP flag, and that SIGKILL returns an error.
+	(test_set_default, test_set_ignore): Check SIGKILL returns error.
+
 	* nih/tests/test_option.c (test_parser): Check that duplicated
 	options result in the previous string being freed.
 

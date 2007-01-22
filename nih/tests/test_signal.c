@@ -38,11 +38,13 @@ test_set_handler (void)
 	struct sigaction act;
 	int              ret, i;
 
+	TEST_FUNCTION ("nih_signal_set_handler");
+
 	/* Check that we can install a signal handler, and that the action
 	 * for that signal points to our handler, has the right flags and
 	 * an empty signal mask.
 	 */
-	TEST_FUNCTION ("nih_signal_set_handler");
+	TEST_FEATURE ("with valid signal");
 	ret = nih_signal_set_handler (SIGUSR1, my_sig_handler);
 
 	TEST_EQ (ret, 0);
@@ -54,6 +56,33 @@ test_set_handler (void)
 
 	for (i = 1; i < 32; i++)
 		TEST_FALSE (sigismember (&act.sa_mask, i));
+
+
+	/* Check that the SIGCHLD handler also has the SA_NOCLDSTOP
+	 * flag set.
+	 */
+	TEST_FEATURE ("with child signal");
+	ret = nih_signal_set_handler (SIGCHLD, my_sig_handler);
+
+	TEST_EQ (ret, 0);
+
+	sigaction (SIGCHLD, NULL, &act);
+	TEST_EQ_P (act.sa_handler, my_sig_handler);
+	TEST_TRUE (act.sa_flags & SA_RESTART);
+	TEST_TRUE (act.sa_flags & SA_NOCLDSTOP);
+	TEST_FALSE (act.sa_flags & SA_RESETHAND);
+
+	for (i = 1; i < 32; i++)
+		TEST_FALSE (sigismember (&act.sa_mask, i));
+
+
+	/* Check that attempting to set a handler for SIGKILL results in
+	 * -1 being returned.
+	 */
+	TEST_FEATURE ("with invalid signal");
+	ret = nih_signal_set_handler (SIGKILL, my_sig_handler);
+
+	TEST_LT (ret, 0);
 }
 
 void
@@ -62,10 +91,12 @@ test_set_default (void)
 	struct sigaction act;
 	int              ret, i;
 
+	TEST_FUNCTION ("nih_signal_set_default");
+
 	/* Check that we can reset a signal to the default handling, which
 	 * should update the action properly.
 	 */
-	TEST_FUNCTION ("nih_signal_set_default");
+	TEST_FEATURE ("with valid signal");
 	ret = nih_signal_set_default (SIGUSR1);
 
 	TEST_EQ (ret, 0);
@@ -77,6 +108,15 @@ test_set_default (void)
 
 	for (i = 1; i < 32; i++)
 		TEST_FALSE (sigismember (&act.sa_mask, i));
+
+
+	/* Check that attempting to set a handler for SIGKILL results in
+	 * -1 being returned.
+	 */
+	TEST_FEATURE ("with invalid signal");
+	ret = nih_signal_set_default (SIGKILL);
+
+	TEST_LT (ret, 0);
 }
 
 void
@@ -85,10 +125,12 @@ test_set_ignore (void)
 	struct sigaction act;
 	int              ret, i;
 
+	TEST_FUNCTION ("nih_signal_set_ignore");
+
 	/* Check that we can set a signal to be ignored, which should update
 	 * the action properly.
 	 */
-	TEST_FUNCTION ("nih_signal_set_ignore");
+	TEST_FEATURE ("with valid signal");
 	ret = nih_signal_set_ignore (SIGUSR1);
 
 	TEST_EQ (ret, 0);
@@ -100,6 +142,15 @@ test_set_ignore (void)
 
 	for (i = 1; i < 32; i++)
 		TEST_FALSE (sigismember (&act.sa_mask, i));
+
+
+	/* Check that attempting to set a handler for SIGKILL results in
+	 * -1 being returned.
+	 */
+	TEST_FEATURE ("with invalid signal");
+	ret = nih_signal_set_ignore (SIGKILL);
+
+	TEST_LT (ret, 0);
 }
 
 void

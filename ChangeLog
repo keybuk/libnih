@@ -1,5 +1,14 @@
 2007-01-22  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/file.c: Strip out anything related to inotify, leaving us
+	with just three functions; nih_file_map(), nih_file_unmap() and
+	nih_dir_walk().  Others that will turn up here will be matching
+	and filtering functions.
+	* nih/file.h: Strip out typedefs, structures and prototypes for
+	anything watch-related; add attributes to functions as necessary.
+	* nih/tests/test_file.c: Remove watch-related test cases, and
+	use TEST_ALLOC_FAIL for test_dir_walk().
+
 	* nih/tests/test_io.c (test_shutdown): Test NIH_IO_MESSAGE using
 	AF_UNIX socketpairs, not pipes.
 

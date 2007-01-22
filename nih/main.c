@@ -307,8 +307,7 @@ nih_main_daemonise (void)
 	 * in that process group, including the child we're about to
 	 * spawn.  So make damned sure it's ignored.
 	 */
-	if (nih_signal_set_ignore (SIGHUP) < 0)
-		return -1;
+	nih_signal_set_ignore (SIGHUP);
 
 	/* We now spawn off a second child (or at least attempt to),
 	 * we do this so that it is guaranteed not to be a session leader,

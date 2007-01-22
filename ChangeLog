@@ -1,5 +1,7 @@
 2007-01-22  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/main.c (nih_main_daemonise): SIGHUP can always be ignored.
+
 	* nih/tests/test_io.c (test_reopen): Make sure that we can't reopen
 	a closed file descriptor.
 	(test_set_nonblock, test_set_cloexec): Check with closed descriptors.

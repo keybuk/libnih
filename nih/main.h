@@ -119,14 +119,16 @@ const char *     nih_main_package_string (void);
 void             nih_main_suggest_help   (void);
 void             nih_main_version        (void);
 
-int              nih_main_daemonise      (void);
+int              nih_main_daemonise      (void)
+	__attribute__ ((warn_unused_result));
 
 int              nih_main_loop           (void);
 void             nih_main_loop_interrupt (void);
 void             nih_main_loop_exit      (int status);
 
 NihMainLoopFunc *nih_main_loop_add_func  (const void *parent,
-					  NihMainLoopCb callback, void *data);
+					  NihMainLoopCb callback, void *data)
+	__attribute__ ((warn_unused_result, malloc));
 
 void             nih_main_term_signal    (void *data, NihSignal *signal);
 

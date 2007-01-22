@@ -111,12 +111,15 @@ struct nih_timer {
 NIH_BEGIN_EXTERN
 
 NihTimer *nih_timer_add_timeout   (const void *parent, time_t timeout,
-				   NihTimerCb callback, void *data);
+				   NihTimerCb callback, void *data)
+	__attribute__ ((warn_unused_result, malloc));
 NihTimer *nih_timer_add_periodic  (const void *parent, time_t period,
-				   NihTimerCb callback, void *data);
+				   NihTimerCb callback, void *data)
+	__attribute__ ((warn_unused_result, malloc));
 NihTimer *nih_timer_add_scheduled (const void *parent,
 				   NihTimerSchedule *schedule,
-				   NihTimerCb callback, void *data);
+				   NihTimerCb callback, void *data)
+	__attribute__ ((warn_unused_result, malloc));
 
 NihTimer *nih_timer_next_due       (void);
 void      nih_timer_poll           (void);

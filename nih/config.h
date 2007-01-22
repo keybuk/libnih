@@ -94,7 +94,8 @@ int       nih_config_has_token     (const char *file, size_t len, size_t *pos,
 
 ssize_t   nih_config_next_token    (const char *file, size_t len, size_t *pos,
 				    size_t *lineno, char *dest,
-				    const char *delim, int dequote);
+				    const char *delim, int dequote)
+	__attribute__ ((warn_unused_result));
 char *    nih_config_next_arg      (const void *parent,
 				    const char *file, size_t len, size_t *pos,
 				    size_t *lineno)
@@ -102,7 +103,8 @@ char *    nih_config_next_arg      (const void *parent,
 void      nih_config_next_line     (const char *file, size_t len, size_t *pos,
 				    size_t *lineno);
 int       nih_config_skip_comment  (const char *file, size_t len, size_t *pos,
-				    size_t *lineno);
+				    size_t *lineno)
+	__attribute__ ((warn_unused_result));
 
 char **   nih_config_parse_args    (const void *parent,
 				    const char *file, size_t len, size_t *pos,
@@ -120,14 +122,17 @@ char *    nih_config_parse_block   (const void *parent,
 
 int       nih_config_parse_stanza  (const char *file, size_t len, size_t *pos,
 				    size_t *lineno, NihConfigStanza *stanzas,
-				    void *data);
+				    void *data)
+	__attribute__ ((warn_unused_result));
 
 int       nih_config_parse_file    (const char *file, size_t len, size_t *pos,
 				    size_t *lineno, NihConfigStanza *stanzas,
-				    void *data);
+				    void *data)
+	__attribute__ ((warn_unused_result));
 int       nih_config_parse         (const char *filename,
 				    size_t *pos, size_t *lineno,
-				    NihConfigStanza *stanzas, void *data);
+				    NihConfigStanza *stanzas, void *data)
+	__attribute__ ((warn_unused_result));
 
 NIH_END_EXTERN
 

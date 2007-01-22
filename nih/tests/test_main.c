@@ -300,7 +300,7 @@ test_main_loop (void)
 	callback_called = 0;
 	last_data = NULL;
 	func = nih_main_loop_add_func (NULL, my_callback, &func);
-	nih_timer_add_timeout (NULL, 1, my_timeout, NULL);
+	NIH_MUST (nih_timer_add_timeout (NULL, 1, my_timeout, NULL));
 	ret = nih_main_loop ();
 
 	TEST_EQ (ret, 42);

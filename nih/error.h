@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -83,7 +83,8 @@ void      nih_error_raise_printf (int number, const char *format, ...);
 void      nih_error_raise_system (void);
 void      nih_error_raise_again  (NihError *error);
 
-NihError *nih_error_get          (void);
+NihError *nih_error_get          (void)
+	__attribute__ ((warn_unused_result));
 
 void      nih_error_push_context (void);
 void      nih_error_pop_context  (void);

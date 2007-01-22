@@ -384,7 +384,8 @@ test_buffer_pop (void)
 
 	TEST_FUNCTION ("nih_io_buffer_pop");
 	buf = nih_io_buffer_new (NULL);
-	nih_io_buffer_push (buf, "this is a test of the buffer code", 33);
+	NIH_MUST (nih_io_buffer_push (
+			  buf, "this is a test of the buffer code", 33) == 0);
 
 
 	/* Check that we can pop some bytes out of a buffer, and have a
@@ -449,7 +450,7 @@ test_buffer_pop (void)
 	 * indicate the shortfall.
 	 */
 	TEST_FEATURE ("with request for more than buffer size");
-	nih_io_buffer_push (buf, "another test", 12);
+	NIH_MUST (nih_io_buffer_push (buf, "another test", 12) == 0);
 	TEST_ALLOC_FAIL {
 		len = 20;
 		str = nih_io_buffer_pop (NULL, buf, &len);
@@ -486,7 +487,8 @@ test_buffer_shrink (void)
 
 	TEST_FUNCTION ("nih_io_buffer_shrink");
 	buf = nih_io_buffer_new (NULL);
-	nih_io_buffer_push (buf, "this is a test of the buffer code", 33);
+	NIH_MUST (nih_io_buffer_push (
+			  buf, "this is a test of the buffer code", 33) == 0);
 
 
 	/* Check that we can shrink the buffer by a small number of bytes. */
@@ -514,7 +516,7 @@ test_buffer_shrink (void)
 	 * and just end up freeing it.
 	 */
 	TEST_FEATURE ("with request larger than buffer size");
-	nih_io_buffer_push (buf, "another test", 12);
+	NIH_MUST (nih_io_buffer_push (buf, "another test", 12) == 0);
 	TEST_ALLOC_FAIL {
 		nih_io_buffer_shrink (buf, 20);
 
@@ -987,7 +989,7 @@ test_message_send (void)
 	 */
 	TEST_FEATURE ("with no control data");
 	msg = nih_io_message_new (NULL);
-	nih_io_buffer_push (msg->data, "test", 4);
+	NIH_MUST (nih_io_buffer_push (msg->data, "test", 4) == 0);
 
 	TEST_ALLOC_FAIL {
 		ret = nih_io_message_send (msg, fds[0]);
@@ -1015,8 +1017,8 @@ test_message_send (void)
 	 * message, and have it come out the other end.
 	 */
 	TEST_FEATURE ("with control data");
-	nih_io_message_add_control (msg, SOL_SOCKET, SCM_RIGHTS,
-				    sizeof (int), &fds[0]);
+	NIH_MUST (nih_io_message_add_control (msg, SOL_SOCKET, SCM_RIGHTS,
+					      sizeof (int), &fds[0]) == 0);
 
 	TEST_ALLOC_FAIL {
 		ret = nih_io_message_send (msg, fds[0]);
@@ -1104,7 +1106,7 @@ test_message_send (void)
 	/* Check that we get an error if the socket is closed. */
 	TEST_FEATURE ("with closed socket");
 	msg = nih_io_message_new (NULL);
-	nih_io_buffer_push (msg->data, "test", 4);
+	NIH_MUST (nih_io_buffer_push (msg->data, "test", 4) == 0);
 
 	TEST_ALLOC_FAIL {
 		ret = nih_io_message_send (msg, fds[0]);
@@ -1290,7 +1292,7 @@ test_shutdown (void)
 	pipe (fds);
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 			    NULL, NULL, NULL, NULL);
-	nih_io_buffer_push (io->recv_buf, "some data", 9);
+	NIH_MUST (nih_io_buffer_push (io->recv_buf, "some data", 9) == 0);
 
 	free_called = 0;
 	nih_alloc_set_destructor (io, destructor_called);
@@ -1355,7 +1357,7 @@ test_shutdown (void)
 			    NULL, NULL, NULL, NULL);
 
 	msg = nih_io_message_new (io);
-	nih_io_buffer_push (msg->data, "some data", 9);
+	NIH_MUST (nih_io_buffer_push (msg->data, "some data", 9) == 0);
 	nih_list_add (io->recv_q, &msg->entry);
 
 	free_called = 0;
@@ -1609,8 +1611,9 @@ test_watcher (void)
 			    my_reader, my_close_handler, my_error_handler,
 			    &io);
 
-	nih_io_buffer_push (io->recv_buf,
-			    "this is a test of the callback code", 33);
+	NIH_MUST (nih_io_buffer_push (
+			  io->recv_buf,
+			  "this is a test of the callback code", 33) == 0);
 
 	read_called = 0;
 	close_called = 0;
@@ -1970,7 +1973,7 @@ test_watcher (void)
 			    &io);
 
 	msg = nih_io_message_new (io);
-	nih_io_buffer_push (msg->data, "this is a test", 14);
+	NIH_MUST (nih_io_buffer_push (msg->data, "this is a test", 14) == 0);
 	nih_list_add (io->recv_q, &msg->entry);
 
 	error_called = 0;
@@ -2042,7 +2045,8 @@ test_watcher (void)
 	TEST_ALLOC_FAIL {
 		nih_alloc_set_allocator (realloc);
 		msg = nih_io_message_new (io);
-		nih_io_buffer_push (msg->data, "this is a test", 14);
+		NIH_MUST (nih_io_buffer_push (
+				  msg->data, "this is a test", 14) == 0);
 		nih_io_send_message (io, msg);
 		nih_alloc_set_allocator (_test_allocator);
 
@@ -2083,7 +2087,7 @@ test_watcher (void)
 	 */
 	TEST_FEATURE ("with another message to write");
 	msg = nih_io_message_new (io);
-	nih_io_buffer_push (msg->data, "another test", 12);
+	NIH_MUST (nih_io_buffer_push (msg->data, "another test", 12) == 0);
 	nih_io_send_message (io, msg);
 
 	free_called = 0;
@@ -2109,14 +2113,14 @@ test_watcher (void)
 	 */
 	TEST_FEATURE ("with multiple messages to write");
 	msg = nih_io_message_new (io);
-	nih_io_buffer_push (msg->data, "this is a test", 14);
+	NIH_MUST (nih_io_buffer_push (msg->data, "this is a test", 14) == 0);
 	nih_io_send_message (io, msg);
 
 	free_called = 0;
 	nih_alloc_set_destructor (msg, destructor_called);
 
 	msg = nih_io_message_new (io);
-	nih_io_buffer_push (msg->data, "another test", 12);
+	NIH_MUST (nih_io_buffer_push (msg->data, "another test", 12) == 0);
 	nih_io_send_message (io, msg);
 
 	nih_alloc_set_destructor (msg, destructor_called);
@@ -2151,7 +2155,7 @@ test_watcher (void)
 	last_error = NULL;
 
 	msg = nih_io_message_new (io);
-	nih_io_buffer_push (msg->data, "one more test", 13);
+	NIH_MUST (nih_io_buffer_push (msg->data, "one more test", 13) == 0);
 	nih_io_send_message (io, msg);
 
 	free_called = 0;
@@ -2193,7 +2197,7 @@ test_read_message (void)
 			    NULL, NULL, NULL, NULL);
 
 	msg = nih_io_message_new (io);
-	nih_io_buffer_push (msg->data, "this is a test", 14);
+	NIH_MUST (nih_io_buffer_push (msg->data, "this is a test", 14) == 0);
 	nih_list_add (io->recv_q, &msg->entry);
 
 	/* Check that we can read a message in the NihIo receive queue,
@@ -2252,7 +2256,7 @@ test_send_message (void)
 	 */
 	TEST_FEATURE ("with empty send queue");
 	msg1 = nih_io_message_new (NULL);
-	nih_io_buffer_push (msg1->data, "this is a test", 14);
+	NIH_MUST (nih_io_buffer_push (msg1->data, "this is a test", 14) == 0);
 
 	nih_io_send_message (io, msg1);
 
@@ -2267,7 +2271,7 @@ test_send_message (void)
 	 */
 	TEST_FEATURE ("with message already in send queue");
 	msg2 = nih_io_message_new (NULL);
-	nih_io_buffer_push (msg2->data, "this is a test", 14);
+	NIH_MUST (nih_io_buffer_push (msg2->data, "this is a test", 14) == 0);
 
 	nih_io_send_message (io, msg2);
 
@@ -2294,7 +2298,9 @@ test_read (void)
 	close (fds[1]);
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 			    NULL, NULL, NULL, NULL);
-	nih_io_buffer_push (io->recv_buf, "this is a test of the io code", 29);
+	NIH_MUST (nih_io_buffer_push (
+			  io->recv_buf,
+			  "this is a test of the io code", 29) == 0);
 
 
 	/* Check that we can read data in the NihIo receive buffer, and the
@@ -2351,7 +2357,7 @@ test_read (void)
 	 * get a short read with len updated.
 	 */
 	TEST_FEATURE ("with larger request than buffer");
-	nih_io_buffer_push (io->recv_buf, "another test", 12);
+	NIH_MUST (nih_io_buffer_push (io->recv_buf, "another test", 12) == 0);
 
 	TEST_ALLOC_FAIL {
 		len = 20;
@@ -2381,7 +2387,8 @@ test_read (void)
 	free_called = 0;
 	nih_alloc_set_destructor (io, destructor_called);
 
-	nih_io_buffer_push (io->recv_buf, "this is a test", 14);
+	NIH_MUST (nih_io_buffer_push (
+			  io->recv_buf, "this is a test", 14) == 0);
 	nih_io_shutdown (io);
 	len = 14;
 	str = nih_io_read (NULL, io, &len);
@@ -2406,7 +2413,9 @@ test_read (void)
 			    NULL, NULL, NULL, NULL);
 
 	msg = nih_io_message_new (io);
-	nih_io_buffer_push (msg->data, "this is a test of the io code", 29);
+	NIH_MUST (nih_io_buffer_push (
+			  msg->data,
+			  "this is a test of the io code", 29) == 0);
 	nih_list_add (io->recv_q, &msg->entry);
 
 	TEST_ALLOC_FAIL {
@@ -2485,7 +2494,7 @@ test_read (void)
 	nih_alloc_set_destructor (io, destructor_called);
 
 	msg = nih_io_message_new (io);
-	nih_io_buffer_push (msg->data, "this is a test", 14);
+	NIH_MUST (nih_io_buffer_push (msg->data, "this is a test", 14) == 0);
 	nih_list_add (io->recv_q, &msg->entry);
 
 	nih_io_shutdown (io);
@@ -2633,9 +2642,10 @@ test_get (void)
 	close (fds[1]);
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 			    NULL, NULL, NULL, NULL);
-	nih_io_buffer_push (io->recv_buf, "some data\n", 10);
-	nih_io_buffer_push (io->recv_buf, "and another line\n", 17);
-	nih_io_buffer_push (io->recv_buf, "incomplete", 10);
+	NIH_MUST (nih_io_buffer_push (io->recv_buf, "some data\n", 10) == 0);
+	NIH_MUST (nih_io_buffer_push (
+			  io->recv_buf, "and another line\n", 17) == 0);
+	NIH_MUST (nih_io_buffer_push (io->recv_buf, "incomplete", 10) == 0);
 
 	/* Check that we can take data from the front of a buffer up until
 	 * the first embedded new line (which isn't returned), and have the
@@ -2703,7 +2713,7 @@ test_get (void)
 	 * in the buffer, which should now be empty.
 	 */
 	TEST_FEATURE ("with null-terminated string in buffer");
-	nih_io_buffer_push (io->recv_buf, "\0", 1);
+	NIH_MUST (nih_io_buffer_push (io->recv_buf, "\0", 1) == 0);
 	str = nih_io_get (NULL, io, "\n");
 
 	TEST_ALLOC_SIZE (str, 11);
@@ -2721,7 +2731,7 @@ test_get (void)
 	free_called = 0;
 	nih_alloc_set_destructor (io, destructor_called);
 
-	nih_io_buffer_push (io->recv_buf, "some data\n", 10);
+	NIH_MUST (nih_io_buffer_push (io->recv_buf, "some data\n", 10) == 0);
 	nih_io_shutdown (io);
 	str = nih_io_get (NULL, io, "\n");
 
@@ -2745,9 +2755,10 @@ test_get (void)
 			    NULL, NULL, NULL, NULL);
 
 	msg = nih_io_message_new (io);
-	nih_io_buffer_push (msg->data, "some data\n", 10);
-	nih_io_buffer_push (msg->data, "and another line\n", 17);
-	nih_io_buffer_push (msg->data, "incomplete", 10);
+	NIH_MUST (nih_io_buffer_push (msg->data, "some data\n", 10) == 0);
+	NIH_MUST (nih_io_buffer_push (
+			  msg->data, "and another line\n", 17) == 0);
+	NIH_MUST (nih_io_buffer_push (msg->data, "incomplete", 10) == 0);
 	nih_list_add (io->recv_q, &msg->entry);
 
 	TEST_ALLOC_FAIL {
@@ -2816,7 +2827,7 @@ test_get (void)
 	free_called = 0;
 	nih_alloc_set_destructor (msg, destructor_called);
 
-	nih_io_buffer_push (msg->data, "\0", 1);
+	NIH_MUST (nih_io_buffer_push (msg->data, "\0", 1) == 0);
 	str = nih_io_get (NULL, io, "\n");
 
 	TEST_ALLOC_SIZE (str, 11);
@@ -2843,7 +2854,7 @@ test_get (void)
 	nih_alloc_set_destructor (io, destructor_called);
 
 	msg = nih_io_message_new (io);
-	nih_io_buffer_push (msg->data, "some data\n", 10);
+	NIH_MUST (nih_io_buffer_push (msg->data, "some data\n", 10) == 0);
 	nih_list_add (io->recv_q, &msg->entry);
 
 	nih_io_shutdown (io);

@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,10 +46,12 @@ char **nih_str_split        (const void *parent, const char *str,
 void   nih_strv_free        (char **strv);
 
 char * nih_str_wrap         (const void *parent, const char *str, size_t len,
-		             size_t first_indent, size_t indent);
+		             size_t first_indent, size_t indent)
+	__attribute__ ((warn_unused_result, malloc));
 size_t nih_str_screen_width (void);
 char * nih_str_screen_wrap  (const void *parent, const char *str,
-			     size_t first_indent, size_t indent);
+			     size_t first_indent, size_t indent)
+	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN
 

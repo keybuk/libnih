@@ -263,7 +263,8 @@ NIH_BEGIN_EXTERN
 
 NihIoWatch *  nih_io_add_watch           (const void *parent, int fd,
 					  NihIoEvents events,
-					  NihIoWatcher watcher, void *data);
+					  NihIoWatcher watcher, void *data)
+	__attribute__ ((warn_unused_result, malloc));
 
 void          nih_io_select_fds          (int *nfds, fd_set *readfds,
 					  fd_set *writefds, fd_set *exceptfds);
@@ -280,7 +281,8 @@ char *        nih_io_buffer_pop          (const void *parent,
 	__attribute__ ((warn_unused_result, malloc));
 void          nih_io_buffer_shrink       (NihIoBuffer *buffer, size_t len);
 int           nih_io_buffer_push         (NihIoBuffer *buffer,
-					  const char *str, size_t len);
+					  const char *str, size_t len)
+	__attribute__ ((warn_unused_result));
 
 
 NihIoMessage *nih_io_message_new         (const void *parent)
@@ -288,19 +290,22 @@ NihIoMessage *nih_io_message_new         (const void *parent)
 
 int           nih_io_message_add_control (NihIoMessage *message, int level,
 					  int type, socklen_t len,
-					  const void *data);
+					  const void *data)
+	__attribute__ ((warn_unused_result));
 
 NihIoMessage *nih_io_message_recv        (const void *parent, int fd,
 					  size_t *len)
 	__attribute__ ((warn_unused_result, malloc));
-ssize_t       nih_io_message_send        (NihIoMessage *message, int fd);
+ssize_t       nih_io_message_send        (NihIoMessage *message, int fd)
+	__attribute__ ((warn_unused_result));
 
 
 NihIo *       nih_io_reopen              (const void *parent, int fd,
 					  NihIoType type, NihIoReader reader,
 					  NihIoCloseHandler close_handler,
 					  NihIoErrorHandler error_handler,
-					  void *data);
+					  void *data)
+	__attribute__ ((warn_unused_result, malloc));
 void          nih_io_shutdown            (NihIo *io);
 void          nih_io_close               (NihIo *io);
 
@@ -311,7 +316,8 @@ char *        nih_io_read                (const void *parent, NihIo *io,
 					  size_t *len)
 	__attribute__ ((warn_unused_result, malloc));
 int           nih_io_write               (NihIo *io, const char *str,
-					  size_t len);
+					  size_t len)
+	__attribute__ ((warn_unused_result));
 
 char *        nih_io_get                 (const void *parent, NihIo *io,
 					  const char *delim)

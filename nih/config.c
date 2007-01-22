@@ -65,7 +65,8 @@
 /* Prototypes for static functions */
 static ssize_t          nih_config_block_end  (const char *file, size_t len,
 					       size_t *lineno, size_t *pos,
-					       const char *type);
+					       const char *type)
+	__attribute__ ((warn_unused_result));
 static NihConfigStanza *nih_config_get_stanza (const char *name,
 					       NihConfigStanza *stanzas);
 
@@ -380,8 +381,9 @@ nih_config_next_arg (const void *parent,
 	if (! arg)
 		nih_return_system_error (NULL);
 
-	nih_config_next_token (file + arg_start, arg_end - arg_start, NULL,
-			       NULL, arg, CNLWS, TRUE);
+	if (nih_config_next_token (file + arg_start, arg_end - arg_start, NULL,
+				   NULL, arg, CNLWS, TRUE) < 0)
+		goto finish;
 
 finish:
 	if (pos)
@@ -635,8 +637,9 @@ nih_config_parse_command (const void *parent,
 	if (! cmd)
 		nih_return_system_error (NULL);
 
-	nih_config_next_token (file + cmd_start, cmd_end - cmd_start, NULL,
-			       NULL, cmd, CNL, FALSE);
+	if (nih_config_next_token (file + cmd_start, cmd_end - cmd_start, NULL,
+				   NULL, cmd, CNL, FALSE) < 0)
+		goto finish;
 
 finish:
 	if (pos)

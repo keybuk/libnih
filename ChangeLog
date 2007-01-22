@@ -1,3 +1,29 @@
+2007-01-22  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/alloc.h: Fix prototype orders.
+	* nih/child.h: Add attributes to important return values.
+	* nih/config.c: Add attributes to important return values.
+	* nih/config.h: Add attributes to important return values.
+	* nih/error.h: Add attributes to important return values.
+	* nih/io.h: Add attributes to important return values.
+	* nih/main.h: Add attributes to important return values.
+	* nih/signal.h: Add attributes to important return values.
+	* nih/string.h: Add attributes to important return values.
+	* nih/timer.h: Add attributes to important return values.
+	* nih/io.c (nih_io_reopen): Don't ignore failure to ignore SIGPIPE.
+	(nih_io_set_cloexec, nih_io_set_nonblock): The only useful errors
+	returned is EBADF, so just return -1 for that.
+	* nih/main.c (nih_main_daemonise): Don't ignore failure to ignore
+	SIGHUP.
+	* nih/signal.c (nih_signal_set_handler, nih_signal_set_default) 
+	(nih_signal_set_ignore): The only useful error sigaction returns
+	is EINVAL, so just return -1.
+	(nih_signal_reset): Ignore EINVAL errors.
+	* nih/tests/test_io.c: Use NIH_MUST around function calls that
+	can fail.
+	* nih/tests/test_main.c: Use NIH_MUST around function calls that
+	can fail.
+
 2007-01-21  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/test.h (TEST_ALLOC_FAIL): Macro that loops over a block of code

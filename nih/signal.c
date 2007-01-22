@@ -2,7 +2,7 @@
  *
  * signal.c - easier and main-loop signal handling
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -83,7 +83,7 @@ nih_signal_init (void)
  * Sets signal @signum to call the @handler function when raised, with
  * sensible defaults for the flags and signal mask.
  *
- * Returns: zero on success, negative value on raised error.
+ * Returns: zero on success, negative value on invalid signal.
  **/
 int
 nih_signal_set_handler (int    signum,
@@ -104,7 +104,7 @@ nih_signal_set_handler (int    signum,
 	sigemptyset (&act.sa_mask);
 
 	if (sigaction (signum, &act, NULL) < 0)
-		nih_return_system_error (-1);
+		return -1;
 
 	return 0;
 }
@@ -116,7 +116,7 @@ nih_signal_set_handler (int    signum,
  * Sets signal @signum to perform the operating system default action when
  * raised, with sensible defaults for the flags and signal mask.
  *
- * Returns: zero on success, negative value on raised error.
+ * Returns: zero on success, negative value on invalid signal.
  **/
 int
 nih_signal_set_default (int signum)
@@ -131,7 +131,7 @@ nih_signal_set_default (int signum)
 	sigemptyset (&act.sa_mask);
 
 	if (sigaction (signum, &act, NULL) < 0)
-		nih_return_system_error (-1);
+		return -1;
 
 	return 0;
 }
@@ -143,7 +143,7 @@ nih_signal_set_default (int signum)
  * Sets signal @signum to be ignored, with sensible defaults for the flags
  * and signal mask.
  *
- * Returns: zero on success, negative value on raised error.
+ * Returns: zero on success, negative value on invalid signal.
  **/
 int
 nih_signal_set_ignore (int signum)
@@ -158,7 +158,7 @@ nih_signal_set_ignore (int signum)
 	sigemptyset (&act.sa_mask);
 
 	if (sigaction (signum, &act, NULL) < 0)
-		nih_return_system_error (-1);
+		return -1;
 
 	return 0;
 }
@@ -166,8 +166,7 @@ nih_signal_set_ignore (int signum)
 /**
  * nih_signal_reset:
  *
- * Resets all signals to their default handling, errors are ignored as
- * there's no real way to deal with them.
+ * Resets all signals to their default handling.
  **/
 void
 nih_signal_reset (void)
@@ -175,8 +174,7 @@ nih_signal_reset (void)
 	int i;
 
 	for (i = 1; i < NUM_SIGNALS; i++)
-		if (nih_signal_set_default (i) < 0)
-			nih_free (nih_error_get ());
+		nih_signal_set_default (i);
 }
 
 

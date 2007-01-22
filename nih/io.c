@@ -54,8 +54,10 @@
 /* Prototypes for static functions */
 static void           nih_io_watcher        (NihIo *io, NihIoWatch *watch,
 					     NihIoEvents events);
-static inline ssize_t nih_io_watcher_read   (NihIo *io, NihIoWatch *watch);
-static inline ssize_t nih_io_watcher_write  (NihIo *io, NihIoWatch *watch);
+static inline ssize_t nih_io_watcher_read   (NihIo *io, NihIoWatch *watch)
+	__attribute__ ((warn_unused_result));
+static inline ssize_t nih_io_watcher_write  (NihIo *io, NihIoWatch *watch)
+	__attribute__ ((warn_unused_result));
 static void           nih_io_closed         (NihIo *io);
 static void           nih_io_error          (NihIo *io);
 static void           nih_io_shutdown_check (NihIo *io);
@@ -871,8 +873,10 @@ nih_io_reopen (const void        *parent,
 	 * don't want to end up blocking; so set the socket so that
 	 * doesn't happen.
 	 */
-	if (nih_io_set_nonblock (fd) < 0)
+	if (nih_io_set_nonblock (fd) < 0) {
+		nih_error_raise_system ();
 		goto error;
+	}
 
 	return io;
 error:
@@ -1671,7 +1675,7 @@ nih_io_printf (NihIo      *io,
  *
  * Change the flags of @fd so that all operations become non-blocking.
  *
- * Returns: zero on success, negative value on raised error.
+ * Returns: zero on success, negative value on invalid file descriptor.
  **/
 int
 nih_io_set_nonblock (int fd)
@@ -1682,12 +1686,12 @@ nih_io_set_nonblock (int fd)
 
 	flags = fcntl (fd, F_GETFL);
 	if (flags < 0)
-		nih_return_system_error (-1);
+		return -1;
 
 	flags |= O_NONBLOCK;
 
 	if (fcntl (fd, F_SETFL, flags) < 0)
-		nih_return_system_error (-1);
+		return -1;
 
 	return 0;
 }
@@ -1698,7 +1702,7 @@ nih_io_set_nonblock (int fd)
  *
  * Change the flags of @fd so that the file descriptor is closed on exec().
  *
- * Returns: zero on success, negative value on raised error.
+ * Returns: zero on success, negative value on invalid file descriptor.
  **/
 int
 nih_io_set_cloexec (int fd)
@@ -1709,12 +1713,12 @@ nih_io_set_cloexec (int fd)
 
 	flags = fcntl (fd, F_GETFD);
 	if (flags < 0)
-		nih_return_system_error (-1);
+		return -1;
 
 	flags |= FD_CLOEXEC;
 
 	if (fcntl (fd, F_SETFD, flags) < 0)
-		nih_return_system_error (-1);
+		return -1;
 
 	return 0;
 }

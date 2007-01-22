@@ -68,7 +68,8 @@ typedef struct nih_child_watch {
 NIH_BEGIN_EXTERN
 
 NihChildWatch *nih_child_add_watch (const void *parent, pid_t pid,
-				    NihReaper reaper, void *data);
+				    NihReaper reaper, void *data)
+	__attribute__ ((warn_unused_result, malloc));
 
 void           nih_child_poll      (void);
 

@@ -1,5 +1,8 @@
 2007-01-22  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/file.c (nih_dir_walk): Correct doc string to indicate that
+	this function raises errors.
+
 	* nih/alloc.h: Fix prototype orders.
 	* nih/child.h: Add attributes to important return values.
 	* nih/config.c: Add attributes to important return values.

@@ -291,7 +291,7 @@ nih_file_reader (void       *data,
  * Leaving S_IFDIR out of @types only prevents @visitor being called for
  * directories, it does not prevent iteration into sub-directories.
  *
- * Returns: zero on success, negative value on error.
+ * Returns: zero on success, negative value on raised error.
  **/
 int
 nih_dir_walk (const char    *path,

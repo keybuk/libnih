@@ -30,6 +30,7 @@
 #include <nih/child.h>
 #include <nih/io.h>
 #include <nih/file.h>
+#include <nih/watch.h>
 #include <nih/main.h>
 #include <nih/option.h>
 #include <nih/command.h>

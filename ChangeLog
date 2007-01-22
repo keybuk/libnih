@@ -1,5 +1,39 @@
 2007-01-22  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.c (nih_io_reopen): Raises an error (usually ENOMEM), since
+	it can also raise EBADF.
+	* nih/tests/test_io.c (test_reopen): Make sure ENOMEM is raised.
+	* nih/watch.c: New watch API, this is a little higher level than
+	what previously existing in nih/file.c; but is substantially easier
+	to use and should cover all of the corner cases.
+	(INOTIFY_EVENTS): inotify events we always watch for.
+	(nih_watch_new): The master function; this creates a new inotify
+	instance and adds a watch for a path in it.
+	(nih_watch_handle_by_wd): Obtain a watch handle by descriptor
+	(nih_watch_handle_by_path): Obtain a watch handle by path
+	(nih_watch_add): Another useful function, adds a second path to
+	an existing watch; normally used just for sub-directories, but
+	possible for anything.
+	(nih_watch_add_visitor): nih_dir_walk() callback that calls the above
+	(nih_watch_free): Free a watch, and the associated NihIo; closing the
+	inotify descriptor.
+	(nih_watch_reader): Reader function; handles the incoming stream of
+	inotify events by locating the watch handle and dispatching through
+	(nih_watch_handle): this function which handles all the various
+	event ordering corner-cases and dispatches to the watch functions
+	proper.
+	* nih/watch.h: Typedefs, structures and prototypes for the new watch
+	API.
+	* nih/tests/test_watch.c: Test suite for the watch code; covers most
+	of the paths -- though malloc checking here is tricky and could do
+	with improving later.
+	* nih/libnih.h: Include nih/watch.h
+	* nih/Makefile.am (libnih_la_SOURCES): Build and link watch.c
+	(nihinclude_HEADERS): Install watch.h
+	(TESTS): Build and run watch test suite
+	(test_watch_SOURCES, test_watch_LDFLAGS, test_watch_LDADD): Details
+	for watch test suite binary.
+
 	* nih/file.c: Strip out anything related to inotify, leaving us
 	with just three functions; nih_file_map(), nih_file_unmap() and
 	nih_dir_walk().  Others that will turn up here will be matching

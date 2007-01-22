@@ -1201,6 +1201,10 @@ test_reopen (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (io, NULL);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
 			continue;
 		}
 
@@ -1239,6 +1243,10 @@ test_reopen (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (io, NULL);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
 			continue;
 		}
 

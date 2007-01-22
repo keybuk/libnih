@@ -804,7 +804,7 @@ error:
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
- * Returns: newly allocated structure, or NULL if insufficient memory.
+ * Returns: newly allocated structure, or NULL on raised error.
  **/
 NihIo *
 nih_io_reopen (const void        *parent,
@@ -821,7 +821,7 @@ nih_io_reopen (const void        *parent,
 
 	io = nih_new (parent, NihIo);
 	if (! io)
-		return NULL;
+		nih_return_system_error (NULL);
 
 	io->type = type;
 	io->reader = reader;
@@ -873,13 +873,12 @@ nih_io_reopen (const void        *parent,
 	 * don't want to end up blocking; so set the socket so that
 	 * doesn't happen.
 	 */
-	if (nih_io_set_nonblock (fd) < 0) {
-		nih_error_raise_system ();
+	if (nih_io_set_nonblock (fd) < 0)
 		goto error;
-	}
 
 	return io;
 error:
+	nih_error_raise_system ();
 	nih_free (io);
 	return NULL;
 }

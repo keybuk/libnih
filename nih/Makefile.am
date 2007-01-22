@@ -18,6 +18,7 @@ libnih_la_SOURCES = \
 	child.c \
 	io.c \
 	file.c \
+	watch.c \
 	main.c \
 	option.c \
 	command.c \
@@ -50,6 +51,7 @@ nihinclude_HEADERS = \
 	child.h \
 	io.h \
 	file.h \
+	watch.h \
 	main.h \
 	option.h \
 	command.h \
@@ -71,6 +73,7 @@ TESTS = \
 	test_child \
 	test_io \
 	test_file \
+	test_watch \
 	test_main \
 	test_option \
 	test_command \
@@ -115,6 +118,10 @@ test_io_LDADD = libnih.la
 test_file_SOURCES = tests/test_file.c
 test_file_LDFLAGS = -static
 test_file_LDADD = libnih.la
+
+test_watch_SOURCES = tests/test_watch.c
+test_watch_LDFLAGS = -static
+test_watch_LDADD = libnih.la
 
 test_main_SOURCES = tests/test_main.c
 test_main_LDFLAGS = -static

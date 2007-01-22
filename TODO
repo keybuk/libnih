@@ -1,11 +1,3 @@
-make sure all functions that raise an error or return NULL to indicate
-  out of memory warn if their result is unused, even if they store it
-  somewhere internally
-make sure all allocating functions have malloc in their attributes
-build a list of "allocating functions" and put it in HACKING (start with
-  others); anything calling these needs testing for failure
-
-
 timers:
 - calendar scheduled timers
 

@@ -80,6 +80,10 @@ The right results can be almost achieved by doing the following.
 
 	indent -kr -i8 -psl
 
+
+Documentation
+-------------
+
 All functions, typedefs, structures and file-level variables, whether
 exported or not, must be preceded by a documentation comment
 detailing their usage and behaviour.  The format of that command is as
@@ -103,6 +107,25 @@ follows:
 
 Structures should detail their members instead of function parameters.
 
+
+Function Attributes
+-------------------
+
+Functions that allocate a structure and return it should use the
+"warn_unused_result" and "malloc" attributes, even if the structure is
+placed in a linked list.  The former ensures a failure to allocate
+memory is checked by the caller, and the latter allows some
+optimisation.
+
+Functions that raise errors, or call other functions that raise
+errors, must indicate that an error has been raised in their return
+value and also use the "warn_unused_result" to ensure that the caller
+doesn't ignore the error.
+
+
+Test Cases
+----------
+
 Where possible, all code should be covered by test cases checking the
 behaviour of that code.  It's particularly important that any bug
 fixes be accompanied by a test case which fails without the fix and
@@ -111,3 +134,8 @@ succeeds with it.
 Tests should be placed in C files under the tests/ directory, and use
 the macros defined in the nih/test.h header.  See the existing test
 examples to see how.
+
+Any functions that allocate memory, or call any functions that
+allocate memory (those marked with the "malloc" attribute) should be
+tested using the TEST_ALLOC_FAIL macro to ensure that the case of
+insufficient memory is handled properly.

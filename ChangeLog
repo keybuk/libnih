@@ -1,5 +1,7 @@
 2007-01-30  Scott James Remnant  <scott@netsplit.com>
 
+	* HACKING: Add newline to end of file.
+
 	* nih/test.h (TEST_ALLOC_SAFE): Add macro to guard allocations so
 	they aren't counted.
 	* nih/tests/test_file.c (my_visitor, test_dir_walk): Use

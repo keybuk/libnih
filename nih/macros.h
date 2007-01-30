@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -66,8 +66,8 @@
 #define NIH_UNLIKELY(_e) __builtin_expect ((_e) ? TRUE : FALSE, FALSE)
 
 /* Force a true or false value, _e must be an assignment expression */
-#define NIH_MUST(_e)     while (! (_e))
-#define NIH_MUST_NOT(_e) while ((_e))
+#define NIH_MUST(_e) while (! (_e))
+#define NIH_ZERO(_e) while ((_e))
 
 
 /* Make gettext friendlier */

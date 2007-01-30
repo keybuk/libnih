@@ -2,7 +2,7 @@
  *
  * main.c - main loop handling and functions often called from main()
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -369,7 +369,7 @@ nih_main_loop_init (void)
 	 * triggered or something
 	 */
 	if (interrupt_pipe[0] == -1) {
-		NIH_MUST (pipe (interrupt_pipe) == 0);
+		NIH_ZERO (pipe (interrupt_pipe));
 
 		nih_io_set_nonblock (interrupt_pipe[0]);
 		nih_io_set_nonblock (interrupt_pipe[1]);

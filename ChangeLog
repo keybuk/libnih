@@ -1,5 +1,10 @@
 2007-01-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/macros.h (NIH_MUST_NOT): Rename to NIH_ZERO
+	* nih/io.c (nih_io_message_recv): Use NIH_ZERO, instead of == 0
+	* nih/main.c (nih_main_loop_init): Use NIH_ZERO, instead of == 0
+	* nih/tests/test_io.c: Use NIH_ZERO not NIH_MUST...== 0
+
 	* nih/tests/test_io.c (test_watcher): Ensure that we don't ignore
 	the return value from nih_io_printf; but also don't fail it.
 

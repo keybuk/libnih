@@ -669,9 +669,11 @@ nih_io_message_recv  (const void *parent,
 		size_t len;
 
 		len = cmsg->cmsg_len - CMSG_ALIGN (sizeof (struct cmsghdr));
-		NIH_MUST (nih_io_message_add_control (
-				  message, cmsg->cmsg_level, cmsg->cmsg_type,
-				  len, CMSG_DATA (cmsg)) == 0);
+		NIH_ZERO (nih_io_message_add_control (message,
+						      cmsg->cmsg_level,
+						      cmsg->cmsg_type,
+						      len,
+						      CMSG_DATA (cmsg)));
 	}
 
 	nih_free (ctrl_buf);

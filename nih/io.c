@@ -312,6 +312,13 @@ nih_io_buffer_resize (NihIoBuffer *buffer,
 	if (! new_buf)
 		return -1;
 
+	/* Clear the area between the old and new size; this is because we
+	 * tend to pass these buffers to syscalls, and passing around
+	 * unintialised data upsets people.
+	 */
+	if (new_size > buffer->size)
+		memset (new_buf + buffer->size, '\0', new_size - buffer->size);
+
 	/* Note: don't adjust the length */
 	buffer->buf = new_buf;
 	buffer->size = new_size;

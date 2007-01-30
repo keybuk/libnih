@@ -1,5 +1,9 @@
 2007-01-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.c (nih_io_buffer_resize): Always keep a buffer filled with
+	zeros when we extend it, so we never pass uninitialised data to
+	syscalls.
+
 	* m4/misc.m4 (NIH_INIT): Detect valgrind/valgrind.h
 	* nih/tests/test_signal.c: Detect valgrind and don't check the error
 	values from trying to set SIG_DFL or SIG_IGN for SIGKILL; which for

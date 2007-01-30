@@ -1747,9 +1747,9 @@ test_watcher (void)
 			    NULL, my_close_handler, my_error_handler, &io);
 
 	TEST_ALLOC_FAIL {
-		nih_alloc_set_allocator (realloc);
-		NIH_ZERO (nih_io_printf (io, "this is a test\n"));
-		nih_alloc_set_allocator (_test_allocator);
+		TEST_ALLOC_SAFE {
+			NIH_ZERO (nih_io_printf (io, "this is a test\n"));
+		}
 
 		FD_ZERO (&readfds);
 		FD_SET (fileno (output), &writefds);
@@ -1773,9 +1773,9 @@ test_watcher (void)
 	 */
 	TEST_FEATURE ("with more data to write");
 	TEST_ALLOC_FAIL {
-		nih_alloc_set_allocator (realloc);
-		NIH_ZERO (nih_io_printf (io, "so is this\n"));
-		nih_alloc_set_allocator (_test_allocator);
+		TEST_ALLOC_SAFE {
+			NIH_ZERO (nih_io_printf (io, "so is this\n"));
+		}
 
 		nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
@@ -2075,12 +2075,12 @@ test_watcher (void)
 			    &io);
 
 	TEST_ALLOC_FAIL {
-		nih_alloc_set_allocator (realloc);
-		msg = nih_io_message_new (io);
-		NIH_ZERO (nih_io_buffer_push (msg->data, "this is a test",
-					      14));
-		nih_io_send_message (io, msg);
-		nih_alloc_set_allocator (_test_allocator);
+		TEST_ALLOC_SAFE {
+			NIH_MUST (msg = nih_io_message_new (io));
+			NIH_ZERO (nih_io_buffer_push (msg->data,
+						      "this is a test", 14));
+			nih_io_send_message (io, msg);
+		}
 
 		free_called = 0;
 		nih_alloc_set_destructor (msg, destructor_called);

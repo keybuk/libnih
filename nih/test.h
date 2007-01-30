@@ -673,6 +673,20 @@ _test_allocator (void   *ptr,
 			nih_alloc_set_allocator (realloc); \
 		} else
 
+/**
+ * TEST_ALLOC_SAFE:
+ *
+ * This macro may be used within a TEST_ALLOC_FAIL block to guard the
+ * following block of code from failing allocation.
+ **/
+#define TEST_ALLOC_SAFE \
+	for (int _test_alloc_safe = 0; _test_alloc_safe < 3; \
+	     _test_alloc_safe++) \
+		if (_test_alloc_safe < 1) { \
+			nih_alloc_set_allocator (realloc); \
+		} else if (_test_alloc_safe > 1) { \
+			nih_alloc_set_allocator (_test_allocator); \
+		} else
 
 /**
  * TEST_LIST_EMPTY:

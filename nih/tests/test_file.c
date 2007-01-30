@@ -162,17 +162,15 @@ my_visitor (void       *data,
 
 	visitor_called++;
 
-	nih_alloc_set_allocator (realloc);
+	TEST_ALLOC_SAFE {
+		v = nih_new (visited, Visited);
+		nih_list_init (&v->entry);
 
-	v = nih_new (visited, Visited);
-	nih_list_init (&v->entry);
+		v->data = data;
+		v->path = nih_strdup (v, path);
 
-	v->data = data;
-	v->path = nih_strdup (v, path);
-
-	nih_list_add (visited, &v->entry);
-
-	nih_alloc_set_allocator (_test_allocator);
+		nih_list_add (visited, &v->entry);
+	}
 
 	if (data == (void *)-1) {
 		errno = EINVAL;
@@ -256,10 +254,10 @@ test_dir_walk (void)
 	 */
 	TEST_FEATURE ("with both dirs and files and no filter");
 	TEST_ALLOC_FAIL {
-		visitor_called = 0;
-		nih_alloc_set_allocator (realloc);
-		visited = nih_list_new (NULL);
-		nih_alloc_set_allocator (_test_allocator);
+		TEST_ALLOC_SAFE {
+			visitor_called = 0;
+			visited = nih_list_new (NULL);
+		}
 
 		ret = nih_dir_walk (dirname, S_IFREG | S_IFDIR, NULL,
 				    my_visitor, &ret);
@@ -318,10 +316,10 @@ test_dir_walk (void)
 	 */
 	TEST_FEATURE ("with only dirs and no filter");
 	TEST_ALLOC_FAIL {
-		visitor_called = 0;
-		nih_alloc_set_allocator (realloc);
-		visited = nih_list_new (NULL);
-		nih_alloc_set_allocator (_test_allocator);
+		TEST_ALLOC_SAFE {
+			visitor_called = 0;
+			visited = nih_list_new (NULL);
+		}
 
 		ret = nih_dir_walk (dirname, S_IFDIR, NULL, my_visitor, &ret);
 
@@ -355,10 +353,10 @@ test_dir_walk (void)
 	 */
 	TEST_FEATURE ("with only files and no filter");
 	TEST_ALLOC_FAIL {
-		visitor_called = 0;
-		nih_alloc_set_allocator (realloc);
-		visited = nih_list_new (NULL);
-		nih_alloc_set_allocator (_test_allocator);
+		TEST_ALLOC_SAFE {
+			visitor_called = 0;
+			visited = nih_list_new (NULL);
+		}
 
 		ret = nih_dir_walk (dirname, S_IFREG, NULL, my_visitor, &ret);
 
@@ -398,10 +396,10 @@ test_dir_walk (void)
 	 */
 	TEST_FEATURE ("with filter");
 	TEST_ALLOC_FAIL {
-		visitor_called = 0;
-		nih_alloc_set_allocator (realloc);
-		visited = nih_list_new (NULL);
-		nih_alloc_set_allocator (_test_allocator);
+		TEST_ALLOC_SAFE {
+			visitor_called = 0;
+			visited = nih_list_new (NULL);
+		}
 
 		ret = nih_dir_walk (dirname, S_IFREG | S_IFDIR, my_filter,
 				    my_visitor, &ret);

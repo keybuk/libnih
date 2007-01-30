@@ -1,5 +1,12 @@
 2007-01-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/test.h (TEST_ALLOC_SAFE): Add macro to guard allocations so
+	they aren't counted.
+	* nih/tests/test_file.c (my_visitor, test_dir_walk): Use
+	TEST_ALLOC_SAFE instead of changing the allocator by hand.
+	* nih/tests/test_io.c (test_watcher): Use TEST_ALLOC_SAFE instead of
+	changing the allocator by hand,
+
 	* nih/macros.h (NIH_MUST_NOT): Rename to NIH_ZERO
 	* nih/io.c (nih_io_message_recv): Use NIH_ZERO, instead of == 0
 	* nih/main.c (nih_main_loop_init): Use NIH_ZERO, instead of == 0

@@ -53,7 +53,7 @@
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
- * Returns: newly allocated string or NULL.
+ * Returns: newly allocated string or NULL if insufficient memory.
  **/
 char *
 nih_sprintf (const void *parent,
@@ -87,7 +87,7 @@ nih_sprintf (const void *parent,
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
- * Returns: newly allocated string or NULL.
+ * Returns: newly allocated string or NULL if insufficient memory.
  **/
 char *
 nih_vsprintf (const void *parent,
@@ -128,7 +128,7 @@ nih_vsprintf (const void *parent,
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
- * Returns: duplicated string or NULL if allocation fails.
+ * Returns: duplicated string or NULL if insufficient memory.
  **/
 char *
 nih_strdup (const void *parent,
@@ -158,7 +158,7 @@ nih_strdup (const void *parent,
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
- * Returns: duplicated string or NULL if allocation fails.
+ * Returns: duplicated string or NULL if insufficient memory.
  **/
 char *
 nih_strndup (const void *parent,
@@ -202,7 +202,7 @@ nih_strndup (const void *parent,
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
- * Returns: allocated array or NULL if allocation fails.
+ * Returns: allocated array or NULL if insufficient memory.
  **/
 char **
 nih_str_split (const void *parent,

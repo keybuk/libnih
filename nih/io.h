@@ -324,7 +324,7 @@ char *        nih_io_get                 (const void *parent, NihIo *io,
 	__attribute__ ((warn_unused_result, malloc));
 
 int           nih_io_printf              (NihIo *io, const char *format, ...)
-	__attribute__ ((format (printf, 2, 3)));
+	__attribute__ ((warn_unused_result, format (printf, 2, 3)));
 
 
 int           nih_io_set_nonblock        (int fd);

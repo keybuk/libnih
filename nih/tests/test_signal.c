@@ -21,6 +21,10 @@
 
 #include <nih/test.h>
 
+#if HAVE_VALGRIND_VALGRIND_H
+#include <valgrind/valgrind.h>
+#endif /* HAVE_VALGRIND_VALGRIND_H */
+
 #include <signal.h>
 
 #include <nih/macros.h>
@@ -76,6 +80,12 @@ test_set_handler (void)
 		TEST_FALSE (sigismember (&act.sa_mask, i));
 
 
+#if HAVE_VALGRIND_VALGRIND_H
+	/* This test fails when running under valgrind; because for no
+	 * readily apparent reason, that lets us catch SIGKILL!
+	 */
+	if (! RUNNING_ON_VALGRIND) {
+#endif
 	/* Check that attempting to set a handler for SIGKILL results in
 	 * -1 being returned.
 	 */
@@ -83,6 +93,9 @@ test_set_handler (void)
 	ret = nih_signal_set_handler (SIGKILL, my_sig_handler);
 
 	TEST_LT (ret, 0);
+#if HAVE_VALGRIND_VALGRIND_H
+	}
+#endif
 }
 
 void
@@ -110,6 +123,12 @@ test_set_default (void)
 		TEST_FALSE (sigismember (&act.sa_mask, i));
 
 
+#if HAVE_VALGRIND_VALGRIND_H
+	/* This test fails when running under valgrind; because for no
+	 * readily apparent reason, that lets us catch SIGKILL!
+	 */
+	if (! RUNNING_ON_VALGRIND) {
+#endif
 	/* Check that attempting to set a handler for SIGKILL results in
 	 * -1 being returned.
 	 */
@@ -117,6 +136,9 @@ test_set_default (void)
 	ret = nih_signal_set_default (SIGKILL);
 
 	TEST_LT (ret, 0);
+#if HAVE_VALGRIND_VALGRIND_H
+	}
+#endif
 }
 
 void
@@ -144,6 +166,12 @@ test_set_ignore (void)
 		TEST_FALSE (sigismember (&act.sa_mask, i));
 
 
+#if HAVE_VALGRIND_VALGRIND_H
+	/* This test fails when running under valgrind; because for no
+	 * readily apparent reason, that lets us ignore SIGKILL!
+	 */
+	if (! RUNNING_ON_VALGRIND) {
+#endif
 	/* Check that attempting to set a handler for SIGKILL results in
 	 * -1 being returned.
 	 */
@@ -151,6 +179,9 @@ test_set_ignore (void)
 	ret = nih_signal_set_ignore (SIGKILL);
 
 	TEST_LT (ret, 0);
+#if HAVE_VALGRIND_VALGRIND_H
+	}
+#endif
 }
 
 void

@@ -46,7 +46,7 @@ m4_ifndef([NIH_PACKAGE_COPYRIGHT], [m4_bmatch([$1], [
 # another source tree.
 AC_DEFUN([NIH_INIT],
 [# Checks for header files.  (libnih)
-AC_CHECK_HEADERS([sys/inotify.h])
+AC_CHECK_HEADERS([sys/inotify.h valgrind/valgrind.h])
 
 # Checks for typedefs, structures, and compiler characteristics.  (libnih)
 NIH_C_C99

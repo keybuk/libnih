@@ -1,5 +1,10 @@
 2007-01-30  Scott James Remnant  <scott@netsplit.com>
 
+	* m4/misc.m4 (NIH_INIT): Detect valgrind/valgrind.h
+	* nih/tests/test_signal.c: Detect valgrind and don't check the error
+	values from trying to set SIG_DFL or SIG_IGN for SIGKILL; which for
+	no readily apparent reason, works under valgrind.
+
 	* HACKING: Add newline to end of file.
 
 	* nih/test.h (TEST_ALLOC_SAFE): Add macro to guard allocations so

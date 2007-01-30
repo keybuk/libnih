@@ -101,13 +101,13 @@ nih_vsprintf (const void *parent,
 	nih_assert (format != NULL);
 
 	va_copy (args_copy, args);
-
-	len = vsnprintf (NULL, 0, format, args);
+	len = vsnprintf (NULL, 0, format, args_copy);
 
 	str = nih_alloc (parent, len + 1);
 	if (! str)
 		return NULL;
 
+	va_copy (args_copy, args);
 	vsnprintf (str, len + 1, format, args_copy);
 
 	return str;

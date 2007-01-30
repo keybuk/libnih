@@ -1,5 +1,9 @@
 2007-01-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/string.c (nih_vsprintf): We need to copy the arguments before
+	iterating either time, otherwise we could return NULL after moving
+	the current argument off the end.
+
 	* TODO: Update.
 
 2007-01-22  Scott James Remnant  <scott@netsplit.com>

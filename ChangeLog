@@ -1,5 +1,8 @@
 2007-01-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_io.c (test_watcher): Ensure that we don't ignore
+	the return value from nih_io_printf; but also don't fail it.
+
 	* HACKING: Clarify that returning to indicate insufficient memory
 	warrants warn_unused_result.
 

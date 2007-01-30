@@ -1747,7 +1747,9 @@ test_watcher (void)
 			    NULL, my_close_handler, my_error_handler, &io);
 
 	TEST_ALLOC_FAIL {
-		nih_io_printf (io, "this is a test\n");
+		nih_alloc_set_allocator (realloc);
+		NIH_MUST (nih_io_printf (io, "this is a test\n") == 0);
+		nih_alloc_set_allocator (_test_allocator);
 
 		FD_ZERO (&readfds);
 		FD_SET (fileno (output), &writefds);
@@ -1771,7 +1773,10 @@ test_watcher (void)
 	 */
 	TEST_FEATURE ("with more data to write");
 	TEST_ALLOC_FAIL {
-		nih_io_printf (io, "so is this\n");
+		nih_alloc_set_allocator (realloc);
+		NIH_MUST (nih_io_printf (io, "so is this\n") == 0);
+		nih_alloc_set_allocator (_test_allocator);
+
 		nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
 		rewind (output);
@@ -1799,7 +1804,7 @@ test_watcher (void)
 	last_data = NULL;
 	last_error = NULL;
 
-	nih_io_printf (io, "this write fails\n");
+	NIH_MUST (nih_io_printf (io, "this write fails\n") == 0);
 
 	FD_ZERO (&writefds);
 	FD_SET (fds[0], &writefds);

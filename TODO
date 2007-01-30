@@ -1,3 +1,6 @@
+nih_watch could probably still do with a little more testing, especially
+  note what fails when a malloc fails in the chain
+
 timers:
 - calendar scheduled timers
 

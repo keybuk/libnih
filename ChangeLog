@@ -1,5 +1,8 @@
 2007-01-30  Scott James Remnant  <scott@netsplit.com>
 
+	* HACKING: Clarify that returning to indicate insufficient memory
+	warrants warn_unused_result.
+
 	* nih/io.h: Add warn_unused_result attribute to nih_io_printf.
 	* nih/string.c: Correct doc strings.
 

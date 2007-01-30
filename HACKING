@@ -119,8 +119,13 @@ optimisation.
 
 Functions that raise errors, or call other functions that raise
 errors, must indicate that an error has been raised in their return
-value and also use the "warn_unused_result" to ensure that the caller
-doesn't ignore the error.
+value and also use the "warn_unused_result" attribute to ensure that
+the caller doesn't ignore the error.
+
+Functions that can return to indicate insufficient memory, even if
+they don't return a pointer, should also use the "warn_unused_result"
+attribute; unless it would be common to ignore this (e.g. shrinking a
+buffer).
 
 
 Test Cases

@@ -2076,7 +2076,7 @@ test_watcher (void)
 
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
-			NIH_MUST (msg = nih_io_message_new (io));
+			msg = nih_io_message_new (io);
 			NIH_ZERO (nih_io_buffer_push (msg->data,
 						      "this is a test", 14));
 			nih_io_send_message (io, msg);

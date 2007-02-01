@@ -1,5 +1,8 @@
 2007-02-01  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_main.c (test_main_loop): Eliminate use of NIH_MUST
+	* nih/tests/test_io.c (test_watcher): Remove unnecessary NIH_MUST
+
 	* nih/test.h (assert0): Add an assert wrapper for the common
 	alternate case.
 

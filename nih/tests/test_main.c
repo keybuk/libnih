@@ -289,6 +289,7 @@ void
 test_main_loop (void)
 {
 	NihMainLoopFunc *func;
+	NihTimer        *timer;
 	int              ret;
 
 	/* Check that we can run through the main loop, and that the
@@ -300,7 +301,7 @@ test_main_loop (void)
 	callback_called = 0;
 	last_data = NULL;
 	func = nih_main_loop_add_func (NULL, my_callback, &func);
-	NIH_MUST (nih_timer_add_timeout (NULL, 1, my_timeout, NULL));
+	timer = nih_timer_add_timeout (NULL, 1, my_timeout, NULL);
 	ret = nih_main_loop ();
 
 	TEST_EQ (ret, 42);

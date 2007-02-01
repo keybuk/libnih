@@ -29,6 +29,7 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <assert.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,6 +39,16 @@
 #include <nih/alloc.h>
 #include <nih/list.h>
 
+
+/**
+ * assert0:
+ * @_expr: expression to check.
+ *
+ * Wrapper around the usual assert() function that handles the common case
+ * of asserting that @_expr returns zero, rather than a TRUE value.
+ **/
+#define assert0(_expr) \
+	assert ((_expr) == 0)
 
 /**
  * TEST_FUNCTION:
@@ -711,6 +722,5 @@ _test_allocator (void   *ptr,
 	if (NIH_LIST_EMPTY (_list)) \
 		TEST_FAILED ("list %p (%s) empty, expected multiple members", \
 			     (_list), #_list)
-
 
 #endif /* NIH_TEST_H */

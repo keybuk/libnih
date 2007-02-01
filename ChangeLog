@@ -1,3 +1,8 @@
+2007-02-01  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/test.h (assert0): Add an assert wrapper for the common
+	alternate case.
+
 2007-01-30  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/io.c (nih_io_buffer_resize): Always keep a buffer filled with

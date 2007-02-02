@@ -233,6 +233,7 @@ test_poll (void)
 	TEST_FALSE (reaper_called);
 
 	kill (pid, SIGTERM);
+	waitpid (pid, NULL, 0);
 
 
 	/* Check that a poll when there are no child processes does nothing */

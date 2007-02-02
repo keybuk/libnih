@@ -1,5 +1,8 @@
 2007-02-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_child.c (test_poll): Reap the child we kill,
+	otherwise the next test might fail sometimes.
+
 	* nih/watch.c (nih_watch_add): Make being unable to recurse into
 	sub-directories to watch them an error.
 	* nih/tests/test_watch.c (test_new, test_add): Update test cases.

@@ -1,5 +1,8 @@
 2007-02-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/file.c (nih_dir_walk): Initialise ret to zero, otherwise
+	can return an uninitialised value when walking an empty directory.
+
 	* nih/tests/test_child.c (test_poll): Reap the child we kill,
 	otherwise the next test might fail sometimes.
 

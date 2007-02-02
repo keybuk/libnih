@@ -182,7 +182,7 @@ nih_dir_walk (const char          *path,
 	NihList      *dirs;
 	struct stat   statbuf;
 	char        **paths, **subpath;
-	int           ret;
+	int           ret = 0;
 
 	nih_assert (path != NULL);
 	nih_assert (visitor != NULL);

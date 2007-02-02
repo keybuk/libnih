@@ -41,6 +41,8 @@ enum {
 	NIH_CONFIG_UNTERMINATED_BLOCK,
 	NIH_CONFIG_UNKNOWN_STANZA,
 
+	NIH_DIR_LOOP_DETECTED,
+
 	/* 0x20000 thru 0x2FFFF reserved for applications */
 	NIH_ERROR_APPLICATION_START = 0x20000L,
 
@@ -56,5 +58,7 @@ enum {
 #define NIH_CONFIG_UNTERMINATED_QUOTE_STR  N_("Unterminated quoted string")
 #define NIH_CONFIG_UNTERMINATED_BLOCK_STR  N_("Unterminated block")
 #define NIH_CONFIG_UNKNOWN_STANZA_STR      N_("Unknown stanza")
+
+#define NIH_DIR_LOOP_DETECTED_STR          N_("Directory loop detected")
 
 #endif /* NIH_ERRORS_H */

@@ -30,16 +30,45 @@
 
 #include <fcntl.h>
 #include <dirent.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
+#include <nih/list.h>
 #include <nih/string.h>
 #include <nih/io.h>
 #include <nih/file.h>
 #include <nih/logging.h>
 #include <nih/error.h>
+#include <nih/errors.h>
+
+
+/**
+ * NihDirEntry:
+ * @entry: list header,
+ * @dev: device number,
+ * @ino: inode number.
+ *
+ * This structure is used to detect directory loops, and is stored in a stack
+ * as we recurse down the directory tree.
+ **/
+typedef struct nih_dir_entry {
+	NihList entry;
+	dev_t   dev;
+	ino_t   ino;
+} NihDirEntry;
+
+
+/* Prototypes for static functions */
+static char **nih_dir_walk_scan  (const char *path, NihFileFilter filter)
+	__attribute__ ((warn_unused_result, malloc));
+static int    nih_dir_walk_visit (const char *dirname, NihList *dirs,
+				  const char *path, NihFileFilter filter,
+				  NihFileVisitor visitor,
+				  NihFileErrorHandler error, void *data)
+	__attribute__ ((warn_unused_result));
 
 
 /**
@@ -119,9 +148,9 @@ nih_file_unmap (void   *map,
 /**
  * nih_dir_walk:
  * @path: path to walk,
- * @types: object types to call @visitor for,
- * @filter: path filter for both @visitor and iteration,
+ * @filter: path filter,
  * @visitor: function to call for each path,
+ * @error: function to call on error,
  * @data: data to pass to @visitor.
  *
  * Iterates the directory tree starting at @path, calling @visitor for
@@ -134,79 +163,240 @@ nih_file_unmap (void   *map,
  * the objects that @visitor is called for.  It is passed the full path
  * of the object, and if it returns TRUE, the object is ignored.
  *
- * @visitor is additionally only called for objects whose type is given
- * in @types, a bitmask of file modes and types as used by stat().
- * Leaving S_IFDIR out of @types only prevents @visitor being called for
- * directories, it does not prevent iteration into sub-directories.
+ * If @visitor returns a negative value, or there's an error obtaining
+ * the listing for a particular sub-directory, then the @error function
+ * will be called.  This function should handle the error and return zero,
+ * or raise an error again and return a negative value which causes the
+ * entire walk to be aborted.  If @error is NULL, then a warning is emitted
+ * instead.
  *
  * Returns: zero on success, negative value on raised error.
  **/
 int
-nih_dir_walk (const char    *path,
-	      mode_t         types,
-	      NihFileFilter  filter,
-	      NihFileVisitor visitor,
-	      void          *data)
+nih_dir_walk (const char          *path,
+	      NihFileFilter        filter,
+	      NihFileVisitor       visitor,
+	      NihFileErrorHandler  error,
+	      void                *data)
 {
-	DIR           *dir;
-	struct dirent *ent;
-	int            ret = 0;
+	NihList      *dirs;
+	struct stat   statbuf;
+	char        **paths, **subpath;
+	int           ret;
 
 	nih_assert (path != NULL);
-	nih_assert (types != 0);
 	nih_assert (visitor != NULL);
+
+	paths = nih_dir_walk_scan (path, filter);
+	if (! paths)
+		return -1;
+
+
+	NIH_MUST (dirs = nih_list_new (NULL));
+
+	if (stat (path, &statbuf) == 0) {
+		NihDirEntry *entry;
+
+		NIH_MUST (entry = nih_new (dirs, NihDirEntry));
+		nih_list_init (&entry->entry);
+		entry->dev = statbuf.st_dev;
+		entry->ino = statbuf.st_ino;
+		nih_list_add (dirs, &entry->entry);
+	}
+
+	for (subpath = paths; *subpath; subpath++) {
+		ret = nih_dir_walk_visit (path, dirs, *subpath, filter,
+					  visitor, error, data);
+		if (ret < 0)
+			break;
+	}
+
+	nih_free (dirs);
+	nih_free (paths);
+
+	return ret;
+}
+
+/**
+ * nih_dir_walk_scan:
+ * @path: path to scan,
+ * @filter: path filter.
+ *
+ * Reads the list of files in @path, removing ".", ".." and any for which
+ * @filter return TRUE.
+ *
+ * Returns: NULL-terminated array of full paths to sub-paths or NULL on
+ * raised error.
+ **/
+static char **
+nih_dir_walk_scan (const char    *path,
+		   NihFileFilter  filter)
+{
+	DIR            *dir;
+	struct dirent  *ent;
+	char          **paths;
+	size_t          npaths;
+
+	nih_assert (path != NULL);
 
 	dir = opendir (path);
 	if (! dir)
-		nih_return_system_error (-1);
+		nih_return_system_error (NULL);
+
+	npaths = 0;
+	NIH_MUST (paths = nih_alloc (NULL, sizeof (char *)));
+	paths[npaths] = NULL;
 
 	while ((ent = readdir (dir)) != NULL) {
-		struct stat  statbuf;
-		char        *subpath;
+		char **new_paths;
+		char  *subpath;
 
 		/* Always ignore '.' and '..' */
 		if ((! strcmp (ent->d_name, "."))
 		    || (! strcmp (ent->d_name, "..")))
 			continue;
 
-		NIH_MUST (subpath = nih_sprintf (NULL, "%s/%s",
+		NIH_MUST (subpath = nih_sprintf (paths, "%s/%s",
 						 path, ent->d_name));
 
-		/* Check the filter */
 		if (filter && filter (subpath)) {
 			nih_free (subpath);
 			continue;
 		}
 
-		/* Not much we can do here if we can't at least stat it */
-		if (stat (subpath, &statbuf) < 0) {
-			nih_free (subpath);
-			continue;
-		}
-
-		/* Call the handler if types match. */
-		if (statbuf.st_mode & types) {
-			ret = visitor (data, subpath);
-			if (ret < 0) {
-				nih_free (subpath);
-				break;
-			}
-		}
-
-		/* Iterate into sub-directories */
-		if (S_ISDIR (statbuf.st_mode)) {
-			ret = nih_dir_walk (subpath, types, filter,
-					    visitor, data);
-			if (ret < 0) {
-				nih_free (subpath);
-				break;
-			}
-		}
-
-		nih_free (subpath);
+		NIH_MUST (new_paths = nih_realloc (paths, NULL,
+						   (sizeof (char *)
+						    * (npaths + 2))));
+		paths = new_paths;
+		paths[npaths++] = subpath;
+		paths[npaths] = NULL;
 	}
 
 	closedir (dir);
 
-	return ret;
+	qsort (paths, npaths, sizeof (char *), alphasort);
+
+	return paths;
+}
+
+
+/**
+ * nih_dir_walk_visit:
+ * @dirname: top-level being walked,
+ * @dirs: stack of visited directories,
+ * @path: path being visited,
+ * @filter: path filter,
+ * @visitor: function to call for each path,
+ * @error: function to call on error,
+ * @data: data to pass to @visitor.
+ *
+ * Visits an individual @path found while iterating the directory tree
+ * started at @dirname.  Ensures that @visitor is called for @path, and
+ * if @path is a directory, it is descended into and the same @visitor
+ * called for each of those.
+ *
+ * @filter can be used to restrict both the sub-directories iterated and
+ * the objects that @visitor is called for.  It is passed the full path
+ * of the object, and if it returns TRUE, the object is ignored.
+ *
+ * If @visitor returns a negative value, or there's an error obtaining
+ * the listing for a particular sub-directory, then the @error function
+ * will be called.  This function should handle the error and return zero,
+ * or raise an error again and return a negative value which causes the
+ * entire walk to be aborted.  If @error is NULL, then a warning is emitted
+ * instead.
+ *
+ * Returns: zero on success, negative value on raised error.
+ **/
+static int
+nih_dir_walk_visit (const char          *dirname,
+		    NihList             *dirs,
+		    const char          *path,
+		    NihFileFilter        filter,
+		    NihFileVisitor       visitor,
+		    NihFileErrorHandler  error,
+		    void                *data)
+{
+	struct stat statbuf;
+
+	nih_assert (dirname != NULL);
+	nih_assert (dirs != NULL);
+	nih_assert (path != NULL);
+	nih_assert (visitor != NULL);
+
+	/* Not much we can do here if we can't at least stat it */
+	if (stat (path, &statbuf) < 0) {
+		nih_error_raise_system ();
+		goto error;
+	}
+
+	/* Call the handler */
+	if (visitor (data, dirname, path, &statbuf) < 0)
+		goto error;
+
+	/* Iterate into sub-directories; first checking for directory loops.
+	 */
+	if (S_ISDIR (statbuf.st_mode)) {
+		NihDirEntry  *entry;
+		char        **paths, **subpath;
+		int           ret = 0;
+
+		NIH_LIST_FOREACH (dirs, iter) {
+			NihDirEntry *entry = (NihDirEntry *)iter;
+
+			if ((entry->dev == statbuf.st_dev)
+			    && (entry->ino == statbuf.st_ino)) {
+				nih_error_raise (NIH_DIR_LOOP_DETECTED,
+						 _(NIH_DIR_LOOP_DETECTED_STR));
+				goto error;
+			}
+		}
+
+		/* Grab the directory contents */
+		paths = nih_dir_walk_scan (path, filter);
+		if (! paths)
+			goto error;
+
+		/* Record the device and inode numbers in the stack so that
+		 * we can detect directory loops.
+		 */
+		NIH_MUST (entry = nih_new (dirs, NihDirEntry));
+		nih_list_init (&entry->entry);
+		entry->dev = statbuf.st_dev;
+		entry->ino = statbuf.st_ino;
+		nih_list_add (dirs, &entry->entry);
+
+		/* Iterate the paths found.  If these calls return a negative
+		 * value, it means that an error handler decided to abort the
+		 * walk; so just abort right now.
+		 */
+		for (subpath = paths; *subpath; subpath++) {
+			ret = nih_dir_walk_visit (dirname, dirs, *subpath,
+						  filter, visitor, error,
+						  data);
+			if (ret < 0)
+				break;
+		}
+
+		nih_list_free (&entry->entry);
+		nih_free (paths);
+
+		if (ret < 0)
+			return ret;
+	}
+
+	return 0;
+
+error:
+	if (error) {
+		return error (data, dirname, path, &statbuf);
+	} else {
+		NihError *err;
+
+		err = nih_error_get ();
+		nih_warn ("%s: %s", path, err->message);
+		nih_free (err);
+
+		return 0;
+	}
 }

@@ -42,15 +42,38 @@ typedef int (*NihFileFilter) (const char *path);
 /**
  * NihFileVisitor:
  * @data: data pointer given to nih_dir_walk(),
- * @path: path to file.
+ * @dirname: top-level path being walked,
+ * @path: path to file,
+ * @statbuf: stat of @path.
  *
- * A file visitor is a function that is called for each file, directory or
- * other object visited by nih_dir_walk() that is does not match the
- * filter given to that function but does match the types argument.
+ * A file visitor is a function that can be called for a filesystem object
+ * visited by nih_dir_walk() that does not match the filter given to that
+ * function.
  *
  * Returns: zero on success, negative value on raised error.
  **/
-typedef int (*NihFileVisitor) (void *data, const char *path);
+typedef int (*NihFileVisitor) (void *data, const char *dirname,
+			       const char *path, struct stat *statbuf);
+
+/**
+ * NihFileErrorHandler:
+ * @data: data pointer given to nih_dir_walk(),
+ * @dirname: top-level path being walked,
+ * @path: path to file,
+ * @statbuf: stat of @path.
+ *
+ * A file error handler is a function called whenever the visitor function
+ * returns a raised error, or the attempt to walk @path fails.  Note that
+ * @statbuf might be invalid if it was stat() that failed.
+ *
+ * This function should handle the error and return zero; alternatively
+ * it may raise the error again (or a different error) and return a negative
+ * value to abort the tree walk.
+ *
+ * Returns: zero on success, negative value on raised error.
+ **/
+typedef int (*NihFileErrorHandler) (void *data, const char *dirname,
+				    const char *path, struct stat *statbuf);
 
 
 NIH_BEGIN_EXTERN
@@ -60,9 +83,9 @@ void *        nih_file_map          (const char *path, int flags,
 	__attribute__ ((warn_unused_result));
 int           nih_file_unmap        (void *map, size_t length);
 
-int           nih_dir_walk          (const char *path, mode_t types,
-				     NihFileFilter filter,
-				     NihFileVisitor visitor, void *data)
+int           nih_dir_walk          (const char *path, NihFileFilter filter,
+				     NihFileVisitor visitor,
+				     NihFileErrorHandler error, void *data)
 	__attribute__ ((warn_unused_result));
 
 NIH_END_EXTERN

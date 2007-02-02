@@ -1,3 +1,23 @@
+2007-02-02  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/file.c (nih_dir_walk): Rework this function to support
+	detection of directory loops, and reporting of errors with a callback
+	handler rather than just aborting the walk.
+	(nih_dir_walk_scan): Build up a sorted list of paths under a directory,
+	filtered with the filter function.  Split out because it has different
+	error handling semantics.
+	(nih_dir_walk_visit): Visit a single path and if it's a directory,
+	descend into it.
+	* nih/file.h (NihFileVisitor): Add arguments to pass the top-level
+	directory and the stat buffer of the path (to avoid stating the same
+	things multiple times).
+	(NihFileErrorHandler): Duplicate prototype for the error handler.
+	* nih/errors.h (NIH_DIR_LOOP_DETECTED): Add new error.
+	* nih/tests/test_file.c (test_dir_walk): Update test cases, improving
+	test coverage at the same time.
+	* nih/watch.c (nih_watch_add_visitor): Update to check the stat
+	passed to the visitor, as well as accept the directory name,
+
 2007-02-01  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/tests/test_io.c: Replace NIH_ZERO in test cases with assert0

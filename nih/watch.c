@@ -64,7 +64,9 @@ static NihWatchHandle *nih_watch_handle_by_wd   (NihWatch *watch, int wd);
 static NihWatchHandle *nih_watch_handle_by_path (NihWatch *watch,
 						 const char *path);
 static int             nih_watch_add_visitor    (NihWatch *watch,
-					         const char *path)
+						 const char *dirname,
+					         const char *path,
+						 struct stat *statbuf)
 	__attribute__ ((warn_unused_result));
 static void            nih_watch_reader      (NihWatch *watch, NihIo *io,
 					      const char *buf, size_t len);
@@ -298,9 +300,9 @@ nih_watch_add (NihWatch   *watch,
 	/* Recurse into sub-directories, warn if we hit one that we can't
 	 * watch (and stop looking)
 	 */
-	if (subdirs && (nih_dir_walk (path, S_IFDIR, watch->filter,
+	if (subdirs && (nih_dir_walk (path, watch->filter,
 				      (NihFileVisitor)nih_watch_add_visitor,
-				      watch) < 0)) {
+				      NULL, watch) < 0)) {
 		NihError *err;
 
 		err = nih_error_get ();
@@ -317,7 +319,9 @@ nih_watch_add (NihWatch   *watch,
 /**
  * nih_watch_add_visitor:
  * @watch: watch to add to,
- * @path: path to add.
+ * @dirname: top-level being watched,
+ * @path: path to add,
+ * @statbuf: stat of @path.
  *
  * Callback function for nih_dir_walk(), used by nih_watch_add() to add
  * sub-directories.  Just calls nih_watch_add() with subdirs as FALSE for
@@ -326,10 +330,20 @@ nih_watch_add (NihWatch   *watch,
  * Returns: zero on success, negative value on raised error.
  **/
 static int
-nih_watch_add_visitor (NihWatch   *watch,
-		       const char *path)
+nih_watch_add_visitor (NihWatch    *watch,
+		       const char  *dirname,
+		       const char  *path,
+		       struct stat *statbuf)
 {
-	return nih_watch_add (watch, path, FALSE);
+	nih_assert (watch != NULL);
+	nih_assert (dirname != NULL);
+	nih_assert (path != NULL);
+	nih_assert (statbuf != NULL);
+
+	if (S_ISDIR (statbuf->st_mode))
+		return nih_watch_add (watch, path, FALSE);
+
+	return 0;
 }
 
 

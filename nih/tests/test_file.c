@@ -35,7 +35,10 @@
 #include <nih/string.h>
 #include <nih/list.h>
 #include <nih/file.h>
+#include <nih/main.h>
+#include <nih/logging.h>
 #include <nih/error.h>
+#include <nih/errors.h>
 
 
 void
@@ -148,6 +151,7 @@ typedef struct visited {
 	NihList  entry;
 
 	void    *data;
+	char    *dirname;
 	char    *path;
 } Visited;
 
@@ -155,8 +159,10 @@ static NihList *visited = NULL;
 static int visitor_called = 0;
 
 static int
-my_visitor (void       *data,
-	    const char *path)
+my_visitor (void        *data,
+	    const char  *dirname,
+	    const char  *path,
+	    struct stat *statbuf)
 {
 	Visited *v;
 
@@ -167,6 +173,7 @@ my_visitor (void       *data,
 		nih_list_init (&v->entry);
 
 		v->data = data;
+		v->dirname = nih_strdup (v, dirname);
 		v->path = nih_strdup (v, path);
 
 		nih_list_add (visited, &v->entry);
@@ -180,6 +187,37 @@ my_visitor (void       *data,
 	return 0;
 }
 
+static int error_called = 0;
+static char *last_error_path = NULL;
+static int last_error = -1;
+
+static int
+my_error_handler (void        *data,
+		  const char  *dirname,
+		  const char  *path,
+		  struct stat *statbuf)
+{
+	NihError *err;
+
+	error_called++;
+
+	err = nih_error_get ();
+	last_error = err->number;
+	if (last_error_path)
+		free (last_error_path);
+	last_error_path = strdup (path);
+
+ 	if (data == (void *)-2) {
+		nih_error_raise_again (err);
+		return -1;
+	}
+
+	nih_free (err);
+
+	return 0;
+}
+
+
 static int
 my_filter (const char *path)
 {
@@ -190,6 +228,17 @@ my_filter (const char *path)
 		return TRUE;
 
 	return FALSE;
+}
+
+static int logger_called = 0;
+
+static int
+my_logger (NihLogLevel  priority,
+	   const char  *message)
+{
+	logger_called++;
+
+	return 0;
 }
 
 void
@@ -248,141 +297,67 @@ test_dir_walk (void)
 	fclose (fd);
 
 
-	/* Check that both directories and files can be visited with no
-	 * filter, the visitor should be called for each one and have the
-	 * correct data pointer and path called.
+	/* Check that when called without a filter, the visitor is called
+	 * for all paths found underneath the tree; getting passed the
+	 * correct data pointer, top-level path and path name,
 	 */
-	TEST_FEATURE ("with both dirs and files and no filter");
+	TEST_FEATURE ("with no filter");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			visitor_called = 0;
 			visited = nih_list_new (NULL);
 		}
 
-		ret = nih_dir_walk (dirname, S_IFREG | S_IFDIR, NULL,
-				    my_visitor, &ret);
+		ret = nih_dir_walk (dirname, NULL, my_visitor, NULL, &ret);
 
 		TEST_EQ (ret, 0);
 		TEST_EQ (visitor_called, 7);
 
 		v = (Visited *)visited->next;
 		TEST_EQ (v->data, &ret);
-		strcpy (filename, dirname);
-		strcat (filename, "/foo");
-		TEST_EQ_STR (v->path, filename);
-
-		v = (Visited *)v->entry.next;
-		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
 		strcpy (filename, dirname);
 		strcat (filename, "/bar");
 		TEST_EQ_STR (v->path, filename);
 
 		v = (Visited *)v->entry.next;
 		TEST_EQ (v->data, &ret);
-		strcpy (filename, dirname);
-		strcat (filename, "/bar/frodo");
-		TEST_EQ_STR (v->path, filename);
-
-		v = (Visited *)v->entry.next;
-		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
 		strcpy (filename, dirname);
 		strcat (filename, "/bar/bilbo");
 		TEST_EQ_STR (v->path, filename);
 
 		v = (Visited *)v->entry.next;
 		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/bar/frodo");
+		TEST_EQ_STR (v->path, filename);
+
+		v = (Visited *)v->entry.next;
+		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
 		strcpy (filename, dirname);
 		strcat (filename, "/baz");
 		TEST_EQ_STR (v->path, filename);
 
 		v = (Visited *)v->entry.next;
 		TEST_EQ (v->data, &ret);
-		strcpy (filename, dirname);
-		strcat (filename, "/frodo");
-		TEST_EQ_STR (v->path, filename);
-
-		v = (Visited *)v->entry.next;
-		TEST_EQ (v->data, &ret);
-		strcpy (filename, dirname);
-		strcat (filename, "/frodo/baggins");
-		TEST_EQ_STR (v->path, filename);
-
-		nih_free (visited);
-	}
-
-
-	/* Check that only directories can be visited by omitting S_IFREG
-	 * from the types list.
-	 */
-	TEST_FEATURE ("with only dirs and no filter");
-	TEST_ALLOC_FAIL {
-		TEST_ALLOC_SAFE {
-			visitor_called = 0;
-			visited = nih_list_new (NULL);
-		}
-
-		ret = nih_dir_walk (dirname, S_IFDIR, NULL, my_visitor, &ret);
-
-		TEST_EQ (ret, 0);
-		TEST_EQ (visitor_called, 3);
-
-		v = (Visited *)visited->next;
-		TEST_EQ (v->data, &ret);
-		strcpy (filename, dirname);
-		strcat (filename, "/bar");
-		TEST_EQ_STR (v->path, filename);
-
-		v = (Visited *)v->entry.next;
-		TEST_EQ (v->data, &ret);
-		strcpy (filename, dirname);
-		strcat (filename, "/baz");
-		TEST_EQ_STR (v->path, filename);
-
-		v = (Visited *)v->entry.next;
-		TEST_EQ (v->data, &ret);
-		strcpy (filename, dirname);
-		strcat (filename, "/frodo");
-		TEST_EQ_STR (v->path, filename);
-
-		nih_free (visited);
-	}
-
-
-	/* Check that only files can be visited by omitting S_IFDIR from
-	 * the types list.  Sub-directories should still be descended into.
-	 */
-	TEST_FEATURE ("with only files and no filter");
-	TEST_ALLOC_FAIL {
-		TEST_ALLOC_SAFE {
-			visitor_called = 0;
-			visited = nih_list_new (NULL);
-		}
-
-		ret = nih_dir_walk (dirname, S_IFREG, NULL, my_visitor, &ret);
-
-		TEST_EQ (ret, 0);
-		TEST_EQ (visitor_called, 4);
-
-		v = (Visited *)visited->next;
-		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
 		strcpy (filename, dirname);
 		strcat (filename, "/foo");
 		TEST_EQ_STR (v->path, filename);
 
 		v = (Visited *)v->entry.next;
 		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
 		strcpy (filename, dirname);
-		strcat (filename, "/bar/frodo");
+		strcat (filename, "/frodo");
 		TEST_EQ_STR (v->path, filename);
 
 		v = (Visited *)v->entry.next;
 		TEST_EQ (v->data, &ret);
-		strcpy (filename, dirname);
-		strcat (filename, "/bar/bilbo");
-		TEST_EQ_STR (v->path, filename);
-
-		v = (Visited *)v->entry.next;
-		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
 		strcpy (filename, dirname);
 		strcat (filename, "/frodo/baggins");
 		TEST_EQ_STR (v->path, filename);
@@ -401,77 +376,485 @@ test_dir_walk (void)
 			visited = nih_list_new (NULL);
 		}
 
-		ret = nih_dir_walk (dirname, S_IFREG | S_IFDIR, my_filter,
-				    my_visitor, &ret);
+		ret = nih_dir_walk (dirname, my_filter,
+				    my_visitor, NULL, &ret);
 
 		TEST_EQ (ret, 0);
 		TEST_EQ (visitor_called, 4);
 
 		v = (Visited *)visited->next;
 		TEST_EQ (v->data, &ret);
-		strcpy (filename, dirname);
-		strcat (filename, "/foo");
-		TEST_EQ_STR (v->path, filename);
-
-		v = (Visited *)v->entry.next;
-		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
 		strcpy (filename, dirname);
 		strcat (filename, "/bar");
 		TEST_EQ_STR (v->path, filename);
 
 		v = (Visited *)v->entry.next;
 		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
 		strcpy (filename, dirname);
 		strcat (filename, "/bar/bilbo");
 		TEST_EQ_STR (v->path, filename);
 
 		v = (Visited *)v->entry.next;
 		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
 		strcpy (filename, dirname);
 		strcat (filename, "/baz");
+		TEST_EQ_STR (v->path, filename);
+
+		v = (Visited *)v->entry.next;
+		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/foo");
 		TEST_EQ_STR (v->path, filename);
 
 		nih_free (visited);
 	}
 
 
-	/* Check that the return value and error from the visitor is
-	 * returned, and no further objects are visited.
+	/* Check that failing to stat a file or directory in the tree with
+	 * no error handler set results in a warning being emitted and us
+	 * stepping over it.
+	 */
+	TEST_FEATURE ("with stat failure and no error handler");
+	strcpy (filename, dirname);
+	strcat (filename, "/bar");
+	chmod (filename, 0644);
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			visitor_called = 0;
+			visited = nih_list_new (NULL);
+		}
+
+		logger_called = 0;
+		nih_log_set_logger (my_logger);
+
+		ret = nih_dir_walk (dirname, my_filter,
+				    my_visitor, NULL, &ret);
+
+		nih_log_set_logger (nih_logger_printf);
+
+		TEST_EQ (logger_called, 1);
+
+		TEST_EQ (ret, 0);
+		TEST_EQ (visitor_called, 3);
+
+		v = (Visited *)visited->next;
+		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/bar");
+		TEST_EQ_STR (v->path, filename);
+
+		v = (Visited *)v->entry.next;
+		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/baz");
+		TEST_EQ_STR (v->path, filename);
+
+		v = (Visited *)v->entry.next;
+		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/foo");
+		TEST_EQ_STR (v->path, filename);
+
+		nih_free (visited);
+	}
+
+	strcpy (filename, dirname);
+	strcat (filename, "/bar");
+	chmod (filename, 0755);
+
+
+	/* Check that failing to stat a file or directory in the tree with
+	 * an error handler set results in the handler being called.
+	 */
+	TEST_FEATURE ("with stat failure and error handler");
+	strcpy (filename, dirname);
+	strcat (filename, "/bar");
+	chmod (filename, 0644);
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			visitor_called = 0;
+			visited = nih_list_new (NULL);
+		}
+
+		error_called = 0;
+		last_error = -1;
+		last_error_path = NULL;
+
+		ret = nih_dir_walk (dirname, my_filter,
+				    my_visitor, my_error_handler, &ret);
+
+		TEST_EQ (error_called, 1);
+		TEST_EQ (last_error, EACCES);
+
+		strcpy (filename, dirname);
+		strcat (filename, "/bar/bilbo");
+		TEST_EQ_STR (last_error_path, filename);
+		free (last_error_path);
+
+		TEST_EQ (ret, 0);
+		TEST_EQ (visitor_called, 3);
+
+		v = (Visited *)visited->next;
+		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/bar");
+		TEST_EQ_STR (v->path, filename);
+
+		v = (Visited *)v->entry.next;
+		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/baz");
+		TEST_EQ_STR (v->path, filename);
+
+		v = (Visited *)v->entry.next;
+		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/foo");
+		TEST_EQ_STR (v->path, filename);
+
+		nih_free (visited);
+	}
+
+	strcpy (filename, dirname);
+	strcat (filename, "/bar");
+	chmod (filename, 0755);
+
+
+	/* Check that the error handler can return a negative value and
+	 * raised error to abort the directory walk.
+	 */
+	TEST_FEATURE ("with error from error handler");
+	strcpy (filename, dirname);
+	strcat (filename, "/bar");
+	chmod (filename, 0644);
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			visitor_called = 0;
+			visited = nih_list_new (NULL);
+		}
+
+		error_called = 0;
+		last_error = -1;
+		last_error_path = NULL;
+
+		ret = nih_dir_walk (dirname, my_filter,
+				    my_visitor, my_error_handler, (void *)-2);
+
+		TEST_EQ (error_called, 1);
+		TEST_EQ (last_error, EACCES);
+
+		strcpy (filename, dirname);
+		strcat (filename, "/bar/bilbo");
+		TEST_EQ_STR (last_error_path, filename);
+		free (last_error_path);
+
+		err = nih_error_get ();
+		TEST_EQ (err->number, EACCES);
+		nih_free (err);
+
+		TEST_EQ (ret, -1);
+		TEST_EQ (visitor_called, 1);
+
+		v = (Visited *)visited->next;
+		TEST_EQ (v->data, (void *)-2);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/bar");
+		TEST_EQ_STR (v->path, filename);
+
+		nih_free (visited);
+	}
+
+	strcpy (filename, dirname);
+	strcat (filename, "/bar");
+	chmod (filename, 0755);
+
+
+	/* Check that a complete failure to walk a sub-directory underneath
+	 * the tree also results in the error handler being called.
+	 */
+	TEST_FEATURE ("with inability to walk a sub-directory");
+	strcpy (filename, dirname);
+	strcat (filename, "/bar");
+	chmod (filename, 0000);
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			visitor_called = 0;
+			visited = nih_list_new (NULL);
+		}
+
+		error_called = 0;
+		last_error = -1;
+		last_error_path = NULL;
+
+		ret = nih_dir_walk (dirname, my_filter,
+				    my_visitor, my_error_handler, &ret);
+
+		TEST_EQ (error_called, 1);
+		TEST_EQ (last_error, EACCES);
+
+		strcpy (filename, dirname);
+		strcat (filename, "/bar");
+		TEST_EQ_STR (last_error_path, filename);
+		free (last_error_path);
+
+		TEST_EQ (ret, 0);
+		TEST_EQ (visitor_called, 3);
+
+		v = (Visited *)visited->next;
+		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/bar");
+		TEST_EQ_STR (v->path, filename);
+
+		v = (Visited *)v->entry.next;
+		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/baz");
+		TEST_EQ_STR (v->path, filename);
+
+		v = (Visited *)v->entry.next;
+		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/foo");
+		TEST_EQ_STR (v->path, filename);
+
+		nih_free (visited);
+	}
+
+	strcpy (filename, dirname);
+	strcat (filename, "/bar");
+	chmod (filename, 0755);
+
+
+	/* Check that a warning is emitted if the visitor raises an error
+	 * when there is no error handler set.
 	 */
 	TEST_FEATURE ("with error in visitor");
-	visitor_called = 0;
-	visited = nih_list_new (NULL);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			visitor_called = 0;
+			visited = nih_list_new (NULL);
+		}
 
-	ret = nih_dir_walk (dirname, S_IFREG | S_IFDIR, my_filter,
-			    my_visitor, (void *)-1);
+		logger_called = 0;
+		nih_log_set_logger (my_logger);
 
-	TEST_EQ (ret, -1);
-	TEST_EQ (visitor_called, 1);
+		ret = nih_dir_walk (dirname, my_filter,
+				    my_visitor, NULL, (void *)-1);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, EINVAL);
-	nih_free (err);
+		nih_log_set_logger (nih_logger_printf);
 
-	nih_free (visited);
+		TEST_EQ (logger_called, 3);
+
+		TEST_EQ (ret, 0);
+		TEST_EQ (visitor_called, 3);
+
+		v = (Visited *)visited->next;
+		TEST_EQ (v->data, (void *)-1);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/bar");
+		TEST_EQ_STR (v->path, filename);
+
+		v = (Visited *)v->entry.next;
+		TEST_EQ (v->data, (void *)-1);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/baz");
+		TEST_EQ_STR (v->path, filename);
+
+		v = (Visited *)v->entry.next;
+		TEST_EQ (v->data, (void *)-1);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/foo");
+		TEST_EQ_STR (v->path, filename);
+
+		nih_free (visited);
+	}
 
 
-	/* Check that we get a ENOTDIR error if we try and walk a file.
+	/* Check that the error handled is called if the visitor raises
+	 * an error.
 	 */
-	TEST_FEATURE ("with non-directory");
+	TEST_FEATURE ("with error in visitor and handler");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			visitor_called = 0;
+			visited = nih_list_new (NULL);
+		}
+
+		error_called = 0;
+		last_error = -1;
+		last_error_path = NULL;
+
+		ret = nih_dir_walk (dirname, my_filter,
+				    my_visitor, my_error_handler, (void *)-1);
+
+		TEST_EQ (error_called, 3);
+		free (last_error_path);
+
+		TEST_EQ (ret, 0);
+		TEST_EQ (visitor_called, 3);
+
+		v = (Visited *)visited->next;
+		TEST_EQ (v->data, (void *)-1);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/bar");
+		TEST_EQ_STR (v->path, filename);
+
+		v = (Visited *)v->entry.next;
+		TEST_EQ (v->data, (void *)-1);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/baz");
+		TEST_EQ_STR (v->path, filename);
+
+		v = (Visited *)v->entry.next;
+		TEST_EQ (v->data, (void *)-1);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/foo");
+		TEST_EQ_STR (v->path, filename);
+
+		nih_free (visited);
+	}
+
+
+	/* Check that we get a ENOTDIR error if we try and walk a file
+	 * and there's no error handler set.
+	 */
+	TEST_FEATURE ("with non-directory and no error handler");
 	strcpy (filename, dirname);
 	strcat (filename, "/foo");
 
-	visitor_called = 0;
+	TEST_ALLOC_FAIL {
+		visitor_called = 0;
 
-	ret = nih_dir_walk (filename, S_IFREG | S_IFDIR, my_filter,
-			    my_visitor, &ret);
+		ret = nih_dir_walk (filename, my_filter,
+				    my_visitor, NULL, &ret);
 
-	TEST_EQ (ret, -1);
-	TEST_EQ (visitor_called, 0);
+		TEST_EQ (ret, -1);
+		TEST_EQ (visitor_called, 0);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, ENOTDIR);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, ENOTDIR);
+		nih_free (err);
+	}
+
+
+	/* Check that we still get a ENOTDIR error if we try and walk a file
+	 * and there is an error handler set.
+	 */
+	TEST_FEATURE ("with non-directory and error handler");
+	strcpy (filename, dirname);
+	strcat (filename, "/foo");
+
+	TEST_ALLOC_FAIL {
+		visitor_called = 0;
+		error_called = 0;
+
+		ret = nih_dir_walk (filename, my_filter,
+				    my_visitor, my_error_handler, &ret);
+
+		TEST_EQ (ret, -1);
+		TEST_EQ (visitor_called, 0);
+		TEST_EQ (error_called, 0);
+
+		err = nih_error_get ();
+		TEST_EQ (err->number, ENOTDIR);
+		nih_free (err);
+	}
+
+
+	/* Check that we can detect the simplest kind of directory loop, and
+	 * have it treated as an ordinary error while visiting.
+	 */
+	TEST_FEATURE ("with simple directory loop");
+	strcpy (filename, dirname);
+	strcat (filename, "/bar/loop");
+	symlink (dirname, filename);
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			visitor_called = 0;
+			visited = nih_list_new (NULL);
+		}
+
+		error_called = 0;
+		last_error = -1;
+		last_error_path = NULL;
+
+		ret = nih_dir_walk (dirname, my_filter,
+				    my_visitor, my_error_handler, &ret);
+
+		TEST_EQ (error_called, 1);
+		TEST_EQ (last_error, NIH_DIR_LOOP_DETECTED);
+
+		strcpy (filename, dirname);
+		strcat (filename, "/bar/loop");
+		TEST_EQ_STR (last_error_path, filename);
+		free (last_error_path);
+
+		TEST_EQ (ret, 0);
+		TEST_EQ (visitor_called, 5);
+
+		v = (Visited *)visited->next;
+		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/bar");
+		TEST_EQ_STR (v->path, filename);
+
+		v = (Visited *)v->entry.next;
+		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/bar/bilbo");
+		TEST_EQ_STR (v->path, filename);
+
+		v = (Visited *)v->entry.next;
+		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/bar/loop");
+		TEST_EQ_STR (v->path, filename);
+
+		v = (Visited *)v->entry.next;
+		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/baz");
+		TEST_EQ_STR (v->path, filename);
+
+		v = (Visited *)v->entry.next;
+		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/foo");
+		TEST_EQ_STR (v->path, filename);
+
+		nih_free (visited);
+	}
 
 
 	strcpy (filename, dirname);

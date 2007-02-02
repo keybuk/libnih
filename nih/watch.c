@@ -304,8 +304,14 @@ nih_watch_add (NihWatch   *watch,
 	if (subdirs && (nih_dir_walk (path, watch->filter,
 				      (NihFileVisitor)nih_watch_add_visitor,
 				      NULL, watch) < 0)) {
-		nih_list_free (&handle->entry);
-		return -1;
+		NihError *err;
+
+		err = nih_error_get ();
+		if (err->number != ENOTDIR) {
+			nih_error_raise_again (err);
+			nih_list_free (&handle->entry);
+			return -1;
+		}
 	}
 
 	return 0;

@@ -585,7 +585,7 @@ test_add (void)
 		strcpy (filename, dirname);
 		strcat (filename, "/bar/bilbo");
 
-		ret = nih_watch_add (watch, filename, FALSE);
+		ret = nih_watch_add (watch, filename, TRUE);
 
 		if (test_alloc_failed && (test_alloc_failed < 3)) {
 			TEST_LT (ret, 0);

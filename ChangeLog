@@ -1,5 +1,9 @@
 2007-02-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/watch.c (nih_watch_add): Make being unable to recurse into
+	sub-directories to watch them an error.
+	* nih/tests/test_watch.c (test_new, test_add): Update test cases.
+
 	* nih/file.c (nih_dir_walk): Rework this function to support
 	detection of directory loops, and reporting of errors with a callback
 	handler rather than just aborting the walk.

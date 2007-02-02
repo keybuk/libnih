@@ -196,16 +196,11 @@ test_new (void)
 		strcpy (filename, dirname);
 		strcat (filename, "/frodo/baggins");
 
-		watch = nih_watch_new (NULL, filename, TRUE, my_filter,
+		watch = nih_watch_new (NULL, filename, FALSE, my_filter,
 				       my_create_handler, my_modify_handler,
 				       my_delete_handler, &watch);
 
-		/* 5th and 6th alloc calls are throwing the ENOTDIR error
-		 * which is caught internally.
-		 */
-		if (test_alloc_failed
-		    && (test_alloc_failed != 5)
-		    && (test_alloc_failed != 6)) {
+		if (test_alloc_failed) {
 			TEST_EQ_P (watch, NULL);
 
 			err = nih_error_get ();
@@ -218,7 +213,7 @@ test_new (void)
 		TEST_ALLOC_SIZE (watch->path, strlen (filename) + 1);
 		TEST_ALLOC_PARENT (watch->path, watch);
 		TEST_EQ_STR (watch->path, filename);
-		TEST_EQ (watch->subdirs, TRUE);
+		TEST_EQ (watch->subdirs, FALSE);
 		TEST_EQ_P (watch->filter, my_filter);
 		TEST_EQ_P (watch->create_handler, my_create_handler);
 		TEST_EQ_P (watch->modify_handler, my_modify_handler);
@@ -319,8 +314,9 @@ test_new (void)
 				       my_create_handler, my_modify_handler,
 				       my_delete_handler, &watch);
 
-		if (test_alloc_failed && ((test_alloc_failed < 5)
-					  || (test_alloc_failed > 14))) {
+		/* Alloc 5 thru 25 are in nih_dir_walk which is malloc safe */
+		if (test_alloc_failed
+		    && ((test_alloc_failed < 5) || (test_alloc_failed > 25))) {
 			TEST_EQ_P (watch, NULL);
 
 			err = nih_error_get ();
@@ -359,7 +355,7 @@ test_new (void)
 
 		nih_list_remove (&handle->entry);
 
-		if (test_alloc_failed < 7) {
+		if ((test_alloc_failed != 15) && (test_alloc_failed != 16)) {
 			strcpy (filename, dirname);
 			strcat (filename, "/bar");
 
@@ -372,7 +368,9 @@ test_new (void)
 			TEST_EQ_STR (handle->path, filename);
 
 			nih_list_remove (&handle->entry);
+		}
 
+		if ((test_alloc_failed != 22) && (test_alloc_failed != 23)) {
 			strcpy (filename, dirname);
 			strcat (filename, "/baz");
 
@@ -385,9 +383,9 @@ test_new (void)
 			TEST_EQ_STR (handle->path, filename);
 
 			nih_list_remove (&handle->entry);
-
-			TEST_LIST_EMPTY (&watch->watches);
 		}
+
+		TEST_LIST_EMPTY (&watch->watches);
 
 		nih_watch_free (watch);
 	}
@@ -414,7 +412,7 @@ test_new (void)
 
 
 	/* Check that an error with a sub-directory results in a warning
-	 * being emitted, and the directory recursing stopped.
+	 * being emitted, but the directory recursing carrying on.
 	 */
 	TEST_FEATURE ("with error with sub-directory");
 	strcpy (filename, dirname);
@@ -446,6 +444,32 @@ test_new (void)
 	TEST_ALLOC_SIZE (handle->path, strlen (dirname) + 1);
 	TEST_ALLOC_PARENT (handle->path, handle);
 	TEST_EQ_STR (handle->path, dirname);
+
+	nih_list_remove (&handle->entry);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/baz");
+
+	handle = (NihWatchHandle *)watch->watches.next;
+	TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
+	TEST_ALLOC_PARENT (handle, watch);
+
+	TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
+	TEST_ALLOC_PARENT (handle->path, handle);
+	TEST_EQ_STR (handle->path, filename);
+
+	nih_list_remove (&handle->entry);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/frodo");
+
+	handle = (NihWatchHandle *)watch->watches.next;
+	TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
+	TEST_ALLOC_PARENT (handle, watch);
+
+	TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
+	TEST_ALLOC_PARENT (handle->path, handle);
+	TEST_EQ_STR (handle->path, filename);
 
 	nih_list_remove (&handle->entry);
 
@@ -545,7 +569,7 @@ test_add (void)
 	strcpy (filename, dirname);
 	strcat (filename, "/frodo/baggins");
 
-	watch = nih_watch_new (NULL, filename, TRUE, my_filter,
+	watch = nih_watch_new (NULL, filename, FALSE, my_filter,
 			       my_create_handler, my_modify_handler,
 			       my_delete_handler, &watch);
 
@@ -561,7 +585,7 @@ test_add (void)
 		strcpy (filename, dirname);
 		strcat (filename, "/bar/bilbo");
 
-		ret = nih_watch_add (watch, filename, TRUE);
+		ret = nih_watch_add (watch, filename, FALSE);
 
 		if (test_alloc_failed && (test_alloc_failed < 3)) {
 			TEST_LT (ret, 0);
@@ -684,11 +708,11 @@ test_add (void)
 	strcpy (filename, dirname);
 	strcat (filename, "/frodo/baggins");
 
-	ret = nih_watch_add (watch, filename, TRUE);
+	ret = nih_watch_add (watch, filename, FALSE);
 
 	TEST_EQ (ret, 0);
 
-	ret = nih_watch_add (watch, filename, TRUE);
+	ret = nih_watch_add (watch, filename, FALSE);
 
 	TEST_EQ (ret, 0);
 
@@ -724,7 +748,7 @@ test_add (void)
 
 
 	/* Check that an error with a sub-directory results in a warning
-	 * being emitted, and the directory recursing stopped.
+	 * being emitted, but the directory recursing carrying on.
 	 */
 	TEST_FEATURE ("with error with sub-directory");
 	strcpy (filename, dirname);
@@ -749,6 +773,19 @@ test_add (void)
 	TEST_ALLOC_SIZE (handle->path, strlen (dirname) + 1);
 	TEST_ALLOC_PARENT (handle->path, handle);
 	TEST_EQ_STR (handle->path, dirname);
+
+	nih_list_remove (&handle->entry);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/baz");
+
+	handle = (NihWatchHandle *)watch->watches.next;
+	TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
+	TEST_ALLOC_PARENT (handle, watch);
+
+	TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
+	TEST_ALLOC_PARENT (handle->path, handle);
+	TEST_EQ_STR (handle->path, filename);
 
 	nih_list_remove (&handle->entry);
 

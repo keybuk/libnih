@@ -297,20 +297,15 @@ nih_watch_add (NihWatch   *watch,
 
 	nih_list_add (&watch->watches, &handle->entry);
 
-	/* Recurse into sub-directories, warn if we hit one that we can't
-	 * watch (and stop looking)
+	/* Recurse into sub-directories, attempting to add a watch for each
+	 * one; errors within the walk are warned automatically, so if this
+	 * fails, it means we literally couldn't watch the top-level.
 	 */
 	if (subdirs && (nih_dir_walk (path, watch->filter,
 				      (NihFileVisitor)nih_watch_add_visitor,
 				      NULL, watch) < 0)) {
-		NihError *err;
-
-		err = nih_error_get ();
-		if (err->number != ENOTDIR)
-			nih_warn ("%s: %s: %s", path,
-				  _("Unable to recurse into sub-directories"),
-				  err->message);
-		nih_free (err);
+		nih_list_free (&handle->entry);
+		return -1;
 	}
 
 	return 0;

@@ -96,6 +96,7 @@ typedef void (*NihDeleteHandler) (void *data, NihWatch *watch,
  * @path: full path to be watched,
  * @watches: list of watch descriptors,
  * @subdirs: include sub-directories of @path,
+ * @create: call @create_handler for existing files,
  * @filter: function to filter paths watched,
  * @create_handler: function called when a path is created,
  * @modify_handler; function called when a path is modified,
@@ -115,6 +116,7 @@ struct nih_watch {
 	NihList           watches;
 
 	int               subdirs;
+	int               create;
 	NihFileFilter     filter;
 
 	NihCreateHandler  create_handler;
@@ -146,7 +148,7 @@ typedef struct nih_watch_handle {
 NIH_BEGIN_EXTERN
 
 NihWatch *nih_watch_new  (const void *parent, const char *path, int subdirs,
-			  NihFileFilter filter,
+			  int create, NihFileFilter filter,
 			  NihCreateHandler create_handler,
 			  NihModifyHandler modify_handler,
 			  NihDeleteHandler delete_handler, void *data)

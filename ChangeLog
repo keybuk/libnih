@@ -1,5 +1,14 @@
 2007-02-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/watch.c (nih_watch_new): Add a create argument to avoid
+	walking a directory tree twice; store in the structure.
+	(nih_watch_add_visitor): Call the create handler if necessary.
+	* nih/watch.h: Update structure to include member and prototype.
+	* nih/tests/test_watch.c (test_new): Check that, when called with
+	create, the handler is called for each file that exists.
+	(test_reader): Check that a directory is recursed when moved in
+	or created with existing files.
+
 	* nih/tests/test_watch.c (test_reader): Add test case for watching
 	sub-directories again.
 

@@ -81,6 +81,7 @@ static void            nih_watch_handle      (NihWatch *watch,
  * @parent: parent of new structure,
  * @path: full path to be watched,
  * @subdirs: include sub-directories of @path,
+ * @create: call @create_handler for existing files,
  * @filter: function to filter paths watched,
  * @create_handler: function called when a path is created,
  * @modify_handler; function called when a path is modified,
@@ -102,6 +103,10 @@ static void            nih_watch_handle      (NihWatch *watch,
  * @delete_handler will be called.  Finally if @path is modified, or a file
  * within it is modified, @modify_handler will be called.
  *
+ * If @create is TRUE, @create_handler will also be called for all of the
+ * files that exist under @path when the watch is first added.  This only
+ * occurs if the watch can be added.
+ *
  * This is a very high level wrapped around the inotify API; lower levels
  * can be obtained using the inotify API itself and some of the helper
  * functions used by this one.
@@ -122,6 +127,7 @@ NihWatch *
 nih_watch_new (const void       *parent,
 	       const char       *path,
 	       int               subdirs,
+	       int               create,
 	       NihFileFilter     filter,
 	       NihCreateHandler  create_handler,
 	       NihModifyHandler  modify_handler,
@@ -137,6 +143,7 @@ nih_watch_new (const void       *parent,
 	NIH_MUST (watch->path = nih_strdup (watch, path));
 
 	watch->subdirs = subdirs;
+	watch->create = create;
 	watch->filter = filter;
 
 	watch->create_handler = create_handler;
@@ -319,6 +326,9 @@ nih_watch_add (NihWatch   *watch,
  * sub-directories.  Just calls nih_watch_add() with subdirs as FALSE for
  * each directory found.
  *
+ * If the create member of @watch is TRUE, it also calls the create handle
+ * for each path found.
+ *
  * Returns: zero on success, negative value on raised error.
  **/
 static int
@@ -332,10 +342,18 @@ nih_watch_add_visitor (NihWatch    *watch,
 	nih_assert (path != NULL);
 	nih_assert (statbuf != NULL);
 
-	if (! S_ISDIR (statbuf->st_mode))
-		return 0;
+	if (watch->create && watch->create_handler)
+		watch->create_handler (watch->data, watch, path);
 
-	return nih_watch_add (watch, path, FALSE);
+	if (S_ISDIR (statbuf->st_mode)) {
+		int ret;
+
+		ret = nih_watch_add (watch, path, FALSE);
+		if (ret < 0)
+			return ret;
+	}
+
+	return 0;
 }
 
 
@@ -483,6 +501,9 @@ nih_watch_handle (NihWatch       *watch,
 
 	/* Handle it differently depending on the events mask */
 	if ((events & IN_CREATE) || (events & IN_MOVED_TO)) {
+		if (watch->create_handler)
+			watch->create_handler (watch->data, watch, path);
+
 		/* See if it's a sub-directory, and we're handling those
 		 * ourselves.  Add a watch to the directory and any
 		 * sub-directories within it.
@@ -500,9 +521,6 @@ nih_watch_handle (NihWatch       *watch,
 				nih_free (err);
 			}
 		}
-
-		if (watch->create_handler)
-			watch->create_handler (watch->data, watch, path);
 
 	} else if (events & IN_MODIFY) {
 		if (watch->modify_handler)

@@ -65,14 +65,17 @@ my_create_handler (void       *data,
 	create_called++;
 	last_data = data;
 	last_watch = watch;
-	if (last_path) {
-		char *old;
 
-		old = last_path;
-		last_path = nih_sprintf (NULL, "%s::%s", old, path);
-		nih_free (old);
-	} else {
-		last_path = nih_strdup (NULL, path);
+	TEST_ALLOC_SAFE {
+		if (last_path) {
+			char *old;
+
+			old = last_path;
+			last_path = nih_sprintf (NULL, "%s::%s", old, path);
+			nih_free (old);
+		} else {
+			last_path = nih_strdup (NULL, path);
+		}
 	}
 }
 
@@ -84,10 +87,13 @@ my_modify_handler (void       *data,
 	modify_called++;
 	last_data = data;
 	last_watch = watch;
-	if (last_path)
-		nih_free (last_path);
 
-	last_path = nih_strdup (NULL, path);
+	TEST_ALLOC_SAFE {
+		if (last_path)
+			nih_free (last_path);
+
+		last_path = nih_strdup (NULL, path);
+	}
 }
 
 static void
@@ -98,15 +104,18 @@ my_delete_handler (void       *data,
 	delete_called++;
 	last_data = data;
 	last_watch = watch;
-	if (last_path)
-		nih_free (last_path);
 
-	if (path) {
-		last_path = nih_strdup (NULL, path);
-		if (! strcmp (path, watch->path))
-			nih_watch_free (watch);
-	} else {
-		last_path = NULL;
+	TEST_ALLOC_SAFE {
+		if (last_path)
+			nih_free (last_path);
+
+		if (path) {
+			last_path = nih_strdup (NULL, path);
+			if (! strcmp (path, watch->path))
+				nih_watch_free (watch);
+		} else {
+			last_path = NULL;
+		}
 	}
 }
 
@@ -191,12 +200,11 @@ test_new (void)
 	 */
 	TEST_FEATURE ("with file");
 	nih_error_push_context ();
-	nih_log_set_logger (my_logger);
 	TEST_ALLOC_FAIL {
 		strcpy (filename, dirname);
 		strcat (filename, "/frodo/baggins");
 
-		watch = nih_watch_new (NULL, filename, FALSE, my_filter,
+		watch = nih_watch_new (NULL, filename, FALSE, FALSE, my_filter,
 				       my_create_handler, my_modify_handler,
 				       my_delete_handler, &watch);
 
@@ -245,7 +253,7 @@ test_new (void)
 		strcpy (filename, dirname);
 		strcat (filename, "/frodo");
 
-		watch = nih_watch_new (NULL, filename, FALSE, my_filter,
+		watch = nih_watch_new (NULL, filename, FALSE, FALSE, my_filter,
 				       my_create_handler, my_modify_handler,
 				       my_delete_handler, &watch);
 
@@ -290,9 +298,8 @@ test_new (void)
 	 * the filter).
 	 */
 	TEST_FEATURE ("with directory and sub-directories");
-	nih_log_set_logger (my_logger);
 	TEST_ALLOC_FAIL {
-		watch = nih_watch_new (NULL, dirname, TRUE, my_filter,
+		watch = nih_watch_new (NULL, dirname, TRUE, FALSE, my_filter,
 				       my_create_handler, my_modify_handler,
 				       my_delete_handler, &watch);
 
@@ -357,7 +364,101 @@ test_new (void)
 		nih_watch_free (watch);
 	}
 
-	nih_log_set_logger (nih_logger_printf);
+
+	/* Check that the create handler can be called for each file and
+	 * directory found at the point we add things.
+	 */
+	TEST_FEATURE ("with create handler");
+	TEST_ALLOC_FAIL {
+		create_called = 0;
+		last_watch = NULL;
+		last_data = NULL;
+		last_path = NULL;
+
+		watch = nih_watch_new (NULL, dirname, TRUE, TRUE, my_filter,
+				       my_create_handler, my_modify_handler,
+				       my_delete_handler, &watch);
+
+		TEST_ALLOC_SIZE (watch, sizeof (NihWatch));
+		TEST_ALLOC_SIZE (watch->path, strlen (dirname) + 1);
+		TEST_ALLOC_PARENT (watch->path, watch);
+		TEST_EQ_STR (watch->path, dirname);
+		TEST_EQ (watch->subdirs, TRUE);
+		TEST_EQ_P (watch->filter, my_filter);
+		TEST_EQ_P (watch->create_handler, my_create_handler);
+		TEST_EQ_P (watch->modify_handler, my_modify_handler);
+		TEST_EQ_P (watch->delete_handler, my_delete_handler);
+		TEST_EQ_P (watch->data, &watch);
+
+		TEST_GE (fcntl (watch->fd, F_GETFD), 0);
+
+		TEST_ALLOC_SIZE (watch->io, sizeof (NihIo));
+		TEST_ALLOC_PARENT (watch->io, NULL);
+		TEST_EQ (watch->io->type, NIH_IO_STREAM);
+		TEST_EQ (watch->io->watch->fd, watch->fd);
+
+		TEST_LIST_NOT_EMPTY (&watch->watches);
+
+		handle = (NihWatchHandle *)watch->watches.next;
+		TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
+		TEST_ALLOC_PARENT (handle, watch);
+
+		TEST_ALLOC_SIZE (handle->path, strlen (dirname) + 1);
+		TEST_ALLOC_PARENT (handle->path, handle);
+		TEST_EQ_STR (handle->path, dirname);
+
+		nih_list_remove (&handle->entry);
+
+		strcpy (filename, dirname);
+		strcat (filename, "/bar");
+
+		handle = (NihWatchHandle *)watch->watches.next;
+		TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
+		TEST_ALLOC_PARENT (handle, watch);
+
+		TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
+		TEST_ALLOC_PARENT (handle->path, handle);
+		TEST_EQ_STR (handle->path, filename);
+
+		nih_list_remove (&handle->entry);
+
+		strcpy (filename, dirname);
+		strcat (filename, "/baz");
+
+		handle = (NihWatchHandle *)watch->watches.next;
+		TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
+		TEST_ALLOC_PARENT (handle, watch);
+
+		TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
+		TEST_ALLOC_PARENT (handle->path, handle);
+		TEST_EQ_STR (handle->path, filename);
+
+		nih_list_remove (&handle->entry);
+
+		TEST_LIST_EMPTY (&watch->watches);
+
+
+		TEST_EQ (create_called, 4);
+		TEST_EQ (last_data, &watch);
+		TEST_EQ (last_watch, watch);
+
+		strcpy (filename, dirname);
+		strcat (filename, "/bar");
+		strcat (filename, "::");
+		strcat (filename, dirname);
+		strcat (filename, "/bar/bilbo");
+		strcat (filename, "::");
+		strcat (filename, dirname);
+		strcat (filename, "/baz");
+		strcat (filename, "::");
+		strcat (filename, dirname);
+		strcat (filename, "/foo");
+
+		TEST_EQ_STR (last_path, filename);
+		nih_free (last_path);
+
+		nih_watch_free (watch);
+	}
 
 
 	/* Check that an error with the path given results in an error
@@ -368,7 +469,7 @@ test_new (void)
 		strcpy (filename, dirname);
 		strcat (filename, "/drogo");
 
-		watch = nih_watch_new (NULL, filename, TRUE, my_filter,
+		watch = nih_watch_new (NULL, filename, TRUE, FALSE, my_filter,
 				       my_create_handler, my_modify_handler,
 				       my_delete_handler, &watch);
 
@@ -392,7 +493,7 @@ test_new (void)
 		logger_called = 0;
 		nih_log_set_logger (my_logger);
 
-		watch = nih_watch_new (NULL, dirname, TRUE, NULL,
+		watch = nih_watch_new (NULL, dirname, TRUE, FALSE, NULL,
 				       my_create_handler, my_modify_handler,
 				       my_delete_handler, &watch);
 
@@ -541,7 +642,7 @@ test_add (void)
 	strcpy (filename, dirname);
 	strcat (filename, "/frodo/baggins");
 
-	watch = nih_watch_new (NULL, filename, FALSE, my_filter,
+	watch = nih_watch_new (NULL, filename, FALSE, FALSE, my_filter,
 			       my_create_handler, my_modify_handler,
 			       my_delete_handler, &watch);
 
@@ -809,7 +910,8 @@ test_free (void)
 	 * and that the inotify descriptor is closed.
 	 */
 	TEST_FUNCTION ("nih_watch_free");
-	watch = nih_watch_new (NULL, "/", FALSE, NULL, NULL, NULL, NULL, NULL);
+	watch = nih_watch_new (NULL, "/", FALSE, FALSE, NULL,
+			       NULL, NULL, NULL, NULL);
 	fd = watch->fd;
 
 	destructor_called = 0;
@@ -841,7 +943,7 @@ test_reader (void)
 	TEST_FILENAME (dirname);
 	mkdir (dirname, 0755);
 
-	watch = nih_watch_new (NULL, dirname, TRUE, my_filter,
+	watch = nih_watch_new (NULL, dirname, TRUE, TRUE, my_filter,
 			       my_create_handler, my_modify_handler,
 			       my_delete_handler, &watch);
 
@@ -1021,7 +1123,6 @@ test_reader (void)
 
 	/* Check that we can create a new directory, and given that subdirs
 	 * is TRUE, have a new watch added for that directory automatically.
-	 * The create handler should not be called.
 	 */
 	TEST_FEATURE ("with new sub-directory");
 	strcpy (filename, dirname);
@@ -1148,7 +1249,97 @@ test_reader (void)
 
 	nih_list_add (&watch->watches, &ptr->entry);
 
+
 	rmdir (filename);
+
+	delete_called = 0;
+	last_path = NULL;
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_TRUE (delete_called);
+	TEST_NE_P (last_path, NULL);
+	nih_free (last_path);
+
+
+	/* Check that we can create a new directory, and given that subdirs
+	 * and create are TRUE, have a new watch added automatically and
+	 * create_handler called for all files in that directory.
+	 */
+	TEST_FEATURE ("with new sub-directory");
+	strcpy (filename, dirname);
+	strcat (filename, "/woo");
+
+	mkdir (filename, 0755);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/woo/whee");
+
+	fd = fopen (filename, "w");
+	fprintf (fd, "test\n");
+	fclose (fd);
+
+	create_called = 0;
+	last_watch = NULL;
+	last_path = NULL;
+	last_data = NULL;
+
+	nfds = 0;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_TRUE (create_called);
+	TEST_EQ_P (last_watch, watch);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/woo");
+	strcat (filename, "::");
+	strcat (filename, dirname);
+	strcat (filename, "/woo/whee");
+	TEST_EQ_STR (last_path, filename);
+	TEST_EQ_P (last_data, &watch);
+
+	nih_free (last_path);
+
+	ptr = (NihWatchHandle *)watch->watches.next;
+	nih_list_remove (&ptr->entry);
+
+	TEST_LIST_NOT_EMPTY (&watch->watches);
+
+	handle = (NihWatchHandle *)watch->watches.next;
+	TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
+	TEST_ALLOC_PARENT (handle, watch);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/woo");
+
+	TEST_EQ_STR (handle->path, filename);
+
+	nih_list_remove (&handle->entry);
+
+	TEST_LIST_EMPTY (&watch->watches);
+
+	nih_list_add (&watch->watches, &ptr->entry);
+	nih_list_add (&watch->watches, &handle->entry);
+
+
+	strcpy (filename, dirname);
+	strcat (filename, "/woo/whee");
+	unlink (filename);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/woo");
+	rmdir (filename);
+
+	delete_called = 0;
+	last_path = NULL;
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+	TEST_TRUE (delete_called);
+	TEST_NE_P (last_path, NULL);
+	nih_free (last_path);
 
 
 	/* Check that we can handle the directory itself being deleted,

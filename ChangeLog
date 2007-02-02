@@ -1,5 +1,10 @@
 2007-02-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/watch.c (nih_watch_new, nih_watch_add): Make safe against
+	ENOMEM; otherwise it's just tricky to decide when it's good and bad
+	to throw things out.
+	* nih/tests/test_watch.c: Update test cases accordingly.
+
 	* nih/watch.c (nih_watch_add): It's not an error for subdirs to be
 	TRUE when we get passed a filename.
 	* nih/tests/test_watch.c (test_add): Check that it works.

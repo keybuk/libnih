@@ -200,15 +200,6 @@ test_new (void)
 				       my_create_handler, my_modify_handler,
 				       my_delete_handler, &watch);
 
-		if (test_alloc_failed) {
-			TEST_EQ_P (watch, NULL);
-
-			err = nih_error_get ();
-			TEST_EQ (err->number, ENOMEM);
-			nih_free (err);
-			continue;
-		}
-
 		TEST_ALLOC_SIZE (watch, sizeof (NihWatch));
 		TEST_ALLOC_SIZE (watch->path, strlen (filename) + 1);
 		TEST_ALLOC_PARENT (watch->path, watch);
@@ -258,15 +249,6 @@ test_new (void)
 				       my_create_handler, my_modify_handler,
 				       my_delete_handler, &watch);
 
-		if (test_alloc_failed) {
-			TEST_EQ_P (watch, NULL);
-
-			err = nih_error_get ();
-			TEST_EQ (err->number, ENOMEM);
-			nih_free (err);
-			continue;
-		}
-
 		TEST_ALLOC_SIZE (watch, sizeof (NihWatch));
 		TEST_ALLOC_SIZE (watch->path, strlen (filename) + 1);
 		TEST_ALLOC_PARENT (watch->path, watch);
@@ -314,17 +296,6 @@ test_new (void)
 				       my_create_handler, my_modify_handler,
 				       my_delete_handler, &watch);
 
-		/* Alloc 5 thru 25 are in nih_dir_walk which is malloc safe */
-		if (test_alloc_failed
-		    && ((test_alloc_failed < 5) || (test_alloc_failed > 25))) {
-			TEST_EQ_P (watch, NULL);
-
-			err = nih_error_get ();
-			TEST_EQ (err->number, ENOMEM);
-			nih_free (err);
-			continue;
-		}
-
 		TEST_ALLOC_SIZE (watch, sizeof (NihWatch));
 		TEST_ALLOC_SIZE (watch->path, strlen (dirname) + 1);
 		TEST_ALLOC_PARENT (watch->path, watch);
@@ -355,35 +326,31 @@ test_new (void)
 
 		nih_list_remove (&handle->entry);
 
-		if ((test_alloc_failed != 15) && (test_alloc_failed != 16)) {
-			strcpy (filename, dirname);
-			strcat (filename, "/bar");
+		strcpy (filename, dirname);
+		strcat (filename, "/bar");
 
-			handle = (NihWatchHandle *)watch->watches.next;
-			TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
-			TEST_ALLOC_PARENT (handle, watch);
+		handle = (NihWatchHandle *)watch->watches.next;
+		TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
+		TEST_ALLOC_PARENT (handle, watch);
 
-			TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
-			TEST_ALLOC_PARENT (handle->path, handle);
-			TEST_EQ_STR (handle->path, filename);
+		TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
+		TEST_ALLOC_PARENT (handle->path, handle);
+		TEST_EQ_STR (handle->path, filename);
 
-			nih_list_remove (&handle->entry);
-		}
+		nih_list_remove (&handle->entry);
 
-		if ((test_alloc_failed != 22) && (test_alloc_failed != 23)) {
-			strcpy (filename, dirname);
-			strcat (filename, "/baz");
+		strcpy (filename, dirname);
+		strcat (filename, "/baz");
 
-			handle = (NihWatchHandle *)watch->watches.next;
-			TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
-			TEST_ALLOC_PARENT (handle, watch);
+		handle = (NihWatchHandle *)watch->watches.next;
+		TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
+		TEST_ALLOC_PARENT (handle, watch);
 
-			TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
-			TEST_ALLOC_PARENT (handle->path, handle);
-			TEST_EQ_STR (handle->path, filename);
+		TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
+		TEST_ALLOC_PARENT (handle->path, handle);
+		TEST_EQ_STR (handle->path, filename);
 
-			nih_list_remove (&handle->entry);
-		}
+		nih_list_remove (&handle->entry);
 
 		TEST_LIST_EMPTY (&watch->watches);
 
@@ -397,18 +364,20 @@ test_new (void)
 	 * being raised and NULL returned.
 	 */
 	TEST_FEATURE ("with non-existant path");
-	strcpy (filename, dirname);
-	strcat (filename, "/drogo");
+	TEST_ALLOC_FAIL {
+		strcpy (filename, dirname);
+		strcat (filename, "/drogo");
 
-	watch = nih_watch_new (NULL, filename, TRUE, my_filter,
-			       my_create_handler, my_modify_handler,
-			       my_delete_handler, &watch);
+		watch = nih_watch_new (NULL, filename, TRUE, my_filter,
+				       my_create_handler, my_modify_handler,
+				       my_delete_handler, &watch);
 
-	TEST_EQ_P (watch, NULL);
+		TEST_EQ_P (watch, NULL);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, ENOENT);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, ENOENT);
+		nih_free (err);
+	}
 
 
 	/* Check that an error with a sub-directory results in a warning
@@ -419,61 +388,64 @@ test_new (void)
 	strcat (filename, "/bar");
 	chmod (filename, 000);
 
-	logger_called = 0;
-	nih_log_set_logger (my_logger);
+	TEST_ALLOC_FAIL {
+		logger_called = 0;
+		nih_log_set_logger (my_logger);
 
-	watch = nih_watch_new (NULL, dirname, TRUE, NULL,
-			       my_create_handler, my_modify_handler,
-			       my_delete_handler, &watch);
+		watch = nih_watch_new (NULL, dirname, TRUE, NULL,
+				       my_create_handler, my_modify_handler,
+				       my_delete_handler, &watch);
 
-	nih_log_set_logger (nih_logger_printf);
+		nih_log_set_logger (nih_logger_printf);
 
-	TEST_TRUE (logger_called);
+		TEST_TRUE (logger_called);
 
-	TEST_ALLOC_SIZE (watch, sizeof (NihWatch));
-	TEST_ALLOC_SIZE (watch->path, strlen (dirname) + 1);
-	TEST_ALLOC_PARENT (watch->path, watch);
-	TEST_EQ_STR (watch->path, dirname);
+		TEST_ALLOC_SIZE (watch, sizeof (NihWatch));
+		TEST_ALLOC_SIZE (watch->path, strlen (dirname) + 1);
+		TEST_ALLOC_PARENT (watch->path, watch);
+		TEST_EQ_STR (watch->path, dirname);
 
-	TEST_LIST_NOT_EMPTY (&watch->watches);
+		TEST_LIST_NOT_EMPTY (&watch->watches);
 
-	handle = (NihWatchHandle *)watch->watches.next;
-	TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
-	TEST_ALLOC_PARENT (handle, watch);
+		handle = (NihWatchHandle *)watch->watches.next;
+		TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
+		TEST_ALLOC_PARENT (handle, watch);
 
-	TEST_ALLOC_SIZE (handle->path, strlen (dirname) + 1);
-	TEST_ALLOC_PARENT (handle->path, handle);
-	TEST_EQ_STR (handle->path, dirname);
+		TEST_ALLOC_SIZE (handle->path, strlen (dirname) + 1);
+		TEST_ALLOC_PARENT (handle->path, handle);
+		TEST_EQ_STR (handle->path, dirname);
 
-	nih_list_remove (&handle->entry);
+		nih_list_remove (&handle->entry);
 
-	strcpy (filename, dirname);
-	strcat (filename, "/baz");
+		strcpy (filename, dirname);
+		strcat (filename, "/baz");
 
-	handle = (NihWatchHandle *)watch->watches.next;
-	TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
-	TEST_ALLOC_PARENT (handle, watch);
+		handle = (NihWatchHandle *)watch->watches.next;
+		TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
+		TEST_ALLOC_PARENT (handle, watch);
 
-	TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
-	TEST_ALLOC_PARENT (handle->path, handle);
-	TEST_EQ_STR (handle->path, filename);
+		TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
+		TEST_ALLOC_PARENT (handle->path, handle);
+		TEST_EQ_STR (handle->path, filename);
 
-	nih_list_remove (&handle->entry);
+		nih_list_remove (&handle->entry);
 
-	strcpy (filename, dirname);
-	strcat (filename, "/frodo");
+		strcpy (filename, dirname);
+		strcat (filename, "/frodo");
 
-	handle = (NihWatchHandle *)watch->watches.next;
-	TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
-	TEST_ALLOC_PARENT (handle, watch);
+		handle = (NihWatchHandle *)watch->watches.next;
+		TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
+		TEST_ALLOC_PARENT (handle, watch);
 
-	TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
-	TEST_ALLOC_PARENT (handle->path, handle);
-	TEST_EQ_STR (handle->path, filename);
+		TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
+		TEST_ALLOC_PARENT (handle->path, handle);
+		TEST_EQ_STR (handle->path, filename);
 
-	nih_list_remove (&handle->entry);
+		nih_list_remove (&handle->entry);
 
-	TEST_LIST_EMPTY (&watch->watches);
+		TEST_LIST_EMPTY (&watch->watches);
+	}
+
 
 	nih_watch_free (watch);
 
@@ -587,15 +559,6 @@ test_add (void)
 
 		ret = nih_watch_add (watch, filename, TRUE);
 
-		if (test_alloc_failed && (test_alloc_failed < 3)) {
-			TEST_LT (ret, 0);
-
-			err = nih_error_get ();
-			TEST_EQ (err->number, ENOMEM);
-			nih_free (err);
-			continue;
-		}
-
 		TEST_EQ (ret, 0);
 
 		TEST_LIST_NOT_EMPTY (&watch->watches);
@@ -624,15 +587,6 @@ test_add (void)
 
 		ret = nih_watch_add (watch, filename, FALSE);
 
-		if (test_alloc_failed) {
-			TEST_LT (ret, 0);
-
-			err = nih_error_get ();
-			TEST_EQ (err->number, ENOMEM);
-			nih_free (err);
-			continue;
-		}
-
 		TEST_EQ (ret, 0);
 
 		TEST_LIST_NOT_EMPTY (&watch->watches);
@@ -656,143 +610,152 @@ test_add (void)
 	 * the filter).
 	 */
 	TEST_FEATURE ("with directory and sub-directories");
-	ret = nih_watch_add (watch, dirname, TRUE);
+	TEST_ALLOC_FAIL {
+		ret = nih_watch_add (watch, dirname, TRUE);
 
-	TEST_EQ (ret, 0);
+		TEST_EQ (ret, 0);
 
-	TEST_LIST_NOT_EMPTY (&watch->watches);
+		TEST_LIST_NOT_EMPTY (&watch->watches);
 
-	handle = (NihWatchHandle *)watch->watches.next;
-	TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
-	TEST_ALLOC_PARENT (handle, watch);
+		handle = (NihWatchHandle *)watch->watches.next;
+		TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
+		TEST_ALLOC_PARENT (handle, watch);
 
-	TEST_ALLOC_SIZE (handle->path, strlen (dirname) + 1);
-	TEST_ALLOC_PARENT (handle->path, handle);
-	TEST_EQ_STR (handle->path, dirname);
+		TEST_ALLOC_SIZE (handle->path, strlen (dirname) + 1);
+		TEST_ALLOC_PARENT (handle->path, handle);
+		TEST_EQ_STR (handle->path, dirname);
 
-	nih_list_remove (&handle->entry);
+		nih_list_remove (&handle->entry);
 
-	strcpy (filename, dirname);
-	strcat (filename, "/bar");
+		strcpy (filename, dirname);
+		strcat (filename, "/bar");
 
-	handle = (NihWatchHandle *)watch->watches.next;
-	TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
-	TEST_ALLOC_PARENT (handle, watch);
+		handle = (NihWatchHandle *)watch->watches.next;
+		TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
+		TEST_ALLOC_PARENT (handle, watch);
 
-	TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
-	TEST_ALLOC_PARENT (handle->path, handle);
-	TEST_EQ_STR (handle->path, filename);
+		TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
+		TEST_ALLOC_PARENT (handle->path, handle);
+		TEST_EQ_STR (handle->path, filename);
 
-	nih_list_remove (&handle->entry);
+		nih_list_remove (&handle->entry);
 
-	strcpy (filename, dirname);
-	strcat (filename, "/baz");
+		strcpy (filename, dirname);
+		strcat (filename, "/baz");
 
-	handle = (NihWatchHandle *)watch->watches.next;
-	TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
-	TEST_ALLOC_PARENT (handle, watch);
+		handle = (NihWatchHandle *)watch->watches.next;
+		TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
+		TEST_ALLOC_PARENT (handle, watch);
 
-	TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
-	TEST_ALLOC_PARENT (handle->path, handle);
-	TEST_EQ_STR (handle->path, filename);
+		TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
+		TEST_ALLOC_PARENT (handle->path, handle);
+		TEST_EQ_STR (handle->path, filename);
 
-	nih_list_remove (&handle->entry);
+		nih_list_remove (&handle->entry);
 
-	TEST_LIST_EMPTY (&watch->watches);
+		TEST_LIST_EMPTY (&watch->watches);
+	}
 
 
 	/* Check that repeated call with the same path does not increase the
 	 * size of the watches list.
 	 */
 	TEST_FEATURE ("with path already being watched");
-	strcpy (filename, dirname);
-	strcat (filename, "/frodo/baggins");
+	TEST_ALLOC_FAIL {
+		strcpy (filename, dirname);
+		strcat (filename, "/frodo/baggins");
 
-	ret = nih_watch_add (watch, filename, FALSE);
+		ret = nih_watch_add (watch, filename, FALSE);
 
-	TEST_EQ (ret, 0);
+		TEST_EQ (ret, 0);
 
-	ret = nih_watch_add (watch, filename, FALSE);
+		ret = nih_watch_add (watch, filename, FALSE);
 
-	TEST_EQ (ret, 0);
+		TEST_EQ (ret, 0);
 
-	TEST_LIST_NOT_EMPTY (&watch->watches);
+		TEST_LIST_NOT_EMPTY (&watch->watches);
 
-	handle = (NihWatchHandle *)watch->watches.next;
-	TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
-	TEST_ALLOC_PARENT (handle, watch);
+		handle = (NihWatchHandle *)watch->watches.next;
+		TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
+		TEST_ALLOC_PARENT (handle, watch);
 
-	TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
-	TEST_ALLOC_PARENT (handle->path, handle);
-	TEST_EQ_STR (handle->path, filename);
+		TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
+		TEST_ALLOC_PARENT (handle->path, handle);
+		TEST_EQ_STR (handle->path, filename);
 
-	nih_list_remove (&handle->entry);
+		nih_list_remove (&handle->entry);
 
-	TEST_LIST_EMPTY (&watch->watches);
+		TEST_LIST_EMPTY (&watch->watches);
+	}
 
 
 	/* Check that an error with the path given results in an error
 	 * being raised and NULL returned.
 	 */
 	TEST_FEATURE ("with non-existant path");
-	strcpy (filename, dirname);
-	strcat (filename, "/drogo");
+	TEST_ALLOC_FAIL {
+		strcpy (filename, dirname);
+		strcat (filename, "/drogo");
 
-	ret = nih_watch_add (watch, filename, TRUE);
+		ret = nih_watch_add (watch, filename, TRUE);
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, ENOENT);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, ENOENT);
+		nih_free (err);
+	}
 
 
 	/* Check that an error with a sub-directory results in a warning
 	 * being emitted, but the directory recursing carrying on.
 	 */
 	TEST_FEATURE ("with error with sub-directory");
-	strcpy (filename, dirname);
-	strcat (filename, "/bar");
-	chmod (filename, 000);
+	TEST_ALLOC_FAIL {
+		strcpy (filename, dirname);
+		strcat (filename, "/bar");
+		chmod (filename, 000);
 
-	logger_called = 0;
-	nih_log_set_logger (my_logger);
+		logger_called = 0;
+		nih_log_set_logger (my_logger);
 
-	ret = nih_watch_add (watch, dirname, TRUE);
+		ret = nih_watch_add (watch, dirname, TRUE);
 
-	nih_log_set_logger (nih_logger_printf);
+		nih_log_set_logger (nih_logger_printf);
 
-	TEST_TRUE (logger_called);
+		TEST_TRUE (logger_called);
 
-	TEST_LIST_NOT_EMPTY (&watch->watches);
+		TEST_LIST_NOT_EMPTY (&watch->watches);
 
-	handle = (NihWatchHandle *)watch->watches.next;
-	TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
-	TEST_ALLOC_PARENT (handle, watch);
+		handle = (NihWatchHandle *)watch->watches.next;
+		TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
+		TEST_ALLOC_PARENT (handle, watch);
 
-	TEST_ALLOC_SIZE (handle->path, strlen (dirname) + 1);
-	TEST_ALLOC_PARENT (handle->path, handle);
-	TEST_EQ_STR (handle->path, dirname);
+		TEST_ALLOC_SIZE (handle->path, strlen (dirname) + 1);
+		TEST_ALLOC_PARENT (handle->path, handle);
+		TEST_EQ_STR (handle->path, dirname);
 
-	nih_list_remove (&handle->entry);
+		nih_list_remove (&handle->entry);
 
-	strcpy (filename, dirname);
-	strcat (filename, "/baz");
+		strcpy (filename, dirname);
+		strcat (filename, "/baz");
 
-	handle = (NihWatchHandle *)watch->watches.next;
-	TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
-	TEST_ALLOC_PARENT (handle, watch);
+		handle = (NihWatchHandle *)watch->watches.next;
+		TEST_ALLOC_SIZE (handle, sizeof (NihWatchHandle));
+		TEST_ALLOC_PARENT (handle, watch);
 
-	TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
-	TEST_ALLOC_PARENT (handle->path, handle);
-	TEST_EQ_STR (handle->path, filename);
+		TEST_ALLOC_SIZE (handle->path, strlen (filename) + 1);
+		TEST_ALLOC_PARENT (handle->path, handle);
+		TEST_EQ_STR (handle->path, filename);
 
-	nih_list_remove (&handle->entry);
+		nih_list_remove (&handle->entry);
 
-	TEST_LIST_EMPTY (&watch->watches);
+		TEST_LIST_EMPTY (&watch->watches);
+	}
 
 
 	nih_watch_free (watch);
+
 
 	strcpy (filename, dirname);
 	strcat (filename, "/foo");

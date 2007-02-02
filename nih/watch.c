@@ -133,16 +133,8 @@ nih_watch_new (const void       *parent,
 	nih_assert (path != NULL);
 
 	/* Allocate the NihWatch structure */
-	watch = nih_new (parent, NihWatch);
-	if (! watch)
-		nih_return_system_error (NULL);
-
-	watch->path = nih_strdup (watch, path);
-	if (! watch->path) {
-		nih_error_raise_system ();
-		nih_free (watch);
-		return NULL;
-	}
+	NIH_MUST (watch = nih_new (parent, NihWatch));
+	NIH_MUST (watch->path = nih_strdup (watch, path));
 
 	watch->subdirs = subdirs;
 	watch->filter = filter;
@@ -176,13 +168,20 @@ nih_watch_new (const void       *parent,
 	/* Create an NihIo to handle incoming events.  This can't be
 	 * an nih_alloc child because we need to be able to lazy close it.
 	 */
-	watch->io = nih_io_reopen (NULL, watch->fd, NIH_IO_STREAM,
-				   (NihIoReader)nih_watch_reader, NULL, NULL,
-				   watch);
-	if (! watch->io) {
-		close (watch->fd);
-		nih_free (watch);
-		return NULL;
+	while (! (watch->io = nih_io_reopen (NULL, watch->fd, NIH_IO_STREAM,
+					     (NihIoReader)nih_watch_reader,
+					     NULL, NULL, watch))) {
+		NihError *err;
+
+		err = nih_error_get ();
+		if (err->number == ENOMEM) {
+			nih_free (err);
+			continue;
+		} else {
+			close (watch->fd);
+			nih_free (watch);
+			return NULL;
+		}
 	}
 
 	return watch;
@@ -268,18 +267,10 @@ nih_watch_add (NihWatch   *watch,
 	nih_assert (path != NULL);
 
 	/* Allocate the NihWatchHandle structure */
-	handle = nih_new (watch, NihWatchHandle);
-	if (! handle)
-		nih_return_system_error (-1);
+	NIH_MUST (handle = nih_new (watch, NihWatchHandle));
+	NIH_MUST (handle->path = nih_strdup (handle, path));
 
 	nih_list_init (&handle->entry);
-
-	handle->path = nih_strdup (handle, path);
-	if (! handle->path) {
-		nih_error_raise_system ();
-		nih_free (handle);
-		return -1;
-	}
 
 	/* Get a watch descriptor for the path */
 	handle->wd = inotify_add_watch (watch->fd, path, INOTIFY_EVENTS);
@@ -341,10 +332,10 @@ nih_watch_add_visitor (NihWatch    *watch,
 	nih_assert (path != NULL);
 	nih_assert (statbuf != NULL);
 
-	if (S_ISDIR (statbuf->st_mode))
-		return nih_watch_add (watch, path, FALSE);
+	if (! S_ISDIR (statbuf->st_mode))
+		return 0;
 
-	return 0;
+	return nih_watch_add (watch, path, FALSE);
 }
 
 

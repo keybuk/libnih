@@ -1,5 +1,7 @@
 2007-02-02  Scott James Remnant  <scott@netsplit.com>
 
+	* TODO: Update.
+
 	* nih/watch.c (nih_watch_new): Add a create argument to avoid
 	walking a directory tree twice; store in the structure.
 	(nih_watch_add_visitor): Call the create handler if necessary.

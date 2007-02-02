@@ -1105,6 +1105,52 @@ test_reader (void)
 	nih_list_add (&watch->watches, &ptr->entry);
 
 
+	/* Check that we can create a new directory with bad permissions,
+	 * and have it warn that it cannot watch them.
+	 */
+	TEST_FEATURE ("with new unsearchable sub-directory");
+	strcpy (filename, dirname);
+	strcat (filename, "/splat");
+
+	mkdir (filename, 0000);
+
+	create_called = 0;
+	last_watch = NULL;
+	last_path = NULL;
+	last_data = NULL;
+
+	nfds = 0;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+
+	logger_called = 0;
+	nih_log_set_logger (my_logger);
+
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	nih_log_set_logger (nih_logger_printf);
+
+	TEST_EQ (logger_called, 1);
+
+	TEST_TRUE (create_called);
+	TEST_EQ_P (last_watch, watch);
+	TEST_EQ_STR (last_path, filename);
+	TEST_EQ_P (last_data, &watch);
+
+	nih_free (last_path);
+
+	ptr = (NihWatchHandle *)watch->watches.next;
+	nih_list_remove (&ptr->entry);
+
+	TEST_LIST_EMPTY (&watch->watches);
+
+	nih_list_add (&watch->watches, &ptr->entry);
+
+	rmdir (filename);
+
+
 	/* Check that we can handle the directory itself being deleted,
 	 * the delete_handler should be called with the top-level path.
 	 * It should be safe to delete the entire watch this way.

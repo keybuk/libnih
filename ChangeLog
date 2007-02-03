@@ -1,5 +1,7 @@
 2007-02-03  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/watch.c (nih_watch_new): Tidy up ENOMEM loop.
+
 	* nih/tests/test_file.c (test_dir_walk): Fix leak of directory caused
 	by not removing a symlink.
 	* nih/tests/test_watch.c (test_new, test_add): Fix leaks of

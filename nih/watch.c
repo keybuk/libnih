@@ -181,14 +181,13 @@ nih_watch_new (const void       *parent,
 		NihError *err;
 
 		err = nih_error_get ();
-		if (err->number == ENOMEM) {
-			nih_free (err);
-			continue;
-		} else {
+		if (err->number != ENOMEM) {
 			close (watch->fd);
 			nih_free (watch);
 			return NULL;
 		}
+
+		nih_free (err);
 	}
 
 	return watch;

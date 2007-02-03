@@ -1236,6 +1236,10 @@ test_dir_walk (void)
 		nih_free (visited);
 	}
 
+	strcpy (filename, dirname);
+	strcat (filename, "/bar/loop");
+	unlink (filename);
+
 
 	strcpy (filename, dirname);
 	strcat (filename, "/foo");

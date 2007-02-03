@@ -489,7 +489,7 @@ test_new (void)
 	TEST_FEATURE ("with error with sub-directory");
 	strcpy (filename, dirname);
 	strcat (filename, "/bar");
-	chmod (filename, 000);
+	chmod (filename, 0000);
 
 	TEST_ALLOC_FAIL {
 		logger_called = 0;
@@ -548,6 +548,10 @@ test_new (void)
 
 		TEST_LIST_EMPTY (&watch->watches);
 	}
+
+	strcpy (filename, dirname);
+	strcat (filename, "/bar");
+	chmod (filename, 0755);
 
 
 	nih_watch_free (watch);
@@ -814,11 +818,11 @@ test_add (void)
 	 * being emitted, but the directory recursing carrying on.
 	 */
 	TEST_FEATURE ("with error with sub-directory");
-	TEST_ALLOC_FAIL {
-		strcpy (filename, dirname);
-		strcat (filename, "/bar");
-		chmod (filename, 000);
+	strcpy (filename, dirname);
+	strcat (filename, "/bar");
+	chmod (filename, 0000);
 
+	TEST_ALLOC_FAIL {
 		logger_called = 0;
 		nih_log_set_logger (my_logger);
 
@@ -855,6 +859,10 @@ test_add (void)
 
 		TEST_LIST_EMPTY (&watch->watches);
 	}
+
+	strcpy (filename, dirname);
+	strcat (filename, "/bar");
+	chmod (filename, 0755);
 
 
 	nih_watch_free (watch);

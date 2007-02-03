@@ -1,5 +1,11 @@
 2007-02-03  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_file.c (test_dir_walk): Fix leak of directory caused
+	by not removing a symlink.
+	* nih/tests/test_watch.c (test_new, test_add): Fix leaks of
+	directories caused by not changing permissions back so we can unlink
+	under them.
+
 	* nih/watch.h (NihCreateHandler, NihModifyHandler): Add stat argument.
 	* nih/watch.c (nih_watch_handle): stat any object created or modified,
 	and pass the stat buf to the handler function.

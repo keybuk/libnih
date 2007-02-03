@@ -1,10 +1,6 @@
 timers:
 - calendar scheduled timers
 
-file matching functions
-common pathnames?
-
-
 allocator/slab module
 restore list_entry code somewhere else
 

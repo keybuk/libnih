@@ -78,14 +78,19 @@ typedef int (*NihFileErrorHandler) (void *data, const char *dirname,
 
 NIH_BEGIN_EXTERN
 
-void *        nih_file_map          (const char *path, int flags,
-				     size_t *length)
+void *nih_file_map       (const char *path, int flags, size_t *length)
 	__attribute__ ((warn_unused_result));
-int           nih_file_unmap        (void *map, size_t length);
+int   nih_file_unmap     (void *map, size_t length);
 
-int           nih_dir_walk          (const char *path, NihFileFilter filter,
-				     NihFileVisitor visitor,
-				     NihFileErrorHandler error, void *data)
+int   nih_file_is_hidden (const char *path);
+int   nih_file_is_backup (const char *path);
+int   nih_file_is_swap   (const char *path);
+int   nih_file_is_rcs    (const char *path);
+int   nih_file_ignore    (const char *path);
+
+int   nih_dir_walk       (const char *path, NihFileFilter filter,
+			  NihFileVisitor visitor, NihFileErrorHandler error,
+			  void *data)
 	__attribute__ ((warn_unused_result));
 
 NIH_END_EXTERN

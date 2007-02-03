@@ -146,6 +146,241 @@ nih_file_unmap (void   *map,
 
 
 /**
+ * nih_file_is_hidden:
+ * @path: path to check.
+ *
+ * Determines whether @path represents a hidden file, matching it against
+ * common patterns for that type of file.
+ *
+ * Returns: TRUE if it matches, FALSE otherwise.
+ **/
+int
+nih_file_is_hidden (const char *path)
+{
+	const char *ptr;
+	size_t      len;
+
+	nih_assert (path != NULL);
+
+	ptr = strrchr (path, '/');
+	if (ptr)
+		path = ptr + 1;
+
+	len = strlen (path);
+	ptr = path + len;
+
+	/* Matches .*; standard hidden pattern */
+	if ((len >= 1) && (path[0] == '.'))
+		return TRUE;
+
+	return FALSE;
+}
+
+/**
+ * nih_file_is_backup:
+ * @path: path to check.
+ *
+ * Determines whether @path represents a backup file, matching it against
+ * common patterns for that type of file.
+ *
+ * Returns: TRUE if it matches, FALSE otherwise.
+ **/
+int
+nih_file_is_backup (const char *path)
+{
+	const char *ptr;
+	size_t      len;
+
+	nih_assert (path != NULL);
+
+	ptr = strrchr (path, '/');
+	if (ptr)
+		path = ptr + 1;
+
+	len = strlen (path);
+	ptr = path + len;
+
+	/* Matches *~; standard backup style */
+	if ((len >= 1) && (ptr[-1] == '~'))
+		return TRUE;
+
+	/* Matches *.bak; common backup extension */
+	if ((len >= 4) && (! strcmp (&ptr[-4], ".bak")))
+		return TRUE;
+
+	/* Matches *.BAK; as above, but on case-insensitive filesystems */
+	if ((len >= 4) && (! strcmp (&ptr[-4], ".BAK")))
+		return TRUE;
+
+	/* Matches #*#; used by emacs for unsaved files */
+	if ((len >= 2) && (path[0] == '#') && (ptr[-1] == '#'))
+		return TRUE;
+
+	return FALSE;
+}
+
+/**
+ * nih_file_is_swap:
+ * @path: path to check.
+ *
+ * Determines whether @path represents an editor swap file, matching it
+ * against common patterns for that type of file.
+ *
+ * Returns: TRUE if it matches, FALSE otherwise.
+ **/
+int
+nih_file_is_swap (const char *path)
+{
+	const char *ptr;
+	size_t      len;
+
+	nih_assert (path != NULL);
+
+	ptr = strrchr (path, '/');
+	if (ptr)
+		path = ptr + 1;
+
+	len = strlen (path);
+	ptr = path + len;
+
+	/* Matches *.swp; used by vi */
+	if ((len >= 4) && (! strcmp (&ptr[-4], ".swp")))
+		return TRUE;
+
+	/* Matches *.swo; used by vi */
+	if ((len >= 4) && (! strcmp (&ptr[-4], ".swo")))
+		return TRUE;
+
+	/* Matches *.swn; used by vi */
+	if ((len >= 4) && (! strcmp (&ptr[-4], ".swn")))
+		return TRUE;
+
+	/* Matches .#*; used by emacs */
+	if ((len >= 2) && (! strncmp (path, ".#", 2)))
+		return TRUE;
+
+	return FALSE;
+}
+
+/**
+ * nih_file_is_rcs:
+ * @path: path to check.
+ *
+ * Determines whether @path represents a file or directory used by a
+ * common revision control system, matching it against common patterns
+ * for known RCSs.
+ *
+ * Returns: TRUE if it matches, FALSE otherwise.
+ **/
+int
+nih_file_is_rcs (const char *path)
+{
+	const char *ptr;
+	size_t      len;
+
+	nih_assert (path != NULL);
+
+	ptr = strrchr (path, '/');
+	if (ptr)
+		path = ptr + 1;
+
+	len = strlen (path);
+	ptr = path + len;
+
+	/* Matches *,v; used by rcs and cvs */
+	if ((len >= 2) && (! strcmp (&ptr[-2], ",v")))
+		return TRUE;
+
+	/* RCS; used by rcs */
+	if (! strcmp (path, "RCS"))
+		return TRUE;
+
+	/* CVS; used by cvs */
+	if (! strcmp (path, "CVS"))
+		return TRUE;
+
+	/* CVS.adm; used by cvs */
+	if (! strcmp (path, "CVS.adm"))
+		return TRUE;
+
+	/* SCCS; used by sccs */
+	if (! strcmp (path, "SCCS"))
+		return TRUE;
+
+	/* .bzr; used by bzr */
+	if (! strcmp (path, ".bzr"))
+		return TRUE;
+
+	/* .bzr.log; used by bzr */
+	if (! strcmp (path, ".bzr.log"))
+		return TRUE;
+
+	/* .hg; used by hg */
+	if (! strcmp (path, ".hg"))
+		return TRUE;
+
+	/* .git; used by git */
+	if (! strcmp (path, ".git"))
+		return TRUE;
+
+	/* .svn; used by subversion */
+	if (! strcmp (path, ".svn"))
+		return TRUE;
+
+	/* BitKeeper; used by BitKeeper */
+	if (! strcmp (path, "BitKeeper"))
+		return TRUE;
+
+	/* .arch-ids; used by tla */
+	if (! strcmp (path, ".arch-ids"))
+		return TRUE;
+
+	/* .arch-inventory; used by tla */
+	if (! strcmp (path, ".arch-inventory"))
+		return TRUE;
+
+	/* {arch}; used by tla */
+	if (! strcmp (path, "{arch}"))
+		return TRUE;
+
+	/* _darcs; used by darcs */
+	if (! strcmp (path, "_darcs"))
+		return TRUE;
+
+	return FALSE;
+}
+
+/**
+ * nih_file_ignore:
+ * @path: path to check.
+ *
+ * Determines whether @path should normally be ignored when walking a
+ * directory tree.  Files ignored are those that are hidden, represent
+ * backup files, editor swap files and both files and directories used
+ * by revision control systems.
+ *
+ * Returns: TRUE if it should be ignored, FALSE otherwise.
+ **/
+int
+nih_file_ignore (const char *path)
+{
+	if (nih_file_is_hidden (path))
+		return TRUE;
+
+	if (nih_file_is_backup (path))
+		return TRUE;
+
+	if (nih_file_is_swap (path))
+		return TRUE;
+
+	if (nih_file_is_rcs (path))
+		return TRUE;
+
+	return FALSE;
+}
+
+
+/**
  * nih_dir_walk:
  * @path: path to walk,
  * @filter: path filter,

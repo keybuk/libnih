@@ -147,6 +147,386 @@ test_unmap (void)
 }
 
 
+void
+test_is_hidden (void)
+{
+	int ret;
+
+	TEST_FUNCTION ("nih_file_is_hidden");
+
+
+	/* Check that a plain file beginning with a dot is hidden. */
+	TEST_FEATURE ("with plain dot file");
+	ret = nih_file_is_hidden (".foo");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a path with a file beginning with a dot is hidden. */
+	TEST_FEATURE ("with path to dot file");
+	ret = nih_file_is_hidden ("/path/to/.foo");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a path containing a dot directory is not hidden,
+	 * since we're already walking it.
+	 */
+	TEST_FEATURE ("with hidden path to non-dot file");
+	ret = nih_file_is_hidden ("/path/.to/foo");
+
+	TEST_FALSE (ret);
+
+
+	/* Check that a plain non-dot file is not hidden. */
+	TEST_FEATURE ("with plain non-dot file");
+	ret = nih_file_is_hidden ("foo");
+
+	TEST_FALSE (ret);
+
+
+	/* Check that a file containing a dot is not hidden. */
+	TEST_FEATURE ("with ordinary file");
+	ret = nih_file_is_hidden ("foo.txt");
+
+	TEST_FALSE (ret);
+}
+
+void
+test_is_backup (void)
+{
+	int ret;
+
+	TEST_FUNCTION ("nih_file_is_backup");
+
+
+	/* Check that a plain file ending with a tilde is a backup file. */
+	TEST_FEATURE ("with plain backup file");
+	ret = nih_file_is_backup ("foo~");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a path with a file ending with a tilde is a
+	 * backup file.
+	 */
+	TEST_FEATURE ("with path to backup file");
+	ret = nih_file_is_backup ("/path/to/foo~");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a path containing a tilde directory is not backup,
+	 * since we're already walking it.
+	 */
+	TEST_FEATURE ("with backup path to non-backup file");
+	ret = nih_file_is_backup ("/path/to~/foo");
+
+	TEST_FALSE (ret);
+
+
+	/* Check that a file containing a tilde is not backup. */
+	TEST_FEATURE ("with file containing tilde");
+	ret = nih_file_is_backup ("foo~txt");
+
+	TEST_FALSE (ret);
+
+
+	/* Check that a plain non-backup file is not matched. */
+	TEST_FEATURE ("with plain non-backup file");
+	ret = nih_file_is_backup ("foo");
+
+	TEST_FALSE (ret);
+
+
+	/* Check that a file ending with .bak is a backup file. */
+	TEST_FEATURE ("with dos-style backup file");
+	ret = nih_file_is_backup ("foo.bak");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a file ending with .BAK is a backup file. */
+	TEST_FEATURE ("with dos/fat-style backup file");
+	ret = nih_file_is_backup ("foo.BAK");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that an emacs-style backup file is matched. */
+	TEST_FEATURE ("with emacs-style backup file");
+	ret = nih_file_is_backup ("#foo#");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a file beginning with a # is not matched. */
+	TEST_FEATURE ("with file beginning with hash");
+	ret = nih_file_is_backup ("#foo");
+
+	TEST_FALSE (ret);
+
+
+	/* Check that a file ending with a # is not matched. */
+	TEST_FEATURE ("with file ending with hash");
+	ret = nih_file_is_backup ("foo#");
+
+	TEST_FALSE (ret);
+}
+
+void
+test_is_swap (void)
+{
+	int ret;
+
+	TEST_FUNCTION ("nih_file_is_swap");
+
+
+	/* Check that a plain file beginning with .# is a swap file. */
+	TEST_FEATURE ("with emacs-style swap file");
+	ret = nih_file_is_swap (".#foo");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a path with a file beginning with .# is a swap file. */
+	TEST_FEATURE ("with path to emacs-style swap file");
+	ret = nih_file_is_swap ("/path/to/.#foo");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a path containing an emacs-style swap directory is
+	 * not swap, since we're already walking it.
+	 */
+	TEST_FEATURE ("with emacs-style swap path to non-swap file");
+	ret = nih_file_is_swap ("/path/.#to/foo");
+
+	TEST_FALSE (ret);
+
+
+	/* Check that a file containing the signature is not swap. */
+	TEST_FEATURE ("with file containing .#");
+	ret = nih_file_is_swap ("foo.#txt");
+
+	TEST_FALSE (ret);
+
+
+	/* Check that a plain non-swap file is not matched. */
+	TEST_FEATURE ("with plain non-swap file");
+	ret = nih_file_is_swap ("foo");
+
+	TEST_FALSE (ret);
+
+
+	/* Check that a file ending with .swp is a swap file. */
+	TEST_FEATURE ("with vi-style .swp file");
+	ret = nih_file_is_swap ("foo.swp");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a file ending with .swo is a swap file. */
+	TEST_FEATURE ("with vi-style .swo file");
+	ret = nih_file_is_swap ("foo.swo");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a file ending with .swn is a swap file. */
+	TEST_FEATURE ("with vi-style .swn file");
+	ret = nih_file_is_swap ("foo.swn");
+
+	TEST_TRUE (ret);
+}
+
+void
+test_is_rcs (void)
+{
+	int ret;
+
+	TEST_FUNCTION ("nih_file_is_rcs");
+
+
+	/* Check that a plain file ending with ,v is an RCS file. */
+	TEST_FEATURE ("with rcs-style file");
+	ret = nih_file_is_rcs ("foo,v");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a path with a file ending with ,v an RCS file. */
+	TEST_FEATURE ("with path to rcs-style file");
+	ret = nih_file_is_rcs ("/path/to/foo,v");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a path containing an RCS-style directory is not matched,
+	 * since we're already walking it.
+	 */
+	TEST_FEATURE ("with rcs-style path to non-rcs file");
+	ret = nih_file_is_rcs ("/path/to,v/foo");
+
+	TEST_FALSE (ret);
+
+
+	/* Check that a file containing the signature is not rcs. */
+	TEST_FEATURE ("with file containing ,v");
+	ret = nih_file_is_rcs ("foo,vtxt");
+
+	TEST_FALSE (ret);
+
+
+	/* Check that a plain non-rcs file is not matched. */
+	TEST_FEATURE ("with plain non-rcs file");
+	ret = nih_file_is_rcs ("foo");
+
+	TEST_FALSE (ret);
+
+
+	/* Check that an RCS directory is matched. */
+	TEST_FEATURE ("with rcs directory name");
+	ret = nih_file_is_rcs ("RCS");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a CVS directory is matched. */
+	TEST_FEATURE ("with cvs directory name");
+	ret = nih_file_is_rcs ("CVS");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a CVS admin directory is matched. */
+	TEST_FEATURE ("with cvs admin directory name");
+	ret = nih_file_is_rcs ("CVS.adm");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that an SCCS directory is matched. */
+	TEST_FEATURE ("with sccs directory name");
+	ret = nih_file_is_rcs ("SCCS");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a bazaar directory is matched. */
+	TEST_FEATURE ("with bzr directory name");
+	ret = nih_file_is_rcs (".bzr");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a bazaar log file is matched. */
+	TEST_FEATURE ("with bzr log filename");
+	ret = nih_file_is_rcs (".bzr.log");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a mercurial directory is matched. */
+	TEST_FEATURE ("with mercurial directory name");
+	ret = nih_file_is_rcs (".hg");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a git directory is matched. */
+	TEST_FEATURE ("with git directory name");
+	ret = nih_file_is_rcs (".git");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a subversion directory is matched. */
+	TEST_FEATURE ("with subversion directory name");
+	ret = nih_file_is_rcs (".svn");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a BitKeeper directory is matched. */
+	TEST_FEATURE ("with BitKeeper directory name");
+	ret = nih_file_is_rcs ("BitKeeper");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that an arch ids file is matched. */
+	TEST_FEATURE ("with arch ids filename");
+	ret = nih_file_is_rcs (".arch-ids");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that an arch inventory file is matched. */
+	TEST_FEATURE ("with arch inventory filename");
+	ret = nih_file_is_rcs (".arch-inventory");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that an arch directory is matched. */
+	TEST_FEATURE ("with arch directory name");
+	ret = nih_file_is_rcs ("{arch}");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a darcs directory is matched. */
+	TEST_FEATURE ("with darcs directory name");
+	ret = nih_file_is_rcs ("_darcs");
+
+	TEST_TRUE (ret);
+}
+
+void
+test_ignore (void)
+{
+	int ret;
+
+	TEST_FUNCTION ("nih_test_ignore");
+
+
+	/* Check that a hidden file is to be ignored. */
+	TEST_FEATURE ("with hidden file");
+	ret = nih_file_ignore (".foo");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a backup file is to be ignored. */
+	TEST_FEATURE ("with backup file");
+	ret = nih_file_ignore ("foo~");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a swap file is to be ignored. */
+	TEST_FEATURE ("with swap file");
+	ret = nih_file_ignore ("foo.swp");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that an RCS file is to be ignored. */
+	TEST_FEATURE ("with rcs file");
+	ret = nih_file_ignore ("CVS");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that an ordinary file isn't ignored. */
+	TEST_FEATURE ("with ordinary file");
+	ret = nih_file_ignore ("foo.txt");
+
+	TEST_FALSE (ret);
+}
+
+
 typedef struct visited {
 	NihList  entry;
 
@@ -895,6 +1275,11 @@ main (int   argc,
 {
 	test_map ();
 	test_unmap ();
+	test_is_hidden ();
+	test_is_backup ();
+	test_is_swap ();
+	test_is_rcs ();
+	test_ignore ();
 	test_dir_walk ();
 
 	return 0;

@@ -26,6 +26,9 @@
 # include <nih/inotify.h>
 #endif /* HAVE_SYS_INOTIFY_H */
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include <nih/macros.h>
 #include <nih/list.h>
 #include <nih/file.h>
@@ -39,7 +42,8 @@ typedef struct nih_watch NihWatch;
  * NihCreateHandler:
  * @data: data pointer given when registered,
  * @watch: NihWatch for directory tree,
- * @path: full path to file.
+ * @path: full path to file,
+ * @statbuf: stat of @path.
  *
  * A create handler is a function that is called whenever a file or other
  * object is created under or moved into a directory tree being watched.
@@ -49,13 +53,14 @@ typedef struct nih_watch NihWatch;
  * It is safe to remove the watch with nih_watch_free() from this function.
  **/
 typedef void (*NihCreateHandler) (void *data, NihWatch *watch,
-				  const char *path);
+				  const char *path, struct stat *statbuf);
 
 /**
  * NihModifyHandler:
  * @data: data pointer given when registered,
  * @watch: NihWatch for directory tree,
- * @path: full path to file.
+ * @path: full path to file,
+ * @statbuf: stat of @path.
  *
  * A modify handler is a function that is called whenever a file or other
  * object is changed within a directory tree being watched.  @path contains
@@ -65,7 +70,7 @@ typedef void (*NihCreateHandler) (void *data, NihWatch *watch,
  * It is safe to remove the watch with nih_watch_free() from this function.
  **/
 typedef void (*NihModifyHandler) (void *data, NihWatch *watch,
-				  const char *path);
+				  const char *path, struct stat *statbuf);
 
 /**
  * NihDeleteHandler:

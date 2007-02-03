@@ -58,9 +58,10 @@ static char *last_path = NULL;
 static void *last_data = NULL;
 
 static void
-my_create_handler (void       *data,
-		   NihWatch   *watch,
-		   const char *path)
+my_create_handler (void        *data,
+		   NihWatch    *watch,
+		   const char  *path,
+		   struct stat *statbuf)
 {
 	create_called++;
 	last_data = data;
@@ -80,9 +81,10 @@ my_create_handler (void       *data,
 }
 
 static void
-my_modify_handler (void       *data,
-		   NihWatch   *watch,
-		   const char *path)
+my_modify_handler (void        *data,
+		   NihWatch    *watch,
+		   const char  *path,
+		   struct stat *statbuf)
 {
 	modify_called++;
 	last_data = data;

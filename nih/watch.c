@@ -343,7 +343,7 @@ nih_watch_add_visitor (NihWatch    *watch,
 	nih_assert (statbuf != NULL);
 
 	if (watch->create && watch->create_handler)
-		watch->create_handler (watch->data, watch, path);
+		watch->create_handler (watch->data, watch, path, statbuf);
 
 	if (S_ISDIR (statbuf->st_mode)) {
 		int ret;
@@ -501,16 +501,18 @@ nih_watch_handle (NihWatch       *watch,
 
 	/* Handle it differently depending on the events mask */
 	if ((events & IN_CREATE) || (events & IN_MOVED_TO)) {
+		if (stat (path, &statbuf) < 0)
+			goto finish;
+
 		if (watch->create_handler)
-			watch->create_handler (watch->data, watch, path);
+			watch->create_handler (watch->data, watch,
+					       path, &statbuf);
 
 		/* See if it's a sub-directory, and we're handling those
 		 * ourselves.  Add a watch to the directory and any
 		 * sub-directories within it.
 		 */
-		if (watch->subdirs
-		    && (stat (path, &statbuf) == 0)
-		    && S_ISDIR (statbuf.st_mode)) {
+		if (watch->subdirs && S_ISDIR (statbuf.st_mode)) {
 			if (nih_watch_add (watch, path, TRUE) < 0) {
 				NihError *err;
 
@@ -523,8 +525,12 @@ nih_watch_handle (NihWatch       *watch,
 		}
 
 	} else if (events & IN_MODIFY) {
+		if (stat (path, &statbuf) < 0)
+			goto finish;
+
 		if (watch->modify_handler)
-			watch->modify_handler (watch->data, watch, path);
+			watch->modify_handler (watch->data, watch,
+					       path, &statbuf);
 
 	} else if ((events & IN_DELETE) || (events & IN_MOVED_FROM)) {
 		NihWatchHandle *path_handle;

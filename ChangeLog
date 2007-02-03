@@ -1,5 +1,12 @@
 2007-02-03  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/watch.h (NihCreateHandler, NihModifyHandler): Add stat argument.
+	* nih/watch.c (nih_watch_handle): stat any object created or modified,
+	and pass the stat buf to the handler function.
+	(nih_watch_add_visitor): Pass stat argument here too.
+
+	* nih/tests/test_watch.c: Add arguments.
+
 	* nih/option.c (nih_option_int): Function to parse integer values
 	on the command line.
 	* nih/option.h: Add prototype.

@@ -113,6 +113,8 @@ NihOption *nih_option_join           (const void *parent,
 	__attribute__ ((warn_unused_result, malloc));
 
 int        nih_option_count          (NihOption *option, const char *arg);
+int        nih_option_int            (NihOption *option, const char *arg);
+
 int        nih_option_quiet          (NihOption *option, const char *arg);
 int        nih_option_verbose        (NihOption *option, const char *arg);
 int        nih_option_debug          (NihOption *option, const char *arg);

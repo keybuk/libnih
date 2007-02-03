@@ -657,6 +657,43 @@ nih_option_count (NihOption  *option,
 	return 0;
 }
 
+/**
+ * nih_option_int:
+ * @option: NihOption invoked,
+ * @arg: argument to parse.
+ *
+ * This option setter may be used to parse an integer from the command line
+ * and store it in the value member of @option, which must be a pointer to
+ * an integer variable.
+ *
+ * The arg_name member of @option must not be NULL.
+ *
+ * Returns: zero on success, non-zero on error.
+ **/
+int
+nih_option_int (NihOption  *option,
+		const char *arg)
+{
+	char *endptr;
+	int  *value;
+
+	nih_assert (option != NULL);
+	nih_assert (option->value != NULL);
+	nih_assert (arg != NULL);
+
+	value = (int *)option->value;
+	*value = strtol (arg, &endptr, 10);
+
+	if (*endptr) {
+		fprintf (stderr, _("%s: illegal argument: %s\n"),
+			 program_name, arg);
+		nih_main_suggest_help ();
+		return -1;
+	}
+
+	return 0;
+}
+
 
 /**
  * nih_option_quiet:

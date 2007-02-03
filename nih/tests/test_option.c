@@ -1273,6 +1273,78 @@ test_count (void)
 	TEST_EQ (value, 2);
 }
 
+void
+test_int (void)
+{
+	FILE      *output;
+	NihOption  opt;
+	int        ret, value = 0;
+
+	TEST_FUNCTION ("nih_option_int");
+	opt.value = &value;
+	output = tmpfile ();
+	program_name = "test";
+
+	/* Check that the int function treats the option value as an
+	 * integer pointer, and sets it.
+	 */
+	TEST_FEATURE ("with positive value");
+	ret = nih_option_int (&opt, "42");
+
+	TEST_EQ (ret, 0);
+	TEST_EQ (value, 42);
+
+
+	/* Check that a negative number can be parsed. */
+	TEST_FEATURE ("with negative value");
+	ret = nih_option_int (&opt, "-14");
+
+	TEST_EQ (ret, 0);
+	TEST_EQ (value, -14);
+
+
+	/* Check that a zero value can be parsed. */
+	TEST_FEATURE ("with zero value");
+	ret = nih_option_int (&opt, "0");
+
+	TEST_EQ (ret, 0);
+	TEST_EQ (value, 0);
+
+
+	/* Check that a non-numeric argument results in an error. */
+	TEST_FEATURE ("with non-numeric argument");
+	TEST_DIVERT_STDERR (output) {
+		ret = nih_option_int (&opt, "foo");
+	}
+	rewind (output);
+
+	TEST_LT (ret, 0);
+
+	TEST_FILE_EQ (output, "test: illegal argument: foo\n");
+	TEST_FILE_EQ (output, "Try `test --help' for more information.\n");
+	TEST_FILE_END (output);
+
+	TEST_FILE_RESET (output);
+
+
+	/* Check that a partially non-numeric argument results in an error. */
+	TEST_FEATURE ("with partially non-numeric argument");
+	TEST_DIVERT_STDERR (output) {
+		ret = nih_option_int (&opt, "15foo");
+	}
+	rewind (output);
+
+	TEST_LT (ret, 0);
+
+	TEST_FILE_EQ (output, "test: illegal argument: 15foo\n");
+	TEST_FILE_EQ (output, "Try `test --help' for more information.\n");
+	TEST_FILE_END (output);
+
+	TEST_FILE_RESET (output);
+
+	fclose (output);
+}
+
 
 static int logger_called = 0;
 
@@ -1643,6 +1715,7 @@ main (int   argc,
 {
 	test_parser ();
 	test_count ();
+	test_int ();
 	test_quiet ();
 	test_verbose ();
 	test_debug ();

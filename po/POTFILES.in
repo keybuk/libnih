@@ -14,5 +14,6 @@ nih/option.c
 nih/signal.c
 nih/string.c
 nih/timer.c
+nih/watch.c
 
 nih/errors.h

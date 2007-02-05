@@ -94,14 +94,16 @@ nih_vsprintf (const void *parent,
 	      const char *format,
 	      va_list     args)
 {
-	size_t   len;
-	va_list  args_copy;
-	char    *str;
+	ssize_t   len;
+	va_list   args_copy;
+	char     *str;
 
 	nih_assert (format != NULL);
 
 	va_copy (args_copy, args);
 	len = vsnprintf (NULL, 0, format, args_copy);
+
+	nih_assert (len >= 0);
 
 	str = nih_alloc (parent, len + 1);
 	if (! str)

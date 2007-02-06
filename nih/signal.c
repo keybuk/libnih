@@ -64,41 +64,41 @@ typedef struct {
  * a NULL name and negative number.
  **/
 static const SignalName signal_names[] = {
-	{ SIGHUP,    "SIGHUP"    },
-	{ SIGINT,    "SIGINT"    },
-	{ SIGQUIT,   "SIGQUIT"   },
-	{ SIGILL,    "SIGILL"    },
-	{ SIGTRAP,   "SIGTRAP"   },
-	{ SIGABRT,   "SIGABRT"   },
-	{ SIGIOT,    "SIGIOT"    },
-	{ SIGBUS,    "SIGBUS"    },
-	{ SIGFPE,    "SIGFPE"    },
-	{ SIGKILL,   "SIGKILL"   },
-	{ SIGUSR1,   "SIGUSR1"   },
-	{ SIGSEGV,   "SIGSEGV"   },
-	{ SIGUSR2,   "SIGUSR2"   },
-	{ SIGPIPE,   "SIGPIPE"   },
-	{ SIGALRM,   "SIGALRM"   },
-	{ SIGTERM,   "SIGTERM"   },
-	{ SIGSTKFLT, "SIGSTKFLT" },
-	{ SIGCHLD,   "SIGCHLD"   },
-	{ SIGCLD,    "SIGCLD"    },
-	{ SIGCONT,   "SIGCONT"   },
-	{ SIGSTOP,   "SIGSTOP"   },
-	{ SIGTSTP,   "SIGTSTEP"  },
-	{ SIGTTIN,   "SIGTTIN"   },
-	{ SIGTTOU,   "SIGTTOU"   },
-	{ SIGURG,    "SIGURG"    },
-	{ SIGXCPU,   "SIGXCPU"   },
-	{ SIGXFSZ,   "SIGXFSZ"   },
-	{ SIGVTALRM, "SIGVTALRM" },
-	{ SIGPROF,   "SIGPROF"   },
-	{ SIGWINCH,  "SIGWINCH"  },
-	{ SIGIO,     "SIGIO"     },
-	{ SIGPOLL,   "SIGPOLL"   },
-	{ SIGPWR,    "SIGPWR"    },
-	{ SIGSYS,    "SIGSYS"    },
-	{ SIGUNUSED, "SIGUNUSED" },
+	{ SIGHUP,    "HUP"    },
+	{ SIGINT,    "INT"    },
+	{ SIGQUIT,   "QUIT"   },
+	{ SIGILL,    "ILL"    },
+	{ SIGTRAP,   "TRAP"   },
+	{ SIGABRT,   "ABRT"   },
+	{ SIGIOT,    "IOT"    },
+	{ SIGBUS,    "BUS"    },
+	{ SIGFPE,    "FPE"    },
+	{ SIGKILL,   "KILL"   },
+	{ SIGUSR1,   "USR1"   },
+	{ SIGSEGV,   "SEGV"   },
+	{ SIGUSR2,   "USR2"   },
+	{ SIGPIPE,   "PIPE"   },
+	{ SIGALRM,   "ALRM"   },
+	{ SIGTERM,   "TERM"   },
+	{ SIGSTKFLT, "STKFLT" },
+	{ SIGCHLD,   "CHLD"   },
+	{ SIGCLD,    "CLD"    },
+	{ SIGCONT,   "CONT"   },
+	{ SIGSTOP,   "STOP"   },
+	{ SIGTSTP,   "TSTP"  },
+	{ SIGTTIN,   "TTIN"   },
+	{ SIGTTOU,   "TTOU"   },
+	{ SIGURG,    "URG"    },
+	{ SIGXCPU,   "XCPU"   },
+	{ SIGXFSZ,   "XFSZ"   },
+	{ SIGVTALRM, "VTALRM" },
+	{ SIGPROF,   "PROF"   },
+	{ SIGWINCH,  "WINCH"  },
+	{ SIGIO,     "IO"     },
+	{ SIGPOLL,   "POLL"   },
+	{ SIGPWR,    "PWR"    },
+	{ SIGSYS,    "SYS"    },
+	{ SIGUNUSED, "UNUSED" },
 
 	{ -1, NULL }
 };
@@ -347,7 +347,7 @@ nih_signal_poll (void)
  * @signum: signal number to look up.
  *
  * Looks up @signum in the table of signal names and returns the common
- * name for the signal.
+ * name for the signal, in the form TERM/CHLD.
  *
  * Returns: static name string or NULL if signal is unknown.
  **/
@@ -370,7 +370,7 @@ nih_signal_to_name (int signum)
  * @signame: signal name to look up.
  *
  * Looks up @signame in the table of signal names and returns the
- * number for the signal.
+ * number for the signal; @signame may be in the form SIGTERM or TERM.
  *
  * Returns: signal number or negative value if signal is unknown.
  **/
@@ -380,6 +380,9 @@ nih_signal_from_name (const char *signame)
 	const SignalName *sig;
 
 	nih_assert (signame != NULL);
+
+	if (! strncmp (signame, "SIG", 3))
+		signame += 3;
 
 	for (sig = signal_names; (sig->num > 0) && sig->name; sig++)
 		if (! strcmp (sig->name, signame))

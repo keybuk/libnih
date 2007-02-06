@@ -1,5 +1,10 @@
 2007-02-06  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/signal.c (nih_signal_from_name): Table changed to not contain
+	SIG, so this now strips it off the front if present.
+	* nih/tests/test_signal.c (test_to_name): Strip SIG from the front
+	(test_from_name): Check that we can omit SIG from the front.
+
 	* nih/signal.c (nih_signal_to_name, nih_signal_from_name): Functions
 	annoyingly missing from the standard library; convert signal names
 	and numbers between each other (e.g. SIGTERM -> 15).

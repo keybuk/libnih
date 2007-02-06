@@ -321,21 +321,21 @@ test_to_name (void)
 	TEST_FEATURE ("with SIGTERM");
 	name = nih_signal_to_name (SIGTERM);
 
-	TEST_EQ_STR (name, "SIGTERM");
+	TEST_EQ_STR (name, "TERM");
 
 
-	/* Check that we get SIGCHLD for SIGCHLD */
+	/* Check that we get CHLD for SIGCHLD */
 	TEST_FEATURE ("with SIGCHLD");
 	name = nih_signal_to_name (SIGCHLD);
 
-	TEST_EQ_STR (name, "SIGCHLD");
+	TEST_EQ_STR (name, "CHLD");
 
 
-	/* Check that we get SIGIO for SIGIO */
+	/* Check that we get IO for SIGIO */
 	TEST_FEATURE ("with SIGIO");
 	name = nih_signal_to_name (SIGIO);
 
-	TEST_EQ_STR (name, "SIGIO");
+	TEST_EQ_STR (name, "IO");
 
 
 	/* Check that we get NULL for an unknown signal */
@@ -355,6 +355,13 @@ test_from_name (void)
 	/* Check that we can convert a common signal into its number. */
 	TEST_FEATURE ("with SIGTERM");
 	signum = nih_signal_from_name ("SIGTERM");
+
+	TEST_EQ (signum, SIGTERM);
+
+
+	/* Check that we can omit the SIG from the front. */
+	TEST_FEATURE ("with TERM");
+	signum = nih_signal_from_name ("TERM");
 
 	TEST_EQ (signum, SIGTERM);
 

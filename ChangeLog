@@ -1,5 +1,7 @@
 2007-02-06  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/string.c (nih_str_split): Use nih_str_array functions.
+
 	* nih/string.c (nih_str_array_addn): Add a version of nih_str_array_add
 	that calls nih_strndup instead of nih_strdup.
 	(nih_str_array_add): turn into a thin wrapper around the above.

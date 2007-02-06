@@ -212,22 +212,19 @@ nih_str_split (const void *parent,
 	       const char *delim,
 	       int         repeat)
 {
-	char **array;
-	int    i;
+	char   **array;
+	size_t   len;
 
 	nih_assert (str != NULL);
 	nih_assert (delim != NULL);
 
-	array = nih_alloc (parent, sizeof (char *));
+	len = 0;
+	array = nih_str_array_new (parent);
 	if (! array)
 		return NULL;
 
-	i = 0;
-	array[i] = NULL;
-
 	while (*str) {
 		const char  *ptr;
-		char       **new_array, *value;
 
 		/* Skip initial delimiters */
 		while (repeat && strchr (delim, *str))
@@ -238,24 +235,11 @@ nih_str_split (const void *parent,
 		while (*str && (! strchr (delim, *str)))
 			str++;
 
-		/* Increase the size of the array */
-		new_array = nih_realloc (array, parent,
-					 sizeof (char *) * (i + 2));
-		if (! new_array) {
+		if (! nih_str_array_addn (&array, parent, &len,
+					  ptr, str - ptr)) {
 			nih_free (array);
 			return NULL;
 		}
-		array = new_array;
-
-		/* Fill in the new value */
-		value = nih_strndup (array, ptr, str - ptr);
-		if (! value) {
-			nih_free (array);
-			return NULL;
-		}
-
-		array[i++] = value;
-		array[i] = NULL;
 
 		/* Skip over the delimiter */
 		if (*str)

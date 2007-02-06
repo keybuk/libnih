@@ -473,7 +473,6 @@ nih_watch_handle (NihWatch       *watch,
 
 	nih_assert (watch != NULL);
 	nih_assert (handle != NULL);
-	nih_assert (events != 0);
 
 	/* First check whether this event is being caused by the actual
 	 * path being watched by the handle being deleted or moved.  In
@@ -491,7 +490,9 @@ nih_watch_handle (NihWatch       *watch,
 
 
 	/* Every other event must come with a name. */
-	nih_assert (name != NULL);
+	if ((! name) || strchr (name, '/'))
+		return;
+
 	NIH_MUST (path = nih_sprintf (watch, "%s/%s", handle->path, name));
 
 	/* Check the filter */

@@ -1,5 +1,12 @@
 2007-02-06  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/signal.c (nih_signal_to_name, nih_signal_from_name): Functions
+	annoyingly missing from the standard library; convert signal names
+	and numbers between each other (e.g. SIGTERM -> 15).
+	* nih/signal.h: Add prototypes.
+	* nih/tests/test_signal.c (test_to_name, test_from_name): Put the
+	new functions through their paces.
+
 	* nih/string.c (nih_str_array_add, nih_str_array_addn): Correct leak
 	when array allocation fails.
 

@@ -310,6 +310,77 @@ test_poll (void)
 }
 
 
+void
+test_to_name (void)
+{
+	const char *name;
+
+	TEST_FUNCTION ("nih_signal_to_name");
+
+	/* Check that we can obtain the name of a common signal. */
+	TEST_FEATURE ("with SIGTERM");
+	name = nih_signal_to_name (SIGTERM);
+
+	TEST_EQ_STR (name, "SIGTERM");
+
+
+	/* Check that we get SIGCHLD for SIGCHLD */
+	TEST_FEATURE ("with SIGCHLD");
+	name = nih_signal_to_name (SIGCHLD);
+
+	TEST_EQ_STR (name, "SIGCHLD");
+
+
+	/* Check that we get SIGIO for SIGIO */
+	TEST_FEATURE ("with SIGIO");
+	name = nih_signal_to_name (SIGIO);
+
+	TEST_EQ_STR (name, "SIGIO");
+
+
+	/* Check that we get NULL for an unknown signal */
+	TEST_FEATURE ("with unknown signal");
+	name = nih_signal_to_name (32);
+
+	TEST_EQ_P (name, NULL);
+}
+
+void
+test_from_name (void)
+{
+	int signum;
+
+	TEST_FUNCTION ("nih_signal_from_name");
+
+	/* Check that we can convert a common signal into its number. */
+	TEST_FEATURE ("with SIGTERM");
+	signum = nih_signal_from_name ("SIGTERM");
+
+	TEST_EQ (signum, SIGTERM);
+
+
+	/* Check that we get SIGCHLD for SIGCHLD */
+	TEST_FEATURE ("with SIGCHLD");
+	signum = nih_signal_from_name ("SIGCHLD");
+
+	TEST_EQ (signum, SIGCHLD);
+
+
+	/* Check that we get SIGIO for SIGIO */
+	TEST_FEATURE ("with SIGIO");
+	signum = nih_signal_from_name ("SIGIO");
+
+	TEST_EQ (signum, SIGIO);
+
+
+	/* Check that we get a negative number for an unknown signal */
+	TEST_FEATURE ("with unknown signal");
+	signum = nih_signal_from_name ("SIGSNARF");
+
+	TEST_LT (signum, 0);
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -320,6 +391,8 @@ main (int   argc,
 	test_reset ();
 	test_add_handler ();
 	test_poll ();
+	test_to_name ();
+	test_from_name ();
 
 	return 0;
 }

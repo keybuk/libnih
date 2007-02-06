@@ -64,17 +64,20 @@ struct nih_signal {
 
 NIH_BEGIN_EXTERN
 
-int        nih_signal_set_handler (int signum, void (*handler)(int));
-int        nih_signal_set_default (int signum);
-int        nih_signal_set_ignore  (int signum);
-void       nih_signal_reset       (void);
+int         nih_signal_set_handler (int signum, void (*handler)(int));
+int         nih_signal_set_default (int signum);
+int         nih_signal_set_ignore  (int signum);
+void        nih_signal_reset       (void);
 
-NihSignal *nih_signal_add_handler (const void *parent, int signum,
+NihSignal * nih_signal_add_handler (const void *parent, int signum,
 				   NihSignalHandler handler, void *data)
 	__attribute__ ((warn_unused_result, malloc));
 
-void       nih_signal_handler     (int signum);
-void       nih_signal_poll        (void);
+void        nih_signal_handler     (int signum);
+void        nih_signal_poll        (void);
+
+const char *nih_signal_to_name     (int signum);
+int         nih_signal_from_name   (const char *signame);
 
 NIH_END_EXTERN
 

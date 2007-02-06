@@ -24,6 +24,7 @@
 #endif /* HAVE_CONFIG_H */
 
 
+#include <string.h>
 #include <signal.h>
 
 #include <nih/macros.h>
@@ -43,6 +44,64 @@
  * Linux this is always 32.
  **/
 #define NUM_SIGNALS 32
+
+/**
+ * SignalName:
+ * @num: number of signal,
+ * @name: name of signal.
+ *
+ * Structure used to associate signal names and numbers to each other.
+ **/
+typedef struct {
+	int         num;
+	const char *name;
+} SignalName;
+
+/**
+ * signal_names:
+ *
+ * List of signal name to number mappings, the last entry in the list has
+ * a NULL name and negative number.
+ **/
+static const SignalName signal_names[] = {
+	{ SIGHUP,    "SIGHUP"    },
+	{ SIGINT,    "SIGINT"    },
+	{ SIGQUIT,   "SIGQUIT"   },
+	{ SIGILL,    "SIGILL"    },
+	{ SIGTRAP,   "SIGTRAP"   },
+	{ SIGABRT,   "SIGABRT"   },
+	{ SIGIOT,    "SIGIOT"    },
+	{ SIGBUS,    "SIGBUS"    },
+	{ SIGFPE,    "SIGFPE"    },
+	{ SIGKILL,   "SIGKILL"   },
+	{ SIGUSR1,   "SIGUSR1"   },
+	{ SIGSEGV,   "SIGSEGV"   },
+	{ SIGUSR2,   "SIGUSR2"   },
+	{ SIGPIPE,   "SIGPIPE"   },
+	{ SIGALRM,   "SIGALRM"   },
+	{ SIGTERM,   "SIGTERM"   },
+	{ SIGSTKFLT, "SIGSTKFLT" },
+	{ SIGCHLD,   "SIGCHLD"   },
+	{ SIGCLD,    "SIGCLD"    },
+	{ SIGCONT,   "SIGCONT"   },
+	{ SIGSTOP,   "SIGSTOP"   },
+	{ SIGTSTP,   "SIGTSTEP"  },
+	{ SIGTTIN,   "SIGTTIN"   },
+	{ SIGTTOU,   "SIGTTOU"   },
+	{ SIGURG,    "SIGURG"    },
+	{ SIGXCPU,   "SIGXCPU"   },
+	{ SIGXFSZ,   "SIGXFSZ"   },
+	{ SIGVTALRM, "SIGVTALRM" },
+	{ SIGPROF,   "SIGPROF"   },
+	{ SIGWINCH,  "SIGWINCH"  },
+	{ SIGIO,     "SIGIO"     },
+	{ SIGPOLL,   "SIGPOLL"   },
+	{ SIGPWR,    "SIGPWR"    },
+	{ SIGSYS,    "SIGSYS"    },
+	{ SIGUNUSED, "SIGUNUSED" },
+
+	{ -1, NULL }
+};
 
 /**
  * signals_caught:
@@ -280,4 +339,51 @@ nih_signal_poll (void)
 
 	for (s = 0; s < NUM_SIGNALS; s++)
 		signals_caught[s] = 0;
+}
+
+
+/**
+ * nih_signal_to_name:
+ * @signum: signal number to look up.
+ *
+ * Looks up @signum in the table of signal names and returns the common
+ * name for the signal.
+ *
+ * Returns: static name string or NULL if signal is unknown.
+ **/
+const char *
+nih_signal_to_name (int signum)
+{
+	const SignalName *sig;
+
+	nih_assert (signum > 0);
+
+	for (sig = signal_names; (sig->num > 0) && sig->name; sig++)
+		if (sig->num == signum)
+			return sig->name;
+
+	return NULL;
+}
+
+/**
+ * nih_signal_from_name:
+ * @signame: signal name to look up.
+ *
+ * Looks up @signame in the table of signal names and returns the
+ * number for the signal.
+ *
+ * Returns: signal number or negative value if signal is unknown.
+ **/
+int
+nih_signal_from_name (const char *signame)
+{
+	const SignalName *sig;
+
+	nih_assert (signame != NULL);
+
+	for (sig = signal_names; (sig->num > 0) && sig->name; sig++)
+		if (! strcmp (sig->name, signame))
+			return sig->num;
+
+	return -1;
 }

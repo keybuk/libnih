@@ -390,7 +390,7 @@ test_array_add (void)
 	len = 0;
 
 	TEST_ALLOC_FAIL {
-		ret = nih_str_array_add (NULL, &array, &len, "test");
+		ret = nih_str_array_add (&array, NULL, &len, "test");
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (ret, NULL);

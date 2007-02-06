@@ -45,7 +45,7 @@ char **nih_str_split        (const void *parent, const char *str,
 	__attribute__ ((warn_unused_result, malloc));
 char **nih_str_array_new    (const void *parent)
 	__attribute__ ((warn_unused_result, malloc));
-char **nih_str_array_add    (const void *parent, char ***array, size_t *len,
+char **nih_str_array_add    (char ***array, const void *parent, size_t *len,
 			     const char *str)
 	__attribute__ ((warn_unused_result, malloc));
 void   nih_strv_free        (char **strv);

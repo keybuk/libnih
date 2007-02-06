@@ -298,8 +298,8 @@ nih_str_array_new (const void *parent)
 
 /**
  * nih_str_array_add:
- * @parent: parent of array,
  * @array: array of strings,
+ * @parent: parent of @array,
  * @len: length of @array,
  * @str: string to add.
  *
@@ -315,8 +315,8 @@ nih_str_array_new (const void *parent)
  * Returns: new array pointer or NULL if insufficient memory.
  **/
 char **
-nih_str_array_add (const void   *parent,
-		   char       ***array,
+nih_str_array_add (char       ***array,
+		   const void   *parent,
 		   size_t       *len,
 		   const char   *str)
 {

@@ -479,11 +479,9 @@ nih_dir_walk_scan (const char    *path,
 		nih_return_system_error (NULL);
 
 	npaths = 0;
-	NIH_MUST (paths = nih_alloc (NULL, sizeof (char *)));
-	paths[npaths] = NULL;
+	NIH_MUST (paths = nih_str_array_new (NULL));
 
 	while ((ent = readdir (dir)) != NULL) {
-		char **new_paths;
 		char  *subpath;
 
 		/* Always ignore '.' and '..' */
@@ -499,12 +497,7 @@ nih_dir_walk_scan (const char    *path,
 			continue;
 		}
 
-		NIH_MUST (new_paths = nih_realloc (paths, NULL,
-						   (sizeof (char *)
-						    * (npaths + 2))));
-		paths = new_paths;
-		paths[npaths++] = subpath;
-		paths[npaths] = NULL;
+		NIH_MUST (nih_str_array_addp (&paths, NULL, &npaths, subpath));
 	}
 
 	closedir (dir);

@@ -31,6 +31,7 @@
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
+#include <nih/string.h>
 #include <nih/file.h>
 #include <nih/config.h>
 #include <nih/logging.h>
@@ -525,17 +526,15 @@ nih_config_parse_args (const void *parent,
 	nih_assert (file != NULL);
 
 	/* Begin with an empty array */
-	args = nih_alloc (parent, sizeof (char *));
+	nargs = 0;
+	args = nih_str_array_new (parent);
 	if (! args)
 		nih_return_system_error (NULL);
-
-	args[0] = NULL;
-	nargs = 0;
 
 	/* Loop through the arguments until we hit a comment or newline */
 	p = (pos ? *pos : 0);
 	while (nih_config_has_token (file, len, &p, lineno)) {
-		char  **new_args, *arg;
+		char *arg;
 
 		arg = nih_config_next_arg (args, file, len, &p, lineno);
 		if (! arg) {
@@ -544,18 +543,11 @@ nih_config_parse_args (const void *parent,
 			goto finish;
 		}
 
-		/* Extend the array and add the new argument. */
-		new_args = nih_realloc (args, parent,
-					(sizeof (char *) * (nargs + 2)));
-		if (! new_args) {
+		if (! nih_str_array_addp (&args, parent, &nargs, arg)) {
+			nih_error_raise_system ();
 			nih_free (args);
-			nih_return_system_error (NULL);
+			return NULL;
 		}
-
-		args = new_args;
-		args[nargs++] = arg;
-		args[nargs] = NULL;
-
 	}
 
 	/* nih_config_has_token has returned FALSE, we must be either past

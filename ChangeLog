@@ -1,5 +1,10 @@
 2007-02-06  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/config.c (nih_config_parse_args): Use nih_str_array functions.
+	* nih/file.c (nih_dir_walk_scan): Use nih_str_array functions.
+	* nih/option.c (nih_option_parser): Use nih_str_array functions.
+	(nih_option_add_arg): Drop this function now.
+
 	* nih/string.c (nih_str_array_addp): Yet another variation on a theme;
 	this one saves duplicating allocs, which is always messy.
 	(nih_str_array_addn): Wrap around the above function.

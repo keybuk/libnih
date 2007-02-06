@@ -69,7 +69,6 @@ typedef struct nih_option_ctx {
 
 
 /* Prototypes for static functions */
-static void        nih_option_add_arg     (NihOptionCtx *ctx);
 static NihOption * nih_option_get_short   (NihOptionCtx *ctx, int option);
 static int         nih_option_short       (NihOptionCtx *ctx);
 static NihOption * nih_option_get_long    (NihOptionCtx *ctx,
@@ -197,9 +196,8 @@ nih_option_parser (const void *parent,
 
 	ctx.options = nih_option_join (parent, options, default_options);
 
-	NIH_MUST (ctx.args = nih_alloc (parent, sizeof (char *)));
-	ctx.args[0] = NULL;
 	ctx.nargs = 0;
+	NIH_MUST (ctx.args = nih_str_array_new (parent));
 
 	ctx.nonopt = 0;
 	ctx.optend = 0;
@@ -212,7 +210,9 @@ nih_option_parser (const void *parent,
 		if ((arg[0] != '-') || (ctx.optend && ctx.arg > ctx.optend)) {
 			/* Not an option */
 			if (ctx.arg > ctx.nonopt) {
-				nih_option_add_arg (&ctx);
+				NIH_MUST (nih_str_array_add
+					  (&ctx.args, parent, &ctx.nargs,
+					   ctx.argv[ctx.arg]));
 				if (break_nonopt)
 					ctx.optend = ctx.arg;
 			}
@@ -239,30 +239,6 @@ error:
 	nih_free (ctx.options);
 	nih_free (ctx.args);
 	return NULL;
-}
-
-/**
- * nih_option_add_arg:
- * @ctx: parsing context.
- *
- * Add the current argument to the array of non-option arguments returned
- * to the caller.
- **/
-static void
-nih_option_add_arg (NihOptionCtx *ctx)
-{
-	char **new_args;
-	char  *arg;
-
-	nih_assert (ctx != NULL);
-
-	NIH_MUST (new_args = nih_realloc (ctx->args, ctx->parent,
-					  sizeof (char *) * (ctx->nargs + 2)));
-	NIH_MUST (arg = nih_strdup (new_args, ctx->argv[ctx->arg]));
-
-	ctx->args = new_args;
-	ctx->args[ctx->nargs++] = arg;
-	ctx->args[ctx->nargs] = NULL;
 }
 
 

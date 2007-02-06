@@ -450,6 +450,47 @@ test_array_addn (void)
 }
 
 void
+test_array_addp (void)
+{
+	char   **array, **ret;
+	char    *ptr;
+	size_t   len;
+
+	/* Check that we can append allocated blocks to a
+	 * NULL-terminated array, and that the blocks are automatically
+	 * reparented.
+	 */
+	TEST_FUNCTION ("nih_str_array_addn");
+	array = nih_str_array_new (NULL);
+	len = 0;
+
+	ptr = nih_alloc (NULL, 1024);
+	memset (ptr, ' ', 1024);
+
+	TEST_ALLOC_FAIL {
+		ret = nih_str_array_addp (&array, NULL, &len, ptr);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+
+			TEST_EQ (len, 1);
+			TEST_EQ_STR (array[0], "test");
+			TEST_EQ_P (array[1], NULL);
+			continue;
+		}
+
+		TEST_NE_P (ret, NULL);
+
+		TEST_EQ (len, 1);
+		TEST_EQ_P (array[0], ptr);
+		TEST_ALLOC_PARENT (array[0], array);
+		TEST_EQ_P (array[1], NULL);
+	}
+
+	nih_free (array);
+}
+
+void
 test_strv_free (void)
 {
 	char **strv;
@@ -834,6 +875,7 @@ main (int   argc,
 	test_array_new ();
 	test_array_add ();
 	test_array_addn ();
+	test_array_addp ();
 	test_strv_free ();
 	test_str_wrap ();
 	test_str_screen_width ();

@@ -1,5 +1,12 @@
 2007-02-06  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/string.c (nih_str_array_addp): Yet another variation on a theme;
+	this one saves duplicating allocs, which is always messy.
+	(nih_str_array_addn): Wrap around the above function.
+	(nih_str_array_add): Make this a wrapper around addp instead.
+	* nih/string.h: Update.
+	* nih/tests/test_string.c (test_array_addp): Check that one works.
+
 	* nih/string.c (nih_str_split): Use nih_str_array functions.
 
 	* nih/string.c (nih_str_array_addn): Add a version of nih_str_array_add

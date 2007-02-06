@@ -304,12 +304,18 @@ nih_str_array_add (char       ***array,
 		   size_t       *len,
 		   const char   *str)
 {
+	char *new_str;
+
 	nih_assert (array != NULL);
 	nih_assert (*array != NULL);
 	nih_assert (len != NULL);
 	nih_assert (str != NULL);
 
-	return nih_str_array_addn (array, parent, len, str, strlen (str));
+	new_str = nih_strdup (*array, str);
+	if (! new_str)
+		return NULL;
+
+	return nih_str_array_addp (array, parent, len, new_str);
 }
 
 /**
@@ -340,12 +346,52 @@ nih_str_array_addn (char       ***array,
 		    const char   *str,
 		    size_t        strlen)
 {
-	char **new_array, *new_str;
+	char *new_str;
 
 	nih_assert (array != NULL);
 	nih_assert (*array != NULL);
 	nih_assert (len != NULL);
 	nih_assert (str != NULL);
+
+	new_str = nih_strndup (*array, str, strlen);
+	if (! new_str)
+		return NULL;
+
+	return nih_str_array_addp (array, parent, len, new_str);
+}
+
+/**
+ * nih_str_array_addp:
+ * @array: array of strings,
+ * @parent: parent of @array,
+ * @len: length of @array,
+ * @ptr: pointer to add.
+ *
+ * Extend the NULL-terminated string @array (which has @len elements,
+ * excluding the final NULL element), appending the nih_alloc() allocated
+ * block @ptr to it.
+ *
+ * The array is allocated using nih_alloc(), @parent must be that of @array;
+ * @ptr will be reparented to be a child of the new array.
+ *
+ * @len will be updated to contain the new array length and @array will
+ * be updated to point to the new array pointer; use the return value
+ * simply to check for success.
+ *
+ * Returns: new array pointer or NULL if insufficient memory.
+ **/
+char **
+nih_str_array_addp (char       ***array,
+		    const void   *parent,
+		    size_t       *len,
+		    void         *ptr)
+{
+	char **new_array;
+
+	nih_assert (array != NULL);
+	nih_assert (*array != NULL);
+	nih_assert (len != NULL);
+	nih_assert (ptr != NULL);
 
 	new_array = nih_realloc (*array, parent, sizeof (char *) * (*len + 2));
 	if (! new_array)
@@ -353,11 +399,9 @@ nih_str_array_addn (char       ***array,
 
 	*array = new_array;
 
-	new_str = nih_strndup (*array, str, strlen);
-	if (! new_str)
-		return NULL;
+	nih_alloc_reparent (ptr, *array);
 
-	(*array)[(*len)++] = new_str;
+	(*array)[(*len)++] = ptr;
 	(*array)[*len] = NULL;
 
 	return *array;

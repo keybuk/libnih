@@ -51,6 +51,9 @@ char **nih_str_array_add    (char ***array, const void *parent, size_t *len,
 char **nih_str_array_addn   (char ***array, const void *parent, size_t *len,
 			     const char *str, size_t strlen)
 	__attribute__ ((warn_unused_result, malloc));
+char **nih_str_array_addp   (char ***array, const void *parent, size_t *len,
+			     void *ptr)
+	__attribute__ ((warn_unused_result, malloc));
 void   nih_strv_free        (char **strv);
 
 char * nih_str_wrap         (const void *parent, const char *str, size_t len,

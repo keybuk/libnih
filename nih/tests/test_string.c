@@ -414,6 +414,42 @@ test_array_add (void)
 }
 
 void
+test_array_addn (void)
+{
+	char   **array, **ret;
+	size_t   len;
+
+	/* Check that we can append strings to a NULL-terminated array.
+	 */
+	TEST_FUNCTION ("nih_str_array_addn");
+	array = nih_str_array_new (NULL);
+	len = 0;
+
+	TEST_ALLOC_FAIL {
+		ret = nih_str_array_addn (&array, NULL, &len, "testing", 4);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+
+			TEST_EQ (len, 1);
+			TEST_EQ_STR (array[0], "test");
+			TEST_EQ_P (array[1], NULL);
+			continue;
+		}
+
+		TEST_NE_P (ret, NULL);
+
+		TEST_EQ (len, 1);
+		TEST_ALLOC_PARENT (array[0], array);
+		TEST_ALLOC_SIZE (array[0], 5);
+		TEST_EQ_STR (array[0], "test");
+		TEST_EQ_P (array[1], NULL);
+	}
+
+	nih_free (array);
+}
+
+void
 test_strv_free (void)
 {
 	char **strv;
@@ -797,6 +833,7 @@ main (int   argc,
 	test_str_split ();
 	test_array_new ();
 	test_array_add ();
+	test_array_addn ();
 	test_strv_free ();
 	test_str_wrap ();
 	test_str_screen_width ();

@@ -320,6 +320,42 @@ nih_str_array_add (char       ***array,
 		   size_t       *len,
 		   const char   *str)
 {
+	nih_assert (array != NULL);
+	nih_assert (*array != NULL);
+	nih_assert (len != NULL);
+	nih_assert (str != NULL);
+
+	return nih_str_array_addn (array, parent, len, str, strlen (str));
+}
+
+/**
+ * nih_str_array_addn:
+ * @array: array of strings,
+ * @parent: parent of @array,
+ * @len: length of @array,
+ * @str: string to add,
+ * @strlen: length of @str.
+ *
+ * Extend the NULL-terminated string @array (which has @len elements,
+ * excluding the final NULL element), appending a copy of the first
+ * @strlen bytes of @str to it.
+ *
+ * Both the array and the new string are allocated using nih_alloc(),
+ * @parent must be that of @array.
+ *
+ * @len will be updated to contain the new array length and @array will
+ * be updated to point to the new array pointer; use the return value
+ * simply to check for success.
+ *
+ * Returns: new array pointer or NULL if insufficient memory.
+ **/
+char **
+nih_str_array_addn (char       ***array,
+		    const void   *parent,
+		    size_t       *len,
+		    const char   *str,
+		    size_t        strlen)
+{
 	char **new_array, *new_str;
 
 	nih_assert (array != NULL);
@@ -333,7 +369,7 @@ nih_str_array_add (char       ***array,
 
 	*array = new_array;
 
-	new_str = nih_strdup (*array, str);
+	new_str = nih_strndup (*array, str, strlen);
 	if (! new_str)
 		return NULL;
 

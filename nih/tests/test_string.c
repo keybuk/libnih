@@ -453,28 +453,62 @@ void
 test_array_addp (void)
 {
 	char   **array, **ret;
-	char    *ptr;
+	char    *ptr1, *ptr2;
 	size_t   len;
+
+	TEST_FUNCTION ("nih_str_array_addn");
+
+
+	/* Check that we can call the function with a NULL array pointer,
+	 * and get one allocated automatically.
+	 */
+	TEST_FEATURE ("with no array given");
+	ptr1 = nih_alloc (NULL, 1024);
+	memset (ptr1, ' ', 1024);
+
+	TEST_ALLOC_FAIL {
+		array = NULL;
+		len = 0;
+
+		ret = nih_str_array_addp (&array, NULL, &len, ptr1);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+
+			TEST_EQ (len, 0);
+			continue;
+		}
+
+		TEST_NE_P (ret, NULL);
+
+		TEST_EQ (len, 1);
+		TEST_EQ_P (array[0], ptr1);
+		TEST_ALLOC_PARENT (array[0], array);
+		TEST_EQ_P (array[1], NULL);
+
+		nih_free (array);
+	}
+
 
 	/* Check that we can append allocated blocks to a
 	 * NULL-terminated array, and that the blocks are automatically
 	 * reparented.
 	 */
-	TEST_FUNCTION ("nih_str_array_addn");
+	TEST_FEATURE ("with length given");
 	array = nih_str_array_new (NULL);
 	len = 0;
 
-	ptr = nih_alloc (NULL, 1024);
-	memset (ptr, ' ', 1024);
+	ptr1 = nih_alloc (NULL, 1024);
+	memset (ptr1, ' ', 1024);
 
 	TEST_ALLOC_FAIL {
-		ret = nih_str_array_addp (&array, NULL, &len, ptr);
+		ret = nih_str_array_addp (&array, NULL, &len, ptr1);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (ret, NULL);
 
 			TEST_EQ (len, 1);
-			TEST_EQ_STR (array[0], "test");
+			TEST_EQ_P (array[0], ptr1);
 			TEST_EQ_P (array[1], NULL);
 			continue;
 		}
@@ -482,9 +516,36 @@ test_array_addp (void)
 		TEST_NE_P (ret, NULL);
 
 		TEST_EQ (len, 1);
-		TEST_EQ_P (array[0], ptr);
+		TEST_EQ_P (array[0], ptr1);
 		TEST_ALLOC_PARENT (array[0], array);
 		TEST_EQ_P (array[1], NULL);
+	}
+
+
+	/* Check that we can omit the length, and have it calculated. */
+	TEST_FEATURE ("with no length given");
+	ptr2 = nih_alloc (NULL, 512);
+	memset (ptr2, ' ', 512);
+
+	TEST_ALLOC_FAIL {
+		ret = nih_str_array_addp (&array, NULL, NULL, ptr2);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+
+			TEST_EQ_P (array[0], ptr1);
+			TEST_EQ_P (array[1], ptr2);
+			TEST_EQ_P (array[2], NULL);
+			continue;
+		}
+
+		TEST_NE_P (ret, NULL);
+
+		TEST_EQ_P (array[0], ptr1);
+		TEST_ALLOC_PARENT (array[0], array);
+		TEST_EQ_P (array[1], ptr2);
+		TEST_ALLOC_PARENT (array[0], array);
+		TEST_EQ_P (array[2], NULL);
 	}
 
 	nih_free (array);

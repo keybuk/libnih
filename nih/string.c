@@ -296,6 +296,10 @@ nih_str_array_new (const void *parent)
  * be updated to point to the new array pointer; use the return value
  * simply to check for success.
  *
+ * If you don't know or care about the length, @len may be set to NULL;
+ * this is less efficient as it necessates counting the length on each
+ * invocation.
+ *
  * Returns: new array pointer or NULL if insufficient memory.
  **/
 char **
@@ -307,8 +311,6 @@ nih_str_array_add (char       ***array,
 	char *new_str;
 
 	nih_assert (array != NULL);
-	nih_assert (*array != NULL);
-	nih_assert (len != NULL);
 	nih_assert (str != NULL);
 
 	new_str = nih_strdup (*array, str);
@@ -337,6 +339,10 @@ nih_str_array_add (char       ***array,
  * be updated to point to the new array pointer; use the return value
  * simply to check for success.
  *
+ * If you don't know or care about the length, @len may be set to NULL;
+ * this is less efficient as it necessates counting the length on each
+ * invocation.
+ *
  * Returns: new array pointer or NULL if insufficient memory.
  **/
 char **
@@ -349,8 +355,6 @@ nih_str_array_addn (char       ***array,
 	char *new_str;
 
 	nih_assert (array != NULL);
-	nih_assert (*array != NULL);
-	nih_assert (len != NULL);
 	nih_assert (str != NULL);
 
 	new_str = nih_strndup (*array, str, strlen);
@@ -378,6 +382,10 @@ nih_str_array_addn (char       ***array,
  * be updated to point to the new array pointer; use the return value
  * simply to check for success.
  *
+ * If you don't know or care about the length, @len may be set to NULL;
+ * this is less efficient as it necessates counting the length on each
+ * invocation.
+ *
  * Returns: new array pointer or NULL if insufficient memory.
  **/
 char **
@@ -386,12 +394,19 @@ nih_str_array_addp (char       ***array,
 		    size_t       *len,
 		    void         *ptr)
 {
-	char **new_array;
+	char   **new_array;
+	size_t   c_len;
 
 	nih_assert (array != NULL);
-	nih_assert (*array != NULL);
-	nih_assert (len != NULL);
 	nih_assert (ptr != NULL);
+
+	if (! len) {
+		len = &c_len;
+		c_len = 0;
+
+		for (new_array = *array; new_array && *new_array; new_array++)
+			c_len++;
+	}
 
 	new_array = nih_realloc (*array, parent, sizeof (char *) * (*len + 2));
 	if (! new_array)

@@ -1,5 +1,8 @@
 2007-02-06  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/string.c (nih_str_array_add, nih_str_array_addn): Correct leak
+	when array allocation fails.
+
 	* nih/string.c (nih_str_array_add, nih_str_array_addn) 
 	(nih_str_array_addp): Allow the array pointed to to be NULL, after all,
 	realloc works anyway.  Also allow len to be NULL, in which case, we

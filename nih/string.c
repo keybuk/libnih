@@ -308,7 +308,8 @@ nih_str_array_add (char       ***array,
 		   size_t       *len,
 		   const char   *str)
 {
-	char *new_str;
+	char  *new_str;
+	char **new_array;
 
 	nih_assert (array != NULL);
 	nih_assert (str != NULL);
@@ -317,7 +318,13 @@ nih_str_array_add (char       ***array,
 	if (! new_str)
 		return NULL;
 
-	return nih_str_array_addp (array, parent, len, new_str);
+	new_array = nih_str_array_addp (array, parent, len, new_str);
+	if (! new_array) {
+		nih_free (new_str);
+		return NULL;
+	}
+
+	return new_array;
 }
 
 /**
@@ -352,7 +359,8 @@ nih_str_array_addn (char       ***array,
 		    const char   *str,
 		    size_t        strlen)
 {
-	char *new_str;
+	char  *new_str;
+	char **new_array;
 
 	nih_assert (array != NULL);
 	nih_assert (str != NULL);
@@ -361,7 +369,13 @@ nih_str_array_addn (char       ***array,
 	if (! new_str)
 		return NULL;
 
-	return nih_str_array_addp (array, parent, len, new_str);
+	new_array = nih_str_array_addp (array, parent, len, new_str);
+	if (! new_array) {
+		nih_free (new_str);
+		return NULL;
+	}
+
+	return new_array;
 }
 
 /**

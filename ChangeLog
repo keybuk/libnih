@@ -1,5 +1,10 @@
 2007-02-06  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/string.c (nih_str_array_new, nih_str_array_add): Functions
+	to handle the common cases of arrays of strings.
+	* nih/string.h: Update.
+	* nih/tests/test_string.c (test_array_new, test_array_add): Test.
+
 	* nih/watch.c (nih_watch_handle): Never assert on data received from
 	an untrusted source (well, the kernel, anyway).  Also make sure nobody
 	sneaks a '/' into the name of an inotify event.

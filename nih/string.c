@@ -266,6 +266,84 @@ nih_str_split (const void *parent,
 }
 
 /**
+ * nih_str_array_new:
+ * @parent: parent of array.
+ *
+ * Allocates a new NULL-terminated array of strings with zero elements;
+ * use nih_str_array_add() to append new strings to the array.  Because
+ * each array element will be allocated using nih_alloc() as a child of
+ * the array itself, the entire array can be freed with nih_free().
+ *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned string will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the nih_alloc_set_destructor() function.
+ *
+ * Returns: newly allocated array or NULL if insufficient memory.
+ **/
+char **
+nih_str_array_new (const void *parent)
+{
+	char **array;
+
+	array = nih_alloc (parent, sizeof (char *));
+	if (! array)
+		return NULL;
+
+	array[0] = NULL;
+
+	return array;
+}
+
+/**
+ * nih_str_array_add:
+ * @parent: parent of array,
+ * @array: array of strings,
+ * @len: length of @array,
+ * @str: string to add.
+ *
+ * Extend the NULL-terminated string @array (which has @len elements,
+ * excluding the final NULL element), appending a copy of @str to it.
+ * Both the array and the new string are allocated using nih_alloc(),
+ * @parent must be that of @array.
+ *
+ * @len will be updated to contain the new array length and @array will
+ * be updated to point to the new array pointer; use the return value
+ * simply to check for success.
+ *
+ * Returns: new array pointer or NULL if insufficient memory.
+ **/
+char **
+nih_str_array_add (const void   *parent,
+		   char       ***array,
+		   size_t       *len,
+		   const char   *str)
+{
+	char **new_array, *new_str;
+
+	nih_assert (array != NULL);
+	nih_assert (*array != NULL);
+	nih_assert (len != NULL);
+	nih_assert (str != NULL);
+
+	new_array = nih_realloc (*array, parent, sizeof (char *) * (*len + 2));
+	if (! new_array)
+		return NULL;
+
+	*array = new_array;
+
+	new_str = nih_strdup (*array, str);
+	if (! new_str)
+		return NULL;
+
+	(*array)[(*len)++] = new_str;
+	(*array)[*len] = NULL;
+
+	return *array;
+}
+
+/**
  * nih_strv_free:
  * @strv: array of strings:
  *

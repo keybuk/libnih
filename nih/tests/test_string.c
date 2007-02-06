@@ -354,6 +354,66 @@ test_str_split (void)
 }
 
 void
+test_array_new (void)
+{
+	char **array;
+
+	/* Check that we can allocate a NULL-terminated array of strings using
+	 * nih_alloc().
+	 */
+	TEST_FUNCTION ("nih_str_array_new");
+	TEST_ALLOC_FAIL {
+		array = nih_str_array_new (NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (array, sizeof (char *));
+		TEST_EQ_P (array[0], NULL);
+
+		nih_free (array);
+	}
+}
+
+void
+test_array_add (void)
+{
+	char   **array, **ret;
+	size_t   len;
+
+	/* Check that we can append strings to a NULL-terminated array.
+	 */
+	TEST_FUNCTION ("nih_str_array_add");
+	array = nih_str_array_new (NULL);
+	len = 0;
+
+	TEST_ALLOC_FAIL {
+		ret = nih_str_array_add (NULL, &array, &len, "test");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+
+			TEST_EQ (len, 1);
+			TEST_EQ_STR (array[0], "test");
+			TEST_EQ_P (array[1], NULL);
+			continue;
+		}
+
+		TEST_NE_P (ret, NULL);
+
+		TEST_EQ (len, 1);
+		TEST_ALLOC_PARENT (array[0], array);
+		TEST_ALLOC_SIZE (array[0], 5);
+		TEST_EQ_STR (array[0], "test");
+		TEST_EQ_P (array[1], NULL);
+	}
+
+	nih_free (array);
+}
+
+void
 test_strv_free (void)
 {
 	char **strv;
@@ -735,6 +795,8 @@ main (int   argc,
 	test_strdup ();
 	test_strndup ();
 	test_str_split ();
+	test_array_new ();
+	test_array_add ();
 	test_strv_free ();
 	test_str_wrap ();
 	test_str_screen_width ();

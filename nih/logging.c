@@ -158,34 +158,33 @@ int
 nih_logger_printf (NihLogLevel  priority,
 		   const char  *message)
 {
-	const char *format;
-	FILE       *stream;
-	size_t      idx;
-
 	nih_assert (message != NULL);
 
-	/* Follow GNU conventions and don't put a space between the program
-	 * name and message if the message is of the form "something: message"
-	 */
-	idx = strcspn (message, " :");
-	if (message[idx] == ':') {
-		format = "%s:%s\n";
-	} else {
-		format = "%s: %s\n";
-	}
-
-	/* Warnings and errors belong on stderr, information and debug on
-	 * stdout
+	/* Warnings and errors belong on stderr, and must be prefixed
+	 * with the program name.  Information and debug go on stdout and
+	 * are not prefixed.
 	 */
 	if (priority >= NIH_LOG_WARN) {
-		stream = stderr;
-	} else {
-		stream = stdout;
-	}
+		const char *format;
+		size_t      idx;
 
-	/* Output it */
-	if (fprintf (stream, format, program_name, message) < 0)
-		return -1;
+		/* Follow GNU conventions and don't put a space between the
+		 * program name and message if the message is of the form
+		 * "something: message"
+		 */
+		idx = strcspn (message, " :");
+		if (message[idx] == ':') {
+			format = "%s:%s\n";
+		} else {
+			format = "%s: %s\n";
+		}
+
+		if (fprintf (stderr, format, program_name, message) < 0)
+			return -1;
+	} else {
+		if (printf ("%s\n", message) < 0)
+			return -1;
+	}
 
 	return 0;
 }

@@ -1,3 +1,11 @@
+2007-02-07  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/logging.c (nih_logger_printf): Change printf logger to not
+	prefix anything intended for stdout.
+	* nih/logging.h: Rearrange.
+	* nih/tests/test_logging.c (test_logger_printf): Make sure that
+	we don't prefix the program name for messages that go to stdout.
+
 2007-02-06  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/signal.c (nih_signal_from_name): Table changed to not contain

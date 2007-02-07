@@ -264,7 +264,7 @@ test_logger_printf (void)
 
 
 	/* Check that a low priority message is output to stdout and formatted
-	 * correctly, with the program name prefixed on the front.
+	 * correctly, without the program name prefixed to the front.
 	 */
 	TEST_FEATURE ("with low priority message");
 	TEST_DIVERT_STDOUT (output) {
@@ -275,14 +275,14 @@ test_logger_printf (void)
 	rewind (output);
 
 	TEST_EQ (ret, 0);
-	TEST_FILE_EQ (output, "test: message with some 20 formatting\n");
+	TEST_FILE_EQ (output, "message with some 20 formatting\n");
 	TEST_FILE_END (output);
 
 	TEST_FILE_RESET (output);
 
 
 	/* Check that ordinary messages are output on stdout and formatted
-	 * correctly, with the program name prefixed on the front.
+	 * correctly, without the program name prefixed on the front.
 	 */
 	TEST_FEATURE ("with ordinary message");
 	TEST_DIVERT_STDOUT (output) {
@@ -293,7 +293,7 @@ test_logger_printf (void)
 	rewind (output);
 
 	TEST_EQ (ret, 0);
-	TEST_FILE_EQ (output, "test: message with some 20 formatting\n");
+	TEST_FILE_EQ (output, "message with some 20 formatting\n");
 	TEST_FILE_END (output);
 
 	TEST_FILE_RESET (output);

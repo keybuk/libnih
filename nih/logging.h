@@ -81,6 +81,18 @@ typedef int (*NihLogger) (NihLogLevel priority, const char *message);
 	nih_log_message (NIH_LOG_INFO, format, ##__VA_ARGS__)
 
 /**
+ * nih_message:
+ * @format: printf-style format string.
+ *
+ * Outputs a message from a non-daemon process that is normally shown unless
+ * the user wants quiet operation.  The difference between this and nih_warn()
+ * is that this is usually send to standard output, instead of standard
+ * error, and it is not prefixed.
+ **/
+#define nih_message(format, ...) \
+	nih_log_message (NIH_LOG_MESSAGE, format, ##__VA_ARGS__)
+
+/**
  * nih_warn:
  * @format: printf-style format string.
  *
@@ -90,18 +102,6 @@ typedef int (*NihLogger) (NihLogLevel priority, const char *message);
  **/
 #define nih_warn(format, ...) \
 	nih_log_message (NIH_LOG_WARN, format, ##__VA_ARGS__)
-
-/**
- * nih_message:
- * @format: printf-style format string.
- *
- * Outputs a message from a non-daemon process that is normally shown unless
- * the user wants quiet operation.  The difference between this and nih_warn()
- * is that this is usually send to standard output, instead of standard
- * error.
- **/
-#define nih_message(format, ...) \
-	nih_log_message (NIH_LOG_MESSAGE, format, ##__VA_ARGS__)
 
 /**
  * nih_error:

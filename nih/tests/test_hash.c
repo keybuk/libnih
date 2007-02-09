@@ -439,9 +439,90 @@ test_lookup (void)
 
 
 void
+test_foreach (void)
+{
+	NihHash *hash;
+	NihList *entry[4], *entry0, *entry1, *entry2, *entry3;
+	int      i;
+
+	/* Check that NIH_HASH_FOREACH iterates the hash correctly in order,
+	 * visiting each entry in each bin.  Note that we stage the entries
+	 * in the hash in the order we expect them to come out in, but add
+	 * them in a different order for sanity.
+	 */
+	TEST_FUNCTION ("nih_HASH_FOREACH");
+	hash = nih_hash_new (NULL, 0, key_function);
+	entry0 = entry[2] = new_entry (hash, "entry 1");
+	entry1 = entry[1] = new_entry (hash, "entry 2");
+	entry2 = entry[3] = new_entry (hash, "entry 1");
+	entry3 = entry[0] = new_entry (hash, "entry 4");
+
+	nih_hash_add (hash, entry0);
+	nih_hash_add (hash, entry1);
+	nih_hash_add (hash, entry2);
+	nih_hash_add (hash, entry3);
+
+	i = 0;
+	NIH_HASH_FOREACH (hash, iter) {
+		if (i > 3)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     4, i + 1);
+
+		if (iter != entry[i])
+			TEST_FAILED ("wrong list entry, expected %p got %p",
+				     entry[i], iter);
+
+		i++;
+	}
+
+	nih_free (hash);
+}
+
+void
+test_foreach_safe (void)
+{
+	NihHash *hash;
+	NihList *entry[4], *entry0, *entry1, *entry2, *entry3;
+	int      i;
+
+	/* Check that NIH_HASH_FOREACH_SAFE iterates the hash correctly in
+	 * order, visiting each entry in each bin; and that it's safe to
+	 * remove the entries while doing so.
+	 */
+	TEST_FUNCTION ("nih_HASH_FOREACH");
+	hash = nih_hash_new (NULL, 0, key_function);
+	entry0 = entry[2] = new_entry (hash, "entry 1");
+	entry1 = entry[1] = new_entry (hash, "entry 2");
+	entry2 = entry[3] = new_entry (hash, "entry 1");
+	entry3 = entry[0] = new_entry (hash, "entry 4");
+
+	nih_hash_add (hash, entry0);
+	nih_hash_add (hash, entry1);
+	nih_hash_add (hash, entry2);
+	nih_hash_add (hash, entry3);
+
+	i = 0;
+	NIH_HASH_FOREACH_SAFE (hash, iter) {
+		if (i > 3)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     4, i + 1);
+
+		if (iter != entry[i])
+			TEST_FAILED ("wrong list entry, expected %p got %p",
+				     entry[i], iter);
+
+		nih_list_remove (entry[i]);
+
+		i++;
+	}
+
+	nih_free (hash);
+}
+
+
+void
 test_string_key (void)
 {
-	NihHash    *hash;
 	NihList    *entry;
 	const char *key;
 
@@ -450,8 +531,7 @@ test_string_key (void)
 	 * key in our test structure.
 	 */
 	TEST_FUNCTION ("nih_hash_string_key");
-	hash = nih_hash_new (NULL, 0, key_function);
-	entry = new_entry (hash, "my entry");
+	entry = new_entry (NULL, "my entry");
 
 	key = nih_hash_string_key (entry);
 
@@ -459,7 +539,6 @@ test_string_key (void)
 	TEST_EQ_STR (key, "my entry");
 
 	nih_list_free (entry);
-	nih_free (hash);
 }
 
 
@@ -473,6 +552,8 @@ main (int   argc,
 	test_replace ();
 	test_search ();
 	test_lookup ();
+	test_foreach ();
+	test_foreach_safe ();
 	test_string_key ();
 
 	return 0;

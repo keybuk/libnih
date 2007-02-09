@@ -58,6 +58,46 @@ typedef struct nih_hash {
 } NihHash;
 
 
+/**
+ * NIH_HASH_FOREACH:
+ * @hash: hash table to iterate,
+ * @iter: name of iterator variable.
+ *
+ * Expands to nested for statements that iterate over each entry in each
+ * bin of @hash, except the bin head pointer, setting @iter to each entry
+ * for the block within the loop.  A variable named _@iter_i is used to
+ * iterate the hash bins.
+ *
+ * If you wish to modify the hash, e.g. remove entries, use
+ * NIH_HASH_FOREACH_SAFE() instead.
+ **/
+#define NIH_HASH_FOREACH(hash, iter) \
+	for (size_t _##iter##_i = 0; _##iter##_i < hash->size; _##iter##_i++) \
+		NIH_LIST_FOREACH (&hash->bins[_##iter##_i], iter)
+
+/**
+ * NIH_HASH_FOREACH_SAFE:
+ * @hash: hash table to iterate,
+ * @iter: name of iterator variable.
+ *
+ * Expans to nested for statements that iterate over each entry in each
+ * bin of @hash, except for the bin head pointer, setting @iter to each
+ * entry for the block within the loop.  A variable named _@iter_i is used
+ * to iterate the hash bins.
+ *
+ * The iteration is performed safely by caching the next entry in the bin
+ * in another variable (named _@iter); this means that @iter can be removed
+ * from the bin, added to a different list or hash table, or entries added
+ * before or after it.
+ *
+ * Note that if you wish an entry added after @iter to be visited, you
+ * would need to use NIH_HASH_FOREACH() instead, as this would skip it.
+ **/
+#define NIH_HASH_FOREACH_SAFE(list, iter) \
+	for (size_t _##iter##_i = 0; _##iter##_i < hash->size; _##iter##_i++) \
+		NIH_LIST_FOREACH_SAFE (&hash->bins[_##iter##_i], iter)
+
+
 NIH_BEGIN_EXTERN
 
 NihHash *   nih_hash_new        (const void *parent, size_t entries,

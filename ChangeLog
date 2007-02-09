@@ -1,3 +1,11 @@
+2007-02-09  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/file.c (nih_file_is_packaging): Check for common packaging
+	filenames -- I swore I wrote this, but I can't find it.
+	(nih_file_ignore): Ignore packaging files.
+	* nih/file.h: Update.
+	* nih/tests/test_file.c (test_is_packaging, test_ignore): Test.
+
 2007-02-07  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/logging.c (nih_logger_printf): Change printf logger to not

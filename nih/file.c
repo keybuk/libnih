@@ -167,7 +167,6 @@ nih_file_is_hidden (const char *path)
 		path = ptr + 1;
 
 	len = strlen (path);
-	ptr = path + len;
 
 	/* Matches .*; standard hidden pattern */
 	if ((len >= 1) && (path[0] == '.'))
@@ -351,6 +350,35 @@ nih_file_is_rcs (const char *path)
 }
 
 /**
+ * nih_file_is_packaging:
+ * @path: path to check.
+ *
+ * Determines whether @path represents a file or directory used by a
+ * common package manager, matching it against common patterns.
+ *
+ * Returns: TRUE if it matches, FALSE otherwise.
+ **/
+int
+nih_file_is_packaging (const char *path)
+{
+	const char *ptr;
+
+	nih_assert (path != NULL);
+
+	ptr = strrchr (path, '/');
+	if (ptr)
+		path = ptr + 1;
+
+	/* Matches *.dpkg-*; used by dpkg */
+	ptr = strrchr (path, '.');
+	if (ptr && (! strncmp (ptr, ".dpkg-", 6)))
+		return TRUE;
+
+
+	return FALSE;
+}
+
+/**
  * nih_file_ignore:
  * @path: path to check.
  *
@@ -374,6 +402,9 @@ nih_file_ignore (const char *path)
 		return TRUE;
 
 	if (nih_file_is_rcs (path))
+		return TRUE;
+
+	if (nih_file_is_packaging (path))
 		return TRUE;
 
 	return FALSE;

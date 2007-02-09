@@ -484,6 +484,46 @@ test_is_rcs (void)
 }
 
 void
+test_is_packaging (void)
+{
+	int ret;
+
+	TEST_FUNCTION ("nih_file_is_packaging");
+
+
+	/* Check that a plain file ending with a dpkg name is packaging. */
+	TEST_FEATURE ("with plain dpkg file");
+	ret = nih_file_is_packaging ("foo.dpkg-new");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a path with a file ending with a dpkg name
+	 * is packaging
+	 */
+	TEST_FEATURE ("with path to dpkg file");
+	ret = nih_file_is_packaging ("/path/to/foo.dpkg-bak");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a path containing a dpkg directory is not packaging,
+	 * since we're already walking it.
+	 */
+	TEST_FEATURE ("with dpkg path to non-packaging file");
+	ret = nih_file_is_packaging ("/path/to.dpkg-bak/foo");
+
+	TEST_FALSE (ret);
+
+
+	/* Check that a plain file is not packaging. */
+	TEST_FEATURE ("with plain file");
+	ret = nih_file_is_packaging ("foo.txt");
+
+	TEST_FALSE (ret);
+}
+
+void
 test_ignore (void)
 {
 	int ret;
@@ -515,6 +555,13 @@ test_ignore (void)
 	/* Check that an RCS file is to be ignored. */
 	TEST_FEATURE ("with rcs file");
 	ret = nih_file_ignore ("CVS");
+
+	TEST_TRUE (ret);
+
+
+	/* Check that a packaging file is to be ignored. */
+	TEST_FEATURE ("with packaging file");
+	ret = nih_file_ignore ("foo.dpkg-new");
 
 	TEST_TRUE (ret);
 
@@ -1283,6 +1330,7 @@ main (int   argc,
 	test_is_backup ();
 	test_is_swap ();
 	test_is_rcs ();
+	test_is_packaging ();
 	test_ignore ();
 	test_dir_walk ();
 

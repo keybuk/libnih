@@ -1,5 +1,7 @@
 2007-02-09  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/hash.h (NIH_HASH_FOREACH_SAFE): Oops, s/list/hash/
+
 	* nih/hash.h (NIH_HASH_FOREACH, NIH_HASH_FOREACH_SAFE): Add macros
 	to iterate over an entire hash table.
 	* nih/tests/test_hash.c (test_foreach, test_foreach_safe): Test the

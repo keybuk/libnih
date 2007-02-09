@@ -60,16 +60,19 @@ typedef struct nih_hash {
 
 NIH_BEGIN_EXTERN
 
-NihHash *nih_hash_new        (const void *parent, size_t entries,
-			      NihKeyFunction key_function)
+NihHash *   nih_hash_new        (const void *parent, size_t entries,
+				 NihKeyFunction key_function)
 	__attribute__ ((warn_unused_result, malloc));
 
-NihList *nih_hash_add        (NihHash *hash, NihList *entry);
-NihList *nih_hash_add_unique (NihHash *hash, NihList *entry);
-NihList *nih_hash_replace    (NihHash *hash, NihList *entry);
+NihList *   nih_hash_add        (NihHash *hash, NihList *entry);
+NihList *   nih_hash_add_unique (NihHash *hash, NihList *entry);
+NihList *   nih_hash_replace    (NihHash *hash, NihList *entry);
 
-NihList *nih_hash_search     (NihHash *hash, const char *key, NihList *entry);
-NihList *nih_hash_lookup     (NihHash *hash, const char *key);
+NihList *   nih_hash_search     (NihHash *hash, const char *key,
+				 NihList *entry);
+NihList *   nih_hash_lookup     (NihHash *hash, const char *key);
+
+const char *nih_hash_string_key (NihList *entry);
 
 NIH_END_EXTERN
 

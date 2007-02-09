@@ -438,6 +438,31 @@ test_lookup (void)
 }
 
 
+void
+test_string_key (void)
+{
+	NihHash    *hash;
+	NihList    *entry;
+	const char *key;
+
+
+	/* Check that the string key function returns a pointer to the
+	 * key in our test structure.
+	 */
+	TEST_FUNCTION ("nih_hash_string_key");
+	hash = nih_hash_new (NULL, 0, key_function);
+	entry = new_entry (hash, "my entry");
+
+	key = nih_hash_string_key (entry);
+
+	TEST_EQ_P (key, ((HashEntry *)entry)->key);
+	TEST_EQ_STR (key, "my entry");
+
+	nih_list_free (entry);
+	nih_free (hash);
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -448,6 +473,7 @@ main (int   argc,
 	test_replace ();
 	test_search ();
 	test_lookup ();
+	test_string_key ();
 
 	return 0;
 }

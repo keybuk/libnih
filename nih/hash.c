@@ -343,3 +343,22 @@ nih_hash_lookup (NihHash    *hash,
 {
 	return nih_hash_search (hash, key, NULL);
 }
+
+
+/**
+ * nih_hash_string_key:
+ * @entry: entry to be checked.
+ *
+ * Key function that can be used for any list entry where the first member
+ * immediately after the list header is a pointer to the string containing
+ * the name.
+ *
+ * Returns: pointer to that string.
+ **/
+const char *
+nih_hash_string_key (NihList *entry)
+{
+	nih_assert (entry != NULL);
+
+	return *((const char **)((char *)entry + sizeof (NihList)));
+}

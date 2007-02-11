@@ -96,6 +96,11 @@ ssize_t   nih_config_token         (const char *file, size_t len, size_t *pos,
 				    size_t *lineno, char *dest,
 				    const char *delim, int dequote)
 	__attribute__ ((warn_unused_result));
+char *    nih_config_next_token    (const void *parent,
+				    const char *file, size_t len, size_t *pos,
+				    size_t *lineno, const char *delim,
+				    int dequote)
+	__attribute__ ((warn_unused_result, malloc));
 char *    nih_config_next_arg      (const void *parent,
 				    const char *file, size_t len, size_t *pos,
 				    size_t *lineno)

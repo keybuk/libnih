@@ -125,7 +125,7 @@ nih_config_has_token (const char *file,
  * @delim: characters to stop on,
  * @dequote: remove quotes and escapes.
  *
- * Extracts a single token from @file which is stopped when any character
+ * Parses a single token from @file which is stopped when any character
  * in @delim is encountered outside of a quoted string and not escaped
  * using a backslash.
  *
@@ -294,17 +294,20 @@ finish:
 }
 
 /**
- * nih_config_next_arg:
+ * nih_config_next_token:
  * @parent: parent of returned argument,
  * @file: file or string to parse,
  * @len: length of @file,
  * @pos: offset within @file,
- * @lineno: line number.
+ * @lineno: line number,
+ * @delim: characters to stop on,
+ * @dequote: remove quotes and escapes.
  *
- * Extracts a single argument from @file, a dequoted token that is stopped
- * on any comment, space or newline character that is not quoted or escaped
- * with a backslash.  Any whitespace after the argument is also consumed,
- * but not returned, including that with escaped newlines within it.
+ * Extracts a single token from @file which is stopped when any character
+ * in @delim is encountered outside of a quoted string and not escaped
+ * using a backslash.  If @delim contains any whitespace character, then
+ * all whitespace after the token is also consumed, but not returned,
+ * including that with escaped newlines within it.
  *
  * @file may be a memory mapped file, in which case @pos should be given
  * as the offset within and @len should be the length of the file as a
@@ -317,20 +320,25 @@ finish:
  * If @lineno is given it will be incremented each time a new line is
  * discovered in the file.
  *
+ * If you also want quotes to be removed and escaped characters to be
+ * replaced with the character itself, set @dequote to TRUE.
+ *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
  * is freed, the returned block will be freed too.  If you have clean-up
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
- * Returns: the argument found or NULL on raised error.
+ * Returns: the token found or NULL on raised error.
  **/
 char *
-nih_config_next_arg (const void *parent,
-		     const char *file,
-		     size_t      len,
-		     size_t     *pos,
-		     size_t     *lineno)
+nih_config_next_token (const void *parent,
+		       const char *file,
+		       size_t      len,
+		       size_t     *pos,
+		       size_t     *lineno,
+		       const char *delim,
+		       int         dequote)
 {
 	size_t   p, arg_start, arg_end;
 	ssize_t  arg_len;
@@ -340,7 +348,8 @@ nih_config_next_arg (const void *parent,
 
 	p = (pos ? *pos : 0);
 	arg_start = p;
-	arg_len = nih_config_token (file, len, &p, lineno, NULL, CNLWS, TRUE);
+	arg_len = nih_config_token (file, len, &p, lineno,
+				    NULL, delim, dequote);
 	arg_end = p;
 
 	if (arg_len < 0) {
@@ -382,7 +391,7 @@ nih_config_next_arg (const void *parent,
 		nih_return_system_error (NULL);
 
 	if (nih_config_token (file + arg_start, arg_end - arg_start, NULL,
-			      NULL, arg, CNLWS, TRUE) < 0)
+			      NULL, arg, delim, dequote) < 0)
 		goto finish;
 
 finish:
@@ -390,6 +399,51 @@ finish:
 		*pos = p;
 
 	return arg;
+}
+
+/**
+ * nih_config_next_arg:
+ * @parent: parent of returned argument,
+ * @file: file or string to parse,
+ * @len: length of @file,
+ * @pos: offset within @file,
+ * @lineno: line number.
+ *
+ * Extracts a single argument from @file, a dequoted token that is stopped
+ * on any comment, space or newline character that is not quoted or escaped
+ * with a backslash.  Any whitespace after the argument is also consumed,
+ * but not returned, including that with escaped newlines within it.
+ *
+ * @file may be a memory mapped file, in which case @pos should be given
+ * as the offset within and @len should be the length of the file as a
+ * whole.
+ *
+ * If @pos is given then it will be used as the offset within @file to
+ * begin (otherwise the start is assumed), and will be updated to point
+ * to @delim or past the end of the file.
+ *
+ * If @lineno is given it will be incremented each time a new line is
+ * discovered in the file.
+ *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned block will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the nih_alloc_set_destructor() function.
+ *
+ * Returns: the argument found or NULL on raised error.
+ **/
+char *
+nih_config_next_arg (const void *parent,
+		     const char *file,
+		     size_t      len,
+		     size_t     *pos,
+		     size_t     *lineno)
+{
+	nih_assert (file != NULL);
+
+	return nih_config_next_token (parent, file, len, pos, lineno,
+				      CNLWS, TRUE);
 }
 
 /**

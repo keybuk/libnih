@@ -405,6 +405,273 @@ test_token (void)
 }
 
 void
+test_next_token (void)
+{
+	char      buf[1024];
+	char     *str;
+	size_t    pos, lineno;
+	NihError *err;
+
+	TEST_FUNCTION ("nih_config_next_token");
+
+	/* Check that we can extract a token at the start of a string,
+	 * and have the position pointing past the whitespace to the next
+	 * argument.
+	 */
+	TEST_FEATURE ("with token at start of string");
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is a test");
+		pos = 0;
+
+		str = nih_config_next_token (NULL, buf,
+					     strlen (buf), &pos, NULL,
+					     " \t\r#\n", FALSE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 5);
+		TEST_ALLOC_SIZE (str, 5);
+		TEST_EQ_STR (str, "this");
+
+		nih_free (str);
+	}
+
+
+	/* Check that we can extract an argument inside a string
+	 */
+	TEST_FEATURE ("with token inside string");
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this is a test");
+		pos = 5;
+
+		str = nih_config_next_token (NULL, buf,
+					     strlen (buf), &pos, NULL,
+					     " \t\r#\n", FALSE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 5);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 8);
+		TEST_ALLOC_SIZE (str, 3);
+		TEST_EQ_STR (str, "is");
+
+		nih_free (str);
+	}
+
+
+	/* Check that all trailing whitespace is eaten after the token. */
+	TEST_FEATURE ("with consecutive whitespace after token");
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this \t  is a test");
+		pos = 0;
+
+		str = nih_config_next_token (NULL, buf,
+					     strlen (buf), &pos, NULL,
+					     " \t\r#\n", FALSE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 8);
+		TEST_ALLOC_SIZE (str, 5);
+		TEST_EQ_STR (str, "this");
+
+		nih_free (str);
+	}
+
+
+	/* Check that any escaped newlines in the whitespace are skipped
+	 * over
+	 */
+	TEST_FEATURE ("with escaped newlines in whitespace");
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "this \\\n is a test");
+		pos = 0;
+
+		str = nih_config_next_token (NULL, buf,
+					     strlen (buf), &pos, NULL,
+					     " \t\r#\n", FALSE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 8);
+		TEST_ALLOC_SIZE (str, 5);
+		TEST_EQ_STR (str, "this");
+
+		nih_free (str);
+	}
+
+
+	/* Check that the line number is incremented for any escaped newlines
+	 * in the whitespace.
+	 */
+	TEST_FEATURE ("with line number set");
+	TEST_ALLOC_FAIL {
+		pos = 0;
+		lineno = 1;
+
+		str = nih_config_next_token (NULL, buf,
+					     strlen (buf), &pos, &lineno,
+					     " \t\r#\n", FALSE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
+			TEST_EQ (lineno, 2);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 8);
+		TEST_EQ (lineno, 2);
+		TEST_ALLOC_SIZE (str, 5);
+		TEST_EQ_STR (str, "this");
+
+		nih_free (str);
+	}
+
+
+	/* Check that the returned token can have the quotes left in it,
+	 * but the whitespace around the newline collapsed.
+	 */
+	TEST_FEATURE ("with token containing quotes");
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "\"this \\\n is\" a test");
+		pos = 0;
+
+		str = nih_config_next_token (NULL, buf,
+					     strlen (buf), &pos, NULL,
+					     " \t\r#\n", FALSE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 13);
+		TEST_ALLOC_SIZE (str, 10);
+		TEST_EQ_STR (str, "\"this is\"");
+
+		nih_free (str);
+	}
+
+
+	/* Check that the returned token can be thoroughly dequoted and any
+	 * whitespace around an embedded newline collapsed to a single
+	 * space.
+	 */
+	TEST_FEATURE ("with quoted whitespace and newline in token");
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "\"this \\\n is\" a test");
+		pos = 0;
+
+		str = nih_config_next_token (NULL, buf,
+					     strlen (buf), &pos, NULL,
+					     " \t\r#\n", TRUE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_EQ (pos, 0);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			continue;
+		}
+
+		TEST_EQ (pos, 13);
+		TEST_ALLOC_SIZE (str, 8);
+		TEST_EQ_STR (str, "this is");
+
+		nih_free (str);
+	}
+
+
+	/* Check that an error is raised if there is no token at that
+	 * position.
+	 */
+	TEST_FEATURE ("with empty line");
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "\nthis is a test");
+		pos = 0;
+		lineno = 1;
+
+		str = nih_config_next_token (NULL, buf,
+					     strlen (buf), &pos, &lineno,
+					     " \t\r#\n", FALSE);
+
+		TEST_EQ_P (str, NULL);
+		TEST_EQ (pos, 0);
+		TEST_EQ (lineno, 1);
+
+		err = nih_error_get ();
+		TEST_EQ (err->number, NIH_CONFIG_EXPECTED_TOKEN);
+		nih_free (err);
+	}
+
+
+	/* Check that a parse error being found with the argument causes an
+	 * error to be raised, with pos and lineno at the site of the error.
+	 */
+	TEST_FEATURE ("with parser error");
+	TEST_ALLOC_FAIL {
+		strcpy (buf, "\"this is a test\nand so is this");
+		pos = 0;
+		lineno = 1;
+
+		str = nih_config_next_token (NULL, buf,
+					     strlen (buf), &pos, &lineno,
+					     " \t\r#\n", FALSE);
+
+		TEST_EQ_P (str, NULL);
+		TEST_EQ (pos, 30);
+		TEST_EQ (lineno, 2);
+
+		err = nih_error_get ();
+		TEST_EQ (err->number, NIH_CONFIG_UNTERMINATED_QUOTE);
+		nih_free (err);
+	}
+}
+
+void
 test_next_arg (void)
 {
 	char      buf[1024];
@@ -2307,6 +2574,7 @@ main (int   argc,
 {
 	test_has_token ();
 	test_token ();
+	test_next_token ();
 	test_next_arg ();
 	test_next_line ();
 	test_skip_comment ();

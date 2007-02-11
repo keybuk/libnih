@@ -1,3 +1,9 @@
+2007-02-11  Johan Kiviniemi  <johan@kiviniemi.name>
+
+	* nih/hash.h (NIH_HASH_FOREACH, NIH_HASH_FOREACH_SAFE): Added missing
+	parenthesis around hash, in case it's a complicated expression with
+	unsurprising precedence results.
+
 2007-02-11  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/config.c (nih_config_skip_whitespace): It turns out that when

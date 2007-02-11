@@ -116,7 +116,7 @@ nih_config_has_token (const char *file,
 
 
 /**
- * nih_config_next_token:
+ * nih_config_token:
  * @file: file or string to parse,
  * @len: length of @file,
  * @pos: offset within @file,
@@ -154,13 +154,13 @@ nih_config_has_token (const char *file,
  * or negative value on raised error.
  **/
 ssize_t
-nih_config_next_token (const char *file,
-		       size_t      len,
-		       size_t     *pos,
-		       size_t     *lineno,
-		       char       *dest,
-		       const char *delim,
-		       int         dequote)
+nih_config_token (const char *file,
+		  size_t      len,
+		  size_t     *pos,
+		  size_t     *lineno,
+		  char       *dest,
+		  const char *delim,
+		  int         dequote)
 {
 	size_t  p, ws = 0, nlws = 0, qc = 0, i = 0;
 	ssize_t ret;
@@ -340,8 +340,7 @@ nih_config_next_arg (const void *parent,
 
 	p = (pos ? *pos : 0);
 	arg_start = p;
-	arg_len = nih_config_next_token (file, len, &p, lineno,
-					 NULL, CNLWS, TRUE);
+	arg_len = nih_config_token (file, len, &p, lineno, NULL, CNLWS, TRUE);
 	arg_end = p;
 
 	if (arg_len < 0) {
@@ -382,8 +381,8 @@ nih_config_next_arg (const void *parent,
 	if (! arg)
 		nih_return_system_error (NULL);
 
-	if (nih_config_next_token (file + arg_start, arg_end - arg_start, NULL,
-				   NULL, arg, CNLWS, TRUE) < 0)
+	if (nih_config_token (file + arg_start, arg_end - arg_start, NULL,
+			      NULL, arg, CNLWS, TRUE) < 0)
 		goto finish;
 
 finish:
@@ -614,14 +613,13 @@ nih_config_parse_command (const void *parent,
 	 */
 	p = (pos ? *pos : 0);
 	cmd_start = p;
-	cmd_len = nih_config_next_token (file, len, &p, lineno,
-					 NULL, CNL, FALSE);
+	cmd_len = nih_config_token (file, len, &p, lineno, NULL, CNL, FALSE);
 	cmd_end = p;
 
 	if (cmd_len < 0)
 		goto finish;
 
-	/* nih_config_next_token will eat up to the end of the file, a comment
+	/* nih_config_token will eat up to the end of the file, a comment
 	 * or a newline; so this must always succeed.
 	 */
 	if (nih_config_skip_comment (file, len, &p, lineno) < 0)
@@ -632,8 +630,8 @@ nih_config_parse_command (const void *parent,
 	if (! cmd)
 		nih_return_system_error (NULL);
 
-	if (nih_config_next_token (file + cmd_start, cmd_end - cmd_start, NULL,
-				   NULL, cmd, CNL, FALSE) < 0)
+	if (nih_config_token (file + cmd_start, cmd_end - cmd_start, NULL,
+			      NULL, cmd, CNL, FALSE) < 0)
 		goto finish;
 
 finish:

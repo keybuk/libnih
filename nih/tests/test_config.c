@@ -99,14 +99,14 @@ test_has_token (void)
 
 
 void
-test_next_token (void)
+test_token (void)
 {
 	char      buf[1024], dest[1024];
 	size_t    pos, lineno;
 	ssize_t   ret;
 	NihError *err;
 
-	TEST_FUNCTION ("nih_config_next_token");
+	TEST_FUNCTION ("nih_config_token");
 	program_name = "test";
 
 	/* Check that we can obtain the length of the first simple token
@@ -117,8 +117,8 @@ test_next_token (void)
 	strcpy (buf, "this is a test");
 	pos = 0;
 
-	ret = nih_config_next_token (buf, strlen (buf), &pos, NULL,
-				     NULL, " ", FALSE);
+	ret = nih_config_token (buf, strlen (buf), &pos, NULL,
+				NULL, " ", FALSE);
 
 	TEST_EQ (ret, 4);
 	TEST_EQ (pos, 4);
@@ -130,8 +130,8 @@ test_next_token (void)
 	TEST_FEATURE ("with token filling string");
 	strcpy (buf, "wibble");
 	pos = 0;
-	ret = nih_config_next_token (buf, strlen (buf), &pos, NULL,
-				     NULL, " ", FALSE);
+	ret = nih_config_token (buf, strlen (buf), &pos, NULL,
+				NULL, " ", FALSE);
 
 	TEST_EQ (ret, 6);
 	TEST_EQ (pos, 6);
@@ -142,8 +142,8 @@ test_next_token (void)
 	 */
 	TEST_FEATURE ("with token to extract");
 	strcpy (buf, "this is a test");
-	ret = nih_config_next_token (buf, strlen (buf), NULL, NULL,
-				     dest, " ", FALSE);
+	ret = nih_config_token (buf, strlen (buf), NULL, NULL,
+				dest, " ", FALSE);
 
 	TEST_EQ (ret, 4);
 	TEST_EQ_STR (dest, "this");
@@ -154,8 +154,8 @@ test_next_token (void)
 	 */
 	TEST_FEATURE ("with token inside string");
 	pos = 5;
-	ret = nih_config_next_token (buf, strlen (buf), &pos, NULL,
-				     NULL, " ", FALSE);
+	ret = nih_config_token (buf, strlen (buf), &pos, NULL,
+				NULL, " ", FALSE);
 
 	TEST_EQ (ret, 2);
 	TEST_EQ (pos, 7);
@@ -168,8 +168,8 @@ test_next_token (void)
 	TEST_FEATURE ("with double quotes inside token");
 	strcpy (buf, "\"this is a\" test");
 	pos = 0;
-	ret = nih_config_next_token (buf, strlen (buf), &pos, NULL,
-				     NULL, " ", FALSE);
+	ret = nih_config_token (buf, strlen (buf), &pos, NULL,
+				NULL, " ", FALSE);
 
 	TEST_EQ (ret, 11);
 	TEST_EQ (pos, 11);
@@ -179,8 +179,8 @@ test_next_token (void)
 	 * quotes, we should still get those.
 	 */
 	TEST_FEATURE ("with double quotes around token to extract");
-	ret = nih_config_next_token (buf, strlen (buf), NULL, NULL,
-				     dest, " ", FALSE);
+	ret = nih_config_token (buf, strlen (buf), NULL, NULL,
+				dest, " ", FALSE);
 
 	TEST_EQ (ret, 11);
 	TEST_EQ_STR (dest, "\"this is a\"");
@@ -191,8 +191,8 @@ test_next_token (void)
 	 */
 	TEST_FEATURE ("with double quotes and dequoting");
 	pos = 0;
-	ret = nih_config_next_token (buf, strlen (buf), &pos, NULL,
-				     NULL, " ", TRUE);
+	ret = nih_config_token (buf, strlen (buf), &pos, NULL,
+				NULL, " ", TRUE);
 
 	TEST_EQ (ret, 9);
 	TEST_EQ (pos, 11);
@@ -202,8 +202,8 @@ test_next_token (void)
 	 * removed.
 	 */
 	TEST_FEATURE ("with double quotes and extract with dequoting");
-	ret = nih_config_next_token (buf, strlen (buf), NULL, NULL,
-				     dest, " ", TRUE);
+	ret = nih_config_token (buf, strlen (buf), NULL, NULL,
+				dest, " ", TRUE);
 
 	TEST_EQ (ret, 9);
 	TEST_EQ_STR (dest, "this is a");
@@ -216,8 +216,8 @@ test_next_token (void)
 	TEST_FEATURE ("with single quotes inside token");
 	strcpy (buf, "\'this is a\' test");
 	pos = 0;
-	ret = nih_config_next_token (buf, strlen (buf), &pos, NULL,
-				     NULL, " ", FALSE);
+	ret = nih_config_token (buf, strlen (buf), &pos, NULL,
+				NULL, " ", FALSE);
 
 	TEST_EQ (ret, 11);
 	TEST_EQ (pos, 11);
@@ -230,8 +230,8 @@ test_next_token (void)
 	TEST_FEATURE ("with escaped spaces inside token");
 	strcpy (buf, "this\\ is\\ a test");
 	pos = 0;
-	ret = nih_config_next_token (buf, strlen (buf), &pos, NULL,
-				     NULL, " ", FALSE);
+	ret = nih_config_token (buf, strlen (buf), &pos, NULL,
+				NULL, " ", FALSE);
 
 	TEST_EQ (ret, 11);
 	TEST_EQ (pos, 11);
@@ -241,8 +241,8 @@ test_next_token (void)
 	 * around the delimiter.
 	 */
 	TEST_FEATURE ("with escaped spaces within extracted token");
-	ret = nih_config_next_token (buf, strlen (buf), NULL, NULL,
-				     dest, " ", FALSE);
+	ret = nih_config_token (buf, strlen (buf), NULL, NULL,
+				dest, " ", FALSE);
 
 	TEST_EQ (ret, 11);
 	TEST_EQ_STR (dest, "this\\ is\\ a");
@@ -253,8 +253,8 @@ test_next_token (void)
 	 */
 	TEST_FEATURE ("with escaped spaces inside token and dequoting");
 	pos = 0;
-	ret = nih_config_next_token (buf, strlen (buf), &pos, NULL,
-				     NULL, " ", TRUE);
+	ret = nih_config_token (buf, strlen (buf), &pos, NULL,
+				NULL, " ", TRUE);
 
 	TEST_EQ (ret, 9);
 	TEST_EQ (pos, 11);
@@ -264,8 +264,8 @@ test_next_token (void)
 	 * around the delimiter, while removing them.
 	 */
 	TEST_FEATURE ("with escaped spaces within extracted dequoted token");
-	ret = nih_config_next_token (buf, strlen (buf), NULL, NULL,
-				     dest, " ", TRUE);
+	ret = nih_config_token (buf, strlen (buf), NULL, NULL,
+				dest, " ", TRUE);
 
 	TEST_EQ (ret, 9);
 	TEST_EQ_STR (dest, "this is a");
@@ -278,8 +278,8 @@ test_next_token (void)
 	strcpy (buf, "\"this is \n a\" test");
 	pos = 0;
 	lineno = 1;
-	ret = nih_config_next_token (buf, strlen (buf), &pos, &lineno,
-				     NULL, " ", FALSE);
+	ret = nih_config_token (buf, strlen (buf), &pos, &lineno,
+				NULL, " ", FALSE);
 
 	TEST_EQ (ret, 11);
 	TEST_EQ (pos, 13);
@@ -290,8 +290,8 @@ test_next_token (void)
 	 * string only returns a single space for the newline.
 	 */
 	TEST_FEATURE ("with newline inside extracted quoted string");
-	ret = nih_config_next_token (buf, strlen (buf), NULL, NULL,
-				     dest, " ", FALSE);
+	ret = nih_config_token (buf, strlen (buf), NULL, NULL,
+				dest, " ", FALSE);
 
 	TEST_EQ (ret, 11);
 	TEST_EQ_STR (dest, "\"this is a\"");
@@ -303,8 +303,8 @@ test_next_token (void)
 	TEST_FEATURE ("with newline inside quoted string and lineno set");
 	pos = 0;
 	lineno = 1;
-	ret = nih_config_next_token (buf, strlen (buf), &pos, &lineno,
-				     NULL, " ", FALSE);
+	ret = nih_config_token (buf, strlen (buf), &pos, &lineno,
+				NULL, " ", FALSE);
 
 	TEST_EQ (ret, 11);
 	TEST_EQ (pos, 13);
@@ -318,8 +318,8 @@ test_next_token (void)
 	strcpy (buf, "this \\\n is a:test");
 	pos = 0;
 	lineno = 1;
-	ret = nih_config_next_token (buf, strlen (buf), &pos, &lineno,
-				     NULL, ":", FALSE);
+	ret = nih_config_token (buf, strlen (buf), &pos, &lineno,
+				NULL, ":", FALSE);
 
 	TEST_EQ (ret, 9);
 	TEST_EQ (pos, 12);
@@ -330,8 +330,8 @@ test_next_token (void)
 	 * returns a single space for the newline.
 	 */
 	TEST_FEATURE ("with escaped newline inside extracted string");
-	ret = nih_config_next_token (buf, strlen (buf), NULL, NULL,
-				     dest, ":", FALSE);
+	ret = nih_config_token (buf, strlen (buf), NULL, NULL,
+				dest, ":", FALSE);
 
 	TEST_EQ (ret, 9);
 	TEST_EQ_STR (dest, "this is a");
@@ -343,8 +343,8 @@ test_next_token (void)
 	TEST_FEATURE ("with escaped newline inside string and lineno set");
 	pos = 0;
 	lineno = 1;
-	ret = nih_config_next_token (buf, strlen (buf), &pos, &lineno,
-				     NULL, ":", FALSE);
+	ret = nih_config_token (buf, strlen (buf), &pos, &lineno,
+				NULL, ":", FALSE);
 
 	TEST_EQ (ret, 9);
 	TEST_EQ (pos, 12);
@@ -359,8 +359,8 @@ test_next_token (void)
 	pos = 0;
 	lineno = 1;
 
-	ret = nih_config_next_token (buf, strlen (buf), &pos, &lineno,
-				     NULL, " ", FALSE);
+	ret = nih_config_token (buf, strlen (buf), &pos, &lineno,
+				NULL, " ", FALSE);
 
 	TEST_LT (ret, 0);
 	TEST_EQ (pos, 7);
@@ -379,8 +379,8 @@ test_next_token (void)
 	pos = 0;
 	lineno = 1;
 
-	ret = nih_config_next_token (buf, strlen (buf), &pos, &lineno,
-				     NULL, " ", FALSE);
+	ret = nih_config_token (buf, strlen (buf), &pos, &lineno,
+				NULL, " ", FALSE);
 
 	TEST_LT (ret, 0);
 	TEST_EQ (pos, 8);
@@ -397,8 +397,8 @@ test_next_token (void)
 	TEST_FEATURE ("with empty token");
 	strcpy (buf, " wibble");
 	pos = 0;
-	ret = nih_config_next_token (buf, strlen (buf), &pos, NULL,
-				     NULL, " ", FALSE);
+	ret = nih_config_token (buf, strlen (buf), &pos, NULL,
+				NULL, " ", FALSE);
 
 	TEST_EQ (ret, 0);
 	TEST_EQ (pos, 0);
@@ -2306,7 +2306,7 @@ main (int   argc,
       char *argv[])
 {
 	test_has_token ();
-	test_next_token ();
+	test_token ();
 	test_next_arg ();
 	test_next_line ();
 	test_skip_comment ();

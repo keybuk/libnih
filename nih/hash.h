@@ -72,8 +72,10 @@ typedef struct nih_hash {
  * NIH_HASH_FOREACH_SAFE() instead.
  **/
 #define NIH_HASH_FOREACH(hash, iter) \
-	for (size_t _##iter##_i = 0; _##iter##_i < hash->size; _##iter##_i++) \
-		NIH_LIST_FOREACH (&hash->bins[_##iter##_i], iter)
+	for (size_t _##iter##_i = 0; \
+	     _##iter##_i < (hash)->size; \
+	     _##iter##_i++) \
+		NIH_LIST_FOREACH (&(hash)->bins[_##iter##_i], iter)
 
 /**
  * NIH_HASH_FOREACH_SAFE:
@@ -94,8 +96,10 @@ typedef struct nih_hash {
  * would need to use NIH_HASH_FOREACH() instead, as this would skip it.
  **/
 #define NIH_HASH_FOREACH_SAFE(hash, iter) \
-	for (size_t _##iter##_i = 0; _##iter##_i < hash->size; _##iter##_i++) \
-		NIH_LIST_FOREACH_SAFE (&hash->bins[_##iter##_i], iter)
+	for (size_t _##iter##_i = 0; \
+	     _##iter##_i < (hash)->size; \
+	     _##iter##_i++) \
+		NIH_LIST_FOREACH_SAFE (&(hash)->bins[_##iter##_i], iter)
 
 
 NIH_BEGIN_EXTERN

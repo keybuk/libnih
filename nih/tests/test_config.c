@@ -958,6 +958,70 @@ test_next_line (void)
 }
 
 void
+test_skip_whitespace (void)
+{
+	char   buf[1024];
+	size_t pos, lineno;
+
+	TEST_FUNCTION ("nih_config_next_whitespace");
+
+	/* Check that we can skip an amount of plain whitespace characters
+	 * until the next token, pointing pos at is.
+	 */
+	TEST_FEATURE ("with plain whitespace");
+	strcpy (buf, "a  plain string\n");
+	pos = 1;
+	lineno = 1;
+
+	nih_config_skip_whitespace (buf, strlen (buf), &pos, &lineno);
+
+	TEST_EQ (pos, 3);
+	TEST_EQ (lineno, 1);
+
+
+	/* Check that we can skip a more complex series of whitespace
+	 * characters until the next token.
+	 */
+	TEST_FEATURE ("with complex whitespace");
+	strcpy (buf, "a more   \t  \r  complex string\n");
+	pos = 6;
+	lineno = 1;
+
+	nih_config_skip_whitespace (buf, strlen (buf), &pos, &lineno);
+
+	TEST_EQ (pos, 15);
+	TEST_EQ (lineno, 1);
+
+
+	/* Check that we can skip whitespace characters up until the end
+	 * of the line, but that we don't step over it.
+	 */
+	TEST_FEATURE ("with whitespace at end of line");
+	strcpy (buf, "trailing whitespace  \t\r\n");
+	pos = 19;
+	lineno = 1;
+
+	nih_config_skip_whitespace (buf, strlen (buf), &pos, &lineno);
+
+	TEST_EQ (pos, 23);
+	TEST_EQ (lineno, 1);
+
+
+	/* Check that we step over an escaped newline embedded in the
+	 * whitespace, and increment lineno.
+	 */
+	TEST_FEATURE ("with escaped newline");
+	strcpy (buf, "this has \\\n a newline");
+	pos = 8;
+	lineno = 1;
+
+	nih_config_skip_whitespace (buf, strlen (buf), &pos, &lineno);
+
+	TEST_EQ (pos, 12);
+	TEST_EQ (lineno, 2);
+}
+
+void
 test_skip_comment (void)
 {
 	char      buf[1024];
@@ -2577,6 +2641,7 @@ main (int   argc,
 	test_next_token ();
 	test_next_arg ();
 	test_next_line ();
+	test_skip_whitespace ();
 	test_skip_comment ();
 	test_parse_args ();
 	test_parse_command ();

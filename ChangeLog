@@ -1,5 +1,13 @@
 2007-02-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/config.c (nih_config_skip_whitespace): It turns out that when
+	parsing, it's often useful to skip any whitespace while retaining the
+	"step over newlines" behaviour.  Seperate it out into its own 
+	function.
+	(nih_config_next_token): Call the new function.
+	* nih/config.h: Add prototype.
+	* nih/tests/test_config.c (test_skip_whitespace): Check the function
+
 	* nih/config.c: Remove macro definitions
 	* nih/config.h: and make them public instead
 	* nih/tests/test_config.c: Use macros.

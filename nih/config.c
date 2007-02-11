@@ -336,30 +336,7 @@ nih_config_next_token (const void *parent,
 		goto finish;
 	}
 
-	/* Skip any amount of whitespace between them, we also need to
-	 * detect an escaped newline here.
-	 */
-	while (p < len) {
-		if (file[p] == '\\') {
-			/* Escape character, only continue scanning if
-			 * the next character is newline
-			 */
-			if ((len - p > 1) && (file[p + 1] == '\n')) {
-				p++;
-			} else {
-				break;
-			}
-		} else if (! strchr (NIH_CONFIG_WS, file[p])) {
-			break;
-		}
-
-		if (file[p] == '\n')
-			if (lineno)
-				(*lineno)++;
-
-		/* Whitespace characer */
-		p++;
-	}
+	nih_config_skip_whitespace (file, len, &p, lineno);
 
 	/* Copy in the new token */
 	arg = nih_alloc (parent, arg_len + 1);
@@ -460,6 +437,63 @@ nih_config_next_line (const char *file,
 	if (*pos < len) {
 		if (lineno)
 			(*lineno)++;
+		(*pos)++;
+	}
+}
+
+
+/**
+ * nih_config_skip_whitespace:
+ * @file: file or string to parse,
+ * @len: length of @file,
+ * @pos: offset within @file,
+ * @lineno: line number.
+ *
+ * Skips an amount of whitespace and finds either the next token or the end
+ * of the current line in @file.  Escaped newlines within the whitespace
+ * are treated as whitespace.
+ *
+ * @file may be a memory mapped file, in which case @pos should be given
+ * as the offset within and @len should be the length of the file as a
+ * whole.
+ *
+ * @pos is used as the offset within @file to begin, and will be updated
+ * to point to past the end of the line or file.
+ *
+ * If @lineno is given it will be incremented each time a new line is
+ * discovered in the file.
+ **/
+void
+nih_config_skip_whitespace (const char *file,
+			    size_t      len,
+			    size_t     *pos,
+			    size_t     *lineno)
+{
+	nih_assert (file != NULL);
+	nih_assert (pos != NULL);
+
+	/* Skip any amount of whitespace between them, we also need to
+	 * detect an escaped newline here.
+	 */
+	while (*pos < len) {
+		if (file[*pos] == '\\') {
+			/* Escape character, only continue scanning if
+			 * the next character is newline
+			 */
+			if ((len - *pos > 1) && (file[*pos + 1] == '\n')) {
+				(*pos)++;
+			} else {
+				break;
+			}
+		} else if (! strchr (NIH_CONFIG_WS, file[*pos])) {
+			break;
+		}
+
+		if (file[*pos] == '\n')
+			if (lineno)
+				(*lineno)++;
+
+		/* Whitespace characer */
 		(*pos)++;
 	}
 }

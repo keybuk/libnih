@@ -425,7 +425,7 @@ test_next_token (void)
 
 		str = nih_config_next_token (NULL, buf,
 					     strlen (buf), &pos, NULL,
-					     " \t\r#\n", FALSE);
+					     NIH_CONFIG_CNLWS, FALSE);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
@@ -454,7 +454,7 @@ test_next_token (void)
 
 		str = nih_config_next_token (NULL, buf,
 					     strlen (buf), &pos, NULL,
-					     " \t\r#\n", FALSE);
+					     NIH_CONFIG_CNLWS, FALSE);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
@@ -482,7 +482,7 @@ test_next_token (void)
 
 		str = nih_config_next_token (NULL, buf,
 					     strlen (buf), &pos, NULL,
-					     " \t\r#\n", FALSE);
+					     NIH_CONFIG_CNLWS, FALSE);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
@@ -512,7 +512,7 @@ test_next_token (void)
 
 		str = nih_config_next_token (NULL, buf,
 					     strlen (buf), &pos, NULL,
-					     " \t\r#\n", FALSE);
+					     NIH_CONFIG_CNLWS, FALSE);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
@@ -542,7 +542,7 @@ test_next_token (void)
 
 		str = nih_config_next_token (NULL, buf,
 					     strlen (buf), &pos, &lineno,
-					     " \t\r#\n", FALSE);
+					     NIH_CONFIG_CNLWS, FALSE);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
@@ -574,7 +574,7 @@ test_next_token (void)
 
 		str = nih_config_next_token (NULL, buf,
 					     strlen (buf), &pos, NULL,
-					     " \t\r#\n", FALSE);
+					     NIH_CONFIG_CNLWS, FALSE);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
@@ -605,7 +605,7 @@ test_next_token (void)
 
 		str = nih_config_next_token (NULL, buf,
 					     strlen (buf), &pos, NULL,
-					     " \t\r#\n", TRUE);
+					     NIH_CONFIG_CNLWS, TRUE);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
@@ -636,7 +636,7 @@ test_next_token (void)
 
 		str = nih_config_next_token (NULL, buf,
 					     strlen (buf), &pos, &lineno,
-					     " \t\r#\n", FALSE);
+					     NIH_CONFIG_CNLWS, FALSE);
 
 		TEST_EQ_P (str, NULL);
 		TEST_EQ (pos, 0);
@@ -659,7 +659,7 @@ test_next_token (void)
 
 		str = nih_config_next_token (NULL, buf,
 					     strlen (buf), &pos, &lineno,
-					     " \t\r#\n", FALSE);
+					     NIH_CONFIG_CNLWS, FALSE);
 
 		TEST_EQ_P (str, NULL);
 		TEST_EQ (pos, 30);

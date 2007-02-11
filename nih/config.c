@@ -39,30 +39,6 @@
 #include <nih/errors.h>
 
 
-/**
- * WS:
- *
- * Definition of what characters we consider whitespace.
- **/
-#define WS " \t\r"
-
-/**
- * CNL:
- *
- * Definition of what characters nominally end a line; a comment start
- * character or a newline.
- **/
-#define CNL "#\n"
-
-/**
- * CNLWS:
- *
- * Defintion of what characters nominally separate tokens.
- **/
-#define CNLWS " \t\r#\n"
-
-
-
 /* Prototypes for static functions */
 static ssize_t          nih_config_block_end  (const char *file, size_t len,
 					       size_t *lineno, size_t *pos,
@@ -107,7 +83,7 @@ nih_config_has_token (const char *file,
 	nih_assert (file != NULL);
 
 	p = (pos ? *pos : 0);
-	if ((p < len) && (! strchr (CNL, file[p]))) {
+	if ((p < len) && (! strchr (NIH_CONFIG_CNL, file[p]))) {
 		return TRUE;
 	} else {
 		return FALSE;
@@ -208,7 +184,7 @@ nih_config_token (const char *file,
 				if (lineno)
 					(*lineno)++;
 				continue;
-			} else if (strchr (WS, file[p])) {
+			} else if (strchr (NIH_CONFIG_WS, file[p])) {
 				ws++;
 				continue;
 			}
@@ -217,7 +193,7 @@ nih_config_token (const char *file,
 			isq = TRUE;
 		} else if (strchr (delim, file[p])) {
 			break;
-		} else if (strchr (WS, file[p])) {
+		} else if (strchr (NIH_CONFIG_WS, file[p])) {
 			ws++;
 			continue;
 		}
@@ -373,7 +349,7 @@ nih_config_next_token (const void *parent,
 			} else {
 				break;
 			}
-		} else if (! strchr (WS, file[p])) {
+		} else if (! strchr (NIH_CONFIG_WS, file[p])) {
 			break;
 		}
 
@@ -443,7 +419,7 @@ nih_config_next_arg (const void *parent,
 	nih_assert (file != NULL);
 
 	return nih_config_next_token (parent, file, len, pos, lineno,
-				      CNLWS, TRUE);
+				      NIH_CONFIG_CNLWS, TRUE);
 }
 
 /**
@@ -667,7 +643,8 @@ nih_config_parse_command (const void *parent,
 	 */
 	p = (pos ? *pos : 0);
 	cmd_start = p;
-	cmd_len = nih_config_token (file, len, &p, lineno, NULL, CNL, FALSE);
+	cmd_len = nih_config_token (file, len, &p, lineno, NULL,
+				    NIH_CONFIG_CNL, FALSE);
 	cmd_end = p;
 
 	if (cmd_len < 0)
@@ -685,7 +662,7 @@ nih_config_parse_command (const void *parent,
 		nih_return_system_error (NULL);
 
 	if (nih_config_token (file + cmd_start, cmd_end - cmd_start, NULL,
-			      NULL, cmd, CNL, FALSE) < 0)
+			      NULL, cmd, NIH_CONFIG_CNL, FALSE) < 0)
 		goto finish;
 
 finish:
@@ -771,7 +748,7 @@ nih_config_parse_block (const void *parent,
 		line_start = p;
 		if (ws < 0) {
 			/* Count initial whitespace */
-			while ((p < len) && strchr (WS, file[p]))
+			while ((p < len) && strchr (NIH_CONFIG_WS, file[p]))
 				p++;
 
 			ws = p - line_start;
@@ -865,7 +842,7 @@ nih_config_block_end (const char *file,
 	p = *pos;
 
 	/* Skip initial whitespace */
-	while ((p < len) && strchr (WS, file[p]))
+	while ((p < len) && strchr (NIH_CONFIG_WS, file[p]))
 		p++;
 
 	/* Check the first word (check we have at least 4 chars because of
@@ -875,12 +852,12 @@ nih_config_block_end (const char *file,
 		return -1;
 
 	/* Must be whitespace after */
-	if (! strchr (WS, file[p + 3]))
+	if (! strchr (NIH_CONFIG_WS, file[p + 3]))
 		return -1;
 
 	/* Find the second word */
 	p += 3;
-	while ((p < len) && strchr (WS, file[p]))
+	while ((p < len) && strchr (NIH_CONFIG_WS, file[p]))
 		p++;
 
 	/* Check the second word */
@@ -890,7 +867,7 @@ nih_config_block_end (const char *file,
 
 	/* May be followed by whitespace */
 	p += strlen (type);
-	while ((p < len) && strchr (WS, file[p]))
+	while ((p < len) && strchr (NIH_CONFIG_WS, file[p]))
 		p++;
 
 	/* May be a comment, in which case eat up to the newline
@@ -1069,7 +1046,7 @@ nih_config_parse_file (const char      *file,
 
 	while (p < len) {
 		/* Skip initial whitespace */
-		while ((p < len) && strchr (WS, file[p]))
+		while ((p < len) && strchr (NIH_CONFIG_WS, file[p]))
 			p++;
 
 		/* Skip lines with only comments in them; because has_token

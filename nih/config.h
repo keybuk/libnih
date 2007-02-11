@@ -87,6 +87,29 @@ struct nih_config_stanza {
 #define NIH_CONFIG_LAST { NULL, NULL }
 
 
+/**
+ * NIH_CONFIG_WS:
+ *
+ * Definition of what characters we consider whitespace.
+ **/
+#define NIH_CONFIG_WS " \t\r"
+
+/**
+ * NIH_CONFIG_CNL:
+ *
+ * Definition of what characters nominally end a line; a comment start
+ * character or a newline.
+ **/
+#define NIH_CONFIG_CNL "#\n"
+
+/**
+ * NIH_CONFIG_CNLWS:
+ *
+ * Defintion of what characters nominally separate tokens.
+ **/
+#define NIH_CONFIG_CNLWS " \t\r#\n"
+
+
 NIH_BEGIN_EXTERN
 
 int       nih_config_has_token     (const char *file, size_t len, size_t *pos,

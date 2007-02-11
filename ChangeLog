@@ -1,5 +1,9 @@
 2007-02-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/config.c: Remove macro definitions
+	* nih/config.h: and make them public instead
+	* nih/tests/test_config.c: Use macros.
+
 	* nih/config.c (nih_config_next_token): Strange hybrid function,
 	it behaves like next_arg() but accepts the same arguments as token();
 	it skips whitespace, but only if the initial whitespace character is

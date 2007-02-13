@@ -106,7 +106,9 @@ static const SignalName signal_names[] = {
 #endif
 	{ SIGPWR,    "PWR"    },
 	{ SIGSYS,    "SYS"    },
+#ifdef SIGUNUSED
 	{ SIGUNUSED, "UNUSED" },
+#endif
 
 	{ -1, NULL }
 };

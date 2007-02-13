@@ -1,5 +1,11 @@
 2007-02-13  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_option.c (test_parser): gcc doesn't like using
+	variables inside fixed for loops, so initialise it deliberately.
+	* nih/tests/test_command.c (test_help): Was mistakenly repeatedly
+	opening output.
+	(test_parser): Similar for loop issue.
+
 	* nih/signal.c: Update signal name list, some signals don't exist on
 	sparc and some turn up unexpectedly.
 

@@ -137,7 +137,7 @@ test_parser (void)
 {
 	FILE *output;
 	char *argv[16];
-	int   argc, ret;
+	int   argc, ret = 0;
 
 	TEST_FUNCTION ("nih_command_parser");
 	program_name = "test";
@@ -593,6 +593,7 @@ test_help (void)
 	int    argc, status;
 
 	TEST_FUNCTION ("nih_command_help");
+	output = tmpfile ();
 
 	/* Check that we can obtain a list of command using the "help"
 	 * command; which terminates the process with exit code 0.  The
@@ -608,7 +609,6 @@ test_help (void)
 		argv[argc++] = "help";
 		argv[argc] = NULL;
 
-		output = tmpfile ();
 		TEST_CHILD (pid) {
 			unsetenv ("COLUMNS");
 
@@ -664,7 +664,6 @@ test_help (void)
 		argv[argc++] = "help";
 		argv[argc] = NULL;
 
-		output = tmpfile ();
 		TEST_CHILD (pid) {
 			unsetenv ("COLUMNS");
 

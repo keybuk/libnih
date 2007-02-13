@@ -95,7 +95,7 @@ void
 test_parser (void)
 {
 	FILE *output;
-	char *argv[16], **args;
+	char *argv[16], **args = NULL;
 	int   argc;
 
 	TEST_FUNCTION ("nih_option_parser");

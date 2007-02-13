@@ -71,6 +71,9 @@ static const SignalName signal_names[] = {
 	{ SIGTRAP,   "TRAP"   },
 	{ SIGABRT,   "ABRT"   },
 	{ SIGIOT,    "IOT"    },
+#ifdef SIGEMT
+	{ SIGEMT,    "EMT"    },
+#endif
 	{ SIGBUS,    "BUS"    },
 	{ SIGFPE,    "FPE"    },
 	{ SIGKILL,   "KILL"   },
@@ -80,12 +83,14 @@ static const SignalName signal_names[] = {
 	{ SIGPIPE,   "PIPE"   },
 	{ SIGALRM,   "ALRM"   },
 	{ SIGTERM,   "TERM"   },
+#ifdef SIGSTKFLT
 	{ SIGSTKFLT, "STKFLT" },
+#endif
 	{ SIGCHLD,   "CHLD"   },
 	{ SIGCLD,    "CLD"    },
 	{ SIGCONT,   "CONT"   },
 	{ SIGSTOP,   "STOP"   },
-	{ SIGTSTP,   "TSTP"  },
+	{ SIGTSTP,   "TSTP"   },
 	{ SIGTTIN,   "TTIN"   },
 	{ SIGTTOU,   "TTOU"   },
 	{ SIGURG,    "URG"    },
@@ -96,6 +101,9 @@ static const SignalName signal_names[] = {
 	{ SIGWINCH,  "WINCH"  },
 	{ SIGIO,     "IO"     },
 	{ SIGPOLL,   "POLL"   },
+#ifdef SIGLOST
+	{ SIGLOST,   "LOST"   },
+#endif
 	{ SIGPWR,    "PWR"    },
 	{ SIGSYS,    "SYS"    },
 	{ SIGUNUSED, "UNUSED" },

@@ -55,7 +55,7 @@
  * The standard set of inotify events we use for watching any path; if
  * people want a different set, they can use inotify_add_watch() directly.
  **/
-#define INOTIFY_EVENTS (IN_CREATE | IN_DELETE | IN_MODIFY \
+#define INOTIFY_EVENTS (IN_CREATE | IN_DELETE | IN_CLOSE_WRITE \
 			| IN_MOVE | IN_MOVE_SELF)
 
 
@@ -524,7 +524,7 @@ nih_watch_handle (NihWatch       *watch,
 			}
 		}
 
-	} else if (events & IN_MODIFY) {
+	} else if (events & IN_CLOSE_WRITE) {
 		if (stat (path, &statbuf) < 0)
 			goto finish;
 

@@ -1,3 +1,9 @@
+2007-02-15  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/watch.c (INOTIFY_EVENTS): Use IN_CLOSE_WRITE instead of
+	IN_MODIFY; since that guarantees the file has actually been closed,
+	and is probably on the filesystem now.
+
 2007-02-13  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/signal.c: Add SIGUNUSED to the list of signals that might not

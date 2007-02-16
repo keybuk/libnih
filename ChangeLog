@@ -1,5 +1,8 @@
 2007-02-16  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/list.h: Fix formatting and ordering.
+	* nih/list.c: Fix function ordering.
+
 	* nih/tree.c: Add generic code to implement pure binary trees.
 	* nih/tree.h: Structures, typedefs and prototypes.
 	* nih/tests/test_tree.c: Binary tree test suite.

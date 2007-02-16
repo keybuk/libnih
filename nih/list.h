@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -91,16 +91,16 @@ typedef struct nih_list {
 
 NIH_BEGIN_EXTERN
 
-void          nih_list_init       (NihList *entry);
-NihList *     nih_list_new        (const void *parent)
+void     nih_list_init       (NihList *entry);
+NihList *nih_list_new        (const void *parent)
 	__attribute__ ((warn_unused_result, malloc));
 
-NihList *     nih_list_remove     (NihList *entry);
-int           nih_list_destructor (NihList *entry);
-int           nih_list_free       (NihList *entry);
+NihList *nih_list_add        (NihList *list, NihList *entry);
+NihList *nih_list_add_after  (NihList *list, NihList *entry);
 
-NihList *     nih_list_add        (NihList *list, NihList *entry);
-NihList *     nih_list_add_after  (NihList *list, NihList *entry);
+NihList *nih_list_remove     (NihList *entry);
+int      nih_list_destructor (NihList *entry);
+int      nih_list_free       (NihList *entry);
 
 NIH_END_EXTERN
 

@@ -2,7 +2,7 @@
  *
  * list.c - generic circular doubly-linked list implementation
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -81,6 +81,73 @@ nih_list_new (const void *parent)
 	nih_list_init (list);
 
 	return list;
+}
+
+
+/**
+ * nih_list_add:
+ * @list: entry in the destination list,
+ * @entry: entry to be added to the list.
+ *
+ * Adds @entry to a new list immediately before the @list entry.  If @list
+ * is the pointer you are using to refer to the list itself, this results
+ * in @entry being appended to the list.
+ *
+ * If @entry is already in another list it is removed so there is no need
+ * to call nih_list_remove() before this function.  There is also no
+ * requirement that the lists be different, so this can be used to reorder
+ * a list.
+ *
+ * Returns: @entry which is now a member of the same list as @list.
+ **/
+NihList *
+nih_list_add (NihList *list,
+	      NihList *entry)
+{
+	nih_assert (list != NULL);
+	nih_assert (entry != NULL);
+
+	nih_list_cut (entry);
+
+	entry->prev = list->prev;
+	list->prev->next = entry;
+	list->prev = entry;
+	entry->next = list;
+
+	return entry;
+}
+
+/**
+ * nih_list_add_after:
+ * @list: entry in the destination list,
+ * @entry: entry to be added to the list.
+ *
+ * Adds @entry to a new list immediately after the @list entry.  If @list
+ * is the pointer you are using to refer to the list itself and that entry
+ * has no data, this results in @entry being pushed onto a stack under it.
+ *
+ * If @entry is already in another list it is removed so there is no need
+ * to call nih_list_remove() before this function.  There is also no
+ * requirement that the lists be different, so this can be used to reorder
+ * a list.
+ *
+ * Returns: @entry which is now a member of the same list as @list.
+ **/
+NihList *
+nih_list_add_after (NihList *list,
+		    NihList *entry)
+{
+	nih_assert (list != NULL);
+	nih_assert (entry != NULL);
+
+	nih_list_cut (entry);
+
+	entry->next = list->next;
+	list->next->prev = entry;
+	list->next = entry;
+	entry->prev = list;
+
+	return entry;
 }
 
 
@@ -166,71 +233,4 @@ nih_list_free (NihList *entry)
 
 	nih_list_cut (entry);
 	return nih_free (entry);
-}
-
-
-/**
- * nih_list_add:
- * @list: entry in the destination list,
- * @entry: entry to be added to the list.
- *
- * Adds @entry to a new list immediately before the @list entry.  If @list
- * is the pointer you are using to refer to the list itself, this results
- * in @entry being appended to the list.
- *
- * If @entry is already in another list it is removed so there is no need
- * to call nih_list_remove() before this function.  There is also no
- * requirement that the lists be different, so this can be used to reorder
- * a list.
- *
- * Returns: @entry which is now a member of the same list as @list.
- **/
-NihList *
-nih_list_add (NihList *list,
-	      NihList *entry)
-{
-	nih_assert (list != NULL);
-	nih_assert (entry != NULL);
-
-	nih_list_cut (entry);
-
-	entry->prev = list->prev;
-	list->prev->next = entry;
-	list->prev = entry;
-	entry->next = list;
-
-	return entry;
-}
-
-/**
- * nih_list_add_after:
- * @list: entry in the destination list,
- * @entry: entry to be added to the list.
- *
- * Adds @entry to a new list immediately after the @list entry.  If @list
- * is the pointer you are using to refer to the list itself and that entry
- * has no data, this results in @entry being pushed onto a stack under it.
- *
- * If @entry is already in another list it is removed so there is no need
- * to call nih_list_remove() before this function.  There is also no
- * requirement that the lists be different, so this can be used to reorder
- * a list.
- *
- * Returns: @entry which is now a member of the same list as @list.
- **/
-NihList *
-nih_list_add_after (NihList *list,
-		    NihList *entry)
-{
-	nih_assert (list != NULL);
-	nih_assert (entry != NULL);
-
-	nih_list_cut (entry);
-
-	entry->next = list->next;
-	list->next->prev = entry;
-	list->next = entry;
-	entry->prev = list;
-
-	return entry;
 }

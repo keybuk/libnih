@@ -13,6 +13,7 @@ libnih_la_SOURCES = \
 	string.c \
 	list.c \
 	hash.c \
+	tree.c \
 	timer.c \
 	signal.c \
 	child.c \
@@ -46,6 +47,7 @@ nihinclude_HEADERS = \
 	string.h \
 	list.h \
 	hash.h \
+	tree.h \
 	timer.h \
 	signal.h \
 	child.h \
@@ -68,6 +70,7 @@ TESTS = \
 	test_string \
 	test_list \
 	test_hash \
+	test_tree \
 	test_timer \
 	test_signal \
 	test_child \
@@ -98,6 +101,10 @@ test_list_LDADD = libnih.la
 test_hash_SOURCES = tests/test_hash.c
 test_hash_LDFLAGS = -static
 test_hash_LDADD = libnih.la
+
+test_tree_SOURCES = tests/test_tree.c
+test_tree_LDFLAGS = -static
+test_tree_LDADD = libnih.la
 
 test_timer_SOURCES = tests/test_timer.c
 test_timer_LDFLAGS = -static

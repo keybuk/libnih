@@ -1,5 +1,12 @@
 2007-02-16  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tree.c (nih_tree_next, nih_tree_prev): Add non-recursive
+	functions to iterate a tree in-order either forwards or backwards.
+	* nih/tree.h (NIH_TREE_FOREACH): Standard macro for wrapping
+	nih_tree_next and turning it into a for loop.
+	* nih/tests/test_tree.c (test_next, test_foreach, test_prev): Test
+	things with a complex tree to see whether they work out ok.
+
 	* nih/list.h: Fix formatting and ordering.
 	* nih/list.c: Fix function ordering.
 

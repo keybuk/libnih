@@ -62,6 +62,22 @@ typedef struct nih_tree {
 } NihTree;
 
 
+/**
+ * NIH_TREE_FOREACH:
+ * @tree: root of the tree to iterate,
+ * @iter: name of iterator variable.
+ *
+ * Expands to a for statement that iterates over each node in @tree in-order,
+ * setting @iter to each node for the block within the loop.
+ *
+ * You should not make changes to the structure of the tree while iterating,
+ * since the order will be relatively unpredictable.
+ **/
+#define NIH_TREE_FOREACH(tree, iter) \
+	for (NihTree *iter = nih_tree_next ((tree), NULL); iter != NULL; \
+	     iter = nih_tree_next ((tree), iter))
+
+
 NIH_BEGIN_EXTERN
 
 void     nih_tree_init       (NihTree *tree);
@@ -75,6 +91,9 @@ NihTree *nih_tree_remove     (NihTree *node);
 NihTree *nih_tree_unlink     (NihTree *node);
 int      nih_tree_destructor (NihTree *node);
 int      nih_tree_free       (NihTree *node);
+
+NihTree *nih_tree_next       (NihTree *tree, NihTree *node);
+NihTree *nih_tree_prev       (NihTree *tree, NihTree *node);
 
 NIH_END_EXTERN
 

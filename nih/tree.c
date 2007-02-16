@@ -239,3 +239,110 @@ nih_tree_free (NihTree *node)
 	nih_tree_unlink (node);
 	return nih_free (node);
 }
+
+
+/**
+ * nih_tree_next:
+ * @tree: tree to iterate,
+ * @node: node just visited.
+ *
+ * Iterates the @tree in-order non-recursively; to obtain the first node,
+ * @tree should be set to the root of the tree and @node should be NULL.
+ * Then for subsequent nodes, @node should be the previous return value
+ * from this function.
+ *
+ * Returns: next in-order node within @tree or NULL if no further nodes.
+ **/
+NihTree *
+nih_tree_next (NihTree *tree,
+	       NihTree *node)
+{
+	NihTree *prev;
+
+	nih_assert (tree != NULL);
+
+	if (node) {
+		prev = node;
+		if (node->right) {
+			node = node->right;
+		} else {
+			node = node->parent;
+		}
+	} else {
+		prev = NULL;
+		node = tree;
+	}
+
+	while (node) {
+		NihTree *tmp = node;
+
+		if (prev == node->parent) {
+			if (node->left) {
+				node = node->left;
+			} else {
+				return node;
+			}
+		} else if (prev == node->left) {
+			return node;
+		} else {
+			node = node->parent;
+		}
+
+		prev = tmp;
+	}
+
+	return NULL;
+}
+
+/**
+ * nih_tree_prev:
+ * @tree: tree to iterate,
+ * @node: node just visited.
+ *
+ * Reverse-iterates the @tree in-order non-recursively; to obtain the last
+ * node, @tree should be set to the root of the tree and @node should be NULL.
+ * Then for subsequent nodes, @node should be the previous return value
+ * from this function.
+ *
+ * Returns: previous in-order node within @tree or NULL if no further nodes.
+ **/
+NihTree *
+nih_tree_prev (NihTree *tree,
+	       NihTree *node)
+{
+	NihTree *prev;
+
+	nih_assert (tree != NULL);
+
+	if (node) {
+		prev = node;
+		if (node->left) {
+			node = node->left;
+		} else {
+			node = node->parent;
+		}
+	} else {
+		prev = NULL;
+		node = tree;
+	}
+
+	while (node) {
+		NihTree *tmp = node;
+
+		if (prev == node->parent) {
+			if (node->right) {
+				node = node->right;
+			} else {
+				return node;
+			}
+		} else if (prev == node->right) {
+			return node;
+		} else {
+			node = node->parent;
+		}
+
+		prev = tmp;
+	}
+
+	return NULL;
+}

@@ -1,3 +1,8 @@
+2007-03-02  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/tests/test_watch.c: Skip these tests if inotify is not
+	available, since there's not much we can do.
+
 2007-02-16  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/tree.c (nih_tree_next, nih_tree_prev): Add non-recursive

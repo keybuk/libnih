@@ -21,6 +21,12 @@
 
 #include <nih/test.h>
 
+#ifdef HAVE_SYS_INOTIFY_H
+# include <sys/inotify.h>
+#else
+# include <nih/inotify.h>
+#endif /* HAVE_SYS_INOTIFY_H */
+
 #include <sys/select.h>
 
 #include <errno.h>
@@ -1389,6 +1395,15 @@ int
 main (int   argc,
       char *argv[])
 {
+	int fd;
+
+	/* Make sure we have inotify before performing these tests */
+	fd = inotify_init ();
+	if (fd < 0) {
+		printf ("SKIP: inotify not available\n");
+		return 0;
+	}
+
 	test_new ();
 	test_add ();
 	test_free ();

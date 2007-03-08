@@ -76,9 +76,11 @@
 # include <locale.h>
 
 # define _(_str)  gettext (_str)
+# define _n(_str1, _str2, _num) ngettext (_str1, _str2, _num)
 # define N_(_str) (_str)
 #else /* ENABLE_NLS */
 # define _(_str)  (_str)
+# define _n(_str1, _str2, _num) ((_num) == 1 ? (_str1) : (_str2))
 # define N_(_str) (_str)
 #endif /* ENABLE_NLS */
 

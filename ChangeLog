@@ -1,3 +1,7 @@
+2007-03-08  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/macros.h (_n): Add a macro to wrap ngettext() for plural forms.
+
 2007-03-02  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/tests/test_watch.c: Skip these tests if inotify is not

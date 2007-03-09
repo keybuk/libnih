@@ -1,3 +1,9 @@
+2007-03-09  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/logging.c: Make the current log priority available globally
+	through the nih_log_priority variable.
+	* nih/logging.h: Update.
+
 2007-03-08  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/macros.h (_n): Add a macro to wrap ngettext() for plural forms.

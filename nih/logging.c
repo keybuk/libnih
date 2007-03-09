@@ -45,12 +45,12 @@
 static NihLogger logger = NULL;
 
 /**
- * min_priority:
+ * nih_log_priority:
  *
  * Lowest priority of log messages that will be given to the logger by
  * default.
  **/
-static NihLogLevel min_priority = NIH_LOG_UNKNOWN;
+NihLogLevel nih_log_priority = NIH_LOG_UNKNOWN;
 
 
 /**
@@ -63,8 +63,8 @@ nih_log_init (void)
 {
 	if (! logger)
 		logger =  nih_logger_printf;
-	if (! min_priority)
-		min_priority = NIH_LOG_MESSAGE;
+	if (! nih_log_priority)
+		nih_log_priority = NIH_LOG_MESSAGE;
 }
 
 /**
@@ -98,7 +98,7 @@ nih_log_set_priority (NihLogLevel new_priority)
 
 	nih_log_init ();
 
-	min_priority = new_priority;
+	nih_log_priority = new_priority;
 }
 
 
@@ -129,7 +129,7 @@ nih_log_message (NihLogLevel  priority,
 
 	nih_log_init ();
 
-	if (priority < min_priority)
+	if (priority < nih_log_priority)
 		return 1;
 
 	va_start (args, format);

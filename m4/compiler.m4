@@ -134,10 +134,16 @@ AS_IF([test "x$nih_cv_c99" = "xyes"],
 # ------------
 # Check whether compiler supports __thread.
 AC_DEFUN([NIH_C_THREAD],
+[AC_ARG_ENABLE(threading,
+	AS_HELP_STRING([--enable-threading],
+		       [Enable support for multi-threading]),
+[], [enable_threading=no])dnl
+AS_IF([test "x$enable_threading" != "xno" ],
 [AC_CACHE_CHECK([whether compiler supports __thread], [nih_cv_c_thread],
 [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[int __thread a;]], [])],
                    [nih_cv_c_thread=yes], [nih_cv_c_thread=no])])
 AS_IF([test $nih_cv_c_thread = no],
       [AC_DEFINE([__thread],,
-                 [Define to empty if `__thread' is not supported.])])
+                 [Define to empty if `__thread' is not supported.])])],
+[AC_DEFINE([__thread], )])dnl
 ])# NIH_C_THREAD

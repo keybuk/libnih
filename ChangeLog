@@ -1,5 +1,8 @@
 2007-03-11  Scott James Remnant  <scott@netsplit.com>
 
+	* m4/compiler.m4: Don't check for __thread unless --enable-threading
+	given to configure, instead define it to empty.
+
 	* TODO: Update.
 
 2007-03-09  Scott James Remnant  <scott@netsplit.com>

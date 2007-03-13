@@ -1,5 +1,9 @@
 2007-03-13  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_io.c (test_get_family): The elmos of this world
+	like to disable various networking protocols, so expect that and
+	skip test cases.
+
 	* nih/io.h: Change int_data type to a plain old int; there's no
 	reason for it to be a fixed width type, and we may as well think
 	about supporting ILP64 in case someone does something silly one day.

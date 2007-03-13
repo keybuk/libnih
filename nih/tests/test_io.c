@@ -23,6 +23,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/un.h>
 
 #include <netinet/in.h>
@@ -3088,28 +3089,43 @@ test_get_family (void)
 	/* Check that we can obtain the family of a UNIX socket. */
 	fd = socket (PF_UNIX, SOCK_STREAM, 0);
 
-	TEST_EQ (nih_io_get_family (fd), PF_UNIX);
+	if (fd < 0) {
+		printf ("SKIP: unix not available\n");
+	} else {
+		TEST_EQ (nih_io_get_family (fd), PF_UNIX);
 
-	close (fd);
+		close (fd);
+	}
 
 
 	/* Check that we can obtain the family of an IPv4 socket. */
 	fd = socket (PF_INET, SOCK_STREAM, 0);
 
-	TEST_EQ (nih_io_get_family (fd), PF_INET);
+	if (fd < 0) {
+		printf ("SKIP: inet not available\n");
+	} else {
+		TEST_EQ (nih_io_get_family (fd), PF_INET);
 
-	close (fd);
+		close (fd);
+	}
 
 
 	/* Check that we can obtain the family of an IPv6 socket. */
 	fd = socket (PF_INET6, SOCK_STREAM, 0);
 
-	TEST_EQ (nih_io_get_family (fd), PF_INET6);
+	if (fd < 0) {
+		printf ("SKIP: inet6 not available\n");
+	} else {
+		TEST_EQ (nih_io_get_family (fd), PF_INET6);
 
-	close (fd);
+		close (fd);
+	}
 
 
 	/* Check that we get -1 on error. */
+	fd = open ("/dev/null", O_RDONLY);
+	close (fd);
+
 	TEST_LT (nih_io_get_family (fd), 0);
 }
 

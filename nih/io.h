@@ -197,7 +197,7 @@ typedef struct nih_io_message {
 	struct cmsghdr  **control;
 
 	union {
-		int32_t  int_data;
+		int      int_data;
 		void    *ptr_data;
 	};
 } NihIoMessage;

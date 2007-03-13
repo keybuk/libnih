@@ -1,3 +1,9 @@
+2007-03-13  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/io.h: Change int_data type to a plain old int; there's no
+	reason for it to be a fixed width type, and we may as well think
+	about supporting ILP64 in case someone does something silly one day.
+
 2007-03-11  Scott James Remnant  <scott@netsplit.com>
 
 	* m4/compiler.m4: Don't check for __thread unless --enable-threading

@@ -102,6 +102,7 @@ nih_vsprintf (const void *parent,
 
 	va_copy (args_copy, args);
 	len = vsnprintf (NULL, 0, format, args_copy);
+	va_end (args_copy);
 
 	nih_assert (len >= 0);
 
@@ -111,6 +112,7 @@ nih_vsprintf (const void *parent,
 
 	va_copy (args_copy, args);
 	vsnprintf (str, len + 1, format, args_copy);
+	va_end (args_copy);
 
 	return str;
 }

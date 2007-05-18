@@ -514,23 +514,35 @@ nih_str_array_append (char         ***array,
 		      size_t         *len,
 		      char * const   *args)
 {
-	size_t        c_len;
+	size_t        c_len, o_len;
 	char * const *arg;
 
 	nih_assert (array != NULL);
 	nih_assert (args != NULL);
 
 	if (! len) {
-		len = &c_len;
 		c_len = 0;
 
 		for (arg = *array; arg && *arg; arg++)
 			c_len++;
+	} else {
+		c_len = *len;
 	}
 
-	for (arg = args; *arg; arg++)
-		if (! nih_str_array_add (array, parent, len, *arg))
+	o_len = c_len;
+
+	for (arg = args; *arg; arg++) {
+		if (! nih_str_array_add (array, parent, &c_len, *arg)) {
+			for (; c_len > o_len; c_len--)
+				nih_free ((*array)[c_len - 1]);
+
+			(*array)[o_len] = NULL;
 			return NULL;
+		}
+	}
+
+	if (len)
+		*len = c_len;
 
 	return *array;
 }

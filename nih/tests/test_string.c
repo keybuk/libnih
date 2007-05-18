@@ -658,10 +658,10 @@ test_array_append (void)
 		if (test_alloc_failed) {
 			TEST_EQ_P (ret, NULL);
 
-			TEST_GE (len, 2);
+			TEST_EQ (len, 2);
 			TEST_EQ_STR (array[0], "foo");
 			TEST_EQ_STR (array[1], "bar");
-			TEST_EQ_P (array[len], NULL);
+			TEST_EQ_P (array[2], NULL);
 
 			nih_free (array);
 			continue;
@@ -706,6 +706,7 @@ test_array_append (void)
 
 			TEST_EQ_STR (array[0], "foo");
 			TEST_EQ_STR (array[1], "bar");
+			TEST_EQ_P (array[2], NULL);
 
 			nih_free (array);
 			continue;

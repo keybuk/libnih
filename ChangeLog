@@ -1,5 +1,14 @@
 2007-05-18  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_string.c (test_array_append): Make sure that the
+	array is returned unaltered (at least, apparently) if any allocation
+	fails during the append.
+	* nih/string.c (nih_str_array_append): Record the original length,
+	and pass always pass our local length variable to nih_str_array_add.
+	Before returning, overwrite the returned length; if any allocation
+	fails, unwind other allocations and restore the NULL pointer before
+	returning NULL.
+
 	* nih/string.c (nih_str_array_copy, nih_str_array_append): Add a
 	couple of functions to copy a string array, and to append one onto
 	the end of another.  Saves reimplementing this each time.

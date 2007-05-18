@@ -552,6 +552,188 @@ test_array_addp (void)
 }
 
 void
+test_array_copy (void)
+{
+	char   **array, **args;
+	size_t   len;
+
+	TEST_FUNCTION ("nih_str_array_copy");
+	NIH_MUST (args = nih_str_array_new (NULL));
+	NIH_MUST (nih_str_array_add (&args, NULL, NULL, "this"));
+	NIH_MUST (nih_str_array_add (&args, NULL, NULL, "is"));
+	NIH_MUST (nih_str_array_add (&args, NULL, NULL, "a"));
+	NIH_MUST (nih_str_array_add (&args, NULL, NULL, "test"));
+
+
+	/* Check that we can make a copy of an array, with each element
+	 * a copy of the last.
+	 */
+	TEST_FEATURE ("with length given");
+	TEST_ALLOC_FAIL {
+		len = 0;
+		array = nih_str_array_copy (NULL, &len, args);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_NE_P (array, NULL);
+
+		TEST_EQ (len, 4);
+		TEST_EQ_STR (array[0], "this");
+		TEST_ALLOC_PARENT (array[0], array);
+		TEST_EQ_STR (array[1], "is");
+		TEST_ALLOC_PARENT (array[1], array);
+		TEST_EQ_STR (array[2], "a");
+		TEST_ALLOC_PARENT (array[2], array);
+		TEST_EQ_STR (array[3], "test");
+		TEST_ALLOC_PARENT (array[3], array);
+		TEST_EQ_P (array[4], NULL);
+
+		nih_free (array);
+	}
+
+
+	/* Check that we can omit the length, and have it calculated. */
+	TEST_FEATURE ("with no length given");
+	TEST_ALLOC_FAIL {
+		array = nih_str_array_copy (NULL, NULL, args);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_NE_P (array, NULL);
+
+		TEST_EQ_STR (array[0], "this");
+		TEST_ALLOC_PARENT (array[0], array);
+		TEST_EQ_STR (array[1], "is");
+		TEST_ALLOC_PARENT (array[1], array);
+		TEST_EQ_STR (array[2], "a");
+		TEST_ALLOC_PARENT (array[2], array);
+		TEST_EQ_STR (array[3], "test");
+		TEST_ALLOC_PARENT (array[3], array);
+		TEST_EQ_P (array[4], NULL);
+
+		nih_free (array);
+	}
+
+	nih_free (args);
+}
+
+void
+test_array_append (void)
+{
+	char   **array, **args, **ret;
+	size_t   len;
+
+	TEST_FUNCTION ("nih_str_array_append");
+	NIH_MUST (args = nih_str_array_new (NULL));
+	NIH_MUST (nih_str_array_add (&args, NULL, NULL, "this"));
+	NIH_MUST (nih_str_array_add (&args, NULL, NULL, "is"));
+	NIH_MUST (nih_str_array_add (&args, NULL, NULL, "a"));
+	NIH_MUST (nih_str_array_add (&args, NULL, NULL, "test"));
+
+
+	/* Check that we can append one array onto the end of the other,
+	 * and that the array is extended and each new element copied
+	 * into the new array.
+	 */
+	TEST_FEATURE ("with length given");
+	TEST_ALLOC_FAIL {
+		len = 0;
+
+		TEST_ALLOC_SAFE {
+			array = nih_str_array_new (NULL);
+			NIH_MUST (nih_str_array_add (&array, NULL, &len,
+						     "foo"));
+			NIH_MUST (nih_str_array_add (&array, NULL, &len,
+						     "bar"));
+		}
+
+		ret = nih_str_array_append (&array, NULL, &len, args);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+
+			TEST_GE (len, 2);
+			TEST_EQ_STR (array[0], "foo");
+			TEST_EQ_STR (array[1], "bar");
+			TEST_EQ_P (array[len], NULL);
+
+			nih_free (array);
+			continue;
+		}
+
+		TEST_NE_P (ret, NULL);
+
+		TEST_EQ (len, 6);
+		TEST_EQ_STR (array[0], "foo");
+		TEST_ALLOC_PARENT (array[0], array);
+		TEST_EQ_STR (array[1], "bar");
+		TEST_ALLOC_PARENT (array[1], array);
+		TEST_EQ_STR (array[2], "this");
+		TEST_ALLOC_PARENT (array[2], array);
+		TEST_EQ_STR (array[3], "is");
+		TEST_ALLOC_PARENT (array[3], array);
+		TEST_EQ_STR (array[4], "a");
+		TEST_ALLOC_PARENT (array[4], array);
+		TEST_EQ_STR (array[5], "test");
+		TEST_ALLOC_PARENT (array[5], array);
+		TEST_EQ_P (array[6], NULL);
+
+		nih_free (array);
+	}
+
+
+	/* Check that we can omit the length, and have it calculated. */
+	TEST_FEATURE ("with no length given");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			array = nih_str_array_new (NULL);
+			NIH_MUST (nih_str_array_add (&array, NULL, NULL,
+						     "foo"));
+			NIH_MUST (nih_str_array_add (&array, NULL, NULL,
+						     "bar"));
+		}
+
+		ret = nih_str_array_append (&array, NULL, NULL, args);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+
+			TEST_EQ_STR (array[0], "foo");
+			TEST_EQ_STR (array[1], "bar");
+
+			nih_free (array);
+			continue;
+		}
+
+		TEST_NE_P (ret, NULL);
+
+		TEST_EQ_STR (array[0], "foo");
+		TEST_ALLOC_PARENT (array[0], array);
+		TEST_EQ_STR (array[1], "bar");
+		TEST_ALLOC_PARENT (array[1], array);
+		TEST_EQ_STR (array[2], "this");
+		TEST_ALLOC_PARENT (array[2], array);
+		TEST_EQ_STR (array[3], "is");
+		TEST_ALLOC_PARENT (array[3], array);
+		TEST_EQ_STR (array[4], "a");
+		TEST_ALLOC_PARENT (array[4], array);
+		TEST_EQ_STR (array[5], "test");
+		TEST_ALLOC_PARENT (array[5], array);
+		TEST_EQ_P (array[6], NULL);
+
+		nih_free (array);
+	}
+
+	nih_free (args);
+}
+
+void
 test_strv_free (void)
 {
 	char **strv;
@@ -937,6 +1119,8 @@ main (int   argc,
 	test_array_add ();
 	test_array_addn ();
 	test_array_addp ();
+	test_array_copy ();
+	test_array_append ();
 	test_strv_free ();
 	test_str_wrap ();
 	test_str_screen_width ();

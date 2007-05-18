@@ -1,3 +1,12 @@
+2007-05-18  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/string.c (nih_str_array_copy, nih_str_array_append): Add a
+	couple of functions to copy a string array, and to append one onto
+	the end of another.  Saves reimplementing this each time.
+	* nih/string.h: Add prototypes.
+	* nih/tests/test_string.c (test_array_copy, test_array_append):
+	Test the new functions.
+
 2007-04-24  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/string.c (nih_vsprintf): Add va_end to va_copy; C standard

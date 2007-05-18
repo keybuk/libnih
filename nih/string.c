@@ -251,6 +251,7 @@ nih_str_split (const void *parent,
 	return array;
 }
 
+
 /**
  * nih_str_array_new:
  * @parent: parent of array.
@@ -437,6 +438,103 @@ nih_str_array_addp (char       ***array,
 
 	return *array;
 }
+
+/**
+ * nih_str_array_copy:
+ * @parent: parent of array.
+ * @len: length of new array,
+ * @array: array of strings to copy.
+ *
+ * Allocates a new NULL-terminated array of strings with elements copied
+ * from the existing @array given.
+ *
+ * Because each array element will be allocated using nih_alloc() as a child
+ * of the array itself, the entire array can be freed with nih_free().
+ * This will not affect the array copied.
+ *
+ * @len will be updated to contain the new array length.  If you don't care
+ * about the length, @len may be set to NULL; this is less efficient as it
+ * necessates counting the length on each future add operation.
+ *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned string will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the nih_alloc_set_destructor() function.
+ *
+ * Returns: newly allocated array or NULL if insufficient memory.
+ **/
+char **
+nih_str_array_copy (const void   *parent,
+		    size_t       *len,
+		    char * const *array)
+{
+	char **new_array;
+
+	nih_assert (array != NULL);
+
+	new_array = nih_str_array_new (parent);
+	if (! new_array)
+		return NULL;
+
+	if (! nih_str_array_append (&new_array, parent, len, array)) {
+		nih_free (new_array);
+		return NULL;
+	}
+
+	return new_array;
+}
+
+/**
+ * nih_str_array_append:
+ * @array: array of strings,
+ * @parent: parent of @array,
+ * @len: length of @array,
+ * @args: array of strings to add.
+ *
+ * Extend the NULL-terminated string @array (which has @len elements,
+ * excluding the final NULL element), appending a copy of each element in
+ * the additional NULL-terminated string array @args to it.
+ * Both the array and the new strings are allocated using nih_alloc(),
+ * @parent must be that of @array.
+ *
+ * @len will be updated to contain the new array length and @array will
+ * be updated to point to the new array pointer; use the return value
+ * simply to check for success.
+ *
+ * If you don't know or care about the length, @len may be set to NULL;
+ * this is less efficient as it necessates counting the length on each
+ * operation.
+ *
+ * Returns: new array pointer or NULL if insufficient memory.
+ **/
+char **
+nih_str_array_append (char         ***array,
+		      const void     *parent,
+		      size_t         *len,
+		      char * const   *args)
+{
+	size_t        c_len;
+	char * const *arg;
+
+	nih_assert (array != NULL);
+	nih_assert (args != NULL);
+
+	if (! len) {
+		len = &c_len;
+		c_len = 0;
+
+		for (arg = *array; arg && *arg; arg++)
+			c_len++;
+	}
+
+	for (arg = args; *arg; arg++)
+		if (! nih_str_array_add (array, parent, len, *arg))
+			return NULL;
+
+	return *array;
+}
+
 
 /**
  * nih_strv_free:

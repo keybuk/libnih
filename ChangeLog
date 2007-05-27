@@ -1,5 +1,9 @@
 2007-05-27  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/config.c (nih_config_parse_block): Don't use -1 in ws to
+	indicate we've not counted it yet, instead use the current value
+	of lines; this elimates the last ssize_t from the code.
+
 	* nih/config.c (nih_config_block_end): Modify to return TRUE or
 	FALSE, and set the end position through an argument instead.
 	(nih_config_parse_block): Update the way we call nih_config_block_end

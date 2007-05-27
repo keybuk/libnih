@@ -751,8 +751,7 @@ nih_config_parse_block (const void *parent,
 			const char *type)
 {
 	char    *block = NULL;
-	size_t   p, pp, sh_start, sh_len, sh_end;
-	ssize_t  ws;
+	size_t   p, pp, sh_start, sh_len, sh_end, ws;
 	int      lines;
 
 	nih_assert (file != NULL);
@@ -770,7 +769,7 @@ nih_config_parse_block (const void *parent,
 	p = (pos ? *pos : 0);
 	sh_start = p;
 	sh_end = 0;
-	ws = -1;
+	ws = 0;
 	lines = 0;
 
 	while (! nih_config_block_end (file, len, &p, lineno, type, &sh_end)) {
@@ -778,8 +777,9 @@ nih_config_parse_block (const void *parent,
 
 		lines++;
 		line_start = p;
-		if (ws < 0) {
-			/* Count initial whitespace */
+
+		if (lines == 1) {
+			/* Count whitespace on the first line */
 			while ((p < len) && strchr (NIH_CONFIG_WS, file[p]))
 				p++;
 

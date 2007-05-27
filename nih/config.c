@@ -1147,19 +1147,11 @@ nih_config_parse (const char      *filename,
 	if (! file)
 		return -1;
 
-	if (len > SSIZE_MAX) {
-		nih_error_raise (NIH_CONFIG_TOO_LONG,
-				 _(NIH_CONFIG_TOO_LONG_STR));
-		ret = -1;
-		goto finish;
-	}
-
 	if (lineno)
 		*lineno = 1;
 
 	ret = nih_config_parse_file (file, len, pos, lineno, stanzas, data);
 
-finish:
 	if (nih_file_unmap ((void *)file, len) < 0)
 		return -1;
 

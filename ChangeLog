@@ -1,5 +1,13 @@
 2007-05-27  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/config.c (nih_config_parse): Since we've elimated all of the
+	uses of ssize_t in this code, we're safe to parse a file larger
+	than SSIZE_MAX, so drop the check.
+	* nih/errors.h (NIH_CONFIG_TOO_LONG): Drop this error, since there
+	can be no such case anymore; technically we don't handle very large
+	files since we can only map 4GB of memory, but we fail by mapping
+	a smaller part of the file, rather than overrunning any buffers.
+
 	* nih/config.c (nih_config_parse_block): Don't use -1 in ws to
 	indicate we've not counted it yet, instead use the current value
 	of lines; this elimates the last ssize_t from the code.

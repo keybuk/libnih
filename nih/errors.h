@@ -33,7 +33,6 @@ enum {
 	/* 0x10000 thru 0x1FFFF reserved for libnih */
 	NIH_ERROR_LIBNIH_START = 0x10000L,
 
-	NIH_CONFIG_TOO_LONG,
 	NIH_CONFIG_EXPECTED_TOKEN,
 	NIH_CONFIG_UNEXPECTED_TOKEN,
 	NIH_CONFIG_TRAILING_SLASH,
@@ -51,7 +50,6 @@ enum {
 };
 
 /* Error strings for defined messages */
-#define NIH_CONFIG_TOO_LONG_STR            N_("File is too long")
 #define NIH_CONFIG_EXPECTED_TOKEN_STR      N_("Expected token")
 #define NIH_CONFIG_UNEXPECTED_TOKEN_STR    N_("Unexpected token")
 #define NIH_CONFIG_TRAILING_SLASH_STR      N_("Trailing slash in file")

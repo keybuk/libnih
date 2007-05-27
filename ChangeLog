@@ -1,5 +1,11 @@
 2007-05-27  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/config.c (nih_config_block_end): Modify to return TRUE or
+	FALSE, and set the end position through an argument instead.
+	(nih_config_parse_block): Update the way we call nih_config_block_end
+	to receive the end location via the pointer, rather than as the
+	return value.
+
 	* nih/config.c (nih_config_token): Change return value to an int,
 	and return the token length through an argument pointer if given.
 	This eliminates a need for ssize_t for this function.

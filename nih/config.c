@@ -40,9 +40,10 @@
 
 
 /* Prototypes for static functions */
-static ssize_t          nih_config_block_end  (const char *file, size_t len,
+static int              nih_config_block_end  (const char *file, size_t len,
 					       size_t *lineno, size_t *pos,
-					       const char *type)
+					       const char *type,
+					       size_t *endpos)
 	__attribute__ ((warn_unused_result));
 static NihConfigStanza *nih_config_get_stanza (const char *name,
 					       NihConfigStanza *stanzas);
@@ -750,8 +751,8 @@ nih_config_parse_block (const void *parent,
 			const char *type)
 {
 	char    *block = NULL;
-	size_t   p, pp, sh_start, sh_len;
-	ssize_t  sh_end, ws;
+	size_t   p, pp, sh_start, sh_len, sh_end;
+	ssize_t  ws;
 	int      lines;
 
 	nih_assert (file != NULL);
@@ -768,12 +769,11 @@ nih_config_parse_block (const void *parent,
 	 */
 	p = (pos ? *pos : 0);
 	sh_start = p;
-	sh_end = -1;
+	sh_end = 0;
 	ws = -1;
 	lines = 0;
 
-	while ((sh_end = nih_config_block_end (file, len, &p,
-					       lineno, type)) < 0) {
+	while (! nih_config_block_end (file, len, &p, lineno, type, &sh_end)) {
 		size_t line_start;
 
 		lines++;
@@ -843,29 +843,30 @@ finish:
  * @len: length of @file,
  * @pos: offset within @file,
  * @lineno: line number,
- * @type: block identifier.
+ * @type: block identifier,
+ * @endpos: pointer to end of block.
  *
- * Determines whether the current line contains an end of block marker.
+ * Determines whether the current line contains an end of block marker,
+ * and if so, sets @endpos to the end  of the block.
  *
  * @file may be a memory mapped file, in which case @pos should be given
  * as the offset within and @len should be the length of the file.  @pos
- * will be updated to point past the end of the block or the end of the
- * file.
+ * will be updated to point past the end of the block and the end block
+ * marker or the end of the file.
  *
  * @lineno will be incremented each time a new line is discovered.
  *
- * Returns: index of block end (always the value of @pos at the time this
- * function was called) or -1 if it is not on this line.
+ * Returns: TRUE if at the end of the block, FALSE otherwise.
  **/
-static ssize_t
+static int
 nih_config_block_end (const char *file,
 		      size_t      len,
 		      size_t     *pos,
 		      size_t     *lineno,
-		      const char *type)
+		      const char *type,
+		      size_t     *endpos)
 {
-	size_t  p;
-	ssize_t end;
+	size_t p;
 
 	nih_assert (file != NULL);
 	nih_assert (pos != NULL);
@@ -881,11 +882,11 @@ nih_config_block_end (const char *file,
 	 * the need for whitespace immediately after)
 	 */
 	if ((len - p < 4) || strncmp (file + p, "end", 3))
-		return -1;
+		return FALSE;
 
 	/* Must be whitespace after */
 	if (! strchr (NIH_CONFIG_WS, file[p + 3]))
-		return -1;
+		return FALSE;
 
 	/* Find the second word */
 	p += 3;
@@ -895,7 +896,7 @@ nih_config_block_end (const char *file,
 	/* Check the second word */
 	if ((len - p < strlen (type))
 	    || strncmp (file + p, type, strlen (type)))
-		return -1;
+		return FALSE;
 
 	/* May be followed by whitespace */
 	p += strlen (type);
@@ -911,7 +912,7 @@ nih_config_block_end (const char *file,
 
 	/* Should be end of string, or a newline */
 	if ((p < len) && (file[p] != '\n'))
-		return -1;
+		return FALSE;
 
 	/* Point past the new line */
 	if (p < len) {
@@ -920,13 +921,14 @@ nih_config_block_end (const char *file,
 		p++;
 	}
 
-	/* Return the beginning of the line (which is the end of the script)
-	 * but update pos to point past this line.
+	/* Set endpos to the beginning of the line (which is the end of the
+	 * script) but update pos to point past this line.
 	 */
-	end = *pos;
+	if (endpos)
+		*endpos = *pos;
 	*pos = p;
 
-	return end;
+	return TRUE;
 }
 
 

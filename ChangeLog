@@ -1,3 +1,15 @@
+2007-05-27  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/config.c (nih_config_token): Change return value to an int,
+	and return the token length through an argument pointer if given.
+	This eliminates a need for ssize_t for this function.
+	(nih_config_next_token, nih_config_parse_command): Update way we
+	call nih_config_token to obtain the length through a pointer, and
+	directly check the return value to decide whether to abandon it.
+	* nih/config.h: Update prototype.
+	* nih/tests/test_config.c (test_token): Update the tests to check
+	the pointed value for the length, and the return value for error.
+
 2007-05-18  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/tests/test_string.c (test_array_append): Make sure that the

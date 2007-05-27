@@ -100,10 +100,12 @@ nih_config_has_token (const char *file,
  * @dest: destination to copy to,
  * @delim: characters to stop on,
  * @dequote: remove quotes and escapes.
+ * @toklen: pointer to store token length in.
  *
  * Parses a single token from @file which is stopped when any character
  * in @delim is encountered outside of a quoted string and not escaped
- * using a backslash.
+ * using a backslash.  The length of the parsed token is stored in @toklen
+ * if given.
  *
  * @file may be a memory mapped file, in which case @pos should be given
  * as the offset within and @len should be the length of the file as a
@@ -126,21 +128,20 @@ nih_config_has_token (const char *file,
  * If you also want quotes to be removed and escaped characters to be
  * replaced with the character itself, set @dequote to TRUE.
  *
- * Returns: the length of the token as it was/would be copied into @dest,
- * or negative value on raised error.
+ * Returns: zero on success, negative value on raised error.
  **/
-ssize_t
+int
 nih_config_token (const char *file,
 		  size_t      len,
 		  size_t     *pos,
 		  size_t     *lineno,
 		  char       *dest,
 		  const char *delim,
-		  int         dequote)
+		  int         dequote,
+		  size_t     *toklen)
 {
 	size_t  p, ws = 0, nlws = 0, qc = 0, i = 0;
-	ssize_t ret;
-	int     slash = FALSE, quote = 0, nl = FALSE;
+	int     slash = FALSE, quote = 0, nl = FALSE, ret = 0;
 
 	nih_assert (file != NULL);
 	nih_assert (delim != NULL);
@@ -254,13 +255,14 @@ nih_config_token (const char *file,
 	}
 
 
-	/* The return value is the length of the token with any newlines and
-	 * surrounding whitespace converted to a single character and any
-	 * trailing whitespace removed.
+	/* The token length we return is the length of the token with any
+	 * newlines and surrounding whitespace converted to a single
+	 * character and any trailing whitespace removed.
 	 *
 	 * The actual end of the text read is returned in *pos.
 	 */
-	ret = p - (pos ? *pos : 0) - ws - nlws - qc;
+	if (toklen)
+		*toklen = p - (pos ? *pos : 0) - ws - nlws - qc;
 
 finish:
 	if (pos)
@@ -316,21 +318,19 @@ nih_config_next_token (const void *parent,
 		       const char *delim,
 		       int         dequote)
 {
-	size_t   p, arg_start, arg_end;
-	ssize_t  arg_len;
-	char    *arg = NULL;
+	size_t  p, arg_start, arg_len, arg_end;
+	char   *arg = NULL;
 
 	nih_assert (file != NULL);
 
 	p = (pos ? *pos : 0);
 	arg_start = p;
-	arg_len = nih_config_token (file, len, &p, lineno,
-				    NULL, delim, dequote);
-	arg_end = p;
-
-	if (arg_len < 0) {
+	if (nih_config_token (file, len, &p, lineno, NULL, delim, dequote,
+			      &arg_len) < 0)
 		goto finish;
-	} else if (! arg_len) {
+
+	arg_end = p;
+	if (! arg_len) {
 		nih_error_raise (NIH_CONFIG_EXPECTED_TOKEN,
 				 _(NIH_CONFIG_EXPECTED_TOKEN_STR));
 		goto finish;
@@ -344,7 +344,7 @@ nih_config_next_token (const void *parent,
 		nih_return_system_error (NULL);
 
 	if (nih_config_token (file + arg_start, arg_end - arg_start, NULL,
-			      NULL, arg, delim, dequote) < 0)
+			      NULL, arg, delim, dequote, NULL) < 0)
 		goto finish;
 
 finish:
@@ -666,9 +666,8 @@ nih_config_parse_command (const void *parent,
 			  size_t     *pos,
 			  size_t     *lineno)
 {
-	char    *cmd = NULL;
-	size_t   p, cmd_start, cmd_end;
-	ssize_t  cmd_len;
+	char   *cmd = NULL;
+	size_t  p, cmd_start, cmd_len, cmd_end;
 
 	nih_assert (file != NULL);
 
@@ -677,12 +676,11 @@ nih_config_parse_command (const void *parent,
 	 */
 	p = (pos ? *pos : 0);
 	cmd_start = p;
-	cmd_len = nih_config_token (file, len, &p, lineno, NULL,
-				    NIH_CONFIG_CNL, FALSE);
-	cmd_end = p;
-
-	if (cmd_len < 0)
+	if (nih_config_token (file, len, &p, lineno, NULL,
+			      NIH_CONFIG_CNL, FALSE, &cmd_len) < 0)
 		goto finish;
+
+	cmd_end = p;
 
 	/* nih_config_token will eat up to the end of the file, a comment
 	 * or a newline; so this must always succeed.
@@ -696,7 +694,7 @@ nih_config_parse_command (const void *parent,
 		nih_return_system_error (NULL);
 
 	if (nih_config_token (file + cmd_start, cmd_end - cmd_start, NULL,
-			      NULL, cmd, NIH_CONFIG_CNL, FALSE) < 0)
+			      NULL, cmd, NIH_CONFIG_CNL, FALSE, NULL) < 0)
 		goto finish;
 
 finish:

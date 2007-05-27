@@ -102,8 +102,8 @@ void
 test_token (void)
 {
 	char      buf[1024], dest[1024];
-	size_t    pos, lineno;
-	ssize_t   ret;
+	size_t    pos, lineno, len;
+	int       ret;
 	NihError *err;
 
 	TEST_FUNCTION ("nih_config_token");
@@ -117,10 +117,12 @@ test_token (void)
 	strcpy (buf, "this is a test");
 	pos = 0;
 
+	len = 0;
 	ret = nih_config_token (buf, strlen (buf), &pos, NULL,
-				NULL, " ", FALSE);
+				NULL, " ", FALSE, &len);
 
-	TEST_EQ (ret, 4);
+	TEST_EQ (ret, 0);
+	TEST_EQ (len, 4);
 	TEST_EQ (pos, 4);
 
 
@@ -130,10 +132,12 @@ test_token (void)
 	TEST_FEATURE ("with token filling string");
 	strcpy (buf, "wibble");
 	pos = 0;
+	len = 0;
 	ret = nih_config_token (buf, strlen (buf), &pos, NULL,
-				NULL, " ", FALSE);
+				NULL, " ", FALSE, &len);
 
-	TEST_EQ (ret, 6);
+	TEST_EQ (ret, 0);
+	TEST_EQ (len, 6);
 	TEST_EQ (pos, 6);
 
 
@@ -143,9 +147,9 @@ test_token (void)
 	TEST_FEATURE ("with token to extract");
 	strcpy (buf, "this is a test");
 	ret = nih_config_token (buf, strlen (buf), NULL, NULL,
-				dest, " ", FALSE);
+				dest, " ", FALSE, NULL);
 
-	TEST_EQ (ret, 4);
+	TEST_EQ (ret, 0);
 	TEST_EQ_STR (dest, "this");
 
 
@@ -154,10 +158,12 @@ test_token (void)
 	 */
 	TEST_FEATURE ("with token inside string");
 	pos = 5;
+	len = 0;
 	ret = nih_config_token (buf, strlen (buf), &pos, NULL,
-				NULL, " ", FALSE);
+				NULL, " ", FALSE, &len);
 
-	TEST_EQ (ret, 2);
+	TEST_EQ (ret, 0);
+	TEST_EQ (len, 2);
 	TEST_EQ (pos, 7);
 
 
@@ -168,10 +174,12 @@ test_token (void)
 	TEST_FEATURE ("with double quotes inside token");
 	strcpy (buf, "\"this is a\" test");
 	pos = 0;
+	len = 0;
 	ret = nih_config_token (buf, strlen (buf), &pos, NULL,
-				NULL, " ", FALSE);
+				NULL, " ", FALSE, &len);
 
-	TEST_EQ (ret, 11);
+	TEST_EQ (ret, 0);
+	TEST_EQ (len, 11);
 	TEST_EQ (pos, 11);
 
 
@@ -179,10 +187,12 @@ test_token (void)
 	 * quotes, we should still get those.
 	 */
 	TEST_FEATURE ("with double quotes around token to extract");
+	len = 0;
 	ret = nih_config_token (buf, strlen (buf), NULL, NULL,
-				dest, " ", FALSE);
+				dest, " ", FALSE, &len);
 
-	TEST_EQ (ret, 11);
+	TEST_EQ (ret, 0);
+	TEST_EQ (len, 11);
 	TEST_EQ_STR (dest, "\"this is a\"");
 
 
@@ -191,10 +201,12 @@ test_token (void)
 	 */
 	TEST_FEATURE ("with double quotes and dequoting");
 	pos = 0;
+	len = 0;
 	ret = nih_config_token (buf, strlen (buf), &pos, NULL,
-				NULL, " ", TRUE);
+				NULL, " ", TRUE, &len);
 
-	TEST_EQ (ret, 9);
+	TEST_EQ (ret, 0);
+	TEST_EQ (len, 9);
 	TEST_EQ (pos, 11);
 
 
@@ -203,9 +215,9 @@ test_token (void)
 	 */
 	TEST_FEATURE ("with double quotes and extract with dequoting");
 	ret = nih_config_token (buf, strlen (buf), NULL, NULL,
-				dest, " ", TRUE);
+				dest, " ", TRUE, NULL);
 
-	TEST_EQ (ret, 9);
+	TEST_EQ (ret, 0);
 	TEST_EQ_STR (dest, "this is a");
 
 
@@ -216,10 +228,12 @@ test_token (void)
 	TEST_FEATURE ("with single quotes inside token");
 	strcpy (buf, "\'this is a\' test");
 	pos = 0;
+	len = 0;
 	ret = nih_config_token (buf, strlen (buf), &pos, NULL,
-				NULL, " ", FALSE);
+				NULL, " ", FALSE, &len);
 
-	TEST_EQ (ret, 11);
+	TEST_EQ (ret, 0);
+	TEST_EQ (len, 11);
 	TEST_EQ (pos, 11);
 
 
@@ -230,10 +244,12 @@ test_token (void)
 	TEST_FEATURE ("with escaped spaces inside token");
 	strcpy (buf, "this\\ is\\ a test");
 	pos = 0;
+	len = 0;
 	ret = nih_config_token (buf, strlen (buf), &pos, NULL,
-				NULL, " ", FALSE);
+				NULL, " ", FALSE, &len);
 
-	TEST_EQ (ret, 11);
+	TEST_EQ (ret, 0);
+	TEST_EQ (len, 11);
 	TEST_EQ (pos, 11);
 
 
@@ -242,9 +258,10 @@ test_token (void)
 	 */
 	TEST_FEATURE ("with escaped spaces within extracted token");
 	ret = nih_config_token (buf, strlen (buf), NULL, NULL,
-				dest, " ", FALSE);
+				dest, " ", FALSE, &len);
 
-	TEST_EQ (ret, 11);
+	TEST_EQ (ret, 0);
+	TEST_EQ (len, 11);
 	TEST_EQ_STR (dest, "this\\ is\\ a");
 
 
@@ -253,10 +270,12 @@ test_token (void)
 	 */
 	TEST_FEATURE ("with escaped spaces inside token and dequoting");
 	pos = 0;
+	len = 0;
 	ret = nih_config_token (buf, strlen (buf), &pos, NULL,
-				NULL, " ", TRUE);
+				NULL, " ", TRUE, &len);
 
-	TEST_EQ (ret, 9);
+	TEST_EQ (ret, 0);
+	TEST_EQ (len, 9);
 	TEST_EQ (pos, 11);
 
 
@@ -264,10 +283,12 @@ test_token (void)
 	 * around the delimiter, while removing them.
 	 */
 	TEST_FEATURE ("with escaped spaces within extracted dequoted token");
+	len = 0;
 	ret = nih_config_token (buf, strlen (buf), NULL, NULL,
-				dest, " ", TRUE);
+				dest, " ", TRUE, &len);
 
-	TEST_EQ (ret, 9);
+	TEST_EQ (ret, 0);
+	TEST_EQ (len, 9);
 	TEST_EQ_STR (dest, "this is a");
 
 
@@ -278,10 +299,12 @@ test_token (void)
 	strcpy (buf, "\"this is \n a\" test");
 	pos = 0;
 	lineno = 1;
+	len = 0;
 	ret = nih_config_token (buf, strlen (buf), &pos, &lineno,
-				NULL, " ", FALSE);
+				NULL, " ", FALSE, &len);
 
-	TEST_EQ (ret, 11);
+	TEST_EQ (ret, 0);
+	TEST_EQ (len, 11);
 	TEST_EQ (pos, 13);
 	TEST_EQ (lineno, 2);
 
@@ -290,10 +313,12 @@ test_token (void)
 	 * string only returns a single space for the newline.
 	 */
 	TEST_FEATURE ("with newline inside extracted quoted string");
+	len = 0;
 	ret = nih_config_token (buf, strlen (buf), NULL, NULL,
-				dest, " ", FALSE);
+				dest, " ", FALSE, &len);
 
-	TEST_EQ (ret, 11);
+	TEST_EQ (ret, 0);
+	TEST_EQ (len, 11);
 	TEST_EQ_STR (dest, "\"this is a\"");
 
 
@@ -303,10 +328,12 @@ test_token (void)
 	TEST_FEATURE ("with newline inside quoted string and lineno set");
 	pos = 0;
 	lineno = 1;
+	len = 0;
 	ret = nih_config_token (buf, strlen (buf), &pos, &lineno,
-				NULL, " ", FALSE);
+				NULL, " ", FALSE, &len);
 
-	TEST_EQ (ret, 11);
+	TEST_EQ (ret, 0);
+	TEST_EQ (len, 11);
 	TEST_EQ (pos, 13);
 	TEST_EQ (lineno, 2);
 
@@ -318,10 +345,12 @@ test_token (void)
 	strcpy (buf, "this \\\n is a:test");
 	pos = 0;
 	lineno = 1;
+	len = 0;
 	ret = nih_config_token (buf, strlen (buf), &pos, &lineno,
-				NULL, ":", FALSE);
+				NULL, ":", FALSE, &len);
 
-	TEST_EQ (ret, 9);
+	TEST_EQ (ret, 0);
+	TEST_EQ (len, 9);
 	TEST_EQ (pos, 12);
 	TEST_EQ (lineno, 2);
 
@@ -331,9 +360,9 @@ test_token (void)
 	 */
 	TEST_FEATURE ("with escaped newline inside extracted string");
 	ret = nih_config_token (buf, strlen (buf), NULL, NULL,
-				dest, ":", FALSE);
+				dest, ":", FALSE, NULL);
 
-	TEST_EQ (ret, 9);
+	TEST_EQ (ret, 0);
 	TEST_EQ_STR (dest, "this is a");
 
 
@@ -343,10 +372,12 @@ test_token (void)
 	TEST_FEATURE ("with escaped newline inside string and lineno set");
 	pos = 0;
 	lineno = 1;
+	len = 0;
 	ret = nih_config_token (buf, strlen (buf), &pos, &lineno,
-				NULL, ":", FALSE);
+				NULL, ":", FALSE, &len);
 
-	TEST_EQ (ret, 9);
+	TEST_EQ (ret, 0);
+	TEST_EQ (len, 9);
 	TEST_EQ (pos, 12);
 	TEST_EQ (lineno, 2);
 
@@ -357,10 +388,11 @@ test_token (void)
 	TEST_FEATURE ("with slash at end of string");
 	strcpy (buf, "wibble\\");
 	pos = 0;
+	len = 0;
 	lineno = 1;
 
 	ret = nih_config_token (buf, strlen (buf), &pos, &lineno,
-				NULL, " ", FALSE);
+				NULL, " ", FALSE, NULL);
 
 	TEST_LT (ret, 0);
 	TEST_EQ (pos, 7);
@@ -380,7 +412,7 @@ test_token (void)
 	lineno = 1;
 
 	ret = nih_config_token (buf, strlen (buf), &pos, &lineno,
-				NULL, " ", FALSE);
+				NULL, " ", FALSE, NULL);
 
 	TEST_LT (ret, 0);
 	TEST_EQ (pos, 8);
@@ -397,10 +429,12 @@ test_token (void)
 	TEST_FEATURE ("with empty token");
 	strcpy (buf, " wibble");
 	pos = 0;
+	len = 0;
 	ret = nih_config_token (buf, strlen (buf), &pos, NULL,
-				NULL, " ", FALSE);
+				NULL, " ", FALSE, &len);
 
 	TEST_EQ (ret, 0);
+	TEST_EQ (len, 0);
 	TEST_EQ (pos, 0);
 }
 

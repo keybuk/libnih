@@ -115,9 +115,10 @@ NIH_BEGIN_EXTERN
 int       nih_config_has_token       (const char *file, size_t len,
 				      size_t *pos, size_t *lineno);
 
-ssize_t   nih_config_token           (const char *file, size_t len,
+int       nih_config_token           (const char *file, size_t len,
 				      size_t *pos, size_t *lineno, char *dest,
-				      const char *delim, int dequote)
+				      const char *delim, int dequote,
+				      size_t *toklen)
 	__attribute__ ((warn_unused_result));
 char *    nih_config_next_token      (const void *parent, const char *file,
 				      size_t len, size_t *pos, size_t *lineno,

@@ -30,6 +30,7 @@
 
 /**
  * NihFileFilter:
+ * @data: data pointer,
  * @path: path to file.
  *
  * A file filter is a function that can be called to determine whether
@@ -37,7 +38,7 @@
  *
  * Returns: TRUE if the path should be ignored, FALSE otherwise.
  **/
-typedef int (*NihFileFilter) (const char *path);
+typedef int (*NihFileFilter) (void *data, const char *path);
 
 /**
  * NihFileVisitor:
@@ -87,7 +88,7 @@ int   nih_file_is_backup    (const char *path);
 int   nih_file_is_swap      (const char *path);
 int   nih_file_is_rcs       (const char *path);
 int   nih_file_is_packaging (const char *path);
-int   nih_file_ignore       (const char *path);
+int   nih_file_ignore       (void *data, const char *path);
 
 int   nih_dir_walk          (const char *path, NihFileFilter filter,
 			     NihFileVisitor visitor, NihFileErrorHandler error,

@@ -62,7 +62,8 @@ typedef struct nih_dir_entry {
 
 
 /* Prototypes for static functions */
-static char **nih_dir_walk_scan  (const char *path, NihFileFilter filter)
+static char **nih_dir_walk_scan  (const char *path, NihFileFilter filter,
+				  void *data)
 	__attribute__ ((warn_unused_result, malloc));
 static int    nih_dir_walk_visit (const char *dirname, NihList *dirs,
 				  const char *path, NihFileFilter filter,
@@ -380,6 +381,7 @@ nih_file_is_packaging (const char *path)
 
 /**
  * nih_file_ignore:
+ * @data: data pointer,
  * @path: path to check.
  *
  * Determines whether @path should normally be ignored when walking a
@@ -390,7 +392,8 @@ nih_file_is_packaging (const char *path)
  * Returns: TRUE if it should be ignored, FALSE otherwise.
  **/
 int
-nih_file_ignore (const char *path)
+nih_file_ignore (void       *data,
+		 const char *path)
 {
 	if (nih_file_is_hidden (path))
 		return TRUE;
@@ -453,7 +456,7 @@ nih_dir_walk (const char          *path,
 	nih_assert (path != NULL);
 	nih_assert (visitor != NULL);
 
-	paths = nih_dir_walk_scan (path, filter);
+	paths = nih_dir_walk_scan (path, filter, data);
 	if (! paths)
 		return -1;
 
@@ -486,7 +489,8 @@ nih_dir_walk (const char          *path,
 /**
  * nih_dir_walk_scan:
  * @path: path to scan,
- * @filter: path filter.
+ * @filter: path filter,
+ * @data: data to pass to @filter.
  *
  * Reads the list of files in @path, removing ".", ".." and any for which
  * @filter return TRUE.
@@ -496,7 +500,8 @@ nih_dir_walk (const char          *path,
  **/
 static char **
 nih_dir_walk_scan (const char    *path,
-		   NihFileFilter  filter)
+		   NihFileFilter  filter,
+		   void          *data)
 {
 	DIR            *dir;
 	struct dirent  *ent;
@@ -523,7 +528,7 @@ nih_dir_walk_scan (const char    *path,
 		NIH_MUST (subpath = nih_sprintf (paths, "%s/%s",
 						 path, ent->d_name));
 
-		if (filter && filter (subpath)) {
+		if (filter && filter (data, subpath)) {
 			nih_free (subpath);
 			continue;
 		}
@@ -612,7 +617,7 @@ nih_dir_walk_visit (const char          *dirname,
 		}
 
 		/* Grab the directory contents */
-		paths = nih_dir_walk_scan (path, filter);
+		paths = nih_dir_walk_scan (path, filter, data);
 		if (! paths)
 			goto error;
 

@@ -533,42 +533,42 @@ test_ignore (void)
 
 	/* Check that a hidden file is to be ignored. */
 	TEST_FEATURE ("with hidden file");
-	ret = nih_file_ignore (".foo");
+	ret = nih_file_ignore (NULL, ".foo");
 
 	TEST_TRUE (ret);
 
 
 	/* Check that a backup file is to be ignored. */
 	TEST_FEATURE ("with backup file");
-	ret = nih_file_ignore ("foo~");
+	ret = nih_file_ignore (NULL, "foo~");
 
 	TEST_TRUE (ret);
 
 
 	/* Check that a swap file is to be ignored. */
 	TEST_FEATURE ("with swap file");
-	ret = nih_file_ignore ("foo.swp");
+	ret = nih_file_ignore (NULL, "foo.swp");
 
 	TEST_TRUE (ret);
 
 
 	/* Check that an RCS file is to be ignored. */
 	TEST_FEATURE ("with rcs file");
-	ret = nih_file_ignore ("CVS");
+	ret = nih_file_ignore (NULL, "CVS");
 
 	TEST_TRUE (ret);
 
 
 	/* Check that a packaging file is to be ignored. */
 	TEST_FEATURE ("with packaging file");
-	ret = nih_file_ignore ("foo.dpkg-new");
+	ret = nih_file_ignore (NULL, "foo.dpkg-new");
 
 	TEST_TRUE (ret);
 
 
 	/* Check that an ordinary file isn't ignored. */
 	TEST_FEATURE ("with ordinary file");
-	ret = nih_file_ignore ("foo.txt");
+	ret = nih_file_ignore (NULL, "foo.txt");
 
 	TEST_FALSE (ret);
 }
@@ -646,7 +646,8 @@ my_error_handler (void        *data,
 
 
 static int
-my_filter (const char *path)
+my_filter (void       *data,
+	   const char *path)
 {
 	char *slash;
 

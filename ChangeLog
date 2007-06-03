@@ -1,3 +1,15 @@
+2007-06-03  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/file.h (NihFileFilter): add missing data pointer to definition.
+	* nih/file.c (nih_dir_walk_scan): Take the data pointer and pass it
+	to the filter function.
+	(nih_dir_walk, nih_dir_walk_visit): Pass data pointer to scan function.
+	(nih_file_ignore): Accept and ignore a data pointer.
+	* nih/tests/test_file.c (my_filter): Add data pointer.
+	(test_ignore): Pass NULL for data pointer.
+	* nih/watch.c (nih_watch_handle): Pass data to filter function.
+	* nih/tests/test_watch.c (my_filter): Add data pointer.
+
 2007-05-27  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/config.c (nih_config_parse): Since we've elimated all of the

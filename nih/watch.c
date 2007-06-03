@@ -496,7 +496,7 @@ nih_watch_handle (NihWatch       *watch,
 	NIH_MUST (path = nih_sprintf (watch, "%s/%s", handle->path, name));
 
 	/* Check the filter */
-	if (watch->filter && watch->filter (path))
+	if (watch->filter && watch->filter (watch->data, path))
 		goto finish;
 
 	/* Handle it differently depending on the events mask */

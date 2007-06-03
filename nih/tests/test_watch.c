@@ -45,7 +45,8 @@
 
 
 static int
-my_filter (const char *path)
+my_filter (void       *data,
+	   const char *path)
 {
 	char *slash;
 

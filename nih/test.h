@@ -723,4 +723,34 @@ _test_allocator (void   *ptr,
 		TEST_FAILED ("list %p (%s) empty, expected multiple members", \
 			     (_list), #_list)
 
+
+/**
+ * TEST_HASH_EMPTY:
+ * @_hash: hash table.
+ *
+ * Check that the hash table @_hash is empty.
+ **/
+#define TEST_HASH_EMPTY(_hash) \
+	for (size_t _hash_i = 0; _hash_i < (_hash)->size; _hash_i++) \
+		if (! NIH_LIST_EMPTY (&(_hash)->bins[_hash_i])) \
+			TEST_FAILED ("hash %p (%s) not empty as expected", \
+				     (_hash), #_hash)
+
+/**
+ * TEST_HASH_NOT_EMPTY:
+ * @_list: entry in list.
+ *
+ * Check that the hash table @_hash is not empty.
+ **/
+#define TEST_HASH_NOT_EMPTY(_hash) \
+	do { \
+		int _hash_empty = 1; \
+		for (size_t _hash_i = 0; _hash_i < (_hash)->size; _hash_i++) \
+			if (! NIH_LIST_EMPTY (&(_hash)->bins[_hash_i])) \
+				_hash_empty = 0; \
+		if (_hash_empty) \
+			TEST_FAILED ("hash %p (%s) empty, expected multiple members", \
+				     (_hash), #_hash) \
+	} while (0)
+
 #endif /* NIH_TEST_H */

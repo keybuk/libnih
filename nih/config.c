@@ -838,6 +838,73 @@ finish:
 }
 
 /**
+ * nih_config_skip_block:
+ * @file: file or string to parse,
+ * @len: length of @file,
+ * @pos: offset within @file,
+ * @lineno: line number,
+ * @type: block identifier,
+ * @endpos: pointer to end of block.
+ *
+ * Skips over a block of text from @file, stopping when the phrase
+ * "end @type" is encountered without any quotes or blackslash escaping
+ * within it.
+ *
+ * @file may be a memory mapped file, in which case @pos should be given
+ * as the offset within and @len should be the length of the file as a
+ * whole.
+ *
+ * If @pos is given then it will be used as the offset within @file to
+ * begin (otherwise the start is assumed), and will be updated to point
+ * past the end of the block and block marker or the end of the file.
+ *
+ * Either @file or @pos should point to the start of the block, after the
+ * opening stanza, rather than the start of the stanza that opens it.
+ *
+ * If @lineno is given it will be incremented each time a new line is
+ * discovered in the file.
+ *
+ * @endpos will be set to the end of the block and the start of the block
+ * marker, this is useful for determining the length of the block skipped,
+ * to parse it for example.
+ *
+ * Returns: zero on success, negative value on raised error.
+ **/
+int
+nih_config_skip_block (const char *file,
+		       size_t      len,
+		       size_t     *pos,
+		       size_t     *lineno,
+		       const char *type,
+		       size_t     *endpos)
+{
+	size_t p;
+	int    ret = 0;
+
+	nih_assert (file != NULL);
+	nih_assert (type != NULL);
+
+	p = (pos ? *pos : 0);
+
+	while (! nih_config_block_end (file, len, &p, lineno, type, endpos)) {
+		nih_config_next_line (file, len, &p, lineno);
+
+		if (p >= len) {
+			nih_error_raise (NIH_CONFIG_UNTERMINATED_BLOCK,
+					 _(NIH_CONFIG_UNTERMINATED_BLOCK_STR));
+			ret = -1;
+			goto finish;
+		}
+	}
+
+finish:
+	if (pos)
+		*pos = p;
+
+	return ret;
+}
+
+/**
  * nih_config_block_end:
  * @file: file or string to parse,
  * @len: length of @file,

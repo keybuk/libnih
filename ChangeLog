@@ -1,3 +1,10 @@
+2007-06-11  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/config.c (nih_config_skip_block): Simple function to skip over
+	a block inline without parsing it into a string.
+	* nih/config.h: Add prototype.
+	* nih/tests/test_config.c (test_skip_block): Test the new function.
+
 2007-06-10  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/test.h (TEST_HASH_EMPTY, TEST_HASH_NOT_EMPTY): Add some

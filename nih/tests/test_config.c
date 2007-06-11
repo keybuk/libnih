@@ -2098,6 +2098,144 @@ test_parse_block (void)
 	}
 }
 
+void
+test_skip_block (void)
+{
+	char      buf[1024];
+	int       ret;
+	size_t    pos, lineno, endpos;
+	NihError *err;
+
+	TEST_FUNCTION ("nih_config_skip_block");
+	program_name = "test";
+
+
+	/* Check that we can find the end of a simple block.  pos should be
+	 * updated to point past the block, and the returned endpos should
+	 * point at the end of the block itself.
+	 */
+	TEST_FEATURE ("with simple block");
+	strcpy (buf, "this is\na test\nend foo\nblah\n");
+	pos = 0;
+
+	ret = nih_config_skip_block (buf, strlen (buf), &pos, NULL,
+				     "foo", &endpos);
+
+	TEST_EQ (ret, 0);
+	TEST_EQ (pos, 23);
+	TEST_EQ (endpos, 15);
+
+
+	/* Check that the line number is incremented for each line that we
+	 * discover in the block, including the terminating line.
+	 */
+	TEST_FEATURE ("with line number set");
+	pos = 0;
+	lineno = 2;
+
+	ret = nih_config_skip_block (buf, strlen (buf), &pos, &lineno,
+				     "foo", &endpos);
+
+	TEST_EQ (ret, 0);
+	TEST_EQ (pos, 23);
+	TEST_EQ (endpos, 15);
+	TEST_EQ (lineno, 5);
+
+
+	/* Check that we can find the end of a block that ends in a terminator
+	 * with extraneous whitespace around the words.
+	 */
+	TEST_FEATURE ("with whitespace in terminator");
+	strcpy (buf, "this is\na test\n  end \t foo  \nblah\n");
+	pos = 0;
+
+	ret = nih_config_skip_block (buf, strlen (buf), &pos, NULL,
+				     "foo", &endpos);
+
+	TEST_EQ (ret, 0);
+	TEST_EQ (pos, 29);
+	TEST_EQ (endpos, 15);
+
+
+	/* Check that we can find the end of a block that ends in a
+	 * terminator which is at the end of the file.
+	 */
+	TEST_FEATURE ("with terminator at end of file");
+	strcpy (buf, "this is\na test\nend foo");
+	pos = 0;
+
+	ret = nih_config_skip_block (buf, strlen (buf), &pos, NULL,
+				     "foo", &endpos);
+
+	TEST_EQ (ret, 0);
+	TEST_EQ (pos, 22);
+	TEST_EQ (endpos, 15);
+
+
+	/* Check that we can find the end of a block that ends in a
+	 * terminator which has a comment following it.
+	 */
+	TEST_FEATURE ("with terminator and comment");
+	strcpy (buf, "this is\na test\nend foo # comment\ntest\n");
+	pos = 0;
+
+	ret = nih_config_skip_block (buf, strlen (buf), &pos, NULL,
+				     "foo", &endpos);
+
+	TEST_EQ (ret, 0);
+	TEST_EQ (pos, 33);
+	TEST_EQ (endpos, 15);
+
+
+	/* Check that we can find the end of a block that ends in a
+	 * terminator which has a comment and then the end of file.
+	 */
+	TEST_FEATURE ("with terminator and comment at end of file");
+	strcpy (buf, "this is\na test\nend foo # comment");
+	pos = 0;
+
+	ret = nih_config_skip_block (buf, strlen (buf), &pos, NULL,
+				     "foo", &endpos);
+
+	TEST_EQ (ret, 0);
+	TEST_EQ (pos, 32);
+	TEST_EQ (endpos, 15);
+
+
+	/* Check that various bogus forms of terminator are ignored.
+	 */
+	TEST_FEATURE ("with various things that aren't terminators");
+	strcpy (buf, "endfoo\nend a\nend fooish\nend foo\ntest\n");
+	pos = 0;
+
+	ret = nih_config_skip_block (buf, strlen (buf), &pos, NULL,
+				     "foo", &endpos);
+
+	TEST_EQ (ret, 0);
+	TEST_EQ (pos, 32);
+	TEST_EQ (endpos, 24);
+
+
+	/* Check that reaching the end of the file without finding the block
+	 * terminator causes an error to be raised and NULL to be returned.
+	 */
+	TEST_FEATURE ("with no terminator before end of file");
+	strcpy (buf, "this is\na test\n");
+	pos = 0;
+	lineno = 2;
+
+	ret = nih_config_skip_block (buf, strlen (buf), &pos, &lineno,
+				     "foo", &endpos);
+
+	TEST_LT (ret, 0);
+	TEST_EQ (pos, 15);
+	TEST_EQ (lineno, 4);
+
+	err = nih_error_get ();
+	TEST_EQ (err->number, NIH_CONFIG_UNTERMINATED_BLOCK);
+	nih_free (err);
+}
+
 
 static int handler_called = 0;
 static void *last_data = NULL;
@@ -2680,6 +2818,7 @@ main (int   argc,
 	test_parse_args ();
 	test_parse_command ();
 	test_parse_block ();
+	test_skip_block ();
 	test_parse_stanza ();
 	test_parse_file ();
 	test_parse ();

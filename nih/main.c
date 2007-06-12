@@ -319,16 +319,30 @@ nih_main_daemonise (void)
 		nih_return_system_error (-1);
 	} else if (pid > 0) {
 		FILE *pidfile;
-		char *filename;
+		char *filename, *tmpname;
 
 		umask (022);
 
+		/* Write a pid file named after the program into /var/run.
+		 * Try very hard to provide a "if the pid file exists, then
+		 * the pid can be read" contract.
+		 */
+		NIH_MUST (tmpname = nih_sprintf (NULL, "%s/.%s.pid.tmp",
+						 VAR_RUN, program_name));
 		NIH_MUST (filename = nih_sprintf (NULL, "%s/%s.pid",
 						  VAR_RUN, program_name));
-		pidfile = fopen (filename, "w");
+
+		pidfile = fopen (tmpname, "w");
 		if (pidfile) {
-			fprintf (pidfile, "%d\n", pid);
-			fclose (pidfile);
+			if ((fprintf (pidfile, "%d\n", pid) > 0)
+			    && (fflush (pidfile) == 0)
+			    && (fsync (fileno (pidfile)) == 0)
+			    && (fclose (pidfile) == 0)) {
+				rename (tmpname, filename);
+			} else {
+				fclose (pidfile);
+				unlink (tmpname);
+			}
 		}
 
 		exit (0);

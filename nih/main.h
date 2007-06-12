@@ -121,6 +121,8 @@ void             nih_main_version        (void);
 
 int              nih_main_daemonise      (void)
 	__attribute__ ((warn_unused_result));
+int              nih_main_pidfile        (pid_t pid)
+	__attribute__ ((warn_unused_result));
 
 int              nih_main_loop           (void);
 void             nih_main_loop_interrupt (void);

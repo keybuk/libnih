@@ -1,5 +1,10 @@
 2007-06-12  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/main.c (nih_main_daemonise): Cut the pid file writing out
+	(nih_main_pidfile): and place it into its own function, since we
+	seem to use this elsewhere too.
+	* nih/main.h: add prototype.
+
 	* nih/main.c (nih_main_daemonise): Don't just write the pid file
 	directly, and hope it works.  Write to a temporary file, flush and
 	sync it, then rename to the real filename.  This provides a "if the

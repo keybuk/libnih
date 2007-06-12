@@ -318,32 +318,8 @@ nih_main_daemonise (void)
 	if (pid < 0) {
 		nih_return_system_error (-1);
 	} else if (pid > 0) {
-		FILE *pidfile;
-		char *filename, *tmpname;
-
-		umask (022);
-
-		/* Write a pid file named after the program into /var/run.
-		 * Try very hard to provide a "if the pid file exists, then
-		 * the pid can be read" contract.
-		 */
-		NIH_MUST (tmpname = nih_sprintf (NULL, "%s/.%s.pid.tmp",
-						 VAR_RUN, program_name));
-		NIH_MUST (filename = nih_sprintf (NULL, "%s/%s.pid",
-						  VAR_RUN, program_name));
-
-		pidfile = fopen (tmpname, "w");
-		if (pidfile) {
-			if ((fprintf (pidfile, "%d\n", pid) > 0)
-			    && (fflush (pidfile) == 0)
-			    && (fsync (fileno (pidfile)) == 0)
-			    && (fclose (pidfile) == 0)) {
-				rename (tmpname, filename);
-			} else {
-				fclose (pidfile);
-				unlink (tmpname);
-			}
-		}
+		if (nih_main_pidfile (pid) < 0)
+			;
 
 		exit (0);
 	}
@@ -364,6 +340,59 @@ nih_main_daemonise (void)
 	dup (fd);
 
 	return 0;
+}
+
+/**
+ * nih_main_pidfile:
+ * @pid: pid to be written.
+ *
+ * Writes the given @pid to a file in the /var/run directory named after
+ * the program name.
+ *
+ * The write is performed in such a way that at the point the file exists,
+ * the pid can be read from it.
+ *
+ * Returns: zero on success, negative value on raised error.
+ **/
+int
+nih_main_pidfile (pid_t pid)
+{
+	FILE   *pidfile;
+	char   *filename, *tmpname;
+	mode_t  oldmask;
+	int     ret = 0;
+
+	/* Place the pid in /var/run and name it after the process */
+	NIH_MUST (tmpname = nih_sprintf (NULL, "%s/.%s.pid.tmp",
+					 VAR_RUN, program_name));
+	NIH_MUST (filename = nih_sprintf (NULL, "%s/%s.pid",
+					  VAR_RUN, program_name));
+
+	oldmask = umask (022);
+
+	/* Write the pid file as atomically as we can */
+	pidfile = fopen (tmpname, "w");
+	if (pidfile) {
+		if ((fprintf (pidfile, "%d\n", pid) > 0)
+		    && (fflush (pidfile) == 0)
+		    && (fsync (fileno (pidfile)) == 0)
+		    && (fclose (pidfile) == 0)) {
+			rename (tmpname, filename);
+		} else {
+			nih_error_raise_system ();
+
+			fclose (pidfile);
+			unlink (tmpname);
+			ret = -1;
+		}
+	}
+
+	umask (oldmask);
+
+	nih_free (tmpname);
+	nih_free (filename);
+
+	return ret;
 }
 
 

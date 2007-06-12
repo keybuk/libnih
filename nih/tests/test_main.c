@@ -22,6 +22,7 @@
 #include <nih/test.h>
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 
 #include <stdio.h>
@@ -33,6 +34,7 @@
 #include <nih/list.h>
 #include <nih/main.h>
 #include <nih/timer.h>
+#include <nih/error.h>
 
 
 void
@@ -267,6 +269,168 @@ test_daemonise (void)
 }
 
 
+void
+test_set_pidfile (void)
+{
+	const char *filename, *ptr;
+
+	TEST_FUNCTION ("nih_main_set_pidfile");
+	program_name = "test";
+
+	/* Check that we can set a pidfile for use, and have the string
+	 * copied and returned.
+	 */
+	TEST_FEATURE ("with new location");
+	filename = "/path/to/pid";
+	nih_main_set_pidfile (filename);
+
+	ptr = nih_main_get_pidfile ();
+	TEST_EQ_STR (ptr, filename);
+	TEST_NE_P (ptr, filename);
+
+
+	/* Check that we can pass NULL to have the default location set
+	 * instead.
+	 */
+	TEST_FEATURE ("with default location");
+	nih_main_set_pidfile (NULL);
+
+	ptr = nih_main_get_pidfile ();
+	TEST_EQ_STR (ptr, "/var/run/test.pid");
+
+
+	nih_main_set_pidfile (NULL);
+}
+
+void
+test_read_pidfile (void)
+{
+	FILE *f;
+	char  filename[PATH_MAX];
+
+	TEST_FUNCTION ("nih_main_read_pidfile");
+	TEST_FILENAME (filename);
+	nih_main_set_pidfile (filename);
+
+	/* Check that reading from a valid pid file will return the pid
+	 * stored there.
+	 */
+	TEST_FEATURE ("with valid pid file");
+	f = fopen (filename, "w");
+	fprintf (f, "1234\n");
+	fclose (f);
+
+	TEST_EQ (nih_main_read_pidfile (), 1234);
+
+
+	/* Check that reading from a pid file without a newline will still
+	 * return the pid stored there.
+	 */
+	TEST_FEATURE ("with no newline in pid file");
+	f = fopen (filename, "w");
+	fprintf (f, "1234");
+	fclose (f);
+
+	TEST_EQ (nih_main_read_pidfile (), 1234);
+
+
+	/* Check that reading from an invalid pid file returns -1. */
+	TEST_FEATURE ("with invalid pid file");
+	f = fopen (filename, "w");
+	fprintf (f, "foo\n1234\n");
+	fclose (f);
+
+	TEST_EQ (nih_main_read_pidfile (), -1);
+
+
+	/* Check that reading from a non-existant pid file returns -1. */
+	TEST_FEATURE ("with non-existant pid file");
+	unlink (filename);
+
+	TEST_EQ (nih_main_read_pidfile (), -1);
+
+
+	nih_main_set_pidfile (NULL);
+}
+
+void
+test_write_pidfile (void)
+{
+	FILE     *f;
+	NihError *err;
+	char      dirname[PATH_MAX], filename[PATH_MAX], tmpname[PATH_MAX];
+	int       ret;
+
+	TEST_FUNCTION ("nih_main_write_pidfile");
+	TEST_FILENAME (dirname);
+	mkdir (dirname, 0755);
+
+	strcpy (filename, dirname);
+	strcat (filename, "/test.pid");
+
+	strcpy (tmpname, dirname);
+	strcat (tmpname, "/.test.pid.tmp");
+
+	nih_main_set_pidfile (filename);
+
+	/* Check that we can write a pid to the file, and have it appaer
+	 * on disk where we expect.
+	 */
+	TEST_FEATURE ("with successful write");
+	ret = nih_main_write_pidfile (1234);
+
+	TEST_EQ (ret, 0);
+
+	f = fopen (filename, "r");
+	TEST_FILE_EQ (f, "1234\n");
+	fclose (f);
+
+
+	/* Check that we can overwrite an existing pid file with a new
+	 * value.
+	 */
+	TEST_FEATURE ("with overwrite of existing pid");
+	ret = nih_main_write_pidfile (5678);
+
+	TEST_EQ (ret, 0);
+
+	f = fopen (filename, "r");
+	TEST_FILE_EQ (f, "5678\n");
+	fclose (f);
+
+
+	/* Check that an error writing to the temporary file does not result
+	 * in the replacement of the existing file and does not result in
+	 * the unlinking of the temporary file.
+	 */
+	TEST_FEATURE ("with failure to write to temporary file");
+	f = fopen (tmpname, "w");
+	fclose (f);
+	chmod (tmpname, 0000);
+
+	ret = nih_main_write_pidfile (1234);
+
+	TEST_LT (ret, 0);
+
+	err = nih_error_get ();
+	TEST_EQ (err->number, EACCES);
+	nih_free (err);
+
+	f = fopen (filename, "r");
+	TEST_FILE_EQ (f, "5678\n");
+	fclose (f);
+
+	TEST_EQ (chmod (tmpname, 0644), 0);
+
+
+	unlink (tmpname);
+	unlink (filename);
+	rmdir (dirname);
+
+	nih_main_set_pidfile (NULL);
+}
+
+
 static int callback_called = 0;
 static void *last_data = NULL;
 
@@ -349,6 +513,9 @@ main (int   argc,
 	test_suggest_help ();
 	test_version ();
 	test_daemonise ();
+	test_set_pidfile ();
+	test_read_pidfile ();
+	test_write_pidfile ();
 	test_main_loop ();
 	test_main_loop_add_func ();
 

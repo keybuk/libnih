@@ -116,6 +116,17 @@ static char *package_string = NULL;
 
 
 /**
+ * pid_file:
+ *
+ * Location of the pid file, or NULL if a reasonable default is to be
+ * assumed.  Can be set using nih_main_set_pidfile(), and is then used by
+ * nih_main_read_pidfile(), nih_main_write_pidfile() and
+ * nih_main_unlink_pidfile().
+ **/
+static char *pid_file = NULL;
+
+
+/**
  * interrupt_pipe:
  *
  * Pipe used for interrupting an active select() call in case a signal
@@ -318,7 +329,7 @@ nih_main_daemonise (void)
 	if (pid < 0) {
 		nih_return_system_error (-1);
 	} else if (pid > 0) {
-		if (nih_main_pidfile (pid) < 0)
+		if (nih_main_write_pidfile (pid) < 0)
 			;
 
 		exit (0);
@@ -342,12 +353,84 @@ nih_main_daemonise (void)
 	return 0;
 }
 
+
 /**
- * nih_main_pidfile:
+ * nih_main_set_pidfile:
+ * @filename: filename to be set.
+ *
+ * Set the location of the process's pid file or NULL to return it to the
+ * default location under /var/run.  @filename must be an absolute path.
+ **/
+void
+nih_main_set_pidfile (const char *filename)
+{
+	if (pid_file)
+		nih_free (pid_file);
+
+	pid_file = NULL;
+
+	if (filename) {
+		nih_assert (filename[0] == '/');
+		NIH_MUST (pid_file = nih_strdup (NULL, filename));
+	}
+}
+
+/**
+ * nih_main_get_pidfile:
+ *
+ * Returns the location of the process's pid file, which may be overridden
+ * by nih_main_set_pidfile().  This is guaranteed to be an absolute path.
+ *
+ * Returns: internal copy of the string.
+ **/
+const char *
+nih_main_get_pidfile (void)
+{
+	nih_assert (program_name != NULL);
+
+	if (! pid_file)
+		NIH_MUST (pid_file = nih_sprintf (NULL, "%s/%s.pid",
+						  VAR_RUN, program_name));
+
+	return pid_file;
+}
+
+/**
+ * nih_main_read_pidfile:
+ *
+ * Reads the pid from the process'd pid file location, which can be set
+ * with nih_main_get_pidfile().
+ *
+ * Returns: pid read or negative value on no available pid.
+ **/
+pid_t
+nih_main_read_pidfile (void)
+{
+	FILE       *pidfile;
+	const char *filename;
+	pid_t       pid;
+
+	filename = nih_main_get_pidfile ();
+
+	pidfile = fopen (filename, "r");
+	if (pidfile) {
+		if (fscanf (pidfile, "%d", &pid) != 1)
+			pid = -1;
+
+		fclose (pidfile);
+	} else {
+		pid = -1;
+	}
+
+	return pid;
+}
+
+/**
+ * nih_main_write_pidfile:
  * @pid: pid to be written.
  *
- * Writes the given @pid to a file in the /var/run directory named after
- * the program name.
+ * Writes the given @pid to the process's pid file location, which can be
+ * set with nih_main_set_pidfile().
  *
  * The write is performed in such a way that at the point the file exists,
  * the pid can be read from it.
@@ -355,42 +438,55 @@ nih_main_daemonise (void)
  * Returns: zero on success, negative value on raised error.
  **/
 int
-nih_main_pidfile (pid_t pid)
+nih_main_write_pidfile (pid_t pid)
 {
-	FILE   *pidfile;
-	char   *filename, *tmpname;
-	mode_t  oldmask;
-	int     ret = 0;
+	FILE       *pidfile;
+	const char *filename, *ptr;
+	char       *tmpname;
+	mode_t      oldmask;
+	int         ret = -1;
 
-	/* Place the pid in /var/run and name it after the process */
-	NIH_MUST (tmpname = nih_sprintf (NULL, "%s/.%s.pid.tmp",
-					 VAR_RUN, program_name));
-	NIH_MUST (filename = nih_sprintf (NULL, "%s/%s.pid",
-					  VAR_RUN, program_name));
+	nih_assert (pid > 0);
+
+	/* Write to a hidden temporary file alongside the pid file.
+	 * The return value is guaranteed to be an absolute path.
+	 */
+	filename = nih_main_get_pidfile ();
+	ptr = strrchr (filename, '/');
+	NIH_MUST (tmpname = nih_sprintf (NULL, "%.*s/.%s.tmp",
+					 ptr - filename, filename, ptr + 1));
 
 	oldmask = umask (022);
 
 	/* Write the pid file as atomically as we can */
 	pidfile = fopen (tmpname, "w");
-	if (pidfile) {
-		if ((fprintf (pidfile, "%d\n", pid) > 0)
-		    && (fflush (pidfile) == 0)
-		    && (fsync (fileno (pidfile)) == 0)
-		    && (fclose (pidfile) == 0)) {
-			rename (tmpname, filename);
-		} else {
-			nih_error_raise_system ();
-
-			fclose (pidfile);
-			unlink (tmpname);
-			ret = -1;
-		}
+	if (! pidfile) {
+		nih_error_raise_system ();
+		goto error;
 	}
+
+	if ((fprintf (pidfile, "%d\n", pid) <= 0)
+	    || (fflush (pidfile) < 0)
+	    || (fsync (fileno (pidfile)) < 0)
+	    || (fclose (pidfile) < 0)) {
+		nih_error_raise_system ();
+		fclose (pidfile);
+		unlink (tmpname);
+		goto error;
+	}
+
+	if (rename (tmpname, filename) < 0) {
+		nih_error_raise_system ();
+		unlink (tmpname);
+		goto error;
+	}
+
+	ret = 0;
+error:
 
 	umask (oldmask);
 
 	nih_free (tmpname);
-	nih_free (filename);
 
 	return ret;
 }

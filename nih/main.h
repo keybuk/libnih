@@ -121,7 +121,11 @@ void             nih_main_version        (void);
 
 int              nih_main_daemonise      (void)
 	__attribute__ ((warn_unused_result));
-int              nih_main_pidfile        (pid_t pid)
+
+void             nih_main_set_pidfile    (const char *filename);
+const char *     nih_main_get_pidfile    (void);
+pid_t            nih_main_read_pidfile   (void);
+int              nih_main_write_pidfile  (pid_t pid)
 	__attribute__ ((warn_unused_result));
 
 int              nih_main_loop           (void);

@@ -491,6 +491,23 @@ error:
 	return ret;
 }
 
+/**
+ * nih_main_unlink_pidfile:
+ *
+ * Removes the process's pid file, which can be set with
+ * nih_main_set_pidfile().
+ *
+ * Errors are ignored, since there's not much you can do about it.
+ **/
+void
+nih_main_unlink_pidfile (void)
+{
+	const char *filename;
+
+	filename = nih_main_get_pidfile ();
+	unlink (filename);
+}
+
 
 /**
  * nih_main_loop_init:

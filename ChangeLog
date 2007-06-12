@@ -1,5 +1,9 @@
 2007-06-12  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/main.c (nih_main_unlink_pidfile): Add for completeness.
+	* nih/main.h: Add prototype.
+	* nih/tests/test_main.c: Use the new function here for testing.
+
 	* nih/main.c (nih_main_pidfile): Rename to nih_main_write_pidfile
 	(nih_main_set_pidfile, nih_main_get_pidfile) 
 	(nih_main_read_pidfile): Add companion functions to set and get the

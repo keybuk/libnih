@@ -127,6 +127,7 @@ const char *     nih_main_get_pidfile    (void);
 pid_t            nih_main_read_pidfile   (void);
 int              nih_main_write_pidfile  (pid_t pid)
 	__attribute__ ((warn_unused_result));
+void             nih_main_unlink_pidfile (void);
 
 int              nih_main_loop           (void);
 void             nih_main_loop_interrupt (void);

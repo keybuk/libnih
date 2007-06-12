@@ -345,7 +345,7 @@ test_read_pidfile (void)
 
 	/* Check that reading from a non-existant pid file returns -1. */
 	TEST_FEATURE ("with non-existant pid file");
-	unlink (filename);
+	nih_main_unlink_pidfile ();
 
 	TEST_EQ (nih_main_read_pidfile (), -1);
 
@@ -423,8 +423,8 @@ test_write_pidfile (void)
 	TEST_EQ (chmod (tmpname, 0644), 0);
 
 
+	nih_main_unlink_pidfile ();
 	unlink (tmpname);
-	unlink (filename);
 	rmdir (dirname);
 
 	nih_main_set_pidfile (NULL);

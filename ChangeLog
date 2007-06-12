@@ -1,5 +1,7 @@
 2007-06-12  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/test.h (TEST_HASH_NOT_EMPTY): Add missing ;
+
 	* nih/main.c (nih_main_unlink_pidfile): Add for completeness.
 	* nih/main.h: Add prototype.
 	* nih/tests/test_main.c: Use the new function here for testing.

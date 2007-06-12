@@ -750,7 +750,7 @@ _test_allocator (void   *ptr,
 				_hash_empty = 0; \
 		if (_hash_empty) \
 			TEST_FAILED ("hash %p (%s) empty, expected multiple members", \
-				     (_hash), #_hash) \
+				     (_hash), #_hash); \
 	} while (0)
 
 #endif /* NIH_TEST_H */

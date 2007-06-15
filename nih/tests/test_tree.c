@@ -393,13 +393,29 @@ test_free (void)
 }
 
 
+/*
+ * For the following tests, we use a specific tree as detailed below:
+ *
+ *                 a
+ *               /   \
+ *             /       \
+ *           b           c
+ *         /           /   \
+ *       d           e       f
+ *      /             \     / \
+ *     g               h   i   k
+ *   m'              p'
+ *
+ * We place each node in order, with node 'a' implicitly placed as the root.
+ */
+
 void
 test_next (void)
 {
 	NihTree *node[13], *ptr;
 	int      i;
 
-	/* Check that we can iterate a reasonably complex tree in-order,
+	/* Check that we can in-order iterate a reasonably complex tree,
 	 * and that nih_tree_next returns the right pointer in each case
 	 * until it finally returns NULL.
 	 */
@@ -407,17 +423,18 @@ test_next (void)
 	for (i = 0; i < 12; i++)
 		node[i] = nih_tree_new (NULL);
 
-	nih_tree_add (node[4], node[3], NIH_TREE_LEFT);
-	nih_tree_add (node[4], node[8], NIH_TREE_RIGHT);
-	nih_tree_add (node[3], node[2], NIH_TREE_LEFT);
-	nih_tree_add (node[8], node[5], NIH_TREE_LEFT);
-	nih_tree_add (node[8], node[10], NIH_TREE_RIGHT);
-	nih_tree_add (node[2], node[1], NIH_TREE_LEFT);
-	nih_tree_add (node[5], node[7], NIH_TREE_RIGHT);
-	nih_tree_add (node[10], node[11], NIH_TREE_RIGHT);
-	nih_tree_add (node[1], node[0], NIH_TREE_LEFT);
-	nih_tree_add (node[7], node[6], NIH_TREE_LEFT);
-	nih_tree_add (node[10], node[9], NIH_TREE_LEFT);
+	/*                                                         a = 4  */
+	nih_tree_add (node[4], node[3], NIH_TREE_LEFT);		/* b = 3  */
+	nih_tree_add (node[4], node[8], NIH_TREE_RIGHT);	/* c = 8  */
+	nih_tree_add (node[3], node[2], NIH_TREE_LEFT);		/* d = 2  */
+	nih_tree_add (node[8], node[5], NIH_TREE_LEFT);		/* e = 5  */
+	nih_tree_add (node[8], node[10], NIH_TREE_RIGHT);	/* f = 10 */
+	nih_tree_add (node[2], node[1], NIH_TREE_LEFT);		/* g = 1  */
+	nih_tree_add (node[5], node[7], NIH_TREE_RIGHT);	/* h = 7  */
+	nih_tree_add (node[10], node[9], NIH_TREE_LEFT);	/* i = 9  */
+	nih_tree_add (node[10], node[11], NIH_TREE_RIGHT);	/* k = 11 */
+	nih_tree_add (node[1], node[0], NIH_TREE_LEFT);		/* m = 0  */
+	nih_tree_add (node[7], node[6], NIH_TREE_LEFT);		/* p = 6  */
 
 	node[12] = NULL;
 
@@ -429,11 +446,11 @@ test_next (void)
 			TEST_FAILED ("wrong number of iterations, expected %d got %d",
 				     13, i + 1);
 
-		ptr = nih_tree_next (node[0], ptr);
+		ptr = nih_tree_next (node[4], ptr);
 
 		if (ptr != node[i])
-			TEST_FAILED ("wrong tree node, expected %p got %p",
-				     node[i], ptr);
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, node[i], ptr);
 
 		i++;
 	} while (ptr);
@@ -448,7 +465,7 @@ test_foreach (void)
 	NihTree *node[12];
 	int      i;
 
-	/* Check that we can iterate a reasonably complex tree in-order,
+	/* Check that we can in-order iterate a reasonably complex tree,
 	 * and that NIH_TREE_FOREACH sets the iterator to the right nodes
 	 * in turn.
 	 */
@@ -456,27 +473,28 @@ test_foreach (void)
 	for (i = 0; i < 12; i++)
 		node[i] = nih_tree_new (NULL);
 
-	nih_tree_add (node[4], node[3], NIH_TREE_LEFT);
-	nih_tree_add (node[4], node[8], NIH_TREE_RIGHT);
-	nih_tree_add (node[3], node[2], NIH_TREE_LEFT);
-	nih_tree_add (node[8], node[5], NIH_TREE_LEFT);
-	nih_tree_add (node[8], node[10], NIH_TREE_RIGHT);
-	nih_tree_add (node[2], node[1], NIH_TREE_LEFT);
-	nih_tree_add (node[5], node[7], NIH_TREE_RIGHT);
-	nih_tree_add (node[10], node[11], NIH_TREE_RIGHT);
-	nih_tree_add (node[1], node[0], NIH_TREE_LEFT);
-	nih_tree_add (node[7], node[6], NIH_TREE_LEFT);
-	nih_tree_add (node[10], node[9], NIH_TREE_LEFT);
+	/*                                                         a = 4  */
+	nih_tree_add (node[4], node[3], NIH_TREE_LEFT);		/* b = 3  */
+	nih_tree_add (node[4], node[8], NIH_TREE_RIGHT);	/* c = 8  */
+	nih_tree_add (node[3], node[2], NIH_TREE_LEFT);		/* d = 2  */
+	nih_tree_add (node[8], node[5], NIH_TREE_LEFT);		/* e = 5  */
+	nih_tree_add (node[8], node[10], NIH_TREE_RIGHT);	/* f = 10 */
+	nih_tree_add (node[2], node[1], NIH_TREE_LEFT);		/* g = 1  */
+	nih_tree_add (node[5], node[7], NIH_TREE_RIGHT);	/* h = 7  */
+	nih_tree_add (node[10], node[9], NIH_TREE_LEFT);	/* i = 9  */
+	nih_tree_add (node[10], node[11], NIH_TREE_RIGHT);	/* k = 11 */
+	nih_tree_add (node[1], node[0], NIH_TREE_LEFT);		/* m = 0  */
+	nih_tree_add (node[7], node[6], NIH_TREE_LEFT);		/* p = 6  */
 
 	i = 0;
-	NIH_TREE_FOREACH (node[0], iter) {
+	NIH_TREE_FOREACH (node[4], iter) {
 		if (i > 11)
 			TEST_FAILED ("wrong number of iterations, expected %d got %d",
 				     12, i + 1);
 
 		if (iter != node[i])
-			TEST_FAILED ("wrong tree node, expected %p got %p",
-				     node[i], iter);
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, node[i], iter);
 
 		i++;
 	}
@@ -491,25 +509,26 @@ test_prev (void)
 	NihTree *node[13], *ptr;
 	int      i;
 
-	/* Check that we can reverse iterate a reasonably complex tree
-	 * in-order, and that nih_tree_prev returns the right pointer in
+	/* Check that we can reverse in-order iterate a reasonably complex
+	 * tree, and that nih_tree_prev returns the right pointer in
 	 * each case until it finally returns NULL.
 	 */
 	TEST_FUNCTION ("nih_tree_prev");
 	for (i = 0; i < 12; i++)
 		node[i] = nih_tree_new (NULL);
 
-	nih_tree_add (node[7], node[8], NIH_TREE_LEFT);
-	nih_tree_add (node[7], node[3], NIH_TREE_RIGHT);
-	nih_tree_add (node[8], node[9], NIH_TREE_LEFT);
-	nih_tree_add (node[3], node[6], NIH_TREE_LEFT);
-	nih_tree_add (node[3], node[1], NIH_TREE_RIGHT);
-	nih_tree_add (node[9], node[10], NIH_TREE_LEFT);
-	nih_tree_add (node[6], node[4], NIH_TREE_RIGHT);
-	nih_tree_add (node[1], node[0], NIH_TREE_RIGHT);
-	nih_tree_add (node[10], node[11], NIH_TREE_LEFT);
-	nih_tree_add (node[4], node[5], NIH_TREE_LEFT);
-	nih_tree_add (node[1], node[2], NIH_TREE_LEFT);
+	/*                                                         a = 7  */
+	nih_tree_add (node[7], node[8], NIH_TREE_LEFT);		/* b = 8  */
+	nih_tree_add (node[7], node[3], NIH_TREE_RIGHT);	/* c = 3  */
+	nih_tree_add (node[8], node[9], NIH_TREE_LEFT);		/* d = 9  */
+	nih_tree_add (node[3], node[6], NIH_TREE_LEFT);		/* e = 6  */
+	nih_tree_add (node[3], node[1], NIH_TREE_RIGHT);	/* f = 1  */
+	nih_tree_add (node[9], node[10], NIH_TREE_LEFT);	/* g = 10 */
+	nih_tree_add (node[6], node[4], NIH_TREE_RIGHT);	/* h = 4  */
+	nih_tree_add (node[1], node[2], NIH_TREE_LEFT);		/* i = 2  */
+	nih_tree_add (node[1], node[0], NIH_TREE_RIGHT);	/* k = 0  */
+	nih_tree_add (node[10], node[11], NIH_TREE_LEFT);	/* m = 11 */
+	nih_tree_add (node[4], node[5], NIH_TREE_LEFT);		/* p = 5  */
 
 	node[12] = NULL;
 
@@ -521,11 +540,301 @@ test_prev (void)
 			TEST_FAILED ("wrong number of iterations, expected %d got %d",
 				     13, i + 1);
 
-		ptr = nih_tree_prev (node[0], ptr);
+		ptr = nih_tree_prev (node[7], ptr);
 
 		if (ptr != node[i])
-			TEST_FAILED ("wrong tree node, expected %p got %p",
-				     node[i], ptr);
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, node[i], ptr);
+
+		i++;
+	} while (ptr);
+
+	for (i = 0; i < 12; i++)
+		nih_free (node[i]);
+}
+
+
+void
+test_next_pre (void)
+{
+	NihTree *node[13], *ptr;
+	int      i;
+
+	/* Check that we can pre-order iterate a reasonably complex tree,
+	 * and that nih_tree_next_pre returns the right pointer in each case
+	 * until it finally returns NULL.
+	 */
+	TEST_FUNCTION ("nih_tree_next_pre");
+	for (i = 0; i < 12; i++)
+		node[i] = nih_tree_new (NULL);
+
+	/*                                                         a = 0  */
+	nih_tree_add (node[0], node[1], NIH_TREE_LEFT);		/* b = 1  */
+	nih_tree_add (node[0], node[5], NIH_TREE_RIGHT);	/* c = 5  */
+	nih_tree_add (node[1], node[2], NIH_TREE_LEFT);		/* d = 2  */
+	nih_tree_add (node[5], node[6], NIH_TREE_LEFT);		/* e = 6  */
+	nih_tree_add (node[5], node[9], NIH_TREE_RIGHT);	/* f = 9  */
+	nih_tree_add (node[2], node[3], NIH_TREE_LEFT);		/* g = 3  */
+	nih_tree_add (node[6], node[7], NIH_TREE_RIGHT);	/* h = 7  */
+	nih_tree_add (node[9], node[10], NIH_TREE_LEFT);	/* i = 10 */
+	nih_tree_add (node[9], node[11], NIH_TREE_RIGHT);	/* k = 11 */
+	nih_tree_add (node[3], node[4], NIH_TREE_LEFT);		/* m = 4  */
+	nih_tree_add (node[7], node[8], NIH_TREE_LEFT);		/* p = 8  */
+
+	node[12] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 12)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     13, i + 1);
+
+		ptr = nih_tree_next_pre (node[0], ptr);
+
+		if (ptr != node[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, node[i], ptr);
+
+		i++;
+	} while (ptr);
+
+	for (i = 0; i < 12; i++)
+		nih_free (node[i]);
+}
+
+void
+test_foreach_pre (void)
+{
+	NihTree *node[12];
+	int      i;
+
+	/* Check that we can in-order iterate a reasonably complex tree,
+	 * and that NIH_TREE_FOREACH_PRE sets the iterator to the right nodes
+	 * in turn.
+	 */
+	TEST_FUNCTION ("NIH_TREE_FOREACH_PRE");
+	for (i = 0; i < 12; i++)
+		node[i] = nih_tree_new (NULL);
+
+	/*                                                         a = 0  */
+	nih_tree_add (node[0], node[1], NIH_TREE_LEFT);		/* b = 1  */
+	nih_tree_add (node[0], node[5], NIH_TREE_RIGHT);	/* c = 5  */
+	nih_tree_add (node[1], node[2], NIH_TREE_LEFT);		/* d = 2  */
+	nih_tree_add (node[5], node[6], NIH_TREE_LEFT);		/* e = 6  */
+	nih_tree_add (node[5], node[9], NIH_TREE_RIGHT);	/* f = 9  */
+	nih_tree_add (node[2], node[3], NIH_TREE_LEFT);		/* g = 3  */
+	nih_tree_add (node[6], node[7], NIH_TREE_RIGHT);	/* h = 7  */
+	nih_tree_add (node[9], node[10], NIH_TREE_LEFT);	/* i = 10 */
+	nih_tree_add (node[9], node[11], NIH_TREE_RIGHT);	/* k = 11 */
+	nih_tree_add (node[3], node[4], NIH_TREE_LEFT);		/* m = 4  */
+	nih_tree_add (node[7], node[8], NIH_TREE_LEFT);		/* p = 8  */
+
+	i = 0;
+	NIH_TREE_FOREACH_PRE (node[0], iter) {
+		if (i > 11)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     12, i + 1);
+
+		if (iter != node[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, node[i], iter);
+
+		i++;
+	}
+
+	for (i = 0; i < 12; i++)
+		nih_free (node[i]);
+}
+
+void
+test_prev_pre (void)
+{
+	NihTree *node[13], *ptr;
+	int      i;
+
+	/* Check that we can reverse pre-order iterate a reasonably complex
+	 * tree, and that nih_tree_prev_pre returns the right pointer in each
+	 * case until it finally returns NULL.
+	 */
+	TEST_FUNCTION ("nih_tree_prev_pre");
+	for (i = 0; i < 12; i++)
+		node[i] = nih_tree_new (NULL);
+
+	/*                                                         a = 11 */
+	nih_tree_add (node[11], node[10], NIH_TREE_LEFT);	/* b = 10 */
+	nih_tree_add (node[11], node[6], NIH_TREE_RIGHT);	/* c = 6  */
+	nih_tree_add (node[10], node[9], NIH_TREE_LEFT);	/* d = 9  */
+	nih_tree_add (node[6], node[5], NIH_TREE_LEFT);		/* e = 5  */
+	nih_tree_add (node[6], node[2], NIH_TREE_RIGHT);	/* f = 2  */
+	nih_tree_add (node[9], node[8], NIH_TREE_LEFT);		/* g = 8  */
+	nih_tree_add (node[5], node[4], NIH_TREE_RIGHT);	/* h = 4  */
+	nih_tree_add (node[2], node[1], NIH_TREE_LEFT);		/* i = 1  */
+	nih_tree_add (node[2], node[0], NIH_TREE_RIGHT);	/* k = 0  */
+	nih_tree_add (node[8], node[7], NIH_TREE_LEFT);		/* m = 7  */
+	nih_tree_add (node[4], node[3], NIH_TREE_LEFT);		/* p = 3  */
+
+	node[12] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 12)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     13, i + 1);
+
+		ptr = nih_tree_prev_pre (node[11], ptr);
+
+		if (ptr != node[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, node[i], ptr);
+
+		i++;
+	} while (ptr);
+
+	for (i = 0; i < 12; i++)
+		nih_free (node[i]);
+}
+
+
+void
+test_next_post (void)
+{
+	NihTree *node[13], *ptr;
+	int      i;
+
+	/* Check that we can post-order iterate a reasonably complex tree,
+	 * and that nih_tree_next_post returns the right pointer in each case
+	 * until it finally returns NULL.
+	 */
+	TEST_FUNCTION ("nih_tree_next_post");
+	for (i = 0; i < 12; i++)
+		node[i] = nih_tree_new (NULL);
+
+	/*                                                         a = 11 */
+	nih_tree_add (node[11], node[3], NIH_TREE_LEFT);	/* b = 3  */
+	nih_tree_add (node[11], node[10], NIH_TREE_RIGHT);	/* c = 10 */
+	nih_tree_add (node[3], node[2], NIH_TREE_LEFT);		/* d = 2  */
+	nih_tree_add (node[10], node[6], NIH_TREE_LEFT);	/* e = 6  */
+	nih_tree_add (node[10], node[9], NIH_TREE_RIGHT);	/* f = 9  */
+	nih_tree_add (node[2], node[1], NIH_TREE_LEFT);		/* g = 1  */
+	nih_tree_add (node[6], node[5], NIH_TREE_RIGHT);	/* h = 5  */
+	nih_tree_add (node[9], node[7], NIH_TREE_LEFT);		/* i = 7  */
+	nih_tree_add (node[9], node[8], NIH_TREE_RIGHT);	/* k = 8  */
+	nih_tree_add (node[1], node[0], NIH_TREE_LEFT);		/* m = 0  */
+	nih_tree_add (node[5], node[4], NIH_TREE_LEFT);		/* p = 4  */
+
+	node[12] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 12)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     13, i + 1);
+
+		ptr = nih_tree_next_post (node[11], ptr);
+
+		if (ptr != node[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, node[i], ptr);
+
+		i++;
+	} while (ptr);
+
+	for (i = 0; i < 12; i++)
+		nih_free (node[i]);
+}
+
+void
+test_foreach_post (void)
+{
+	NihTree *node[12];
+	int      i;
+
+	/* Check that we can post-order iterate a reasonably complex tree,
+	 * and that NIH_TREE_FOREACH_POST sets the iterator to the right nodes
+	 * in turn.
+	 */
+	TEST_FUNCTION ("NIH_TREE_FOREACH_POST");
+	for (i = 0; i < 12; i++)
+		node[i] = nih_tree_new (NULL);
+
+	/*                                                         a = 11 */
+	nih_tree_add (node[11], node[3], NIH_TREE_LEFT);	/* b = 3  */
+	nih_tree_add (node[11], node[10], NIH_TREE_RIGHT);	/* c = 10 */
+	nih_tree_add (node[3], node[2], NIH_TREE_LEFT);		/* d = 2  */
+	nih_tree_add (node[10], node[6], NIH_TREE_LEFT);	/* e = 6  */
+	nih_tree_add (node[10], node[9], NIH_TREE_RIGHT);	/* f = 9  */
+	nih_tree_add (node[2], node[1], NIH_TREE_LEFT);		/* g = 1  */
+	nih_tree_add (node[6], node[5], NIH_TREE_RIGHT);	/* h = 5  */
+	nih_tree_add (node[9], node[7], NIH_TREE_LEFT);		/* i = 7  */
+	nih_tree_add (node[9], node[8], NIH_TREE_RIGHT);	/* k = 8  */
+	nih_tree_add (node[1], node[0], NIH_TREE_LEFT);		/* m = 0  */
+	nih_tree_add (node[5], node[4], NIH_TREE_LEFT);		/* p = 4  */
+
+	i = 0;
+	NIH_TREE_FOREACH_POST (node[11], iter) {
+		if (i > 11)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     12, i + 1);
+
+		if (iter != node[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, node[i], iter);
+
+		i++;
+	}
+
+	for (i = 0; i < 12; i++)
+		nih_free (node[i]);
+}
+
+void
+test_prev_post (void)
+{
+	NihTree *node[13], *ptr;
+	int      i;
+
+	/* Check that we can reverse post-order iterate a reasonably complex
+	 * tree, and that nih_tree_prev_post returns the right pointer in each
+	 * case until it finally returns NULL.
+	 */
+	TEST_FUNCTION ("nih_tree_prev_post");
+	for (i = 0; i < 12; i++)
+		node[i] = nih_tree_new (NULL);
+
+	/*                                                         a = 0  */
+	nih_tree_add (node[0], node[8], NIH_TREE_LEFT);		/* b = 8  */
+	nih_tree_add (node[0], node[1], NIH_TREE_RIGHT);	/* c = 1  */
+	nih_tree_add (node[8], node[9], NIH_TREE_LEFT);		/* d = 9  */
+	nih_tree_add (node[1], node[5], NIH_TREE_LEFT);		/* e = 5  */
+	nih_tree_add (node[1], node[2], NIH_TREE_RIGHT);	/* f = 2  */
+	nih_tree_add (node[9], node[10], NIH_TREE_LEFT);	/* g = 10 */
+	nih_tree_add (node[5], node[6], NIH_TREE_RIGHT);	/* h = 6  */
+	nih_tree_add (node[2], node[4], NIH_TREE_LEFT);		/* i = 4  */
+	nih_tree_add (node[2], node[3], NIH_TREE_RIGHT);	/* k = 3  */
+	nih_tree_add (node[10], node[11], NIH_TREE_LEFT);	/* m = 11 */
+	nih_tree_add (node[6], node[7], NIH_TREE_LEFT);		/* p = 7  */
+
+	node[12] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 12)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     13, i + 1);
+
+		ptr = nih_tree_prev_post (node[0], ptr);
+
+		if (ptr != node[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, node[i], ptr);
 
 		i++;
 	} while (ptr);
@@ -549,6 +858,12 @@ main (int   argc,
 	test_next ();
 	test_foreach ();
 	test_prev ();
+	test_next_pre ();
+	test_foreach_pre ();
+	test_prev_pre ();
+	test_next_post ();
+	test_foreach_post ();
+	test_prev_post ();
 
 	return 0;
 }

@@ -67,7 +67,7 @@ typedef struct nih_tree {
  * @tree: root of the tree to iterate,
  * @iter: name of iterator variable.
  *
- * Expands to a for statement that iterates over each node in @tree in-order,
+ * Expands to a for statement that in-order iterates over each node in @tree,
  * setting @iter to each node for the block within the loop.
  *
  * You should not make changes to the structure of the tree while iterating,
@@ -76,6 +76,36 @@ typedef struct nih_tree {
 #define NIH_TREE_FOREACH(tree, iter) \
 	for (NihTree *iter = nih_tree_next ((tree), NULL); iter != NULL; \
 	     iter = nih_tree_next ((tree), iter))
+
+/**
+ * NIH_TREE_FOREACH_PRE:
+ * @tree: root of the tree to iterate,
+ * @iter: name of iterator variable.
+ *
+ * Expands to a for statement that pre-order iterates over each node in @tree,
+ * setting @iter to each node for the block within the loop.
+ *
+ * You should not make changes to the structure of the tree while iterating,
+ * since the order will be relatively unpredictable.
+ **/
+#define NIH_TREE_FOREACH_PRE(tree, iter) \
+	for (NihTree *iter = nih_tree_next_pre ((tree), NULL); iter != NULL; \
+	     iter = nih_tree_next_pre ((tree), iter))
+
+/**
+ * NIH_TREE_FOREACH_POST:
+ * @tree: root of the tree to iterate,
+ * @iter: name of iterator variable.
+ *
+ * Expands to a for statement that post-order iterates over each node in @tree,
+ * setting @iter to each node for the block within the loop.
+ *
+ * You should not make changes to the structure of the tree while iterating,
+ * since the order will be relatively unpredictable.
+ **/
+#define NIH_TREE_FOREACH_POST(tree, iter) \
+	for (NihTree *iter = nih_tree_next_post ((tree), NULL); iter != NULL; \
+	     iter = nih_tree_next_post ((tree), iter))
 
 
 NIH_BEGIN_EXTERN
@@ -94,6 +124,12 @@ int      nih_tree_free       (NihTree *node);
 
 NihTree *nih_tree_next       (NihTree *tree, NihTree *node);
 NihTree *nih_tree_prev       (NihTree *tree, NihTree *node);
+
+NihTree *nih_tree_next_pre   (NihTree *tree, NihTree *node);
+NihTree *nih_tree_prev_pre   (NihTree *tree, NihTree *node);
+
+NihTree *nih_tree_next_post  (NihTree *tree, NihTree *node);
+NihTree *nih_tree_prev_post  (NihTree *tree, NihTree *node);
 
 NIH_END_EXTERN
 

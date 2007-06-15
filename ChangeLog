@@ -1,3 +1,29 @@
+2007-06-15  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/tree.c (nih_tree_next, nih_tree_prev): Minor bug fix, set the
+	previous to the tree's parent when visiting for the first time so that
+	partial	tree iterations might be able to work.  Make algorithm code
+	simpler and more readable.
+	(nih_tree_next_pre, nih_tree_prev_pre): Algorithm for non-recursive
+	pre-order tree iteration, note that unlike the above, these are not
+	symmetrical.
+	(nih_tree_next_post, nih_tree_prev_post): Algorithm for non-recursive
+	post-order tree iteration, note that these aren't symmetrical with
+	each other, but are the symmetrical equivalents of the pre-order
+	functions.
+	* nih/tree.h: Add prototypes for new functions.
+	(NIH_TREE_FOREACH_PRE, NIH_TREE_FOREACH_POST): Add convenience
+	iteration macros for pre-order and post-order iteration.
+	* nih/tests/test_tree.c (test_next, test_foreach, test_prev): Add
+	some documentation for the tree shape, and how we work out the node
+	numbers.  In each case, we were accidentally giving the expected
+	first node (which fortunately always worked); to test this harder,
+	give the root node instead!
+	(test_next_pre, test_foreach_pre, text_prev_pre): Test pre-order
+	tree iteration with the same basic code.
+	(test_next_post, test_foreach_post, text_prev_post): Test post-order
+	tree iteration with the same basic code.
+
 2007-06-12  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/test.h (TEST_HASH_NOT_EMPTY): Add missing ;

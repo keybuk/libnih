@@ -269,23 +269,19 @@ nih_tree_next (NihTree *tree,
 			node = node->parent;
 		}
 	} else {
-		prev = NULL;
+		prev = tree->parent;
 		node = tree;
 	}
 
 	while (node) {
 		NihTree *tmp = node;
 
-		if (prev == node->parent) {
-			if (node->left) {
-				node = node->left;
-			} else {
-				return node;
-			}
-		} else if (prev == node->left) {
-			return node;
-		} else {
+		if ((prev == node->parent) && node->left) {
+			node = node->left;
+		} else if (prev == node->right) {
 			node = node->parent;
+		} else {
+			return node;
 		}
 
 		prev = tmp;
@@ -322,21 +318,205 @@ nih_tree_prev (NihTree *tree,
 			node = node->parent;
 		}
 	} else {
-		prev = NULL;
+		prev = tree->parent;
 		node = tree;
 	}
 
 	while (node) {
 		NihTree *tmp = node;
 
-		if (prev == node->parent) {
-			if (node->right) {
-				node = node->right;
-			} else {
-				return node;
-			}
-		} else if (prev == node->right) {
+		if ((prev == node->parent) && node->right) {
+			node = node->right;
+		} else if (prev == node->left) {
+			node = node->parent;
+		} else {
 			return node;
+		}
+
+		prev = tmp;
+	}
+
+	return NULL;
+}
+
+
+/**
+ * nih_tree_next_pre:
+ * @tree: tree to iterate,
+ * @node: node just visited.
+ *
+ * Iterates the @tree in-order non-recursively; to obtain the first node,
+ * @tree should be set to the root of the tree and @node should be NULL.
+ * Then for subsequent nodes, @node should be the previous return value
+ * from this function.
+ *
+ * Returns: next in-order node within @tree or NULL if no further nodes.
+ **/
+NihTree *
+nih_tree_next_pre (NihTree *tree,
+		   NihTree *node)
+{
+	NihTree *prev;
+
+	nih_assert (tree != NULL);
+
+	if (node) {
+		prev = node;
+		if (node->left) {
+			return node->left;
+		} else if (node->right) {
+			return node->right;
+		} else {
+			node = node->parent;
+		}
+	} else {
+		return tree;
+	}
+
+	while (node) {
+		NihTree *tmp = node;
+
+		if ((prev != node->right) && node->right) {
+			return node->right;
+		} else {
+			node = node->parent;
+		}
+
+		prev = tmp;
+	}
+
+	return NULL;
+}
+
+/**
+ * nih_tree_prev_pre:
+ * @tree: tree to iterate,
+ * @node: node just visited.
+ *
+ * Reverse-iterates the @tree in-order non-recursively; to obtain the last
+ * node, @tree should be set to the root of the tree and @node should be NULL.
+ * Then for subsequent nodes, @node should be the previous return value
+ * from this function.
+ *
+ * Returns: previous in-order node within @tree or NULL if no further nodes.
+ **/
+NihTree *
+nih_tree_prev_pre (NihTree *tree,
+		   NihTree *node)
+{
+	NihTree *prev;
+
+	nih_assert (tree != NULL);
+
+	if (node) {
+		prev = node;
+		node = node->parent;
+	} else {
+		prev = tree->parent;
+		node = tree;
+	}
+
+	while (node) {
+		NihTree *tmp = node;
+
+		if ((prev == node->parent) && node->right) {
+			node = node->right;
+		} else if ((prev != node->left) && node->left) {
+			node = node->left;
+		} else {
+			return node;
+		}
+
+		prev = tmp;
+	}
+
+	return NULL;
+}
+
+
+/**
+ * nih_tree_next_post:
+ * @tree: tree to iterate,
+ * @node: node just visited.
+ *
+ * Iterates the @tree in-order non-recursively; to obtain the first node,
+ * @tree should be set to the root of the tree and @node should be NULL.
+ * Then for subsequent nodes, @node should be the previous return value
+ * from this function.
+ *
+ * Returns: next in-order node within @tree or NULL if no further nodes.
+ **/
+NihTree *
+nih_tree_next_post (NihTree *tree,
+		    NihTree *node)
+{
+	NihTree *prev;
+
+	nih_assert (tree != NULL);
+
+	if (node) {
+		prev = node;
+		node = node->parent;
+	} else {
+		prev = tree->parent;
+		node = tree;
+	}
+
+	while (node) {
+		NihTree *tmp = node;
+
+		if ((prev == node->parent) && node->left) {
+			node = node->left;
+		} else if ((prev != node->right) && node->right) {
+			node = node->right;
+		} else {
+			return node;
+		}
+
+		prev = tmp;
+	}
+
+	return NULL;
+}
+
+/**
+ * nih_tree_prev_post:
+ * @tree: tree to iterate,
+ * @node: node just visited.
+ *
+ * Reverse-iterates the @tree in-order non-recursively; to obtain the last
+ * node, @tree should be set to the root of the tree and @node should be NULL.
+ * Then for subsequent nodes, @node should be the previous return value
+ * from this function.
+ *
+ * Returns: previous in-order node within @tree or NULL if no further nodes.
+ **/
+NihTree *
+nih_tree_prev_post (NihTree *tree,
+		    NihTree *node)
+{
+	NihTree *prev;
+
+	nih_assert (tree != NULL);
+
+	if (node) {
+		prev = node;
+		if (node->right) {
+			return node->right;
+		} else if (node->left) {
+			return node->left;
+		} else {
+			node = node->parent;
+		}
+	} else {
+		return tree;
+	}
+
+	while (node) {
+		NihTree *tmp = node;
+
+		if ((prev != node->left) && node->left) {
+			return node->left;
 		} else {
 			node = node->parent;
 		}

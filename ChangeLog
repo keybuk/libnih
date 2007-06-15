@@ -2,6 +2,17 @@
 
 	* nih/tests/test_tree.c (test_next, test_foreach, test_prev) 
 	(test_next_pre, test_foreach_pre, test_prev_pre, test_next_post) 
+	(test_foreach_post, test_prev_post): Add tests for partial tree
+	traversal, we don't expect to break out of the confines of the
+	root that we've set, even if it has a parent.
+	* nih/tree.c (nih_tree_next, nih_tree_prev, nih_tree_next_pre)
+	(nih_tree_prev_pre, nih_tree_next_post, nih_tree_prev_post): Before
+	moving up to the parent node, check whether the current node is the
+	tree root; if it is, return NULL instead since we've iterated the
+	sub-tree we were looking at.
+
+	* nih/tests/test_tree.c (test_next, test_foreach, test_prev) 
+	(test_next_pre, test_foreach_pre, test_prev_pre, test_next_post) 
 	(test_foreach_post, test_prev_post): Use two different arrays to
 	make it really obvious how the tree is constructed and what order
 	we really expect it to be in.  This makes it easier to get ready for

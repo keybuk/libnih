@@ -469,6 +469,37 @@ test_next (void)
 	} while (ptr);
 
 
+	/* Check that we can limit the iteration to a partial tree rooted
+	 * at the given tree node.
+	 */
+	TEST_FEATURE ("with partial tree");
+	expect[0] = node['e' - 97];
+	expect[1] = node['l' - 97];
+	expect[2] = node['h' - 97];
+	expect[3] = node['c' - 97];
+	expect[4] = node['i' - 97];
+	expect[5] = node['f' - 97];
+	expect[6] = node['j' - 97];
+	expect[7] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 7)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     7, i + 1);
+
+		ptr = nih_tree_next (node['c' - 97], ptr);
+
+		if (ptr != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], ptr);
+
+		i++;
+	} while (ptr);
+
+
 	for (i = 0; i < 12; i++)
 		nih_free (node[i]);
 }
@@ -529,6 +560,33 @@ test_foreach (void)
 	}
 
 
+	/* Check that we can limit the iteration to a partial tree rooted
+	 * at the given tree node.
+	 */
+	TEST_FEATURE ("with partial tree");
+	expect[0] = node['e' - 97];
+	expect[1] = node['l' - 97];
+	expect[2] = node['h' - 97];
+	expect[3] = node['c' - 97];
+	expect[4] = node['i' - 97];
+	expect[5] = node['f' - 97];
+	expect[6] = node['j' - 97];
+	expect[7] = NULL;
+
+	i = 0;
+	NIH_TREE_FOREACH (node['c' - 97], iter) {
+		if (i > 7)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     7, i + 1);
+
+		if (iter != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], iter);
+
+		i++;
+	}
+
+
 	for (i = 0; i < 12; i++)
 		nih_free (node[i]);
 }
@@ -575,7 +633,6 @@ test_prev (void)
 	expect[11] = node['k' - 97];
 	expect[12] = NULL;
 
-
 	i = 0;
 	ptr = NULL;
 
@@ -585,6 +642,37 @@ test_prev (void)
 				     13, i + 1);
 
 		ptr = nih_tree_prev (node['a' - 97], ptr);
+
+		if (ptr != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], ptr);
+
+		i++;
+	} while (ptr);
+
+
+	/* Check that we can limit the iteration to a partial tree rooted
+	 * at the given tree node.
+	 */
+	TEST_FEATURE ("with partial tree");
+	expect[0] = node['j' - 97];
+	expect[1] = node['f' - 97];
+	expect[2] = node['i' - 97];
+	expect[3] = node['c' - 97];
+	expect[4] = node['h' - 97];
+	expect[5] = node['l' - 97];
+	expect[6] = node['e' - 97];
+	expect[7] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 7)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     7, i + 1);
+
+		ptr = nih_tree_prev (node['c' - 97], ptr);
 
 		if (ptr != expect[i])
 			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
@@ -659,6 +747,37 @@ test_next_pre (void)
 	} while (ptr);
 
 
+	/* Check that we can limit the iteration to a partial tree rooted
+	 * at the given tree node.
+	 */
+	TEST_FEATURE ("with partial tree");
+	expect[0] = node['c' - 97];
+	expect[1] = node['e' - 97];
+	expect[2] = node['h' - 97];
+	expect[3] = node['l' - 97];
+	expect[4] = node['f' - 97];
+	expect[5] = node['i' - 97];
+	expect[6] = node['j' - 97];
+	expect[7] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 7)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     7, i + 1);
+
+		ptr = nih_tree_next_pre (node['c' - 97], ptr);
+
+		if (ptr != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], ptr);
+
+		i++;
+	} while (ptr);
+
+
 	for (i = 0; i < 12; i++)
 		nih_free (node[i]);
 }
@@ -710,6 +829,33 @@ test_foreach_pre (void)
 		if (i > 11)
 			TEST_FAILED ("wrong number of iterations, expected %d got %d",
 				     12, i + 1);
+
+		if (iter != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], iter);
+
+		i++;
+	}
+
+
+	/* Check that we can limit the iteration to a partial tree rooted
+	 * at the given tree node.
+	 */
+	TEST_FEATURE ("with partial tree");
+	expect[0] = node['c' - 97];
+	expect[1] = node['e' - 97];
+	expect[2] = node['h' - 97];
+	expect[3] = node['l' - 97];
+	expect[4] = node['f' - 97];
+	expect[5] = node['i' - 97];
+	expect[6] = node['j' - 97];
+	expect[7] = NULL;
+
+	i = 0;
+	NIH_TREE_FOREACH_PRE (node['c' - 97], iter) {
+		if (i > 7)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     7, i + 1);
 
 		if (iter != expect[i])
 			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
@@ -782,6 +928,38 @@ test_prev_pre (void)
 		i++;
 	} while (ptr);
 
+
+	/* Check that we can limit the iteration to a partial tree rooted
+	 * at the given tree node.
+	 */
+	TEST_FEATURE ("with partial tree");
+	expect[0] = node['j' - 97];
+	expect[1] = node['i' - 97];
+	expect[2] = node['f' - 97];
+	expect[3] = node['l' - 97];
+	expect[4] = node['h' - 97];
+	expect[5] = node['e' - 97];
+	expect[6] = node['c' - 97];
+	expect[7] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 7)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     7, i + 1);
+
+		ptr = nih_tree_prev_pre (node['c' - 97], ptr);
+
+		if (ptr != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], ptr);
+
+		i++;
+	} while (ptr);
+
+
 	for (i = 0; i < 12; i++)
 		nih_free (node[i]);
 }
@@ -838,6 +1016,37 @@ test_next_post (void)
 				     13, i + 1);
 
 		ptr = nih_tree_next_post (node['a' - 97], ptr);
+
+		if (ptr != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], ptr);
+
+		i++;
+	} while (ptr);
+
+
+	/* Check that we can limit the iteration to a partial tree rooted
+	 * at the given tree node.
+	 */
+	TEST_FEATURE ("with partial tree");
+	expect[0] = node['l' - 97];
+	expect[1] = node['h' - 97];
+	expect[2] = node['e' - 97];
+	expect[3] = node['i' - 97];
+	expect[4] = node['j' - 97];
+	expect[5] = node['f' - 97];
+	expect[6] = node['c' - 97];
+	expect[7] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 7)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     7, i + 1);
+
+		ptr = nih_tree_next_post (node['c' - 97], ptr);
 
 		if (ptr != expect[i])
 			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
@@ -907,6 +1116,33 @@ test_foreach_post (void)
 	}
 
 
+	/* Check that we can limit the iteration to a partial tree rooted
+	 * at the given tree node.
+	 */
+	TEST_FEATURE ("with partial tree");
+	expect[0] = node['l' - 97];
+	expect[1] = node['h' - 97];
+	expect[2] = node['e' - 97];
+	expect[3] = node['i' - 97];
+	expect[4] = node['j' - 97];
+	expect[5] = node['f' - 97];
+	expect[6] = node['c' - 97];
+	expect[7] = NULL;
+
+	i = 0;
+	NIH_TREE_FOREACH_POST (node['c' - 97], iter) {
+		if (i > 7)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     7, i + 1);
+
+		if (iter != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], iter);
+
+		i++;
+	}
+
+
 	for (i = 0; i < 12; i++)
 		nih_free (node[i]);
 }
@@ -962,6 +1198,37 @@ test_prev_post (void)
 				     13, i + 1);
 
 		ptr = nih_tree_prev_post (node['a' - 97], ptr);
+
+		if (ptr != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], ptr);
+
+		i++;
+	} while (ptr);
+
+
+	/* Check that we can limit the iteration to a partial tree rooted
+	 * at the given tree node.
+	 */
+	TEST_FEATURE ("with partial tree");
+	expect[0] = node['c' - 97];
+	expect[1] = node['f' - 97];
+	expect[2] = node['j' - 97];
+	expect[3] = node['i' - 97];
+	expect[4] = node['e' - 97];
+	expect[5] = node['h' - 97];
+	expect[6] = node['l' - 97];
+	expect[7] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 7)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     7, i + 1);
+
+		ptr = nih_tree_prev_post (node['c' - 97], ptr);
 
 		if (ptr != expect[i])
 			TEST_FAILED ("wrong tree node for %d, expected %p got %p",

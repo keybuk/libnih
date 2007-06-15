@@ -266,6 +266,9 @@ nih_tree_next (NihTree *tree,
 		if (node->right) {
 			node = node->right;
 		} else {
+			if (node == tree)
+				return NULL;
+
 			node = node->parent;
 		}
 	} else {
@@ -279,6 +282,9 @@ nih_tree_next (NihTree *tree,
 		if ((prev == node->parent) && node->left) {
 			node = node->left;
 		} else if (prev == node->right) {
+			if (node == tree)
+				return NULL;
+
 			node = node->parent;
 		} else {
 			return node;
@@ -315,6 +321,9 @@ nih_tree_prev (NihTree *tree,
 		if (node->left) {
 			node = node->left;
 		} else {
+			if (node == tree)
+				return NULL;
+
 			node = node->parent;
 		}
 	} else {
@@ -328,6 +337,9 @@ nih_tree_prev (NihTree *tree,
 		if ((prev == node->parent) && node->right) {
 			node = node->right;
 		} else if (prev == node->left) {
+			if (node == tree)
+				return NULL;
+
 			node = node->parent;
 		} else {
 			return node;
@@ -367,6 +379,9 @@ nih_tree_next_pre (NihTree *tree,
 		} else if (node->right) {
 			return node->right;
 		} else {
+			if (node == tree)
+				return NULL;
+
 			node = node->parent;
 		}
 	} else {
@@ -379,6 +394,9 @@ nih_tree_next_pre (NihTree *tree,
 		if ((prev != node->right) && node->right) {
 			return node->right;
 		} else {
+			if (node == tree)
+				return NULL;
+
 			node = node->parent;
 		}
 
@@ -410,6 +428,9 @@ nih_tree_prev_pre (NihTree *tree,
 
 	if (node) {
 		prev = node;
+		if (node == tree)
+			return NULL;
+
 		node = node->parent;
 	} else {
 		prev = tree->parent;
@@ -456,6 +477,9 @@ nih_tree_next_post (NihTree *tree,
 
 	if (node) {
 		prev = node;
+		if (node == tree)
+			return NULL;
+
 		node = node->parent;
 	} else {
 		prev = tree->parent;
@@ -506,6 +530,9 @@ nih_tree_prev_post (NihTree *tree,
 		} else if (node->left) {
 			return node->left;
 		} else {
+			if (node == tree)
+				return NULL;
+
 			node = node->parent;
 		}
 	} else {
@@ -518,6 +545,9 @@ nih_tree_prev_post (NihTree *tree,
 		if ((prev != node->left) && node->left) {
 			return node->left;
 		} else {
+			if (node == tree)
+				return NULL;
+
 			node = node->parent;
 		}
 

@@ -1,5 +1,12 @@
 2007-06-15  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_tree.c (test_next, test_foreach, test_prev) 
+	(test_next_pre, test_foreach_pre, test_prev_pre, test_next_post) 
+	(test_foreach_post, test_prev_post): Use two different arrays to
+	make it really obvious how the tree is constructed and what order
+	we really expect it to be in.  This makes it easier to get ready for
+	the next bit ...
+
 	* nih/tree.c (nih_tree_next, nih_tree_prev): Minor bug fix, set the
 	previous to the tree's parent when visiting for the first time so that
 	partial	tree iterations might be able to work.  Make algorithm code

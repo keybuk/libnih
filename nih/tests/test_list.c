@@ -68,6 +68,33 @@ test_new (void)
 }
 
 void
+test_entry_new (void)
+{
+	NihListEntry *list;
+
+	/* Check that nih_list_entry_new allocates a new empty list entry with
+	 * nih_alloc and that it is initialised with pointers pointing to
+	 * itself.  If allocation fails, we should get NULL returned.
+	 */
+	TEST_FUNCTION ("nih_list_entry_new");
+	TEST_ALLOC_FAIL {
+		list = nih_list_entry_new (NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (list, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (list, sizeof (NihListEntry));
+		TEST_EQ_P (list->entry.prev, &list->entry);
+		TEST_EQ_P (list->entry.next, &list->entry);
+		TEST_EQ_P (list->data, NULL);
+
+		nih_free (list);
+	}
+}
+
+void
 test_add (void)
 {
 	NihList *list, *entry1, *entry2, *ptr;
@@ -446,6 +473,7 @@ main (int   argc,
 {
 	test_init ();
 	test_new ();
+	test_entry_new ();
 	test_add ();
 	test_add_after ();
 	test_empty ();

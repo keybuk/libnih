@@ -69,6 +69,34 @@ test_new (void)
 	}
 }
 
+void
+test_entry_new (void)
+{
+	NihTreeEntry *tree;
+
+	/* Check that nih_tree_entry_new allocates a new empty tree node with
+	 * nih_alloc and that it is initialised with all three pointers
+	 * set to NULL.  If allocation fails, we should get NULL returned.
+	 */
+	TEST_FUNCTION ("nih_tree_entry_new");
+	TEST_ALLOC_FAIL {
+		tree = nih_tree_entry_new (NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (tree, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (tree, sizeof (NihTreeEntry));
+		TEST_EQ_P (tree->node.parent, NULL);
+		TEST_EQ_P (tree->node.left, NULL);
+		TEST_EQ_P (tree->node.right, NULL);
+		TEST_EQ_P (tree->data, NULL);
+
+		nih_free (tree);
+	}
+}
+
 
 void
 test_add (void)
@@ -1249,6 +1277,7 @@ main (int   argc,
 {
 	test_init ();
 	test_new ();
+	test_entry_new ();
 	test_add ();
 	test_remove ();
 	test_unlink ();

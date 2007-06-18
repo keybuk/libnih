@@ -79,7 +79,39 @@ nih_tree_new (const void *parent)
 	return tree;
 }
 
+/**
+ * nih_tree_entry_new:
+ * @parent: parent of new node.
+ *
+ * Allocates a new tree entry structure, leaving the caller to set the
+ * data of the entry.
+ *
+ * The structure is allocated using nih_alloc() so can be used as a context
+ * to other allocations.
+ *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned string will be freed too.  If you have clean-up
+ * that would need to be run, you can assign a destructor function using
+ * the nih_alloc_set_destructor() function.
+ *
+ * Returns: the new tree node or NULL if the allocation failed.
+ **/
+NihTreeEntry *
+nih_tree_entry_new (const void *parent)
+{
+	NihTreeEntry *tree;
 
+	tree = nih_new (parent, NihTreeEntry);
+	if (! tree)
+		return NULL;
+
+	nih_tree_init (&tree->node);
+
+	tree->data = NULL;
+
+	return tree;
+}
 
 
 /**

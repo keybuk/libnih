@@ -2,7 +2,6 @@ timers:
 - calendar scheduled timers
 
 allocator/slab module
-restore list_entry code somewhere else
 
 string table:
 - as hash, but massively optimised for tables of strings

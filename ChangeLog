@@ -1,3 +1,16 @@
+2007-06-18  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/list.h (NihListEntry): Define structure combining an NihList
+	with a union of common types.
+	* nih/list.c (nih_list_entry_new): Add a helper function for when
+	we need a simple entry without any extra structure around it.
+	* nih/tests/test_list.c (test_entry_new): Test the new function.
+	* nih/tree.h (NihTreeEntry): Define structure combining an NihTree
+	with a union of common types.
+	* nih/tree.c (nih_tree_entry_new): Add a helper function for when
+	we need a simple node without any extra structure around it.
+	* nih/tests/test_tree.c (test_entry_new): Test the new function.
+
 2007-06-15  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/tests/test_tree.c (test_next, test_foreach, test_prev) 

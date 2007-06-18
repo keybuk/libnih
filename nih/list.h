@@ -39,6 +39,27 @@ typedef struct nih_list {
 	struct nih_list *prev, *next;
 } NihList;
 
+/**
+ * NihListEntry:
+ * @entry: list header,
+ * @data: data pointer,
+ * @str: string pointer,
+ * @int_data: integer value.
+ *
+ * This structure can be used as a generic NihList node that contains
+ * a pointer to generic data, a string or contains an integer value.
+ *
+ * You should take care of setting the data yourself.
+ **/
+typedef struct nih_list_entry {
+	NihList entry;
+	union {
+		void *data;
+		char *str;
+		int   int_data;
+	};
+} NihListEntry;
+
 
 /**
  * NIH_LIST_EMPTY:
@@ -91,16 +112,20 @@ typedef struct nih_list {
 
 NIH_BEGIN_EXTERN
 
-void     nih_list_init       (NihList *entry);
-NihList *nih_list_new        (const void *parent)
+void          nih_list_init       (NihList *entry);
+NihList *     nih_list_new        (const void *parent)
 	__attribute__ ((warn_unused_result, malloc));
 
-NihList *nih_list_add        (NihList *list, NihList *entry);
-NihList *nih_list_add_after  (NihList *list, NihList *entry);
+NihListEntry *nih_list_entry_new  (const void *parent)
+	__attribute__ ((warn_unused_result, malloc));
 
-NihList *nih_list_remove     (NihList *entry);
-int      nih_list_destructor (NihList *entry);
-int      nih_list_free       (NihList *entry);
+
+NihList *     nih_list_add        (NihList *list, NihList *entry);
+NihList *     nih_list_add_after  (NihList *list, NihList *entry);
+
+NihList *     nih_list_remove     (NihList *entry);
+int           nih_list_destructor (NihList *entry);
+int           nih_list_free       (NihList *entry);
 
 NIH_END_EXTERN
 

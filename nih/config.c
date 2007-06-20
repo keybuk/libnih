@@ -1089,6 +1089,8 @@ nih_config_parse_stanza (const char      *file,
 		return -1;
 	}
 
+	nih_free (name);
+
 	ret = stanza->handler (data, stanza, file, len, &p, lineno);
 
 finish:

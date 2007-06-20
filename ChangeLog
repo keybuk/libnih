@@ -1,5 +1,7 @@
 2007-06-20  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/config.c (nih_config_parse_stanza): Free name after use.
+
 	* nih/config.c (nih_config_parse_stanza): Don't dequote stanza
 	names, since otherwise they can't be made non-special; if we don't
 	recognise the stanza we parsed, raise the error without updating

@@ -2387,7 +2387,7 @@ test_parse_stanza (void)
 
 
 	/* Check that finding an unknown stanza results in an error being
-	 * raised at its first argument, and no handler called.
+	 * raised, and no handler called.
 	 */
 	TEST_FEATURE ("with unknown stanza");
 	strcpy (buf, "wibble this is a test\nwibble\n");
@@ -2401,7 +2401,7 @@ test_parse_stanza (void)
 
 	TEST_FALSE (handler_called);
 	TEST_LT (ret, 0);
-	TEST_EQ (pos, 7);
+	TEST_EQ (pos, 0);
 	TEST_EQ (lineno, 1);
 
 	err = nih_error_get ();

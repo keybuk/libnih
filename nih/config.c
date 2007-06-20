@@ -1054,9 +1054,6 @@ nih_config_get_stanza (const char      *name,
  * If @lineno is given it will be incremented each time a new line is
  * discovered in the file.
  *
- * A warning is output if no stanza is found, and the position is moved
- * past the end of the line.  This may result in inconsistent parsing.
- *
  * Returns: zero on success or negative value on raised error.
  **/
 int
@@ -1078,7 +1075,8 @@ nih_config_parse_stanza (const char      *file,
 	p = (pos ? *pos : 0);
 
 	/* Get the next dequoted argument from the file */
-	name = nih_config_next_arg (NULL, file, len, &p, lineno);
+	name = nih_config_next_token (NULL, file, len, &p, lineno,
+				      NIH_CONFIG_CNLWS, FALSE);
 	if (! name)
 		goto finish;
 
@@ -1087,15 +1085,13 @@ nih_config_parse_stanza (const char      *file,
 	if (! stanza) {
 		nih_error_raise (NIH_CONFIG_UNKNOWN_STANZA,
 				 _(NIH_CONFIG_UNKNOWN_STANZA_STR));
-		goto finish;
+		nih_free (name);
+		return -1;
 	}
 
 	ret = stanza->handler (data, stanza, file, len, &p, lineno);
 
 finish:
-	if (name)
-		nih_free (name);
-
 	if (pos)
 		*pos = p;
 

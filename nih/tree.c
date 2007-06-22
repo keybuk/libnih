@@ -313,7 +313,7 @@ nih_tree_next (NihTree *tree,
 
 		if ((prev == node->parent) && node->left) {
 			node = node->left;
-		} else if (prev == node->right) {
+		} else if (node->right && (prev == node->right)) {
 			if (node == tree)
 				return NULL;
 
@@ -368,7 +368,7 @@ nih_tree_prev (NihTree *tree,
 
 		if ((prev == node->parent) && node->right) {
 			node = node->right;
-		} else if (prev == node->left) {
+		} else if (node->left && (prev == node->left)) {
 			if (node == tree)
 				return NULL;
 

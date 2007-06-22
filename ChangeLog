@@ -1,3 +1,14 @@
+2007-06-22  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/tests/test_tree.c (test_next, test_prev, test_next_pre)
+	(test_prev_pre, test_next_post, test_pre_post): Add tests for a
+	single-node tree, because we found a bug where it didn't work.
+	* nih/tree.c (nih_tree_next): Bug fix; check there is a right node
+	before checking whether we've returned from it, otherwise we could
+	confuse it with starting at the top of the tree.
+	(nih_tree_prev): Likewise check there is a left node before checking
+	whether we've returned from it.
+
 2007-06-20  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/config.c (nih_config_parse_stanza): Free name after use.

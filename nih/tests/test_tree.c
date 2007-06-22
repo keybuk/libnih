@@ -530,6 +530,19 @@ test_next (void)
 
 	for (i = 0; i < 12; i++)
 		nih_free (node[i]);
+
+
+	/* Check that we can iterate a tree with a single node. */
+	TEST_FEATURE ("with single node");
+	node[0] = nih_tree_new (NULL);
+
+	ptr = nih_tree_next (node[0], NULL);
+	TEST_EQ_P (ptr, node[0]);
+
+	ptr = nih_tree_next (node[0], ptr);
+	TEST_EQ_P (ptr, NULL);
+
+	nih_free (node[0]);
 }
 
 void
@@ -712,6 +725,19 @@ test_prev (void)
 
 	for (i = 0; i < 12; i++)
 		nih_free (node[i]);
+
+
+	/* Check that we can iterate a tree with a single node. */
+	TEST_FEATURE ("with single node");
+	node[0] = nih_tree_new (NULL);
+
+	ptr = nih_tree_prev (node[0], NULL);
+	TEST_EQ_P (ptr, node[0]);
+
+	ptr = nih_tree_prev (node[0], ptr);
+	TEST_EQ_P (ptr, NULL);
+
+	nih_free (node[0]);
 }
 
 
@@ -808,6 +834,19 @@ test_next_pre (void)
 
 	for (i = 0; i < 12; i++)
 		nih_free (node[i]);
+
+
+	/* Check that we can iterate a tree with a single node. */
+	TEST_FEATURE ("with single node");
+	node[0] = nih_tree_new (NULL);
+
+	ptr = nih_tree_next_pre (node[0], NULL);
+	TEST_EQ_P (ptr, node[0]);
+
+	ptr = nih_tree_next_pre (node[0], ptr);
+	TEST_EQ_P (ptr, NULL);
+
+	nih_free (node[0]);
 }
 
 void
@@ -990,6 +1029,19 @@ test_prev_pre (void)
 
 	for (i = 0; i < 12; i++)
 		nih_free (node[i]);
+
+
+	/* Check that we can iterate a tree with a single node. */
+	TEST_FEATURE ("with single node");
+	node[0] = nih_tree_new (NULL);
+
+	ptr = nih_tree_prev_pre (node[0], NULL);
+	TEST_EQ_P (ptr, node[0]);
+
+	ptr = nih_tree_prev_pre (node[0], ptr);
+	TEST_EQ_P (ptr, NULL);
+
+	nih_free (node[0]);
 }
 
 
@@ -1086,6 +1138,19 @@ test_next_post (void)
 
 	for (i = 0; i < 12; i++)
 		nih_free (node[i]);
+
+
+	/* Check that we can iterate a tree with a single node. */
+	TEST_FEATURE ("with single node");
+	node[0] = nih_tree_new (NULL);
+
+	ptr = nih_tree_next_post (node[0], NULL);
+	TEST_EQ_P (ptr, node[0]);
+
+	ptr = nih_tree_next_post (node[0], ptr);
+	TEST_EQ_P (ptr, NULL);
+
+	nih_free (node[0]);
 }
 
 void
@@ -1268,6 +1333,19 @@ test_prev_post (void)
 
 	for (i = 0; i < 12; i++)
 		nih_free (node[i]);
+
+
+	/* Check that we can iterate a tree with a single node. */
+	TEST_FEATURE ("with single node");
+	node[0] = nih_tree_new (NULL);
+
+	ptr = nih_tree_prev_post (node[0], NULL);
+	TEST_EQ_P (ptr, node[0]);
+
+	ptr = nih_tree_prev_post (node[0], ptr);
+	TEST_EQ_P (ptr, NULL);
+
+	nih_free (node[0]);
 }
 
 

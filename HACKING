@@ -26,7 +26,7 @@ as the GNU Autotools).  You will need the following versions
 installed.
 
 	* GNU Autoconf 2.60
-	* GNU Automake 1.9
+	* GNU Automake 1.10
 	* GNU Libtool 1.5.22
 	* GNU Gettext 0.15
 

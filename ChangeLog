@@ -1,3 +1,13 @@
+2007-10-08  Scott James Remnant  <scott@netsplit.com>
+
+	* Makefile.am (ACLOCAL_AMFLAGS): Specify that aclocal install
+	ordinarily system-wide macros into m4 (libtool.m4, specifically).
+	This makes it easier for packagers to modify autoconfery since
+	aclocal is no longer a destructive event.
+	* configure.ac (AM_INIT_AUTOMAKE): Increase Automake requirement to
+	1.10 to ensure we have aclocal --instal
+	* HACKING: Increase Automake version in the docs.
+
 2007-06-22  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/tests/test_tree.c (test_next, test_prev, test_next_pre)

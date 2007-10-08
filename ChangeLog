@@ -1,5 +1,9 @@
 2007-10-08  Scott James Remnant  <scott@netsplit.com>
 
+	* configure.ac (AM_GNU_GETTEXT_VERSION): Bump to 0.16.1 since this
+	version of gettext is needed for compatibility with Automake 1.10
+	* HACKING: Bump version in the docs too.
+
 	* Makefile.am (ACLOCAL_AMFLAGS): Specify that aclocal install
 	ordinarily system-wide macros into m4 (libtool.m4, specifically).
 	This makes it easier for packagers to modify autoconfery since

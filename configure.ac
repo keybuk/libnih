@@ -10,7 +10,7 @@ AC_GNU_SOURCE
 
 AM_INIT_AUTOMAKE([1.10 gnu nostdinc check-news dist-bzip2])
 
-AM_GNU_GETTEXT_VERSION([0.15])
+AM_GNU_GETTEXT_VERSION([0.16.1])
 AM_GNU_GETTEXT()
 
 # Checks for programs.

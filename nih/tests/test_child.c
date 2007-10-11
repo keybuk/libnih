@@ -186,7 +186,7 @@ test_poll (void)
 	TEST_EQ_P (last_data, &watch1);
 	TEST_FALSE (destroyed);
 
-	nih_free (watch);
+	nih_free (watch1);
 
 
 	/* Check that if we poll with an unknown pid, and no catch-all,
@@ -216,7 +216,7 @@ test_poll (void)
 	TEST_FALSE (reaper_called);
 	TEST_FALSE (destroyed);
 
-	nih_free (watch);
+	nih_free (watch1);
 
 
 	/* Check that a poll when nothing has died does nothing. */
@@ -245,7 +245,7 @@ test_poll (void)
 
 	TEST_FALSE (reaper_called);
 
-	nih_free (watch);
+	nih_free (watch1);
 }
 
 

@@ -1,5 +1,7 @@
 2007-10-12  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_child.c (test_poll): Fix erroneous removal of "1"
+
 	* TODO: Update.
 
 2007-10-11  Scott James Remnant  <scott@netsplit.com>

@@ -538,7 +538,7 @@ test_string_key (void)
 	TEST_EQ_P (key, ((HashEntry *)entry)->key);
 	TEST_EQ_STR (key, "my entry");
 
-	nih_list_free (entry);
+	nih_free (entry);
 }
 
 

@@ -1,5 +1,8 @@
 2007-10-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_hash.c (test_string_key): Replace nih_list_free
+	call with nih_free, since we're not overriding the destructor.
+
 	* nih/list.c (nih_list_free): Drop this function.
 	(nih_list_destructor): Rename to nih_list_destroy()
 	(nih_list_new, nih_list_entry_new): Set destructor function.

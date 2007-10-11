@@ -304,9 +304,7 @@ finish:
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: the token found or NULL on raised error.
  **/
@@ -381,9 +379,7 @@ finish:
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: the argument found or NULL on raised error.
  **/
@@ -571,9 +567,7 @@ nih_config_skip_comment (const char *file,
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: the list of arguments found or NULL on raised error.
  **/
@@ -654,9 +648,7 @@ finish:
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: the command found or NULL on raised error.
  **/
@@ -736,9 +728,7 @@ finish:
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: the text contained within the block or NULL on raised error.
  **/

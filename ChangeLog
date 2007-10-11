@@ -1,5 +1,8 @@
 2007-10-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/hash.c: Fix doc string, destructors are now considered internal
+	and shouldn't be set by callers.
+
 	* nih/signal.c (nih_signal_add_handler): Adjust call to set destructor
 	* nih/tests/test_signal.c (test_add_handler): Call nih_free instead
 	of nih_list_free

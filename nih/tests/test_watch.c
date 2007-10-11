@@ -914,9 +914,6 @@ my_destructor (void *ptr)
 {
 	destructor_called++;
 
-	if (nih_alloc_size (ptr) == sizeof (NihWatch))
-		nih_list_destroy (ptr);
-
 	return 100;
 }
 

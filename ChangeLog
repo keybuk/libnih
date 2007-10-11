@@ -1,5 +1,8 @@
 2007-10-12  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_watch.c (my_destructor): Neither NihWatch nor NihIo
+	need a destructor to be called.
+
 	* nih/tests/test_child.c (test_poll): Fix erroneous removal of "1"
 
 	* TODO: Update.

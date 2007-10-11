@@ -106,7 +106,7 @@ nih_io_init (void)
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned string will be freed too.  If you have clean-up
+ * is freed, the returned block will be freed too.  If you have clean-up
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
@@ -246,7 +246,7 @@ nih_io_handle_fds (fd_set *readfds,
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned string will be freed too.  If you have clean-up
+ * is freed, the returned block will be freed too.  If you have clean-up
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
@@ -344,7 +344,7 @@ nih_io_buffer_resize (NihIoBuffer *buffer,
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned string will be freed too.  If you have clean-up
+ * is freed, the returned block will be freed too.  If you have clean-up
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
@@ -443,7 +443,7 @@ nih_io_buffer_push (NihIoBuffer *buffer,
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned string will be freed too.  If you have clean-up
+ * is freed, the returned block will be freed too.  If you have clean-up
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
@@ -561,7 +561,7 @@ nih_io_message_add_control (NihIoMessage *message,
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned string will be freed too.  If you have clean-up
+ * is freed, the returned block will be freed too.  If you have clean-up
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
@@ -809,7 +809,7 @@ error:
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned string will be freed too.  If you have clean-up
+ * is freed, the returned block will be freed too.  If you have clean-up
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
@@ -1367,7 +1367,7 @@ nih_io_first_message (NihIo *io)
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned string will be freed too.  If you have clean-up
+ * is freed, the returned block will be freed too.  If you have clean-up
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
@@ -1448,7 +1448,7 @@ nih_io_send_message (NihIo        *io,
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned string will be freed too.  If you have clean-up
+ * is freed, the returned block will be freed too.  If you have clean-up
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *
@@ -1580,7 +1580,7 @@ nih_io_write (NihIo      *io,
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned string will be freed too.  If you have clean-up
+ * is freed, the returned block will be freed too.  If you have clean-up
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *

@@ -1,5 +1,7 @@
 2007-10-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/: Documentation string fix.
+
 	* nih/tests/test_hash.c (test_string_key): Replace nih_list_free
 	call with nih_free, since we're not overriding the destructor.
 

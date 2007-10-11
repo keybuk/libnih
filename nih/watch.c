@@ -117,7 +117,7 @@ static void            nih_watch_handle      (NihWatch *watch,
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned string will be freed too.  If you have clean-up
+ * is freed, the returned block will be freed too.  If you have clean-up
  * that would need to be run, you can assign a destructor function using
  * the nih_alloc_set_destructor() function.
  *

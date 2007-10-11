@@ -164,10 +164,10 @@ test_add (void)
 	TEST_EQ_P (ptr->prev, entry2);
 	TEST_EQ_P (entry2->prev, ptr);
 
-	nih_list_free (list);
-	nih_list_free (entry1);
-	nih_list_free (entry2);
-	nih_list_free (ptr);
+	nih_free (list);
+	nih_free (entry1);
+	nih_free (entry2);
+	nih_free (ptr);
 }
 
 void
@@ -399,7 +399,7 @@ test_remove (void)
 }
 
 void
-test_destructor (void)
+test_destroy (void)
 {
 	NihList *list, *entry, *tail;
 	int      ret;
@@ -408,11 +408,11 @@ test_destructor (void)
 	 * list, it needn't bother updating the entry itself seeing as it's
 	 * being freed anyway.
 	 */
-	TEST_FUNCTION ("nih_list_destructor");
+	TEST_FUNCTION ("nih_list_destroy");
 	list = nih_list_new (NULL);
 	entry = nih_list_add (list, nih_list_new (NULL));
 	tail = nih_list_add (list, nih_list_new (NULL));
-	ret = nih_list_destructor (entry);
+	ret = nih_list_destroy (entry);
 
 	TEST_EQ (ret, 0);
 
@@ -422,46 +422,6 @@ test_destructor (void)
 	TEST_EQ_P (tail->prev, list);
 
 	nih_free (entry);
-	nih_free (list);
-	nih_free (tail);
-}
-
-
-static int was_called;
-
-static int
-destructor_called (void *ptr)
-{
-	was_called++;
-
-	return 0;
-}
-
-void
-test_free (void)
-{
-	NihList *list, *entry, *tail;
-	int      ret;
-
-	/* Check that destructors are called on nih_list_free and the return
-	 * value of that destructor is returned; the entry should be cut out
-	 * of the list it was in.
-	 */
-	TEST_FUNCTION ("nih_list_free");
-	list = nih_list_new (NULL);
-	entry = nih_list_add (list, nih_list_new (NULL));
-	tail = nih_list_add (list, nih_list_new (NULL));
-	nih_alloc_set_destructor (entry, destructor_called);
-	ret = nih_list_free (entry);
-
-	TEST_EQ (ret, 0);
-	TEST_TRUE (was_called);
-
-	TEST_EQ_P (list->next, tail);
-	TEST_EQ_P (tail->next, list);
-	TEST_EQ_P (list->prev, tail);
-	TEST_EQ_P (tail->prev, list);
-
 	nih_free (list);
 	nih_free (tail);
 }
@@ -480,8 +440,7 @@ main (int   argc,
 	test_foreach ();
 	test_foreach_safe ();
 	test_remove ();
-	test_destructor ();
-	test_free ();
+	test_destroy ();
 
 	return 0;
 }

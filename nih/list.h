@@ -112,20 +112,19 @@ typedef struct nih_list_entry {
 
 NIH_BEGIN_EXTERN
 
-void          nih_list_init       (NihList *entry);
-NihList *     nih_list_new        (const void *parent)
+void          nih_list_init      (NihList *entry);
+NihList *     nih_list_new       (const void *parent)
 	__attribute__ ((warn_unused_result, malloc));
 
-NihListEntry *nih_list_entry_new  (const void *parent)
+NihListEntry *nih_list_entry_new (const void *parent)
 	__attribute__ ((warn_unused_result, malloc));
 
 
-NihList *     nih_list_add        (NihList *list, NihList *entry);
-NihList *     nih_list_add_after  (NihList *list, NihList *entry);
+NihList *     nih_list_add       (NihList *list, NihList *entry);
+NihList *     nih_list_add_after (NihList *list, NihList *entry);
 
-NihList *     nih_list_remove     (NihList *entry);
-int           nih_list_destructor (NihList *entry);
-int           nih_list_free       (NihList *entry);
+NihList *     nih_list_remove    (NihList *entry);
+int           nih_list_destroy   (NihList *entry);
 
 NIH_END_EXTERN
 

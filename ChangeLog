@@ -1,3 +1,13 @@
+2007-10-11  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/list.c (nih_list_free): Drop this function.
+	(nih_list_destructor): Rename to nih_list_destroy()
+	(nih_list_new, nih_list_entry_new): Set destructor function.
+	* nih/list.h: Update prototypes.
+	* nih/tests/test_list.c (test_destructor): Rename.
+	(test_free): Drop.
+	(test_add): Replace nih_list_free calls with nih_free
+
 2007-10-08  Scott James Remnant  <scott@netsplit.com>
 
 	* configure.ac (AM_GNU_GETTEXT_VERSION): Bump to 0.16.1 since this

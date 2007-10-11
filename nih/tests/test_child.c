@@ -77,7 +77,7 @@ test_add_watch (void)
 		TEST_EQ_P (watch->data, &watch);
 		TEST_LIST_NOT_EMPTY (&watch->entry);
 
-		nih_list_free (&watch->entry);
+		nih_free (watch);
 	}
 
 
@@ -99,7 +99,7 @@ test_add_watch (void)
 		TEST_EQ_P (watch->data, &watch);
 		TEST_LIST_NOT_EMPTY (&watch->entry);
 
-		nih_list_free (&watch->entry);
+		nih_free (watch);
 	}
 }
 
@@ -110,6 +110,8 @@ static int
 my_destructor (void *ptr)
 {
 	destroyed = 1;
+
+	nih_list_destroy (ptr);
 
 	return 0;
 }
@@ -184,7 +186,7 @@ test_poll (void)
 	TEST_EQ_P (last_data, &watch1);
 	TEST_FALSE (destroyed);
 
-	nih_list_free (&watch1->entry);
+	nih_free (watch);
 
 
 	/* Check that if we poll with an unknown pid, and no catch-all,
@@ -214,7 +216,7 @@ test_poll (void)
 	TEST_FALSE (reaper_called);
 	TEST_FALSE (destroyed);
 
-	nih_list_free (&watch1->entry);
+	nih_free (watch);
 
 
 	/* Check that a poll when nothing has died does nothing. */
@@ -243,7 +245,7 @@ test_poll (void)
 
 	TEST_FALSE (reaper_called);
 
-	nih_list_free (&watch1->entry);
+	nih_free (watch);
 }
 
 

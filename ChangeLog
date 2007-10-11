@@ -1,5 +1,11 @@
 2007-10-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/child.c (nih_child_add_watch): Adjust call to set destructor
+	(nih_child_poll): Call nih_free instead of nih_list_free
+	* nih/tests/test_child.c (test_add_watch, test_poll): Call nih_free
+	instead of nih_list_free.
+	(my_destructor): Call nih_list_destroy().
+
 	* nih/string.c: Fix documentation as below.
 
 	* nih/hash.c: Fix doc string, destructors are now considered internal

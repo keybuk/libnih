@@ -71,14 +71,11 @@ nih_child_init (void)
  * then @reaper is called for all children.
  *
  * The watch structure is allocated using nih_alloc() and stored in a linked
- * list, a default destructor is set that removes the watch from the list.
- * Removal of the watch can be performed by freeing it.
+ * list.  Removal of the watch can be performed by freeing it.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: the watch information, or NULL if insufficient memory.
  **/
@@ -100,7 +97,8 @@ nih_child_add_watch (const void *parent,
 		return NULL;
 
 	nih_list_init (&watch->entry);
-	nih_alloc_set_destructor (watch, (NihDestructor)nih_list_destructor);
+
+	nih_alloc_set_destructor (watch, (NihDestructor)nih_list_destroy);
 
 	watch->pid = pid;
 
@@ -158,7 +156,7 @@ nih_child_poll (void)
 			watch->reaper (watch->data, pid, killed, status);
 
 			if (watch->pid != -1)
-				nih_list_free (&watch->entry);
+				nih_free (watch);
 		}
 
 		/* Reap the child */

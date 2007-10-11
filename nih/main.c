@@ -666,14 +666,11 @@ nih_main_loop_exit (int status)
  * in each main loop iteration.
  *
  * The callback structure is allocated using nih_alloc() and stored in a
- * linked list, a default destructor is set that removes the callback from
- * the list. Removal of the callback can be performed by freeing it.
+ * linked list. Removal of the callback can be performed by freeing it.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: the function information, or NULL if insufficient memory.
  **/
@@ -693,7 +690,8 @@ nih_main_loop_add_func (const void    *parent,
 		return NULL;
 
 	nih_list_init (&func->entry);
-	nih_alloc_set_destructor (func, (NihDestructor)nih_list_destructor);
+
+	nih_alloc_set_destructor (func, (NihDestructor)nih_list_destroy);
 
 	func->callback = callback;
 	func->data = data;

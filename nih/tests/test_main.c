@@ -472,7 +472,7 @@ test_main_loop (void)
 	TEST_TRUE (callback_called);
 	TEST_EQ_P (last_data, &func);
 
-	nih_list_free (&func->entry);
+	nih_free (func);
 }
 
 void
@@ -498,7 +498,7 @@ test_main_loop_add_func (void)
 		TEST_EQ_P (func->callback, my_callback);
 		TEST_EQ_P (func->data, &func);
 
-		nih_list_free (&func->entry);
+		nih_free (func);
 	}
 }
 

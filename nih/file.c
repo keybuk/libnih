@@ -468,6 +468,7 @@ nih_dir_walk (const char          *path,
 
 		NIH_MUST (entry = nih_new (dirs, NihDirEntry));
 		nih_list_init (&entry->entry);
+		nih_alloc_set_destructor (entry, (NihDestructor)nih_list_destroy);
 		entry->dev = statbuf.st_dev;
 		entry->ino = statbuf.st_ino;
 		nih_list_add (dirs, &entry->entry);
@@ -626,6 +627,7 @@ nih_dir_walk_visit (const char          *dirname,
 		 */
 		NIH_MUST (entry = nih_new (dirs, NihDirEntry));
 		nih_list_init (&entry->entry);
+		nih_alloc_set_destructor (entry, (NihDestructor)nih_list_destroy);
 		entry->dev = statbuf.st_dev;
 		entry->ino = statbuf.st_ino;
 		nih_list_add (dirs, &entry->entry);
@@ -642,7 +644,7 @@ nih_dir_walk_visit (const char          *dirname,
 				break;
 		}
 
-		nih_list_free (&entry->entry);
+		nih_free (entry);
 		nih_free (paths);
 
 		if (ret < 0)

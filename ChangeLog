@@ -1,5 +1,9 @@
 2007-10-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/file.c (nih_dir_walk_visit): Call nih_free instead of
+	nih_list_free
+	(nih_dir_walk, nih_dir_walk_visit): Set destructor on object.
+
 	* nih/tests/test_io.c (test_add_watch, test_select_fds)
 	(test_handle_fds, test_shutdown, test_watcher): Call nih-free
 	instead of nih_list_free

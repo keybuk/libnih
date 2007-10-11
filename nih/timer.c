@@ -71,9 +71,8 @@ nih_timer_init (void)
  * time, or the soonest period thereafter.  A timer may be called
  * immediately by passing zero or a non-negative number as @timeout.
  *
- * The timer structure is allocated using nih_alloc() and stored in a linked
- * list, a default destructor is set that removes the timer from the list.
- * Cancellation of the timer can be performed by freeing it.
+ * The timer structure is allocated using nih_alloc() and stored in
+ * a linked list.  Cancellation of the timer can be performed by freeing it.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
@@ -124,9 +123,8 @@ nih_timer_add_timeout (const void *parent,
  * Arranges for the @callback function to be called every @period seconds,
  * or the soonest time thereafter.
  *
- * The timer structure is allocated using nih_alloc() and stored in a linked
- * list, a default destructor is set that removes the timer from the list.
- * Cancellation of the timer can be performed by freeing it.
+ * The timer structure is allocated using nih_alloc() and stored in
+ * a linked list.  Cancellation of the timer can be performed by freeing it.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
@@ -178,9 +176,8 @@ nih_timer_add_periodic (const void *parent,
  * Arranges for the @callback function to be called based on the @schedule
  * given.
  *
- * The timer structure is allocated using nih_alloc() and stored in a linked
- * list, a default destructor is set that removes the timer from the list.
- * Cancellation of the timer can be performed by freeing it.
+ * The timer structure is allocated using nih_alloc() and stored in
+ * a linked list.  Cancellation of the timer can be performed by freeing it.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent

@@ -1,5 +1,7 @@
 2007-10-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/timer.c: Fix doc strings
+
 	* nih/timer.c (nih_timer_add_timeout, nih_timer_add_periodic)
 	(nih_timer_add_scheduled): Adjust calls to set destructor.
 	(nih_timer_poll): Call nih_free rather than nih_list_free.

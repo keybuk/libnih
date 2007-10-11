@@ -74,7 +74,7 @@ test_add_timeout (void)
 		/* Check that the timer is the next one due. */
 		TEST_EQ_P (nih_timer_next_due (), timer);
 
-		nih_list_free (&timer->entry);
+		nih_free (timer);
 	}
 }
 
@@ -111,7 +111,7 @@ test_add_periodic (void)
 		/* Check that the timer is the next one due. */
 		TEST_EQ_P (nih_timer_next_due (), timer);
 
-		nih_list_free (&timer->entry);
+		nih_free (timer);
 	}
 }
 
@@ -155,7 +155,7 @@ test_add_scheduled (void)
 		/* Check that the timer is the next one due. */
 		TEST_EQ_P (nih_timer_next_due (), timer);
 
-		nih_list_free (&timer->entry);
+		nih_free (timer);
 	}
 }
 
@@ -175,13 +175,13 @@ test_next_due (void)
 	timer3 = nih_timer_add_timeout (NULL, 15, my_callback, &timer3);
 
 	TEST_EQ_P (nih_timer_next_due (), timer2);
-	nih_list_free (&timer2->entry);
+	nih_free (timer2);
 
 	TEST_EQ_P (nih_timer_next_due (), timer1);
-	nih_list_free (&timer1->entry);
+	nih_free (timer1);
 
 	TEST_EQ_P (nih_timer_next_due (), timer3);
-	nih_list_free (&timer3->entry);
+	nih_free (timer3);
 
 	TEST_EQ_P (nih_timer_next_due (), NULL);
 }
@@ -193,6 +193,8 @@ static int
 my_destructor (void *ptr)
 {
 	destroyed = 1;
+
+	nih_list_destroy (ptr);
 
 	return 0;
 }
@@ -250,7 +252,7 @@ test_poll (void)
 	TEST_LE (timer2->due, t2 + 20);
 
 
-	nih_list_free (&timer2->entry);
+	nih_free (timer2);
 }
 
 

@@ -1,12 +1,19 @@
 2007-10-11  Scott James Remnant  <scott@netsplit.com>
 
-	* nih/tests/test_tree.c (test_destructor): Rename.
-	(test_free): Drop
+	* nih/timer.c (nih_timer_add_timeout, nih_timer_add_periodic)
+	(nih_timer_add_scheduled): Adjust calls to set destructor.
+	(nih_timer_poll): Call nih_free rather than nih_list_free.
+	* nih/tests/test_timer.c (test_add_timeout, test_add_periodic)
+	(test_add_scheduled, test_next_due): Call nih_free rather than
+	nih_list_free
+	(my_destructor): Call the list destructor.
 
 	* nih/tree.c (nih_tree_destructor): Rename to nih_tree_destroy()
 	(nih_tree_free): Drop.
 	(nih_tree_new, nih_tree_entry_new): Set destructor.
 	* nih/tree.h: Update prototypes.
+	* nih/tests/test_tree.c (test_destructor): Rename.
+	(test_free): Drop
 
 	* nih/: Documentation string fix.
 

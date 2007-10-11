@@ -77,9 +77,7 @@ nih_timer_init (void)
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: the new timer information, or NULL if insufficient memory.
  **/
@@ -100,7 +98,8 @@ nih_timer_add_timeout (const void *parent,
 		return NULL;
 
 	nih_list_init (&timer->entry);
-	nih_alloc_set_destructor (timer, (NihDestructor)nih_list_destructor);
+
+	nih_alloc_set_destructor (timer, (NihDestructor)nih_list_destroy);
 
 	timer->type = NIH_TIMER_TIMEOUT;
 	timer->timeout = timeout;
@@ -131,9 +130,7 @@ nih_timer_add_timeout (const void *parent,
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: the new timer information, or NULL if insufficient memory.
  **/
@@ -155,7 +152,8 @@ nih_timer_add_periodic (const void *parent,
 		return NULL;
 
 	nih_list_init (&timer->entry);
-	nih_alloc_set_destructor (timer, (NihDestructor)nih_list_destructor);
+
+	nih_alloc_set_destructor (timer, (NihDestructor)nih_list_destroy);
 
 	timer->type = NIH_TIMER_PERIODIC;
 	timer->period = period;
@@ -186,9 +184,7 @@ nih_timer_add_periodic (const void *parent,
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: the new timer information, or NULL if insufficient memory.
  **/
@@ -210,7 +206,8 @@ nih_timer_add_scheduled (const void       *parent,
 		return NULL;
 
 	nih_list_init (&timer->entry);
-	nih_alloc_set_destructor (timer, (NihDestructor)nih_list_destructor);
+
+	nih_alloc_set_destructor (timer, (NihDestructor)nih_list_destroy);
 
 	timer->type = NIH_TIMER_SCHEDULED;
 	memcpy (&timer->schedule, schedule, sizeof (NihTimerSchedule));
@@ -286,7 +283,7 @@ nih_timer_poll (void)
 
 		switch (timer->type) {
 		case NIH_TIMER_TIMEOUT:
-			nih_list_free (&timer->entry);
+			nih_free (timer);
 			break;
 		case NIH_TIMER_PERIODIC:
 			timer->due = now + timer->period;

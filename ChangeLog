@@ -1,5 +1,18 @@
 2007-10-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_io.c (test_add_watch, test_select_fds)
+	(test_handle_fds, test_shutdown, test_watcher): Call nih-free
+	instead of nih_list_free
+	(destructor_called): Call nih_list_destroy when passed an
+	NihIoMessage; a bit icky since this is also called for an NihIo
+	which doesn't have a destructor (yet)
+
+	* nih/io.c (nih_io_watcher_write, nih_io_read, nih_io_get): Call
+	nih_free instead of nih_list_free.
+	(nih_io_add_watch): Adjust call to set destructor
+	(nih_io_message_new): Set a destructor so the message is removed
+	from a list when freed.
+
 	* nih/child.c (nih_child_add_watch): Adjust call to set destructor
 	(nih_child_poll): Call nih_free instead of nih_list_free
 	* nih/tests/test_child.c (test_add_watch, test_poll): Call nih_free

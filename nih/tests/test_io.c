@@ -92,7 +92,7 @@ test_add_watch (void)
 		TEST_EQ_P (watch->watcher, my_watcher);
 		TEST_EQ_P (watch->data, &watch);
 
-		nih_list_free (&watch->entry);
+		nih_free (watch);
 
 		close (fds[0]);
 		close (fds[1]);
@@ -133,9 +133,9 @@ test_select_fds (void)
 	TEST_TRUE (FD_ISSET (fds[1], &writefds));
 	TEST_FALSE (FD_ISSET (fds[1], &exceptfds));
 
-	nih_list_free (&watch1->entry);
-	nih_list_free (&watch2->entry);
-	nih_list_free (&watch3->entry);
+	nih_free (watch1);
+	nih_free (watch2);
+	nih_free (watch3);
 
 	close (fds[0]);
 	close (fds[1]);
@@ -211,9 +211,9 @@ test_handle_fds (void)
 	TEST_EQ (watcher_called, 0);
 
 
-	nih_list_free (&watch1->entry);
-	nih_list_free (&watch2->entry);
-	nih_list_free (&watch3->entry);
+	nih_free (watch1);
+	nih_free (watch2);
+	nih_free (watch3);
 
 	close (fds[0]);
 	close (fds[1]);
@@ -1305,6 +1305,9 @@ destructor_called (void *ptr)
 {
 	free_called++;
 
+	if (nih_alloc_size (ptr) == sizeof (NihIoMessage))
+		nih_list_destroy (ptr);
+
 	return 0;
 }
 
@@ -1402,7 +1405,7 @@ test_shutdown (void)
 	 * the shutdown socket to be closed and the structure to be freed.
 	 */
 	TEST_FEATURE ("with message being handled");
-	nih_list_free (&msg->entry);
+	nih_free (msg);
 
 	FD_ZERO (&readfds);
 	FD_ZERO (&writefds);
@@ -1869,7 +1872,7 @@ test_watcher (void)
 		} else if (test_alloc_failed) {
 			msg = (NihIoMessage *)io->recv_q->prev;
 
-			nih_list_free (&msg->entry);
+			nih_free (msg);
 			continue;
 		}
 
@@ -2097,7 +2100,7 @@ test_watcher (void)
 			TEST_TRUE (io->watch->events & NIH_IO_WRITE);
 			TEST_FALSE (free_called);
 
-			nih_list_free (&msg->entry);
+			nih_free (msg);
 			continue;
 		}
 

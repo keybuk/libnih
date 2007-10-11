@@ -101,14 +101,11 @@ nih_io_init (void)
  * This is the simplest form of watch and satisfies most basic purposes.
  *
  * The watch structure is allocated using nih_alloc() and stored in a linked
- * list, a default destructor is set that removes the watch from the list.
- * Removal of the watch can be performed by freeing it.
+ * list.  Removal of the watch can be performed by freeing it.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: the watch structure, or NULL if insufficient memory.
  **/
@@ -131,7 +128,8 @@ nih_io_add_watch (const void   *parent,
 		return NULL;
 
 	nih_list_init (&watch->entry);
-	nih_alloc_set_destructor (watch, (NihDestructor)nih_list_destructor);
+
+	nih_alloc_set_destructor (watch, (NihDestructor)nih_list_destroy);
 
 	watch->fd = fd;
 	watch->events = events;
@@ -246,9 +244,7 @@ nih_io_handle_fds (fd_set *readfds,
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: new buffer, or NULL if insufficient memory.
  **/
@@ -344,9 +340,7 @@ nih_io_buffer_resize (NihIoBuffer *buffer,
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: newly allocated data pointer, or NULL if insufficient memory.
  **/
@@ -439,13 +433,11 @@ nih_io_buffer_push (NihIoBuffer *buffer,
  *
  * All functions that use the message structure ensure that the internal
  * data is an nih_alloc() child of the message or its buffers, so the entire
- * message freed using nih_list_free() or nih_free().
+ * message freed using nih_free().
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: new message, or NULL if insufficient memory.
  **/
@@ -459,6 +451,8 @@ nih_io_message_new (const void *parent)
 		return NULL;
 
 	nih_list_init (&message->entry);
+
+	nih_alloc_set_destructor (message, (NihDestructor)nih_list_destroy);
 
 	message->addr = NULL;
 	message->addrlen = 0;
@@ -551,19 +545,16 @@ nih_io_message_add_control (NihIoMessage *message,
  * number of bytes read.
  *
  * The message structure is allocated using nih_alloc() and normally
- * stored in a linked list, a default destructor is set that removes the
- * message from the list.  Removal of the message can be performed by
+ * stored in a linked list.  Removal of the message can be performed by
  * freeing it.
  *
  * All functions that use the message structure ensure that the internal
  * data is an nih_alloc() child of the message or its buffers, so the entire
- * message freed using nih_list_free() or nih_free().
+ * message freed using nih_free().
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: new message, or NULL on raised error.
  */
@@ -809,9 +800,7 @@ error:
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: newly allocated structure, or NULL on raised error.
  **/
@@ -1163,7 +1152,7 @@ nih_io_watcher_write (NihIo      *io,
 			if (len < 0)
 				return -1;
 
-			nih_list_free (&message->entry);
+			nih_free (message);
 		}
 
 		/* Don't check for writability if we have nothing to write */
@@ -1335,9 +1324,8 @@ nih_io_close (NihIo *io)
  * returned message is not removed from the queue, so this can be used
  * to "peek" at the message or manipulate it.
  *
- * The message can be removed from the queue with nih_list_remove(),
- * nih_list_free() or just nih_free() if an alternate destructor has not
- * been set.
+ * The message can be removed from the queue with nih_list_remove() or
+ * nih_free().
  *
  * This may only be used when @io is in message mode.
  *
@@ -1367,9 +1355,7 @@ nih_io_first_message (NihIo *io)
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: message from queue, or NULL if the queue is empty.
  **/
@@ -1402,8 +1388,7 @@ nih_io_read_message (const void *parent,
  * Appends message to the send queue of @io so that it will be sent in
  * turn when possible.
  *
- * @message itself is added to the queue, and freed once written; if
- * freed before, its destructor should ensure it's removed from the queue.
+ * @message itself is added to the queue, and freed once written.
  *
  * When called on a message already in the send queue, this moves it to
  * the end of the queue.  It's entirely permitted to call this on messages
@@ -1448,9 +1433,7 @@ nih_io_send_message (NihIo        *io,
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: newly allocated string, or NULL if insufficient memory.
  **/
@@ -1491,7 +1474,7 @@ nih_io_read (const void *parent,
 	str = nih_io_buffer_pop (parent, buf, len);
 
 	if (message && (! message->data->len))
-		nih_list_free (&message->entry);
+		nih_free (message);
 
 finish:
 	nih_io_shutdown_check (io);
@@ -1580,9 +1563,7 @@ nih_io_write (NihIo      *io,
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: newly allocated string or NULL if delimiter not found or
  * insufficient memory.
@@ -1632,7 +1613,7 @@ nih_io_get (const void *parent,
 	}
 
 	if (message && (! message->data->len))
-		nih_list_free (&message->entry);
+		nih_free (message);
 
 finish:
 	nih_io_shutdown_check (io);

@@ -1,5 +1,7 @@
 2007-10-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/string.c: Fix documentation as below.
+
 	* nih/hash.c: Fix doc string, destructors are now considered internal
 	and shouldn't be set by callers.
 

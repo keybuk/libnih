@@ -132,28 +132,27 @@ typedef struct nih_tree_entry {
 
 NIH_BEGIN_EXTERN
 
-void          nih_tree_init       (NihTree *tree);
-NihTree *     nih_tree_new        (const void *parent)
+void          nih_tree_init      (NihTree *tree);
+NihTree *     nih_tree_new       (const void *parent)
 	__attribute__ ((warn_unused_result, malloc));
-NihTreeEntry *nih_tree_entry_new  (const void *parent)
+NihTreeEntry *nih_tree_entry_new (const void *parent)
 	__attribute__ ((warn_unused_result, malloc));
 
-NihTree *     nih_tree_add        (NihTree *tree, NihTree *node,
-				   NihTreeWhere where);
+NihTree *     nih_tree_add       (NihTree *tree, NihTree *node,
+				  NihTreeWhere where);
 
-NihTree *     nih_tree_remove     (NihTree *node);
-NihTree *     nih_tree_unlink     (NihTree *node);
-int           nih_tree_destructor (NihTree *node);
-int           nih_tree_free       (NihTree *node);
+NihTree *     nih_tree_remove    (NihTree *node);
+NihTree *     nih_tree_unlink    (NihTree *node);
+int           nih_tree_destroy   (NihTree *node);
 
-NihTree *     nih_tree_next       (NihTree *tree, NihTree *node);
-NihTree *     nih_tree_prev       (NihTree *tree, NihTree *node);
+NihTree *     nih_tree_next      (NihTree *tree, NihTree *node);
+NihTree *     nih_tree_prev      (NihTree *tree, NihTree *node);
 
-NihTree *     nih_tree_next_pre   (NihTree *tree, NihTree *node);
-NihTree *     nih_tree_prev_pre   (NihTree *tree, NihTree *node);
+NihTree *     nih_tree_next_pre  (NihTree *tree, NihTree *node);
+NihTree *     nih_tree_prev_pre  (NihTree *tree, NihTree *node);
 
-NihTree *     nih_tree_next_post  (NihTree *tree, NihTree *node);
-NihTree *     nih_tree_prev_post  (NihTree *tree, NihTree *node);
+NihTree *     nih_tree_next_post (NihTree *tree, NihTree *node);
+NihTree *     nih_tree_prev_post (NihTree *tree, NihTree *node);
 
 NIH_END_EXTERN
 

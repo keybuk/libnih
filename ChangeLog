@@ -1,5 +1,13 @@
 2007-10-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_tree.c (test_destructor): Rename.
+	(test_free): Drop
+
+	* nih/tree.c (nih_tree_destructor): Rename to nih_tree_destroy()
+	(nih_tree_free): Drop.
+	(nih_tree_new, nih_tree_entry_new): Set destructor.
+	* nih/tree.h: Update prototypes.
+
 	* nih/: Documentation string fix.
 
 	* nih/tests/test_hash.c (test_string_key): Replace nih_list_free

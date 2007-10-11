@@ -59,9 +59,7 @@ nih_tree_init (NihTree *tree)
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: the new tree node or NULL if the allocation failed.
  **/
@@ -75,6 +73,8 @@ nih_tree_new (const void *parent)
 		return NULL;
 
 	nih_tree_init (tree);
+
+	nih_alloc_set_destructor (tree, (NihDestructor)nih_tree_destroy);
 
 	return tree;
 }
@@ -91,9 +91,7 @@ nih_tree_new (const void *parent)
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: the new tree node or NULL if the allocation failed.
  **/
@@ -107,6 +105,8 @@ nih_tree_entry_new (const void *parent)
 		return NULL;
 
 	nih_tree_init (&tree->node);
+
+	nih_alloc_set_destructor (tree, (NihDestructor)nih_tree_destroy);
 
 	tree->data = NULL;
 
@@ -228,48 +228,24 @@ nih_tree_unlink (NihTree *node)
 }
 
 /**
- * nih_tree_destructor:
+ * nih_tree_destroy:
  * @node: node to be removed.
  *
- * Removes @node from its containing tree, intended to be used as an
- * nih_alloc() destructor so that the node is automatically removed if
- * it is freed.
+ * Removes @node from its containing tree.
+ *
+ * Normally used or called from an nih_alloc() destructor so that the list
+ * item is automatically removed from its containing list when freed.
  *
  * Returns: zero.
  **/
 int
-nih_tree_destructor (NihTree *node)
+nih_tree_destroy (NihTree *node)
 {
 	nih_assert (node != NULL);
 
 	nih_tree_unlink (node);
 
 	return 0;
-}
-
-/**
- * nih_tree_free:
- * @node: node to be removed and freed.
- *
- * Removes @node from its containing tree and frees the memory allocated
- * for it.  @node must have been previously allocated using nih_alloc().
- *
- * Children of @node are not automatically freed unless they are allocated
- * as nih_alloc() children of @node.
- *
- * You must also take care of freeing the data attached to the node yourself
- * by either freeing it before calling this function or allocating it using
- * the node as the context.
- *
- * Returns: return value from destructor, or 0.
- **/
-int
-nih_tree_free (NihTree *node)
-{
-	nih_assert (node != NULL);
-
-	nih_tree_unlink (node);
-	return nih_free (node);
 }
 
 

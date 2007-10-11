@@ -327,12 +327,12 @@ test_unlink (void)
 }
 
 void
-test_destructor (void)
+test_destroy (void)
 {
 	NihTree *tree, *node1, *node2;
 	int      ret;
 
-	TEST_FUNCTION ("nih_tree_destructor");
+	TEST_FUNCTION ("nih_tree_destroy");
 
 	/* Check that we can unlink a node from its containing tree, and
 	 * also have its children cast adrift.
@@ -345,7 +345,7 @@ test_destructor (void)
 	nih_tree_add (tree, node1, NIH_TREE_LEFT);
 	nih_tree_add (node1, node2, NIH_TREE_RIGHT);
 
-	ret = nih_tree_destructor (node1);
+	ret = nih_tree_destroy (node1);
 
 	TEST_EQ (ret, 0);
 
@@ -363,7 +363,7 @@ test_destructor (void)
 	nih_tree_add (tree, node1, NIH_TREE_LEFT);
 	nih_tree_add (tree, node2, NIH_TREE_RIGHT);
 
-	ret = nih_tree_destructor (tree);
+	ret = nih_tree_destroy (tree);
 
 	TEST_EQ (ret, 0);
 
@@ -373,49 +373,6 @@ test_destructor (void)
 	TEST_EQ_P (node1->parent, NULL);
 	TEST_EQ_P (node2->parent, NULL);
 
-
-	nih_free (tree);
-}
-
-
-static int destructor_called = 0;
-
-static int
-my_destructor (void *ptr)
-{
-	destructor_called++;
-
-	return 0;
-}
-
-void
-test_free (void)
-{
-	NihTree *tree, *node1, *node2;
-	int      ret;
-
-	/* Check that destructors are called on nih_tree_free and the return
-	 * value of that destructor is returned; the node should be unlinked
-	 * from the tree it was in, casting children adrift.
-	 */
-	TEST_FUNCTION ("nih_list_free");
-	tree = nih_tree_new (NULL);
-	node1 = nih_tree_new (tree);
-	node2 = nih_tree_new (tree);
-
-	nih_tree_add (tree, node1, NIH_TREE_LEFT);
-	nih_tree_add (node1, node2, NIH_TREE_RIGHT);
-
-	destructor_called = 0;
-	nih_alloc_set_destructor (node1, my_destructor);
-
-	ret = nih_tree_free (node1);
-
-	TEST_EQ (ret, 0);
-	TEST_TRUE (destructor_called);
-
-	TEST_EQ_P (tree->left, NULL);
-	TEST_EQ_P (node2->parent, NULL);
 
 	nih_free (tree);
 }
@@ -1359,8 +1316,7 @@ main (int   argc,
 	test_add ();
 	test_remove ();
 	test_unlink ();
-	test_destructor ();
-	test_free ();
+	test_destroy ();
 	test_next ();
 	test_foreach ();
 	test_prev ();

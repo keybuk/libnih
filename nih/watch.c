@@ -117,9 +117,7 @@ static void            nih_watch_handle      (NihWatch *watch,
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: new NihWatch structure, or NULL on raised error.
  **/
@@ -278,6 +276,8 @@ nih_watch_add (NihWatch   *watch,
 
 	nih_list_init (&handle->entry);
 
+	nih_alloc_set_destructor (handle, (NihDestructor)nih_list_destroy);
+
 	/* Get a watch descriptor for the path */
 	handle->wd = inotify_add_watch (watch->fd, path, INOTIFY_EVENTS);
 	if (handle->wd < 0) {
@@ -306,7 +306,7 @@ nih_watch_add (NihWatch   *watch,
 		err = nih_error_get ();
 		if (err->number != ENOTDIR) {
 			nih_error_raise_again (err);
-			nih_list_free (&handle->entry);
+			nih_free (handle);
 			return -1;
 		}
 	}
@@ -484,7 +484,7 @@ nih_watch_handle (NihWatch       *watch,
 					       handle->path);
 
 		nih_debug ("Ceasing watch on %s", handle->path);
-		nih_list_free (&handle->entry);
+		nih_free (handle);
 		return;
 	}
 
@@ -545,7 +545,7 @@ nih_watch_handle (NihWatch       *watch,
 		path_handle = nih_watch_handle_by_path (watch, path);
 		if (path_handle) {
 			nih_debug ("Ceasing watch on %s", path_handle->path);
-			nih_list_free (&path_handle->entry);
+			nih_free (path_handle);
 		}
 	}
 

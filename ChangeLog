@@ -1,5 +1,11 @@
 2007-10-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/watch.c (nih_watch_add, nih_watch_handle): Call nih_free
+	instead of nih_list_free
+	(nih_watch_add): Set destructor to nih_list_destroy for now.
+	* nih/tests/test_watch.c (my_destructor): Call nih_list_destroy
+	for NihWatch structure.
+
 	* nih/file.c (nih_dir_walk_visit): Call nih_free instead of
 	nih_list_free
 	(nih_dir_walk, nih_dir_walk_visit): Set destructor on object.

@@ -259,14 +259,11 @@ nih_signal_reset (void)
  * have been set to nih_signal_handler() using nih_signal_set_handler(),
  *
  * The callback structure is allocated using nih_alloc() and stored in a
- * linked list, a default destructor is set that removes the handler from
- * the list.  Removal of the handler can be performed by freeing it.
+ * linked list.  Removal of the handler can be performed by freeing it.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * is freed, the returned block will be freed too.
  *
  * Returns: the signal information, or NULL if insufficient memory.
  **/
@@ -289,7 +286,8 @@ nih_signal_add_handler (const void       *parent,
 		return NULL;
 
 	nih_list_init (&signal->entry);
-	nih_alloc_set_destructor (signal, (NihDestructor)nih_list_destructor);
+
+	nih_alloc_set_destructor (signal, (NihDestructor)nih_list_destroy);
 
 	signal->signum = signum;
 

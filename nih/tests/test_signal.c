@@ -243,7 +243,7 @@ test_add_handler (void)
 		TEST_EQ_P (signal->handler, my_handler);
 		TEST_EQ_P (signal->data, &signal);
 
-		nih_list_free (&signal->entry);
+		nih_free (signal);
 	}
 }
 

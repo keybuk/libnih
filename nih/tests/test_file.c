@@ -598,6 +598,7 @@ my_visitor (void        *data,
 	TEST_ALLOC_SAFE {
 		v = nih_new (visited, Visited);
 		nih_list_init (&v->entry);
+		nih_alloc_set_destructor (v, (NihDestructor)nih_list_destroy);
 
 		v->data = data;
 		v->dirname = nih_strdup (v, dirname);

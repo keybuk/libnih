@@ -1,5 +1,8 @@
 2007-10-12  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_file.c (my_visitor): Set destructor for the list
+	entries we create as we go.
+
 	* nih/watch.c (nih_watch_reader): Rework the function slightly,
 	instead of using the free pointer to free at the end of the handler,
 	use it to detect the free after the handler returns and immediately

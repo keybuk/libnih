@@ -1,5 +1,19 @@
 2007-10-12  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/watch.c (nih_watch_reader): Rework the function slightly,
+	instead of using the free pointer to free at the end of the handler,
+	use it to detect the free after the handler returns and immediately
+	abort -- it means we won't process remaining watches but meh.
+	(nih_watch_handle): Get passed the caught_free flag and check it
+	after calling any handlers to make sure we abort properly.
+	(nih_watch_free): Rename to nih_watch_destroy and just handle the
+	internal cleanup.
+	(nih_watch_new): Set the destructor properly.
+	* nih/watch.h: Update prototypes.
+	* nih/tests/test_watch.c (test_free): Rename to test_destroy.
+	(my_delete_handler): Use nih_free not nih_watch_free
+	(my_destructor): Chain up to nih_watch_destroy for NihWatch.
+
 	* nih/tests/test_watch.c (my_destructor): Neither NihWatch nor NihIo
 	need a destructor to be called.
 

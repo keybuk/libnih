@@ -73,7 +73,8 @@ static void            nih_watch_reader      (NihWatch *watch, NihIo *io,
 static void            nih_watch_handle      (NihWatch *watch,
 					      NihWatchHandle *handle,
 					      uint32_t events, uint32_t cookie,
-					      const char *name);
+					      const char *name,
+					      int *caught_free);
 
 
 /**
@@ -112,8 +113,7 @@ static void            nih_watch_handle      (NihWatch *watch,
  * functions used by this one.
  *
  * The returned watch structure is allocated with nih_alloc(), and contains
- * open inotify descriptors and child structures including NihIo.  It should
- * be freed using nih_watch_free().
+ * open inotify descriptors and child structures including NihIo.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
@@ -187,6 +187,8 @@ nih_watch_new (const void       *parent,
 
 		nih_free (err);
 	}
+
+	nih_alloc_set_destructor (watch, (NihDestructor)nih_watch_destroy);
 
 	return watch;
 }
@@ -357,26 +359,27 @@ nih_watch_add_visitor (NihWatch    *watch,
 
 
 /**
- * nih_watch_free:
- * @watch: NihWatch to be freed.
+ * nih_watch_destroy:
+ * @watch: NihWatch to be destroyed.
  *
- * Closes the inotify descriptor and frees both the NihIo and NihWatch
- * instances handling it.
+ * Closes the inotify descriptor and frees the NihIo instance handling it.
  *
- * Returns: value returned from destructor.
+ * Normally used or called from an nih_alloc() destructor.
+ *
+ * Returns: zero.
  **/
 int
-nih_watch_free (NihWatch *watch)
+nih_watch_destroy (NihWatch *watch)
 {
 	nih_assert (watch != NULL);
 
-	if (watch->free) {
+	if (watch->free)
 		*watch->free = TRUE;
-		return 0;
-	}
 
-	nih_io_close (watch->io);
-	return nih_free (watch);
+	if (watch->io)
+		nih_io_close (watch->io);
+
+	return 0;
 }
 
 
@@ -398,16 +401,16 @@ nih_watch_reader (NihWatch   *watch,
 		  const char *buf,
 		  size_t      len)
 {
-	int lazy_free;
+	int caught_free;
 
 	nih_assert (watch != NULL);
 	nih_assert (io != NULL);
 	nih_assert (buf != NULL);
 	nih_assert (len > 0);
 
-	lazy_free = FALSE;
+	caught_free = FALSE;
 	if (! watch->free)
-		watch->free = &lazy_free;
+		watch->free = &caught_free;
 
 	while (len > 0) {
 		NihWatchHandle       *handle;
@@ -433,7 +436,14 @@ nih_watch_reader (NihWatch   *watch,
 		handle = nih_watch_handle_by_wd (watch, event->wd);
 		if (handle)
 			nih_watch_handle (watch, handle, event->mask,
-					  event->cookie, event->name);
+					  event->cookie, event->name,
+					  &caught_free);
+
+		/* Check whether the user freed the watch from inside the
+		 * handler.  Just drop out now; everything we had has gone.
+		 */
+		if (caught_free)
+			return;
 
 		/* Remove the event from the front of the buffer, and
 		 * decrease our own length counter.
@@ -443,10 +453,8 @@ nih_watch_reader (NihWatch   *watch,
 	}
 
 finish:
-	if (watch->free == &lazy_free)
+	if (watch->free == &caught_free)
 		watch->free = NULL;
-	if (lazy_free)
-		nih_watch_free (watch);
 }
 
 /**
@@ -455,7 +463,8 @@ finish:
  * @handle: NihWatchHandle for individual path,
  * @events: inotify events mask,
  * @cookie: unique cookie for renames,
- * @name: name of path under @handle.
+ * @name: name of path under @handle,
+ * @caught_free: set to TRUE if the watch is freed.
  *
  * This handler is called when an event occurs for an individual watch
  * handle, it deals with the event and ensures that the @watch handlers
@@ -466,7 +475,8 @@ nih_watch_handle (NihWatch       *watch,
 		  NihWatchHandle *handle,
 		  uint32_t        events,
 		  uint32_t        cookie,
-		  const char     *name)
+		  const char     *name,
+		  int            *caught_free)
 {
 	struct stat  statbuf;
 	char        *path;
@@ -482,6 +492,8 @@ nih_watch_handle (NihWatch       *watch,
 		if (watch->delete_handler)
 			watch->delete_handler (watch->data, watch,
 					       handle->path);
+		if (*caught_free)
+			return;
 
 		nih_debug ("Ceasing watch on %s", handle->path);
 		nih_free (handle);
@@ -507,6 +519,8 @@ nih_watch_handle (NihWatch       *watch,
 		if (watch->create_handler)
 			watch->create_handler (watch->data, watch,
 					       path, &statbuf);
+		if (*caught_free)
+			goto finish;
 
 		/* See if it's a sub-directory, and we're handling those
 		 * ourselves.  Add a watch to the directory and any
@@ -531,12 +545,16 @@ nih_watch_handle (NihWatch       *watch,
 		if (watch->modify_handler)
 			watch->modify_handler (watch->data, watch,
 					       path, &statbuf);
+		if (*caught_free)
+			goto finish;
 
 	} else if ((events & IN_DELETE) || (events & IN_MOVED_FROM)) {
 		NihWatchHandle *path_handle;
 
 		if (watch->delete_handler)
 			watch->delete_handler (watch->data, watch, path);
+		if (*caught_free)
+			goto finish;
 
 		/* If there's a watch for that path, we act as if it got
 		 * IN_IGNORED or IN_MOVE_SELF; just in case it's a symlink

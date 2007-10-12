@@ -152,17 +152,17 @@ typedef struct nih_watch_handle {
 
 NIH_BEGIN_EXTERN
 
-NihWatch *nih_watch_new  (const void *parent, const char *path, int subdirs,
-			  int create, NihFileFilter filter,
-			  NihCreateHandler create_handler,
-			  NihModifyHandler modify_handler,
-			  NihDeleteHandler delete_handler, void *data)
+NihWatch *nih_watch_new     (const void *parent, const char *path, int subdirs,
+			     int create, NihFileFilter filter,
+			     NihCreateHandler create_handler,
+			     NihModifyHandler modify_handler,
+			     NihDeleteHandler delete_handler, void *data)
 	__attribute__ ((warn_unused_result, malloc));
 
-int       nih_watch_add  (NihWatch *watch, const char *path, int subdirs)
+int       nih_watch_add     (NihWatch *watch, const char *path, int subdirs)
 	__attribute__ ((warn_unused_result));
 
-int       nih_watch_free (NihWatch *watch);
+int       nih_watch_destroy (NihWatch *watch);
 
 NIH_END_EXTERN
 

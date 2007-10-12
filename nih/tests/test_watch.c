@@ -121,7 +121,7 @@ my_delete_handler (void       *data,
 		if (path) {
 			last_path = nih_strdup (NULL, path);
 			if (! strcmp (path, watch->path))
-				nih_watch_free (watch);
+				nih_free (watch);
 		} else {
 			last_path = NULL;
 		}
@@ -249,7 +249,7 @@ test_new (void)
 
 		TEST_LIST_EMPTY (&watch->watches);
 
-		nih_watch_free (watch);
+		nih_free (watch);
 	}
 	nih_error_pop_context ();
 
@@ -298,7 +298,7 @@ test_new (void)
 
 		TEST_LIST_EMPTY (&watch->watches);
 
-		nih_watch_free (watch);
+		nih_free (watch);
 	}
 
 
@@ -370,7 +370,7 @@ test_new (void)
 
 		TEST_LIST_EMPTY (&watch->watches);
 
-		nih_watch_free (watch);
+		nih_free (watch);
 	}
 
 
@@ -466,7 +466,7 @@ test_new (void)
 		TEST_EQ_STR (last_path, filename);
 		nih_free (last_path);
 
-		nih_watch_free (watch);
+		nih_free (watch);
 	}
 
 
@@ -561,7 +561,7 @@ test_new (void)
 	chmod (filename, 0755);
 
 
-	nih_watch_free (watch);
+	nih_free (watch);
 
 
 	strcpy (filename, dirname);
@@ -872,7 +872,7 @@ test_add (void)
 	chmod (filename, 0755);
 
 
-	nih_watch_free (watch);
+	nih_free (watch);
 
 
 	strcpy (filename, dirname);
@@ -914,34 +914,41 @@ my_destructor (void *ptr)
 {
 	destructor_called++;
 
+	if (nih_alloc_size (ptr) == sizeof (NihWatch))
+		nih_watch_destroy (ptr);
+
 	return 100;
 }
 
 void
-test_free (void)
+test_destroy (void)
 {
 	NihWatch *watch;
-	int       ret, fd;
+	int       ret, fd, caught_free;
 
-	/* Check that both the io structure and watch structure are freed,
+	/* Check that the free flag is set, the io structure is destroyed
 	 * and that the inotify descriptor is closed.
 	 */
-	TEST_FUNCTION ("nih_watch_free");
+	TEST_FUNCTION ("nih_watch_destroy");
 	watch = nih_watch_new (NULL, "/", FALSE, FALSE, NULL,
 			       NULL, NULL, NULL, NULL);
 	fd = watch->fd;
 
+	caught_free = FALSE;
+	watch->free = &caught_free;
+
 	destructor_called = 0;
-	nih_alloc_set_destructor (watch, my_destructor);
 	nih_alloc_set_destructor (watch->io, my_destructor);
 
-	ret = nih_watch_free (watch);
+	ret = nih_free (watch);
 
-	TEST_EQ (ret, 100);
-	TEST_EQ (destructor_called, 2);
+	TEST_EQ (ret, 0);
+	TEST_EQ (destructor_called, 1);
 
 	TEST_LT (fcntl (fd, F_GETFD), 0);
 	TEST_EQ (errno, EBADF);
+
+	TEST_TRUE (caught_free);
 }
 
 
@@ -1407,7 +1414,7 @@ main (int   argc,
 
 	test_new ();
 	test_add ();
-	test_free ();
+	test_destroy ();
 	test_reader ();
 
 	return 0;

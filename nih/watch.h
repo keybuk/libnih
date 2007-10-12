@@ -50,7 +50,7 @@ typedef struct nih_watch NihWatch;
  * @path contains the path to the file, including the directory prefix
  * which can be found in @watch.
  *
- * It is safe to remove the watch with nih_watch_free() from this function.
+ * It is safe to remove the watch with nih_free() from this function.
  **/
 typedef void (*NihCreateHandler) (void *data, NihWatch *watch,
 				  const char *path, struct stat *statbuf);
@@ -67,7 +67,7 @@ typedef void (*NihCreateHandler) (void *data, NihWatch *watch,
  * the path to the file, including the directory prefix which can be
  * found in @watch.
  *
- * It is safe to remove the watch with nih_watch_free() from this function.
+ * It is safe to remove the watch with nih_free() from this function.
  **/
 typedef void (*NihModifyHandler) (void *data, NihWatch *watch,
 				  const char *path, struct stat *statbuf);
@@ -88,7 +88,7 @@ typedef void (*NihModifyHandler) (void *data, NihWatch *watch,
  * with the top-level path as an argument (check watch->path).  It is
  * normal and safe to free the watch at this point.
  *
- * It is safe to remove the watch with nih_watch_free() from this function.
+ * It is safe to remove the watch with nih_free() from this function.
  **/
 typedef void (*NihDeleteHandler) (void *data, NihWatch *watch,
 				  const char *path);

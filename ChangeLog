@@ -1,5 +1,8 @@
 2007-10-12  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/watch.h (NihCreateHandler, NihModifyHandler, NihDeleteHandler):
+	Modify doc strings to mention nih_free instead of nih_watch_free
+
 	* nih/tests/test_file.c (my_visitor): Set destructor for the list
 	entries we create as we go.
 

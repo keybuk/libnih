@@ -1,5 +1,18 @@
 2007-10-14  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/watch.c (nih_watch_new): Make the io structure an nih_alloc
+	child of the watch, now that we don't perform any kind of lazy
+	freeing or closing.
+	(nih_watch_destroy): No need to close the io structure since it'll
+	be automatically freed, just set the flag to be caught in the reader.
+	* nih/tests/test_watch.c (test_new): Check parent of watch->io
+	is watch, not NUL.
+	(test_destroy): Don't use the destructor anymore, nih_alloc is tested
+	elsewhere.
+	(test_reader): Don't use destructor to test watch->io
+	(my_destructor): Always call nih_watch_destroy since this is only
+	used for that.
+
 	* nih/io.c (nih_io_close): Rename to nih_io_destroy, setting a free
 	flag in the structure if necessary before closing the descriptor
 	and calling the error handler if there's a problem.

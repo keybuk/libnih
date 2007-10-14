@@ -170,10 +170,8 @@ nih_watch_new (const void       *parent,
 	}
 
 
-	/* Create an NihIo to handle incoming events.  This can't be
-	 * an nih_alloc child because we need to be able to lazy close it.
-	 */
-	while (! (watch->io = nih_io_reopen (NULL, watch->fd, NIH_IO_STREAM,
+	/* Create an NihIo to handle incoming events. */
+	while (! (watch->io = nih_io_reopen (watch, watch->fd, NIH_IO_STREAM,
 					     (NihIoReader)nih_watch_reader,
 					     NULL, NULL, watch))) {
 		NihError *err;
@@ -375,9 +373,6 @@ nih_watch_destroy (NihWatch *watch)
 
 	if (watch->free)
 		*watch->free = TRUE;
-
-	if (watch->io)
-		nih_io_close (watch->io);
 
 	return 0;
 }

@@ -231,7 +231,7 @@ test_new (void)
 		TEST_GE (fcntl (watch->fd, F_GETFD), 0);
 
 		TEST_ALLOC_SIZE (watch->io, sizeof (NihIo));
-		TEST_ALLOC_PARENT (watch->io, NULL);
+		TEST_ALLOC_PARENT (watch->io, watch);
 		TEST_EQ (watch->io->type, NIH_IO_STREAM);
 		TEST_EQ (watch->io->watch->fd, watch->fd);
 
@@ -280,7 +280,7 @@ test_new (void)
 		TEST_GE (fcntl (watch->fd, F_GETFD), 0);
 
 		TEST_ALLOC_SIZE (watch->io, sizeof (NihIo));
-		TEST_ALLOC_PARENT (watch->io, NULL);
+		TEST_ALLOC_PARENT (watch->io, watch);
 		TEST_EQ (watch->io->type, NIH_IO_STREAM);
 		TEST_EQ (watch->io->watch->fd, watch->fd);
 
@@ -326,7 +326,7 @@ test_new (void)
 		TEST_GE (fcntl (watch->fd, F_GETFD), 0);
 
 		TEST_ALLOC_SIZE (watch->io, sizeof (NihIo));
-		TEST_ALLOC_PARENT (watch->io, NULL);
+		TEST_ALLOC_PARENT (watch->io, watch);
 		TEST_EQ (watch->io->type, NIH_IO_STREAM);
 		TEST_EQ (watch->io->watch->fd, watch->fd);
 
@@ -402,7 +402,7 @@ test_new (void)
 		TEST_GE (fcntl (watch->fd, F_GETFD), 0);
 
 		TEST_ALLOC_SIZE (watch->io, sizeof (NihIo));
-		TEST_ALLOC_PARENT (watch->io, NULL);
+		TEST_ALLOC_PARENT (watch->io, watch);
 		TEST_EQ (watch->io->type, NIH_IO_STREAM);
 		TEST_EQ (watch->io->watch->fd, watch->fd);
 
@@ -914,8 +914,7 @@ my_destructor (void *ptr)
 {
 	destructor_called++;
 
-	if (nih_alloc_size (ptr) == sizeof (NihWatch))
-		nih_watch_destroy (ptr);
+	nih_watch_destroy (ptr);
 
 	return 100;
 }
@@ -926,8 +925,8 @@ test_destroy (void)
 	NihWatch *watch;
 	int       ret, fd, caught_free;
 
-	/* Check that the free flag is set, the io structure is destroyed
-	 * and that the inotify descriptor is closed.
+	/* Check that the free flag is set and that the inotify descriptor
+	 * is closed.
 	 */
 	TEST_FUNCTION ("nih_watch_destroy");
 	watch = nih_watch_new (NULL, "/", FALSE, FALSE, NULL,
@@ -937,13 +936,9 @@ test_destroy (void)
 	caught_free = FALSE;
 	watch->free = &caught_free;
 
-	destructor_called = 0;
-	nih_alloc_set_destructor (watch->io, my_destructor);
-
 	ret = nih_free (watch);
 
 	TEST_EQ (ret, 0);
-	TEST_EQ (destructor_called, 1);
 
 	TEST_LT (fcntl (fd, F_GETFD), 0);
 	TEST_EQ (errno, EBADF);
@@ -1375,7 +1370,6 @@ test_reader (void)
 
 	destructor_called = 0;
 	nih_alloc_set_destructor (watch, my_destructor);
-	nih_alloc_set_destructor (watch->io, my_destructor);
 
 	delete_called = 0;
 	last_watch = NULL;
@@ -1395,7 +1389,7 @@ test_reader (void)
 	TEST_EQ_STR (last_path, dirname);
 	TEST_EQ_P (last_data, &watch);
 
-	TEST_EQ (destructor_called, 2);
+	TEST_EQ (destructor_called, 1);
 }
 
 

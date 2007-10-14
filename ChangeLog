@@ -1,3 +1,28 @@
+2007-10-14  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/io.c (nih_io_close): Rename to nih_io_destroy, setting a free
+	flag in the structure if necessary before closing the descriptor
+	and calling the error handler if there's a problem.
+	(nih_io_reopen): Set destructor
+	(nih_io_watcher): Rename lazy_close to caught_free and check its
+	value after any calls to the reader, error handler or close handler
+	functions; if true, simply bail out.  Reorder leaving so that a
+	shutdown check happens last (since this can free the structure).
+	(nih_io_closed): Now simply calls the close handler if it exists,
+	otherwise frees the structure.
+	* nih/io.h (NihIo): Rename close member to free.
+	Update prototypes.
+	* nih/tests/test_io.c (my_reader, test_reopen): Use nih_free
+	instead of nih_io_close.
+	(test_reopen): Create new fds each time, since they are closed
+	on free now.
+	(destructor_called): Chain up to call nih_io_destroy
+	(test_close): Rename to test_destroy and alter appropriately.
+	(test_watcher): Adjust documentation to say we're checking that free
+	is called in the reader.
+	(test_send_message, test_write, test_printf): Open pipes rather
+	than just stdout, because that will end up closed.
+
 2007-10-12  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/watch.h (NihCreateHandler, NihModifyHandler, NihDeleteHandler):

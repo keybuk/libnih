@@ -827,7 +827,7 @@ nih_io_reopen (const void        *parent,
 	io->error_handler = error_handler;
 	io->data = data;
 	io->shutdown = FALSE;
-	io->close = NULL;
+	io->free = NULL;
 
 	switch (io->type) {
 	case NIH_IO_STREAM:
@@ -874,6 +874,8 @@ nih_io_reopen (const void        *parent,
 	if (nih_io_set_nonblock (fd) < 0)
 		goto error;
 
+	nih_alloc_set_destructor (io, (NihDestructor)nih_io_destroy);
+
 	return io;
 error:
 	nih_error_raise_system ();
@@ -905,17 +907,14 @@ nih_io_watcher (NihIo       *io,
 		NihIoWatch  *watch,
 		NihIoEvents  events)
 {
-	int lazy_close;
+	int caught_free;
 
 	nih_assert (io != NULL);
 	nih_assert (watch != NULL);
 
-	/* Use the structure's close member to turn all attempts to close/free
-	 * the structure into lazy ones.
-	 */
-	lazy_close = FALSE;
-	if (! io->close)
-		io->close = &lazy_close;
+	caught_free = FALSE;
+	if (! io->free)
+		io->free = &caught_free;
 
 	/* There's data to be read */
 	if (events & NIH_IO_READ) {
@@ -938,6 +937,8 @@ nih_io_watcher (NihIo       *io,
 					io->reader (io->data, io,
 						    io->recv_buf->buf,
 						    io->recv_buf->len);
+				if (caught_free)
+					return;
 				break;
 			case NIH_IO_MESSAGE: {
 				NihIoMessage *last = NULL, *message;
@@ -951,6 +952,8 @@ nih_io_watcher (NihIo       *io,
 					io->reader (io->data, io,
 						    message->data->buf,
 						    message->data->len);
+					if (caught_free)
+						return;
 					last = message;
 				}
 				break;
@@ -976,6 +979,8 @@ nih_io_watcher (NihIo       *io,
 			default:
 				nih_error_raise_again (err);
 				nih_io_error (io);
+				if (caught_free)
+					return;
 				goto finish;
 			}
 		}
@@ -983,15 +988,11 @@ nih_io_watcher (NihIo       *io,
 		/* Deal with socket being closed */
 		if ((io->type == NIH_IO_STREAM) && (! len)) {
 			nih_io_closed (io);
+			if (caught_free)
+				return;
 			goto finish;
 		}
 	}
-
-	/* Don't bother trying to write data if the socket is going to be
-	 * closed.
-	 */
-	if (lazy_close)
-		goto finish;
 
 	/* There's room to write data, send as much as we can */
 	if (events & NIH_IO_WRITE) {
@@ -1013,23 +1014,19 @@ nih_io_watcher (NihIo       *io,
 			default:
 				nih_error_raise_again (err);
 				nih_io_error (io);
+				if (caught_free)
+					return;
 				goto finish;
 			}
 		}
 	}
 
 finish:
+	if (io->free == &caught_free)
+		io->free = NULL;
+
 	/* Shut down the socket if it is empty */
 	nih_io_shutdown_check (io);
-
-	/* Check whether nih_io_close was called anywhere during the handling
-	 * of this socket (including by nested watchers, maybe); if so, close
-	 * it now that we don't need it anymore.
-	 */
-	if (io->close == &lazy_close)
-		io->close = NULL;
-	if (lazy_close)
-		nih_io_close (io);
 }
 
 /**
@@ -1218,13 +1215,10 @@ nih_io_closed (NihIo *io)
 {
 	nih_assert (io != NULL);
 
-	if (io->close && *io->close)
-		return;
-
 	if (io->close_handler) {
 		io->close_handler (io->data, io);
 	} else {
-		nih_io_close (io);
+		nih_free (io);
 	}
 }
 
@@ -1283,36 +1277,33 @@ nih_io_shutdown_check (NihIo *io)
 }
 
 /**
- * nih_io_close:
- * @io: structure to be closed.
+ * nih_io_destroy:
+ * @io: structure to be destroyed.
  *
- * Closes the file descriptor associated with an NihIo structure and
- * frees the structure.  If an error is caught by closing the descriptor,
- * it is the error handler is called instead of the error being raised;
+ * Closes the file descriptor associated with an NihIo structure so that
+ * the structure can be freed.  IF an error is caught by closing the
+ * descriptor, the error handler is called instead of the error being raised;
  * this allows you to group your error handling in one place rather than
  * special-case close.
  *
- * If this function is called from within a reader function, it only
- * marks the structure to be closed; it will not actually be done until
- * the function returns.  You should take care not to accidentally free
- * the structure before this happens.
+ * Normally used or called from an nih_alloc() destructor.
+ *
+ * Returns: zero.
  **/
-void
-nih_io_close (NihIo *io)
+int
+nih_io_destroy (NihIo *io)
 {
 	nih_assert (io != NULL);
 
-	if (io->close) {
-		*(io->close) = TRUE;
-		return;
-	}
+	if (io->free)
+		*(io->free) = TRUE;
 
 	if ((close (io->watch->fd) < 0) && io->error_handler) {
 		nih_error_raise_system ();
 		io->error_handler (io->data, io);
 	}
 
-	nih_free (io);
+	return 0;
 }
 
 

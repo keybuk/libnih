@@ -1154,7 +1154,7 @@ my_reader (void       *data,
 	}
 
 	if (! data)
-		nih_io_close (io);
+		nih_free (io);
 
 	last_data = data;
 	last_str = str;
@@ -1187,7 +1187,6 @@ test_reopen (void)
 	NihError         *err;
 
 	TEST_FUNCTION ("nih_io_reopen");
-	pipe (fds);
 
 	/* Check that we can create a stream mode NihIo structure from an
 	 * existing file descriptor; the structure should be correctly
@@ -1196,6 +1195,7 @@ test_reopen (void)
 	 */
 	TEST_FEATURE ("with stream mode");
 	TEST_ALLOC_FAIL {
+		pipe (fds);
 		io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 				    my_reader, my_close_handler,
 				    my_error_handler, &io);
@@ -1220,7 +1220,7 @@ test_reopen (void)
 		TEST_EQ_P (io->error_handler, my_error_handler);
 		TEST_EQ_P (io->data, &io);
 		TEST_FALSE (io->shutdown);
-		TEST_EQ_P (io->close, NULL);
+		TEST_EQ_P (io->free, NULL);
 
 		TEST_ALLOC_PARENT (io->watch, io);
 		TEST_EQ (io->watch->fd, fds[0]);
@@ -1228,6 +1228,7 @@ test_reopen (void)
 		TEST_TRUE (fcntl (fds[0], F_GETFL) & O_NONBLOCK);
 
 		nih_free (io);
+		close (fds[1]);
 	}
 
 
@@ -1238,6 +1239,7 @@ test_reopen (void)
 	 */
 	TEST_FEATURE ("with message mode");
 	TEST_ALLOC_FAIL {
+		pipe (fds);
 		io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
 				    my_reader, my_close_handler,
 				    my_error_handler, &io);
@@ -1262,7 +1264,7 @@ test_reopen (void)
 		TEST_EQ_P (io->error_handler, my_error_handler);
 		TEST_EQ_P (io->data, &io);
 		TEST_FALSE (io->shutdown);
-		TEST_EQ_P (io->close, NULL);
+		TEST_EQ_P (io->free, NULL);
 
 		TEST_ALLOC_PARENT (io->watch, io);
 		TEST_EQ (io->watch->fd, fds[0]);
@@ -1270,11 +1272,8 @@ test_reopen (void)
 		TEST_TRUE (fcntl (fds[0], F_GETFL) & O_NONBLOCK);
 
 		nih_free (io);
+		close (fds[1]);
 	}
-
-
-	close (fds[0]);
-	close (fds[1]);
 
 
 	/* Check that the SIGPIPE signal will now be ignored */
@@ -1286,6 +1285,10 @@ test_reopen (void)
 	 * is closed.
 	 */
 	TEST_FEATURE ("with closed file");
+	pipe (fds);
+	close (fds[0]);
+	close (fds[1]);
+
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
 			    my_reader, my_close_handler,
 			    my_error_handler, &io);
@@ -1307,6 +1310,8 @@ destructor_called (void *ptr)
 
 	if (nih_alloc_size (ptr) == sizeof (NihIoMessage))
 		nih_list_destroy (ptr);
+	if (nih_alloc_size (ptr) == sizeof (NihIo))
+		nih_io_destroy (ptr);
 
 	return 0;
 }
@@ -1440,14 +1445,14 @@ test_shutdown (void)
 }
 
 void
-test_close (void)
+test_destroy (void)
 {
 	NihIo *io;
-	int    fds[2], lazy_close;
+	int    fds[2];
 
-	TEST_FUNCTION ("nih_io_close");
+	TEST_FUNCTION ("nih_io_destroy");
 
-	/* Check that closing an open file descriptor doesn't call the error
+	/* Check that freeing an open file descriptor doesn't call the error
 	 * handler, and just closes the fd and frees the structure.
 	 */
 	TEST_FEATURE ("with open file descriptor");
@@ -1456,13 +1461,9 @@ test_close (void)
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 			    NULL, NULL, my_error_handler, &io);
 
-	free_called = 0;
-	nih_alloc_set_destructor (io, destructor_called);
-
-	nih_io_close (io);
+	nih_free (io);
 
 	TEST_FALSE (error_called);
-	TEST_TRUE (free_called);
 	TEST_LT (fcntl (fds[0], F_GETFD), 0);
 	TEST_EQ (errno, EBADF);
 
@@ -1482,48 +1483,15 @@ test_close (void)
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 			    NULL, NULL, my_error_handler, &io);
 
-	free_called = 0;
-	nih_alloc_set_destructor (io, destructor_called);
-
 	close (fds[0]);
-	nih_io_close (io);
+	nih_free (io);
 
 	TEST_TRUE (error_called);
 	TEST_EQ (last_error->number, EBADF);
 	TEST_EQ_P (last_data, &io);
-	TEST_TRUE (free_called);
 
 	nih_free (last_error);
 
-	close (fds[1]);
-
-
-	/* Check that closing the file descriptor during a watcher function
-	 * (when io->close is non-NULL) just causes TRUE to be stored in
-	 * that variable.
-	 */
-	TEST_FEATURE ("with close flag variable set");
-	pipe (fds);
-	error_called = 0;
-	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
-			    NULL, NULL, my_error_handler, &io);
-
-	free_called = 0;
-	nih_alloc_set_destructor (io, destructor_called);
-
-	lazy_close = FALSE;
-	io->close = &lazy_close;
-
-	nih_io_close (io);
-
-	TEST_TRUE (lazy_close);
-	TEST_FALSE (error_called);
-	TEST_FALSE (free_called);
-	TEST_EQ (fcntl (fds[0], F_GETFD), 0);
-
-	nih_free (io);
-
-	close (fds[0]);
 	close (fds[1]);
 }
 
@@ -1614,11 +1582,11 @@ test_watcher (void)
 	}
 
 
-	/* Check that the reader function can call nih_io_close(), resulting
+	/* Check that the reader function can call nih_free(), resulting
 	 * in the structure being closed once it has finished the watcher
 	 * function.
 	 */
-	TEST_FEATURE ("with close called in reader");
+	TEST_FEATURE ("with free called in reader");
 	io->data = NULL;
 
 	free_called = 0;
@@ -1974,7 +1942,7 @@ test_watcher (void)
 	TEST_EQ (read_called, 1);
 
 
-	/* Check that the reader function can call nih_io_close(), resulting
+	/* Check that the reader function can call nih_free(), resulting
 	 * in the structure being closed once it has finished the watcher
 	 * function.
 	 */
@@ -2281,9 +2249,14 @@ test_send_message (void)
 {
 	NihIo        *io;
 	NihIoMessage *msg1, *msg2;
+	int           fds[2];
 
 	TEST_FUNCTION ("nih_io_send_message");
-	io = nih_io_reopen (NULL, 0, NIH_IO_MESSAGE, NULL, NULL, NULL, NULL);
+	pipe (fds);
+	close (fds[0]);
+
+	io = nih_io_reopen (NULL, fds[1], NIH_IO_MESSAGE,
+			    NULL, NULL, NULL, NULL);
 
 
 	/* Check that we can send a message into the empty send queue, it
@@ -2549,10 +2522,14 @@ test_write (void)
 {
 	NihIo        *io;
 	NihIoMessage *msg;
-	int           ret;
+	int           ret, fds[2];
 
 	TEST_FUNCTION ("nih_io_write");
-	io = nih_io_reopen (NULL, 0, NIH_IO_STREAM, NULL, NULL, NULL, NULL);
+	pipe (fds);
+	close (fds[0]);
+
+	io = nih_io_reopen (NULL, fds[1], NIH_IO_STREAM,
+			    NULL, NULL, NULL, NULL);
 
 	/* Check that we can write data into the NihIo send buffer, the
 	 * buffer should contain the data and be a page in size.  The
@@ -2604,7 +2581,11 @@ test_write (void)
 	 * have it made into a new message in the send queue.
 	 */
 	TEST_FEATURE ("with empty send queue");
-	io = nih_io_reopen (NULL, 0, NIH_IO_MESSAGE, NULL, NULL, NULL, NULL);
+	pipe (fds);
+	close (fds[0]);
+
+	io = nih_io_reopen (NULL, fds[1], NIH_IO_MESSAGE,
+			    NULL, NULL, NULL, NULL);
 	TEST_ALLOC_FAIL {
 		ret = nih_io_write (io, "test", 4);
 
@@ -2906,10 +2887,14 @@ test_printf (void)
 {
 	NihIo        *io;
 	NihIoMessage *msg;
-	int           ret;
+	int           ret, fds[2];
 
 	TEST_FUNCTION ("nih_io_printf");
-	io = nih_io_reopen (NULL, 0, NIH_IO_STREAM, NULL, NULL, NULL, NULL);
+	pipe (fds);
+	close (fds[0]);
+
+	io = nih_io_reopen (NULL, fds[1], NIH_IO_STREAM,
+			    NULL, NULL, NULL, NULL);
 
 	/* Check that we can write a line of formatted data into the send
 	 * buffer, which should be written without a NULL terminator.
@@ -2967,7 +2952,11 @@ test_printf (void)
 	 * the send queue.
 	 */
 	TEST_FEATURE ("with empty send queue");
-	io = nih_io_reopen (NULL, 0, NIH_IO_MESSAGE, NULL, NULL, NULL, NULL);
+	pipe (fds);
+	close (fds[0]);
+
+	io = nih_io_reopen (NULL, fds[1], NIH_IO_MESSAGE,
+			    NULL, NULL, NULL, NULL);
 	TEST_ALLOC_FAIL {
 		ret = nih_io_printf (io, "this is a %d %s test\n",
 				     4, "format");
@@ -3151,7 +3140,7 @@ main (int   argc,
 	test_message_send ();
 	test_reopen ();
 	test_shutdown ();
-	test_close ();
+	test_destroy ();
 	test_watcher ();
 	test_read_message ();
 	test_send_message ();

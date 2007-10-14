@@ -310,8 +310,9 @@ nih_realloc (void       *ptr,
  * @ptr: pointer to block to free.
  *
  * Return the block of memory at @ptr to the allocator so it may be
- * re-used by something else.  Any children of the block are also freed,
- * and any destructors called.
+ * re-used by something else.  The destructor is called, and then any
+ * children of the block are freed (with their destructors called and
+ * children freed also, etc.)
  *
  * Returns: return value from destructor, or 0.
  **/
@@ -325,15 +326,15 @@ nih_free (void *ptr)
 
 	ctx = NIH_ALLOC_CTX (ptr);
 
+	if (ctx->destructor)
+		ret = ctx->destructor (ptr);
+
 	NIH_LIST_FOREACH_SAFE (&ctx->children, iter) {
 		void *ptr;
 
 		ptr = NIH_ALLOC_PTR (iter);
-		ret = nih_free (ptr);
+		nih_free (ptr);
 	}
-
-	if (ctx->destructor)
-		ret = ctx->destructor (ptr);
 
 	nih_list_remove (&ctx->entry);
 

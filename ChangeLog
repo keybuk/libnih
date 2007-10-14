@@ -1,5 +1,12 @@
 2007-10-14  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (nih_free): Call destructors before freeing children,
+	this makes them more consistent with being structure clean-up
+	functions rather than using them to detect a free.  Don't return
+	values from children destructors.
+	* nih/tests/test_alloc.c (test_free): Adjust test, return values
+	from children destructors are never returned.
+
 	* nih/watch.c (nih_watch_new): Make the io structure an nih_alloc
 	child of the watch, now that we don't perform any kind of lazy
 	freeing or closing.

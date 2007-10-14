@@ -271,7 +271,7 @@ test_free (void)
 
 	TEST_EQ (last_size, 0);
 	TEST_TRUE (was_called);
-	TEST_EQ (ret, 20);
+	TEST_EQ (ret, 0);
 
 
 	/* Check that both destructors on parent and children are called,

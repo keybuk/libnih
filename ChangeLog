@@ -1,5 +1,11 @@
 2007-10-15  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (nih_alloc_using, nih_alloc_reparent, nih_realloc):
+	Change the order in which children allocations are stored in the
+	list such that the last allocation is freed first rather than
+	the other way around.  This solves issues of children being stored
+	inside an allocated hash table which will be freed first.
+
 	* m4/misc.m4 (NIH_INIT): Use AC_PROG_CC_C99 instead of NIH_C_C99
 	* configure.ac: Bump Autoconf dependency to 2.61
 	* HACKING: Likewise increase documentation

@@ -163,7 +163,7 @@ nih_alloc_using (NihAllocator  allocator,
 	if (parent) {
 		ctx->parent = NIH_ALLOC_CTX (parent);
 
-		nih_list_add (&ctx->parent->children, &ctx->entry);
+		nih_list_add_after (&ctx->parent->children, &ctx->entry);
 	} else {
 		ctx->parent = NULL;
 	}
@@ -278,7 +278,7 @@ nih_realloc (void       *ptr,
 	 * or reinitialise the list entry so it doesn't point to nowhere.
 	 */
 	if (ctx->parent) {
-		nih_list_add (&ctx->parent->children, &ctx->entry);
+		nih_list_add_after (&ctx->parent->children, &ctx->entry);
 	} else {
 		nih_list_init (&ctx->entry);
 	}
@@ -394,7 +394,7 @@ nih_alloc_reparent (void       *ptr,
 	if (parent) {
 		ctx->parent = NIH_ALLOC_CTX (parent);
 
-		nih_list_add (&ctx->parent->children, &ctx->entry);
+		nih_list_add_after (&ctx->parent->children, &ctx->entry);
 	} else {
 		ctx->parent = NULL;
 

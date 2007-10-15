@@ -1,5 +1,7 @@
 2007-10-15  Scott James Remnant  <scott@netsplit.com>
 
+	* HACKING: Correct Bazaar branch now we're natively hosted on LP
+
 	* nih/test.h (_test_allocator): Mark used in case it isn't.
 	(_test_free_tag, _test_free_tags, _test_destructor)
 	(TEST_FREE_TAG, TEST_FREE, TEST_NOT_FREE): Since destructors are

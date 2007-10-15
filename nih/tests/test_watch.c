@@ -907,18 +907,6 @@ test_add (void)
 }
 
 
-static int destructor_called = 0;
-
-static int
-my_destructor (void *ptr)
-{
-	destructor_called++;
-
-	nih_watch_destroy (ptr);
-
-	return 100;
-}
-
 void
 test_destroy (void)
 {
@@ -1368,8 +1356,7 @@ test_reader (void)
 	TEST_FEATURE ("with removal of directory");
 	rmdir (dirname);
 
-	destructor_called = 0;
-	nih_alloc_set_destructor (watch, my_destructor);
+	TEST_FREE_TAG (watch);
 
 	delete_called = 0;
 	last_watch = NULL;
@@ -1389,7 +1376,7 @@ test_reader (void)
 	TEST_EQ_STR (last_path, dirname);
 	TEST_EQ_P (last_data, &watch);
 
-	TEST_EQ (destructor_called, 1);
+	TEST_FREE (watch);
 }
 
 

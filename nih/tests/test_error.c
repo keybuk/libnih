@@ -103,7 +103,6 @@ test_raise_system (void)
 
 
 static int was_logged;
-static int was_destroyed;
 
 static int
 logger_called (NihLogLevel  priority,
@@ -112,14 +111,6 @@ logger_called (NihLogLevel  priority,
 	was_logged++;
 
 	return 0;
-}
-
-static int
-destructor_called (void *ptr)
-{
-	was_destroyed++;
-
-	return 2;
 }
 
 void
@@ -148,8 +139,7 @@ test_raise_again (void)
 	 * returned should be the new one.
 	 */
 	TEST_FEATURE ("with unhandled error");
-	was_destroyed = 0;
-	nih_alloc_set_destructor (error1, destructor_called);
+	TEST_FREE_TAG (error1);
 	nih_error_raise_again (error1);
 
 	error2 = nih_new (NULL, NihError);
@@ -165,7 +155,7 @@ test_raise_again (void)
 
 	TEST_EQ_P (error3, error2);
 	TEST_TRUE (was_logged);
-	TEST_TRUE (was_destroyed);
+	TEST_FREE (error1);
 
 	nih_free (error3);
 
@@ -282,8 +272,7 @@ test_pop_context (void)
 	nih_error_raise (0x20004, "Error in new context");
 	error = nih_error_get ();
 
-	was_destroyed = 0;
-	nih_alloc_set_destructor (error, destructor_called);
+	TEST_FREE_TAG (error);
 	nih_error_raise_again (error);
 
 	was_logged = 0;
@@ -293,7 +282,7 @@ test_pop_context (void)
 	nih_error_pop_context ();
 
 	TEST_TRUE (was_logged);
-	TEST_TRUE (was_destroyed);
+	TEST_FREE (error);
 
 	nih_log_set_logger (nih_logger_printf);
 

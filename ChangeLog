@@ -1,5 +1,23 @@
 2007-10-15  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/test.h (_test_allocator): Mark used in case it isn't.
+	(_test_free_tag, _test_free_tags, _test_destructor)
+	(TEST_FREE_TAG, TEST_FREE, TEST_NOT_FREE): Since destructors are
+	now intended for internal use by an object, we shouldn't abuse them
+	in test cases like we were doing - since we might not chain up
+	properly and miss vital behaviour as a result.  Instead implement
+	some tests that use a destructor on an nih_alloc() child of the object
+	to determine freeness.
+	* nih/tests/test_watch.c (test_reader): Use TEST_FREE instead of
+	a custom destructor, which are no longer favoured for this kind
+	of work.
+	* nih/tests/test_error.c (test_raise_again, test_pop_context): 
+	Use TEST_FREE instead of custom destructor.
+	* nih/tests/test_timer.c (test_poll): Use TEST_FREE/TEST_NOT_FREE
+	* nih/tests/test_child.c (test_poll): Use TEST_FREE, etc.
+	* nih/tests/test_io.c (test_shutdown, test_watcher)
+	(test_read_message, test_read, test_get): Use TEST_FREE, etc.
+
 	* nih/hash.c, nih/timer.c, nih/signal.c, nih/child.c, nih/io.c,
 	nih/watch.c: Document why non-allocated versions of functions
 	are missing.

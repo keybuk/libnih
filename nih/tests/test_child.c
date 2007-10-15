@@ -104,18 +104,6 @@ test_add_watch (void)
 }
 
 
-static int destroyed = 0;
-
-static int
-my_destructor (void *ptr)
-{
-	destroyed = 1;
-
-	nih_list_destroy (ptr);
-
-	return 0;
-}
-
 void
 test_poll (void)
 {
@@ -137,12 +125,12 @@ test_poll (void)
 	}
 
 	watch1 = nih_child_add_watch (NULL, -1, my_reaper, &watch1);
-	nih_alloc_set_destructor (watch1, my_destructor);
 	watch2 = nih_child_add_watch (NULL, pid, my_reaper, &watch2);
-	nih_alloc_set_destructor (watch2, my_destructor);
+
+	TEST_FREE_TAG (watch1);
+	TEST_FREE_TAG (watch2);
 
 	reaper_called = 0;
-	destroyed = 0;
 	last_data = NULL;
 	last_pid = 0;
 	last_killed = FALSE;
@@ -157,7 +145,7 @@ test_poll (void)
 	TEST_EQ (last_pid, pid);
 	TEST_TRUE (last_killed);
 	TEST_EQ (last_status, SIGTERM);
-	TEST_TRUE (destroyed);
+	TEST_FREE (watch2);
 
 
 	/* Check that if we poll again, only the catch-all watcher is
@@ -168,7 +156,6 @@ test_poll (void)
 	}
 
 	reaper_called = 0;
-	destroyed = 0;
 	last_data = NULL;
 	last_pid = 0;
 	last_killed = FALSE;
@@ -184,7 +171,7 @@ test_poll (void)
 	TEST_TRUE (last_killed);
 	TEST_EQ (last_status, SIGTERM);
 	TEST_EQ_P (last_data, &watch1);
-	TEST_FALSE (destroyed);
+	TEST_NOT_FREE (watch1);
 
 	nih_free (watch1);
 
@@ -199,10 +186,9 @@ test_poll (void)
 	}
 
 	watch1 = nih_child_add_watch (NULL, pid - 1, my_reaper, &watch1);
-	nih_alloc_set_destructor (watch1, my_destructor);
+	TEST_FREE_TAG (watch1);
 
 	reaper_called = 0;
-	destroyed = 0;
 	last_data = NULL;
 	last_pid = 0;
 	last_killed = FALSE;
@@ -214,7 +200,7 @@ test_poll (void)
 	nih_child_poll ();
 
 	TEST_FALSE (reaper_called);
-	TEST_FALSE (destroyed);
+	TEST_NOT_FREE (watch1);
 
 	nih_free (watch1);
 
@@ -227,12 +213,13 @@ test_poll (void)
 	}
 
 	watch1 = nih_child_add_watch (NULL, -1, my_reaper, &watch1);
-	nih_alloc_set_destructor (watch1, my_destructor);
+	TEST_FREE_TAG (watch1);
 
 	reaper_called = 0;
 	nih_child_poll ();
 
 	TEST_FALSE (reaper_called);
+	TEST_NOT_FREE (watch1);
 
 	kill (pid, SIGTERM);
 	waitpid (pid, NULL, 0);
@@ -244,6 +231,7 @@ test_poll (void)
 	nih_child_poll ();
 
 	TEST_FALSE (reaper_called);
+	TEST_NOT_FREE (watch1);
 
 	nih_free (watch1);
 }

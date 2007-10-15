@@ -608,6 +608,7 @@
 			     (_ptr), #_ptr, (_parent), #_parent, \
 			     nih_alloc_parent (_ptr))
 
+
 /**
  * test_alloc_failed:
  *
@@ -637,7 +638,7 @@ static int _test_alloc_call = 0;
  * it internally counts the number of times it is called, and if that matches
  * test_alloc_failed, then it returns NULL.
  **/
-static inline void *
+static inline  __attribute__ ((used)) void *
 _test_allocator (void   *ptr,
 		 size_t  size)
 {
@@ -698,6 +699,114 @@ _test_allocator (void   *ptr,
 		} else if (_test_alloc_safe > 1) { \
 			nih_alloc_set_allocator (_test_allocator); \
 		} else
+
+
+/**
+ * struct _test_free_tag:
+ * @ptr: allocated block,
+ * @tag: tag block.
+ *
+ * This structure is used to find out whether an nih_alloc() allocated block
+ * is freed.  It works by pairing the allocated block with a tag block that
+ * is an nih_alloc() child.  When that child is freed, this array is
+ * cleared again.
+ **/
+struct _test_free_tag {
+	void *ptr;
+	void *tag;
+};
+
+/**
+ * _test_free_tags:
+ *
+ * Array of suitable tag pairings, set the upper limit of this to taste.
+ **/
+static struct _test_free_tag _test_free_tags[1024] = { { NULL, NULL } };
+
+/**
+ * _test_free_tag:
+ * @ptr: allocated block.
+ *
+ * Finds the tag pairing structure for @ptr in the array and returns it;
+ * NULL can be used to find the first empty structure in the array for use
+ * by a new tag.
+ *
+ * Return: tag structure for @ptr.
+ **/
+static inline struct _test_free_tag *
+_test_free_tag (void *ptr)
+{
+	int i;
+
+	for (i = 0; i < 1024; i++)
+		if (_test_free_tags[i].ptr == ptr)
+			return &(_test_free_tags[i]);
+
+	return NULL;
+}
+
+/**
+ * _test_destructor:
+ * @tag: tag block.
+ *
+ * Destructor used to clear the tag for @tag and its parent block.
+ *
+ * Returns: zero
+ **/
+static int __attribute__ ((used))
+_test_destructor (void *tag)
+{
+	struct _test_free_tag *_test_tag;
+
+	_test_tag = _test_free_tag (nih_alloc_parent (tag));
+	if (_test_tag)
+		_test_tag->ptr = _test_tag->tag = NULL;
+
+	return 0;
+}
+
+
+/**
+ * TEST_FREE_TAG:
+ * @_ptr: allocated block.
+ *
+ * This macro is used to tag an nih_alloc() allocated structure or block
+ * to determine whether or not it is freed by code between it and either
+ * TEST_FREED or TEST_NOT_FREED.
+ **/
+#define TEST_FREE_TAG(_ptr)						\
+	do {								\
+		struct _test_free_tag *_test_tag = _test_free_tag (NULL); \
+		_test_tag->ptr = (_ptr);				\
+		_test_tag->tag = nih_alloc_using (realloc, (_ptr), 1);	\
+		nih_alloc_set_destructor (_test_tag->tag, _test_destructor); \
+	} while (0)
+
+/**
+ * TEST_FREE:
+ * @_ptr: allocated block.
+ *
+ * Check that the data structure or block @_ptr was freed as expected; it
+ * must have been first prepared by using TEST_FREE_TAG on it.
+ **/
+#define TEST_FREE(_ptr)						    \
+	if (_test_free_tag (_ptr))				    \
+		TEST_FAILED ("block %p (%s) not freed as expected", \
+			     (_ptr), #_ptr)
+
+
+/**
+ * TEST_NOT_FREE:
+ * @_ptr: allocated block.
+ *
+ * Check that the data structure or block @_ptr was not freed unexpectedly; it
+ * must have been first prepared by using TEST_FREE_TAG on it.
+ **/
+#define TEST_NOT_FREE(_ptr)					 \
+	if (! _test_free_tag (_ptr))				 \
+		TEST_FAILED ("block %p (%s) freed unexpectedly", \
+			     (_ptr), #_ptr)
+
 
 /**
  * TEST_LIST_EMPTY:

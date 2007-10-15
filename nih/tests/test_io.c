@@ -1301,21 +1301,6 @@ test_reopen (void)
 }
 
 
-static int free_called;
-
-static int
-destructor_called (void *ptr)
-{
-	free_called++;
-
-	if (nih_alloc_size (ptr) == sizeof (NihIoMessage))
-		nih_list_destroy (ptr);
-	if (nih_alloc_size (ptr) == sizeof (NihIo))
-		nih_io_destroy (ptr);
-
-	return 0;
-}
-
 void
 test_shutdown (void)
 {
@@ -1330,8 +1315,7 @@ test_shutdown (void)
 			    NULL, NULL, NULL, NULL);
 	assert0 (nih_io_buffer_push (io->recv_buf, "some data", 9));
 
-	free_called = 0;
-	nih_alloc_set_destructor (io, destructor_called);
+	TEST_FREE_TAG (io);
 
 	/* Check that shutting down a socket with data in the buffer
 	 * merely marks it as shutdown and neither closes the socket or
@@ -1341,7 +1325,7 @@ test_shutdown (void)
 	nih_io_shutdown (io);
 
 	TEST_TRUE (io->shutdown);
-	TEST_FALSE (free_called);
+	TEST_NOT_FREE (io);
 	TEST_GE (fcntl (fds[0], F_GETFD), 0);
 
 
@@ -1356,7 +1340,7 @@ test_shutdown (void)
 	nih_io_buffer_shrink (io->recv_buf, 9);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	TEST_TRUE (free_called);
+	TEST_FREE (io);
 	TEST_LT (fcntl (fds[0], F_GETFD), 0);
 	TEST_EQ (errno, EBADF);
 
@@ -1372,12 +1356,11 @@ test_shutdown (void)
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 			    NULL, NULL, NULL, NULL);
 
-	free_called = 0;
-	nih_alloc_set_destructor (io, destructor_called);
+	TEST_FREE_TAG (io);
 
 	nih_io_shutdown (io);
 
-	TEST_TRUE (free_called);
+	TEST_FREE (io);
 	TEST_LT (fcntl (fds[0], F_GETFD), 0);
 	TEST_EQ (errno, EBADF);
 
@@ -1396,12 +1379,11 @@ test_shutdown (void)
 	assert0 (nih_io_buffer_push (msg->data, "some data", 9));
 	nih_list_add (io->recv_q, &msg->entry);
 
-	free_called = 0;
-	nih_alloc_set_destructor (io, destructor_called);
+	TEST_FREE_TAG (io);
 
 	nih_io_shutdown (io);
 
-	TEST_FALSE (free_called);
+	TEST_NOT_FREE (io);
 	TEST_TRUE (io->shutdown);
 	TEST_GE (fcntl (fds[0], F_GETFD), 0);
 
@@ -1419,7 +1401,7 @@ test_shutdown (void)
 
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	TEST_TRUE (free_called);
+	TEST_FREE (io);
 	TEST_LT (fcntl (fds[0], F_GETFD), 0);
 	TEST_EQ (errno, EBADF);
 
@@ -1432,12 +1414,11 @@ test_shutdown (void)
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
 			    NULL, NULL, NULL, NULL);
 
-	free_called = 0;
-	nih_alloc_set_destructor (io, destructor_called);
+	TEST_FREE_TAG (io);
 
 	nih_io_shutdown (io);
 
-	TEST_TRUE (free_called);
+	TEST_FREE (io);
 	TEST_LT (fcntl (fds[0], F_GETFD), 0);
 	TEST_EQ (errno, EBADF);
 
@@ -1499,7 +1480,7 @@ void
 test_watcher (void)
 {
 	NihIo         *io;
-	NihIoMessage  *msg;
+	NihIoMessage  *msg, *msg2;
 	int            fds[2];
 	ssize_t        len;
 	struct msghdr  msghdr;
@@ -1589,12 +1570,11 @@ test_watcher (void)
 	TEST_FEATURE ("with free called in reader");
 	io->data = NULL;
 
-	free_called = 0;
-	nih_alloc_set_destructor (io, destructor_called);
+	TEST_FREE_TAG (io);
 
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	TEST_TRUE (free_called);
+	TEST_FREE (io);
 	TEST_LT (fcntl (fds[0], F_GETFD), 0);
 	TEST_EQ (errno, EBADF);
 
@@ -1672,8 +1652,7 @@ test_watcher (void)
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 			    my_reader, NULL, NULL, &io);
 
-	free_called = 0;
-	nih_alloc_set_destructor (io, destructor_called);
+	TEST_FREE_TAG (io);
 
 	FD_ZERO (&readfds);
 	FD_SET (fds[0], &readfds);
@@ -1681,7 +1660,7 @@ test_watcher (void)
 	close (fds[1]);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	TEST_TRUE (free_called);
+	TEST_FREE (io);
 	TEST_LT (fcntl (fds[0], F_GETFD), 0);
 	TEST_EQ (errno, EBADF);
 
@@ -1694,8 +1673,7 @@ test_watcher (void)
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 			    my_reader, NULL, NULL, &io);
 
-	free_called = 0;
-	nih_alloc_set_destructor (io, destructor_called);
+	TEST_FREE_TAG (io);
 
 	FD_ZERO (&readfds);
 	FD_SET (fds[0], &readfds);
@@ -1706,7 +1684,7 @@ test_watcher (void)
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 	nih_log_set_priority (NIH_LOG_MESSAGE);
 
-	TEST_TRUE (free_called);
+	TEST_FREE (io);
 
 
 	/* Check that data in the send buffer is written to the file
@@ -1949,8 +1927,7 @@ test_watcher (void)
 	TEST_FEATURE ("with close called in reader for message");
 	io->data = NULL;
 
-	free_called = 0;
-	nih_alloc_set_destructor (io, destructor_called);
+	TEST_FREE_TAG (io);
 
 	memcpy (buf, "test with close", 15);
 	iov[0].iov_len = 15;
@@ -1959,7 +1936,7 @@ test_watcher (void)
 
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	TEST_TRUE (free_called);
+	TEST_FREE (io);
 	TEST_LT (fcntl (fds[0], F_GETFD), 0);
 	TEST_EQ (errno, EBADF);
 
@@ -2021,8 +1998,7 @@ test_watcher (void)
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
 			    my_reader, NULL, NULL, &io);
 
-	free_called = 0;
-	nih_alloc_set_destructor (io, destructor_called);
+	TEST_FREE_TAG (io);
 
 	FD_ZERO (&readfds);
 	FD_SET (fds[0], &readfds);
@@ -2033,7 +2009,7 @@ test_watcher (void)
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
  	nih_log_set_priority (NIH_LOG_MESSAGE);
 
-	TEST_TRUE (free_called);
+	TEST_FREE (io);
 
 
 	/* Check that a message in the send queue is written to the socket
@@ -2054,8 +2030,7 @@ test_watcher (void)
 			nih_io_send_message (io, msg);
 		}
 
-		free_called = 0;
-		nih_alloc_set_destructor (msg, destructor_called);
+		TEST_FREE_TAG (msg);
 
 		FD_ZERO (&readfds);
 		FD_ZERO (&writefds);
@@ -2066,7 +2041,7 @@ test_watcher (void)
 		if (test_alloc_failed) {
 			TEST_LIST_NOT_EMPTY (io->send_q);
 			TEST_TRUE (io->watch->events & NIH_IO_WRITE);
-			TEST_FALSE (free_called);
+			TEST_NOT_FREE (msg);
 
 			nih_free (msg);
 			continue;
@@ -2077,7 +2052,7 @@ test_watcher (void)
 
 		TEST_LIST_EMPTY (io->send_q);
 		TEST_FALSE (io->watch->events & NIH_IO_WRITE);
-		TEST_TRUE (free_called);
+		TEST_FREE (msg);
 
 		len = recvmsg (fds[1], &msghdr, 0);
 
@@ -2094,8 +2069,7 @@ test_watcher (void)
 	assert0 (nih_io_buffer_push (msg->data, "another test", 12));
 	nih_io_send_message (io, msg);
 
-	free_called = 0;
-	nih_alloc_set_destructor (msg, destructor_called);
+	TEST_FREE_TAG (msg);
 
 	FD_ZERO (&writefds);
 	FD_SET (fds[0], &writefds);
@@ -2104,7 +2078,7 @@ test_watcher (void)
 
 	TEST_LIST_EMPTY (io->send_q);
 	TEST_FALSE (io->watch->events & NIH_IO_WRITE);
-	TEST_TRUE (free_called);
+	TEST_FREE (msg);
 
 	len = recvmsg (fds[1], &msghdr, 0);
 
@@ -2120,14 +2094,13 @@ test_watcher (void)
 	assert0 (nih_io_buffer_push (msg->data, "this is a test", 14));
 	nih_io_send_message (io, msg);
 
-	free_called = 0;
-	nih_alloc_set_destructor (msg, destructor_called);
+	TEST_FREE_TAG (msg);
 
-	msg = nih_io_message_new (io);
-	assert0 (nih_io_buffer_push (msg->data, "another test", 12));
-	nih_io_send_message (io, msg);
+	msg2 = nih_io_message_new (io);
+	assert0 (nih_io_buffer_push (msg2->data, "another test", 12));
+	nih_io_send_message (io, msg2);
 
-	nih_alloc_set_destructor (msg, destructor_called);
+	TEST_FREE_TAG (msg2);
 
 	FD_ZERO (&writefds);
 	FD_SET (fds[0], &writefds);
@@ -2136,7 +2109,8 @@ test_watcher (void)
 
 	TEST_LIST_EMPTY (io->send_q);
 	TEST_FALSE (io->watch->events & NIH_IO_WRITE);
-	TEST_EQ (free_called, 2);
+	TEST_FREE (msg);
+	TEST_FREE (msg2);
 
 	len = recvmsg (fds[1], &msghdr, 0);
 
@@ -2162,8 +2136,7 @@ test_watcher (void)
 	assert0 (nih_io_buffer_push (msg->data, "one more test", 13));
 	nih_io_send_message (io, msg);
 
-	free_called = 0;
-	nih_alloc_set_destructor (msg, destructor_called);
+	TEST_FREE_TAG (msg);
 
 	FD_ZERO (&writefds);
 	FD_SET (fds[0], &writefds);
@@ -2172,7 +2145,7 @@ test_watcher (void)
 	close (fds[1]);
 	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
 
-	TEST_FALSE (free_called);
+	TEST_NOT_FREE (msg);
 	TEST_LIST_NOT_EMPTY (io->send_q);
 	TEST_EQ_P (io->send_q->next, &msg->entry);
 	TEST_TRUE (io->watch->events & NIH_IO_WRITE);
@@ -2228,8 +2201,7 @@ test_read_message (void)
 	 * we take the last data from a shutdown socket.
 	 */
 	TEST_FEATURE ("with shutdown socket");
-	free_called = 0;
-	nih_alloc_set_destructor (io, destructor_called);
+	TEST_FREE_TAG (io);
 
 	nih_list_add (io->recv_q, &msg->entry);
 	nih_io_shutdown (io);
@@ -2237,7 +2209,7 @@ test_read_message (void)
 
 	TEST_EQ_P (ptr, msg);
 
-	TEST_TRUE (free_called);
+	TEST_FREE (io);
 	TEST_LT (fcntl (fds[0], F_GETFD), 0);
 	TEST_EQ (errno, EBADF);
 
@@ -2392,8 +2364,7 @@ test_read (void)
 	 * we take the last data from a shutdown socket.
 	 */
 	TEST_FEATURE ("with shutdown socket and last data");
-	free_called = 0;
-	nih_alloc_set_destructor (io, destructor_called);
+	TEST_FREE_TAG (io);
 
 	assert0 (nih_io_buffer_push (io->recv_buf, "this is a test", 14));
 	nih_io_shutdown (io);
@@ -2403,7 +2374,7 @@ test_read (void)
 	TEST_EQ (len, 14);
 	TEST_NE_P (str, NULL);
 
-	TEST_TRUE (free_called);
+	TEST_FREE (io);
 	TEST_LT (fcntl (fds[0], F_GETFD), 0);
 	TEST_EQ (errno, EBADF);
 
@@ -2448,8 +2419,7 @@ test_read (void)
 	 * and removed from the receive queue.
 	 */
 	TEST_FEATURE ("with request to empty message buffer");
-	free_called = 0;
-	nih_alloc_set_destructor (msg, destructor_called);
+	TEST_FREE_TAG (msg);
 
 	TEST_ALLOC_FAIL {
 		len = 15;
@@ -2464,7 +2434,8 @@ test_read (void)
 		TEST_ALLOC_SIZE (str, 16);
 		TEST_EQ (str[15], '\0');
 		TEST_EQ_STR (str, " of the io code");
-		TEST_TRUE (free_called);
+		TEST_FREE (msg);
+
 		TEST_LIST_EMPTY (io->recv_q);
 
 		nih_free (str);
@@ -2496,8 +2467,7 @@ test_read (void)
 	 * we take the last data from a shutdown socket.
 	 */
 	TEST_FEATURE ("with shutdown socket and last message");
-	free_called = 0;
-	nih_alloc_set_destructor (io, destructor_called);
+	TEST_FREE_TAG (io);
 
 	msg = nih_io_message_new (io);
 	assert0 (nih_io_buffer_push (msg->data, "this is a test", 14));
@@ -2510,7 +2480,7 @@ test_read (void)
 	TEST_EQ (len, 14);
 	TEST_NE_P (str, NULL);
 
-	TEST_TRUE (free_called);
+	TEST_FREE (io);
 	TEST_LT (fcntl (fds[0], F_GETFD), 0);
 	TEST_EQ (errno, EBADF);
 
@@ -2741,8 +2711,7 @@ test_get (void)
 	 * socket is closed and freed.
 	 */
 	TEST_FEATURE ("with shutdown socket and emptied buffer");
-	free_called = 0;
-	nih_alloc_set_destructor (io, destructor_called);
+	TEST_FREE_TAG (io);
 
 	assert0 (nih_io_buffer_push (io->recv_buf, "some data\n", 10));
 	nih_io_shutdown (io);
@@ -2751,7 +2720,7 @@ test_get (void)
 	TEST_ALLOC_SIZE (str, 10);
 	TEST_EQ_STR (str, "some data");
 
-	TEST_TRUE (free_called);
+	TEST_FREE (io);
 	TEST_LT (fcntl (fds[0], F_GETFD), 0);
 	TEST_EQ (errno, EBADF);
 
@@ -2836,8 +2805,7 @@ test_get (void)
 	 * in the message being removed from the queue and freed.
 	 */
 	TEST_FEATURE ("with null-terminated string in message");
-	free_called = 0;
-	nih_alloc_set_destructor (msg, destructor_called);
+	TEST_FREE_TAG (msg);
 
 	assert0 (nih_io_buffer_push (msg->data, "\0", 1));
 	str = nih_io_get (NULL, io, "\n");
@@ -2845,7 +2813,7 @@ test_get (void)
 	TEST_ALLOC_SIZE (str, 11);
 	TEST_EQ_STR (str, "incomplete");
 
-	TEST_TRUE (free_called);
+	TEST_FREE (msg);
 	TEST_LIST_EMPTY (io->recv_q);
 
 	nih_free (str);
@@ -2862,8 +2830,7 @@ test_get (void)
 	 * socket is closed and freed.
 	 */
 	TEST_FEATURE ("with shutdown socket and emptied message");
-	free_called = 0;
-	nih_alloc_set_destructor (io, destructor_called);
+	TEST_FREE_TAG (io);
 
 	msg = nih_io_message_new (io);
 	assert0 (nih_io_buffer_push (msg->data, "some data\n", 10));
@@ -2875,7 +2842,7 @@ test_get (void)
 	TEST_ALLOC_SIZE (str, 10);
 	TEST_EQ_STR (str, "some data");
 
-	TEST_TRUE (free_called);
+	TEST_FREE (io);
 	TEST_LT (fcntl (fds[0], F_GETFD), 0);
 	TEST_EQ (errno, EBADF);
 

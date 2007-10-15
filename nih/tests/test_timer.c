@@ -187,18 +187,6 @@ test_next_due (void)
 }
 
 
-static int destroyed = 0;
-
-static int
-my_destructor (void *ptr)
-{
-	destroyed = 1;
-
-	nih_list_destroy (ptr);
-
-	return 0;
-}
-
 void
 test_poll (void)
 {
@@ -209,8 +197,8 @@ test_poll (void)
 	timer1 = nih_timer_add_timeout (NULL, 10, my_callback, &timer1);
 	timer2 = nih_timer_add_periodic (NULL, 20, my_callback, &timer2);
 
-	nih_alloc_set_destructor (timer1, my_destructor);
-	nih_alloc_set_destructor (timer2, my_destructor);
+	TEST_FREE_TAG (timer1);
+	TEST_FREE_TAG (timer2);
 
 	/* Check that we can poll for timers to be triggered, and have the
 	 * first timeout run.  Once run, the timer should be destroyed.
@@ -219,7 +207,6 @@ test_poll (void)
 	callback_called = 0;
 	last_data = NULL;
 	last_timer = NULL;
-	destroyed = 0;
 
 	timer1->due = time (NULL) - 5;
 	nih_timer_poll ();
@@ -227,7 +214,8 @@ test_poll (void)
 	TEST_EQ (callback_called, 1);
 	TEST_EQ_P (last_timer, timer1);
 	TEST_EQ_P (last_data, &timer1);
-	TEST_TRUE (destroyed);
+
+	TEST_FREE (timer1);
 
 
 	/* Check that we can poll again and have the periodic timer run,
@@ -237,7 +225,6 @@ test_poll (void)
 	callback_called = 0;
 	last_data = NULL;
 	last_timer = NULL;
-	destroyed = 0;
 
 	timer2->due = time (NULL) - 5;
 	t1 = time (NULL);
@@ -247,7 +234,7 @@ test_poll (void)
 	TEST_EQ (callback_called, 1);
 	TEST_EQ_P (last_timer, timer2);
 	TEST_EQ_P (last_data, &timer2);
-	TEST_FALSE (destroyed);
+	TEST_NOT_FREE (timer2);
 	TEST_GE (timer2->due, t1 + 20);
 	TEST_LE (timer2->due, t2 + 20);
 

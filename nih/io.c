@@ -101,7 +101,9 @@ nih_io_init (void)
  * This is the simplest form of watch and satisfies most basic purposes.
  *
  * The watch structure is allocated using nih_alloc() and stored in a linked
- * list.  Removal of the watch can be performed by freeing it.
+ * list; there is no non-allocated version because of this.
+ *
+ * Removal of the watch can be performed by freeing it.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
@@ -240,7 +242,8 @@ nih_io_handle_fds (fd_set *readfds,
  *
  * The buffer is allocated using nih_alloc() and all functions that use the
  * buffer ensure that the internal data is an nih_alloc() child of the buffer
- * itself, so this can be freed using nih_free().
+ * itself, so this can be freed using nih_free(); there is no non-allocated
+ * version because of this,
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
@@ -433,7 +436,8 @@ nih_io_buffer_push (NihIoBuffer *buffer,
  *
  * All functions that use the message structure ensure that the internal
  * data is an nih_alloc() child of the message or its buffers, so the entire
- * message freed using nih_free().
+ * message freed using nih_free(); there is no non-allocated version because
+ * of this.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
@@ -775,6 +779,7 @@ error:
  * This allocates a new NihIo structure using nih_alloc(), used to manage an
  * already opened file descriptor.  The descriptor is set to be non-blocking
  * if it hasn't already been and the SIGPIPE signal is set to be ignored.
+ * The file descriptor will be closed when the structure is freed.
  *
  * If @type is NIH_IO_STREAM, the descriptor is managed in stream mode; data
  * to be sent and data received are held in a single buffer that is expanded
@@ -797,6 +802,10 @@ error:
  * If @error_handler is given then it is called whenever any errors are
  * raised, otherwise the @close_handler is called or the same action taken
  * if that is not given either.
+ *
+ * The returned structure is allocated with nih_alloc() and children buffers
+ * and watches are allocated as children so will be automatically freed;
+ * there is no non-allocated version because of this.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent

@@ -1,3 +1,10 @@
+2007-10-15  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/hash.c, nih/timer.c, nih/signal.c, nih/child.c, nih/io.c,
+	nih/watch.c: Document why non-allocated versions of functions
+	are missing.
+	* TODO: Update.
+
 2007-10-14  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/alloc.c (nih_free): Call destructors before freeing children,

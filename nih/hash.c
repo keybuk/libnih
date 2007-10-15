@@ -117,7 +117,8 @@ fnv_hash (const char *key)
  * would ordinarily just return a static string within the entry itself.
  *
  * The structure is allocated using nih_alloc() so it can be used as a
- * context to other allocations.
+ * context to other allocations; there is no non-allocated version of this
+ * function because the hash must be usable as a parent context to its bins.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent

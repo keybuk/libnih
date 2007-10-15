@@ -259,7 +259,9 @@ nih_signal_reset (void)
  * have been set to nih_signal_handler() using nih_signal_set_handler(),
  *
  * The callback structure is allocated using nih_alloc() and stored in a
- * linked list.  Removal of the handler can be performed by freeing it.
+ * linked list; there is no non-allocated version because of this.
+ *
+ * Removal of the handler can be performed by freeing it.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent

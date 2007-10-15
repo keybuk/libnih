@@ -71,7 +71,10 @@ nih_child_init (void)
  * then @reaper is called for all children.
  *
  * The watch structure is allocated using nih_alloc() and stored in a linked
- * list.  Removal of the watch can be performed by freeing it.
+ * list; there is no non-allocated version because of this and because it
+ * will be automatically freed once called if @pid is not -1.
+ *
+ * Removal of the watch can be performed by freeing it.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent

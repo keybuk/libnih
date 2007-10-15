@@ -113,7 +113,9 @@ static void            nih_watch_handle      (NihWatch *watch,
  * functions used by this one.
  *
  * The returned watch structure is allocated with nih_alloc(), and contains
- * open inotify descriptors and child structures including NihIo.
+ * open inotify descriptors and child structures including NihIo, which are
+ * children of the returned structure; there is no non-allocated version
+ * because of this.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
@@ -257,6 +259,10 @@ nih_watch_handle_by_path (NihWatch   *watch,
  *
  * If @subdirs is TRUE, and @path is a directory, then sub-directories of
  * the path are also watched.
+ *
+ * An NihWatchHandle structure is allocated and stored in the watches
+ * member of @watch, it is also a child of that structure; there is no
+ * non-allocated version of this because of this.
  *
  * Returns: zero on success, negative value on raised error.
  **/

@@ -72,7 +72,10 @@ nih_timer_init (void)
  * immediately by passing zero or a non-negative number as @timeout.
  *
  * The timer structure is allocated using nih_alloc() and stored in
- * a linked list.  Cancellation of the timer can be performed by freeing it.
+ * a linked list; there is no non-allocated version of this function
+ * because of this and because it will be automatically freed once called.
+ *
+ * Cancellation of the timer can be performed by freeing it.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
@@ -124,7 +127,10 @@ nih_timer_add_timeout (const void *parent,
  * or the soonest time thereafter.
  *
  * The timer structure is allocated using nih_alloc() and stored in
- * a linked list.  Cancellation of the timer can be performed by freeing it.
+ * a linked list; there is no non-allocated version of this function
+ * because of this.
+ *
+ * Cancellation of the timer can be performed by freeing it.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent
@@ -177,7 +183,10 @@ nih_timer_add_periodic (const void *parent,
  * given.
  *
  * The timer structure is allocated using nih_alloc() and stored in
- * a linked list.  Cancellation of the timer can be performed by freeing it.
+ * a linked list; there is no non-allocated version of this function
+ * because of this.
+ *
+ * Cancellation of the timer can be performed by freeing it.
  *
  * If @parent is not NULL, it should be a pointer to another allocated
  * block which will be used as the parent for this block.  When @parent

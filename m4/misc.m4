@@ -49,7 +49,7 @@ AC_DEFUN([NIH_INIT],
 AC_CHECK_HEADERS([sys/inotify.h valgrind/valgrind.h])
 
 # Checks for typedefs, structures, and compiler characteristics.  (libnih)
-NIH_C_C99
+AC_PROG_CC_C99
 NIH_C_THREAD
 
 # Other checks

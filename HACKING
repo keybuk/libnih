@@ -25,7 +25,7 @@ The source tree for libnih uses the GNU Build System (sometimes known
 as the GNU Autotools).  You will need the following versions
 installed.
 
-	* GNU Autoconf 2.60
+	* GNU Autoconf 2.61
 	* GNU Automake 1.10
 	* GNU Libtool 1.5.22
 	* GNU Gettext 0.16.1

@@ -1,5 +1,9 @@
 2007-10-15  Scott James Remnant  <scott@netsplit.com>
 
+	* m4/misc.m4 (NIH_INIT): Use AC_PROG_CC_C99 instead of NIH_C_C99
+	* configure.ac: Bump Autoconf dependency to 2.61
+	* HACKING: Likewise increase documentation
+
 	* HACKING: Correct Bazaar branch now we're natively hosted on LP
 
 	* nih/test.h (_test_allocator): Mark used in case it isn't.

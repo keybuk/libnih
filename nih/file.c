@@ -110,6 +110,11 @@ nih_file_map (const char *path,
 	if (fstat (fd, &statbuf) < 0)
 		goto error;
 
+	if (statbuf.st_size > SIZE_MAX) {
+		errno = EFBIG;
+		nih_return_system_error (NULL);
+	}
+
 	*length = statbuf.st_size;
 
 	map = mmap (NULL, *length, prot, MAP_SHARED, fd, 0);

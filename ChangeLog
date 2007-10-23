@@ -1,3 +1,9 @@
+2007-10-24  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/file.c (nih_file_map): Catch a file larger than the length of
+	size_t and raise the standard EFBIG error message.  Noticed by
+	Kees Cook.
+
 2007-10-15  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/alloc.c (nih_alloc_using, nih_alloc_reparent, nih_realloc):

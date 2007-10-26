@@ -33,7 +33,8 @@ AC_DEFUN([NIH_LINKER_OPTIMISATIONS],
 		       [Disable linker optimisations]),
 [AS_IF([test "x$enable_linker_optimisations" = "xno"],
        [LDFLAGS=`echo "$LDFLAGS" | sed -e "s/ -Wl,-O[0-9]*\b//g"`],
-       [LDFLAGS="$LDFLAGS -Wl,-O1"])])dnl
+       [LDFLAGS="$LDFLAGS -Wl,-O1"])
+])dnl
 ])# NIH_LINKER_OPTIMISATIONS
 
 # NIH_LINKER_VERSION_SCRIPT

@@ -1,5 +1,8 @@
 2007-10-26  Scott James Remnant  <scott@netsplit.com>
 
+	* m4/compiler.m4 (NIH_COMPILER_COVERAGE, NIH_COMPILER_OPTIMISATIONS)
+	(NIH_COMPILER_WARNINGS): Update to use AS_IF.
+
 	* m4/compiler.m4 (NIH_C_THREAD): Shell fix.
 
 	* m4/linker.m4 (NIH_LINKER_OPTIMISATIONS): Update to use AS_IF.

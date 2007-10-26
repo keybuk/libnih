@@ -32,14 +32,12 @@ AC_DEFUN([NIH_COMPILER_WARNINGS],
 [AC_ARG_ENABLE(compiler-warnings,
 	AS_HELP_STRING([--enable-compiler-warnings],
 	               [Enable additional compiler warnings]),
-[if test "x$enable_compiler_warnings" = "xyes"; then
-	if test "x$GCC" = "xyes"; then
-                CFLAGS="-Wall -Werror $CFLAGS"
-        fi
-	if test "x$GXX" = "xyes"; then
-		CXXFLAGS="-Wall -Werror $CXXFLAGS"
-	fi
-fi])dnl
+[AS_IF([test "x$enable_compiler_warnings" = "xyes"],
+       AS_IF([test "x$GCC" = "xyes"],
+       	     [CFLAGS="-Wall -Werror $CFLAGS"])
+       AS_IF([test "x$GXX" = "xyes"],
+       	     [CXXFLAGS="-Wall -Werror $CXXFLAGS"])])
+])dnl
 ])# NIH_COMPILER_WARNINGS
 
 # NIH_COMPILER_OPTIMISATIONS
@@ -49,10 +47,10 @@ AC_DEFUN([NIH_COMPILER_OPTIMISATIONS],
 [AC_ARG_ENABLE(compiler-optimisations,
 	AS_HELP_STRING([--disable-compiler-optimisations],
 		       [Disable compiler optimisations]),
-[if test "x$enable_compiler_optimisations" = "xno"; then
+[AS_IF([test "x$enable_compiler_optimisations" = "xno"],
 	[CFLAGS=`echo "$CFLAGS" | sed -e "s/ -O[1-9]*\b/ -O0/g"`]
-	[CXXFLAGS=`echo "$CXXFLAGS" | sed -e "s/ -O[1-9]*\b/ -O0/g"`]
-fi])dnl
+	[CXXFLAGS=`echo "$CXXFLAGS" | sed -e "s/ -O[1-9]*\b/ -O0/g"`])
+])dnl
 ])# NIH_COMPILER_OPTIMISATIONS
 
 # NIH_COMPILER_COVERAGE
@@ -62,14 +60,12 @@ AC_DEFUN([NIH_COMPILER_COVERAGE],
 [AC_ARG_ENABLE(compiler-coverage,
 	AS_HELP_STRING([--enable-compiler-coverage],
 		       [Enable generation of coverage data]),
-[if test "x$enable_compiler_coverage" = "xyes"; then
-	if test "x$GCC" = "xyes"; then
-		CFLAGS="$CFLAGS -fprofile-arcs -ftest-coverage"
-	fi
-	if test "x$GXX" = "xyes"; then
-		CXXFLAGS="$CXXFLAGS -fprofile-arcs -ftest-coverage"
-	fi
-fi])dnl
+[AS_IF([test "x$enable_compiler_coverage" = "xyes"],
+       [AS_IF([test "x$GCC" = "xyes"],
+	      [CFLAGS="$CFLAGS -fprofile-arcs -ftest-coverage"]),
+	AS_IF([test "x$GXX" = "xyes"],
+	      [CXXFLAGS="$CXXFLAGS -fprofile-arcs -ftest-coverage"])])
+])dnl
 ])# NIH_COMPILER_COVERAGE
 
 # NIH_TRY_C99([ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])

@@ -142,7 +142,7 @@ AS_IF([test "x$enable_threading" != "xno" ],
 [AC_CACHE_CHECK([whether compiler supports __thread], [nih_cv_c_thread],
 [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[int __thread a;]], [])],
                    [nih_cv_c_thread=yes], [nih_cv_c_thread=no])])
-AS_IF([test $nih_cv_c_thread = no],
+AS_IF([test "x$nih_cv_c_thread" = "xno"],
       [AC_DEFINE([__thread],,
                  [Define to empty if `__thread' is not supported.])])],
 [AC_DEFINE([__thread], )])dnl

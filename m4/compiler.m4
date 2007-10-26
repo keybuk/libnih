@@ -54,7 +54,7 @@ AC_DEFUN([NIH_COMPILER_OPTIMISATIONS],
 ])# NIH_COMPILER_OPTIMISATIONS
 
 # NIH_COMPILER_COVERAGE
-# ----------------------
+# ---------------------
 # Add configure option to enable coverage data.
 AC_DEFUN([NIH_COMPILER_COVERAGE],
 [AC_ARG_ENABLE(compiler-coverage,
@@ -101,7 +101,7 @@ AC_DEFUN([NIH_TRY_C99],
 ])# NIH_TRY_C99
 
 # NIH_C_C99
-# ----------
+# ---------
 # Check whether the compiler can do C99, adding a compiler flag if
 # necessary.
 AC_DEFUN([NIH_C_C99],

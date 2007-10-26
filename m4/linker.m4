@@ -25,7 +25,7 @@
 
 
 # NIH_LINKER_OPTIMISATIONS
-# --------------------------
+# ------------------------
 # Add configure option to disable linker optimisations.
 AC_DEFUN([NIH_LINKER_OPTIMISATIONS],
 [AC_ARG_ENABLE(linker-optimisations,
@@ -38,7 +38,7 @@ AC_DEFUN([NIH_LINKER_OPTIMISATIONS],
 ])# NIH_LINKER_OPTIMISATIONS
 
 # NIH_LINKER_VERSION_SCRIPT
-# ------------------
+# -------------------------
 # Detect whether the linker supports version scripts
 AC_DEFUN([NIH_LINKER_VERSION_SCRIPT],
 [AC_CACHE_CHECK([for linker version script argument], [nih_cv_version_script],
@@ -67,3 +67,25 @@ done])
 AS_IF([test "x$nih_cv_version_script" != "xnone"],
       [AC_SUBST(VERSION_SCRIPT_ARG, [$nih_cv_version_script])])dnl
 ])# NIH_LINKER_VERSION_SCRIPT
+
+# NIH_LINKER_SYMBOLIC_FUNCTIONS
+# -----------------------------
+# Detect whether the linker supports symbolic functions
+AC_DEFUN([NIH_LINKER_SYMBOLIC_FUNCTIONS],
+[AC_CACHE_CHECK([for linker symbolic functions argument],
+[nih_cv_symbolic_functions],
+[nih_cv_symbolic_functions=none
+for nih_try_arg in "-Wl,-Bsymbolic-functions"; do
+	nih_old_ldflags="$LDFLAGS"
+	LDFLAGS="$LDFLAGS $nih_try_arg"
+	AC_TRY_LINK([], [], [
+		LDFLAGS="$nih_old_ldflags"
+		nih_cv_symbolic_functions="$nih_try_arg"
+		break
+	])
+
+	LDFLAGS="$nih_old_ldflags"
+done])
+AS_IF([test "x$nih_cv_symbolic_functions" != "xnone"],
+      [LDFLAGS="$LDFLAGS $nih_cv_symbolic_functions"])dnl
+])# NIH_LINKER_SYMBOLIC_FUNCTIONS

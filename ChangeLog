@@ -1,5 +1,8 @@
 2007-10-26  Scott James Remnant  <scott@netsplit.com>
 
+	* m4/linker.m4 (NIH_LINKER_SYMBOLIC_FUNCTIONS): Test that checks
+	for -Bsymbolic-functions
+
 	* m4/linker.m4: Style fix.
 
 	* m4/compiler.m4 (NIH_COMPILER_COVERAGE, NIH_COMPILER_OPTIMISATIONS)

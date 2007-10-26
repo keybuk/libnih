@@ -42,7 +42,8 @@ fi], [LDFLAGS="$LDFLAGS -Wl,-O1"])dnl
 # ------------------
 # Detect whether the linker supports version scripts
 AC_DEFUN([NIH_LINKER_VERSION_SCRIPT],
-[AC_MSG_CHECKING([for linker version script argument])
+[AC_CACHE_CHECK([for linker version script argument], [nih_cv_version_script],
+[nih_cv_version_script=none
 for nih_try_arg in "-Wl,--version-script"; do
 	nih_old_libs="$LIBS"
 	LIBS="$LIBS $nih_try_arg=conftest.ver"
@@ -57,19 +58,13 @@ EOF
 	AC_TRY_LINK([], [], [
 		rm -f conftest.ver
 		LIBS="$nih_old_libs"
-
-		AC_MSG_RESULT([$nih_try_arg])
-		AC_SUBST(VERSION_SCRIPT_ARG, [$nih_try_arg])
+		nih_cv_version_script="$nih_try_arg"
 		break
 	])
 
 	rm -f conftest.ver
 	LIBS="$nih_old_libs"
-done
-
-AM_CONDITIONAL(HAVE_VERSION_SCRIPT_ARG, [test -n "$VERSION_SCRIPT_ARG"])
-if test -z "$VERSION_SCRIPT_ARG"; then
-	AC_MSG_RESULT([unknown])
-fi
-])dnl
+done])
+AS_IF([test "x$nih_cv_version_script" != "xnone"],
+      [AC_SUBST(VERSION_SCRIPT_ARG, [$nih_cv_version_script])])dnl
 ])# NIH_LINKER_VERSION_SCRIPT

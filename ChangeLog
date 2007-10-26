@@ -1,3 +1,8 @@
+2007-10-26  Scott James Remnant  <scott@netsplit.com>
+
+	* m4/linker.m4 (NIH_LINKER_VERSION_SCRIPT): Update so it supports
+	a config.cache
+
 2007-10-24  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/file.c (nih_file_map): Catch a file larger than the length of

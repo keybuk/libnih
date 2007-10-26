@@ -1,5 +1,7 @@
 2007-10-26  Scott James Remnant  <scott@netsplit.com>
 
+	* m4/linker.m4 (NIH_LINKER_OPTIMISATIONS): Update to use AS_IF.
+
 	* m4/linker.m4 (NIH_LINKER_VERSION_SCRIPT): Update so it supports
 	a config.cache
 

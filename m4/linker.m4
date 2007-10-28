@@ -65,7 +65,9 @@ EOF
 	LIBS="$nih_old_libs"
 done])
 AS_IF([test "x$nih_cv_version_script" != "xnone"],
-      [AC_SUBST(VERSION_SCRIPT_ARG, [$nih_cv_version_script])])dnl
+      [AC_SUBST(VERSION_SCRIPT_ARG, [$nih_cv_version_script])])
+AM_CONDITIONAL(HAVE_VERSION_SCRIPT_ARG,
+	       [test "x$nih_cv_version_script" != "xnone"])
 ])# NIH_LINKER_VERSION_SCRIPT
 
 # NIH_LINKER_SYMBOLIC_FUNCTIONS

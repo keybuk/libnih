@@ -1,5 +1,10 @@
 2007-10-27  Scott James Remnant  <scott@netsplit.com>
 
+	* m4/compiler.m4 (NIH_COMPILER_WARNINGS): Add missing [...] around
+	the second argument to AS_IF.
+	(NIH_COMPILER_OPTIMISATIONS): Fix wrong use of [..][..] to [....]
+	(NIH_COMPILER_COVERAGE): Remove extraneous comma
+
 	* m4/linker.m4 (NIH_LINKER_VERSION_SCRIPT): Restore AM_CONDITIONAL
 	that was mistakenly dropped.
 

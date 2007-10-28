@@ -33,10 +33,10 @@ AC_DEFUN([NIH_COMPILER_WARNINGS],
 	AS_HELP_STRING([--enable-compiler-warnings],
 	               [Enable additional compiler warnings]),
 [AS_IF([test "x$enable_compiler_warnings" = "xyes"],
-       AS_IF([test "x$GCC" = "xyes"],
-       	     [CFLAGS="-Wall -Werror $CFLAGS"])
-       AS_IF([test "x$GXX" = "xyes"],
-       	     [CXXFLAGS="-Wall -Werror $CXXFLAGS"])])
+       [AS_IF([test "x$GCC" = "xyes"],
+              [CFLAGS="-Wall -Werror $CFLAGS"])
+        AS_IF([test "x$GXX" = "xyes"],
+       	      [CXXFLAGS="-Wall -Werror $CXXFLAGS"])])
 ])dnl
 ])# NIH_COMPILER_WARNINGS
 
@@ -48,8 +48,8 @@ AC_DEFUN([NIH_COMPILER_OPTIMISATIONS],
 	AS_HELP_STRING([--disable-compiler-optimisations],
 		       [Disable compiler optimisations]),
 [AS_IF([test "x$enable_compiler_optimisations" = "xno"],
-	[CFLAGS=`echo "$CFLAGS" | sed -e "s/ -O[1-9]*\b/ -O0/g"`]
-	[CXXFLAGS=`echo "$CXXFLAGS" | sed -e "s/ -O[1-9]*\b/ -O0/g"`])
+       [CFLAGS=`echo "$CFLAGS" | sed -e "s/ -O[1-9]*\b/ -O0/g"`
+	CXXFLAGS=`echo "$CXXFLAGS" | sed -e "s/ -O[1-9]*\b/ -O0/g"`])
 ])dnl
 ])# NIH_COMPILER_OPTIMISATIONS
 
@@ -62,7 +62,7 @@ AC_DEFUN([NIH_COMPILER_COVERAGE],
 		       [Enable generation of coverage data]),
 [AS_IF([test "x$enable_compiler_coverage" = "xyes"],
        [AS_IF([test "x$GCC" = "xyes"],
-	      [CFLAGS="$CFLAGS -fprofile-arcs -ftest-coverage"]),
+	      [CFLAGS="$CFLAGS -fprofile-arcs -ftest-coverage"])
 	AS_IF([test "x$GXX" = "xyes"],
 	      [CXXFLAGS="$CXXFLAGS -fprofile-arcs -ftest-coverage"])])
 ])dnl

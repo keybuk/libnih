@@ -1,5 +1,7 @@
 2007-10-27  Scott James Remnant  <scott@netsplit.com>
 
+	* m4/compiler.m4 (NIH_COMPILER_OPTIMISATIONS): Add extra [...]
+
 	* m4/compiler.m4 (NIH_COMPILER_WARNINGS): Add missing [...] around
 	the second argument to AS_IF.
 	(NIH_COMPILER_OPTIMISATIONS): Fix wrong use of [..][..] to [....]

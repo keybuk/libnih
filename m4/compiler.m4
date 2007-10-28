@@ -48,8 +48,8 @@ AC_DEFUN([NIH_COMPILER_OPTIMISATIONS],
 	AS_HELP_STRING([--disable-compiler-optimisations],
 		       [Disable compiler optimisations]),
 [AS_IF([test "x$enable_compiler_optimisations" = "xno"],
-       [CFLAGS=`echo "$CFLAGS" | sed -e "s/ -O[1-9]*\b/ -O0/g"`
-	CXXFLAGS=`echo "$CXXFLAGS" | sed -e "s/ -O[1-9]*\b/ -O0/g"`])
+       [[CFLAGS=`echo "$CFLAGS" | sed -e "s/ -O[1-9]*\b/ -O0/g"`
+	 CXXFLAGS=`echo "$CXXFLAGS" | sed -e "s/ -O[1-9]*\b/ -O0/g"`]])
 ])dnl
 ])# NIH_COMPILER_OPTIMISATIONS
 

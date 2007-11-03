@@ -61,6 +61,17 @@
 	printf ("Testing %s()\n", _func)
 
 /**
+ * TEST_FUNCTION_FEATURE:
+ * @_func: name of function being tested,
+ * @_feat: feature being tested.
+ *
+ * Output a message indicating that tests of the function named @_func are
+ * being performed, specifically of the @_feat feature.
+ **/
+#define TEST_FUNCTION_FEATURE(_func, _feat)			\
+	printf ("Testing %s() %s\n", _func, _feat)
+
+/**
  * TEST_FEATURE:
  * @_feat: name of function feature being tested.
  *

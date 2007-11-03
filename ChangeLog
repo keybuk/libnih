@@ -1,3 +1,8 @@
+2007-11-02  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/test.h (TEST_FUNCTION_FEATURE): Add macro for when we're
+	testing a specific feature of a function.
+
 2007-10-27  Scott James Remnant  <scott@netsplit.com>
 
 	* m4/compiler.m4 (NIH_COMPILER_OPTIMISATIONS): Add extra [...]

@@ -787,7 +787,9 @@ _test_destructor (void *tag)
  **/
 #define TEST_FREE_TAG(_ptr)						\
 	do {								\
-		struct _test_free_tag *_test_tag = _test_free_tag (NULL); \
+		struct _test_free_tag *_test_tag;			\
+		assert ((_ptr) != NULL);				\
+		_test_tag = _test_free_tag (NULL);			\
 		_test_tag->ptr = (_ptr);				\
 		_test_tag->tag = nih_alloc_using (realloc, (_ptr), 1);	\
 		nih_alloc_set_destructor (_test_tag->tag, _test_destructor); \

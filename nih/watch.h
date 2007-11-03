@@ -31,6 +31,7 @@
 
 #include <nih/macros.h>
 #include <nih/list.h>
+#include <nih/hash.h>
 #include <nih/file.h>
 #include <nih/io.h>
 
@@ -104,8 +105,9 @@ typedef void (*NihDeleteHandler) (void *data, NihWatch *watch,
  * @create: call @create_handler for existing files,
  * @filter: function to filter paths watched,
  * @create_handler: function called when a path is created,
- * @modify_handler; function called when a path is modified,
+ * @modify_handler: function called when a path is modified,
  * @delete_handler: function called when a path is deleted,
+ * @created: hash table of created files,
  * @data: pointer to pass to functions,
  * @free: allows free to be called within a handler.
  *
@@ -127,6 +129,8 @@ struct nih_watch {
 	NihCreateHandler  create_handler;
 	NihModifyHandler  modify_handler;
 	NihDeleteHandler  delete_handler;
+
+	NihHash          *created;
 
 	void             *data;
 	int              *free;

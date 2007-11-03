@@ -226,6 +226,8 @@ test_new (void)
 		TEST_EQ_P (watch->create_handler, my_create_handler);
 		TEST_EQ_P (watch->modify_handler, my_modify_handler);
 		TEST_EQ_P (watch->delete_handler, my_delete_handler);
+		TEST_ALLOC_SIZE (watch->created, sizeof (NihHash));
+		TEST_ALLOC_PARENT (watch->created, watch);
 		TEST_EQ_P (watch->data, &watch);
 
 		TEST_GE (fcntl (watch->fd, F_GETFD), 0);
@@ -275,6 +277,8 @@ test_new (void)
 		TEST_EQ_P (watch->create_handler, my_create_handler);
 		TEST_EQ_P (watch->modify_handler, my_modify_handler);
 		TEST_EQ_P (watch->delete_handler, my_delete_handler);
+		TEST_ALLOC_SIZE (watch->created, sizeof (NihHash));
+		TEST_ALLOC_PARENT (watch->created, watch);
 		TEST_EQ_P (watch->data, &watch);
 
 		TEST_GE (fcntl (watch->fd, F_GETFD), 0);
@@ -321,6 +325,8 @@ test_new (void)
 		TEST_EQ_P (watch->create_handler, my_create_handler);
 		TEST_EQ_P (watch->modify_handler, my_modify_handler);
 		TEST_EQ_P (watch->delete_handler, my_delete_handler);
+		TEST_ALLOC_SIZE (watch->created, sizeof (NihHash));
+		TEST_ALLOC_PARENT (watch->created, watch);
 		TEST_EQ_P (watch->data, &watch);
 
 		TEST_GE (fcntl (watch->fd, F_GETFD), 0);
@@ -397,6 +403,8 @@ test_new (void)
 		TEST_EQ_P (watch->create_handler, my_create_handler);
 		TEST_EQ_P (watch->modify_handler, my_modify_handler);
 		TEST_EQ_P (watch->delete_handler, my_delete_handler);
+		TEST_ALLOC_SIZE (watch->created, sizeof (NihHash));
+		TEST_ALLOC_PARENT (watch->created, watch);
 		TEST_EQ_P (watch->data, &watch);
 
 		TEST_GE (fcntl (watch->fd, F_GETFD), 0);
@@ -514,6 +522,8 @@ test_new (void)
 		TEST_ALLOC_SIZE (watch->path, strlen (dirname) + 1);
 		TEST_ALLOC_PARENT (watch->path, watch);
 		TEST_EQ_STR (watch->path, dirname);
+		TEST_ALLOC_SIZE (watch->created, sizeof (NihHash));
+		TEST_ALLOC_PARENT (watch->created, watch);
 
 		TEST_LIST_NOT_EMPTY (&watch->watches);
 
@@ -986,6 +996,113 @@ test_reader (void)
 	TEST_EQ_P (last_data, &watch);
 
 	nih_free (last_path);
+
+
+	/* Check that a new file opened on disk doesn't result in the create
+	 * handler being called until the file has been closed.
+	 */
+	TEST_FEATURE ("with new still-open file");
+	strcpy (filename, dirname);
+	strcat (filename, "/meep");
+
+	create_called = 0;
+	last_watch = NULL;
+	last_path = NULL;
+	last_data = NULL;
+
+	fd = fopen (filename, "w");
+
+	nfds = 0;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_FALSE (create_called);
+
+	TEST_NE_P (nih_hash_lookup (watch->created, filename), NULL);
+
+	fprintf (fd, "test\n");
+	fclose (fd);
+
+	nfds = 0;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_TRUE (create_called);
+	TEST_EQ_P (last_watch, watch);
+	TEST_EQ_STR (last_path, filename);
+	TEST_EQ_P (last_data, &watch);
+
+	nih_free (last_path);
+	last_path = NULL;
+	unlink (filename);
+
+	nfds = 0;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	nih_free (last_path);
+
+
+	/* Check that removing a file that was newly created but then
+	 * immediately removed doesn't get a handler at all.
+	 */
+	TEST_FEATURE ("with removal of still-open file");
+	strcpy (filename, dirname);
+	strcat (filename, "/meep");
+
+	create_called = 0;
+	modify_called = 0;
+	delete_called = 0;
+	last_watch = NULL;
+	last_path = NULL;
+	last_data = NULL;
+
+	fd = fopen (filename, "w");
+
+	nfds = 0;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_FALSE (create_called);
+	TEST_FALSE (modify_called);
+	TEST_FALSE (delete_called);
+
+	TEST_NE_P (nih_hash_lookup (watch->created, filename), NULL);
+
+	unlink (filename);
+
+	fprintf (fd, "test\n");
+	fclose (fd);
+
+	nfds = 0;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_FALSE (create_called);
+	TEST_FALSE (modify_called);
+	TEST_FALSE (delete_called);
+
+	TEST_EQ_P (nih_hash_lookup (watch->created, filename), NULL);
 
 
 	/* Check that modifying that file results in the modify handler

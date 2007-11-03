@@ -1,5 +1,18 @@
 2007-11-03  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/watch.h (NihWatch): Add created hash table so we can easily
+	delay the create_handler until the file is closed.
+	* nih/watch.c (nih_watch_new): Initialise the created hash table.
+	(nih_watch_handle): When a file is created, add an entry to the
+	created hash table and return without calling a handler -- for all
+	paths, check for and remove any remove any existing created entry;
+	call create_handler instead of modify_handler if this exists, and
+	don't call delete_handler at all.
+	* nih/tests/test_watch.c (test_new): Check created is initialised.
+	(test_reader): Test that creating a file doesn't trigger create
+	until it's closed and that unlinking a file before it's been closed
+	doesn't trigger at all.
+
 	* nih/test.h (TEST_FREE_TAG): assert that we don't use this on
 	a NULL pointer.
 

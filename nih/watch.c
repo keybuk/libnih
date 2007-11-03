@@ -42,6 +42,7 @@
 #include <nih/alloc.h>
 #include <nih/string.h>
 #include <nih/list.h>
+#include <nih/hash.h>
 #include <nih/io.h>
 #include <nih/file.h>
 #include <nih/watch.h>
@@ -85,7 +86,7 @@ static void            nih_watch_handle      (NihWatch *watch,
  * @create: call @create_handler for existing files,
  * @filter: function to filter paths watched,
  * @create_handler: function called when a path is created,
- * @modify_handler; function called when a path is modified,
+ * @modify_handler: function called when a path is modified,
  * @delete_handler: function called when a path is deleted,
  * @data: pointer to pass to functions.
  *
@@ -141,6 +142,8 @@ nih_watch_new (const void       *parent,
 	/* Allocate the NihWatch structure */
 	NIH_MUST (watch = nih_new (parent, NihWatch));
 	NIH_MUST (watch->path = nih_strdup (watch, path));
+	NIH_MUST (watch->created = nih_hash_new (watch, 0,
+						 nih_hash_string_key));
 
 	watch->subdirs = subdirs;
 	watch->create = create;
@@ -170,7 +173,6 @@ nih_watch_new (const void       *parent,
 		nih_free (watch);
 		return NULL;
 	}
-
 
 	/* Create an NihIo to handle incoming events. */
 	while (! (watch->io = nih_io_reopen (watch, watch->fd, NIH_IO_STREAM,
@@ -479,8 +481,10 @@ nih_watch_handle (NihWatch       *watch,
 		  const char     *name,
 		  int            *caught_free)
 {
-	struct stat  statbuf;
-	char        *path;
+	NihListEntry *entry;
+	int           delayed = FALSE;
+	struct stat   statbuf;
+	char         *path;
 
 	nih_assert (watch != NULL);
 	nih_assert (handle != NULL);
@@ -512,10 +516,30 @@ nih_watch_handle (NihWatch       *watch,
 	if (watch->filter && watch->filter (watch->data, path))
 		goto finish;
 
+	/* Look to see whether we have a delayed create handler for this
+	 * path - it's handled differently depending on the events and
+	 * file type.
+	 */
+	entry = (NihListEntry *)nih_hash_lookup (watch->created, path);
+	if (entry) {
+		delayed = TRUE;
+		nih_free (entry);
+	}
+
 	/* Handle it differently depending on the events mask */
 	if ((events & IN_CREATE) || (events & IN_MOVED_TO)) {
 		if (stat (path, &statbuf) < 0)
 			goto finish;
+
+		/* Delay the create handler when files are first created. */
+		if ((events & IN_CREATE) && (! S_ISDIR (statbuf.st_mode))) {
+			NIH_MUST (entry = nih_list_entry_new (watch));
+			nih_alloc_reparent (path, entry);
+			entry->str = path;
+
+			nih_hash_add (watch->created, &entry->entry);
+			return;
+		}
 
 		if (watch->create_handler)
 			watch->create_handler (watch->data, watch,
@@ -543,7 +567,13 @@ nih_watch_handle (NihWatch       *watch,
 		if (stat (path, &statbuf) < 0)
 			goto finish;
 
-		if (watch->modify_handler)
+		/* Use the create handler when a newly created file is
+		 * closed.
+		 */
+		if (delayed && watch->create_handler) {
+			watch->create_handler (watch->data, watch,
+					       path, &statbuf);
+		} else if (watch->modify_handler)
 			watch->modify_handler (watch->data, watch,
 					       path, &statbuf);
 		if (*caught_free)
@@ -552,7 +582,8 @@ nih_watch_handle (NihWatch       *watch,
 	} else if ((events & IN_DELETE) || (events & IN_MOVED_FROM)) {
 		NihWatchHandle *path_handle;
 
-		if (watch->delete_handler)
+		/* Suppress the handler if the file was newly created. */
+		if ((! delayed) && watch->delete_handler)
 			watch->delete_handler (watch->data, watch, path);
 		if (*caught_free)
 			goto finish;

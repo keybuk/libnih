@@ -1,5 +1,16 @@
 2007-11-15  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/child.c (nih_child_poll): I found out what was causing the
+	signal information to be missing for CLD_STOPPED, a kernel bug;
+	cope with it for now by shifting the status across 8 bits for
+	CLD_TRAPPED and CLD_STOPPED until I get Roland to fix that bit.
+	* nih/tests/test_child.c (test_poll): Replace sleeps with waitid
+	WNOWAIT calls now that that particular kernel bug is fixed; add
+	a couple of pauses so that the child doesn't exit and clean up
+	the wait queue before we get a chance to look.  Add a wait on the
+	child stopping after fork to avoid a race condition where the child
+	isn't actually running yet when we try and detach from it.
+
 	* nih/child.h (NihChildWatch): Add events member and rename reaper
 	to handler, since it can now be called for things like stop, trap
 	and ptrace events.

@@ -245,7 +245,10 @@ test_poll (void)
 
 	TEST_TRUE (handler_called);
 	TEST_EQ (last_pid, pid);
-	/* We might get killed if we never dumped core... */
+	/* We might get killed if we never dumped core... fiddling with
+	 * the limit doesn't help, since we might be under gdb and that
+	 * never lets us dump core.
+	 */
 	if (last_event != NIH_CHILD_KILLED)
 		TEST_EQ (last_event, NIH_CHILD_DUMPED);
 	TEST_EQ (last_status, SIGABRT);
@@ -261,6 +264,7 @@ test_poll (void)
 
 	TEST_CHILD (pid) {
 		raise (SIGSTOP);
+		pause ();
 		exit (0);
 	}
 
@@ -274,6 +278,7 @@ test_poll (void)
 	last_data = NULL;
 	last_pid = 0;
 	last_event = -1;
+	last_status = 0;
 
 	waitid (P_PID, pid, &siginfo, WSTOPPED | WNOWAIT);
 
@@ -282,6 +287,7 @@ test_poll (void)
 	TEST_TRUE (handler_called);
 	TEST_EQ (last_pid, pid);
 	TEST_EQ (last_event, NIH_CHILD_STOPPED);
+	TEST_EQ (last_status, SIGSTOP);
 	TEST_NOT_FREE (watch);
 
 
@@ -295,6 +301,7 @@ test_poll (void)
 	last_data = NULL;
 	last_pid = 0;
 	last_event = -1;
+	last_status = 0;
 
 	kill (pid, SIGCONT);
 
@@ -305,8 +312,10 @@ test_poll (void)
 	TEST_TRUE (handler_called);
 	TEST_EQ (last_pid, pid);
 	TEST_EQ (last_event, NIH_CHILD_CONTINUED);
+	TEST_EQ (last_status, SIGCONT);
 	TEST_NOT_FREE (watch);
 
+	kill (pid, SIGTERM);
 	waitid (P_PID, pid, &siginfo, WEXITED);
 	nih_free (watch);
 
@@ -323,6 +332,7 @@ test_poll (void)
 
 		raise (SIGSTOP);
 		raise (SIGCHLD);
+		pause ();
 		exit (0);
 	}
 
@@ -331,11 +341,7 @@ test_poll (void)
 	assert0 (ptrace (PTRACE_SETOPTIONS, pid, NULL, PTRACE_O_TRACESYSGOOD));
 	assert0 (ptrace (PTRACE_CONT, pid, NULL, SIGCONT));
 
-	/* FIXME ideally we'd use WNOWAIT and deliberately wait until the
-	 * signal has been issued, but we can't do that until we fix the
-	 * kernel ... FIXKERNEL really :p
-	 */
-	sleep (1);
+	waitid (P_PID, pid, &siginfo, WSTOPPED | WNOWAIT);
 
 	watch = nih_child_add_watch (NULL, pid, NIH_CHILD_TRAPPED,
 				     my_handler, &watch);
@@ -346,6 +352,7 @@ test_poll (void)
 	last_data = NULL;
 	last_pid = 0;
 	last_event = -1;
+	last_status = 0;
 
 	nih_child_poll ();
 
@@ -357,6 +364,7 @@ test_poll (void)
 
 	assert0 (ptrace (PTRACE_CONT, pid, NULL, SIGCONT));
 
+	kill (pid, SIGTERM);
 	waitid (P_PID, pid, &siginfo, WEXITED);
 	nih_free (watch);
 
@@ -376,6 +384,8 @@ test_poll (void)
 		child = fork ();
 		assert (child >= 0);
 
+		pause ();
+
 		exit (0);
 	}
 
@@ -385,11 +395,7 @@ test_poll (void)
 			 PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEFORK));
 	assert0 (ptrace (PTRACE_CONT, pid, NULL, SIGCONT));
 
-	/* FIXME ideally we'd use WNOWAIT and deliberately wait until the
-	 * signal has been issued, but we can't do that until we fix the
-	 * kernel ... FIXKERNEL really :p
-	 */
-	sleep (1);
+	waitid (P_PID, pid, &siginfo, WSTOPPED | WNOWAIT);
 
 	watch = nih_child_add_watch (NULL, pid, NIH_CHILD_PTRACE,
 				     my_handler, &watch);
@@ -400,6 +406,7 @@ test_poll (void)
 	last_data = NULL;
 	last_pid = 0;
 	last_event = -1;
+	last_status = 0;
 
 	nih_child_poll ();
 
@@ -414,10 +421,18 @@ test_poll (void)
 	assert0 (ptrace (PTRACE_GETEVENTMSG, pid, NULL, &child));
 	assert (child != -1);
 
+	/* Wait for ptrace to stop the child, otherwise it might not be
+	 * ready for us to actually detach from.
+	 */
+	waitid (P_PID, child, &siginfo, WSTOPPED | WNOWAIT);
+
 	assert0 (ptrace (PTRACE_DETACH, pid, NULL, SIGCONT));
 	assert0 (ptrace (PTRACE_DETACH, child, NULL, SIGCONT));
 
+	kill (child, SIGTERM);
 	waitid (P_PID, child, &siginfo, WEXITED);
+
+	kill (pid, SIGTERM);
 	waitid (P_PID, pid, &siginfo, WEXITED);
 	nih_free (watch);
 
@@ -444,11 +459,7 @@ test_poll (void)
 			 PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEEXEC));
 	assert0 (ptrace (PTRACE_CONT, pid, NULL, SIGCONT));
 
-	/* FIXME ideally we'd use WNOWAIT and deliberately wait until the
-	 * signal has been issued, but we can't do that until we fix the
-	 * kernel ... FIXKERNEL really :p
-	 */
-	sleep (1);
+	waitid (P_PID, pid, &siginfo, WSTOPPED | WNOWAIT);
 
 	watch = nih_child_add_watch (NULL, pid, NIH_CHILD_PTRACE,
 				     my_handler, &watch);
@@ -459,6 +470,7 @@ test_poll (void)
 	last_data = NULL;
 	last_pid = 0;
 	last_event = -1;
+	last_status = 0;
 
 	nih_child_poll ();
 

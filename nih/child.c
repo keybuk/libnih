@@ -180,6 +180,9 @@ nih_child_poll (void)
 			status = info.si_status;
 			break;
 		case CLD_TRAPPED:
+			/* OMG WTF KERNEL SUCKS M'KAY */
+			info.si_status >>= 8;
+
 			if (((info.si_status & 0x7f) == SIGTRAP)
 			    && (info.si_status & ~0x7f)) {
 				event = NIH_CHILD_PTRACE;
@@ -191,13 +194,16 @@ nih_child_poll (void)
 			free_watch = FALSE;
 			break;
 		case CLD_STOPPED:
+			/* OMG WTF KERNEL SUCKS M'KAY */
+			info.si_status >>= 8;
+
 			event = NIH_CHILD_STOPPED;
-			status = 0;
+			status = info.si_status;
 			free_watch = FALSE;
 			break;
 		case CLD_CONTINUED:
 			event = NIH_CHILD_CONTINUED;
-			status = 0;
+			status = info.si_status;
 			free_watch = FALSE;
 			break;
 		default:

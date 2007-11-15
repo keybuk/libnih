@@ -38,6 +38,14 @@
 
 
 /**
+ * WAITOPTS:
+ *
+ * Options to pass to waitid().
+ **/
+#define WAITOPTS (WEXITED | WSTOPPED | WCONTINUED)
+
+
+/**
  * child_watches:
  *
  * This is the list of current child watches, not sorted into any
@@ -63,16 +71,19 @@ nih_child_init (void)
  * nih_child_add_watch:
  * @parent: parent of watch,
  * @pid: process id to watch or -1,
- * @reaper: function to call on termination,
- * @data: pointer to pass to @reaper.
+ * @events: events to watch for,
+ * @handler: function to call on @events,
+ * @data: pointer to pass to @handler.
  *
- * Adds @reaper to the list of functions that should be called by
- * nih_child_poll() if the process with id @pid terminates.  If @pid is -1
- * then @reaper is called for all children.
+ * Adds @handler to the list of functions that should be called by
+ * nih_child_poll() if any of the events listed in @events occurs to the
+ * process with id @pid.  If @pid is -1 then @handler is called for all
+ * children.
  *
  * The watch structure is allocated using nih_alloc() and stored in a linked
  * list; there is no non-allocated version because of this and because it
- * will be automatically freed once called if @pid is not -1.
+ * will be automatically freed once called if @pid is not -1 and the event
+ * indicates that the process has terminated.
  *
  * Removal of the watch can be performed by freeing it.
  *
@@ -83,15 +94,16 @@ nih_child_init (void)
  * Returns: the watch information, or NULL if insufficient memory.
  **/
 NihChildWatch *
-nih_child_add_watch (const void *parent,
-		     pid_t       pid,
-		     NihReaper   reaper,
-		     void       *data)
+nih_child_add_watch (const void      *parent,
+		     pid_t            pid,
+		     NihChildEvents   events,
+		     NihChildHandler  handler,
+		     void            *data)
 {
 	NihChildWatch *watch;
 
 	nih_assert (pid != 0);
-	nih_assert (reaper != NULL);
+	nih_assert (handler != NULL);
 
 	nih_child_init ();
 
@@ -104,8 +116,9 @@ nih_child_add_watch (const void *parent,
 	nih_alloc_set_destructor (watch, (NihDestructor)nih_list_destroy);
 
 	watch->pid = pid;
+	watch->events = events;
 
-	watch->reaper = reaper;
+	watch->handler = handler;
 	watch->data = data;
 
 	nih_list_add (child_watches, &watch->entry);
@@ -118,10 +131,11 @@ nih_child_add_watch (const void *parent,
  * nih_child_poll:
  *
  * Repeatedly call waitid() until there are no children waiting to be
- * reaped.  For each child that has terminated, the list of child watches
- * is iterated and the reaper function for appropriate entries called.
+ * reaped.  For each child that an event occurs for, the list of child
+ * watches is iterated and the handler function for appropriate entries
+ * is called.
  *
- * It is safe for the reaper to remove itself.
+ * It is safe for the handler to remove itself.
  **/
 void
 nih_child_poll (void)
@@ -139,16 +153,56 @@ nih_child_poll (void)
 	 */
 	memset (&info, 0, sizeof (info));
 
-	while (waitid (P_ALL, 0, &info, WEXITED | WNOHANG | WNOWAIT) == 0) {
-		pid_t pid;
-		int   killed, status;
+	while (waitid (P_ALL, 0, &info, WAITOPTS | WNOHANG | WNOWAIT) == 0) {
+		pid_t          pid;
+		NihChildEvents event;
+		int            status, free_watch = TRUE;
 
 		pid = info.si_pid;
 		if (! pid)
 			break;
 
-		killed = info.si_code == CLD_KILLED ? TRUE : FALSE;
-		status = info.si_status;
+		/* Convert siginfo information to handler function arguments;
+		 * in practice this is mostly just copying, with a few bits
+		 * of lore.
+		 */
+		switch (info.si_code) {
+		case CLD_EXITED:
+			event = NIH_CHILD_EXITED;
+			status = info.si_status;
+			break;
+		case CLD_KILLED:
+			event = NIH_CHILD_KILLED;
+			status = info.si_status;
+			break;
+		case CLD_DUMPED:
+			event = NIH_CHILD_DUMPED;
+			status = info.si_status;
+			break;
+		case CLD_TRAPPED:
+			if (((info.si_status & 0x7f) == SIGTRAP)
+			    && (info.si_status & ~0x7f)) {
+				event = NIH_CHILD_PTRACE;
+				status = info.si_status >> 8;
+			} else {
+				event = NIH_CHILD_TRAPPED;
+				status = info.si_status;
+			}
+			free_watch = FALSE;
+			break;
+		case CLD_STOPPED:
+			event = NIH_CHILD_STOPPED;
+			status = 0;
+			free_watch = FALSE;
+			break;
+		case CLD_CONTINUED:
+			event = NIH_CHILD_CONTINUED;
+			status = 0;
+			free_watch = FALSE;
+			break;
+		default:
+			nih_assert_not_reached ();
+		}
 
 		NIH_LIST_FOREACH_SAFE (child_watches, iter) {
 			NihChildWatch *watch = (NihChildWatch *)iter;
@@ -156,15 +210,18 @@ nih_child_poll (void)
 			if ((watch->pid != pid) && (watch->pid != -1))
 				continue;
 
-			watch->reaper (watch->data, pid, killed, status);
+			if (! (watch->events & event))
+				continue;
 
-			if (watch->pid != -1)
+			watch->handler (watch->data, pid, event, status);
+
+			if (free_watch && (watch->pid != -1))
 				nih_free (watch);
 		}
 
 		/* Reap the child */
 		memset (&info, 0, sizeof (info));
-		waitid (P_PID, pid, &info, WEXITED);
+		waitid (P_PID, pid, &info, WAITOPTS);
 
 		/* For next waitid call */
 		memset (&info, 0, sizeof (info));

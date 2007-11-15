@@ -1,3 +1,25 @@
+2007-11-15  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/child.h (NihChildWatch): Add events member and rename reaper
+	to handler, since it can now be called for things like stop, trap
+	and ptrace events.
+	(NihReaper): Rename to NihChildHandler
+	(NihChildEvents): Enumeration/bit flags for events member
+	* nih/child.c (WAITOPTS): Define wait options in one place to make
+	repeating them easier.
+	(nih_child_add_watch): Add events argument and change type and name
+	of function argument, set in the structure.
+	(nih_child_poll): Rather than just working out a killed boolean (which
+	was wrong anyway since it didn't take CLD_DUMPED into account), we
+	store one of many events in the event argument and convert status if
+	necessary (bit shifting for CLD_TRAPPED and ptrace events).  Check
+	this event against the events mask in the watch, and pass to the
+	handler.
+	* nih/tests/test_child.c (test_add_watch): Check that events and
+	handler are initialised correctly.
+	(test_poll): Many new test cases for exiting, killing, aborting,
+	stopping, continuing, trapping and ptracing.
+
 2007-11-03  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/watch.h (NihWatch): Add created hash table so we can easily

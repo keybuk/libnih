@@ -1,5 +1,8 @@
 2007-11-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/main.c (nih_main_write_pidfile): Have to cast the difference
+	in pointers to int, otherwise we get a compiler warning on amd64.
+
 	* nih/child.c (nih_child_poll): Remove the hacks that shift the
 	status information back now that we have a kernel patch in akpm's
 	tree to fix it.

@@ -454,7 +454,8 @@ nih_main_write_pidfile (pid_t pid)
 	filename = nih_main_get_pidfile ();
 	ptr = strrchr (filename, '/');
 	NIH_MUST (tmpname = nih_sprintf (NULL, "%.*s/.%s.tmp",
-					 ptr - filename, filename, ptr + 1));
+					 (int)(ptr - filename),
+					 filename, ptr + 1));
 
 	oldmask = umask (022);
 

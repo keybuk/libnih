@@ -1,3 +1,9 @@
+2007-11-29  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/child.c (nih_child_poll): Remove the hacks that shift the
+	status information back now that we have a kernel patch in akpm's
+	tree to fix it.
+
 2007-11-15  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/child.c (nih_child_poll): I found out what was causing the

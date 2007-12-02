@@ -362,7 +362,7 @@ test_poll (void)
 	TEST_EQ (last_status, SIGCHLD);
 	TEST_NOT_FREE (watch);
 
-	assert0 (ptrace (PTRACE_CONT, pid, NULL, SIGCONT));
+	assert0 (ptrace (PTRACE_DETACH, pid, NULL, 0));
 
 	kill (pid, SIGTERM);
 	waitid (P_PID, pid, &siginfo, WEXITED);
@@ -395,7 +395,24 @@ test_poll (void)
 			 PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEFORK));
 	assert0 (ptrace (PTRACE_CONT, pid, NULL, SIGCONT));
 
+	/* Wait for ptrace to stop the parent (signalling the fork) */
 	waitid (P_PID, pid, &siginfo, WSTOPPED | WNOWAIT);
+
+	/* Will be able to get the child pid now, we have to do it here
+	 * because we want to wait on it to ensure the test is synchronous;
+	 * otherwise nih_child_poll() could actually eat the child event
+	 * before it returns -- normally we'd do this inside the handler,
+	 * so things would probably work (we iter the handlers for each
+	 * event, so you can add one).
+	 */
+	child = -1;
+	assert0 (ptrace (PTRACE_GETEVENTMSG, pid, NULL, &child));
+	assert (child != -1);
+
+	/* Wait for ptrace to stop the child, otherwise it might not be
+	 * ready for us to actually detach from.
+	 */
+	waitid (P_PID, child, &siginfo, WSTOPPED | WNOWAIT);
 
 	watch = nih_child_add_watch (NULL, pid, NIH_CHILD_PTRACE,
 				     my_handler, &watch);
@@ -416,22 +433,10 @@ test_poll (void)
 	TEST_EQ (last_status, PTRACE_EVENT_FORK);
 	TEST_NOT_FREE (watch);
 
-	/* Should be able to get the child pid now */
-	child = -1;
-	assert0 (ptrace (PTRACE_GETEVENTMSG, pid, NULL, &child));
-	assert (child != -1);
-
-	/* Wait for ptrace to stop the child, otherwise it might not be
-	 * ready for us to actually detach from.
-	 */
-	waitid (P_PID, child, &siginfo, WSTOPPED | WNOWAIT);
+	assert0 (ptrace (PTRACE_DETACH, child, NULL, SIGCONT));
+	kill (child, SIGTERM);
 
 	assert0 (ptrace (PTRACE_DETACH, pid, NULL, SIGCONT));
-	assert0 (ptrace (PTRACE_DETACH, child, NULL, SIGCONT));
-
-	kill (child, SIGTERM);
-	waitid (P_PID, child, &siginfo, WEXITED);
-
 	kill (pid, SIGTERM);
 	waitid (P_PID, pid, &siginfo, WEXITED);
 	nih_free (watch);
@@ -480,7 +485,8 @@ test_poll (void)
 	TEST_EQ (last_status, PTRACE_EVENT_EXEC);
 	TEST_NOT_FREE (watch);
 
-	assert0 (ptrace (PTRACE_CONT, pid, NULL, SIGCONT));
+	assert0 (ptrace (PTRACE_DETACH, pid, NULL, SIGCONT));
+
 	waitid (P_PID, pid, &siginfo, WEXITED);
 	nih_free (watch);
 

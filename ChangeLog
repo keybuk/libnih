@@ -1,3 +1,21 @@
+2007-12-02  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/tests/test_child.c (test_poll): Fix up several race
+	conditions in the ptrace test cases, there are a lot of quirks you
+	have to remember when dealing this most insane of syscalls.
+	(signal from traced child): Once we've finished the test we must
+	detach from the child otherwise we'll trap our own SIGTERM and the
+	child won't exit.  Tthere's no need to send SIGCONT since this
+	is an ordinary ptrace signal trap.
+	(exec by traced child): Detach and send SIGCONT in case the process
+	we run gets a signal delivered to it; if that happened, we'd trap
+	that signal and the child would never exit.
+	(fork by traced child): This is the most pathalogical.  We had a
+	race where nih_child_poll() was actually reaping the event for the
+	child stopping.  Change to get the child pid and wait for it before
+	calling the poll function.  Don't bother waiting for the child to
+	terminate, we shouldn't ever find out if we've detached properly.
+
 2007-11-29  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/main.c (nih_main_write_pidfile): Have to cast the difference

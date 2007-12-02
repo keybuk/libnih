@@ -1,5 +1,10 @@
 2007-12-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/signal.c (nih_signal_set_handler): Drop the SA_NOCLDSTOP flag
+	from when we were setting SIGCHLD, I've no idea why this crept in
+	and it now stops us doing things we want to.
+	* nih/tests/test_signal.c (test_set_handler): Remove the test for it.
+
 	* nih/tests/test_child.c (test_poll): Fix for AMD64, the data
 	argument for PTRACE_GETEVENTMSG is unsigned long, which is larger
 	than pid_t here.

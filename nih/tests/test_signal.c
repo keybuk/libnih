@@ -62,24 +62,6 @@ test_set_handler (void)
 		TEST_FALSE (sigismember (&act.sa_mask, i));
 
 
-	/* Check that the SIGCHLD handler also has the SA_NOCLDSTOP
-	 * flag set.
-	 */
-	TEST_FEATURE ("with child signal");
-	ret = nih_signal_set_handler (SIGCHLD, my_sig_handler);
-
-	TEST_EQ (ret, 0);
-
-	sigaction (SIGCHLD, NULL, &act);
-	TEST_EQ_P (act.sa_handler, my_sig_handler);
-	TEST_TRUE (act.sa_flags & SA_RESTART);
-	TEST_TRUE (act.sa_flags & SA_NOCLDSTOP);
-	TEST_FALSE (act.sa_flags & SA_RESETHAND);
-
-	for (i = 1; i < 32; i++)
-		TEST_FALSE (sigismember (&act.sa_mask, i));
-
-
 #if HAVE_VALGRIND_VALGRIND_H
 	/* This test fails when running under valgrind; because for no
 	 * readily apparent reason, that lets us catch SIGKILL!

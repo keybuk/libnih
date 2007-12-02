@@ -1,5 +1,9 @@
 2007-12-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_child.c (test_poll): Fix for AMD64, the data
+	argument for PTRACE_GETEVENTMSG is unsigned long, which is larger
+	than pid_t here.
+
 	* nih/tests/test_child.c (test_poll): Fix up several race
 	conditions in the ptrace test cases, there are a lot of quirks you
 	have to remember when dealing this most insane of syscalls.

@@ -116,6 +116,7 @@ test_poll (void)
 	NihChildWatch *watch;
 	siginfo_t      siginfo;
 	pid_t          pid, child;
+	unsigned long  data;
 
 	TEST_FUNCTION ("nih_child_poll");
 
@@ -405,9 +406,10 @@ test_poll (void)
 	 * so things would probably work (we iter the handlers for each
 	 * event, so you can add one).
 	 */
-	child = -1;
-	assert0 (ptrace (PTRACE_GETEVENTMSG, pid, NULL, &child));
-	assert (child != -1);
+	data = 0;
+	assert0 (ptrace (PTRACE_GETEVENTMSG, pid, NULL, &data));
+	assert (data != 0);
+	child = (pid_t)data;
 
 	/* Wait for ptrace to stop the child, otherwise it might not be
 	 * ready for us to actually detach from.

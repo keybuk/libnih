@@ -60,9 +60,7 @@ typedef enum {
  * @status: exit status of process, signal that killed it or ptrace event.
  *
  * A child handler is a function called for events on the child process
- * obtained through waitid().  For those that indicate that the child has
- * terminated, it will not actually be cleaned up until these functions
- * have been called, so it will still exist in the process table.
+ * obtained through waitid().
  **/
 typedef void (*NihChildHandler) (void *data, pid_t pid,
 				 NihChildEvents event, int status);

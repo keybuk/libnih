@@ -153,7 +153,7 @@ nih_child_poll (void)
 	 */
 	memset (&info, 0, sizeof (info));
 
-	while (waitid (P_ALL, 0, &info, WAITOPTS | WNOHANG | WNOWAIT) == 0) {
+	while (waitid (P_ALL, 0, &info, WAITOPTS | WNOHANG) == 0) {
 		pid_t          pid;
 		NihChildEvents event;
 		int            status, free_watch = TRUE;
@@ -218,10 +218,6 @@ nih_child_poll (void)
 			if (free_watch && (watch->pid != -1))
 				nih_free (watch);
 		}
-
-		/* Reap the child */
-		memset (&info, 0, sizeof (info));
-		waitid (P_PID, pid, &info, WAITOPTS);
 
 		/* For next waitid call */
 		memset (&info, 0, sizeof (info));

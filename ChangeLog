@@ -1,3 +1,11 @@
+2007-12-06  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/child.c (nih_child_poll): I give up.  The wait queue can change
+	between an invocation of waitid with WNOWAIT and the invocation later
+	to "remove" the entry.  WNOWAIT is a waste of time, and no matter how
+	useful it might have been, I just see no way of actually using it.
+	* nih/child.h: Update documentation.
+
 2007-12-02  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/signal.c (nih_signal_set_handler): Drop the SA_NOCLDSTOP flag

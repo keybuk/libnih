@@ -1,5 +1,9 @@
 2008-01-15  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_child.c (test_poll): Don't run the ptrace tests
+	under valgrind, since they upset it somewhat and return different
+	things (I expect we end up tracing valgrind itself).
+
 	* nih/main.c (nih_main_daemonise): Formatting fix.
 
 2008-01-14  Scott James Remnant  <scott@netsplit.com>

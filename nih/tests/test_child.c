@@ -21,6 +21,10 @@
 
 #include <nih/test.h>
 
+#if HAVE_VALGRIND_VALGRIND_H
+#include <valgrind/valgrind.h>
+#endif /* HAVE_VALGRIND_VALGRIND_H */
+
 #include <sys/ptrace.h>
 
 #include <fcntl.h>
@@ -370,6 +374,11 @@ test_poll (void)
 	nih_free (watch);
 
 
+#if HAVE_VALGRIND_VALGRIND_H
+	/* These tests fail when running under valgrind.
+	 */
+	if (! RUNNING_ON_VALGRIND) {
+#endif
 	/* Check that when a traced child forks it causes the reaper
 	 * to be called with a ptrace event and the fork event in the
 	 * status field.  It should not be removed from the list since the
@@ -491,6 +500,9 @@ test_poll (void)
 
 	waitid (P_PID, pid, &siginfo, WEXITED);
 	nih_free (watch);
+#if HAVE_VALGRIND_VALGRIND_H
+	}
+#endif
 
 
 	/* Check that we can watch for events from any process, which

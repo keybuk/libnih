@@ -298,7 +298,6 @@ nih_main_daemonise (void)
 
 	nih_assert (program_name != NULL);
 
-
 	/* Fork off child process.  This begans the detachment from our
 	 * parent process; this will terminate the intermediate process.
 	 */

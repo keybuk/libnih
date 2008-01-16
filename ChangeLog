@@ -1,5 +1,8 @@
 2008-01-16  Scott James Remnant  <scott@netsplit.com>
 
+	* m4/compiler.m4 (NIH_COMPILER_COVERAGE): Allow this to disable
+	use of -Os, which otherwise wouldn't be.
+
 	* configure.ac (AC_COPYRIGHT): Update copyright to 2008.
 
 2008-01-15  Scott James Remnant  <scott@netsplit.com>

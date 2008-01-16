@@ -2,7 +2,7 @@
 #
 # compiler.m4 - autoconf macros for compiler settings
 #
-# Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+# Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -48,8 +48,8 @@ AC_DEFUN([NIH_COMPILER_OPTIMISATIONS],
 	AS_HELP_STRING([--disable-compiler-optimisations],
 		       [Disable compiler optimisations]),
 [AS_IF([test "x$enable_compiler_optimisations" = "xno"],
-       [[CFLAGS=`echo "$CFLAGS" | sed -e "s/ -O[1-9]*\b/ -O0/g"`
-	 CXXFLAGS=`echo "$CXXFLAGS" | sed -e "s/ -O[1-9]*\b/ -O0/g"`]])
+       [[CFLAGS=`echo "$CFLAGS" | sed -e "s/ -O[1-9s]*\b/ -O0/g"`
+	 CXXFLAGS=`echo "$CXXFLAGS" | sed -e "s/ -O[1-9s]*\b/ -O0/g"`]])
 ])dnl
 ])# NIH_COMPILER_OPTIMISATIONS
 

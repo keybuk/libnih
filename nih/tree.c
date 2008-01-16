@@ -284,7 +284,7 @@ nih_tree_next (NihTree *tree,
 		node = tree;
 	}
 
-	while (node) {
+	for (;;) {
 		NihTree *tmp = node;
 
 		if ((prev == node->parent) && node->left) {
@@ -300,8 +300,6 @@ nih_tree_next (NihTree *tree,
 
 		prev = tmp;
 	}
-
-	return NULL;
 }
 
 /**
@@ -339,7 +337,7 @@ nih_tree_prev (NihTree *tree,
 		node = tree;
 	}
 
-	while (node) {
+	for (;;) {
 		NihTree *tmp = node;
 
 		if ((prev == node->parent) && node->right) {
@@ -355,8 +353,6 @@ nih_tree_prev (NihTree *tree,
 
 		prev = tmp;
 	}
-
-	return NULL;
 }
 
 
@@ -396,7 +392,7 @@ nih_tree_next_pre (NihTree *tree,
 		return tree;
 	}
 
-	while (node) {
+	for (;;) {
 		NihTree *tmp = node;
 
 		if ((prev != node->right) && node->right) {
@@ -410,8 +406,6 @@ nih_tree_next_pre (NihTree *tree,
 
 		prev = tmp;
 	}
-
-	return NULL;
 }
 
 /**
@@ -445,7 +439,7 @@ nih_tree_prev_pre (NihTree *tree,
 		node = tree;
 	}
 
-	while (node) {
+	for (;;) {
 		NihTree *tmp = node;
 
 		if ((prev == node->parent) && node->right) {
@@ -458,8 +452,6 @@ nih_tree_prev_pre (NihTree *tree,
 
 		prev = tmp;
 	}
-
-	return NULL;
 }
 
 
@@ -494,7 +486,7 @@ nih_tree_next_post (NihTree *tree,
 		node = tree;
 	}
 
-	while (node) {
+	for (;;) {
 		NihTree *tmp = node;
 
 		if ((prev == node->parent) && node->left) {
@@ -507,8 +499,6 @@ nih_tree_next_post (NihTree *tree,
 
 		prev = tmp;
 	}
-
-	return NULL;
 }
 
 /**
@@ -547,7 +537,7 @@ nih_tree_prev_post (NihTree *tree,
 		return tree;
 	}
 
-	while (node) {
+	for (;;) {
 		NihTree *tmp = node;
 
 		if ((prev != node->left) && node->left) {
@@ -561,6 +551,4 @@ nih_tree_prev_post (NihTree *tree,
 
 		prev = tmp;
 	}
-
-	return NULL;
 }

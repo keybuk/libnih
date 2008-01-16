@@ -1,5 +1,13 @@
 2008-01-16  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tree.c (nih_tree_next, nih_tree_prev, nih_tree_next_pre)
+	(nih_tree_prev_pre, nih_tree_next_post, nih_tree_prev_post): It's
+	never possible to break out of the loop since we always return
+	inside it.
+
+	* nih/tests/test_child.c (test_poll): Add test case for the watch
+	being on the wrong event.
+
 	* m4/compiler.m4 (NIH_COMPILER_COVERAGE): Allow this to disable
 	use of -Os, which otherwise wouldn't be.
 

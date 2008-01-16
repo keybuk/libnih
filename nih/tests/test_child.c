@@ -570,6 +570,37 @@ test_poll (void)
 	nih_free (watch);
 
 
+	/* Check that if we poll with a known pid but for a different event
+	 * set, nothing is triggered and the watch is not removed.
+	 */
+	TEST_FEATURE ("with event-specific watcher and wrong event");
+
+	TEST_CHILD (pid) {
+		pause ();
+	}
+
+	watch = nih_child_add_watch (NULL, pid, NIH_CHILD_STOPPED,
+				     my_handler, &watch);
+
+	TEST_FREE_TAG (watch);
+
+	handler_called = 0;
+	last_data = NULL;
+	last_pid = 0;
+	last_event = -1;
+	last_status = 0;
+
+	kill (pid, SIGTERM);
+	waitid (P_PID, pid, &siginfo, WEXITED | WNOWAIT);
+
+	nih_child_poll ();
+
+	TEST_FALSE (handler_called);
+	TEST_NOT_FREE (watch);
+
+	nih_free (watch);
+
+
 	/* Check that a poll when nothing has died does nothing. */
 	TEST_FEATURE ("with nothing dead");
 

@@ -2,7 +2,7 @@
 
 AC_PREREQ(2.61)
 AC_INIT([libnih], [0.1.0], [libnih-bugs@netsplit.com])
-AC_COPYRIGHT([[Copyright © 2007 Scott James Remnant <scott@netsplit.com>.]])
+AC_COPYRIGHT([[Copyright © 2008 Scott James Remnant <scott@netsplit.com>.]])
 AC_CONFIG_SRCDIR([nih/libnih.h])
 AC_CONFIG_MACRO_DIR([m4])
 

@@ -1,3 +1,7 @@
+2008-01-16  Scott James Remnant  <scott@netsplit.com>
+
+	* configure.ac (AC_COPYRIGHT): Update copyright to 2008.
+
 2008-01-15  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/tests/test_child.c (test_poll): Don't run the ptrace tests

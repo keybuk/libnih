@@ -1,3 +1,16 @@
+2008-03-01  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/tree.c (nih_tree_next, nih_tree_prev, nih_tree_next_pre)
+	(nih_tree_prev_pre, nih_tree_next_post, nih_tree_prev_post): Rename
+	these functions to *_full and add filter and data pointers, where
+	the filter must return FALSE if given otherwise a node is ignored.
+	* nih/tree.h: Update prototypes, and keep previous behaviour with
+	the old names through the use of macros.  Typedef the filter function
+	pointer type.
+	* nih/tests/test_tree.c (test_next_full, test_prev_full)
+	(test_next_pre_full, test_prev_pre_full, text_next_post_full)
+	(test_prev_post_full): Test iteration with filters.
+
 2008-01-16  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/tree.c (nih_tree_next, nih_tree_prev, nih_tree_next_pre)

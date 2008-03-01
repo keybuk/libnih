@@ -1306,6 +1306,664 @@ test_prev_post (void)
 }
 
 
+/*
+ * For the following tests, we use a specific tree as detailed below where
+ * only those nodes marked with *s should be visited.
+ *
+ *                *a*
+ *               /   \
+ *             /       \
+ *          *b*         *c*
+ *         /           /   \
+ *      *d*         *e*      f
+ *      /             \     / \
+ *     g              *h*  i   j
+ *   k'              l'
+ *
+ * We place each node in order, with node 'a' implicitly placed as the root;
+ * the filter function will return FALSE for 'j' and 'k' as well to test
+ * that they're ignored since they are children.
+ */
+
+static int
+my_filter (NihTree **nodes,
+	   NihTree  *node)
+{
+	/* FALSE means that we DON'T ignore the node */
+	if (! nodes)
+		return TRUE;
+	if (node == nodes['a' - 97])
+		return FALSE;
+	if (node == nodes['b' - 97])
+		return FALSE;
+	if (node == nodes['c' - 97])
+		return FALSE;
+	if (node == nodes['d' - 97])
+		return FALSE;
+	if (node == nodes['e' - 97])
+		return FALSE;
+	if (node == nodes['f' - 97])
+		return TRUE;
+	if (node == nodes['g' - 97])
+		return TRUE;
+	if (node == nodes['h' - 97])
+		return FALSE;
+	if (node == nodes['i' - 97])
+		return TRUE;
+	if (node == nodes['j' - 97])
+		return FALSE;
+	if (node == nodes['k' - 97])
+		return FALSE;
+	if (node == nodes['l' - 97])
+		return TRUE;
+
+	assert ("not reached");
+	return TRUE;
+}
+
+void
+test_next_full (void)
+{
+	NihTree *node[12], *expect[13], *ptr;
+	int      i;
+
+	TEST_FUNCTION ("nih_tree_next_full");
+	for (i = 0; i < 12; i++)
+		node[i] = nih_tree_new (NULL);
+
+	nih_tree_add (node['a' - 97], node['b' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['a' - 97], node['c' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['b' - 97], node['d' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['c' - 97], node['e' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['c' - 97], node['f' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['d' - 97], node['g' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['e' - 97], node['h' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['f' - 97], node['i' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['f' - 97], node['j' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['g' - 97], node['k' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['h' - 97], node['l' - 97], NIH_TREE_LEFT);
+
+
+	/* Check that we can in-order iterate a reasonably complex tree,
+	 * and that nih_tree_next returns the right pointer in each case
+	 * until it finally returns NULL.
+	 */
+	TEST_FEATURE ("with full tree");
+	expect[0] = node['d' - 97];
+	expect[1] = node['b' - 97];
+	expect[2] = node['a' - 97];
+	expect[3] = node['e' - 97];
+	expect[4] = node['h' - 97];
+	expect[5] = node['c' - 97];
+	expect[6] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 6)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     7, i + 1);
+
+		ptr = nih_tree_next_full (node['a' - 97], ptr,
+					  (NihTreeFilter)my_filter, &node);
+
+		if (ptr != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], ptr);
+
+		i++;
+	} while (ptr);
+
+
+	/* Check that we can limit the iteration to a partial tree rooted
+	 * at the given tree node.
+	 */
+	TEST_FEATURE ("with partial tree");
+	expect[0] = node['e' - 97];
+	expect[1] = node['h' - 97];
+	expect[2] = node['c' - 97];
+	expect[3] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 3)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     4, i + 1);
+
+		ptr = nih_tree_next_full (node['c' - 97], ptr,
+					  (NihTreeFilter)my_filter, &node);
+
+		if (ptr != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], ptr);
+
+		i++;
+	} while (ptr);
+
+
+	for (i = 0; i < 12; i++)
+		nih_free (node[i]);
+
+
+	/* Check that a tree with a single node to be ignored is not
+	 * iterated.
+	 */
+	TEST_FEATURE ("with single node");
+	node[0] = nih_tree_new (NULL);
+
+	ptr = nih_tree_next_full (node[0], NULL,
+				  (NihTreeFilter)my_filter, NULL);
+	TEST_EQ_P (ptr, NULL);
+
+	nih_free (node[0]);
+}
+
+void
+test_prev_full (void)
+{
+	NihTree *node[12], *expect[13], *ptr;
+	int      i;
+
+	TEST_FUNCTION ("nih_tree_prev_full");
+	for (i = 0; i < 12; i++)
+		node[i] = nih_tree_new (NULL);
+
+	nih_tree_add (node['a' - 97], node['b' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['a' - 97], node['c' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['b' - 97], node['d' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['c' - 97], node['e' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['c' - 97], node['f' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['d' - 97], node['g' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['e' - 97], node['h' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['f' - 97], node['i' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['f' - 97], node['j' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['g' - 97], node['k' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['h' - 97], node['l' - 97], NIH_TREE_LEFT);
+
+
+	/* Check that we can reverse in-order iterate a reasonably complex
+	 * tree, and that nih_tree_prev returns the right pointer in
+	 * each case until it finally returns NULL.
+	 */
+	TEST_FEATURE ("with full tree");
+	expect[0] = node['c' - 97];
+	expect[1] = node['h' - 97];
+	expect[2] = node['e' - 97];
+	expect[3] = node['a' - 97];
+	expect[4] = node['b' - 97];
+	expect[5] = node['d' - 97];
+	expect[6] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 6)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     7, i + 1);
+
+		ptr = nih_tree_prev_full (node['a' - 97], ptr,
+					  (NihTreeFilter)my_filter, &node);
+
+		if (ptr != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], ptr);
+
+		i++;
+	} while (ptr);
+
+
+	/* Check that we can limit the iteration to a partial tree rooted
+	 * at the given tree node.
+	 */
+	TEST_FEATURE ("with partial tree");
+	expect[0] = node['c' - 97];
+	expect[1] = node['h' - 97];
+	expect[2] = node['e' - 97];
+	expect[3] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 3)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     4, i + 1);
+
+		ptr = nih_tree_prev_full (node['c' - 97], ptr,
+					  (NihTreeFilter)my_filter, &node);
+
+		if (ptr != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], ptr);
+
+		i++;
+	} while (ptr);
+
+
+	for (i = 0; i < 12; i++)
+		nih_free (node[i]);
+
+
+	/* Check that a tree with a single node to be ignored is not
+	 * iterated.
+	 */
+	TEST_FEATURE ("with single node");
+	node[0] = nih_tree_new (NULL);
+
+	ptr = nih_tree_prev_full (node[0], NULL,
+				  (NihTreeFilter)my_filter, NULL);
+	TEST_EQ_P (ptr, NULL);
+
+	nih_free (node[0]);
+}
+
+
+void
+test_next_pre_full (void)
+{
+	NihTree *node[12], *expect[13], *ptr;
+	int      i;
+
+	TEST_FUNCTION ("nih_tree_next_pre_full");
+	for (i = 0; i < 12; i++)
+		node[i] = nih_tree_new (NULL);
+
+	nih_tree_add (node['a' - 97], node['b' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['a' - 97], node['c' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['b' - 97], node['d' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['c' - 97], node['e' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['c' - 97], node['f' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['d' - 97], node['g' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['e' - 97], node['h' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['f' - 97], node['i' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['f' - 97], node['j' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['g' - 97], node['k' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['h' - 97], node['l' - 97], NIH_TREE_LEFT);
+
+
+	/* Check that we can pre-order iterate a reasonably complex tree,
+	 * and that nih_tree_next_pre returns the right pointer in each case
+	 * until it finally returns NULL.
+	 */
+	TEST_FEATURE ("with full tree");
+	expect[0] = node['a' - 97];
+	expect[1] = node['b' - 97];
+	expect[2] = node['d' - 97];
+	expect[3] = node['c' - 97];
+	expect[4] = node['e' - 97];
+	expect[5] = node['h' - 97];
+	expect[6] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 6)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     7, i + 1);
+
+		ptr = nih_tree_next_pre_full (node['a' - 97], ptr,
+					      (NihTreeFilter)my_filter, &node);
+
+		if (ptr != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], ptr);
+
+		i++;
+	} while (ptr);
+
+
+	/* Check that we can limit the iteration to a partial tree rooted
+	 * at the given tree node.
+	 */
+	TEST_FEATURE ("with partial tree");
+	expect[0] = node['c' - 97];
+	expect[1] = node['e' - 97];
+	expect[2] = node['h' - 97];
+	expect[3] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 3)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     4, i + 1);
+
+		ptr = nih_tree_next_pre_full (node['c' - 97], ptr,
+					      (NihTreeFilter)my_filter, &node);
+
+		if (ptr != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], ptr);
+
+		i++;
+	} while (ptr);
+
+
+	for (i = 0; i < 12; i++)
+		nih_free (node[i]);
+
+
+	/* Check that a tree with a single node to be ignored is not
+	 * iterated.
+	 */
+	TEST_FEATURE ("with single node");
+	node[0] = nih_tree_new (NULL);
+
+	ptr = nih_tree_next_pre_full (node[0], NULL,
+				      (NihTreeFilter)my_filter, NULL);
+	TEST_EQ_P (ptr, NULL);
+
+	nih_free (node[0]);
+}
+
+void
+test_prev_pre_full (void)
+{
+	NihTree *node[12], *expect[13], *ptr;
+	int      i;
+
+	TEST_FUNCTION ("nih_tree_prev_pre_full");
+	for (i = 0; i < 12; i++)
+		node[i] = nih_tree_new (NULL);
+
+	nih_tree_add (node['a' - 97], node['b' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['a' - 97], node['c' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['b' - 97], node['d' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['c' - 97], node['e' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['c' - 97], node['f' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['d' - 97], node['g' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['e' - 97], node['h' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['f' - 97], node['i' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['f' - 97], node['j' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['g' - 97], node['k' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['h' - 97], node['l' - 97], NIH_TREE_LEFT);
+
+
+	/* Check that we can reverse pre-order iterate a reasonably complex
+	 * tree, and that nih_tree_prev_pre returns the right pointer in each
+	 * case until it finally returns NULL.
+	 */
+	TEST_FEATURE ("with full tree");
+	expect[0] = node['h' - 97];
+	expect[1] = node['e' - 97];
+	expect[2] = node['c' - 97];
+	expect[3] = node['d' - 97];
+	expect[4] = node['b' - 97];
+	expect[5] = node['a' - 97];
+	expect[6] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 6)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     7, i + 1);
+
+		ptr = nih_tree_prev_pre_full (node['a' - 97], ptr,
+					      (NihTreeFilter)my_filter, &node);
+
+		if (ptr != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], ptr);
+
+		i++;
+	} while (ptr);
+
+
+	/* Check that we can limit the iteration to a partial tree rooted
+	 * at the given tree node.
+	 */
+	TEST_FEATURE ("with partial tree");
+	expect[0] = node['h' - 97];
+	expect[1] = node['e' - 97];
+	expect[2] = node['c' - 97];
+	expect[3] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 3)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     4, i + 1);
+
+		ptr = nih_tree_prev_pre_full (node['c' - 97], ptr,
+					      (NihTreeFilter)my_filter, &node);
+
+		if (ptr != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], ptr);
+
+		i++;
+	} while (ptr);
+
+
+	for (i = 0; i < 12; i++)
+		nih_free (node[i]);
+
+
+	/* Check that a tree with a single node to be ignored is not
+	 * iterated.
+	 */
+	TEST_FEATURE ("with single node");
+	node[0] = nih_tree_new (NULL);
+
+	ptr = nih_tree_prev_pre_full (node[0], NULL,
+				      (NihTreeFilter)my_filter, NULL);
+	TEST_EQ_P (ptr, NULL);
+
+	nih_free (node[0]);
+}
+
+
+void
+test_next_post_full (void)
+{
+	NihTree *node[12], *expect[13], *ptr;
+	int      i;
+
+	TEST_FUNCTION ("nih_tree_next_post_full");
+	for (i = 0; i < 12; i++)
+		node[i] = nih_tree_new (NULL);
+
+	nih_tree_add (node['a' - 97], node['b' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['a' - 97], node['c' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['b' - 97], node['d' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['c' - 97], node['e' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['c' - 97], node['f' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['d' - 97], node['g' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['e' - 97], node['h' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['f' - 97], node['i' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['f' - 97], node['j' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['g' - 97], node['k' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['h' - 97], node['l' - 97], NIH_TREE_LEFT);
+
+
+	/* Check that we can post-order iterate a reasonably complex tree,
+	 * and that nih_tree_next_post returns the right pointer in each case
+	 * until it finally returns NULL.
+	 */
+	TEST_FEATURE ("with full tree");
+	expect[0] = node['d' - 97];
+	expect[1] = node['b' - 97];
+	expect[2] = node['h' - 97];
+	expect[3] = node['e' - 97];
+	expect[4] = node['c' - 97];
+	expect[5] = node['a' - 97];
+	expect[6] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 6)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     7, i + 1);
+
+		ptr = nih_tree_next_post_full (node['a' - 97], ptr,
+					       (NihTreeFilter)my_filter, &node);
+
+		if (ptr != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], ptr);
+
+		i++;
+	} while (ptr);
+
+
+	/* Check that we can limit the iteration to a partial tree rooted
+	 * at the given tree node.
+	 */
+	TEST_FEATURE ("with partial tree");
+	expect[0] = node['h' - 97];
+	expect[1] = node['e' - 97];
+	expect[2] = node['c' - 97];
+	expect[3] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 3)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     4, i + 1);
+
+		ptr = nih_tree_next_post_full (node['c' - 97], ptr,
+					       (NihTreeFilter)my_filter, &node);
+
+		if (ptr != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], ptr);
+
+		i++;
+	} while (ptr);
+
+
+	for (i = 0; i < 12; i++)
+		nih_free (node[i]);
+
+
+	/* Check that a tree with a single node to be ignored is not
+	 * iterated.
+	 */
+	TEST_FEATURE ("with single node");
+	node[0] = nih_tree_new (NULL);
+
+	ptr = nih_tree_next_post_full (node[0], NULL,
+				       (NihTreeFilter)my_filter, NULL);
+	TEST_EQ_P (ptr, NULL);
+
+	nih_free (node[0]);
+}
+
+void
+test_prev_post_full (void)
+{
+	NihTree *node[12], *expect[13], *ptr;
+	int      i;
+
+	TEST_FUNCTION ("nih_tree_prev_post_full");
+	for (i = 0; i < 12; i++)
+		node[i] = nih_tree_new (NULL);
+
+	nih_tree_add (node['a' - 97], node['b' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['a' - 97], node['c' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['b' - 97], node['d' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['c' - 97], node['e' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['c' - 97], node['f' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['d' - 97], node['g' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['e' - 97], node['h' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['f' - 97], node['i' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['f' - 97], node['j' - 97], NIH_TREE_RIGHT);
+	nih_tree_add (node['g' - 97], node['k' - 97], NIH_TREE_LEFT);
+	nih_tree_add (node['h' - 97], node['l' - 97], NIH_TREE_LEFT);
+
+
+	/* Check that we can reverse post-order iterate a reasonably complex
+	 * tree, and that nih_tree_prev_post returns the right pointer in each
+	 * case until it finally returns NULL.
+	 */
+	TEST_FEATURE ("with full tree");
+	expect[0] = node['a' - 97];
+	expect[1] = node['c' - 97];
+	expect[2] = node['e' - 97];
+	expect[3] = node['h' - 97];
+	expect[4] = node['b' - 97];
+	expect[5] = node['d' - 97];
+	expect[6] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 6)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     7, i + 1);
+
+		ptr = nih_tree_prev_post_full (node['a' - 97], ptr,
+					       (NihTreeFilter)my_filter, &node);
+
+		if (ptr != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], ptr);
+
+		i++;
+	} while (ptr);
+
+
+	/* Check that we can limit the iteration to a partial tree rooted
+	 * at the given tree node.
+	 */
+	TEST_FEATURE ("with partial tree");
+	expect[0] = node['c' - 97];
+	expect[1] = node['e' - 97];
+	expect[2] = node['h' - 97];
+	expect[3] = NULL;
+
+	i = 0;
+	ptr = NULL;
+
+	do {
+		if (i > 3)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     4, i + 1);
+
+		ptr = nih_tree_prev_post_full (node['c' - 97], ptr,
+					       (NihTreeFilter)my_filter, &node);
+
+		if (ptr != expect[i])
+			TEST_FAILED ("wrong tree node for %d, expected %p got %p",
+				     i, expect[i], ptr);
+
+		i++;
+	} while (ptr);
+
+
+	for (i = 0; i < 12; i++)
+		nih_free (node[i]);
+
+
+	/* Check that a tree with a single node to be ignored is not
+	 * iterated.
+	 */
+	TEST_FEATURE ("with single node");
+	node[0] = nih_tree_new (NULL);
+
+	ptr = nih_tree_prev_post_full (node[0], NULL,
+				       (NihTreeFilter)my_filter, NULL);
+	TEST_EQ_P (ptr, NULL);
+
+	nih_free (node[0]);
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -1326,6 +1984,12 @@ main (int   argc,
 	test_next_post ();
 	test_foreach_post ();
 	test_prev_post ();
+	test_next_full ();
+	test_prev_full ();
+	test_next_pre_full ();
+	test_prev_pre_full ();
+	test_next_post_full ();
+	test_prev_post_full ();
 
 	return 0;
 }

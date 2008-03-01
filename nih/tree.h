@@ -97,49 +97,67 @@ typedef int (*NihTreeFilter) (void *data, NihTree *node);
 
 
 /**
- * NIH_TREE_FOREACH:
+ * NIH_TREE_FOREACH_FULL:
  * @tree: root of the tree to iterate,
- * @iter: name of iterator variable.
+ * @iter: name of iterator variable,
+ * @filter: filter function to test each node,
+ * @data: data pointer to pass to @filter.
  *
  * Expands to a for statement that in-order iterates over each node in @tree,
  * setting @iter to each node for the block within the loop.
  *
+ * If @filter is given, it will be called for each node visited and must
+ * return FALSE otherwise the node and its children will be ignored.
+ *
  * You should not make changes to the structure of the tree while iterating,
  * since the order will be relatively unpredictable.
  **/
-#define NIH_TREE_FOREACH(tree, iter) \
-	for (NihTree *iter = nih_tree_next ((tree), NULL); iter != NULL; \
-	     iter = nih_tree_next ((tree), iter))
+#define NIH_TREE_FOREACH_FULL(tree, iter, filter, data) \
+	for (NihTree *iter = nih_tree_next_full ((tree), NULL, (filter), (data)); \
+	     iter != NULL; \
+	     iter = nih_tree_next_full ((tree), iter, (filter), (data)))
 
 /**
- * NIH_TREE_FOREACH_PRE:
+ * NIH_TREE_FOREACH_PRE_FULL:
  * @tree: root of the tree to iterate,
- * @iter: name of iterator variable.
+ * @iter: name of iterator variable,
+ * @filter: filter function to test each node,
+ * @data: data pointer to pass to @filter.
  *
  * Expands to a for statement that pre-order iterates over each node in @tree,
  * setting @iter to each node for the block within the loop.
  *
+ * If @filter is given, it will be called for each node visited and must
+ * return FALSE otherwise the node and its children will be ignored.
+ *
  * You should not make changes to the structure of the tree while iterating,
  * since the order will be relatively unpredictable.
  **/
-#define NIH_TREE_FOREACH_PRE(tree, iter) \
-	for (NihTree *iter = nih_tree_next_pre ((tree), NULL); iter != NULL; \
-	     iter = nih_tree_next_pre ((tree), iter))
+#define NIH_TREE_FOREACH_PRE_FULL(tree, iter, filter, data) \
+	for (NihTree *iter = nih_tree_next_pre_full ((tree), NULL, (filter), (data)); \
+	     iter != NULL; \
+	     iter = nih_tree_next_pre_full ((tree), iter, (filter), (data)))
 
 /**
- * NIH_TREE_FOREACH_POST:
+ * NIH_TREE_FOREACH_POST_FULL:
  * @tree: root of the tree to iterate,
- * @iter: name of iterator variable.
+ * @iter: name of iterator variable,
+ * @filter: filter function to test each node,
+ * @data: data pointer to pass to @filter.
  *
  * Expands to a for statement that post-order iterates over each node in @tree,
  * setting @iter to each node for the block within the loop.
  *
+ * If @filter is given, it will be called for each node visited and must
+ * return FALSE otherwise the node and its children will be ignored.
+ *
  * You should not make changes to the structure of the tree while iterating,
  * since the order will be relatively unpredictable.
  **/
-#define NIH_TREE_FOREACH_POST(tree, iter) \
-	for (NihTree *iter = nih_tree_next_post ((tree), NULL); iter != NULL; \
-	     iter = nih_tree_next_post ((tree), iter))
+#define NIH_TREE_FOREACH_POST_FULL(tree, iter, filter, data) \
+	for (NihTree *iter = nih_tree_next_post_full ((tree), NULL, (filter), (data)); \
+	     iter != NULL; \
+	     iter = nih_tree_next_post_full ((tree), iter, (filter), (data)))
 
 
 /**
@@ -231,6 +249,52 @@ typedef int (*NihTreeFilter) (void *data, NihTree *node);
  **/
 #define nih_tree_prev_post(tree, node) \
 	nih_tree_prev_post_full ((tree), (node), NULL, NULL)
+
+
+/**
+ * NIH_TREE_FOREACH:
+ * @tree: root of the tree to iterate,
+ * @iter: name of iterator variable.
+ *
+ * Expands to a for statement that in-order iterates over each node in @tree,
+ * setting @iter to each node for the block within the loop.
+ *
+ * You should not make changes to the structure of the tree while iterating,
+ * since the order will be relatively unpredictable.
+ **/
+#define NIH_TREE_FOREACH(tree, iter) \
+	for (NihTree *iter = nih_tree_next ((tree), NULL); iter != NULL; \
+	     iter = nih_tree_next ((tree), iter))
+
+/**
+ * NIH_TREE_FOREACH_PRE:
+ * @tree: root of the tree to iterate,
+ * @iter: name of iterator variable.
+ *
+ * Expands to a for statement that pre-order iterates over each node in @tree,
+ * setting @iter to each node for the block within the loop.
+ *
+ * You should not make changes to the structure of the tree while iterating,
+ * since the order will be relatively unpredictable.
+ **/
+#define NIH_TREE_FOREACH_PRE(tree, iter) \
+	for (NihTree *iter = nih_tree_next_pre ((tree), NULL); iter != NULL; \
+	     iter = nih_tree_next_pre ((tree), iter))
+
+/**
+ * NIH_TREE_FOREACH_POST:
+ * @tree: root of the tree to iterate,
+ * @iter: name of iterator variable.
+ *
+ * Expands to a for statement that post-order iterates over each node in @tree,
+ * setting @iter to each node for the block within the loop.
+ *
+ * You should not make changes to the structure of the tree while iterating,
+ * since the order will be relatively unpredictable.
+ **/
+#define NIH_TREE_FOREACH_POST(tree, iter) \
+	for (NihTree *iter = nih_tree_next_post ((tree), NULL); iter != NULL; \
+	     iter = nih_tree_next_post ((tree), iter))
 
 
 NIH_BEGIN_EXTERN

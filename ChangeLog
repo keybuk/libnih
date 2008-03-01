@@ -1,5 +1,10 @@
 2008-03-01  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tree.h (NIH_TREE_FOREACH_FULL, NIH_TREE_FOREACH_PRE_FULL)
+	(NIH_TREE_FOREACH_POST_FULL): The lack of these macros was silly.
+	* nih/tests/test_tree.c (test_foreach_full)
+	(test_foreach_pre_full, test_foreach_post_full): Add tests.
+
 	* nih/tree.c (nih_tree_next, nih_tree_prev, nih_tree_next_pre)
 	(nih_tree_prev_pre, nih_tree_next_post, nih_tree_prev_post): Rename
 	these functions to *_full and add filter and data pointers, where

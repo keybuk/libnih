@@ -1,3 +1,10 @@
+2008-03-02  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/libnih.supp (nih-command-parser, nih-option-parser): Suppress
+	leak of internal state during --help tests.
+	(nih-main-package-string-test): Modify suppression to also catch
+	when it's allocated within a test case.
+
 2008-03-01  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/tree.h (NIH_TREE_FOREACH_FULL, NIH_TREE_FOREACH_PRE_FULL)

@@ -1,5 +1,13 @@
 2008-03-03  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_config.c (test_token): We don't want to dequote
+	anything other than newlines and whitespace, since the quote
+	characters may be important for the value (e.g. \$FOO being different
+	to $FOO).  Add tests to make sure we don't.
+	* nih/config.c (nih_config_token): After a slash, only dequote
+	whitespace otherwise if we're copying, copy a literal slash character
+	first.
+
 	* nih/tests/test_string.c (test_array_append): Should work with a
 	NULL array argument.
 	* nih/string.c (nih_str_array_append): Make it work.

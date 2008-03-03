@@ -169,10 +169,12 @@ nih_config_token (const char *file,
 				if (lineno)
 					(*lineno)++;
 				continue;
-			} else {
+			} else if (strchr (NIH_CONFIG_WS, file[p])) {
 				extra++;
 				if (dequote)
 					qc++;
+			} else if (dest) {
+				dest[i++] = '\\';
 			}
 		} else if (file[p] == '\\') {
 			slash = TRUE;

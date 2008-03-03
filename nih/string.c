@@ -455,18 +455,12 @@ nih_str_array_copy (const void   *parent,
 		    size_t       *len,
 		    char * const *array)
 {
-	char **new_array;
+	char **new_array = NULL;
 
 	nih_assert (array != NULL);
 
-	new_array = nih_str_array_new (parent);
-	if (! new_array)
+	if (! nih_str_array_append (&new_array, parent, len, array))
 		return NULL;
-
-	if (! nih_str_array_append (&new_array, parent, len, array)) {
-		nih_free (new_array);
-		return NULL;
-	}
 
 	return new_array;
 }
@@ -501,10 +495,14 @@ nih_str_array_append (char         ***array,
 		      char * const   *args)
 {
 	size_t        c_len, o_len;
+	int           free_on_error = FALSE;
 	char * const *arg;
 
 	nih_assert (array != NULL);
 	nih_assert (args != NULL);
+
+	if (! *array)
+		free_on_error = TRUE;
 
 	if (! len) {
 		c_len = 0;
@@ -519,10 +517,18 @@ nih_str_array_append (char         ***array,
 
 	for (arg = args; *arg; arg++) {
 		if (! nih_str_array_add (array, parent, &c_len, *arg)) {
-			for (; c_len > o_len; c_len--)
-				nih_free ((*array)[c_len - 1]);
+			if (*array) {
+				for (; c_len > o_len; c_len--)
+					nih_free ((*array)[c_len - 1]);
 
-			(*array)[o_len] = NULL;
+				(*array)[o_len] = NULL;
+
+				if (free_on_error) {
+					nih_free (*array);
+					*array = NULL;
+				}
+			}
+
 			return NULL;
 		}
 	}

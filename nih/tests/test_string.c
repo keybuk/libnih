@@ -731,6 +731,72 @@ test_array_append (void)
 		nih_free (array);
 	}
 
+
+	/* Check that we can pass a NULL array to get a copy of it, with
+	 * the returned length containing the new length.
+	 */
+	TEST_FEATURE ("with NULL array and length");
+	TEST_ALLOC_FAIL {
+		len = 0;
+		array = NULL;
+		ret = nih_str_array_append (&array, NULL, &len, args);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+
+			TEST_EQ (len, 0);
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_NE_P (ret, NULL);
+
+		TEST_EQ (len, 4);
+		TEST_EQ_STR (array[0], "this");
+		TEST_ALLOC_PARENT (array[0], array);
+		TEST_EQ_STR (array[1], "is");
+		TEST_ALLOC_PARENT (array[1], array);
+		TEST_EQ_STR (array[2], "a");
+		TEST_ALLOC_PARENT (array[2], array);
+		TEST_EQ_STR (array[3], "test");
+		TEST_ALLOC_PARENT (array[3], array);
+		TEST_EQ_P (array[4], NULL);
+
+		nih_free (array);
+	}
+
+
+	/* Check that we can pass a NULL array to get a copy of it, without
+	 * passing the length in.
+	 */
+	TEST_FEATURE ("with NULL array and no length");
+	TEST_ALLOC_FAIL {
+		array = NULL;
+		ret = nih_str_array_append (&array, NULL, NULL, args);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_NE_P (ret, NULL);
+
+		TEST_EQ_STR (array[0], "this");
+		TEST_ALLOC_PARENT (array[0], array);
+		TEST_EQ_STR (array[1], "is");
+		TEST_ALLOC_PARENT (array[1], array);
+		TEST_EQ_STR (array[2], "a");
+		TEST_ALLOC_PARENT (array[2], array);
+		TEST_EQ_STR (array[3], "test");
+		TEST_ALLOC_PARENT (array[3], array);
+		TEST_EQ_P (array[4], NULL);
+
+		nih_free (array);
+	}
+
+
 	nih_free (args);
 }
 

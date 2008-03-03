@@ -1,3 +1,10 @@
+2008-03-03  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/tests/test_string.c (test_array_append): Should work with a
+	NULL array argument.
+	* nih/string.c (nih_str_array_append): Make it work.
+	(nih_str_array_copy): Which makes this function somewhat simpler.
+
 2008-03-02  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/libnih.supp (nih-command-parser, nih-option-parser): Suppress

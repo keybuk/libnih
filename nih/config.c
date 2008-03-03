@@ -169,7 +169,8 @@ nih_config_token (const char *file,
 				if (lineno)
 					(*lineno)++;
 				continue;
-			} else if (strchr (NIH_CONFIG_WS, file[p])) {
+			} else if ((file[p] == '\\')
+				   || strchr (NIH_CONFIG_WS, file[p])) {
 				extra++;
 				if (dequote)
 					qc++;

@@ -1,5 +1,11 @@
 2008-03-03  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_config.c (test_token): Also check that backslashes
+	can escape themselves; since you may want a literal one followed by
+	whitespace or a newline.
+	* nih/config.c (nih_config_token): Dequote blackslash following a
+	blackslash.
+
 	* nih/tests/test_config.c (test_token): We don't want to dequote
 	anything other than newlines and whitespace, since the quote
 	characters may be important for the value (e.g. \$FOO being different

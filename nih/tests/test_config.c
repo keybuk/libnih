@@ -437,6 +437,61 @@ test_token (void)
 	TEST_EQ_STR (dest, "this\\$FOO");
 
 
+	/* Check that we can obtain the length of a token that contains
+	 * escaped backslashes, the length should include the backslashes.
+	 */
+	TEST_FEATURE ("with escaped backslashes inside token");
+	strcpy (buf, "this\\\\FOO");
+	pos = 0;
+	len = 0;
+	ret = nih_config_token (buf, strlen (buf), &pos, NULL,
+				NULL, " ", FALSE, &len);
+
+	TEST_EQ (ret, 0);
+	TEST_EQ (len, 9);
+	TEST_EQ (pos, 9);
+
+
+	/* Check that we can extract a token that contains escaped
+	 * blackslashes.
+	 */
+	TEST_FEATURE ("with escaped backslashes within extracted token");
+	ret = nih_config_token (buf, strlen (buf), NULL, NULL,
+				dest, " ", FALSE, &len);
+
+	TEST_EQ (ret, 0);
+	TEST_EQ (len, 9);
+	TEST_EQ_STR (dest, "this\\\\FOO");
+
+
+	/* Check that we can obtain the length of a token that contains
+	 * escaped blackslashes, reduced to one since we're dequoting
+	 */
+	TEST_FEATURE ("with escaped backslashes inside token and dequoting");
+	pos = 0;
+	len = 0;
+	ret = nih_config_token (buf, strlen (buf), &pos, NULL,
+				NULL, " ", TRUE, &len);
+
+	TEST_EQ (ret, 0);
+	TEST_EQ (len, 8);
+	TEST_EQ (pos, 9);
+
+
+	/* Check that we can extract a token that contains escaped backslashes,
+	 * which should include only one of the backslashes because
+	 * we're dequoting.
+	 */
+	TEST_FEATURE ("with escaped backslashes within extracted dequoted token");
+	len = 0;
+	ret = nih_config_token (buf, strlen (buf), NULL, NULL,
+				dest, " ", TRUE, &len);
+
+	TEST_EQ (ret, 0);
+	TEST_EQ (len, 8);
+	TEST_EQ_STR (dest, "this\\FOO");
+
+
 	/* Check that a slash at the end of the file causes a parser error
 	 * to be raised with pos and lineno set to the offending location.
 	 */

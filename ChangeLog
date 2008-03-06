@@ -1,5 +1,12 @@
 2008-03-06  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/string.c (nih_strcat, nih_strncat, nih_strcat_sprintf)
+	(nih_strcat_vsprintf): I'm needing to use realloc more than I should
+	for string concatenation, so lets have some functions to do that.
+	* nih/string.h: Prototypes for new functions.
+	* nih/tests/test_string.c (test_strcat, test_strncat)
+	(test_strcat_sprintf, test_strcat_vsprintf): Test the new functions.
+
 	* TODO: Update.
 
 2008-03-03  Scott James Remnant  <scott@netsplit.com>

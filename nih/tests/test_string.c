@@ -271,6 +271,193 @@ test_strndup (void)
 	}
 }
 
+
+void
+test_strcat (void)
+{
+	char *str, *ret;
+
+	/* Check that we can extend a string with another, resulting in the
+	 * original string being modified and the new pointer stored in the
+	 * argument and returned.
+	 */
+	TEST_FUNCTION ("nih_strcat");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			str = nih_strdup (NULL, "this is a test");
+		}
+
+		ret = nih_strcat (&str, NULL, " of strdup");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, str);
+			TEST_EQ_STR (str, "this is a test");
+			continue;
+		}
+
+		TEST_NE (ret, NULL);
+		TEST_EQ_P (ret, str);
+
+		TEST_ALLOC_PARENT (str, NULL);
+		TEST_ALLOC_SIZE (str, 25);
+		TEST_EQ_STR (str, "this is a test of strdup");
+
+		nih_free (str);
+	}
+}
+
+void
+test_strncat (void)
+{
+	char *str, *ret;
+
+	TEST_FUNCTION ("nih_strncat");
+
+	/* Check that we can extend a string with the first number of bytes
+	 * from another, resulting in the original string being modified and
+	 * the new pointer stored in the argument and returned.
+	 */
+	TEST_FEATURE ("with larger string than length");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			str = nih_strdup (NULL, "this is a test");
+		}
+
+		ret = nih_strncat (&str, NULL, " of strndup", 3);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, str);
+			TEST_EQ_STR (str, "this is a test");
+			continue;
+		}
+
+		TEST_NE (ret, NULL);
+		TEST_EQ_P (ret, str);
+
+		TEST_ALLOC_PARENT (str, NULL);
+		TEST_ALLOC_SIZE (str, 18);
+		TEST_EQ_STR (str, "this is a test of");
+
+		nih_free (str);
+	}
+
+
+	/* Check that if a longer length than the string is given, enough
+	 * space is reserved but the string copy stops at the NULL.
+	 */
+	TEST_FEATURE ("with larger length than string");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			str = nih_strdup (NULL, "this is a test");
+		}
+
+		ret = nih_strncat (&str, NULL, " of strndup", 21);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, str);
+			TEST_EQ_STR (str, "this is a test");
+			continue;
+		}
+
+		TEST_NE (ret, NULL);
+		TEST_EQ_P (ret, str);
+
+		TEST_ALLOC_PARENT (str, NULL);
+		TEST_ALLOC_SIZE (str, 36);
+		TEST_EQ_STR (str, "this is a test of strndup");
+
+		nih_free (str);
+	}
+}
+
+
+void
+test_strcat_sprintf (void)
+{
+	char *str, *ret;
+
+	/* Check that we can extend a string with a formatted string,
+	 * resulting in the original string being modified and the new
+	 * pointer stored in the argument and returned.
+	 */
+	TEST_FUNCTION ("test_strcat_sprintf");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			str = nih_strdup (NULL, "this");
+		}
+
+		ret = nih_strcat_sprintf (&str, NULL,
+					  " %s a test %d", "is", 54321);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, str);
+			TEST_EQ_STR (str, "this");
+			continue;
+		}
+
+		TEST_NE (ret, NULL);
+		TEST_EQ_P (ret, str);
+
+		TEST_ALLOC_PARENT (str, NULL);
+		TEST_ALLOC_SIZE (str, 21);
+		TEST_EQ_STR (str, "this is a test 54321");
+
+		nih_free (str);
+	}
+}
+
+static char *
+my_strcat_vsprintf (char       **str,
+		    const void  *parent,
+		    const char  *format,
+		    ...)
+{
+	char    *ret;
+	va_list  args;
+
+	va_start (args, format);
+	ret = nih_strcat_vsprintf (str, parent, format, args);
+	va_end (args);
+
+	return ret;
+}
+
+void
+test_strcat_vsprintf (void)
+{
+	char *str, *ret;
+
+	/* Check that we can extend a string with a formatted string,
+	 * resulting in the original string being modified and the new
+	 * pointer stored in the argument and returned.
+	 */
+	TEST_FUNCTION ("test_strcat_vsprintf");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			str = nih_strdup (NULL, "this");
+		}
+
+		ret = my_strcat_vsprintf (&str, NULL,
+					  " %s a test %d", "is", 54321);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, str);
+			TEST_EQ_STR (str, "this");
+			continue;
+		}
+
+		TEST_NE (ret, NULL);
+		TEST_EQ_P (ret, str);
+
+		TEST_ALLOC_PARENT (str, NULL);
+		TEST_ALLOC_SIZE (str, 21);
+		TEST_EQ_STR (str, "this is a test 54321");
+
+		nih_free (str);
+	}
+}
+
+
 void
 test_str_split (void)
 {
@@ -1181,6 +1368,10 @@ main (int   argc,
 	test_vsprintf ();
 	test_strdup ();
 	test_strndup ();
+	test_strcat ();
+	test_strncat ();
+	test_strcat_sprintf ();
+	test_strcat_vsprintf ();
 	test_str_split ();
 	test_array_new ();
 	test_array_add ();

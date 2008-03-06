@@ -177,6 +177,152 @@ nih_strndup (const void *parent,
 
 
 /**
+ * nih_strcat:
+ * @str: pointer to string to modify,
+ * @parent: parent of @str,
+ * @src: string to append to @str.
+ *
+ * Modifies @str, concatenating the contents of @src to it.  The new string
+ * is allocated using nih_alloc(), and @str will be updated to point to the
+ * new pointer; use the return value simply to check for success.
+ * @parent must be its parent.
+ *
+ * Returns: new string pointer or NULL if insufficient memory.
+ **/
+char *
+nih_strcat (char       **str,
+	    const void  *parent,
+	    const char  *src)
+{
+	nih_assert (str != NULL);
+	nih_assert (*str != NULL);
+	nih_assert (src != NULL);
+
+	return nih_strncat (str, parent, src, strlen (src));
+}
+
+/**
+ * nih_strncat:
+ * @str: pointer to string to modify,
+ * @parent: parent of @str,
+ * @src: string to append to @str,
+ * @len: length of @src.
+ *
+ * Modifies @str, concatenating up to @len characters of the contents of @src
+ * to it.  The new string is allocated using nih_alloc(), and @str will be
+ * updated to point to the new pointer; use the return value simply to check
+ * for success. @parent must be its parent.
+ *
+ * Returns: new string pointer or NULL if insufficient memory.
+ **/
+char *
+nih_strncat (char       **str,
+	     const void  *parent,
+	     const char  *src,
+	     size_t       len)
+{
+	char   *ret;
+
+	nih_assert (str != NULL);
+	nih_assert (*str != NULL);
+	nih_assert (src != NULL);
+
+	ret = nih_realloc (*str, parent, strlen (*str) + len + 1);
+	if (! ret)
+		return NULL;
+
+	*str = ret;
+
+	strncat (*str, src, len);
+
+	return ret;
+}
+
+
+/**
+ * nih_strcat_sprintf:
+ * @str: pointer to string to modify,
+ * @parent: parent of @str,
+ * @format: format string to append to @str.
+ *
+ * Modifies @str, concatenating according to @format as sprintf().  The new
+ * string is allocated using nih_alloc(), and @str will be updated to point
+ * to the new pointer; use the return value simply to check for success.
+ * @parent must be its parent.
+ *
+ * Returns: new string pointer or NULL if insufficient memory.
+ **/
+char *
+nih_strcat_sprintf (char       **str,
+		    const void  *parent,
+		    const char  *format,
+		    ...)
+{
+	char    *ret;
+	va_list  args;
+
+	nih_assert (str != NULL);
+	nih_assert (*str != NULL);
+	nih_assert (format != NULL);
+
+	va_start (args, format);
+	ret = nih_strcat_vsprintf (str, parent, format, args);
+	va_end (args);
+
+	return ret;
+}
+
+/**
+ * nih_strcat_vsprintf:
+ * @str: pointer to string to modify,
+ * @parent: parent of @str,
+ * @format: format string to append to @str,
+ * @args: arguments to format string.
+ *
+ * Modifies @str, concatenating according to @format as vsprintf().  The new
+ * string is allocated using nih_alloc(), and @str will be updated to point
+ * to the new pointer; use the return value simply to check for success.
+ * @parent must be its parent.
+ *
+ * Returns: new string pointer or NULL if insufficient memory.
+ **/
+char *
+nih_strcat_vsprintf (char       **str,
+		     const void  *parent,
+		     const char  *format,
+		     va_list      args)
+{
+	ssize_t   len, str_len;
+	va_list   args_copy;
+	char     *ret;
+
+	nih_assert (str != NULL);
+	nih_assert (*str != NULL);
+	nih_assert (format != NULL);
+
+	str_len = strlen (*str);
+
+	va_copy (args_copy, args);
+	len = vsnprintf (NULL, 0, format, args_copy);
+	va_end (args_copy);
+
+	nih_assert (len >= 0);
+
+	ret = nih_realloc (*str, parent, str_len + len + 1);
+	if (! ret)
+		return NULL;
+
+	*str = ret;
+
+	va_copy (args_copy, args);
+	vsnprintf (*str + str_len, len + 1, format, args_copy);
+	va_end (args_copy);
+
+	return ret;
+}
+
+
+/**
  * nih_str_split:
  * @parent: parent of returned array,
  * @str: string to split,

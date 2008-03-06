@@ -40,6 +40,19 @@ char * nih_strdup           (const void *parent, const char *str)
 char * nih_strndup          (const void *parent, const char *str, size_t len)
 	__attribute__ ((warn_unused_result, malloc));
 
+char * nih_strcat           (char **str, const void *parent, const char *src)
+	__attribute__ ((warn_unused_result, malloc));
+char * nih_strncat          (char **str, const void *parent, const char *src,
+			     size_t len)
+	__attribute__ ((warn_unused_result, malloc));
+
+char * nih_strcat_sprintf   (char **str, const void *parent,
+			     const char *format, ...)
+	__attribute__ ((format (printf, 3, 4), warn_unused_result, malloc));
+char * nih_strcat_vsprintf  (char **str, const void *parent,
+			     const char *format, va_list args)
+	__attribute__ ((format (printf, 3, 0), warn_unused_result, malloc));
+
 char **nih_str_split        (const void *parent, const char *str,
 			     const char *delim, int repeat)
 	__attribute__ ((warn_unused_result, malloc));

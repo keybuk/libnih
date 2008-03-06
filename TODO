@@ -1,5 +1,17 @@
+io:
+- there's a couple of tricky tests left to do:
+- nih_io_message_recv() with socket types other than PF_UNIX
+- nih_io_message_recv() when recv() fails
+- nih_io_watcher() with write error and free called
+
 timers:
 - calendar scheduled timers
+
+watch:
+- inotify already has an IN_ISDIR flag to let us know that we got an event
+  for a directory, so we don't really need to stat() it or pass a statbuf
+  around; except maybe for compatibility with the walk code.
+- handle IN_Q_OVERFLOW in some sane manner, at least log it.
 
 allocator/slab module
 

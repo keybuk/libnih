@@ -1,3 +1,10 @@
+2008-03-07  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/error.h (NIH_SHOULD): We quite often need to loop while
+	we get ENOMEM, but break on another error; this does that.
+	* nih/watch.c (nih_watch_new): Use here, fixing a bug in the process
+	where we didn't re-raise the error again.
+
 2008-03-06  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/string.c (nih_strcat, nih_strncat, nih_strcat_sprintf)

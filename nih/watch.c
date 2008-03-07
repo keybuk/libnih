@@ -175,19 +175,13 @@ nih_watch_new (const void       *parent,
 	}
 
 	/* Create an NihIo to handle incoming events. */
-	while (! (watch->io = nih_io_reopen (watch, watch->fd, NIH_IO_STREAM,
-					     (NihIoReader)nih_watch_reader,
-					     NULL, NULL, watch))) {
-		NihError *err;
-
-		err = nih_error_get ();
-		if (err->number != ENOMEM) {
-			close (watch->fd);
-			nih_free (watch);
-			return NULL;
-		}
-
-		nih_free (err);
+	NIH_SHOULD (watch->io = nih_io_reopen (watch, watch->fd, NIH_IO_STREAM,
+					       (NihIoReader)nih_watch_reader,
+					       NULL, NULL, watch));
+	if (! watch->io) {
+		close (watch->fd);
+		nih_free (watch);
+		return NULL;
 	}
 
 	nih_alloc_set_destructor (watch, (NihDestructor)nih_watch_destroy);

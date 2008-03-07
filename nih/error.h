@@ -76,6 +76,22 @@ typedef struct nih_error_info {
 	do { nih_error_raise_system (); return retval; } while (0)
 
 
+
+/* Force a true value, checking for ENOMEM on a false one */
+#define NIH_SHOULD(_e)						  \
+	while (! (_e)) {					  \
+		NihError *_nih_should_err;			  \
+								  \
+		_nih_should_err = nih_error_get ();		  \
+		if (_nih_should_err->number == ENOMEM) {	  \
+			nih_free (_nih_should_err);		  \
+		} else {					  \
+			nih_error_raise_again (_nih_should_err);  \
+			break;					  \
+		}						  \
+	}
+
+
 NIH_BEGIN_EXTERN
 
 void      nih_error_raise        (int number, const char *message);

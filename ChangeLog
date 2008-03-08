@@ -1,3 +1,8 @@
+2008-03-08  Scott James Remnant  <scott@netsplit.com>
+
+	* HACKING: Terminology changes: Bazaar-NG is now just Bazaar;
+	Malone is now just Launchpad's bug tracking system.
+
 2008-03-07  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/error.h (NIH_SHOULD): We quite often need to loop while

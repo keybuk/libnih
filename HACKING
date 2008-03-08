@@ -1,6 +1,5 @@
-The libnih source tree is available using Bazaar-NG with the
-following URL, if you plan to hack on libnih please work off this
-branch.
+The libnih source tree is available using Bazaar with the following
+URL, if you plan to hack on libnih please work off this branch.
 
 	http://bazaar.launchpad.net/~keybuk/libnih/trunk
 
@@ -8,12 +7,12 @@ Releases are available from the FTP site:
 
 	ftp://ftp.netsplit.com/pub/libnih/
 
-libnih uses the Malone bug tracking system:
+libnih uses Launchpad's bug tracking system:
 
-	http://launchpad.net/products/libnih/+bugs
+	http://bugs.launchpad.net/products/libnih/
 
 If you want to contribute code or bug fixes, please either provide the
-URL to your own Bazaar-NG branch or use the ‘unified’ diff format
+URL to your own Bazaar branch or use the ‘unified’ diff format
 (diff -pu) and attach the patch to a bug.  Please supply a suggested
 ChangeLog entry with your patch.
 
@@ -30,7 +29,7 @@ installed.
 	* GNU Libtool 1.5.22
 	* GNU Gettext 0.16.1
 
-After checking out libnih from Bazaar-NG you will need to use these
+After checking out libnih from Bazaar you will need to use these
 tools to generate the build files.  The correct way to do this is to
 simply run ‘autoreconf -i’ from the top-level source directory.
 

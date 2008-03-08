@@ -9,7 +9,7 @@ Releases are available from the FTP site:
 
 libnih uses Launchpad's bug tracking system:
 
-	http://bugs.launchpad.net/products/libnih/
+	http://bugs.launchpad.net/libnih/
 
 If you want to contribute code or bug fixes, please either provide the
 URL to your own Bazaar branch or use the ‘unified’ diff format

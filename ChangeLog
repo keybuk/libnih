@@ -1,5 +1,7 @@
 2008-03-08  Scott James Remnant  <scott@netsplit.com>
 
+	* HACKING: Don't even need /product/ anymore.
+
 	* HACKING: Terminology changes: Bazaar-NG is now just Bazaar;
 	Malone is now just Launchpad's bug tracking system.
 

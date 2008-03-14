@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,20 +28,44 @@
  * NihKeyFunction:
  * @entry: entry to key.
  *
- * This function is used to obtain a string key for a given hash table
- * entry; the key is not freed so should be a constant, or at least static,
- * string.
+ * This function is used to obtain a constant key for a given table entry.
  *
- * Keys are always compared case-sensitively, code should take care to
- * present keys in a canon form.
+ * Returns: constant key from entry.
  **/
-typedef const char *(*NihKeyFunction) (NihList *entry);
+typedef const void *(*NihKeyFunction) (NihList *entry);
+
+/**
+ * NihHashFunction:
+ * @key: key to hash.
+ *
+ * This function is used to generate a 32-bit hash for a given constant
+ * key, this will be bounded by the hash size automatically.
+ *
+ * Returns: 32-bit hash.
+ **/
+typedef uint32_t (*NihHashFunction) (const void *key);
+
+/**
+ * NihCmpFunction:
+ * @key1: key to compare,
+ * @key2: key to compare against.
+ *
+ * This function is used to compare constant keys from two given table
+ * entries.
+ *
+ * Returns: integer less than, equal to or greater than zero if @key1 is
+ * respectively less then, equal to or greater than @key2.
+ **/
+typedef int (*NihCmpFunction) (const void *key1, const void *key2);
+
 
 /**
  * NihHash:
  * @bins: array of bins,
  * @size: size of bins array,
- * @key_function: function used to obtain keys for entries.
+ * @key_function: function used to obtain keys for entries,
+ * @hash_function: function used to obtain hash of keys,
+ * @cmp_function: function used to compare keys.
  *
  * This structure represents a hash table which is more efficient for
  * looking up members than an ordinary list.
@@ -51,10 +75,12 @@ typedef const char *(*NihKeyFunction) (NihList *entry);
  * use nih_list_remove().
  **/
 typedef struct nih_hash {
-	NihList        *bins;
-	size_t          size;
+	NihList         *bins;
+	size_t           size;
 
-	NihKeyFunction  key_function;
+	NihKeyFunction   key_function;
+	NihHashFunction  hash_function;
+	NihCmpFunction   cmp_function;
 } NihHash;
 
 
@@ -100,21 +126,85 @@ typedef struct nih_hash {
 		NIH_LIST_FOREACH_SAFE (&(hash)->bins[_##iter##_i], iter)
 
 
+/**
+ * nih_hash_pointer_new:
+ * @parent: parent of new hash,
+ * @entries: rough number of entries expected,
+ *
+ * Allocates a new hash table, the number of buckets selected is a prime
+ * number that is no larger than @entries; this should be set to a rough
+ * number of expected entries to ensure optimum distribution.
+ *
+ * Individual members of the hash table are unique NihList members, for
+ * which their pointers will be used as the hash key and compared directly.
+ *
+ * The structure is allocated using nih_alloc() so it can be used as a
+ * context to other allocations; there is no non-allocated version of this
+ * function because the hash must be usable as a parent context to its bins.
+ *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned block will be freed too.
+ *
+ * Returns: the new hash table or NULL if the allocation failed.
+ **/
+#define nih_hash_pointer_new(parent, entries)			\
+	nih_hash_new (parent, entries, nih_hash_pointer_key,	\
+		      nih_hash_pointer_hash, nih_hash_pointer_cmp)
+
+/**
+ * nih_hash_string_new:
+ * @parent: parent of new hash,
+ * @entries: rough number of entries expected,
+ *
+ * Allocates a new hash table, the number of buckets selected is a prime
+ * number that is no larger than @entries; this should be set to a rough
+ * number of expected entries to ensure optimum distribution.
+ *
+ * Individual members of the hash table are NihList member which have
+ * a constant string as the first member that can be used as the hash key,
+ * these will be compared case sensitively.
+ *
+ * The structure is allocated using nih_alloc() so it can be used as a
+ * context to other allocations; there is no non-allocated version of this
+ * function because the hash must be usable as a parent context to its bins.
+ *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned block will be freed too.
+ *
+ * Returns: the new hash table or NULL if the allocation failed.
+ **/
+#define nih_hash_string_new(parent, entries)		     \
+	nih_hash_new (parent, entries,			     \
+		      (NihKeyFunction)nih_hash_string_key,   \
+		      (NihHashFunction)nih_hash_string_hash, \
+		      (NihCmpFunction)nih_hash_string_cmp)
+
+
 NIH_BEGIN_EXTERN
 
-NihHash *   nih_hash_new        (const void *parent, size_t entries,
-				 NihKeyFunction key_function)
+NihHash *   nih_hash_new          (const void *parent, size_t entries,
+				   NihKeyFunction key_function,
+				   NihHashFunction hash_function,
+				   NihCmpFunction cmp_function)
 	__attribute__ ((warn_unused_result, malloc));
 
-NihList *   nih_hash_add        (NihHash *hash, NihList *entry);
-NihList *   nih_hash_add_unique (NihHash *hash, NihList *entry);
-NihList *   nih_hash_replace    (NihHash *hash, NihList *entry);
+NihList *   nih_hash_add          (NihHash *hash, NihList *entry);
+NihList *   nih_hash_add_unique   (NihHash *hash, NihList *entry);
+NihList *   nih_hash_replace      (NihHash *hash, NihList *entry);
 
-NihList *   nih_hash_search     (NihHash *hash, const char *key,
-				 NihList *entry);
-NihList *   nih_hash_lookup     (NihHash *hash, const char *key);
+NihList *   nih_hash_search       (NihHash *hash, const void *key,
+				   NihList *entry);
+NihList *   nih_hash_lookup       (NihHash *hash, const void *key);
 
-const char *nih_hash_string_key (NihList *entry);
+const void *nih_hash_pointer_key  (NihList *entry);
+uint32_t    nih_hash_pointer_hash (const void *key);
+int         nih_hash_pointer_cmp  (const void *key1, const void *key2);
+
+const char *nih_hash_string_key   (NihList *entry);
+uint32_t    nih_hash_string_hash  (const char *key);
+int         nih_hash_string_cmp   (const char *key1, const char *key2);
 
 NIH_END_EXTERN
 

@@ -2,7 +2,7 @@
  *
  * watch.c - watching of files and directories with inotify
  *
- * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -142,8 +142,7 @@ nih_watch_new (const void       *parent,
 	/* Allocate the NihWatch structure */
 	NIH_MUST (watch = nih_new (parent, NihWatch));
 	NIH_MUST (watch->path = nih_strdup (watch, path));
-	NIH_MUST (watch->created = nih_hash_new (watch, 0,
-						 nih_hash_string_key));
+	NIH_MUST (watch->created = nih_hash_string_new (watch, 0));
 
 	watch->subdirs = subdirs;
 	watch->create = create;

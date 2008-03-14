@@ -1,5 +1,23 @@
 2008-03-14  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/hash.c (nih_hash_new): Also require hash and cmp functions
+	and store in the structure.
+	(nih_hash_add, nih_hash_add_unique, nih_hash_add_replace)
+	(nih_hash_search, nih_hash_lookup): Change key type to void,
+	use hash and cmp functions from the structure.
+	(fnv_hash): Rename to nih_hash_string_key
+	(nih_hash_string_cmp): String comparison function.
+	(nih_hash_pointer_key, nih_hash_pointer_hash, nih_hash_pointer_cmp):
+	Pointer hash functions.
+	* nih/hash.h (NihHashFunction): Prototype for hash function.
+	(NihCmpFunction): Prototype for key comparison function.
+	(NihHash): Add hash_function and cmp_function members.
+	(nih_hash_pointer_new, nih_hash_string_new): Macros to wrap function
+	and pass in common key, hash and cmp functions.
+	* nih/tests/test_hash.c: Update tests to include new functions and
+	macros.
+	* nih/watch.c: Use nih_hash_string_new() to create the hash table.
+
 	* nih/command.c: Add const to local structures.
 	(nih_command_join): Expect to not change the structures passed
 	(nih_command_handle): Iterate structure as const.

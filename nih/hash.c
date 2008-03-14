@@ -2,7 +2,7 @@
  *
  * hash.c - Fuller/Noll/Vo hash table implementation
  *
- * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,10 +50,6 @@
 #define FNV_OFFSET_BASIS 2166136261UL
 
 
-/* Prototypes for static functions */
-static uint32_t fnv_hash (const char *key);
-
-
 /**
  * primes:
  *
@@ -74,47 +70,27 @@ static const uint32_t primes[] = {
 static const size_t num_primes = sizeof (primes) / sizeof (uint32_t);
 
 
-/**
- * fnv_hash:
- * @key: string key to hash.
- *
- * Generates and returns a 32-bit hash for the given string key using the
- * FNV-1 algorithm as documented at http://www.isthe.com/chongo/tech/comp/fnv/
- *
- * The returned key will need to be bounded within the number of bins
- * used in the hash table.
- *
- * Returns: 32-bit hash.
- **/
-static uint32_t
-fnv_hash (const char *key)
-{
-	register uint32_t hash = FNV_OFFSET_BASIS;
-
-	nih_assert (key != NULL);
-
-	while (*key) {
-		hash *= FNV_PRIME;
-		hash ^= *(key++);
-	}
-
-	return hash;
-}
 
 
 /**
  * nih_hash_new:
  * @parent: parent of new hash,
  * @entries: rough number of entries expected,
- * @key_function: function used to obtain keys for entries.
+ * @key_function: function used to obtain keys for entries,
+ * @hash_function: function used to obtain hash for keys,
+ * @cmp_function: function used to compare keys.
  *
  * Allocates a new hash table, the number of buckets selected is a prime
  * number that is no larger than @entries; this should be set to a rough
  * number of expected entries to ensure optimum distribution.
  *
  * Individual members of the hash table are NihList members, so to
- * associate them with a string key @key_function must be provided; this
- * would ordinarily just return a static string within the entry itself.
+ * associate them with a constant key @key_function must be provided, to
+ * convert that key into a hash @hash_function must be provided and to
+ * compare keys @cmp_function must be provided.  The nih_hash_pointer_new()
+ * and nih_hash_string_new() macros wrap this function for the most common
+ * two cases of pointer equality and a string key as the first structure
+ * member.
  *
  * The structure is allocated using nih_alloc() so it can be used as a
  * context to other allocations; there is no non-allocated version of this
@@ -127,14 +103,18 @@ fnv_hash (const char *key)
  * Returns: the new hash table or NULL if the allocation failed.
  **/
 NihHash *
-nih_hash_new (const void     *parent,
-	      size_t          entries,
-	      NihKeyFunction  key_function)
+nih_hash_new (const void      *parent,
+	      size_t           entries,
+	      NihKeyFunction   key_function,
+	      NihHashFunction  hash_function,
+	      NihCmpFunction   cmp_function)
 {
 	NihHash *hash;
 	size_t   i;
 
 	nih_assert (key_function != NULL);
+	nih_assert (hash_function != NULL);
+	nih_assert (cmp_function != NULL);
 
 	hash = nih_new (parent, NihHash);
 	if (! hash)
@@ -157,6 +137,8 @@ nih_hash_new (const void     *parent,
 		nih_list_init (&hash->bins[i]);
 
 	hash->key_function = key_function;
+	hash->hash_function = hash_function;
+	hash->cmp_function = cmp_function;
 
 	return hash;
 }
@@ -167,7 +149,7 @@ nih_hash_new (const void     *parent,
  * @hash: destination hash table,
  * @entry: entry to be added.
  *
- * Adds @entry to @hash using the value returned by the hash NihKeyFunction
+ * Adds @entry to @hash using the value returned by the hash functions
  * to indicate which bin the entry should be placed into.
  *
  * For speed reasons, this function does not check whether an entry already
@@ -183,14 +165,16 @@ NihList *
 nih_hash_add (NihHash *hash,
 	      NihList *entry)
 {
-	const char *key;
+	const void *key;
+	uint32_t    hashval;
 	NihList    *bin;
 
 	nih_assert (hash != NULL);
 	nih_assert (entry != NULL);
 
 	key = hash->key_function (entry);
-	bin = &hash->bins[fnv_hash (key) % hash->size];
+	hashval = hash->hash_function (key) % hash->size;
+	bin = &hash->bins[hashval];
 
 	return nih_list_add (bin, entry);
 }
@@ -200,12 +184,12 @@ nih_hash_add (NihHash *hash,
  * @hash: destination hash table,
  * @entry: entry to be added.
  *
- * Adds @entry to @hash using the value returned by the hash NihKeyFunction
+ * Adds @entry to @hash using the value returned by the hash functions
  * to indicate which bin the entry should be placed into, provided the key
  * is unique.
  *
  * Because the hash table does not store the key of each entry, this requires
- * that NihKeyFunction be called for each entry in the destination bin, so
+ * that the key function be called for each entry in the destination bin, so
  * should only be used where the uniqueness constraint is required and not
  * already enforced by other code.
  *
@@ -219,17 +203,19 @@ NihList *
 nih_hash_add_unique (NihHash *hash,
 		     NihList *entry)
 {
-	const char *key;
+	const void *key;
+	uint32_t    hashval;
 	NihList    *bin;
 
 	nih_assert (hash != NULL);
 	nih_assert (entry != NULL);
 
 	key = hash->key_function (entry);
-	bin = &hash->bins[fnv_hash (key) % hash->size];
+	hashval = hash->hash_function (key) % hash->size;
+	bin = &hash->bins[hashval];
 
 	NIH_LIST_FOREACH (bin, iter) {
-		if (! strcmp (key, hash->key_function (iter)))
+		if (! hash->cmp_function (key, hash->key_function (iter)))
 			return NULL;
 	}
 
@@ -241,12 +227,12 @@ nih_hash_add_unique (NihHash *hash,
  * @hash: destination hash table,
  * @entry: entry to be added.
  *
- * Adds @entry to @hash using the value returned by the hash NihKeyFunction
+ * Adds @entry to @hash using the value returned by the hash functions
  * to indicate which bin the entry should be placed into, replacing any
  * existing entry with the same key.
  *
  * Because the hash table does not store the key of each entry, this requires
- * that NihKeyFunction be called for each entry in the destination bin, so
+ * that the key function be called for each entry in the destination bin, so
  * should only be used where the uniqueness constraint is required and not
  * already enforced by other code.
  *
@@ -263,17 +249,19 @@ NihList *
 nih_hash_replace (NihHash *hash,
 		  NihList *entry)
 {
-	const char *key;
+	const void *key;
+	uint32_t    hashval;
 	NihList    *bin, *ret = NULL;
 
 	nih_assert (hash != NULL);
 	nih_assert (entry != NULL);
 
 	key = hash->key_function (entry);
-	bin = &hash->bins[fnv_hash (key) % hash->size];
+	hashval = hash->hash_function (key) % hash->size;
+	bin = &hash->bins[hashval];
 
 	NIH_LIST_FOREACH (bin, iter) {
-		if (! strcmp (key, hash->key_function (iter))) {
+		if (! hash->cmp_function (key, hash->key_function (iter))) {
 			ret = nih_list_remove (iter);
 			break;
 		}
@@ -292,7 +280,7 @@ nih_hash_replace (NihHash *hash,
  * @entry: previous entry found.
  *
  * Finds all entries in @hash with a key of @key by calling the hash's
- * NihKeyFunction on each entry in the appropriate bin, starting with @entry,
+ * key function on each entry in the appropriate bin, starting with @entry,
  * until one is found.
  *
  * The initial @entry can be found by passing NULL or using nih_hash_lookup().
@@ -301,22 +289,25 @@ nih_hash_replace (NihHash *hash,
  **/
 NihList *
 nih_hash_search (NihHash    *hash,
-		 const char *key,
+		 const void *key,
 		 NihList    *entry)
 {
-	NihList *bin;
+	uint32_t  hashval;
+	NihList  *bin;
 
 	nih_assert (hash != NULL);
 	nih_assert (key != NULL);
 
-	bin = &hash->bins[fnv_hash (key) % hash->size];
+	hashval = hash->hash_function (key) % hash->size;
+	bin = &hash->bins[hashval];
+
 	NIH_LIST_FOREACH (bin, iter) {
 		if (iter == entry) {
 			entry = NULL;
 			continue;
 		} else if (entry) {
 			continue;
-		} else if (! strcmp (key, hash->key_function (iter))) {
+		} else if (! hash->cmp_function (key, hash->key_function (iter))) {
 			return iter;
 		}
 	}
@@ -338,15 +329,87 @@ nih_hash_search (NihHash    *hash,
  **/
 NihList *
 nih_hash_lookup (NihHash    *hash,
-		 const char *key)
+		 const void *key)
 {
 	return nih_hash_search (hash, key, NULL);
 }
 
 
 /**
+ * nih_hash_pointer_key:
+ * @entry: entry to create key for.
+ *
+ * Key function that can be used for any structure that should be compared
+ * directly.
+ *
+ * Returns: pointer to the structure.
+ **/
+const void *
+nih_hash_pointer_key (NihList *entry)
+{
+	nih_assert (entry != NULL);
+
+	return entry;
+}
+
+/**
+ * nih_hash_pointer_hash:
+ * @key: pointer key to hash.
+ *
+ * Generates and returns a 32-bit hash for the given pointer key using the
+ * FNV-1 algorithm as documented at http://www.isthe.com/chongo/tech/comp/fnv/
+ *
+ * The returned key will need to be bounded within the number of bins
+ * used in the hash table.
+ *
+ * Returns: 32-bit hash.
+ **/
+uint32_t
+nih_hash_pointer_hash (const void *key)
+{
+	register uint32_t hash = FNV_OFFSET_BASIS;
+	int               i;
+
+	nih_assert (key != NULL);
+
+	for (i = 0; i < sizeof (key); i += sizeof (hash)) {
+		hash *= FNV_PRIME;
+		hash ^= ((uint32_t *)&key)[i];
+	}
+
+	return hash;
+}
+
+/**
+ * nih_hash_pointer_cmp:
+ * @key1: key to compare,
+ * @key2: key to compare against.
+ *
+ * Compares @key1 to @key2 for exact equality.
+ *
+ * Returns: integer less than, equal to or greater than zero if @key1 is
+ * respectively less then, equal to or greater than @key2.
+ **/
+int
+nih_hash_pointer_cmp (const void *key1,
+		      const void *key2)
+{
+	nih_assert (key1 != NULL);
+	nih_assert (key2 != NULL);
+
+	if (key1 < key2) {
+		return -1;
+	} else if (key1 > key2) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+
+/**
  * nih_hash_string_key:
- * @entry: entry to be checked.
+ * @entry: entry to create key for.
  *
  * Key function that can be used for any list entry where the first member
  * immediately after the list header is a pointer to the string containing
@@ -360,4 +423,51 @@ nih_hash_string_key (NihList *entry)
 	nih_assert (entry != NULL);
 
 	return *((const char **)((char *)entry + sizeof (NihList)));
+}
+
+/**
+ * nih_hash_string_hash:
+ * @key: string key to hash.
+ *
+ * Generates and returns a 32-bit hash for the given string key using the
+ * FNV-1 algorithm as documented at http://www.isthe.com/chongo/tech/comp/fnv/
+ *
+ * The returned key will need to be bounded within the number of bins
+ * used in the hash table.
+ *
+ * Returns: 32-bit hash.
+ **/
+uint32_t
+nih_hash_string_hash (const char *key)
+{
+	register uint32_t hash = FNV_OFFSET_BASIS;
+
+	nih_assert (key != NULL);
+
+	while (*key) {
+		hash *= FNV_PRIME;
+		hash ^= *(key++);
+	}
+
+	return hash;
+}
+
+/**
+ * nih_hash_string_cmp:
+ * @key1: key to compare,
+ * @key2: key to compare against.
+ *
+ * Compares @key1 to @key2 case-sensitively.
+ *
+ * Returns: integer less than, equal to or greater than zero if @key1 is
+ * respectively less then, equal to or greater than @key2.
+ **/
+int
+nih_hash_string_cmp (const char *key1,
+		     const char *key2)
+{
+	nih_assert (key1 != NULL);
+	nih_assert (key2 != NULL);
+
+	return strcmp (key1, key2);
 }

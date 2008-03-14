@@ -2,7 +2,7 @@
  *
  * timer.c - timeouts, periodic and scheduled timers
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@
 
 
 /**
- * timers:
+ * nih_timers:
  *
  * This is the list of all registered timers, it is not sorted into any
  * particular order.  The due time of timers should be set when the timer
@@ -44,7 +44,7 @@
  *
  * Each item is an NihTimer structure.
  **/
-static NihList *timers = NULL;
+NihList *nih_timers = NULL;
 
 
 /**
@@ -52,11 +52,11 @@ static NihList *timers = NULL;
  *
  * Initialise the timer list.
  **/
-static inline void
+void
 nih_timer_init (void)
 {
-	if (! timers)
-		NIH_MUST (timers = nih_list_new (NULL));
+	if (! nih_timers)
+		NIH_MUST (nih_timers = nih_list_new (NULL));
 }
 
 
@@ -111,7 +111,7 @@ nih_timer_add_timeout (const void *parent,
 
 	timer->due = time (NULL) + timeout;
 
-	nih_list_add (timers, &timer->entry);
+	nih_list_add (nih_timers, &timer->entry);
 
 	return timer;
 }
@@ -167,7 +167,7 @@ nih_timer_add_periodic (const void *parent,
 
 	timer->due = time (NULL) + period;
 
-	nih_list_add (timers, &timer->entry);
+	nih_list_add (nih_timers, &timer->entry);
 
 	return timer;
 }
@@ -224,7 +224,7 @@ nih_timer_add_scheduled (const void       *parent,
 	/* FIXME Not implemented */
 	timer->due = 0;
 
-	nih_list_add (timers, &timer->entry);
+	nih_list_add (nih_timers, &timer->entry);
 
 	return timer;
 }
@@ -250,7 +250,7 @@ nih_timer_next_due (void)
 	nih_timer_init ();
 
 	next = NULL;
-	NIH_LIST_FOREACH (timers, iter) {
+	NIH_LIST_FOREACH (nih_timers, iter) {
 		NihTimer *timer = (NihTimer *)iter;
 
 		if ((next == NULL) || (timer->due < next->due))
@@ -279,7 +279,7 @@ nih_timer_poll (void)
 	nih_timer_init ();
 
 	now = time (NULL);
-	NIH_LIST_FOREACH_SAFE (timers, iter) {
+	NIH_LIST_FOREACH_SAFE (nih_timers, iter) {
 		NihTimer *timer = (NihTimer *)iter;
 
 		if (timer->due > now)

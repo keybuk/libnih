@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -92,6 +92,10 @@ typedef struct nih_child_watch {
 
 
 NIH_BEGIN_EXTERN
+
+NihList *nih_child_watches;
+
+void           nih_child_init      (void);
 
 NihChildWatch *nih_child_add_watch (const void *parent, pid_t pid,
 				    NihChildEvents events,

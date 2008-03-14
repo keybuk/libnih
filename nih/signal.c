@@ -2,7 +2,7 @@
  *
  * signal.c - easier and main-loop signal handling
  *
- * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -123,12 +123,12 @@ static const SignalName signal_names[] = {
 static volatile sig_atomic_t signals_caught[NUM_SIGNALS];
 
 /**
- * signals:
+ * nih_signals:
  *
  * This is the list of registered signals, not sorted into any particular
  * order.  Each item is an NihSignal structure.
  **/
-static NihList *signals = NULL;
+NihList *nih_signals = NULL;
 
 
 /**
@@ -136,11 +136,11 @@ static NihList *signals = NULL;
  *
  * Initialise the list of signals.
  **/
-static inline void
+void
 nih_signal_init (void)
 {
-	if (! signals)
-		NIH_MUST (signals = nih_list_new (NULL));
+	if (! nih_signals)
+		NIH_MUST (nih_signals = nih_list_new (NULL));
 }
 
 
@@ -294,7 +294,7 @@ nih_signal_add_handler (const void       *parent,
 	signal->handler = handler;
 	signal->data = data;
 
-	nih_list_add (signals, &signal->entry);
+	nih_list_add (nih_signals, &signal->entry);
 
 	return signal;
 }
@@ -336,7 +336,7 @@ nih_signal_poll (void)
 
 	nih_signal_init ();
 
-	NIH_LIST_FOREACH_SAFE (signals, iter) {
+	NIH_LIST_FOREACH_SAFE (nih_signals, iter) {
 		NihSignal *signal = (NihSignal *)iter;
 
 		if (! signals_caught[signal->signum])

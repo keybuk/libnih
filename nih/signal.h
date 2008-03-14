@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,6 +63,11 @@ struct nih_signal {
 
 
 NIH_BEGIN_EXTERN
+
+NihList *nih_signals;
+
+
+void        nih_signal_init        (void);
 
 int         nih_signal_set_handler (int signum, void (*handler)(int));
 int         nih_signal_set_default (int signum);

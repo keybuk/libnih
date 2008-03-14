@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -260,6 +260,11 @@ struct nih_io {
 
 
 NIH_BEGIN_EXTERN
+
+NihList *nih_io_watches;
+
+
+void          nih_io_init                (void);
 
 NihIoWatch *  nih_io_add_watch           (const void *parent, int fd,
 					  NihIoEvents events,

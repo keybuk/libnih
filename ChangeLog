@@ -1,5 +1,31 @@
 2008-03-14  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/child.c (child_watches): Rename to nih_child_watches and
+	make extern.
+	(nih_child_init): Make extern, update name of global.
+	(nih_child_add_watch, nih_child_poll): Update name of global.
+	* nih/child.h: Add prototypes.
+	* nih/io.c (io_watches): Rename to nih_io_watches and make extern.
+	(nih_io_init): Make extern, update name of global.
+	(nih_io_add_watch, nih_io_select_fds, nih_io_handle_fds): Update
+	name of global.
+	* nih/io.h: Add prototypes.
+	* nih/main.c (loop_functions): Rename to nih_main_loop_functions
+	and make extern.
+	(nih_main_loop_init, nih_main_loop, nih_main_loop_add_func): Update
+	name of global.
+	* nih/main.h: Add prototype.
+	* nih/signal.c (signals): Rename to nih_signals and make extern.
+	(nih_signal_init): Make extern, update name of global.
+	(nih_signal_add_handler, nih_signal_poll): Update name of global.
+	* nih/signal.h: Add prototypes.
+	* nih/timer.c (timers): Rename to nih_timers and make extern.
+	(nih_timer_init): Make extern, update name of global.
+	(nih_timer_add_timeout, nih_timer_add_periodic)
+	(nih_timer_add_scheduled, nih_timer_next_due, nih_timer_poll): Update
+	name of global.
+	* nih/timer.h: Add prototypes.
+
 	* m4/misc.m4 (NIH_INIT): Allow the macro to take options, the first
 	of which shall be "noinstall" which defines a Makefile conditional
 	that prevents installation of files -- useful when embedded in

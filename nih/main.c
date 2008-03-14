@@ -151,12 +151,12 @@ static __thread int exit_loop = 0;
 static __thread int exit_status = 0;
 
 /**
- * loop_functions:
+ * nih_main_loop_functions:
  *
  * List of functions to be called in each main loop iteration.  Each item
  * is an NihMainLoopFunc structure.
  **/
-static NihList *loop_functions = NULL;
+NihList *nih_main_loop_functions = NULL;
 
 
 /**
@@ -517,8 +517,8 @@ nih_main_unlink_pidfile (void)
 static void
 nih_main_loop_init (void)
 {
-	if (! loop_functions)
-		NIH_MUST (loop_functions = nih_list_new (NULL));
+	if (! nih_main_loop_functions)
+		NIH_MUST (nih_main_loop_functions = nih_list_new (NULL));
 
 	/* Set up the interrupt pipe, we need it to be non blocking so that
 	 * we don't accidentally block if there's too many signals been
@@ -609,7 +609,7 @@ nih_main_loop (void)
 		nih_timer_poll ();
 
 		/* Run the loop functions */
-		NIH_LIST_FOREACH_SAFE (loop_functions, iter) {
+		NIH_LIST_FOREACH_SAFE (nih_main_loop_functions, iter) {
 			NihMainLoopFunc *func = (NihMainLoopFunc *)iter;
 
 			func->callback (func->data, func);
@@ -696,7 +696,7 @@ nih_main_loop_add_func (const void    *parent,
 	func->callback = callback;
 	func->data = data;
 
-	nih_list_add (loop_functions, &func->entry);
+	nih_list_add (nih_main_loop_functions, &func->entry);
 
 	return func;
 }

@@ -2,7 +2,7 @@
  *
  * io.c - file and socket input/output handling
  *
- * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,13 +65,13 @@ static NihIoMessage * nih_io_first_message  (NihIo *io);
 
 
 /**
- * io_watches;
+ * nih_io_watches;
  *
  * This is the list of current watches on file descriptors and sockets,
  * not sorted into any particular order.  Each item is an NihIoWatch
  * structure.
  **/
-static NihList *io_watches = NULL;
+NihList *nih_io_watches = NULL;
 
 
 /**
@@ -79,11 +79,11 @@ static NihList *io_watches = NULL;
  *
  * Initialise the list of I/O watches.
  **/
-static inline void
+void
 nih_io_init (void)
 {
-	if (! io_watches)
-		NIH_MUST (io_watches = nih_list_new (NULL));
+	if (! nih_io_watches)
+		NIH_MUST (nih_io_watches = nih_list_new (NULL));
 }
 
 /**
@@ -139,7 +139,7 @@ nih_io_add_watch (const void   *parent,
 	watch->watcher = watcher;
 	watch->data = data;
 
-	nih_list_add (io_watches, &watch->entry);
+	nih_list_add (nih_io_watches, &watch->entry);
 
 	return watch;
 }
@@ -167,7 +167,7 @@ nih_io_select_fds (int    *nfds,
 
 	nih_io_init ();
 
-	NIH_LIST_FOREACH (io_watches, iter) {
+	NIH_LIST_FOREACH (nih_io_watches, iter) {
 		NihIoWatch    *watch = (NihIoWatch *)iter;
 
 		if (watch->events & NIH_IO_READ) {
@@ -210,7 +210,7 @@ nih_io_handle_fds (fd_set *readfds,
 
 	nih_io_init ();
 
-	NIH_LIST_FOREACH_SAFE (io_watches, iter) {
+	NIH_LIST_FOREACH_SAFE (nih_io_watches, iter) {
 		NihIoWatch  *watch = (NihIoWatch *)iter;
 		NihIoEvents  events;
 

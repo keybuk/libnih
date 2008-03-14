@@ -2,7 +2,7 @@
  *
  * child.c - child process termination handling
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,12 +46,12 @@
 
 
 /**
- * child_watches:
+ * nih_child_watches:
  *
  * This is the list of current child watches, not sorted into any
  * particular order.  Each item is an NihChildWatch structure.
  **/
-static NihList *child_watches = NULL;
+NihList *nih_child_watches = NULL;
 
 
 /**
@@ -59,11 +59,11 @@ static NihList *child_watches = NULL;
  *
  * Initialise the list of child watches.
  **/
-static inline void
+void
 nih_child_init (void)
 {
-	if (! child_watches)
-		NIH_MUST (child_watches = nih_list_new (NULL));
+	if (! nih_child_watches)
+		NIH_MUST (nih_child_watches = nih_list_new (NULL));
 }
 
 
@@ -121,7 +121,7 @@ nih_child_add_watch (const void      *parent,
 	watch->handler = handler;
 	watch->data = data;
 
-	nih_list_add (child_watches, &watch->entry);
+	nih_list_add (nih_child_watches, &watch->entry);
 
 	return watch;
 }
@@ -204,7 +204,7 @@ nih_child_poll (void)
 			nih_assert_not_reached ();
 		}
 
-		NIH_LIST_FOREACH_SAFE (child_watches, iter) {
+		NIH_LIST_FOREACH_SAFE (nih_child_watches, iter) {
 			NihChildWatch *watch = (NihChildWatch *)iter;
 
 			if ((watch->pid != pid) && (watch->pid != -1))

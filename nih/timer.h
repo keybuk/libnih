@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -109,6 +109,11 @@ struct nih_timer {
 
 
 NIH_BEGIN_EXTERN
+
+NihList *nih_timers;
+
+
+void      nih_timer_init          (void);
 
 NihTimer *nih_timer_add_timeout   (const void *parent, time_t timeout,
 				   NihTimerCb callback, void *data)

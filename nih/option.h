@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -109,7 +109,7 @@ char **    nih_option_parser         (const void *parent,
 	__attribute__ ((warn_unused_result, malloc));
 
 NihOption *nih_option_join           (const void *parent,
-				      NihOption *a, NihOption *b)
+				      const NihOption *a, const NihOption *b)
 	__attribute__ ((warn_unused_result, malloc));
 
 int        nih_option_count          (NihOption *option, const char *arg);

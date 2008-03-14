@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -108,7 +108,7 @@ int         nih_command_parser (const void *parent, int argc, char *argv[],
 				NihOption *options, NihCommand *commands);
 
 NihCommand *nih_command_join   (const void *parent,
-				NihCommand *a, NihCommand *b)
+				const NihCommand *a, const NihCommand *b)
 	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN

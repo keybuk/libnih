@@ -2,7 +2,7 @@
  *
  * command.c - command parser based on nih_option_parser
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ static void        nih_command_group_help (NihCommandGroup *group,
  * These default commands are appended to those defined by the user
  * so they can be overriden.
  **/
-static NihCommand default_commands[] = {
+static const NihCommand default_commands[] = {
 	{ "help", NULL,
 	  N_("display list of commands"), NULL, NULL, NULL, NULL },
 
@@ -68,7 +68,7 @@ static NihCommand default_commands[] = {
  *
  * This is used whenever the options member of NihCommand is NULL.
  **/
-static NihOption no_options[] = {
+static const NihOption no_options[] = {
 	NIH_OPTION_LAST
 };
 
@@ -219,12 +219,13 @@ error:
  * Returns: combined command array.
  **/
 NihCommand *
-nih_command_join (const void *parent,
-		  NihCommand *a,
-		  NihCommand *b)
+nih_command_join (const void       *parent,
+		  const NihCommand *a,
+		  const NihCommand *b)
 {
-	NihCommand *cmd, *cmds;
-	size_t      alen = 0, blen = 0;
+	const NihCommand *cmd;
+	NihCommand       *cmds;
+	size_t            alen = 0, blen = 0;
 
 	nih_assert (a != NULL);
 	nih_assert (b != NULL);
@@ -308,9 +309,10 @@ nih_command_handle (const void *parent,
 		    NihCommand *commands,
 		    NihCommand *command)
 {
-	char       **args;
-	NihOption   *opts, *cmd_opts;
-	int          ret;
+	char            **args;
+	const NihOption  *cmd_opts;
+	NihOption        *opts;
+	int               ret;
 
 	nih_assert (argc > 0);
 	nih_assert (argv != NULL);

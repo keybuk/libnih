@@ -1,5 +1,13 @@
 2008-03-14  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/command.c: Add const to local structures.
+	(nih_command_join): Expect to not change the structures passed
+	(nih_command_handle): Iterate structure as const.
+	* nih/command.h: Add const to prototype.
+	* nih/option.c: Add const to local structures.
+	(nih_option_join): Expect to not change the structures passed
+	* nih/option.h: Add const to prototype.
+
 	* nih/error.c (nih_error_init): Make extern for consistency.
 	* nih/error.h: Add prototype.
 	* nih/logging.c (nih_log_init): Make extern for consistency.

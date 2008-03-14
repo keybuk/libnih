@@ -2,7 +2,7 @@
  *
  * option.c - command-line argument and option parsing
  *
- * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -90,7 +90,7 @@ static void        nih_option_group_help  (NihOptionGroup *group,
  * These default options are appended to those defined by the user
  * so they can be overriden.
  **/
-static NihOption default_options[] = {
+static const NihOption default_options[] = {
 	{ 'q', "quiet",
 	  N_("reduce output to errors only"),
 	  NULL, NULL, NULL, nih_option_quiet },
@@ -570,12 +570,13 @@ nih_option_next_nonopt (NihOptionCtx *ctx)
  * Returns: combined option array.
  **/
 NihOption *
-nih_option_join (const void *parent,
-		 NihOption  *a,
-		 NihOption  *b)
+nih_option_join (const void      *parent,
+		 const NihOption *a,
+		 const NihOption *b)
 {
-	NihOption *opt, *opts;
-	size_t     alen = 0, blen = 0;
+	const NihOption *opt;
+	NihOption       *opts;
+	size_t           alen = 0, blen = 0;
 
 	nih_assert (a != NULL);
 	nih_assert (b != NULL);

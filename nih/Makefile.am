@@ -6,7 +6,13 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/intl
 
 
-lib_LTLIBRARIES = libnih.la
+libraries = libnih.la
+
+if INSTALL_NIH
+lib_LTLIBRARIES = $(libraries)
+else
+noinst_LTLIBRARIES = $(libraries)
+endif
 
 libnih_la_SOURCES = \
 	alloc.c \
@@ -37,6 +43,7 @@ endif
 EXTRA_DIST = libnih.ver libnih.supp
 
 
+if INSTALL_NIH
 include_HEADERS = \
 	libnih.h
 
@@ -63,6 +70,7 @@ nihinclude_HEADERS = \
 	errors.h \
 	inotify.h \
 	test.h
+endif
 
 
 TESTS = \

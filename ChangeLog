@@ -1,3 +1,15 @@
+2008-03-14  Scott James Remnant  <scott@netsplit.com>
+
+	* m4/misc.m4 (NIH_INIT): Allow the macro to take options, the first
+	of which shall be "noinstall" which defines a Makefile conditional
+	that prevents installation of files -- useful when embedded in
+	things like Upstart.
+	* m4/Makefile.am (dist_aclocal_DATA): Don't install if "noinstall"
+	is defined.
+	* nih/Makefile.am (lib_LTLIBRARIES): If "noinstall" is defined,
+	still build the library but do not install it.
+	(include_HEADERS): Don't install if "noinstall" is defined.
+
 2008-03-08  Scott James Remnant  <scott@netsplit.com>
 
 	* HACKING: Don't even need /product/ anymore.

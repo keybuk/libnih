@@ -2,7 +2,7 @@
 #
 # misc.m4 - miscellaneous autoconf macros
 #
-# Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+# Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -40,15 +40,24 @@ m4_ifndef([NIH_PACKAGE_COPYRIGHT], [m4_bmatch([$1], [
 ])# AC_COPYRIGHT
 
 
-# NIH_INIT
-# --------
+# NIH_INIT([OPTIONS])
+# -------------------
 # Expands to the set of macros normally required for using libnih within
 # another source tree.
+#
+# Options:
+#   noinstall       do not install libnih
 AC_DEFUN([NIH_INIT],
-[# Checks for header files.  (libnih)
+[m4_foreach_w([_NIH_Option], [$1],
+	     [m4_define([_NIH_Option_]m4_bpatsubst(_NIH_Option, [[^a-zA_Z0-9_]], [_]))])
+
+m4_ifdef([_NIH_Option_noinstall], [nih_noinstall=yes])
+AM_CONDITIONAL([INSTALL_NIH], [test "x$nih_noinstall" != "xyes"])
+
+# Checks for header files.
 AC_CHECK_HEADERS([sys/inotify.h valgrind/valgrind.h])
 
-# Checks for typedefs, structures, and compiler characteristics.  (libnih)
+# Checks for typedefs, structures, and compiler characteristics.
 AC_PROG_CC_C99
 NIH_C_THREAD
 

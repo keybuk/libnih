@@ -2,7 +2,7 @@
  *
  * error.c - error handling
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -83,7 +83,7 @@ static __thread NihList *context_stack = NULL;
  *
  * Initialise the context stack.
  **/
-static inline void
+void
 nih_error_init (void)
 {
 	if (! context_stack) {

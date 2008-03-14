@@ -1,5 +1,10 @@
 2008-03-14  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/error.c (nih_error_init): Make extern for consistency.
+	* nih/error.h: Add prototype.
+	* nih/logging.c (nih_log_init): Make extern for consistency.
+	* nih/logging.h: Add prototype.
+
 	* nih/child.c (child_watches): Rename to nih_child_watches and
 	make extern.
 	(nih_child_init): Make extern, update name of global.

@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -156,6 +156,8 @@ NIH_BEGIN_EXTERN
 
 NihLogLevel nih_log_priority;
 
+
+void nih_log_init         (void);
 
 void nih_log_set_logger   (NihLogger new_logger);
 void nih_log_set_priority (NihLogLevel new_priority);

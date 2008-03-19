@@ -368,13 +368,13 @@ uint32_t
 nih_hash_pointer_hash (const void *key)
 {
 	register uint32_t hash = FNV_OFFSET_BASIS;
-	int               i;
+	size_t            i;
 
 	nih_assert (key != NULL);
 
-	for (i = 0; i < sizeof (key); i += sizeof (hash)) {
+	for (i = 0; i < sizeof (key); i++) {
 		hash *= FNV_PRIME;
-		hash ^= ((uint32_t *)&key)[i];
+		hash ^= ((char *)&key)[i];
 	}
 
 	return hash;

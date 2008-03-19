@@ -1,3 +1,8 @@
+2008-03-19  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/hash.c (nih_hash_pointer_hash): Fix hash generation on 64-bit
+	systems by using each byte rather than trying to be clever.
+
 2008-03-14  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/hash.c (nih_hash_new): Also require hash and cmp functions

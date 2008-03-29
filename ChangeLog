@@ -1,3 +1,11 @@
+2008-03-29  Scott James Remnant  <scott@netsplit.com>
+
+	* m4/libs.m4: Add an empty file to hold macros relating to library
+	detection.
+	* m4/Makefile.am (dist_aclocal_DATA): Install and distribute the
+	new macro file.
+	* nihify: Symlink the new macro file across as well.
+
 2008-03-19  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/hash.c (nih_hash_pointer_hash): Fix hash generation on 64-bit

@@ -34,3 +34,19 @@ after any checks for the compiler (the "Checks for libraries" section
 is usually the right place).
 
 	NIH_INIT
+
+
+Dependencies
+------------
+
+In order to query the availability of external libraries, libnih uses
+the pkg-config tool:
+
+	* pkg-config
+
+To build the optional libnih-dbus bindings library you will need the
+D-Bus development files for the library itself and the Python
+interpreter for the binding generation tool:
+
+	* D-Bus 1.1.1
+	* Python 2.5

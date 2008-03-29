@@ -1,5 +1,14 @@
 2008-03-29  Scott James Remnant  <scott@netsplit.com>
 
+	* m4/libs.m4 (NIH_LIB_DBUS): Macro to detet whether pkg-config,
+	D-Bus and Python are available and decide based on that whether or
+	not we can build an optional D-Bus binding library; configure options
+	and arguments determine whether being unable to is a warning or an
+	error.
+	* m4/misc.m4: Add the dbus option to the help and the call to check
+	for the libraries.
+	* README: Add a section on the dependencies this introduces.
+
 	* m4/libs.m4: Add an empty file to hold macros relating to library
 	detection.
 	* m4/Makefile.am (dist_aclocal_DATA): Install and distribute the

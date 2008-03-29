@@ -47,12 +47,16 @@ m4_ifndef([NIH_PACKAGE_COPYRIGHT], [m4_bmatch([$1], [
 #
 # Options:
 #   noinstall       do not install libnih
+#   dbus            require that libnih-dbus be built
 AC_DEFUN([NIH_INIT],
 [m4_foreach_w([_NIH_Option], [$1],
 	     [m4_define([_NIH_Option_]m4_bpatsubst(_NIH_Option, [[^a-zA_Z0-9_]], [_]))])
 
 m4_ifdef([_NIH_Option_noinstall], [nih_noinstall=yes])
 AM_CONDITIONAL([INSTALL_NIH], [test "x$nih_noinstall" != "xyes"])
+
+# Checks for libraries
+NIH_LIB_DBUS
 
 # Checks for header files.
 AC_CHECK_HEADERS([sys/inotify.h valgrind/valgrind.h])

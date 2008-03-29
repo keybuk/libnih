@@ -37,6 +37,7 @@ m4_ifndef([NIH_PACKAGE_COPYRIGHT], [m4_bmatch([$1], [
 		  ["m4_bpatsubst([AS_ESCAPE([$1])], [©], [(C)])"])
 	AC_DEFINE([PACKAGE_COPYRIGHT], [NIH_PACKAGE_COPYRIGHT],
 		  [Define to the copyright message of this package.])])])dnl
+	AC_SUBST([PACKAGE_COPYRIGHT], ["$1"])
 ])# AC_COPYRIGHT
 
 
@@ -63,6 +64,7 @@ AC_CHECK_HEADERS([sys/inotify.h valgrind/valgrind.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_PROG_CC_C99
+AM_PROG_CC_C_O
 NIH_C_THREAD
 
 # Other checks

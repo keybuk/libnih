@@ -7,6 +7,9 @@ AM_CPPFLAGS = \
 
 
 libraries = libnih.la
+if HAVE_DBUS
+libraries += libnih-dbus.la
+endif
 
 if INSTALL_NIH
 lib_LTLIBRARIES = $(libraries)
@@ -40,7 +43,39 @@ if HAVE_VERSION_SCRIPT_ARG
 libnih_la_LDFLAGS += @VERSION_SCRIPT_ARG@=$(srcdir)/libnih.ver
 endif
 
-EXTRA_DIST = libnih.ver libnih.supp
+
+libnih_dbus_la_SOURCES = \
+	dbus.c
+
+libnih_dbus_la_CFLAGS = $(DBUS_CFLAGS)
+libnih_dbus_la_LIBS = $(DBUS_LIBS)
+
+libnih_dbus_la_LDFLAGS = \
+	-version-info 0:0:0
+if HAVE_VERSION_SCRIPT_ARG
+libnih_dbus_la_LDFLAGS += @VERSION_SCRIPT_ARG@=$(srcdir)/libnih-dbus.ver
+endif
+
+
+EXTRA_DIST = libnih.ver libnih-dbus.ver libnih.supp libnih-dbus.supp
+
+
+if HAVE_DBUS
+bin_SCRIPTS = \
+	nih-dbus-tool
+endif
+
+CLEANFILES = nih-dbus-tool
+EXTRA_DIST += nih_dbus_tool.py
+
+do_subst = sed \
+	-e '1s|\#!.*|\#!$(PYTHON)|g' \
+	-e 's|[@]PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
+	-e 's|[@]PACKAGE_COPYRIGHT[@]|$(PACKAGE_COPYRIGHT)|g'
+
+nih-dbus-tool: nih_dbus_tool.py
+	$(do_subst) $< > $@
+	chmod +x $@
 
 
 if INSTALL_NIH
@@ -70,6 +105,11 @@ nihinclude_HEADERS = \
 	errors.h \
 	inotify.h \
 	test.h
+
+if HAVE_DBUS
+nihinclude_HEADERS += \
+	dbus.h
+endif
 endif
 
 
@@ -91,6 +131,11 @@ TESTS = \
 	test_config \
 	test_logging \
 	test_error
+
+if HAVE_DBUS
+TESTS += \
+	test_dbus
+endif
 
 check_PROGRAMS = $(TESTS)
 
@@ -161,6 +206,11 @@ test_logging_LDADD = libnih.la
 test_error_SOURCES = tests/test_error.c
 test_error_LDFLAGS = -static
 test_error_LDADD = libnih.la
+
+test_dbus_SOURCES = tests/test_dbus.c
+test_dbus_CFLAGS = $(DBUS_CFLAGS)
+test_dbus_LDFLAGS = -static
+test_dbus_LDADD = libnih.la libnih-dbus.la $(DBUS_LIBS)
 
 
 clean-local:

@@ -1,5 +1,23 @@
 2008-03-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/Makefile.am (libraries): Build optional libnih-dbus.la
+	(libnih_dbus_la_SOURCES, libnih_dbus_la_CFLAGS)
+	(libnih_dbus_la_LIBS, -version-info 0, libnih_dbus_la_LDFLAGS):
+	Details for optional library.
+	(EXTRA_DIST): Distribute the version script and suppressions files.
+	(nihinclude_HEADERS): Install the optional libdbus header
+	(bin_SCRIPTS): Build optional nih-dbus-tool binding tool script
+	(CLEANFILES, EXTRA_DIST, do_subst, nih-dbus-tool): Create installed
+	script by substituting in another, be sure to distribute the other
+	and clean the intermediate file.
+	(TESTS): Optional test suite
+	(test_dbus_SOURCES, test_dbus_CFLAGS, test_dbus_LDFLAGS)
+	(test_dbus_LDADD): Details for the optional dbus test suite.
+	* m4/misc.m4 (AC_COPYRIGHT): Also add a Makefile PACKAGE_COPYRIGHT
+	variable for substitution.
+	(NIH_INIT): We have separate cflags for dbus-related tools, so we
+	need to check that gcc supports -c and -o.
+
 	* m4/libs.m4 (NIH_LIB_DBUS): Macro to detet whether pkg-config,
 	D-Bus and Python are available and decide based on that whether or
 	not we can build an optional D-Bus binding library; configure options

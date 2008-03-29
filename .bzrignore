@@ -12,6 +12,7 @@ Makefile.in.in
 ./INSTALL
 ./aclocal.m4
 ./autom4te.cache
+./compile
 ./config.cache
 ./config.guess
 ./config.h
@@ -38,4 +39,5 @@ po/Rules-quot
 po/stamp-po
 po/libnih.pot
 nih/libnih.la
+nih/libnih-dbus.la
 nih/test_*

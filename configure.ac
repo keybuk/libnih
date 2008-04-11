@@ -18,7 +18,7 @@ AC_PROG_CC
 AC_PROG_LIBTOOL
 
 # Checks for libraries.
-NIH_INIT
+NIH_INIT([install])
 
 # Checks for header files.
 

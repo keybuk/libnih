@@ -1,3 +1,9 @@
+2008-04-11  Scott James Remnant  <scott@netsplit.com>
+
+	* m4/misc.m4: Reverse the sense of the noinstall option, so that
+	"install" needs to be present for libnih to be installed.
+	* configure.ac: Install libnih when built from its own source.
+
 2008-03-29  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/Makefile.am (libraries): Build optional libnih-dbus.la

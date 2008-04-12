@@ -1,5 +1,12 @@
 2008-04-12  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/nih_dbus_tool.py: Skeleton code for the Python binding tool.
+	* nih/tests/test_nih_dbus_tool.py: Test cases for the dbus tool.
+	* nih/Makefile.am (TESTS): When building the dbus library, also run
+	the Python test suite for the Python binding tool; this requires
+	reversing the check_PROGRAMS/TESTS setting since it needs to only
+	be in TESTS.
+
 	* nih/libnih-dbus.supp, nih/libnih-dbus.ver: Library support files.
 
 	* nih/dbus.c (nih_dbus_error_raise): Begin the D-Bus library with

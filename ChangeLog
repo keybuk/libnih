@@ -1,5 +1,7 @@
 2008-04-12  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/libnih-dbus.supp, nih/libnih-dbus.ver: Library support files.
+
 	* nih/dbus.c (nih_dbus_error_raise): Begin the D-Bus library with
 	a function to raise an NihError that can be converted into a
 	DBusError when necessary (to be used in function returns).

@@ -1,0 +1,6 @@
+LIBNIH_DBUS_0 {
+	global:
+		nih_dbus_*;
+	local:
+		*;
+};

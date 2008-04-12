@@ -61,8 +61,13 @@ EXTRA_DIST = libnih.ver libnih-dbus.ver libnih.supp libnih-dbus.supp
 
 
 if HAVE_DBUS
+if INSTALL_NIH
 bin_SCRIPTS = \
 	nih-dbus-tool
+else
+noinst_SCRIPTS = \
+	nih-dbus-tool
+endif
 endif
 
 CLEANFILES = nih-dbus-tool

@@ -1,5 +1,8 @@
 2008-04-12  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/Makefile.am: If we're not installing the library then we
+	want to still make the script but don't want to install it.
+
 	* nih/nih_dbus_tool.py: Skeleton code for the Python binding tool.
 	* nih/tests/test_nih_dbus_tool.py: Test cases for the dbus tool.
 	* nih/Makefile.am (TESTS): When building the dbus library, also run

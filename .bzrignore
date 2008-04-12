@@ -40,4 +40,5 @@ po/stamp-po
 po/libnih.pot
 nih/libnih.la
 nih/libnih-dbus.la
+nih/nih-dbus-tool
 nih/test_*

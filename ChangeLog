@@ -1,3 +1,14 @@
+2008-04-12  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/dbus.c (nih_dbus_error_raise): Begin the D-Bus library with
+	a function to raise an NihError that can be converted into a
+	DBusError when necessary (to be used in function returns).
+	* nih/dbus.h (NihDBusError): Type for the structure since we need
+	to include a name member.
+	* nih/tests/test_dbus.c (test_error_raise): Test case.
+	* nih/errors.h: Add NIH_DBUS_ERROR error; no string for this since
+	each individual error will have its own.
+
 2008-04-11  Scott James Remnant  <scott@netsplit.com>
 
 	* m4/misc.m4: Reverse the sense of the noinstall option, so that

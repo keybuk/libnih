@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,6 +41,8 @@ enum {
 	NIH_CONFIG_UNKNOWN_STANZA,
 
 	NIH_DIR_LOOP_DETECTED,
+
+	NIH_DBUS_ERROR,
 
 	/* 0x20000 thru 0x2FFFF reserved for applications */
 	NIH_ERROR_APPLICATION_START = 0x20000L,

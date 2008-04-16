@@ -537,7 +537,7 @@
 		if (! fgets (_test_file, sizeof (_test_file), (_file))) \
 			TEST_FAILED ("eof on file %p (%s), expected line other than '%s'", \
 				     (_file), #_file, (_line)); \
-		if (strcmp (_test_file, (_line))) \
+		if (! strcmp (_test_file, (_line))) \
 			TEST_FAILED ("wrong content in file %p (%s), got unexpected '%s'", \
 			     (_file), #_file, (_line)); \
 	} while (0)
@@ -556,7 +556,7 @@
 		if (! fgets (_test_file, sizeof (_test_file), (_file))) \
 			TEST_FAILED ("eof on file %p (%s), expected line other than '%s'", \
 				     (_file), #_file, (_line)); \
-		if (strncmp (_test_file, (_line), strlen (_line))) \
+		if (! strncmp (_test_file, (_line), strlen (_line))) \
 			TEST_FAILED ("wrong content in file %p (%s), got unexpected '%.*s'", \
 			     (_file), #_file, (int)strlen (_line), (_line)); \
 	} while (0)

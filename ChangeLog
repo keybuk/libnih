@@ -1,3 +1,7 @@
+2008-04-16  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/test.h (TEST_FILE_NE, TEST_FILE_NE_N): Fix logic of tests.
+
 2008-04-12  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/Makefile.am: If we're not installing the library then we

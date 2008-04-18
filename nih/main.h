@@ -131,6 +131,7 @@ int              nih_main_write_pidfile  (pid_t pid)
 	__attribute__ ((warn_unused_result));
 void             nih_main_unlink_pidfile (void);
 
+void             nih_main_loop_init      (void);
 int              nih_main_loop           (void);
 void             nih_main_loop_interrupt (void);
 void             nih_main_loop_exit      (int status);

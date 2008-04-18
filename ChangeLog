@@ -1,3 +1,8 @@
+2008-04-18  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/main.c (nih_main_loop_init): Make a non-static function.
+	* nih/main.h: Add prototype.
+
 2008-04-16  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/test.h (TEST_FILE_NE, TEST_FILE_NE_N): Fix logic of tests.

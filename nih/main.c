@@ -514,7 +514,7 @@ nih_main_unlink_pidfile (void)
  *
  * Initialise the loop functions list.
  **/
-static void
+void
 nih_main_loop_init (void)
 {
 	if (! nih_main_loop_functions)

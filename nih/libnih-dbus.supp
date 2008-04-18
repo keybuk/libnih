@@ -1,1 +1,9 @@
 # This is a valgrind suppressions file.
+
+# dbus connection slots stay around forever
+{
+   dbus-connection-slot
+   Memcheck:Leak
+   fun:realloc
+   fun:_dbus_data_slot_allocator_alloc
+}

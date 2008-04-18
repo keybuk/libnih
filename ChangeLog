@@ -1,5 +1,37 @@
 2008-04-18  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/dbus.c (nih_dbus_connect, nih_dbus_bus): Functions to connect
+	to an abitrary address or a well-known bus, calling our own handler
+	on disconnect instead of exit() and setting things up in the main
+	loop properly.
+	(nih_dbus_setup): Function called by the above, and callable
+	externally, to set up the disconnect handler and main loop hook-ups;
+	deals with shared connections by checking the main loop slot.
+	(nih_dbus_server): Similar function to create a listening server
+	and hook it up to the main loop.
+	(nih_dbus_add_watch, nih_dbus_remove_watch)
+	(nih_dbus_watch_toggled, nih_dbus_watcher): Glue functions so that
+	D-Bus can watch file descriptors using our main loop.
+	(nih_dbus_add_timeout, nih_dbus_remove_timeout)
+	(nih_dbus_timeout_toggled, nih_dbus_timer): Glue functions so that
+	D-Bus can set timeouts using our main loop.
+	(nih_dbus_wakeup_main): Glue function so that D-Bus can interrupt
+	the main loop (I think this is really for multi-threaded apps, but
+	it does no harm to force an iteration).
+	(nih_dbus_callback): Glue function to dispatch D-Bus messages
+	within the main loop.
+	(nih_dbus_connection_disconnected): Filter function to catch the
+	org.freedesktop.DBus.Local.Disconnected signal and call any
+	disconnect handler before unreferencing the connection.
+	(nih_dbus_new_connection): Handle new server connections by calling
+	the connect handler if set, referencing the new connection then
+	setting it up in the main loop.
+	* nih/dbus.h (NihDBusDisconnectHandler, NihDBusConnectHandler):
+	Function prototype typedefs for disconnect and connect handlers.
+	* nih/tests/test_dbus.c (test_connect, test_bus, test_setup)
+	(test_server): Test the new functions as best we can.
+	* nih/libnih-dbus.supp: D-Bus slot allocator doesn't free memory.
+
 	* nih/main.c (nih_main_loop_init): Make a non-static function.
 	* nih/main.h: Add prototype.
 

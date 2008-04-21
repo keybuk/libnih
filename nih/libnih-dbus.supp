@@ -7,3 +7,83 @@
    fun:realloc
    fun:_dbus_data_slot_allocator_alloc
 }
+{
+   dbus-connection-slot
+   Memcheck:Leak
+   fun:realloc
+   fun:dbus_realloc
+   fun:_dbus_data_slot_allocator_alloc
+}
+
+
+# Deep inside nss lookup, we read freed memory ... encouraging
+{
+   idiotic-leak
+   Memcheck:Addr8
+   obj:/lib/ld-2.7.so
+}
+
+# NSS-related leak
+{
+   nss-database-lookup
+   Memcheck:Leak
+   fun:malloc
+   obj:/lib/libc-2.7.so
+   fun:__nss_database_lookup
+}
+
+# Another NSS-related leak
+{
+   nss-lookup-function
+   Memcheck:Leak
+   fun:malloc
+   fun:__nss_lookup_function
+}
+
+# Yet Another NSS_releated leak
+{
+   nss-lookup-function-tsearch
+   Memcheck:Leak
+   fun:malloc
+   fun:tsearch
+   fun:__nss_lookup_function
+}
+
+
+# DBus has a userdb cache which isn't reset by shutdown()
+{
+   dbus-init-system-db
+   Memcheck:Leak
+   fun:fill_user_info
+   fun:_dbus_user_info_fill_uid
+   fun:_dbus_user_database_lookup
+   fun:_dbus_user_database_get_uid
+   fun:init_system_db
+}
+
+# Each connection seems to have an address attached to it that is cached
+# for next time
+{
+   dbus-parse-address
+   Memcheck:Leak
+   fun:calloc
+   fun:dbus_malloc0
+   fun:_dbus_mem_pool_new
+   fun:alloc_link
+   fun:_dbus_list_prepend
+   fun:_dbus_list_append
+   fun:dbus_parse_address
+   fun:dbus_server_listen
+}
+
+# Another cached address perhaps?  Related to new client connections
+{
+   dbus-handle-new-client-fd-and-unlock
+   Memcheck:Leak
+   fun:malloc
+   fun:dbus_malloc
+   fun:_dbus_string_init_preallocated
+   fun:_dbus_string_init
+   fun:_dbus_transport_new_for_socket
+   fun:handle_new_client_fd_and_unlock
+}

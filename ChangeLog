@@ -1,5 +1,8 @@
 2008-04-21  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/libnih-dbus.supp: I keep finding ways in which D-Bus holds
+	on to data, not to mention annoying NSS problems.
+
 	* nih/libnih.supp: Add long-missing suppression for the main loop
 	functions list, seems we've never actually tested that without
 	freeing it manually.

@@ -1,3 +1,9 @@
+2008-04-21  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/libnih.supp: Add long-missing suppression for the main loop
+	functions list, seems we've never actually tested that without
+	freeing it manually.
+
 2008-04-18  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/dbus.c (nih_dbus_connect, nih_dbus_bus): Functions to connect

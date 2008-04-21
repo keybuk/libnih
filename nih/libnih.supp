@@ -74,6 +74,17 @@
    fun:nih_timer_init
 }
 
+{
+   nih-main-loop-init
+   Memcheck:Leak
+   fun:malloc
+   fun:realloc
+   fun:nih_alloc_using
+   fun:nih_alloc
+   fun:nih_list_new
+   fun:nih_main_loop_init
+}
+
 
 # nih_main_package_string stores the generated string in a
 # heap-allocated pointer.  It survives the life of the process and

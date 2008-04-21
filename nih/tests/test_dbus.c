@@ -341,6 +341,10 @@ test_bus (void)
 	 */
 	TEST_FEATURE ("with session bus");
 	conn = nih_dbus_bus (DBUS_BUS_SESSION, my_disconnect_handler);
+	if (! conn) {
+		printf ("SKIP: session bus not available\n");
+		goto system_bus;
+	}
 
 	TEST_NE_P (conn, NULL);
 
@@ -363,6 +367,7 @@ test_bus (void)
 	TEST_EQ_P (loop_func->data, conn);
 
 	dbus_connection_unref (conn);
+system_bus:
 	dbus_shutdown ();
 
 
@@ -398,7 +403,7 @@ test_bus (void)
 
 	/* Check that we can share connections to a bus. */
 	TEST_FEATURE ("with shared bus connection");
-	conn = nih_dbus_bus (DBUS_BUS_SESSION, my_disconnect_handler);
+	conn = nih_dbus_bus (DBUS_BUS_SYSTEM, my_disconnect_handler);
 
 	TEST_NE_P (conn, NULL);
 
@@ -422,7 +427,7 @@ test_bus (void)
 	last_conn = conn;
 	TEST_FREE_TAG (loop_func);
 
-	conn = nih_dbus_bus (DBUS_BUS_SESSION, my_disconnect_handler);
+	conn = nih_dbus_bus (DBUS_BUS_SYSTEM, my_disconnect_handler);
 
 	TEST_EQ_P (conn, last_conn);
 

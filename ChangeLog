@@ -1,5 +1,8 @@
 2008-04-21  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_dbus.c (test_bus): Cope when the session bus
+	is not available.
+
 	* nih/libnih-dbus.supp: Suppress annoying NSS problems on i686
 	as well (we did x86-64 last time).  Also found that a couple of
 	the suppressions were caused by failing to shutdown properly,

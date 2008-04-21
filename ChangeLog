@@ -1,5 +1,7 @@
 2008-04-21  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_dbus.c: Remove unnecessary SIGPIPE setting.
+
 	* nih/libnih-dbus.supp: I keep finding ways in which D-Bus holds
 	on to data, not to mention annoying NSS problems.
 

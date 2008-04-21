@@ -19,6 +19,11 @@
 # Deep inside nss lookup, we read freed memory ... encouraging
 {
    idiotic-leak
+   Memcheck:Addr4
+   obj:/lib/ld-2.7.so
+}
+{
+   idiotic-leak
    Memcheck:Addr8
    obj:/lib/ld-2.7.so
 }
@@ -31,6 +36,14 @@
    obj:/lib/libc-2.7.so
    fun:__nss_database_lookup
 }
+{
+   nss-database-lookup
+   Memcheck:Leak
+   fun:malloc
+   obj:/lib/tls/i686/cmov/libc-2.7.so
+   fun:__nss_database_lookup
+}
+
 
 # Another NSS-related leak
 {
@@ -61,29 +74,11 @@
    fun:init_system_db
 }
 
-# Each connection seems to have an address attached to it that is cached
-# for next time
 {
-   dbus-parse-address
+   dbus-user-database-new
    Memcheck:Leak
    fun:calloc
    fun:dbus_malloc0
-   fun:_dbus_mem_pool_new
-   fun:alloc_link
-   fun:_dbus_list_prepend
-   fun:_dbus_list_append
-   fun:dbus_parse_address
-   fun:dbus_server_listen
-}
-
-# Another cached address perhaps?  Related to new client connections
-{
-   dbus-handle-new-client-fd-and-unlock
-   Memcheck:Leak
-   fun:malloc
-   fun:dbus_malloc
-   fun:_dbus_string_init_preallocated
-   fun:_dbus_string_init
-   fun:_dbus_transport_new_for_socket
-   fun:handle_new_client_fd_and_unlock
+   fun:_dbus_user_database_new
+   fun:init_system_db
 }

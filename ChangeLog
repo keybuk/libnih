@@ -1,5 +1,9 @@
 2008-04-22  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/libnih-dbus.supp: D-Bus init_system_db() related leaks
+	were likely a missing dbus_shutdown() since they've gone away
+	now.
+
 	* nih/dbus.c (nih_dbus_add_timeout, nih_dbus_timeout_toggled):
 	Slightly adjust the millisecond to second conversion to always
 	round up to the nearest whole second rather than down; that way

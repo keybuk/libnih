@@ -61,24 +61,3 @@
    fun:tsearch
    fun:__nss_lookup_function
 }
-
-
-# DBus has a userdb cache which isn't reset by shutdown()
-{
-   dbus-init-system-db
-   Memcheck:Leak
-   fun:fill_user_info
-   fun:_dbus_user_info_fill_uid
-   fun:_dbus_user_database_lookup
-   fun:_dbus_user_database_get_uid
-   fun:init_system_db
-}
-
-{
-   dbus-user-database-new
-   Memcheck:Leak
-   fun:calloc
-   fun:dbus_malloc0
-   fun:_dbus_user_database_new
-   fun:init_system_db
-}

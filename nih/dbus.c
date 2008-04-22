@@ -566,7 +566,7 @@ nih_dbus_add_timeout (DBusTimeout *timeout,
 
 	interval = dbus_timeout_get_interval (timeout);
 
-	timer = nih_timer_add_periodic (NULL, interval / 1000,
+	timer = nih_timer_add_periodic (NULL, (interval - 1) / 1000 + 1,
 					(NihTimerCb)nih_dbus_timer, timeout);
 	if (! timer)
 		return FALSE;
@@ -636,7 +636,7 @@ nih_dbus_timeout_toggled (DBusTimeout *timeout,
 	/* D-Bus may toggle the timer in an attempt to change the timeout */
 	interval = dbus_timeout_get_interval (timeout);
 
-	timer->period = interval / 1000;
+	timer->period = (interval - 1) / 1000 + 1;
 	timer->due = time (NULL) + timer->period;
 }
 

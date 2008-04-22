@@ -1,3 +1,10 @@
+2008-04-22  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/dbus.c (nih_dbus_add_timeout, nih_dbus_timeout_toggled):
+	Slightly adjust the millisecond to second conversion to always
+	round up to the nearest whole second rather than down; that way
+	we have a 1s minimum timeout instead of an immediate one.
+
 2008-04-21  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/tests/test_dbus.c (test_bus): Cope when the session bus

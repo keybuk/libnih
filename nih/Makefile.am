@@ -118,7 +118,7 @@ endif
 endif
 
 
-check_PROGRAMS = \
+TESTS = \
 	test_alloc \
 	test_string \
 	test_list \
@@ -138,16 +138,11 @@ check_PROGRAMS = \
 	test_error
 
 if HAVE_DBUS
-check_PROGRAMS += \
+TESTS += \
 	test_dbus
 endif
 
-TESTS = $(check_PROGRAMS)
-
-if HAVE_DBUS
-TESTS += \
-	tests/test_nih_dbus_tool.py
-endif
+check_PROGRAMS = $(TESTS)
 
 test_alloc_SOURCES = tests/test_alloc.c
 test_alloc_LDFLAGS = -static

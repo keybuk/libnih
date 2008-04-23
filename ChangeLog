@@ -1,3 +1,13 @@
+2008-04-23  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/tests/test_nih_dbus_tool.py: In hindsight, it's unnecessary
+	to test the binding tool directly since the tests will basically
+	just compare the output to an expected C file which will make
+	maintaining it damned hard and doesn't actually guarantee it works;
+	instead we'll test generated output.
+	* nih/Makefile.am (TESTS): Remove the call to the Python test suite,
+	and reverse the TESTS/check_PROGRAMS thing again to match.
+
 2008-04-22  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/libnih-dbus.supp: D-Bus init_system_db() related leaks

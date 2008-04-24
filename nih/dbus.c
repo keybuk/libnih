@@ -69,7 +69,27 @@ static DBusHandlerResult nih_dbus_connection_disconnected (DBusConnection *conn,
 static void              nih_dbus_new_connection    (DBusServer *server,
 						     DBusConnection *conn,
 						     void *data);
+static int               nih_dbus_object_destroy    (NihDBusObject *object);
+static void              nih_dbus_object_unregister (DBusConnection *conn,
+						     NihDBusObject *object);
+static DBusHandlerResult nih_dbus_object_message    (DBusConnection *conn,
+						     DBusMessage *message,
+						     NihDBusObject *object);
+static DBusHandlerResult nih_dbus_object_introspect (DBusConnection *conn,
+						     DBusMessage *message,
+						     NihDBusObject *object);
 
+
+/**
+ * nih_dbus_object_vtable:
+ *
+ * Table of functions for handling D-Bus objects.
+ **/
+const static DBusObjectPathVTable nih_dbus_object_vtable = {
+	(DBusObjectPathUnregisterFunction)nih_dbus_object_unregister,
+	(DBusObjectPathMessageFunction)nih_dbus_object_message,
+	NULL
+};
 
 /**
  * main_loop_slot:
@@ -769,4 +789,396 @@ nih_dbus_new_connection (DBusServer     *server,
 	disconnect_handler = dbus_server_get_data (server,
 						   disconnect_handler_slot);
 	NIH_ZERO (nih_dbus_setup (conn, disconnect_handler));
+}
+
+
+/**
+ * nih_dbus_object_new:
+ * @parent: parent block,
+ * @conn: D-Bus connection to associate with,
+ * @path: path of object,
+ * @interfaces: interfaces list to attach,
+ * @data: data pointer.
+ *
+ * Creates a new D-Bus object with the attached list of @interfaces which
+ * specify the methods, signals and properties that object will export
+ * and the C functions that will marshal them.
+ *
+ * @interfaces should be a NULL-terminated array of pointers to
+ * NihDBusInterface structures.  Normally this is constructed using pointers
+ * to structures defined by nih-dbus-tool which provides all the necessary
+ * glue arrays and functions.
+ *
+ * The object structure is allocated using nih_alloc() and connected to
+ * the given @conn, it can be unregistered by freeing it and it will be
+ * automatically unregistered should @conn be disconnected.
+ *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned block will be freed too.
+ *
+ * Returns: new NihDBusObject structure on success, or NULL if
+ * insufficient memory.
+ **/
+NihDBusObject *
+nih_dbus_object_new (const void              *parent,
+		     DBusConnection          *conn,
+		     const char              *path,
+		     const NihDBusInterface **interfaces,
+		     void                    *data)
+{
+	NihDBusObject *object;
+
+	nih_assert (conn != NULL);
+	nih_assert (path != NULL);
+	nih_assert (interfaces != NULL);
+
+	object = nih_new (parent, NihDBusObject);
+	if (! object)
+		return NULL;
+
+	object->path = nih_strdup (object, path);
+	if (! object->path) {
+		nih_free (object);
+		return NULL;
+	}
+
+	object->conn = conn;
+	object->data = data;
+	object->interfaces = interfaces;
+	object->registered = FALSE;
+
+	if (! dbus_connection_register_object_path (object->conn, object->path,
+						    &nih_dbus_object_vtable,
+						    object)) {
+		nih_free (object);
+		return NULL;
+	}
+
+	object->registered = TRUE;
+	nih_alloc_set_destructor (object,
+				  (NihDestructor)nih_dbus_object_destroy);
+
+	return object;
+}
+
+/**
+ * nih_dbus_object_destroy:
+ * @object: D-Bus object being destroyed.
+ *
+ * Destructor function for an NihDBusObject structure, ensures that it
+ * is unregistered from the attached D-Bus connection and path.
+ *
+ * Returns: always zero.
+ **/
+static int
+nih_dbus_object_destroy (NihDBusObject *object)
+{
+	nih_assert (object != NULL);
+
+	if (object->registered) {
+		object->registered = FALSE;
+		dbus_connection_unregister_object_path (object->conn,
+							object->path);
+	}
+
+	return 0;
+}
+
+/**
+ * nih_dbus_object_unregister:
+ * @conn: D-Bus connection,
+ * @object: D-Bus object to destroy.
+ *
+ * Called by D-Bus to unregister the @object attached to the D-Bus connection
+ * @conn, requires us to free the attached structure.
+ **/
+static void
+nih_dbus_object_unregister (DBusConnection *conn,
+			    NihDBusObject  *object)
+{
+	nih_assert (conn != NULL);
+	nih_assert (object != NULL);
+	nih_assert (object->conn == conn);
+
+	if (object->registered) {
+		object->registered = FALSE;
+		nih_free (object);
+	}
+}
+
+
+/**
+ * nih_dbus_object_message:
+ * @conn: D-Bus connection,
+ * @message: D-Bus message received,
+ * @object: Object that received the message.
+ *
+ * Called by D-Bus when a @message is received for a registered @object.  We
+ * handle messages related to introspection and properties ourselves,
+ * otherwise the method invoked is located in the @object's interfaces array
+ * and the marshaller function called to handle it.
+ *
+ * Returns: result of handling the message.
+ **/
+static DBusHandlerResult
+nih_dbus_object_message (DBusConnection *conn,
+			 DBusMessage    *message,
+			 NihDBusObject  *object)
+{
+	const NihDBusInterface **interface;
+
+	nih_assert (conn != NULL);
+	nih_assert (message != NULL);
+	nih_assert (object != NULL);
+	nih_assert (object->conn == conn);
+
+	/* Handle introspection internally */
+	if (dbus_message_is_method_call (
+		    message, DBUS_INTERFACE_INTROSPECTABLE, "Introspect"))
+		return nih_dbus_object_introspect (conn, message, object);
+
+	/* FIXME handle properties */
+	if (dbus_message_is_method_call (
+		    message, DBUS_INTERFACE_PROPERTIES, "Get"))
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	if (dbus_message_is_method_call (
+		    message, DBUS_INTERFACE_PROPERTIES, "Set"))
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	if (dbus_message_is_method_call (
+		    message, DBUS_INTERFACE_PROPERTIES, "GetAll"))
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+
+	/* No built-in handling, locate a marshaller function in the defined
+	 * interfaces that can handle it.
+	 */
+	for (interface = object->interfaces; interface && *interface;
+	     interface++) {
+		const NihDBusMethod *method;
+
+		for (method = (*interface)->methods; method && method->name;
+		     method++) {
+			nih_assert (method->marshaller != NULL);
+
+			if (dbus_message_is_method_call (message,
+							 (*interface)->name,
+							 method->name)) {
+				NihDBusMessage    *msg;
+				DBusHandlerResult  result;
+
+				msg = nih_new (NULL, NihDBusMessage);
+				if (! msg)
+					return DBUS_HANDLER_RESULT_NEED_MEMORY;
+
+				msg->conn = conn;
+				msg->message = message;
+
+				dbus_message_ref (msg->message);
+
+				result = method->marshaller (object, msg);
+
+				dbus_message_unref (msg->message);
+
+				nih_free (msg);
+
+				return result;
+			}
+		}
+	}
+
+	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}
+
+/**
+ * nih_dbus_object_introspect:
+ * @conn: D-Bus connection,
+ * @message: D-Bus message received,
+ * @object: Object that received the message.
+ *
+ * Called because the D-Bus introspection method has been invoked on @object,
+ * we return an XML description of the object's interfaces, methods, signals
+ * and properties based on its interfaces array.
+ *
+ * Returns: result of handling the message.
+ **/
+static DBusHandlerResult
+nih_dbus_object_introspect (DBusConnection *conn,
+			    DBusMessage    *message,
+			    NihDBusObject  *object)
+{
+	const NihDBusInterface **interface;
+	char                    *xml = NULL, **children = NULL, **child;
+	DBusMessage             *reply = NULL;
+	int                      have_props = FALSE;
+
+	nih_assert (conn != NULL);
+	nih_assert (message != NULL);
+	nih_assert (object != NULL);
+	nih_assert (object->conn == conn);
+
+	xml = nih_strdup (NULL, DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE);
+	if (! xml)
+		goto error;
+
+	/* Root node */
+	if (! nih_strcat_sprintf (&xml, NULL, "<node name=\"%s\">\n",
+				  object->path))
+		goto error;
+
+	/* Obviously we support introspection */
+	if (! nih_strcat_sprintf (&xml, NULL,
+				  "  <interface name=\"%s\">\n"
+				  "    <method name=\"Introspect\">\n"
+				  "      <arg name=\"data\" type=\"s\" direction=\"out\"/>\n"
+				  "    </method>\n"
+				  "  </interface>\n",
+				  DBUS_INTERFACE_INTROSPECTABLE))
+		goto error;
+
+	/* Add each interface definition */
+	for (interface = object->interfaces; interface && *interface;
+	     interface++) {
+		const NihDBusMethod   *method;
+		const NihDBusSignal   *signal;
+		const NihDBusProperty *property;
+
+		if (! nih_strcat_sprintf (&xml, NULL,
+					  "  <interface name=\"%s\">\n",
+					  (*interface)->name))
+			goto error;
+
+		for (method = (*interface)->methods; method && method->name;
+		     method++) {
+			const NihDBusArg *arg;
+
+			if (! nih_strcat_sprintf (&xml, NULL,
+						  "    <method name=\"%s\">\n",
+						  method->name))
+				goto error;
+
+			for (arg = method->args; arg && arg->type; arg++) {
+				if (! nih_strcat_sprintf (
+					    &xml, NULL,
+					    "      <arg name=\"%s\" type=\"%s\""
+					    " direction=\"%s\"/>\n",
+					    arg->name, arg->type,
+					    (arg->dir == NIH_DBUS_ARG_IN ? "in"
+					     : "out")))
+					goto error;
+			}
+
+			if (! nih_strcat (&xml, NULL, "    </method>\n"))
+				goto error;
+		}
+
+		for (signal = (*interface)->signals; signal && signal->name;
+		     signal++) {
+			const NihDBusArg *arg;
+
+			if (! nih_strcat_sprintf (&xml, NULL,
+						  "    <signal name=\"%s\">\n",
+						  signal->name))
+				goto error;
+
+			for (arg = signal->args; arg && arg->type; arg++) {
+				if (! nih_strcat_sprintf (
+					    &xml, NULL,
+					    "      <arg name=\"%s\" type=\"%s\"/>\n",
+					    arg->name, arg->type))
+					goto error;
+			}
+
+			if (! nih_strcat (&xml, NULL, "    </signal>\n"))
+				goto error;
+		}
+
+		for (property = (*interface)->properties;
+		     property && property->name; property++) {
+			have_props = TRUE;
+			if (! nih_strcat_sprintf (
+				    &xml, NULL,
+				    "    <property name=\"%s\" type=\"%s\" "
+				    "access=\"%s\"/>\n",
+				    property->name, property->type,
+				    (property->access == NIH_DBUS_READ ? "read"
+				     : (property->access == NIH_DBUS_WRITE
+					? "write" : "readwrite"))))
+				goto error;
+		}
+
+		if (! nih_strcat (&xml, NULL, "  </interface>\n"))
+		    goto error;
+	}
+
+	/* We may also support properties, but don't want to announce that
+	 * unless we really do have some.
+	 */
+	if (have_props)
+		if (! nih_strcat_sprintf (
+			    &xml, NULL,
+			    "  <interface name=\"%s\">\n"
+			    "    <method name=\"Get\">\n"
+			    "      <arg name=\"interface_name\" type=\"s\" direction=\"in\"/>\n"
+			    "      <arg name=\"property_name\" type=\"s\" direction=\"in\"/>\n"
+			    "      <arg name=\"value\" type=\"v\" direction=\"out\"/>\n"
+			    "    </method>\n"
+			    "    <method name=\"Set\">\n"
+			    "      <arg name=\"interface_name\" type=\"s\" direction=\"in\"/>\n"
+			    "      <arg name=\"property_name\" type=\"s\" direction=\"in\"/>\n"
+			    "      <arg name=\"value\" type=\"v\" direction=\"in\"/>\n"
+			    "    </method>\n"
+			    "    <method name=\"GetAll\">\n"
+			    "      <arg name=\"interface_name\" type=\"s\" direction=\"in\"/>\n"
+			    "      <arg name=\"props\" type=\"a{sv}\" direction=\"out\"/>\n"
+			    "    </method>\n"
+			    "  </interface>\n",
+			    DBUS_INTERFACE_PROPERTIES))
+			goto error;
+
+	/* Add node items for children */
+	if (! dbus_connection_list_registered (conn, object->path, &children))
+		goto error;
+
+	for (child = children; *child; child++) {
+		if (! nih_strcat_sprintf (&xml, NULL, "  <node name=\"%s\"/>\n",
+					  *child))
+			goto error;
+	}
+
+	if (! nih_strcat (&xml, NULL, "</node>\n"))
+		goto error;
+
+	dbus_free_string_array (children);
+	children = NULL;
+
+
+	/* Generate and send the reply */
+	reply = dbus_message_new_method_return (message);
+	if (! reply)
+		goto error;
+
+	if (! dbus_message_append_args (reply,
+					DBUS_TYPE_STRING, &xml,
+					DBUS_TYPE_INVALID))
+		goto error;
+
+	if (! dbus_connection_send (conn, reply, NULL))
+		goto error;
+
+	dbus_message_unref (reply);
+
+	return DBUS_HANDLER_RESULT_HANDLED;
+
+error:
+	if (reply)
+		dbus_message_unref (reply);
+	if (children)
+		dbus_free_string_array (children);
+	if (xml)
+		nih_free (xml);
+
+	return DBUS_HANDLER_RESULT_NEED_MEMORY;
 }

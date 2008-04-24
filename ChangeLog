@@ -1,3 +1,32 @@
+2008-04-25  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/dbus.c (nih_dbus_object_new): Register an object with D-Bus
+	and hook it up to an internal message handling function that deals
+	with introspection and the like, while passing off actual handling
+	to marshaller functions for individual methods.
+	(nih_dbus_object_destroy): When the object is freed, unregister
+	it from the bus making sure that doing so doesn't try to free it
+	a second time.
+	(nih_dbus_object_unregister): When the bus connection is dropped
+	or object otherwise unregistered, free it, making sure that doing
+	so doesn't try to unregister it a second time.
+	(nih_dbus_object_message): Handle messages for the object, locate
+	the marshaller function in the interface structures or pass off
+	to internal handler for introspection.
+	(nih_dbus_object_introspect): Handle the Introspect method by
+	generating XML which we return in a reply.
+	* nih/dbus.h: Add prototype for new function.
+	(NihDBusObject, NihDBusMessage, NihDBusMarshaller, NihDBusArgDir)
+	(NihDBusArg, NihDBusMethod, NihDBusSignal, NihDBusAccess)
+	(NihDBusProperty, NihDBusInterface): Add the truly insane number
+	of structures and enums we need to fully specify the interfaces
+	that a D-Bus object provides; you'll never do this by hand! :-)
+	* nih/tests/test_dbus.c (test_object_new, test_object_destroy)
+	(test_object_unregister, test_object_message): Test cases for new
+	functions.
+	(test_connect, test_bus): Check error messages using the macros
+	rather than by name.
+
 2008-04-23  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/tests/test_nih_dbus_tool.py: In hindsight, it's unnecessary

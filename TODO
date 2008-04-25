@@ -1,3 +1,33 @@
+dbus:
+- connecting a signal is by nih_dbus_proxy_new, like object new it takes
+  a server, path and interfaces except instead of registering an object
+  it adds a match and the associated filter functions
+- proxy could be passed to method calls
+- proxy would combine connection, destination name and path
+
+- properties need to be handled in some way
+
+- binding tool needs to generate dispatch functions for methods
+  and marshal functions for signals (which should be filter functions, no
+  generic marshaller for signals)
+- binding tool needs to generate async marshal and dispatch functions for
+  methods
+- no way to set no reply flag and auto start flags on dispatch?
+- binding tool needs to support structs
+- binding tool needs to support arrays
+- binding tool needs to at least acknowledge variants
+
+- rather than hard-coding the names of method and signal handler functions,
+  it might be nice to have some kind of dispatch table for them.  The only
+  concern is that we'd end up looking up in the interface table to find
+  the marshaller then the dispatch table to get the handler function.
+
+main:
+- there's an argument for making the main loop more generic; having io,
+  watch, signal, child, timer, etc. just add main loop structs that
+  have a select() and handle() function - we'd then just have one per
+  timer, etc.
+
 io:
 - there's a couple of tricky tests left to do:
 - nih_io_message_recv() with socket types other than PF_UNIX

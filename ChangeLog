@@ -1,5 +1,28 @@
 2008-04-25  Scott James Remnant  <scott@netsplit.com>
 
+	* TODO: Update, adding missing pieces for D-Bus support and an
+	idea for changing the way that timers/signals/io/etc. work.
+
+	* nih_dbus_tool.py: Handle the basic D-Bus types and generate
+	marshalling functions for methods and dispatch functions for
+	signals, along with all of the glue needed for nih_dbus_object_new()
+	* nih/tests/com.netsplit.Nih.Test.xml: Interface to be used for
+	testing of the generated code.
+	* nih/tests/test_com.netsplit.Nih.Test_object.c: Test suite for
+	the generated code (in object mode), so far this just tests a
+	couple of methods but will be adding a lot more tests soon.
+	* nih/Makefile.am (TESTS): Add the above test suite.
+	(test_com_netsplit_Nih_Test_object_SOURCES)
+	(test_com_netsplit_Nih_Test_object_CFLAGS)
+	(test_com_netsplit_Nih_Test_object_LDFLAGS)
+	(test_com_netsplit_Nih_Test_object_LDADD): Details for the test suite.
+	(BUILT_SOURCES): Interface definitions are auto-generated and need
+	to be done so at the start of the build so deps work properly.
+	(CLEANFILES): All built sources need to be cleaned on "make clean"
+	(tests/com.netsplit.Nih.Test_object.c tests/com.netsplit.Nih.Test_object.h):
+	Generate the interface definitions with the binding tool, being
+	sure to regenerate if the XML or binding tool change.
+
 	* nih/dbus.c (nih_dbus_object_new): Register an object with D-Bus
 	and hook it up to an internal message handling function that deals
 	with introspection and the like, while passing off actual handling

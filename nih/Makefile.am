@@ -139,7 +139,8 @@ TESTS = \
 
 if HAVE_DBUS
 TESTS += \
-	test_dbus
+	test_dbus \
+	test_com.netsplit.Nih.Test_object
 endif
 
 check_PROGRAMS = $(TESTS)
@@ -217,6 +218,25 @@ test_dbus_CFLAGS = $(DBUS_CFLAGS)
 test_dbus_LDFLAGS = -static
 test_dbus_LDADD = libnih.la libnih-dbus.la $(DBUS_LIBS)
 
+
+test_com_netsplit_Nih_Test_object_SOURCES = \
+	tests/test_com.netsplit.Nih.Test_object.c \
+	tests/com.netsplit.Nih.Test_object.c \
+	tests/com.netsplit.Nih.Test_object.h
+test_com_netsplit_Nih_Test_object_CFLAGS = $(DBUS_CFLAGS)
+test_com_netsplit_Nih_Test_object_LDFLAGS = -static
+test_com_netsplit_Nih_Test_object_LDADD = libnih.la libnih-dbus.la $(DBUS_LIBS)
+
+BUILT_SOURCES = \
+	tests/com.netsplit.Nih.Test_object.c \
+	tests/com.netsplit.Nih.Test_object.h
+
+tests/com.netsplit.Nih.Test_object.c tests/com.netsplit.Nih.Test_object.h: \
+		tests/com.netsplit.Nih.Test.xml nih-dbus-tool
+	$(builddir)/nih-dbus-tool --mode=object --prefix=my --output=$@ $<
+
+
+CLEANFILES += $(BUILT_SOURCES)
 
 clean-local:
 	rm -f *.gcno *.gcda

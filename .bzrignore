@@ -42,3 +42,5 @@ nih/libnih.la
 nih/libnih-dbus.la
 nih/nih-dbus-tool
 nih/test_*
+nih/tests/com.netsplit.Nih.Test_object.c
+nih/tests/com.netsplit.Nih.Test_object.h

@@ -1,0 +1,12 @@
+<node name="/com/netsplit/Nih">
+  <interface name="com.netsplit.Nih.Test">
+    <method name="StrToInt">
+      <arg name="input" type="s" direction="in" />
+      <arg name="output" type="i" direction="out" />
+    </method>
+    <method name="IntToStr">
+      <arg name="input" type="i" direction="in" />
+      <arg name="output" type="s" direction="out" />
+    </method> 
+ </interface>
+</node>

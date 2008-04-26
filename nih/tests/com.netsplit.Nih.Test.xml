@@ -1,12 +1,97 @@
 <node name="/com/netsplit/Nih">
   <interface name="com.netsplit.Nih.Test">
-    <method name="StrToInt">
+    <method name="TestMethod">
       <arg name="input" type="s" direction="in" />
-      <arg name="output" type="i" direction="out" />
+      <arg name="flags" type="i" direction="in" />
+      <arg name="output" type="s" direction="out" />
     </method>
-    <method name="IntToStr">
+    <method name="ByteToStr">
+      <arg name="input" type="y" direction="in" />
+      <arg name="output" type="s" direction="out" />
+    </method> 
+    <method name="StrToByte">
+      <arg name="input" type="s" direction="in" />
+      <arg name="output" type="y" direction="out" />
+    </method>
+    <method name="BooleanToStr">
+      <arg name="input" type="b" direction="in" />
+      <arg name="output" type="s" direction="out" />
+    </method> 
+    <method name="StrToBoolean">
+      <arg name="input" type="s" direction="in" />
+      <arg name="output" type="b" direction="out" />
+    </method>
+    <method name="Int16ToStr">
+      <arg name="input" type="n" direction="in" />
+      <arg name="output" type="s" direction="out" />
+    </method> 
+    <method name="StrToInt16">
+      <arg name="input" type="s" direction="in" />
+      <arg name="output" type="n" direction="out" />
+    </method>
+    <method name="UInt16ToStr">
+      <arg name="input" type="q" direction="in" />
+      <arg name="output" type="s" direction="out" />
+    </method> 
+    <method name="StrToUInt16">
+      <arg name="input" type="s" direction="in" />
+      <arg name="output" type="q" direction="out" />
+    </method>
+    <method name="Int32ToStr">
       <arg name="input" type="i" direction="in" />
       <arg name="output" type="s" direction="out" />
     </method> 
+    <method name="StrToInt32">
+      <arg name="input" type="s" direction="in" />
+      <arg name="output" type="i" direction="out" />
+    </method>
+    <method name="UInt32ToStr">
+      <arg name="input" type="u" direction="in" />
+      <arg name="output" type="s" direction="out" />
+    </method> 
+    <method name="StrToUInt32">
+      <arg name="input" type="s" direction="in" />
+      <arg name="output" type="u" direction="out" />
+    </method>
+    <method name="Int64ToStr">
+      <arg name="input" type="x" direction="in" />
+      <arg name="output" type="s" direction="out" />
+    </method> 
+    <method name="StrToInt64">
+      <arg name="input" type="s" direction="in" />
+      <arg name="output" type="x" direction="out" />
+    </method>
+    <method name="UInt64ToStr">
+      <arg name="input" type="t" direction="in" />
+      <arg name="output" type="s" direction="out" />
+    </method> 
+    <method name="StrToUInt64">
+      <arg name="input" type="s" direction="in" />
+      <arg name="output" type="t" direction="out" />
+    </method>
+    <method name="DoubleToStr">
+      <arg name="input" type="d" direction="in" />
+      <arg name="output" type="s" direction="out" />
+    </method> 
+    <method name="StrToDouble">
+      <arg name="input" type="s" direction="in" />
+      <arg name="output" type="d" direction="out" />
+    </method>
+    <method name="ObjectPathToStr">
+      <arg name="input" type="o" direction="in" />
+      <arg name="output" type="s" direction="out" />
+    </method> 
+    <method name="StrToObjectPath">
+      <arg name="input" type="s" direction="in" />
+      <arg name="output" type="o" direction="out" />
+    </method>
+    <method name="SignatureToStr">
+      <arg name="input" type="g" direction="in" />
+      <arg name="output" type="s" direction="out" />
+    </method> 
+    <method name="StrToSignature">
+      <arg name="input" type="s" direction="in" />
+      <arg name="output" type="g" direction="out" />
+    </method>
  </interface>
 </node>

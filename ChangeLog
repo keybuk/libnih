@@ -1,3 +1,14 @@
+2008-04-26  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/tests/com.netsplit.Nih.Test.xml: Add more methods to test,
+	one generic method and two methods (in and out) for each basic type.
+	* nih/tests/test_com.netsplit.Nih.Test_object.c: Slightly redo the
+	way we do the tests, do the basic set of tests using a single method
+	that can return cases such as errors, etc.  Then have input and output
+	marshal tests for each of the basic types.
+	* nih/nih_dbus_tool.py (NAME_RE): Cope with numerics in member names,
+	treat them the same as lowerspace characters.
+
 2008-04-25  Scott James Remnant  <scott@netsplit.com>
 
 	* TODO: Update, adding missing pieces for D-Bus support and an

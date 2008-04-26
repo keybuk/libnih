@@ -39,7 +39,7 @@ extern_data_type = "void *"
 
 
 # Conversion for external C names
-NAME_RE = re.compile(r'([a-z])([A-Z])')
+NAME_RE = re.compile(r'([a-z0-9])([A-Z])')
 
 
 # array type

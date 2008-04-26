@@ -495,7 +495,7 @@ test_method_marshal (void)
 	dbus_uint64_t   uint64_arg;
 	double          double_arg;
 
-	TEST_FUNCTION ("method_marshal");
+	TEST_GROUP ("method marshalling");
 	dbus_error_init (&error);
 
 

@@ -1,5 +1,9 @@
 2008-04-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/test.h (TEST_GROUP): Add macro for when we don't test functions.
+	* nih/tests/test_com.netsplit.Nih.Test_object.c (test_method_marshal):
+	Use TEST_GROUP here.
+
 	* nih/tests/com.netsplit.Nih.Test.xml: Add more methods to test,
 	one generic method and two methods (in and out) for each basic type.
 	* nih/tests/test_com.netsplit.Nih.Test_object.c: Slightly redo the

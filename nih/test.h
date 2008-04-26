@@ -51,6 +51,16 @@
 	assert ((_expr) == 0)
 
 /**
+ * TEST_GROUP:
+ * @_name: name of group being tested.
+ *
+ * Output a message indicating that a group of tests testing @_name are
+ * being performed.
+ **/
+#define TEST_GROUP(_name) \
+	printf ("Testing %s\n", _name)
+
+/**
  * TEST_FUNCTION:
  * @_func: name of function being tested.
  *

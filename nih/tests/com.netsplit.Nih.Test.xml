@@ -93,5 +93,52 @@
       <arg name="input" type="s" direction="in" />
       <arg name="output" type="g" direction="out" />
     </method>
- </interface>
+
+    <signal name="TestSignal">
+      <arg name="text" type="s" />
+      <arg name="flags" type="i" />
+    </signal>
+    <signal name="EmitByte">
+      <arg name="data" type="y" />
+    </signal>
+    <signal name="EmitBoolean">
+      <arg name="data" type="b" />
+    </signal>
+    <signal name="EmitInt16">
+      <arg name="data" type="n" />
+    </signal>
+    <signal name="EmitUInt16">
+      <arg name="data" type="q" />
+    </signal>
+    <signal name="EmitInt32">
+      <arg name="data" type="i" />
+    </signal>
+    <signal name="EmitUInt32">
+      <arg name="data" type="u" />
+    </signal>
+    <signal name="EmitInt64">
+      <arg name="data" type="x" />
+    </signal>
+    <signal name="EmitUInt64">
+      <arg name="data" type="t" />
+    </signal>
+    <signal name="EmitDouble">
+      <arg name="data" type="d" />
+    </signal>
+    <signal name="EmitString">
+      <arg name="data" type="s" />
+    </signal>
+    <signal name="EmitObjectPath">
+      <arg name="data" type="o" />
+    </signal>
+    <signal name="EmitSignature">
+      <arg name="data" type="g" />
+    </signal>
+  </interface>
+
+  <interface name="com.netsplit.Nih.Glue">
+    <method name="EmitSignal">
+      <arg name="signum" type="i" direction="in" />
+    </method>
+  </interface>
 </node>

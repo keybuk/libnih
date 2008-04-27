@@ -1,3 +1,12 @@
+2008-04-27  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/tests/com.netsplit.Nih.Test.xml: Add signals to the test
+	interface for the variety of basic argument types, we also need
+	a glue function to make the server emit the signal.
+	* nih/tests/test_com.netsplit.Nih.Test_object.c (my_emit_signal)
+	(test_signal_dispatch): Test the signals are emitted and dispatched
+	properly by catching them and checking them.
+
 2008-04-26  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/test.h (TEST_GROUP): Add macro for when we don't test functions.

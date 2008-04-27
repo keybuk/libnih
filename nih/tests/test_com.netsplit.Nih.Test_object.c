@@ -46,6 +46,7 @@
 
 const static NihDBusInterface *my_interfaces[] = {
 	&com_netsplit_Nih_Test,
+	&com_netsplit_Nih_Glue,
 	NULL
 };
 
@@ -395,6 +396,87 @@ my_str_to_signature (void            *data,
 	TEST_NE_P (output, NULL);
 
 	*output = nih_strdup (message, input);
+
+	return 0;
+}
+
+
+int
+my_emit_signal (void           *data,
+		NihDBusMessage *message,
+		int32_t         signum)
+{
+	int ret;
+
+	switch (signum) {
+	case 0:
+		ret = my_test_signal (message->conn,
+				      dbus_message_get_path (message->message),
+				      "hello there", 0);
+		break;
+	case 1:
+		ret = my_emit_byte (message->conn,
+				    dbus_message_get_path (message->message),
+				    65);
+		break;
+	case 2:
+		ret = my_emit_boolean (message->conn,
+				       dbus_message_get_path (message->message),
+				       TRUE);
+		break;
+	case 3:
+		ret = my_emit_int16 (message->conn,
+				     dbus_message_get_path (message->message),
+				     1701);
+		break;
+	case 4:
+		ret = my_emit_uint16 (message->conn,
+				      dbus_message_get_path (message->message),
+				      1701);
+		break;
+	case 5:
+		ret = my_emit_int32 (message->conn,
+				     dbus_message_get_path (message->message),
+				     1701);
+		break;
+	case 6:
+		ret = my_emit_uint32 (message->conn,
+				      dbus_message_get_path (message->message),
+				      1701);
+		break;
+	case 7:
+		ret = my_emit_int64 (message->conn,
+				     dbus_message_get_path (message->message),
+				     1701);
+		break;
+	case 8:
+		ret = my_emit_uint64 (message->conn,
+				      dbus_message_get_path (message->message),
+				      1701);
+		break;
+	case 9:
+		ret = my_emit_double (message->conn,
+				      dbus_message_get_path (message->message),
+				      3.141);
+		break;
+	case 10:
+		ret = my_emit_string (message->conn,
+				      dbus_message_get_path (message->message),
+				      "test data");
+		break;
+	case 11:
+		ret = my_emit_object_path (message->conn,
+					   dbus_message_get_path (message->message),
+					   "/com/netsplit/Nih");
+		break;
+	case 12:
+		ret = my_emit_signature (message->conn,
+					 dbus_message_get_path (message->message),
+					 "a{sv}");
+		break;
+	}
+
+	TEST_EQ (ret, 0);
 
 	return 0;
 }
@@ -1457,11 +1539,558 @@ test_method_marshal (void)
 }
 
 
+void
+test_signal_dispatch (void)
+{
+	DBusConnection *conn;
+	DBusMessage    *message, *reply;
+	DBusError       error;
+	dbus_int32_t    signum, flags;
+	const char     *str;
+	dbus_unichar_t  byte_arg;
+	dbus_bool_t     boolean_arg;
+	dbus_int16_t    int16_arg;
+	dbus_uint16_t   uint16_arg;
+	dbus_int32_t    int32_arg;
+	dbus_uint32_t   uint32_arg;
+	dbus_int64_t    int64_arg;
+	dbus_uint64_t   uint64_arg;
+	double          double_arg;
+
+	TEST_GROUP ("signal dispatching");
+	dbus_error_init (&error);
+
+	/* Check that an ordinary signal can be emitted by the server with
+	 * a set of arguments, and that we can catch it with them as we
+	 * expected.  No particular error conditions to check for, since the
+	 * only one is out of memory.
+	 */
+	TEST_FEATURE ("with ordinary signal");
+	conn = my_setup ();
+
+	signum = 0;
+
+	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
+						"com.netsplit.Nih.Glue",
+						"EmitSignal");
+
+	dbus_message_append_args (message,
+				  DBUS_TYPE_INT32, &signum,
+				  DBUS_TYPE_INVALID);
+
+	reply = dbus_connection_send_with_reply_and_block (conn, message,
+							   -1, &error);
+
+	TEST_NE_P (reply, NULL);
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	message = dbus_connection_pop_message (conn);
+
+	TEST_NE_P (message, NULL);
+	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
+					   "TestSignal"));
+	TEST_TRUE (dbus_message_get_args (message, &error,
+					  DBUS_TYPE_STRING, &str,
+					  DBUS_TYPE_INT32, &flags,
+					  DBUS_TYPE_INVALID));
+
+	TEST_EQ_STR (str, "hello there");
+	TEST_EQ (flags, 0);
+
+	dbus_message_unref (message);
+
+	my_teardown (conn);
+
+
+	/* Check that a signal with a Byte argument can be emitted and that
+	 * we can catch it as expected.
+	 */
+	TEST_FEATURE ("with Byte argument");
+	conn = my_setup ();
+
+	signum = 1;
+
+	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
+						"com.netsplit.Nih.Glue",
+						"EmitSignal");
+
+	dbus_message_append_args (message,
+				  DBUS_TYPE_INT32, &signum,
+				  DBUS_TYPE_INVALID);
+
+	reply = dbus_connection_send_with_reply_and_block (conn, message,
+							   -1, &error);
+
+	TEST_NE_P (reply, NULL);
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	message = dbus_connection_pop_message (conn);
+
+	TEST_NE_P (message, NULL);
+	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
+					   "EmitByte"));
+	TEST_TRUE (dbus_message_get_args (message, &error,
+					  DBUS_TYPE_BYTE, &byte_arg,
+					  DBUS_TYPE_INVALID));
+
+	TEST_EQ (byte_arg, 65);
+
+	dbus_message_unref (message);
+
+	my_teardown (conn);
+
+
+	/* Check that a signal with a Boolean argument can be emitted and that
+	 * we can catch it as expected.
+	 */
+	TEST_FEATURE ("with Boolean argument");
+	conn = my_setup ();
+
+	signum = 2;
+
+	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
+						"com.netsplit.Nih.Glue",
+						"EmitSignal");
+
+	dbus_message_append_args (message,
+				  DBUS_TYPE_INT32, &signum,
+				  DBUS_TYPE_INVALID);
+
+	reply = dbus_connection_send_with_reply_and_block (conn, message,
+							   -1, &error);
+
+	TEST_NE_P (reply, NULL);
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	message = dbus_connection_pop_message (conn);
+
+	TEST_NE_P (message, NULL);
+	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
+					   "EmitBoolean"));
+	TEST_TRUE (dbus_message_get_args (message, &error,
+					  DBUS_TYPE_BOOLEAN, &boolean_arg,
+					  DBUS_TYPE_INVALID));
+
+	TEST_EQ (boolean_arg, TRUE);
+
+	dbus_message_unref (message);
+
+	my_teardown (conn);
+
+
+	/* Check that a signal with a Int16 argument can be emitted and that
+	 * we can catch it as expected.
+	 */
+	TEST_FEATURE ("with Int16 argument");
+	conn = my_setup ();
+
+	signum = 3;
+
+	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
+						"com.netsplit.Nih.Glue",
+						"EmitSignal");
+
+	dbus_message_append_args (message,
+				  DBUS_TYPE_INT32, &signum,
+				  DBUS_TYPE_INVALID);
+
+	reply = dbus_connection_send_with_reply_and_block (conn, message,
+							   -1, &error);
+
+	TEST_NE_P (reply, NULL);
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	message = dbus_connection_pop_message (conn);
+
+	TEST_NE_P (message, NULL);
+	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
+					   "EmitInt16"));
+	TEST_TRUE (dbus_message_get_args (message, &error,
+					  DBUS_TYPE_INT16, &int16_arg,
+					  DBUS_TYPE_INVALID));
+
+	TEST_EQ (int16_arg, 1701);
+
+	dbus_message_unref (message);
+
+	my_teardown (conn);
+
+
+	/* Check that a signal with a UInt16 argument can be emitted and that
+	 * we can catch it as expected.
+	 */
+	TEST_FEATURE ("with UInt16 argument");
+	conn = my_setup ();
+
+	signum = 4;
+
+	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
+						"com.netsplit.Nih.Glue",
+						"EmitSignal");
+
+	dbus_message_append_args (message,
+				  DBUS_TYPE_INT32, &signum,
+				  DBUS_TYPE_INVALID);
+
+	reply = dbus_connection_send_with_reply_and_block (conn, message,
+							   -1, &error);
+
+	TEST_NE_P (reply, NULL);
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	message = dbus_connection_pop_message (conn);
+
+	TEST_NE_P (message, NULL);
+	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
+					   "EmitUInt16"));
+	TEST_TRUE (dbus_message_get_args (message, &error,
+					  DBUS_TYPE_UINT16, &uint16_arg,
+					  DBUS_TYPE_INVALID));
+
+	TEST_EQ (uint16_arg, 1701);
+
+	dbus_message_unref (message);
+
+	my_teardown (conn);
+
+
+	/* Check that a signal with a Int32 argument can be emitted and that
+	 * we can catch it as expected.
+	 */
+	TEST_FEATURE ("with Int32 argument");
+	conn = my_setup ();
+
+	signum = 5;
+
+	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
+						"com.netsplit.Nih.Glue",
+						"EmitSignal");
+
+	dbus_message_append_args (message,
+				  DBUS_TYPE_INT32, &signum,
+				  DBUS_TYPE_INVALID);
+
+	reply = dbus_connection_send_with_reply_and_block (conn, message,
+							   -1, &error);
+
+	TEST_NE_P (reply, NULL);
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	message = dbus_connection_pop_message (conn);
+
+	TEST_NE_P (message, NULL);
+	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
+					   "EmitInt32"));
+	TEST_TRUE (dbus_message_get_args (message, &error,
+					  DBUS_TYPE_INT32, &int32_arg,
+					  DBUS_TYPE_INVALID));
+
+	TEST_EQ (int32_arg, 1701);
+
+	dbus_message_unref (message);
+
+	my_teardown (conn);
+
+
+	/* Check that a signal with a UInt32 argument can be emitted and that
+	 * we can catch it as expected.
+	 */
+	TEST_FEATURE ("with UInt32 argument");
+	conn = my_setup ();
+
+	signum = 6;
+
+	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
+						"com.netsplit.Nih.Glue",
+						"EmitSignal");
+
+	dbus_message_append_args (message,
+				  DBUS_TYPE_INT32, &signum,
+				  DBUS_TYPE_INVALID);
+
+	reply = dbus_connection_send_with_reply_and_block (conn, message,
+							   -1, &error);
+
+	TEST_NE_P (reply, NULL);
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	message = dbus_connection_pop_message (conn);
+
+	TEST_NE_P (message, NULL);
+	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
+					   "EmitUInt32"));
+	TEST_TRUE (dbus_message_get_args (message, &error,
+					  DBUS_TYPE_UINT32, &uint32_arg,
+					  DBUS_TYPE_INVALID));
+
+	TEST_EQ (uint32_arg, 1701);
+
+	dbus_message_unref (message);
+
+	my_teardown (conn);
+
+
+	/* Check that a signal with a Int64 argument can be emitted and that
+	 * we can catch it as expected.
+	 */
+	TEST_FEATURE ("with Int64 argument");
+	conn = my_setup ();
+
+	signum = 7;
+
+	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
+						"com.netsplit.Nih.Glue",
+						"EmitSignal");
+
+	dbus_message_append_args (message,
+				  DBUS_TYPE_INT32, &signum,
+				  DBUS_TYPE_INVALID);
+
+	reply = dbus_connection_send_with_reply_and_block (conn, message,
+							   -1, &error);
+
+	TEST_NE_P (reply, NULL);
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	message = dbus_connection_pop_message (conn);
+
+	TEST_NE_P (message, NULL);
+	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
+					   "EmitInt64"));
+	TEST_TRUE (dbus_message_get_args (message, &error,
+					  DBUS_TYPE_INT64, &int64_arg,
+					  DBUS_TYPE_INVALID));
+
+	TEST_EQ (int64_arg, 1701);
+
+	dbus_message_unref (message);
+
+	my_teardown (conn);
+
+
+	/* Check that a signal with a UInt64 argument can be emitted and that
+	 * we can catch it as expected.
+	 */
+	TEST_FEATURE ("with UInt64 argument");
+	conn = my_setup ();
+
+	signum = 8;
+
+	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
+						"com.netsplit.Nih.Glue",
+						"EmitSignal");
+
+	dbus_message_append_args (message,
+				  DBUS_TYPE_INT32, &signum,
+				  DBUS_TYPE_INVALID);
+
+	reply = dbus_connection_send_with_reply_and_block (conn, message,
+							   -1, &error);
+
+	TEST_NE_P (reply, NULL);
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	message = dbus_connection_pop_message (conn);
+
+	TEST_NE_P (message, NULL);
+	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
+					   "EmitUInt64"));
+	TEST_TRUE (dbus_message_get_args (message, &error,
+					  DBUS_TYPE_UINT64, &uint64_arg,
+					  DBUS_TYPE_INVALID));
+
+	TEST_EQ (uint64_arg, 1701);
+
+	dbus_message_unref (message);
+
+	my_teardown (conn);
+
+
+	/* Check that a signal with a Double argument can be emitted and that
+	 * we can catch it as expected.
+	 */
+	TEST_FEATURE ("with Double argument");
+	conn = my_setup ();
+
+	signum = 9;
+
+	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
+						"com.netsplit.Nih.Glue",
+						"EmitSignal");
+
+	dbus_message_append_args (message,
+				  DBUS_TYPE_INT32, &signum,
+				  DBUS_TYPE_INVALID);
+
+	reply = dbus_connection_send_with_reply_and_block (conn, message,
+							   -1, &error);
+
+	TEST_NE_P (reply, NULL);
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	message = dbus_connection_pop_message (conn);
+
+	TEST_NE_P (message, NULL);
+	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
+					   "EmitDouble"));
+	TEST_TRUE (dbus_message_get_args (message, &error,
+					  DBUS_TYPE_DOUBLE, &double_arg,
+					  DBUS_TYPE_INVALID));
+
+	TEST_EQ (double_arg, 3.141);
+
+	dbus_message_unref (message);
+
+	my_teardown (conn);
+
+
+	/* Check that a signal with a String argument can be emitted and that
+	 * we can catch it as expected.
+	 */
+	TEST_FEATURE ("with String argument");
+	conn = my_setup ();
+
+	signum = 10;
+
+	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
+						"com.netsplit.Nih.Glue",
+						"EmitSignal");
+
+	dbus_message_append_args (message,
+				  DBUS_TYPE_INT32, &signum,
+				  DBUS_TYPE_INVALID);
+
+	reply = dbus_connection_send_with_reply_and_block (conn, message,
+							   -1, &error);
+
+	TEST_NE_P (reply, NULL);
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	message = dbus_connection_pop_message (conn);
+
+	TEST_NE_P (message, NULL);
+	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
+					   "EmitString"));
+	TEST_TRUE (dbus_message_get_args (message, &error,
+					  DBUS_TYPE_STRING, &str,
+					  DBUS_TYPE_INVALID));
+
+	TEST_EQ_STR (str, "test data");
+
+	dbus_message_unref (message);
+
+	my_teardown (conn);
+
+
+	/* Check that a signal with a ObjectPath argument can be emitted and
+	 * that we can catch it as expected.
+	 */
+	TEST_FEATURE ("with ObjectPath argument");
+	conn = my_setup ();
+
+	signum = 11;
+
+	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
+						"com.netsplit.Nih.Glue",
+						"EmitSignal");
+
+	dbus_message_append_args (message,
+				  DBUS_TYPE_INT32, &signum,
+				  DBUS_TYPE_INVALID);
+
+	reply = dbus_connection_send_with_reply_and_block (conn, message,
+							   -1, &error);
+
+	TEST_NE_P (reply, NULL);
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	message = dbus_connection_pop_message (conn);
+
+	TEST_NE_P (message, NULL);
+	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
+					   "EmitObjectPath"));
+	TEST_TRUE (dbus_message_get_args (message, &error,
+					  DBUS_TYPE_OBJECT_PATH, &str,
+					  DBUS_TYPE_INVALID));
+
+	TEST_EQ_STR (str, "/com/netsplit/Nih");
+
+	dbus_message_unref (message);
+
+	my_teardown (conn);
+
+
+	/* Check that a signal with a Signature argument can be emitted and
+	 * that we can catch it as expected.
+	 */
+	TEST_FEATURE ("with Signature argument");
+	conn = my_setup ();
+
+	signum = 12;
+
+	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
+						"com.netsplit.Nih.Glue",
+						"EmitSignal");
+
+	dbus_message_append_args (message,
+				  DBUS_TYPE_INT32, &signum,
+				  DBUS_TYPE_INVALID);
+
+	reply = dbus_connection_send_with_reply_and_block (conn, message,
+							   -1, &error);
+
+	TEST_NE_P (reply, NULL);
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	message = dbus_connection_pop_message (conn);
+
+	TEST_NE_P (message, NULL);
+	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
+					   "EmitSignature"));
+	TEST_TRUE (dbus_message_get_args (message, &error,
+					  DBUS_TYPE_SIGNATURE, &str,
+					  DBUS_TYPE_INVALID));
+
+	TEST_EQ_STR (str, "a{sv}");
+
+	dbus_message_unref (message);
+
+	my_teardown (conn);
+}
+
+
 int
 main (int   argc,
       char *argv[])
 {
 	test_method_marshal ();
+	test_signal_dispatch ();
 
 	return 0;
 }

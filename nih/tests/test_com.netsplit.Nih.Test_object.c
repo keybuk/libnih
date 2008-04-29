@@ -589,6 +589,7 @@ test_method_marshal (void)
 
 	input = "test data";
 	flags = 0;
+	output = NULL;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -655,6 +656,7 @@ test_method_marshal (void)
 
 	input = "test data";
 	flags = 2;
+	output = NULL;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -863,6 +865,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	byte_arg = 65;
+	output = NULL;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -894,6 +897,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	input = "65";
+	byte_arg = 0;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -925,6 +929,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	boolean_arg = 1;
+	output = NULL;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -956,6 +961,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	input = "False";
+	boolean_arg = TRUE;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -972,7 +978,7 @@ test_method_marshal (void)
 					  DBUS_TYPE_BOOLEAN, &boolean_arg,
 					  DBUS_TYPE_INVALID));
 
-	TEST_EQ (boolean_arg, 0);
+	TEST_EQ (boolean_arg, FALSE);
 
 	dbus_message_unref (reply);
 	dbus_message_unref (message);
@@ -987,6 +993,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	int16_arg = 1701;
+	output = NULL;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -1018,6 +1025,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	input = "1701";
+	int16_arg = 0;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -1049,6 +1057,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	uint16_arg = 1701;
+	output = NULL;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -1080,6 +1089,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	input = "1701";
+	uint16_arg = 0;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -1111,6 +1121,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	int32_arg = 1701;
+	output = NULL;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -1142,6 +1153,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	input = "1701";
+	int32_arg = 0;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -1173,6 +1185,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	uint32_arg = 1701;
+	output = NULL;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -1204,6 +1217,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	input = "1701";
+	uint32_arg = 0;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -1235,6 +1249,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	int64_arg = 1701;
+	output = NULL;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -1266,6 +1281,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	input = "1701";
+	int64_arg = 0;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -1297,6 +1313,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	uint64_arg = 1701;
+	output = NULL;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -1328,6 +1345,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	input = "1701";
+	uint64_arg = 0;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -1359,6 +1377,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	double_arg = 3.141592;
+	output = NULL;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -1390,6 +1409,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	input = "3.141";
+	double_arg = 0;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -1421,6 +1441,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	input = "/com/netsplit/Nih";
+	output = NULL;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -1452,6 +1473,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	input = "/com/netsplit/Nih";
+	output = NULL;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -1483,6 +1505,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	input = "a{sv}";
+	output = NULL;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -1514,6 +1537,7 @@ test_method_marshal (void)
 	conn = my_setup ();
 
 	input = "a{sv}";
+	output = NULL;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Test",
@@ -1569,6 +1593,8 @@ test_signal_dispatch (void)
 	conn = my_setup ();
 
 	signum = 0;
+	str = NULL;
+	flags = -1;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Glue",
@@ -1611,6 +1637,7 @@ test_signal_dispatch (void)
 	conn = my_setup ();
 
 	signum = 1;
+	byte_arg = 0;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Glue",
@@ -1651,6 +1678,7 @@ test_signal_dispatch (void)
 	conn = my_setup ();
 
 	signum = 2;
+	boolean_arg = FALSE;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Glue",
@@ -1691,6 +1719,7 @@ test_signal_dispatch (void)
 	conn = my_setup ();
 
 	signum = 3;
+	int16_arg = 0;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Glue",
@@ -1731,6 +1760,7 @@ test_signal_dispatch (void)
 	conn = my_setup ();
 
 	signum = 4;
+	uint16_arg = 0;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Glue",
@@ -1771,6 +1801,7 @@ test_signal_dispatch (void)
 	conn = my_setup ();
 
 	signum = 5;
+	int32_arg = 0;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Glue",
@@ -1811,6 +1842,7 @@ test_signal_dispatch (void)
 	conn = my_setup ();
 
 	signum = 6;
+	uint32_arg = 0;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Glue",
@@ -1851,6 +1883,7 @@ test_signal_dispatch (void)
 	conn = my_setup ();
 
 	signum = 7;
+	int64_arg = 0;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Glue",
@@ -1891,6 +1924,7 @@ test_signal_dispatch (void)
 	conn = my_setup ();
 
 	signum = 8;
+	uint64_arg = 0;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Glue",
@@ -1931,6 +1965,7 @@ test_signal_dispatch (void)
 	conn = my_setup ();
 
 	signum = 9;
+	double_arg = 0;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Glue",
@@ -1971,6 +2006,7 @@ test_signal_dispatch (void)
 	conn = my_setup ();
 
 	signum = 10;
+	str = NULL;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Glue",
@@ -2011,6 +2047,7 @@ test_signal_dispatch (void)
 	conn = my_setup ();
 
 	signum = 11;
+	str = NULL;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Glue",
@@ -2051,6 +2088,7 @@ test_signal_dispatch (void)
 	conn = my_setup ();
 
 	signum = 12;
+	str = NULL;
 
 	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
 						"com.netsplit.Nih.Glue",

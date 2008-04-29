@@ -1,5 +1,10 @@
 2008-04-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_com.netsplit.Nih.Test_object.c (test_method_marshal)
+	(test_signal_dispatch):	For some reason valgrind needs some
+	reassurance that it's ok to pass uninitialised data around in various
+	cases; probably good for testing anyway.
+
 	* nih/dbus.c (nih_dbus_path): Function to generate D-Bus paths with
 	appropriate escaping of non-root elements.
 	* nih/dbus.h: Add prototype.

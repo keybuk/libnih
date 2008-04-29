@@ -26,7 +26,9 @@
 
 #include <dbus/dbus.h>
 
+#include <stdio.h>
 #include <errno.h>
+#include <string.h>
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
@@ -1183,4 +1185,89 @@ error:
 		nih_free (xml);
 
 	return DBUS_HANDLER_RESULT_NEED_MEMORY;
+}
+
+
+/**
+ * nih_dbus_path:
+ * @parent: parent block of allocation,
+ * @root: root of path.
+ *
+ * Generates a D-Bus path suitable for object registration rooted at
+ * @root with each of the further elements joined with "/" separators and
+ * appended after non-permissible characters are removed.
+ *
+ * The final argument to this function must be NULL to signify the end
+ * of elements.
+ *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned block will be freed too.
+ *
+ * Returns: newly allocated string or NULL if insufficient memory.
+ **/
+char *
+nih_dbus_path (const void *parent,
+	       const char *root,
+	       ...)
+{
+	const char *arg, *ptr;
+	char       *path;
+	va_list     args;
+	size_t      len;
+
+	nih_assert (root != NULL);
+
+	/* First work out how much space we'll need */
+	len = strlen (root);
+
+	va_start (args, root);
+	for (arg = va_arg (args, const char *); arg != NULL;
+	     arg = va_arg (args, const char *)) {
+		len += 1;
+
+		for (ptr = arg; *ptr != '\0'; ptr++) {
+			if (   ((*ptr >= 'a') && (*ptr <= 'z'))
+			    || ((*ptr >= 'A') && (*ptr <= 'Z'))
+			    || ((*ptr >= '0') && (*ptr <= '9'))) {
+				len += 1;
+			} else {
+				len += 3;
+			}
+		}
+	}
+	va_end (args);
+
+	/* Now we can allocate it */
+	path = nih_alloc (parent, len + 1);
+	if (! path)
+		return NULL;
+
+	/* And copy the elements in */
+	strcpy (path, root);
+	len = strlen (root);
+
+	va_start (args, root);
+	for (arg = va_arg (args, const char *); arg != NULL;
+	     arg = va_arg (args, const char *)) {
+		path[len++] = '/';
+
+		for (ptr = arg; *ptr != '\0'; ptr++) {
+			if (   ((*ptr >= 'a') && (*ptr <= 'z'))
+			    || ((*ptr >= 'A') && (*ptr <= 'Z'))
+			    || ((*ptr >= '0') && (*ptr <= '9'))) {
+				path[len++] = *ptr;
+			} else {
+				path[len++] = '_';
+
+				sprintf (path + len, "%02x", *ptr);
+				len += 2;
+			}
+		}
+	}
+	va_end (args);
+
+	path[len] = '\0';
+
+	return path;
 }

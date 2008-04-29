@@ -278,6 +278,10 @@ NihDBusObject * nih_dbus_object_new  (const void *parent, DBusConnection *conn,
 				      void *data)
 	__attribute__ ((malloc));
 
+char *          nih_dbus_path        (const void *parent, const char *root,
+				      ...)
+	__attribute__ ((sentinel, warn_unused_result, malloc));
+
 NIH_END_EXTERN
 
 #endif /* NIH_DBUS_H */

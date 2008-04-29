@@ -1,3 +1,7 @@
+2008-04-29  Scott James Remnant  <scott@netsplit.com>
+
+	* POTFILES.in: Add dbus.c
+
 2007-03-09  Scott James Remnant  <scott@netsplit.com>
 
 	* POTFILES.in: Add tree.c

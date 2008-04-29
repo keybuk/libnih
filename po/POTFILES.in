@@ -18,3 +18,5 @@ nih/tree.c
 nih/watch.c
 
 nih/errors.h
+
+nih/dbus.c

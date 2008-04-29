@@ -1170,6 +1170,8 @@ nih_dbus_object_introspect (DBusConnection *conn,
 
 	dbus_message_unref (reply);
 
+	nih_free (xml);
+
 	return DBUS_HANDLER_RESULT_HANDLED;
 
 error:

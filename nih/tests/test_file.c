@@ -112,7 +112,8 @@ test_map (void)
 	munmap (map, length);
 	fd = fopen (filename, "r");
 
-	fgets (text, sizeof (text), fd);
+	if (! fgets (text, sizeof (text), fd))
+		TEST_FAILED ("unexpected eof on file");
 	TEST_EQ_STR (text, "cool\n");
 
 	fclose (fd);
@@ -1221,7 +1222,7 @@ test_dir_walk (void)
 	TEST_FEATURE ("with simple directory loop");
 	strcpy (filename, dirname);
 	strcat (filename, "/bar/loop");
-	symlink (dirname, filename);
+	assert0 (symlink (dirname, filename));
 
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {

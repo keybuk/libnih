@@ -1,5 +1,27 @@
 2008-05-06  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/main.c (nih_main_daemonise): Deliberately ignore chdir
+	return value, repeat the dup calls until they work.
+	(nih_main_loop_interrupt): repeat write call until it succeeds.
+	* nih/test.h (TEST_CHILD, TEST_CHILD_WAIT, TEST_CHILD_RELEASE):
+	assert that pipe() returns zero and read() and write() both return 1.
+	(TEST_DIVERT_STDOUT_FD, TEST_DIVERT_STDERR_FD): assert that dup2
+	returns a file descriptor.
+	(TEST_FILE_RESET): assert ftruncate works.
+	* nih/tests/test_io.c (test_add_watch, test_select_fds)
+	(test_handle_fds, test_reopen, test_shutdown, test_destroy)
+	(test_watcher, test_read_message, test_send_message, test_read)
+	(test_write, test_get, test_printf, test_set_nonblock)
+	(test_set_cloexec): assert that the pipe() calls work.
+	(test_watcher): assert that write() returns expected number.
+	* nih/tests/test_file.c (test_map): Check the fgets works.
+	(test_dir_walk): assert that the symlink call works.
+	* nih/tests/test_main.c (test_daemonise): assert pipe(), write()
+	and getcwd() calls work.
+	* nih/tests/test_com.netsplit.Nih.Test_object.c (my_setup):
+	initialise wait_fd to get around gcc's blindness.
+	(my_emit_signal): initialise ret.
+
 	* m4/compiler.m4: Add -Wformat, -Wformat-security and
 	-D_FORTIFY_SOURCE=2 to our default CFLAGS unless compiler warnings
 	are disabled.

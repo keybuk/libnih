@@ -337,7 +337,8 @@ nih_main_daemonise (void)
 	/* We're now in a daemon child process.  Change our working directory
 	 * and file creation mask to be more appropriate.
 	 */
-	chdir ("/");
+	if (chdir ("/"))
+		;
 	umask (0);
 
 	/* Close the stdin/stdout/stderr that we inherited */
@@ -346,8 +347,12 @@ nih_main_daemonise (void)
 
 	/* And instead bind /dev/null to them */
 	fd = open (DEV_NULL, O_RDWR);
-	dup (fd);
-	dup (fd);
+	if (fd >= 0) {
+		while (dup (fd) < 0)
+			;
+		while (dup (fd) < 0)
+			;
+	}
 
 	return 0;
 }
@@ -633,7 +638,8 @@ nih_main_loop_interrupt (void)
 	nih_main_loop_init ();
 
 	if (interrupt_pipe[1] != -1)
-		write (interrupt_pipe[1], "", 1);
+		while (write (interrupt_pipe[1], "", 1) < 0)
+			;
 }
 
 /**

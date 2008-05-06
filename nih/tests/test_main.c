@@ -234,7 +234,7 @@ test_daemonise (void)
 	 */
 	TEST_FUNCTION ("nih_main_daemonise");
 
-	pipe (fds);
+	assert0 (pipe (fds));
 	TEST_CHILD (pid) {
 		char buf[80];
 
@@ -242,13 +242,13 @@ test_daemonise (void)
 		if (nih_main_daemonise () < 0)
 			exit (50);
 
-		getcwd (buf, sizeof (buf));
+		assert (getcwd (buf, sizeof (buf)));
 		if (strcmp (buf, "/")) {
-			write (fds[1], "wd", 2);
+			assert (write (fds[1], "wd", 2) == 2);
 			exit (10);
 		}
 
-		write (fds[1], "ok", 2);
+		assert (write (fds[1], "ok", 2) == 2);
 		exit (10);
 	}
 

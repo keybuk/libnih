@@ -77,7 +77,7 @@ test_add_watch (void)
 	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
 
 	TEST_ALLOC_FAIL {
-		pipe (fds);
+		assert0 (pipe (fds));
 		watch = nih_io_add_watch (NULL, fds[0], NIH_IO_READ,
 					  my_watcher, &watch);
 
@@ -111,7 +111,7 @@ test_select_fds (void)
 	 * based on a set of watches we add.
 	 */
 	TEST_FUNCTION ("nih_io_select_fds");
-	pipe (fds);
+	assert0 (pipe (fds));
 	watch1 = nih_io_add_watch (NULL, fds[0], NIH_IO_READ,
 				   my_watcher, &watch1);
 	watch2 = nih_io_add_watch (NULL, fds[1], NIH_IO_WRITE,
@@ -149,7 +149,7 @@ test_handle_fds (void)
 	int            fds[2];
 
 	TEST_FUNCTION ("nih_io_handle_fds");
-	pipe (fds);
+	assert0 (pipe (fds));
 	watch1 = nih_io_add_watch (NULL, fds[0], NIH_IO_READ,
 				   my_watcher, &watch1);
 	watch2 = nih_io_add_watch (NULL, fds[1], NIH_IO_WRITE,
@@ -1195,7 +1195,7 @@ test_reopen (void)
 	 */
 	TEST_FEATURE ("with stream mode");
 	TEST_ALLOC_FAIL {
-		pipe (fds);
+		assert0 (pipe (fds));
 		io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 				    my_reader, my_close_handler,
 				    my_error_handler, &io);
@@ -1239,7 +1239,7 @@ test_reopen (void)
 	 */
 	TEST_FEATURE ("with message mode");
 	TEST_ALLOC_FAIL {
-		pipe (fds);
+		assert0 (pipe (fds));
 		io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
 				    my_reader, my_close_handler,
 				    my_error_handler, &io);
@@ -1285,7 +1285,7 @@ test_reopen (void)
 	 * is closed.
 	 */
 	TEST_FEATURE ("with closed file");
-	pipe (fds);
+	assert0 (pipe (fds));
 	close (fds[0]);
 	close (fds[1]);
 
@@ -1310,7 +1310,7 @@ test_shutdown (void)
 	fd_set        readfds, writefds, exceptfds;
 
 	TEST_FUNCTION ("nih_io_shutdown");
-	pipe (fds);
+	assert0 (pipe (fds));
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 			    NULL, NULL, NULL, NULL);
 	assert0 (nih_io_buffer_push (io->recv_buf, "some data", 9));
@@ -1351,7 +1351,7 @@ test_shutdown (void)
 	 * results in it being immediately closed and freed.
 	 */
 	TEST_FEATURE ("with no data in the buffer");
-	pipe (fds);
+	assert0 (pipe (fds));
 	close (fds[1]);
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 			    NULL, NULL, NULL, NULL);
@@ -1437,7 +1437,7 @@ test_destroy (void)
 	 * handler, and just closes the fd and frees the structure.
 	 */
 	TEST_FEATURE ("with open file descriptor");
-	pipe (fds);
+	assert0 (pipe (fds));
 	error_called = 0;
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 			    NULL, NULL, my_error_handler, &io);
@@ -1457,7 +1457,7 @@ test_destroy (void)
 	 * freed.
 	 */
 	TEST_FEATURE ("with closed file descriptor");
-	pipe (fds);
+	assert0 (pipe (fds));
 	error_called = 0;
 	last_data = NULL;
 	last_error = NULL;
@@ -1496,7 +1496,7 @@ test_watcher (void)
 	 * called with the right arguments.
 	 */
 	TEST_FEATURE ("with data to read");
-	pipe (fds);
+	assert0 (pipe (fds));
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 			    my_reader, my_close_handler, my_error_handler,
 			    &io);
@@ -1505,7 +1505,7 @@ test_watcher (void)
 		io->recv_buf->len = 0;
 		io->recv_buf->size = 0;
 
-		write (fds[1], "this is a test", 14);
+		assert (write (fds[1], "this is a test", 14) == 14);
 
 		FD_ZERO (&readfds);
 		FD_ZERO (&writefds);
@@ -1544,7 +1544,7 @@ test_watcher (void)
 		io->recv_buf->len = 14;
 		io->recv_buf->size = BUFSIZ;
 
-		write (fds[1], " of the callback code", 19);
+		assert (write (fds[1], " of the callback code", 19) == 19);
 
 		read_called = 0;
 		last_data = NULL;
@@ -1585,7 +1585,7 @@ test_watcher (void)
 	 * has been closed; along with the close function.
 	 */
 	TEST_FEATURE ("with remote end closed");
-	pipe (fds);
+	assert0 (pipe (fds));
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 			    my_reader, my_close_handler, my_error_handler,
 			    &io);
@@ -1648,7 +1648,7 @@ test_watcher (void)
 	 * the file descriptor is closed and the structure freed.
 	 */
 	TEST_FEATURE ("with no close handler");
-	pipe (fds);
+	assert0 (pipe (fds));
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 			    my_reader, NULL, NULL, &io);
 
@@ -1669,7 +1669,7 @@ test_watcher (void)
 	 * that the structure is freed.
 	 */
 	TEST_FEATURE ("with no error handler");
-	pipe (fds);
+	assert0 (pipe (fds));
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 			    my_reader, NULL, NULL, &io);
 
@@ -2168,7 +2168,7 @@ test_read_message (void)
 	int           fds[2];
 
 	TEST_FUNCTION ("nih_io_read_message");
-	pipe (fds);
+	assert0 (pipe (fds));
 	close (fds[1]);
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
 			    NULL, NULL, NULL, NULL);
@@ -2224,7 +2224,7 @@ test_send_message (void)
 	int           fds[2];
 
 	TEST_FUNCTION ("nih_io_send_message");
-	pipe (fds);
+	assert0 (pipe (fds));
 	close (fds[0]);
 
 	io = nih_io_reopen (NULL, fds[1], NIH_IO_MESSAGE,
@@ -2275,7 +2275,7 @@ test_read (void)
 	int           fds[2];
 
 	TEST_FUNCTION ("nih_io_read");
-	pipe (fds);
+	assert0 (pipe (fds));
 	close (fds[1]);
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 			    NULL, NULL, NULL, NULL);
@@ -2385,7 +2385,7 @@ test_read (void)
 	 * data from the first message; which should have its buffer shrunk.
 	 */
 	TEST_FEATURE ("with full message in queue");
-	pipe (fds);
+	assert0 (pipe (fds));
 	close (fds[1]);
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
 			    NULL, NULL, NULL, NULL);
@@ -2495,7 +2495,7 @@ test_write (void)
 	int           ret, fds[2];
 
 	TEST_FUNCTION ("nih_io_write");
-	pipe (fds);
+	assert0 (pipe (fds));
 	close (fds[0]);
 
 	io = nih_io_reopen (NULL, fds[1], NIH_IO_STREAM,
@@ -2551,7 +2551,7 @@ test_write (void)
 	 * have it made into a new message in the send queue.
 	 */
 	TEST_FEATURE ("with empty send queue");
-	pipe (fds);
+	assert0 (pipe (fds));
 	close (fds[0]);
 
 	io = nih_io_reopen (NULL, fds[1], NIH_IO_MESSAGE,
@@ -2622,7 +2622,7 @@ test_get (void)
 	int           fds[2];
 
 	TEST_FUNCTION ("nih_io_get");
-	pipe (fds);
+	assert0 (pipe (fds));
 	close (fds[1]);
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 			    NULL, NULL, NULL, NULL);
@@ -2731,7 +2731,7 @@ test_get (void)
 	 * the oldest message.
 	 */
 	TEST_FEATURE ("with full message in queue");
-	pipe (fds);
+	assert0 (pipe (fds));
 	close (fds[1]);
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
 			    NULL, NULL, NULL, NULL);
@@ -2857,7 +2857,7 @@ test_printf (void)
 	int           ret, fds[2];
 
 	TEST_FUNCTION ("nih_io_printf");
-	pipe (fds);
+	assert0 (pipe (fds));
 	close (fds[0]);
 
 	io = nih_io_reopen (NULL, fds[1], NIH_IO_STREAM,
@@ -2919,7 +2919,7 @@ test_printf (void)
 	 * the send queue.
 	 */
 	TEST_FEATURE ("with empty send queue");
-	pipe (fds);
+	assert0 (pipe (fds));
 	close (fds[0]);
 
 	io = nih_io_reopen (NULL, fds[1], NIH_IO_MESSAGE,
@@ -2995,7 +2995,7 @@ test_set_nonblock (void)
 
 	/* Check that we can trivially mark a socket to be non-blocking. */
 	TEST_FEATURE ("with valid descriptor");
-	pipe (fds);
+	assert0 (pipe (fds));
 	ret = nih_io_set_nonblock (fds[0]);
 
 	TEST_EQ (ret, 0);
@@ -3021,7 +3021,7 @@ test_set_cloexec (void)
 
 	/* Check that we can trivially mark a socket to be closed on exec. */
 	TEST_FEATURE ("with valid descriptor");
-	pipe (fds);
+	assert0 (pipe (fds));
 	ret = nih_io_set_cloexec (fds[0]);
 
 	TEST_EQ (ret, 0);

@@ -406,7 +406,7 @@ my_emit_signal (void           *data,
 		NihDBusMessage *message,
 		int32_t         signum)
 {
-	int ret;
+	int ret = -1;
 
 	switch (signum) {
 	case 0:
@@ -506,7 +506,7 @@ static DBusConnection *
 my_setup (void)
 {
 	DBusConnection *conn;
-	int             wait_fd;
+	int             wait_fd = -1;
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		DBusServer *server;

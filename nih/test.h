@@ -352,16 +352,16 @@
 #define TEST_CHILD(_pid) \
 	do { \
 		int _test_fds[2]; \
-		pipe (_test_fds); \
+		assert0 (pipe (_test_fds)); \
 		_pid = fork (); \
 		if (_pid > 0) { \
 			char _test_buf[1]; \
 			close (_test_fds[1]); \
-			read (_test_fds[0], _test_buf, 1); \
+			assert (read (_test_fds[0], _test_buf, 1) == 1); \
 			close (_test_fds[0]); \
 		} else if (_pid == 0) { \
 			close (_test_fds[0]); \
-			write (_test_fds[1], "\n", 1); \
+			assert (write (_test_fds[1], "\n", 1) == 1); \
 			close (_test_fds[1]); \
 		} \
 	} while (0); \
@@ -389,12 +389,12 @@
 #define TEST_CHILD_WAIT(_pid, _fd) \
 	do { \
 		int _test_fds[2]; \
-		pipe (_test_fds); \
+		assert0 (pipe (_test_fds)); \
 		_pid = fork (); \
 		if (_pid > 0) { \
 			char _test_buf[1]; \
 			close (_test_fds[1]); \
-			read (_test_fds[0], _test_buf, 1); \
+			assert (read (_test_fds[0], _test_buf, 1) == 1); \
 			close (_test_fds[0]); \
 		} else if (_pid == 0) { \
 			close (_test_fds[0]); \
@@ -416,7 +416,7 @@
  **/
 #define TEST_CHILD_RELEASE(_fd) \
 	do { \
-		write ((_fd), "\n", 1); \
+		assert (write ((_fd), "\n", 1) == 1);	\
 		close (_fd); \
 	} while (0)
 
@@ -432,10 +432,10 @@
 	     _test_stdout < 3; _test_stdout++) \
 		if (_test_stdout < 1) { \
 			fflush (stdout); \
-			dup2 ((_fd), STDOUT_FILENO); \
+			assert (dup2 ((_fd), STDOUT_FILENO) >= 0); \
 		} else if (_test_stdout > 1) { \
 			fflush (stdout); \
-			dup2 (_test_oldstdout, STDOUT_FILENO); \
+			assert (dup2 (_test_oldstdout, STDOUT_FILENO) >= 0); \
 			close (_test_oldstdout); \
 		} else
 
@@ -461,10 +461,10 @@
 	     _test_stderr < 3; _test_stderr++) \
 		if (_test_stderr < 1) { \
 			fflush (stderr); \
-			dup2 ((_fd), STDERR_FILENO); \
+			assert (dup2 ((_fd), STDERR_FILENO) >= 0); \
 		} else if (_test_stderr > 1) { \
 			fflush (stderr); \
-			dup2 (_test_oldstderr, STDERR_FILENO); \
+			assert (dup2 (_test_oldstderr, STDERR_FILENO) >= 0); \
 			close (_test_oldstderr); \
 		} else
 
@@ -597,7 +597,7 @@
 	do { \
 		fflush (_file); \
 		rewind (_file); \
-		ftruncate (fileno (_file), 0); \
+		assert0 (ftruncate (fileno (_file), 0)); \
 	} while (0)
 
 

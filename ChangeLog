@@ -1,5 +1,7 @@
 2008-05-06  Scott James Remnant  <scott@netsplit.com>
 
+	* m4/compiler.m4: -Wformat is already in -Wall
+
 	* nih/main.c (nih_main_daemonise): Deliberately ignore chdir
 	return value, repeat the dup calls until they work.
 	(nih_main_loop_interrupt): repeat write call until it succeeds.

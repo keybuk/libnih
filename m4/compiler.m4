@@ -34,9 +34,9 @@ AC_DEFUN([NIH_COMPILER_WARNINGS],
 	               [Enable additional compiler warnings]),
 [AS_IF([test "x$enable_compiler_warnings" = "xyes"],
        [AS_IF([test "x$GCC" = "xyes"],
-              [CFLAGS="-Wall -Wformat -Wformat-security -Werror -D_FORTIFY_SOURCE=2 $CFLAGS"])
+              [CFLAGS="-Wall -Wformat-security -Werror -D_FORTIFY_SOURCE=2 $CFLAGS"])
         AS_IF([test "x$GXX" = "xyes"],
-       	      [CXXFLAGS="-Wall -Wformat -Wformat-security -Werror -D_FORTIFY_SOURCE=2 $CXXFLAGS"])])
+       	      [CXXFLAGS="-Wall -Wformat-security -Werror -D_FORTIFY_SOURCE=2 $CXXFLAGS"])])
 ])dnl
 ])# NIH_COMPILER_WARNINGS
 

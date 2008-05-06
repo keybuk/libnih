@@ -1,3 +1,9 @@
+2008-05-06  Scott James Remnant  <scott@netsplit.com>
+
+	* m4/compiler.m4: Add -Wformat, -Wformat-security and
+	-D_FORTIFY_SOURCE=2 to our default CFLAGS unless compiler warnings
+	are disabled.
+
 2008-04-29  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/tests/test_com.netsplit.Nih.Test_object.c (test_method_marshal)

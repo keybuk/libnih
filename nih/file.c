@@ -380,6 +380,19 @@ nih_file_is_packaging (const char *path)
 	if (ptr && (! strncmp (ptr, ".dpkg-", 6)))
 		return TRUE;
 
+	/* Matches *.rpm{save,orig,new}; used by rpm */
+	if (ptr && (! strncmp (ptr, ".rpmsave", 9)))
+		return TRUE;
+	if (ptr && (! strncmp (ptr, ".rpmorig", 9)))
+		return TRUE;
+	if (ptr && (! strncmp (ptr, ".rpmnew", 8)))
+		return TRUE;
+
+	/* Matches *;[a-fA-F0-9]{8}; used by rpm */
+	ptr = strrchr (path, ';');
+	if (ptr && (strspn (ptr + 1, "abcdefABCDEF0123456789") == 8)
+	    && (! ptr[9]))
+		return TRUE;
 
 	return FALSE;
 }

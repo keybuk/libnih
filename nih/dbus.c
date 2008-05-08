@@ -28,6 +28,7 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <stdarg.h>
 #include <string.h>
 
 #include <nih/macros.h>
@@ -143,6 +144,47 @@ nih_dbus_error_raise (const char *name,
 	err->error.number = NIH_DBUS_ERROR;
 	NIH_MUST (err->name = nih_strdup (err, name));
 	NIH_MUST (err->error.message = nih_strdup (err, message));
+
+	nih_error_raise_again (&err->error);
+}
+
+/**
+ * nih_dbus_error_raise_printf:
+ * @name: D-Bus name for error,
+ * @format: format string for human-readable message.
+ *
+ * Raises an error which includes a D-Bus name so that it may be sent as
+ * a reply to a method call, the error type is fixed to NIH_DBUS_ERROR.
+ *
+ * The human-readable message for the error is parsed according to @format,
+ * and allocated as a child of the error object so that it is freed.
+ *
+ * You may use this in D-Bus handlers and return a negative number to
+ * automatically have this error returned as the method reply.  It is also
+ * useful when mixing D-Bus and libnih function calls in your own methods
+ * to return consistent error forms, in which case pass the name and message
+ * members of the DBusError structure before freeing it.
+ **/
+void
+nih_dbus_error_raise_printf (const char *name,
+			     const char *format,
+			     ...)
+{
+	NihDBusError *err;
+	va_list       args;
+
+	nih_assert (name != NULL);
+	nih_assert (format != NULL);
+
+	NIH_MUST (err = nih_new (NULL, NihDBusError));
+
+	err->error.number = NIH_DBUS_ERROR;
+
+	NIH_MUST (err->name = nih_strdup (err, name));
+
+	va_start (args, format);
+	NIH_MUST (err->error.message = nih_vsprintf (err, format, args));
+	va_end (args);
 
 	nih_error_raise_again (&err->error);
 }

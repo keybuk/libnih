@@ -97,7 +97,8 @@ NIH_BEGIN_EXTERN
 void      nih_error_init         (void);
 
 void      nih_error_raise        (int number, const char *message);
-void      nih_error_raise_printf (int number, const char *format, ...);
+void      nih_error_raise_printf (int number, const char *format, ...)
+	__attribute__ ((format (printf, 2, 3)));
 void      nih_error_raise_system (void);
 void      nih_error_raise_again  (NihError *error);
 

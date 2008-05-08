@@ -69,6 +69,35 @@ test_error_raise (void)
 	}
 }
 
+void
+test_error_raise_printf (void)
+{
+	NihError     *error;
+	NihDBusError *err;
+
+	/* Make sure that an NIH_DBUS_ERROR is raised with the name and
+	 * formatted message we give.
+	 */
+	TEST_FUNCTION ("nih_dbus_error_raise_printf");
+	TEST_ALLOC_SAFE {
+		nih_dbus_error_raise_printf ("foo", "hello %d this is a %s",
+					     123, "test");
+		error = nih_error_get ();
+
+		TEST_ALLOC_PARENT (error, NULL);
+		TEST_ALLOC_SIZE (error, sizeof (NihDBusError));
+		TEST_EQ (error->number, NIH_DBUS_ERROR);
+
+		err = (NihDBusError *)error;
+		TEST_EQ_STR (err->name, "foo");
+		TEST_ALLOC_PARENT (err->name, err);
+		TEST_EQ_STR (err->error.message, "hello 123 this is a test");
+		TEST_ALLOC_PARENT (err->error.message, err);
+
+		nih_free (error);
+	}
+}
+
 
 static int connected = FALSE;
 static DBusConnection *last_connection = NULL;

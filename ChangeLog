@@ -1,5 +1,11 @@
 2008-05-08  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/dbus.c (nih_dbus_error_raise_printf): Add formatted error
+	function, I held out as long as I could
+	* nih/dbus.h: Add prototype.
+	* nih/tests/test_dbus.c (test_error_raise_printf): And test for it.
+	* nih/error.h: Add missing attribute
+
 	* nih/Makefile.am: No need for version info if not installing
 
 2008-05-06  Scott James Remnant  <scott@netsplit.com>

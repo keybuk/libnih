@@ -255,31 +255,37 @@ struct nih_dbus_interface {
 
 NIH_BEGIN_EXTERN
 
-void            nih_dbus_error_raise (const char *name, const char *message);
+void            nih_dbus_error_raise        (const char *name,
+					     const char *message);
 
-DBusConnection *nih_dbus_connect     (const char *address,
-				      NihDBusDisconnectHandler disconnect_handler)
+void            nih_dbus_error_raise_printf (const char *name,
+					     const char *format, ...)
+	__attribute__ ((format (printf, 2, 3)));
+
+DBusConnection *nih_dbus_connect            (const char *address,
+				             NihDBusDisconnectHandler disconnect_handler)
 	__attribute__ ((warn_unused_result));
-DBusConnection *nih_dbus_bus         (DBusBusType bus,
-				      NihDBusDisconnectHandler disconnect_handler)
+DBusConnection *nih_dbus_bus                (DBusBusType bus,
+					     NihDBusDisconnectHandler disconnect_handler)
 	__attribute__ ((warn_unused_result));
-int             nih_dbus_setup       (DBusConnection *conn,
-				      NihDBusDisconnectHandler disconnect_handler)
+int             nih_dbus_setup              (DBusConnection *conn,
+				             NihDBusDisconnectHandler disconnect_handler)
 	__attribute__ ((warn_unused_result));
 
-DBusServer *    nih_dbus_server      (const char *address,
-				      NihDBusConnectHandler connect_handler,
-				      NihDBusDisconnectHandler disconnect_handler)
+DBusServer *    nih_dbus_server             (const char *address,
+					     NihDBusConnectHandler connect_handler,
+					     NihDBusDisconnectHandler disconnect_handler)
 	__attribute__ ((warn_unused_result));
 
-NihDBusObject * nih_dbus_object_new  (const void *parent, DBusConnection *conn,
-				      const char *path,
-				      const NihDBusInterface **interfaces,
-				      void *data)
+NihDBusObject * nih_dbus_object_new         (const void *parent,
+					     DBusConnection *conn,
+					     const char *path,
+					     const NihDBusInterface **interfaces,
+					     void *data)
 	__attribute__ ((malloc));
 
-char *          nih_dbus_path        (const void *parent, const char *root,
-				      ...)
+char *          nih_dbus_path               (const void *parent,
+					     const char *root, ...)
 	__attribute__ ((sentinel, warn_unused_result, malloc));
 
 NIH_END_EXTERN

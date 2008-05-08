@@ -37,12 +37,13 @@ libnih_la_SOURCES = \
 	error.c
 
 
+if INSTALL_NIH
 libnih_la_LDFLAGS = \
 	-version-info 0:0:0
 if HAVE_VERSION_SCRIPT_ARG
 libnih_la_LDFLAGS += @VERSION_SCRIPT_ARG@=$(srcdir)/libnih.ver
 endif
-
+endif
 
 libnih_dbus_la_SOURCES = \
 	dbus.c
@@ -50,10 +51,12 @@ libnih_dbus_la_SOURCES = \
 libnih_dbus_la_CFLAGS = $(DBUS_CFLAGS)
 libnih_dbus_la_LIBS = $(DBUS_LIBS)
 
+if INSTALL_NIH
 libnih_dbus_la_LDFLAGS = \
 	-version-info 0:0:0
 if HAVE_VERSION_SCRIPT_ARG
 libnih_dbus_la_LDFLAGS += @VERSION_SCRIPT_ARG@=$(srcdir)/libnih-dbus.ver
+endif
 endif
 
 

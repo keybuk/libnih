@@ -1,5 +1,9 @@
 2008-05-09  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/nih_dbus_tool.py: Drop the data type argument, and just
+	pass around void *; we never have the types available, and since
+	we have our own prototype anyway, we never upset gcc.
+
 	* nih/dbus.c (nih_dbus_path): Empty path components are named
 	as "_" instead.
 	* nih/tests/test_dbus.c (test_path): Test the new functionality.

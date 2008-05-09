@@ -34,9 +34,6 @@ PACKAGE_COPYRIGHT = "@PACKAGE_COPYRIGHT@"
 # Prefix for external functions
 extern_prefix = "dbus"
 
-# Data type for external function argument
-extern_data_type = "void *"
-
 
 # Conversion for external C names
 NAME_RE = re.compile(r'([a-z0-9])([A-Z])')
@@ -640,7 +637,7 @@ goto send;
         code += indent(self.in_args.marshal("iter", error), 1)
 
         # Construct the function call
-        args = [ "(%s)object->data" % extern_data_type, "message" ]
+        args = [ "object->data", "message" ]
         args.extend(name for type, name in self.in_args.vars())
         args.extend("&%s" % name for type, name in self.out_args.vars())
 
@@ -734,28 +731,7 @@ return DBUS_HANDLER_RESULT_HANDLED;
         Returns a (retval, name, args, attributes) tuple for the prototype
         of the handler function that the user must define.
         """
-        bits = []
-        for bit in extern_data_type.split():
-            bit = bit.strip("*")
-
-            if bit == "const":
-                continue
-            if bit == "static":
-                continue
-            if bit == "void":
-                continue
-            if bit == "char":
-                bit = "str"
-
-            if len(bit):
-                bits.append(bit.lower())
-
-        if bits:
-            extern_data_name = "_".join(bits)
-        else:
-            extern_data_name = "data"
-
-        vars = [ (extern_data_type, extern_data_name),
+        vars = [ ("void *", "data"),
                  ("NihDBusMessage *", "message") ]
         vars.extend(self.in_args.vars())
 
@@ -1498,7 +1474,6 @@ def indent(str, level):
 def main():
     global options
     global extern_prefix
-    global extern_data_type
 
     usage = "%prog [OPTION]... XMLFILE"
     description = """\
@@ -1521,9 +1496,6 @@ or to that specified by --output.
     parser.add_option("--prefix", type="string", metavar="PREFIX",
                       default="dbus",
                       help="Prefix for externally supplied C functions [default: %default]")
-    parser.add_option("--data-type", type="string", metavar="TYPE",
-                      default="void *",
-                      help="Type for data argument of externally supplied functions [default: %default]")
 
     (options, args) = parser.parse_args()
     if len(args) != 1:
@@ -1532,7 +1504,6 @@ or to that specified by --output.
         parser.error("invalid mode")
 
     extern_prefix = options.prefix
-    extern_data_type = options.data_type
 
     # Figure out input and output filenames based on arguments; try and
     # do the right thing in most circumstances

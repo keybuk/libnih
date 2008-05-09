@@ -1672,6 +1672,24 @@ test_path (void)
 
 		nih_free (path);
 	}
+
+
+	/* Check that if one of the additional elements is empty, it
+	 * is replaced with an underscore.
+	 */
+	TEST_FEATURE ("with empty element");
+	TEST_ALLOC_FAIL {
+		path = nih_dbus_path (NULL, "/com/netsplit/Nih", "", NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (path, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (path, "/com/netsplit/Nih/_");
+
+		nih_free (path);
+	}
 }
 
 

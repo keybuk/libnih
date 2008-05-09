@@ -1268,6 +1268,9 @@ nih_dbus_path (const void *parent,
 	     arg = va_arg (args, const char *)) {
 		len += 1;
 
+		if (! *arg)
+			len += 1;
+
 		for (ptr = arg; *ptr != '\0'; ptr++) {
 			if (   ((*ptr >= 'a') && (*ptr <= 'z'))
 			    || ((*ptr >= 'A') && (*ptr <= 'Z'))
@@ -1293,6 +1296,9 @@ nih_dbus_path (const void *parent,
 	for (arg = va_arg (args, const char *); arg != NULL;
 	     arg = va_arg (args, const char *)) {
 		path[len++] = '/';
+
+		if (! *arg)
+			path[len++] = '_';
 
 		for (ptr = arg; *ptr != '\0'; ptr++) {
 			if (   ((*ptr >= 'a') && (*ptr <= 'z'))

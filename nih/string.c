@@ -220,12 +220,15 @@ nih_strncat (char       **str,
 	     const char  *src,
 	     size_t       len)
 {
-	char   *ret;
+	ssize_t  str_len;
+	char    *ret;
 
 	nih_assert (str != NULL);
 	nih_assert (src != NULL);
 
-	ret = nih_realloc (*str, parent, strlen (*str) + len + 1);
+	str_len = *str ? strlen (*str) : 0;
+
+	ret = nih_realloc (*str, parent, str_len + len + 1);
 	if (! ret)
 		return NULL;
 
@@ -296,7 +299,7 @@ nih_strcat_vsprintf (char       **str,
 	nih_assert (str != NULL);
 	nih_assert (format != NULL);
 
-	str_len = strlen (*str);
+	str_len = *str ? strlen (*str) : 0;
 
 	va_copy (args_copy, args);
 	len = vsnprintf (NULL, 0, format, args_copy);

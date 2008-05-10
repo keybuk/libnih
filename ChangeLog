@@ -1,5 +1,9 @@
 2008-05-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/string.c (nih_strncat, nih_strcat_vsprintf): Ok, there
+	was a minor technical reason after all; don't strlen the
+	string if we don't have it.
+
 	* nih/string.c (nih_strcat, nih_strncat, nih_strcat_sprintf)
 	(nih_strcat_vsprintf): Remove the restriction that the string
 	must be pre-allocated, there's no technical reason for it, I was

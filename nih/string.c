@@ -195,7 +195,6 @@ nih_strcat (char       **str,
 	    const char  *src)
 {
 	nih_assert (str != NULL);
-	nih_assert (*str != NULL);
 	nih_assert (src != NULL);
 
 	return nih_strncat (str, parent, src, strlen (src));
@@ -224,7 +223,6 @@ nih_strncat (char       **str,
 	char   *ret;
 
 	nih_assert (str != NULL);
-	nih_assert (*str != NULL);
 	nih_assert (src != NULL);
 
 	ret = nih_realloc (*str, parent, strlen (*str) + len + 1);
@@ -262,7 +260,6 @@ nih_strcat_sprintf (char       **str,
 	va_list  args;
 
 	nih_assert (str != NULL);
-	nih_assert (*str != NULL);
 	nih_assert (format != NULL);
 
 	va_start (args, format);
@@ -297,7 +294,6 @@ nih_strcat_vsprintf (char       **str,
 	char     *ret;
 
 	nih_assert (str != NULL);
-	nih_assert (*str != NULL);
 	nih_assert (format != NULL);
 
 	str_len = strlen (*str);

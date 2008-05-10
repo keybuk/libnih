@@ -1,3 +1,10 @@
+2008-05-10  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/string.c (nih_strcat, nih_strncat, nih_strcat_sprintf)
+	(nih_strcat_vsprintf): Remove the restriction that the string
+	must be pre-allocated, there's no technical reason for it, I was
+	just trying to enforce a style.
+
 2008-05-09  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/nih_dbus_tool.py: Drop the data type argument, and just

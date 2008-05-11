@@ -400,6 +400,100 @@ my_str_to_signature (void            *data,
 	return 0;
 }
 
+int
+my_int32_array_to_str (void            *data,
+		       NihDBusMessage  *message,
+		       int32_t         *array,
+		       size_t           array_len,
+		       const char     **output)
+{
+	char *str;
+
+	TEST_NE_P (array, NULL);
+	TEST_NE_P (output, NULL);
+
+	str = NULL;
+
+	for (size_t i = 0; i < array_len; i++)
+		NIH_MUST (nih_strcat_sprintf (&str, message,
+					      str ? " %d" : "%d",
+					      (int)array[i]));
+
+	*output = str;
+
+	return 0;
+}
+
+int
+my_str_to_int32_array (void            *data,
+		       NihDBusMessage  *message,
+		       const char      *input,
+		       int32_t        **array,
+		       size_t          *array_len)
+{
+	char **parts, **p;
+
+	TEST_NE_P (input, NULL);
+	TEST_NE_P (array, NULL);
+	TEST_NE_P (array_len, NULL);
+
+	*array = NULL;
+	*array_len = 0;
+
+	parts = nih_str_split (NULL, input, " ", FALSE);
+	for (p = parts; p && *p; p++) {
+		int      i;
+		int32_t *new_array;
+
+		sscanf (*p, "%d", &i);
+
+		NIH_MUST (new_array = nih_realloc (
+				  *array, message,
+				  sizeof (int32_t) * (*array_len + 1)));
+		*array = new_array;
+		(*array)[(*array_len)++] = i;
+	}
+
+	return 0;
+}
+
+int
+my_str_array_to_str (void            *data,
+		     NihDBusMessage  *message,
+		     const char     **array,
+		     const char     **output)
+{
+	char       *str;
+	const char **a;
+
+	TEST_NE_P (array, NULL);
+	TEST_NE_P (output, NULL);
+
+	str = NULL;
+
+	for (a = array; a && *a; a++)
+		NIH_MUST (nih_strcat_sprintf (&str, message,
+					      str ? " %s" : "%s", *a));
+
+	*output = str;
+
+	return 0;
+}
+
+int
+my_str_to_str_array (void             *data,
+		     NihDBusMessage   *message,
+		     const char       *input,
+		     const char     ***array)
+{
+	TEST_NE_P (input, NULL);
+	TEST_NE_P (array, NULL);
+
+	*array = (const char **)nih_str_split (message, input, " ", FALSE);
+
+	return 0;
+}
+
 
 int
 my_emit_signal (void           *data,
@@ -474,6 +568,22 @@ my_emit_signal (void           *data,
 					 dbus_message_get_path (message->message),
 					 "a{sv}");
 		break;
+	case 13: {
+		int32_t array[] = { 4, 8, 15, 16, 23, 42 };
+
+		ret = my_emit_int32_array (message->conn,
+					   dbus_message_get_path (message->message),
+					   array, 6);
+		break;
+	}
+	case 14: {
+		const char *array[] = { "this", "is", "a", "test", NULL };
+
+		ret = my_emit_str_array (message->conn,
+					 dbus_message_get_path (message->message),
+					 array);
+		break;
+	}
 	}
 
 	TEST_EQ (ret, 0);
@@ -563,19 +673,22 @@ my_teardown (DBusConnection *conn)
 void
 test_method_marshal (void)
 {
-	DBusConnection *conn;
-	DBusMessage    *message, *reply;
-	DBusError       error;
-	const char     *input, *output;
-	dbus_unichar_t  byte_arg;
-	dbus_bool_t     boolean_arg;
-	dbus_int16_t    int16_arg;
-	dbus_uint16_t   uint16_arg;
-	dbus_int32_t    flags, int32_arg;
-	dbus_uint32_t   uint32_arg;
-	dbus_int64_t    int64_arg;
-	dbus_uint64_t   uint64_arg;
-	double          double_arg;
+	DBusConnection  *conn;
+	DBusMessage     *message, *reply;
+	DBusError        error;
+	const char      *input, *output;
+	dbus_unichar_t   byte_arg;
+	dbus_bool_t      boolean_arg;
+	dbus_int16_t     int16_arg;
+	dbus_uint16_t    uint16_arg;
+	dbus_int32_t     flags, int32_arg;
+	dbus_uint32_t    uint32_arg;
+	dbus_int64_t     int64_arg;
+	dbus_uint64_t    uint64_arg;
+	double           double_arg;
+	dbus_int32_t    *int32_array;
+	const char     **str_array;
+	size_t           array_len;
 
 	TEST_GROUP ("method marshalling");
 	dbus_error_init (&error);
@@ -1560,26 +1673,183 @@ test_method_marshal (void)
 	dbus_message_unref (message);
 
 	my_teardown (conn);
+
+
+	/* Check that an input argument of Array type with Int32 members
+	 * is marshalled correctly.
+	 */
+	TEST_FEATURE ("with Int32 Array input argument");
+	conn = my_setup ();
+
+	int32_array = nih_alloc (NULL, sizeof (int32_t) * 6);
+	int32_array[0] = 4;
+	int32_array[1] = 8;
+	int32_array[2] = 15;
+	int32_array[3] = 16;
+	int32_array[4] = 23;
+	int32_array[5] = 42;
+	array_len = 6;
+
+	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
+						"com.netsplit.Nih.Test",
+						"Int32ArrayToStr");
+	dbus_message_append_args (message,
+				  DBUS_TYPE_ARRAY, DBUS_TYPE_INT32,
+				  &int32_array, array_len,
+				  DBUS_TYPE_INVALID);
+
+	reply = dbus_connection_send_with_reply_and_block (conn, message,
+							   -1, &error);
+
+	TEST_NE_P (reply, NULL);
+	TEST_TRUE (dbus_message_get_args (reply, &error,
+					  DBUS_TYPE_STRING, &output,
+					  DBUS_TYPE_INVALID));
+
+	TEST_EQ_STR (output, "4 8 15 16 23 42");
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	my_teardown (conn);
+
+
+	/* Check that an output argument of Array type with Int32 elements
+	 * is dispatched correctly.
+	 */
+	TEST_FEATURE ("with Int32 Array output argument");
+	conn = my_setup ();
+
+	input = "4 8 15 16 23 42";
+	int32_array = NULL;
+
+	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
+						"com.netsplit.Nih.Test",
+						"StrToInt32Array");
+	dbus_message_append_args (message,
+				  DBUS_TYPE_STRING, &input,
+				  DBUS_TYPE_INVALID);
+
+	reply = dbus_connection_send_with_reply_and_block (conn, message,
+							   -1, &error);
+
+	TEST_NE_P (reply, NULL);
+	TEST_TRUE (dbus_message_get_args (reply, &error,
+					  DBUS_TYPE_ARRAY, DBUS_TYPE_INT32,
+					  &int32_array, &array_len,
+					  DBUS_TYPE_INVALID));
+
+	TEST_NE_P (int32_array, NULL);
+	TEST_EQ (array_len, 6);
+	TEST_EQ (int32_array[0], 4);
+	TEST_EQ (int32_array[1], 8);
+	TEST_EQ (int32_array[2], 15);
+	TEST_EQ (int32_array[3], 16);
+	TEST_EQ (int32_array[4], 23);
+	TEST_EQ (int32_array[5], 42);
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	my_teardown (conn);
+
+
+	/* Check that an input argument of Array type with String members
+	 * is marshalled correctly.
+	 */
+	TEST_FEATURE ("with String Array input argument");
+	conn = my_setup ();
+
+	str_array = nih_alloc (NULL, sizeof (int32_t) * 4);
+	str_array[0] = "this";
+	str_array[1] = "is";
+	str_array[2] = "a";
+	str_array[3] = "test";
+	array_len = 4;
+
+	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
+						"com.netsplit.Nih.Test",
+						"StrArrayToStr");
+	dbus_message_append_args (message,
+				  DBUS_TYPE_ARRAY, DBUS_TYPE_STRING,
+				  &str_array, array_len,
+				  DBUS_TYPE_INVALID);
+
+	reply = dbus_connection_send_with_reply_and_block (conn, message,
+							   -1, &error);
+
+	TEST_NE_P (reply, NULL);
+	TEST_TRUE (dbus_message_get_args (reply, &error,
+					  DBUS_TYPE_STRING, &output,
+					  DBUS_TYPE_INVALID));
+
+	TEST_EQ_STR (output, "this is a test");
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	my_teardown (conn);
+
+
+	/* Check that an output argument of Array type with String elements
+	 * is dispatched correctly.
+	 */
+	TEST_FEATURE ("with String Array output argument");
+	conn = my_setup ();
+
+	input = "this is a test";
+	str_array = NULL;
+
+	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
+						"com.netsplit.Nih.Test",
+						"StrToStrArray");
+	dbus_message_append_args (message,
+				  DBUS_TYPE_STRING, &input,
+				  DBUS_TYPE_INVALID);
+
+	reply = dbus_connection_send_with_reply_and_block (conn, message,
+							   -1, &error);
+
+	TEST_NE_P (reply, NULL);
+	TEST_TRUE (dbus_message_get_args (reply, &error,
+					  DBUS_TYPE_ARRAY, DBUS_TYPE_STRING,
+					  &str_array, &array_len,
+					  DBUS_TYPE_INVALID));
+
+	TEST_NE_P (str_array, NULL);
+	TEST_EQ (array_len, 4);
+	TEST_EQ_STR (str_array[0], "this");
+	TEST_EQ_STR (str_array[1], "is");
+	TEST_EQ_STR (str_array[2], "a");
+	TEST_EQ_STR (str_array[3], "test");
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	my_teardown (conn);
 }
 
 
 void
 test_signal_dispatch (void)
 {
-	DBusConnection *conn;
-	DBusMessage    *message, *reply;
-	DBusError       error;
-	dbus_int32_t    signum, flags;
-	const char     *str;
-	dbus_unichar_t  byte_arg;
-	dbus_bool_t     boolean_arg;
-	dbus_int16_t    int16_arg;
-	dbus_uint16_t   uint16_arg;
-	dbus_int32_t    int32_arg;
-	dbus_uint32_t   uint32_arg;
-	dbus_int64_t    int64_arg;
-	dbus_uint64_t   uint64_arg;
-	double          double_arg;
+	DBusConnection  *conn;
+	DBusMessage     *message, *reply;
+	DBusError        error;
+	dbus_int32_t     signum, flags;
+	const char      *str;
+	dbus_unichar_t   byte_arg;
+	dbus_bool_t      boolean_arg;
+	dbus_int16_t     int16_arg;
+	dbus_uint16_t    uint16_arg;
+	dbus_int32_t     int32_arg;
+	dbus_uint32_t    uint32_arg;
+	dbus_int64_t     int64_arg;
+	dbus_uint64_t    uint64_arg;
+	double           double_arg;
+	dbus_int32_t    *int32_array;
+	const char     **str_array;
+	size_t           array_len;
 
 	TEST_GROUP ("signal dispatching");
 	dbus_error_init (&error);
@@ -2116,6 +2386,104 @@ test_signal_dispatch (void)
 					  DBUS_TYPE_INVALID));
 
 	TEST_EQ_STR (str, "a{sv}");
+
+	dbus_message_unref (message);
+
+	my_teardown (conn);
+
+
+	/* Check that a signal with a Array argument and Int32 elements
+	 * can be emitted and that we can catch it as expected.
+	 */
+	TEST_FEATURE ("with Int32 Array argument");
+	conn = my_setup ();
+
+	signum = 13;
+	int32_array = NULL;
+	array_len = 0;
+
+	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
+						"com.netsplit.Nih.Glue",
+						"EmitSignal");
+
+	dbus_message_append_args (message,
+				  DBUS_TYPE_INT32, &signum,
+				  DBUS_TYPE_INVALID);
+
+	reply = dbus_connection_send_with_reply_and_block (conn, message,
+							   -1, &error);
+
+	TEST_NE_P (reply, NULL);
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	message = dbus_connection_pop_message (conn);
+
+	TEST_NE_P (message, NULL);
+	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
+					   "EmitInt32Array"));
+	TEST_TRUE (dbus_message_get_args (message, &error,
+					  DBUS_TYPE_ARRAY, DBUS_TYPE_INT32,
+					  &int32_array, &array_len,
+					  DBUS_TYPE_INVALID));
+
+	TEST_NE_P (int32_array, NULL);
+	TEST_EQ (int32_array[0], 4);
+	TEST_EQ (int32_array[1], 8);
+	TEST_EQ (int32_array[2], 15);
+	TEST_EQ (int32_array[3], 16);
+	TEST_EQ (int32_array[4], 23);
+	TEST_EQ (int32_array[5], 42);
+	TEST_EQ (array_len, 6);
+
+	dbus_message_unref (message);
+
+	my_teardown (conn);
+
+
+	/* Check that a signal with a Array argument and String elements
+	 * can be emitted and that we can catch it as expected.
+	 */
+	TEST_FEATURE ("with String Array argument");
+	conn = my_setup ();
+
+	signum = 14;
+	str_array = NULL;
+	array_len = 0;
+
+	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
+						"com.netsplit.Nih.Glue",
+						"EmitSignal");
+
+	dbus_message_append_args (message,
+				  DBUS_TYPE_INT32, &signum,
+				  DBUS_TYPE_INVALID);
+
+	reply = dbus_connection_send_with_reply_and_block (conn, message,
+							   -1, &error);
+
+	TEST_NE_P (reply, NULL);
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	message = dbus_connection_pop_message (conn);
+
+	TEST_NE_P (message, NULL);
+	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
+					   "EmitStrArray"));
+	TEST_TRUE (dbus_message_get_args (message, &error,
+					  DBUS_TYPE_ARRAY, DBUS_TYPE_STRING,
+					  &str_array, &array_len,
+					  DBUS_TYPE_INVALID));
+
+	TEST_NE_P (str_array, NULL);
+	TEST_EQ_STR (str_array[0], "this");
+	TEST_EQ_STR (str_array[1], "is");
+	TEST_EQ_STR (str_array[2], "a");
+	TEST_EQ_STR (str_array[3], "test");
+	TEST_EQ (array_len, 4);
 
 	dbus_message_unref (message);
 

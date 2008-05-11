@@ -1,3 +1,15 @@
+2008-05-11  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/nih_dbus_tool.py: Implement handling for arrays of simple C
+	types with an extra length variable, and handling for arrays of
+	pointer types with an extra NULL element
+	* nih/tests/com.netsplit.Nih.Test.xml: Add test methods with an
+	int32 and string array as input and output, and test signals
+	with both array types.
+	* nih/tests/test_com.netsplit.Nih.Test_object.c: Add tests for
+	the new methods and signals, testing the underlying automatic
+	generation.
+
 2008-05-10  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/string.c (nih_strncat, nih_strcat_vsprintf): Ok, there

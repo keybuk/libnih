@@ -93,6 +93,22 @@
       <arg name="input" type="s" direction="in" />
       <arg name="output" type="g" direction="out" />
     </method>
+    <method name="Int32ArrayToStr">
+      <arg name="input" type="ai" direction="in" />
+      <arg name="output" type="s" direction="out" />
+    </method> 
+    <method name="StrToInt32Array">
+      <arg name="input" type="s" direction="in" />
+      <arg name="output" type="ai" direction="out" />
+    </method> 
+    <method name="StrArrayToStr">
+      <arg name="input" type="as" direction="in" />
+      <arg name="output" type="s" direction="out" />
+    </method> 
+    <method name="StrToStrArray">
+      <arg name="input" type="s" direction="in" />
+      <arg name="output" type="as" direction="out" />
+    </method> 
 
     <signal name="TestSignal">
       <arg name="text" type="s" />
@@ -133,6 +149,12 @@
     </signal>
     <signal name="EmitSignature">
       <arg name="data" type="g" />
+    </signal>
+    <signal name="EmitInt32Array">
+      <arg name="data" type="ai" />
+    </signal>
+    <signal name="EmitStrArray">
+      <arg name="data" type="as" />
     </signal>
   </interface>
 

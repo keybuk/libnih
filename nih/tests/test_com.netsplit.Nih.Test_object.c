@@ -541,6 +541,8 @@ my_str_to_int32_array (void            *data,
 		(*array)[(*array_len)++] = i;
 	}
 
+	nih_free (parts);
+
 	return 0;
 }
 
@@ -2078,6 +2080,8 @@ test_method_marshal (void)
 	dbus_message_unref (reply);
 	dbus_message_unref (message);
 
+	nih_free (int32_array);
+
 	my_teardown (conn);
 
 
@@ -2155,6 +2159,8 @@ test_method_marshal (void)
 	dbus_message_unref (reply);
 	dbus_message_unref (message);
 
+	nih_free (str_array);
+
 	my_teardown (conn);
 
 
@@ -2189,6 +2195,8 @@ test_method_marshal (void)
 	TEST_EQ_STR (str_array[1], "is");
 	TEST_EQ_STR (str_array[2], "a");
 	TEST_EQ_STR (str_array[3], "test");
+
+	dbus_free_string_array ((char **)str_array);
 
 	dbus_message_unref (reply);
 	dbus_message_unref (message);
@@ -2851,6 +2859,8 @@ test_signal_dispatch (void)
 	TEST_EQ_STR (str_array[2], "a");
 	TEST_EQ_STR (str_array[3], "test");
 	TEST_EQ (array_len, 4);
+
+	dbus_free_string_array ((char **)str_array);
 
 	dbus_message_unref (message);
 

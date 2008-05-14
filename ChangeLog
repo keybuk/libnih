@@ -1,5 +1,11 @@
 2008-05-14  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_com.netsplit.Nih.Test_object.c (my_str_to_int32_array):
+	Forgot to clean up parts after splitting.
+	(test_method_marshal): Forgot to free self-allocated arrays, and
+	we have to free a string array returned by D-Bus as well.
+	(test_signal_dispatch): Another string array to be freed.
+
 	* nih/tests/test_dbus.c (test_object_message): Don't use timeouts
 	to guess when the reply should have arrived, just use a pending
 	call notify function.  This speeds the whole thing up a hundred

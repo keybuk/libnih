@@ -1240,6 +1240,87 @@ error:
 
 
 /**
+ * nih_dbus_message_destroy:
+ * @msg: message to be destroyed.
+ *
+ * Unreferences the attached D-Bus message.
+ *
+ * Returns : zero
+ **/
+static int
+nih_dbus_message_destroy (NihDBusMessage *msg)
+{
+	nih_assert (msg != NULL);
+
+	dbus_message_unref (msg->message);
+
+	return 0;
+}
+
+
+/**
+ * nih_dbus_message_error:
+ * @msg: message to reply to,
+ * @name: name of D-Bus error to reply with,
+ * @format: format string for human-readable message.
+ *
+ * Replies to an asynchronous D-Bus message @msg with the D-Bus error
+ * @name with a human-readable message parsed according to @format.
+ *
+ * As with the binding-generated reply functions, this is considered to
+ * complete @msg on success, so will free it.
+ *
+ * Returns: zero on success, negative value on insufficient memory.
+ **/
+int
+nih_dbus_message_error (NihDBusMessage *msg,
+			const char     *name,
+			const char     *format,
+			...)
+{
+	DBusMessage *message;
+	va_list      args;
+	char        *str;
+
+	nih_assert (msg != NULL);
+	nih_assert (name != NULL);
+	nih_assert (format != NULL);
+
+	/* Create the message string */
+	va_start (args, format);
+	str = nih_vsprintf (NULL, format, args);
+	va_end (args);
+
+	if (! str)
+		return -1;
+
+	/* And the reply */
+	message = dbus_message_new_error (msg->message, name, str);
+	if (! message) {
+		nih_free (str);
+		return -1;
+	}
+
+	/* Send the error back to the connection the original message
+	 * was received from.
+	 */
+	if (! dbus_connection_send (msg->conn, message, NULL)) {
+		dbus_message_unref (message);
+		nih_free (str);
+
+		return -1;
+	}
+
+	dbus_message_unref (message);
+	nih_free (str);
+
+	nih_free (msg);
+
+	return 0;
+}
+
+
+/**
  * nih_dbus_path:
  * @parent: parent block of allocation,
  * @root: root of path.
@@ -1327,23 +1408,4 @@ nih_dbus_path (const void *parent,
 	path[len] = '\0';
 
 	return path;
-}
-
-
-/**
- * nih_dbus_message_destroy:
- * @msg: message to be destroyed.
- *
- * Unreferences the attached D-Bus message.
- *
- * Returns : zero
- **/
-static int
-nih_dbus_message_destroy (NihDBusMessage *msg)
-{
-	nih_assert (msg != NULL);
-
-	dbus_message_unref (msg->message);
-
-	return 0;
 }

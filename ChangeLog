@@ -1,5 +1,13 @@
 2008-05-14  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/dbus.c (nih_dbus_message_error): Asynchronous messages need
+	a way to return an error message to the sender after the handler
+	function has terminated; this function fulfills that need
+	* nih/dbus.h: Add prototype.
+	* nih/tests/test_dbus.c (test_message_error): Add test case for
+	replying to an asynchronous message with an error; this ends up
+	somewhat evil since we're not using the bindings.
+
 	* nih/nih_dbus_tool.py: Use a namespaced attribute to specify
 	whether methods should be generated synchronous (reply generated
 	after handler returns) or asynchronous (handler expected to keep

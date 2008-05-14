@@ -284,6 +284,11 @@ NihDBusObject * nih_dbus_object_new         (const void *parent,
 					     void *data)
 	__attribute__ ((malloc));
 
+int             nih_dbus_message_error      (NihDBusMessage *msg,
+					     const char *name,
+					     const char *format, ...)
+	__attribute__ ((warn_unused_result));
+
 char *          nih_dbus_path               (const void *parent,
 					     const char *root, ...)
 	__attribute__ ((sentinel, warn_unused_result, malloc));

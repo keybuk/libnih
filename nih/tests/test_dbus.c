@@ -1693,6 +1693,147 @@ test_path (void)
 }
 
 
+static void
+my_return_error_cb (NihDBusMessage *message,
+		    NihTimer       *timer)
+{
+	int ret;
+
+	TEST_NE_P (message, NULL);
+	TEST_NOT_FREE (message);
+
+	ret = nih_dbus_message_error (message,
+				      "com.netsplit.Nih.Test.MyError",
+				      "this is a %s %d", "test", 1234);
+
+	TEST_EQ (ret, 0);
+
+	TEST_FREE (message);
+}
+
+static DBusHandlerResult
+my_return_error (NihDBusObject  *object,
+		 NihDBusMessage *message)
+{
+	NIH_MUST (nih_timer_add_timeout (NULL, 1,
+					 (NihTimerCb)my_return_error_cb,
+					 message));
+
+	TEST_FREE_TAG (message);
+
+	/* async */
+	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}
+
+static DBusConnection *server_conn = NULL;
+
+static int
+my_error_connect (DBusServer     *server,
+		  DBusConnection *conn)
+{
+	NihDBusObject *object;
+
+	const static NihDBusMethod com_netsplit_Nih_Glue_methods[] = {
+		{ "ReturnError", my_return_error, NULL },
+		{ NULL }
+	};
+	const static NihDBusInterface com_netsplit_Nih_Glue = {
+		"com.netsplit.Nih.Glue",
+		com_netsplit_Nih_Glue_methods, NULL, NULL
+	};
+	const static NihDBusInterface *my_interfaces[] = {
+		&com_netsplit_Nih_Glue,
+		NULL,
+	};
+
+	assert (server_conn == NULL);
+	server_conn = conn;
+
+	object = nih_dbus_object_new (NULL, conn, "/com/netsplit/Nih",
+				      my_interfaces, NULL);
+	assert (object != NULL);
+
+	return TRUE;
+}
+
+void
+test_message_error (void)
+{
+	DBusConnection *conn;
+	DBusMessage    *message, *reply;
+	DBusError       error;
+	pid_t           server_pid;
+	int             wait_fd = -1, status;
+
+	/* Check that an error returned outside the handler with the
+	 * nih_dbus_message_error() function is returned to the sender
+	 * with the right details.
+	 */
+	TEST_FUNCTION ("nih_dbus_message_error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		DBusServer *server;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test",
+					  my_error_connect, NULL);
+		assert (server != NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		if (server_conn) {
+			dbus_connection_close (server_conn);
+			dbus_connection_unref (server_conn);
+		}
+
+		dbus_server_disconnect (server);
+		dbus_server_unref (server);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+
+	dbus_error_init (&error);
+
+	conn = dbus_connection_open ("unix:abstract=/com/netsplit/nih/test",
+				     NULL);
+	assert (conn != NULL);
+
+
+	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
+						"com.netsplit.Nih.Glue",
+						"ReturnError");
+
+	reply = dbus_connection_send_with_reply_and_block (conn, message,
+							   -1, &error);
+
+	TEST_EQ_P (reply, NULL);
+	TEST_EQ_STR (error.name, "com.netsplit.Nih.Test.MyError");
+	TEST_EQ_STR (error.message, "this is a test 1234");
+
+	dbus_error_free (&error);
+
+	dbus_message_unref (message);
+
+
+	kill (server_pid, SIGTERM);
+
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
+	dbus_connection_unref (conn);
+
+	dbus_shutdown ();
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -1707,6 +1848,7 @@ main (int   argc,
 	test_object_destroy ();
 	test_object_unregister ();
 	test_object_message ();
+	test_message_error ();
 	test_path ();
 
 	return 0;

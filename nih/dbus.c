@@ -81,6 +81,7 @@ static DBusHandlerResult nih_dbus_object_message    (DBusConnection *conn,
 static DBusHandlerResult nih_dbus_object_introspect (DBusConnection *conn,
 						     DBusMessage *message,
 						     NihDBusObject *object);
+static int               nih_dbus_message_destroy   (NihDBusMessage *msg);
 
 
 /**
@@ -1017,6 +1018,10 @@ nih_dbus_object_message (DBusConnection *conn,
 				if (! msg)
 					return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
+				nih_alloc_set_destructor (
+					msg,
+					(NihDestructor)nih_dbus_message_destroy);
+
 				msg->conn = conn;
 				msg->message = message;
 
@@ -1024,7 +1029,11 @@ nih_dbus_object_message (DBusConnection *conn,
 
 				result = method->marshaller (object, msg);
 
-				dbus_message_unref (msg->message);
+				/* Async function, the handler will ensure
+				 * the message is replied to and freed.
+				 */
+				if (result == DBUS_HANDLER_RESULT_NOT_YET_HANDLED)
+					return DBUS_HANDLER_RESULT_HANDLED;
 
 				nih_free (msg);
 
@@ -1318,4 +1327,23 @@ nih_dbus_path (const void *parent,
 	path[len] = '\0';
 
 	return path;
+}
+
+
+/**
+ * nih_dbus_message_destroy:
+ * @msg: message to be destroyed.
+ *
+ * Unreferences the attached D-Bus message.
+ *
+ * Returns : zero
+ **/
+static int
+nih_dbus_message_destroy (NihDBusMessage *msg)
+{
+	nih_assert (msg != NULL);
+
+	dbus_message_unref (msg->message);
+
+	return 0;
 }

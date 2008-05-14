@@ -1,3 +1,12 @@
+2008-05-14  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/dbus.c (nih_dbus_object_message): Set a destructor for the
+	message that unreferences the attached D-Bus message when it
+	is freed, and don't unreference it ourselves.  Also allow the
+	handler to return "not yet handled" to mean that the method
+	has actually been handled, but the reply hasn't been sent yet.
+	(nih_dbus_message_destroy): Destructor for the message.
+
 2008-05-11  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/nih_dbus_tool.py: Implement handling for arrays of simple C

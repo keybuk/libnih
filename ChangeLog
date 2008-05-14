@@ -1,5 +1,16 @@
 2008-05-14  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/nih_dbus_tool.py: Use a namespaced attribute to specify
+	whether methods should be generated synchronous (reply generated
+	after handler returns) or asynchronous (handler expected to keep
+	the message object and call a reply function later).
+	* nih/tests/com.netsplit.Nih.Test.xml: Add a test asynchronous
+	method, the same basic method as the ordinary test method, but
+	which is specified to generate an asynchronous call.
+	* nih/tests/test_com.netsplit.Nih.Test_object.c: Add many tests
+	for async calls, in fact, we pretty much just duplicate the sync
+	tests but use a timer in the server to deliver the reply.
+
 	* nih/dbus.c (nih_dbus_object_message): Set a destructor for the
 	message that unreferences the attached D-Bus message when it
 	is freed, and don't unreference it ourselves.  Also allow the

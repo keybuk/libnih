@@ -38,6 +38,9 @@ extern_prefix = "dbus"
 # Conversion for external C names
 NAME_RE = re.compile(r'([a-z0-9])([A-Z])')
 
+# Namespace for our own tags and attributes
+XMLNS = "http://www.netsplit.com/nih/dbus"
+
 
 # arrays of arrays with length (ends up being an array of a struct)
 #  - instead of using self.type.c_type and name, we should iterate
@@ -737,13 +740,17 @@ class MemberWithArgs(Member):
         if name is None:
             raise AttributeError, "Name may not be null"
 
-        types = [ DBusType.fromElement(elem) for elem in elem.findall("arg") ]
+        types = [ DBusType.fromElement(e) for e in elem.findall("arg") ]
 
-        return cls(interface, name, types)
+        self = cls(interface, name, types)
+        self.style = elem.get(ElementTree.QName(XMLNS, "object"),
+                              self.style)
+        return self
 
     def __init__(self, interface, name, types):
         super(MemberWithArgs, self).__init__(interface, name)
 
+        self.style = "sync"
         self.types = types
 
     def argArray(self):
@@ -828,8 +835,9 @@ static DBusHandlerResult
                  ( "DBusMessage *", "reply = NULL" ) ]
         vars.extend(self.in_args.vars())
         vars.extend(self.in_args.locals())
-        vars.extend(self.out_args.vars())
-        vars.extend(self.out_args.locals())
+        if self.style != "async":
+            vars.extend(self.out_args.vars())
+            vars.extend(self.out_args.locals())
 
         code += indent(''.join("%s;\n" % var for var in lineup_vars(vars)), 1)
 
@@ -868,7 +876,8 @@ goto send;
         # Construct the function call
         args = [ "object->data", "message" ]
         args.extend(name for type, name in self.in_args.vars())
-        args.extend("&%s" % name for type, name in self.out_args.vars())
+        if self.style != "async":
+            args.extend("&%s" % name for type, name in self.out_args.vars())
 
         code += "\n"
         code += indent("""\
@@ -907,10 +916,14 @@ if (%s (%s) < 0) {
 }
 """ % (self.extern_name, ", ".join(args)), 1)
 
-        # Be well-behaved and make the function return immediately if no
-        # reply is expected
-        code += "\n"
-        code += indent("""\
+        if self.style == "async":
+            code += "\n"
+            code += indent("return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n", 1)
+        else:
+            # Be well-behaved and make the function return immediately
+            # if no reply is expected
+            code += "\n"
+            code += indent("""\
 /* If the sender doesn't care about a reply, don't bother wasting
  * effort constructing and sending one.
  */
@@ -918,9 +931,10 @@ if (dbus_message_get_no_reply (message->message))
 	return DBUS_HANDLER_RESULT_HANDLED;
 """, 1)
 
-        # Create reply and dispatch the local variables into output arguments
-        code += "\n"
-        code += indent("""\
+            # Create reply and dispatch the local variables into output
+            # arguments
+            code += "\n"
+            code += indent("""\
 /* Construct the reply message */
 reply = dbus_message_new_method_return (message->message);
 if (! reply)
@@ -928,13 +942,13 @@ if (! reply)
 
 dbus_message_iter_init_append (reply, &iter);
 """, 1)
-        code += "\n"
+            code += "\n"
 
-        mem_error = indent("""\
+            mem_error = indent("""\
 dbus_message_unref (reply);
 return DBUS_HANDLER_RESULT_NEED_MEMORY;
 """, 1)
-        code += indent(self.out_args.dispatch("iter", mem_error), 1)
+            code += indent(self.out_args.dispatch("iter", mem_error), 1)
 
         # Send the reply
         code += "\nsend:\n"
@@ -964,13 +978,106 @@ return DBUS_HANDLER_RESULT_HANDLED;
                  ("NihDBusMessage *", "message") ]
         vars.extend(self.in_args.vars())
 
-        for type, name in self.out_args.vars():
-            vars.append((pointerify(type), name))
+        if self.style != "async":
+            for type, name in self.out_args.vars():
+                vars.append((pointerify(type), name))
 
         return ( "extern int",
                  self.extern_name,
                  vars,
                  None )
+
+    def replyPrototype(self):
+        """Reply function prototype.
+
+        Returns a (retval, name, args, attributes) tuple for the prototype
+        of the reply function defined for async functions.
+        """
+        vars = [("NihDBusMessage *", "message") ]
+        vars.extend(self.out_args.vars())
+
+        return ( "int",
+                 "_".join([ self.extern_name, "reply" ]),
+                 vars,
+                 None )
+
+    def replyFunction(self):
+        """Reply function.
+
+        Returns a string containing a reply function that takes its
+        arguments and produces a D-Bus message reply.
+        """
+        name = "_".join([ self.extern_name, "reply" ])
+        vars = [ ( "NihDBusMessage *", "message" ) ]
+        vars.extend(self.out_args.vars())
+
+        code = "int\n%s (" % (name, )
+        code += (",\n" + " " * (len(name) + 2)).join(lineup_vars(vars))
+        code += ")\n{\n"
+
+        # Declare local variables for the iterator and the reply
+        vars = [ ( "DBusMessageIter", "iter" ),
+                 ( "DBusMessage *", "reply = NULL" ) ]
+        vars.extend(self.out_args.locals())
+
+        code += indent(''.join("%s;\n" % var for var in lineup_vars(vars)), 1)
+
+        # Pre-amble for the function
+        code += "\n"
+        code += indent("""\
+nih_assert (message != NULL);
+""", 1);
+
+        # Be well-behaved and don't actually send the reply if one is
+        # not expected
+        code += "\n"
+        code += indent("""\
+/* If the sender doesn't care about a reply, don't bother wasting
+ * effort constructing and sending one.
+ */
+if (dbus_message_get_no_reply (message->message)) {
+	nih_free (message);
+	return 0;
+}
+""", 1)
+
+        # Create reply and dispatch the local variables into output
+        # arguments
+        code += "\n"
+        code += indent("""\
+/* Construct the reply message */
+reply = dbus_message_new_method_return (message->message);
+if (! reply)
+	return -1;
+
+dbus_message_iter_init_append (reply, &iter);
+""", 1)
+        code += "\n"
+
+        mem_error = indent("""\
+dbus_message_unref (reply);
+return -1;
+""", 1)
+        code += indent(self.out_args.dispatch("iter", mem_error), 1)
+
+        # Send the reply
+        code += "\n"
+        code += indent("""\
+/* Send the reply, appending it to the outgoing queue. */
+if (! dbus_connection_send (message->conn, reply, NULL)) {
+	dbus_message_unref (reply);
+	return -1;
+}
+
+dbus_message_unref (reply);
+nih_free (message);
+
+return 0;
+""", 1)
+
+        code += "}\n"
+
+        return code
 
     def staticPrototypes(self):
         """Static prototypes.
@@ -1001,7 +1108,24 @@ return DBUS_HANDLER_RESULT_HANDLED;
 
         Each function is the code to define it, including any documentation.
         """
-        return [ self.marshalFunction() ]
+        functions = [ self.marshalFunction() ]
+        if self.style == "async":
+            functions.append(self.replyFunction())
+
+        return functions
+
+    def exportPrototypes(self):
+        """Function prototypes.
+
+        Returns an array of exported function prototypes which are normally
+        placed in a block inside the extern part of the header file.
+
+        Each prototype is a (retval, name, args, attributes) tuple.
+        """
+        if self.style == "async":
+            return [ self.replyPrototype() ]
+        else:
+            return []
 
 
 class Signal(MemberWithArgs):

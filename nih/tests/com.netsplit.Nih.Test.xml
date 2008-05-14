@@ -1,10 +1,17 @@
-<node name="/com/netsplit/Nih">
+<node name="/com/netsplit/Nih"
+      xmlns:nih="http://www.netsplit.com/nih/dbus">
   <interface name="com.netsplit.Nih.Test">
     <method name="TestMethod">
       <arg name="input" type="s" direction="in" />
       <arg name="flags" type="i" direction="in" />
       <arg name="output" type="s" direction="out" />
     </method>
+    <method name="TestAsyncMethod" nih:object="async">
+      <arg name="input" type="s" direction="in" />
+      <arg name="flags" type="i" direction="in" />
+      <arg name="output" type="s" direction="out" />
+    </method>
+
     <method name="ByteToStr">
       <arg name="input" type="y" direction="in" />
       <arg name="output" type="s" direction="out" />

@@ -10,11 +10,9 @@ dbus:
 - binding tool needs to generate dispatch functions for methods
   and marshal functions for signals (which should be filter functions, no
   generic marshaller for signals)
-- binding tool needs to generate async marshal and dispatch functions for
-  methods
-- no way to set no reply flag and auto start flags on dispatch?
+- how should we set no reply flag and auto start flags on dispatch?
+- should there always be an async option, or just when required?
 - binding tool needs to support structs
-- binding tool needs to support arrays
 - binding tool needs to at least acknowledge variants
 
 - rather than hard-coding the names of method and signal handler functions,
@@ -35,6 +33,7 @@ io:
 - nih_io_watcher() with write error and free called
 
 timers:
+- sub-second timer resolution (since select can do it)
 - calendar scheduled timers
 
 watch:

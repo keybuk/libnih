@@ -1,5 +1,10 @@
 2008-05-14  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_dbus.c (test_object_message): Don't use timeouts
+	to guess when the reply should have arrived, just use a pending
+	call notify function.  This speeds the whole thing up a hundred
+	fold and removes valgrind slowness issues.
+
 	* nih/dbus.c (nih_dbus_message_error): Asynchronous messages need
 	a way to return an error message to the sender after the handler
 	function has terminated; this function fulfills that need

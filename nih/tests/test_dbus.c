@@ -964,6 +964,13 @@ test_object_unregister (void)
 }
 
 
+static void
+pending_call_complete (DBusPendingCall *pending,
+		       void            *data)
+{
+	nih_main_loop_exit (0);
+}
+
 void
 test_object_message (void)
 {
@@ -1086,9 +1093,9 @@ test_object_message (void)
 			assert (dbus_connection_send_with_reply (
 					conn, message,
 					&pending, -1));
-			assert (nih_timer_add_timeout (
-					NULL, 1,
-					(NihTimerCb)nih_main_term_signal, NULL));
+			assert (dbus_pending_call_set_notify (
+					pending, pending_call_complete,
+					NULL, NULL));
 		}
 
 		dbus_message_unref (message);
@@ -1134,9 +1141,9 @@ test_object_message (void)
 			assert (dbus_connection_send_with_reply (
 					conn, message,
 					&pending, -1));
-			assert (nih_timer_add_timeout (
-					NULL, 1,
-					(NihTimerCb)nih_main_term_signal, NULL));
+			assert (dbus_pending_call_set_notify (
+					pending, pending_call_complete,
+					NULL, NULL));
 		}
 
 		dbus_message_unref (message);
@@ -1182,9 +1189,9 @@ test_object_message (void)
 			assert (dbus_connection_send_with_reply (
 					conn, message,
 					&pending, -1));
-			assert (nih_timer_add_timeout (
-					NULL, 1,
-					(NihTimerCb)nih_main_term_signal, NULL));
+			assert (dbus_pending_call_set_notify (
+					pending, pending_call_complete,
+					NULL, NULL));
 		}
 
 		dbus_message_unref (message);
@@ -1230,9 +1237,9 @@ test_object_message (void)
 			assert (dbus_connection_send_with_reply (
 					conn, message,
 					&pending, -1));
-			assert (nih_timer_add_timeout (
-					NULL, 1,
-					(NihTimerCb)nih_main_term_signal, NULL));
+			assert (dbus_pending_call_set_notify (
+					pending, pending_call_complete,
+					NULL, NULL));
 		}
 
 		dbus_message_unref (message);
@@ -1274,9 +1281,9 @@ test_object_message (void)
 			assert (dbus_connection_send_with_reply (
 					conn, message,
 					&pending, -1));
-			assert (nih_timer_add_timeout (
-					NULL, 1,
-					(NihTimerCb)nih_main_term_signal, NULL));
+			assert (dbus_pending_call_set_notify (
+					pending, pending_call_complete,
+					NULL, NULL));
 		}
 
 		dbus_message_unref (message);
@@ -1430,9 +1437,9 @@ test_object_message (void)
 			assert (dbus_connection_send_with_reply (
 					conn, message,
 					&pending, -1));
-			assert (nih_timer_add_timeout (
-					NULL, 1,
-					(NihTimerCb)nih_main_term_signal, NULL));
+			assert (dbus_pending_call_set_notify (
+					pending, pending_call_complete,
+					NULL, NULL));
 		}
 
 		dbus_message_unref (message);
@@ -1501,9 +1508,9 @@ test_object_message (void)
 			assert (dbus_connection_send_with_reply (
 					conn, message,
 					&pending, -1));
-			assert (nih_timer_add_timeout (
-					NULL, 1,
-					(NihTimerCb)nih_main_term_signal, NULL));
+			assert (dbus_pending_call_set_notify (
+					pending, pending_call_complete,
+					NULL, NULL));
 		}
 
 		dbus_message_unref (message);

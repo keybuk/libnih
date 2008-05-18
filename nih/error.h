@@ -22,6 +22,9 @@
 
 #include <nih/macros.h>
 
+#include <errno.h>
+#include <string.h>
+
 
 /**
  * NihError:
@@ -75,6 +78,20 @@ typedef struct nih_error_info {
 #define nih_return_system_error(retval) \
 	do { nih_error_raise_system (); return retval; } while (0)
 
+/**
+ * nih_return_no_memory_error:
+ * @retval: return value for function.
+ *
+ * Raises an ENOMEM system error, if an unhandled error already exists then
+ * an error message is emitted through the logging system; you should try
+ * to avoid this.
+ *
+ * Will return from the current function with @retval, which may be left
+ * empty to return from a void function.
+ **/
+#define nih_return_no_memory_error(retval) \
+	do { nih_error_raise (ENOMEM, strerror (ENOMEM));	\
+	     return retval; } while (0)
 
 
 /* Force a true value, checking for ENOMEM on a false one */

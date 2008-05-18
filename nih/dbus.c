@@ -232,11 +232,9 @@ nih_dbus_connect (const char               *address,
 	}
 
 	if (nih_dbus_setup (conn, disconnect_handler) < 0) {
-		errno = ENOMEM;
-		nih_error_raise_system ();
-
 		dbus_connection_unref (conn);
-		return NULL;
+
+		nih_return_no_memory_error (NULL);
 	}
 
 	return conn;
@@ -285,11 +283,9 @@ nih_dbus_bus (DBusBusType              bus,
 	dbus_connection_set_exit_on_disconnect (conn, FALSE);
 
 	if (nih_dbus_setup (conn, disconnect_handler) < 0) {
-		errno = ENOMEM;
-		nih_error_raise_system ();
-
 		dbus_connection_unref (conn);
-		return NULL;
+
+		nih_return_no_memory_error (NULL);
 	}
 
 	return conn;
@@ -465,11 +461,9 @@ nih_dbus_server (const char               *address,
 	return server;
 
 error:
-	errno = ENOMEM;
-	nih_error_raise_system ();
-
 	dbus_server_unref (server);
-	return NULL;
+
+	nih_return_no_memory_error (NULL);
 }
 
 

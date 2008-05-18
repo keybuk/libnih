@@ -1,3 +1,14 @@
+2008-05-18  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/error.h (nih_return_no_memory_error): Add a convenience macro
+	for raising the ENOMEM system error with the right string, rather
+	than setting errno just do it directly.
+	* nih/tests/test_error.c (test_return_no_memory_error): Make sure
+	the macro is tested.
+	* nih/dbus.c (nih_dbus_connect, nih_dbus_bus, nih_dbus_server):
+	Use new macro to return ENOMEM when we're not sure that it's the
+	current errno.
+
 2008-05-14  Scott James Remnant  <scott@netsplit.com>
 
 	* TODO: Update.

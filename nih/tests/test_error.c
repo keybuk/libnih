@@ -228,6 +228,40 @@ test_return_system_error (void)
 	nih_error_pop_context ();
 }
 
+static int
+call_return_no_memory_error (int ret)
+{
+	nih_return_no_memory_error (ret);
+}
+
+void
+test_return_no_memory_error (void)
+{
+	NihError *error;
+	int       ret;
+
+	/* Check that the macro to raise an ENOMEM error return from a
+	 * function does just that without modifying errno.
+	 */
+	TEST_FUNCTION ("nih_return_no_memory_error");
+	nih_error_push_context ();
+	TEST_ALLOC_FAIL {
+		errno = ENOENT;
+		ret = call_return_no_memory_error (-1);
+		error = nih_error_get ();
+
+		TEST_EQ (ret, -1);
+		TEST_EQ (error->number, ENOMEM);
+		TEST_EQ_STR (error->message, strerror (ENOMEM));
+
+		if (! test_alloc_failed)
+			TEST_EQ (errno, ENOENT);
+
+		nih_free (error);
+	}
+	nih_error_pop_context ();
+}
+
 
 void
 test_push_context (void)
@@ -309,6 +343,7 @@ main (int   argc,
 	test_raise_again ();
 	test_return_error ();
 	test_return_system_error ();
+	test_return_no_memory_error ();
 	test_push_context ();
 	test_pop_context ();
 

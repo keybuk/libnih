@@ -1,3 +1,7 @@
+2008-05-24  Scott James Remnant  <scott@netsplit.com>
+
+	* HACKING: Changed branch location again.
+
 2008-05-18  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/error.h (nih_return_no_memory_error): Add a convenience macro

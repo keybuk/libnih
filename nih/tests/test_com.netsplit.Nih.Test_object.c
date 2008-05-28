@@ -666,7 +666,7 @@ my_emit_signal (void           *data,
 		break;
 	}
 	case 14: {
-		const char *array[] = { "this", "is", "a", "test", NULL };
+		char *array[] = { "this", "is", "a", "test", NULL };
 
 		ret = my_emit_str_array (message->conn,
 					 dbus_message_get_path (message->message),

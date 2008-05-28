@@ -243,7 +243,7 @@ class DBusStringType(DBusBasicType):
     into a variable, the code to dispatch from a variable back into a
     DBusMessage and the same basic C type.
     """
-    c_type    = "const char *"
+    c_type    = "char *"
 
 
 class DBusByte(DBusBasicType):
@@ -875,9 +875,9 @@ goto send;
 
         # Construct the function call
         args = [ "object->data", "message" ]
-        args.extend(name for type, name in self.in_args.vars())
+        args.extend(n for t, n in self.in_args.vars())
         if self.style != "async":
-            args.extend("&%s" % name for type, name in self.out_args.vars())
+            args.extend("&%s" % n for t, n in self.out_args.vars())
 
         code += "\n"
         code += indent("""\
@@ -976,7 +976,8 @@ return DBUS_HANDLER_RESULT_HANDLED;
         """
         vars = [ ("void *", "data"),
                  ("NihDBusMessage *", "message") ]
-        vars.extend(self.in_args.vars())
+        for type, name in self.in_args.vars():
+            vars.append((constify(type), name))
 
         if self.style != "async":
             for type, name in self.out_args.vars():
@@ -994,7 +995,8 @@ return DBUS_HANDLER_RESULT_HANDLED;
         of the reply function defined for async functions.
         """
         vars = [("NihDBusMessage *", "message") ]
-        vars.extend(self.out_args.vars())
+        for type, name in self.out_args.vars():
+            vars.append((constify(type), name))
 
         return ( "int",
                  "_".join([ self.extern_name, "reply" ]),
@@ -1009,7 +1011,8 @@ return DBUS_HANDLER_RESULT_HANDLED;
         """
         name = "_".join([ self.extern_name, "reply" ])
         vars = [ ( "NihDBusMessage *", "message" ) ]
-        vars.extend(self.out_args.vars())
+        for var_type, var_name in self.out_args.vars():
+            vars.append((constify(var_type), var_name))
 
         code = "int\n%s (" % (name, )
         code += (",\n" + " " * (len(name) + 2)).join(lineup_vars(vars))
@@ -1131,6 +1134,10 @@ return 0;
 class Signal(MemberWithArgs):
     def __init__(self, interface, name, types):
         super(Signal, self).__init__(interface, name, types)
+
+        # Turn arguments into their const equivalent
+        for type in types:
+            type.c_type = constify(type.c_type)
 
         self.args = DBusGroup(types)
 
@@ -1815,6 +1822,19 @@ def pointerify(type):
         return type + "*"
     else:
         return type + " *"
+
+def constify(type):
+    """Type C pointer type into a const pointer.
+
+    Returns the string modified so that the pointer is a const pointer.
+    """
+    if not type.endswith("*"):
+        return type
+
+    if type[:-1].endswith("*"):
+        return type[:-1] + " const *"
+    else:
+        return "const " + type
 
 
 def main():

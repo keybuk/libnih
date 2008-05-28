@@ -1,3 +1,12 @@
+2008-05-28  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/nih_dbus_tool.py: The C type of string-like types should be
+	just "char *"; instead we should add "const" when needed, such as
+	in the prototype of handlers and in reply functions.  This avoids
+	some const-bending games.
+	* nih/tests/test_com.netsplit.Nih.Test_object.c (my_emit_signal):
+	Adjust type of string array to match.
+
 2008-05-24  Scott James Remnant  <scott@netsplit.com>
 
 	* HACKING: Changed branch location again.

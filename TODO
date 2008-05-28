@@ -25,6 +25,7 @@ main:
   watch, signal, child, timer, etc. just add main loop structs that
   have a select() and handle() function - we'd then just have one per
   timer, etc.
+- we could do that using signalfd() and timerfd_*()
 
 io:
 - there's a couple of tricky tests left to do:
@@ -34,6 +35,7 @@ io:
 
 timers:
 - sub-second timer resolution (since select can do it)
+- monotonic and realtime (using timerfd?)
 - calendar scheduled timers
 
 watch:

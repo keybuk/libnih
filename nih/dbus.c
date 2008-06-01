@@ -1012,14 +1012,15 @@ nih_dbus_object_message (DBusConnection *conn,
 				if (! msg)
 					return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
+				msg->conn = conn;
+				dbus_connection_ref (msg->conn);
+
+				msg->message = message;
+				dbus_message_ref (msg->message);
+
 				nih_alloc_set_destructor (
 					msg,
 					(NihDestructor)nih_dbus_message_destroy);
-
-				msg->conn = conn;
-				msg->message = message;
-
-				dbus_message_ref (msg->message);
 
 				result = method->marshaller (object, msg);
 
@@ -1247,6 +1248,7 @@ nih_dbus_message_destroy (NihDBusMessage *msg)
 	nih_assert (msg != NULL);
 
 	dbus_message_unref (msg->message);
+	dbus_connection_unref (msg->conn);
 
 	return 0;
 }

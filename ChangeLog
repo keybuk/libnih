@@ -1,3 +1,13 @@
+2008-06-01  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/dbus.c (nih_dbus_object_message): Keep a reference on the
+	connection, as well as the message; otherwise if the connection is
+	disconnected while handling a async method, we'll end up trying to
+	send it to a freed connection instead of just a disconnected and
+	forgotten one.
+	(nih_dbus_message_destroy): Unreference the connection when freeing
+	the message object.
+
 2008-05-28  Scott James Remnant  <scott@netsplit.com>
 
 	* TODO (main, timers): Update.

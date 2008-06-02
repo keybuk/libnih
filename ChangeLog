@@ -1,5 +1,8 @@
 2008-06-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/test.h (TEST_DBUS, TEST_DBUS_END): Macros to set up a
+	temporary D-Bus session bus for testing purposes.
+
 	* nih/tests/test_dbus.c (test_object_new, test_object_destroy)
 	(test_object_unregister): Use the system bus for testing, since
 	there may be no session bus.

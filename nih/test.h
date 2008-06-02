@@ -905,7 +905,7 @@ _test_destructor (void *tag)
 		assert0 (pipe (_test_fds));				\
 		assert ((_pid = fork ()) >= 0);				\
 		if (_pid > 0) {						\
-			char _test_address[128];			\
+			char _test_address[128] = { 0 };		\
 			close (_test_fds[1]);				\
 			assert (read (_test_fds[0], _test_address,	\
 				      sizeof (_test_address)) > 0);	\

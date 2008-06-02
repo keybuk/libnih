@@ -1,5 +1,8 @@
 2008-06-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/test.h (TEST_DBUS): Initialise _test_address to zeros so
+	valgrind shuts up.
+
 	* nih/test.h (TEST_DBUS, TEST_DBUS_END): Macros to set up a
 	temporary D-Bus session bus for testing purposes.
 

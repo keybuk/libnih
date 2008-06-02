@@ -867,7 +867,7 @@ test_object_new (void)
 	 * the connection at the right path.
 	 */
 	TEST_FUNCTION ("nih_dbus_object_new");
-	conn = dbus_bus_get (DBUS_BUS_SESSION, NULL);
+	conn = dbus_bus_get (DBUS_BUS_SYSTEM, NULL);
 	assert (conn != NULL);
 
 	dbus_connection_set_exit_on_disconnect (conn, FALSE);
@@ -917,7 +917,7 @@ test_object_destroy (void)
 	 * bus when it is destroyed.
 	 */
 	TEST_FUNCTION ("nih_dbus_object_destroy");
-	conn = dbus_bus_get (DBUS_BUS_SESSION, NULL);
+	conn = dbus_bus_get (DBUS_BUS_SYSTEM, NULL);
 	assert (conn != NULL);
 
 	dbus_connection_set_exit_on_disconnect (conn, FALSE);
@@ -950,7 +950,7 @@ test_object_unregister (void)
 	 * D-Bus objects go as well.
 	 */
 	TEST_FUNCTION ("nih_dbus_object_unregister");
-	conn = dbus_bus_get (DBUS_BUS_SESSION, NULL);
+	conn = dbus_bus_get (DBUS_BUS_SYSTEM, NULL);
 	assert (conn != NULL);
 
 	dbus_connection_set_exit_on_disconnect (conn, FALSE);

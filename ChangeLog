@@ -1,5 +1,9 @@
 2008-06-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_dbus.c (test_object_new, test_object_destroy)
+	(test_object_unregister): Use the system bus for testing, since
+	there may be no session bus.
+
 	* nih/tests/test_dbus.c (test_bus): We get an error when the
 	session bus is not available, so we should eat that before skipping.
 

@@ -370,6 +370,11 @@ test_bus (void)
 	TEST_FEATURE ("with session bus");
 	conn = nih_dbus_bus (DBUS_BUS_SESSION, my_disconnect_handler);
 	if (! conn) {
+		NihError *err;
+
+		err = nih_error_get ();
+		nih_free (err);
+
 		printf ("SKIP: session bus not available\n");
 		goto system_bus;
 	}

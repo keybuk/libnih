@@ -1,3 +1,8 @@
+2008-06-02  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/tests/test_dbus.c (test_bus): We get an error when the
+	session bus is not available, so we should eat that before skipping.
+
 2008-06-01  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/dbus.c (nih_dbus_object_message): Keep a reference on the

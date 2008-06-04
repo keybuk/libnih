@@ -2131,7 +2131,7 @@ test_method_marshal (void)
 	TEST_FEATURE ("with String Array input argument");
 	conn = my_setup ();
 
-	str_array = nih_alloc (NULL, sizeof (int32_t) * 4);
+	str_array = nih_alloc (NULL, sizeof (char *) * 4);
 	str_array[0] = "this";
 	str_array[1] = "is";
 	str_array[2] = "a";

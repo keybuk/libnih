@@ -1,3 +1,9 @@
+2008-06-04  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/tests/test_com.netsplit.Nih.Test_object.c (test_method_marshal):
+	Why would I be allocating a string array using sizeof (int32_t),
+	fix C&P error to make amd64 happy again.
+
 2008-06-02  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/test.h (TEST_DBUS): Initialise _test_address to zeros so

@@ -808,6 +808,32 @@ test_array_copy (void)
 	}
 
 	nih_free (args);
+
+
+	/* Check that we can make a copy of an array with a single NULL
+	 * element and have the same returned.
+	 */
+	TEST_FEATURE ("with zero-length array");
+	NIH_MUST (args = nih_str_array_new (NULL));
+
+	TEST_ALLOC_FAIL {
+		len = 0;
+		array = nih_str_array_copy (NULL, &len, args);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_NE_P (array, NULL);
+
+		TEST_EQ (len, 0);
+		TEST_EQ_P (array[0], NULL);
+
+		nih_free (array);
+	}
+
+	nih_free (args);
 }
 
 void

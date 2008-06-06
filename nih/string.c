@@ -600,12 +600,18 @@ nih_str_array_copy (const void   *parent,
 		    size_t       *len,
 		    char * const *array)
 {
-	char **new_array = NULL;
+	char **new_array;
 
 	nih_assert (array != NULL);
 
-	if (! nih_str_array_append (&new_array, parent, len, array))
+	new_array = nih_str_array_new (parent);
+	if (! new_array)
 		return NULL;
+
+	if (! nih_str_array_append (&new_array, parent, len, array)) {
+		nih_free (new_array);
+		return NULL;
+	}
 
 	return new_array;
 }

@@ -1,5 +1,10 @@
 2008-06-06  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/test.h (TEST_DBUS, TEST_DBUS_OPEN, TEST_DBUS_MESSAGE)
+	(TEST_DBUS_CLOSE, TEST_DBUS_END): Various useful macros to set up,
+	connect to, pop messages from, close and kill D-Bus connections to
+	a private bus daemon.
+
 	* nih/tests/test_string.c (test_array_copy): Add a test case for a
 	zero-length array, which we need to be able to support.
 	* nih/string.c (nih_str_array_copy): Fix it by always creating a

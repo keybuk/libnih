@@ -892,7 +892,8 @@ _test_destructor (void *tag)
  *
  * Spawns a D-Bus bus daemon which may be used for testing purposes.  You
  * may create connections to the daemon with either the system bus or session
- * bus addresses, which will both contain its address.
+ * bus addresses, which will both contain its address; alternatively use
+ * TEST_DBUS_OPEN() to establish a connection.
  *
  * The pid of the daemon process is stored in @_pid.
  *
@@ -921,10 +922,61 @@ _test_destructor (void *tag)
 		} else if (_pid == 0) {					\
 			close (_test_fds[0]);				\
 			assert (dup2 (_test_fds[1], STDOUT_FILENO) >= 0); \
-			assert0 (execlp ("dbus-daemon", "dbus-daemon",	\
+			assert0 (execlp ("dbus-daemon", "test_dbus-daemon",	\
 					 "--session", "--print-address", NULL)); \
 			exit (255);					\
 		}							\
+	} while (0)
+
+/**
+ * TEST_DBUS_OPEN:
+ * @_conn: variable to store connection in.
+ *
+ * Creates a new connection to the temporary D-Bus server, ensuring that
+ * it won't exit on disconnect and removing the NameAcquired signal from
+ * the incoming queue.
+ *
+ * The connection may be closed again using TEST_DBUS_CLOSE().
+ **/
+#define TEST_DBUS_OPEN(_conn)						\
+	do {								\
+		DBusMessage *_test_message;				\
+									\
+		assert ((_conn = dbus_bus_get_private (DBUS_BUS_SYSTEM, NULL)) != NULL); \
+		dbus_connection_set_exit_on_disconnect (_conn, FALSE);	\
+									\
+		while (! (_test_message = dbus_connection_pop_message (_conn))) \
+			dbus_connection_read_write (_conn, -1);		\
+									\
+		assert (dbus_message_is_signal (			\
+				_test_message, DBUS_INTERFACE_DBUS,	\
+				"NameAcquired"));			\
+									\
+		dbus_message_unref (_test_message);			\
+	} while (0)
+
+/**
+ * TEST_DBUS_MESSAGE:
+ * @_conn: connection,
+ * @_message: variable to store message in.
+ *
+ * Waits for a single message to arrive and pops it from the incoming queue,
+ * placing it in @_message.
+ **/
+#define TEST_DBUS_MESSAGE(_conn, _message)			   \
+	while (! (_message = dbus_connection_pop_message (_conn))) \
+		dbus_connection_read_write (_conn, -1);
+
+/**
+ * TEST_DBUS_CLOSE:
+ * @_conn: connection to close.
+ *
+ * Closes the connection opened with TEST_DBUS_OPEN().
+ **/
+#define TEST_DBUS_CLOSE(_conn)			\
+	do {					\
+		dbus_connection_close (_conn);	\
+		dbus_connection_unref (_conn);	\
 	} while (0)
 
 /**

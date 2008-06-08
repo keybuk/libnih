@@ -234,6 +234,8 @@ BUILT_SOURCES = \
 	tests/com.netsplit.Nih.Test_object.c \
 	tests/com.netsplit.Nih.Test_object.h
 
+EXTRA_DIST += tests/com.netsplit.Nih.Test.xml
+
 tests/com.netsplit.Nih.Test_object.c tests/com.netsplit.Nih.Test_object.h: \
 		tests/com.netsplit.Nih.Test.xml nih-dbus-tool
 	$(builddir)/nih-dbus-tool --mode=object --prefix=my --output=$@ $<

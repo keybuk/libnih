@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 
 #include <fcntl.h>
+#include <stdio.h>
 #include <dirent.h>
 #include <stdlib.h>
 #include <string.h>
@@ -73,6 +74,72 @@ static int    nih_dir_walk_visit (const char *dirname, NihList *dirs,
 
 
 /**
+ * nih_file_read:
+ * @parent: parent block of allocation,
+ * @path: path to read,
+ * @length: pointer to store file length in.
+ *
+ * Opens the file at @path and reads the contents into memory, returning
+ * a newly allocated block.  If the file is particularly large, it may
+ * not be possible to read into memory at all, and you'll need to use
+ * nih_file_map() instead.
+ *
+ * The returned data will NOT be NULL terminated.
+ *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned block will be freed too.
+ *
+ * Returns: newly allocated block or NULL if insufficient memory.
+ **/
+char *
+nih_file_read (const void *parent,
+	       const char *path,
+	       size_t     *length)
+{
+	struct stat  statbuf;
+	FILE        *fp;
+	char        *file = NULL;
+
+	nih_assert (path != NULL);
+	nih_assert (length != NULL);
+
+	fp = fopen (path, "r");
+	if (! fp)
+		goto error;
+
+	if (fstat (fileno (fp), &statbuf) < 0)
+		goto error;
+
+	if (statbuf.st_size > SIZE_MAX) {
+		errno = EFBIG;
+		goto error;
+	}
+
+	*length = statbuf.st_size;
+
+	file = nih_alloc (parent, statbuf.st_size);
+	if (! file)
+		goto error;
+
+	if (fread (file, 1, statbuf.st_size, fp) != statbuf.st_size) {
+		errno = EILSEQ;
+		goto error;
+	}
+
+	fclose (fp);
+	return file;
+error:
+	nih_error_raise_system ();
+	if (file)
+		nih_free (file);
+	if (fp)
+		fclose (fp);
+
+	return NULL;
+}
+
+/**
  * nih_file_map:
  * @path: path to open,
  * @flags: open mode,
@@ -112,7 +179,7 @@ nih_file_map (const char *path,
 
 	if (statbuf.st_size > SIZE_MAX) {
 		errno = EFBIG;
-		nih_return_system_error (NULL);
+		goto error;
 	}
 
 	*length = statbuf.st_size;

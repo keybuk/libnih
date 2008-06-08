@@ -79,6 +79,10 @@ typedef int (*NihFileErrorHandler) (void *data, const char *dirname,
 
 NIH_BEGIN_EXTERN
 
+char *nih_file_read         (const void *parent, const char *path,
+			     size_t *length)
+	__attribute__ ((malloc, warn_unused_result));
+
 void *nih_file_map          (const char *path, int flags, size_t *length)
 	__attribute__ ((warn_unused_result));
 int   nih_file_unmap        (void *map, size_t length);

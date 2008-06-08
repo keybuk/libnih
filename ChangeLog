@@ -1,3 +1,11 @@
+2008-06-08  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/file.c (nih_file_read): Implement a simpler function for reading
+	a file into memory that does literally just that, better than map
+	for various reasons.
+	* nih/file.h: Add prototype.
+	* nih/tests/test_file.c (test_read): Test it works.
+
 2008-06-06  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/test.h (TEST_DBUS, TEST_DBUS_OPEN, TEST_DBUS_MESSAGE)

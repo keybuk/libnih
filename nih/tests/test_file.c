@@ -42,6 +42,69 @@
 
 
 void
+test_read (void)
+{
+	FILE     *fd;
+	char      filename[PATH_MAX], *file;
+	size_t    length;
+	NihError *err;
+
+	TEST_FUNCTION ("nih_file_read");
+	nih_error_init ();
+
+
+	/* Check that we can read a file into memory, and that the memory
+	 * contents match the file.
+	 */
+	TEST_FEATURE ("with existing file");
+	TEST_FILENAME (filename);
+
+	fd = fopen (filename, "w");
+	fprintf (fd, "test\n");
+	fclose (fd);
+
+	TEST_ALLOC_FAIL {
+		length = 0;
+		file = nih_file_read (NULL, filename, &length);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (file, NULL);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (file, 5);
+
+		TEST_NE_P (file, NULL);
+		TEST_EQ (length, 5);
+		TEST_EQ_MEM (file, "test\n", 5);
+
+		nih_free (file);
+	}
+
+	unlink (filename);
+
+
+	/* Check that if we try and read a non-existant file, we get an
+	 * error raised.
+	 */
+	TEST_FEATURE ("with non-existant file");
+	length = 0;
+	file = nih_file_read (NULL, filename, &length);
+
+	TEST_EQ_P (file, NULL);
+
+	err = nih_error_get ();
+	TEST_EQ (err->number, ENOENT);
+	nih_free (err);
+}
+
+
+void
 test_map (void)
 {
 	FILE     *fd;
@@ -1327,6 +1390,7 @@ int
 main (int   argc,
       char *argv[])
 {
+	test_read ();
 	test_map ();
 	test_unmap ();
 	test_is_hidden ();

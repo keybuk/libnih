@@ -863,7 +863,7 @@ return DBUS_HANDLER_RESULT_NEED_MEMORY;
 """, 1)
         type_error = indent("""\
 reply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,
-				"Invalid arguments to %s method");
+				_("Invalid arguments to %s method"));
 if (! reply) {
 %s
 }

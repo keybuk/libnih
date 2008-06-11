@@ -1,5 +1,8 @@
 2008-06-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/nih_dbus_tool.py (Method.marshalFunction): Allow the message
+	for the invalid args/type message to be translated.
+
 	* nih/tests/test_child.c (test_poll): We end up creating a core file,
 	so unlink it.
 

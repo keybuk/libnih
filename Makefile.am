@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = m4 po intl nih
+SUBDIRS = m4 intl nih po
 
 EXTRA_DIST = HACKING
 

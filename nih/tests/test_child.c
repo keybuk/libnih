@@ -254,8 +254,10 @@ test_poll (void)
 	 * the limit doesn't help, since we might be under gdb and that
 	 * never lets us dump core.
 	 */
-	if (last_event != NIH_CHILD_KILLED)
+	if (last_event != NIH_CHILD_KILLED) {
 		TEST_EQ (last_event, NIH_CHILD_DUMPED);
+		unlink ("core");
+	}
 	TEST_EQ (last_status, SIGABRT);
 	TEST_FREE (watch);
 

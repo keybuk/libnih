@@ -1,5 +1,8 @@
 2008-06-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_child.c (test_poll): We end up creating a core file,
+	so unlink it.
+
 	* nih/Makefile.am (tests/com.netsplit.Nih.Test_object.c tests/com.netsplit.Nih.Test_object.h):
 	Create the tests directory.
 

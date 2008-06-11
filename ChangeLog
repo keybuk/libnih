@@ -1,3 +1,8 @@
+2008-06-11  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/Makefile.am (tests/com.netsplit.Nih.Test_object.c tests/com.netsplit.Nih.Test_object.h):
+	Create the tests directory.
+
 2008-06-08  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/Makefile.am (EXTRA_DIST): Forgot to distribute the test XML

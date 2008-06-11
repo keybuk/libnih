@@ -20,3 +20,6 @@ nih/watch.c
 nih/errors.h
 
 nih/dbus.c
+
+# More to test the build system than anything else
+nih/tests/com.netsplit.Nih.Test_object.c

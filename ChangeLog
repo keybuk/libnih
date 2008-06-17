@@ -14,6 +14,9 @@
 
 2008-06-08  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/Makefile.am (tests/com.netsplit.Nih.Test_object.c tests/com.netsplit.Nih.Test_object.h):
+	Make the tests directory in the output.
+
 	* nih/Makefile.am (EXTRA_DIST): Forgot to distribute the test XML
 
 	* nih/file.c (nih_file_read): Implement a simpler function for reading

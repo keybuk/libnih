@@ -238,7 +238,7 @@ EXTRA_DIST += tests/com.netsplit.Nih.Test.xml
 
 tests/com.netsplit.Nih.Test_object.c tests/com.netsplit.Nih.Test_object.h: \
 		tests/com.netsplit.Nih.Test.xml nih-dbus-tool
-	$(mkdir_p) tests
+	$(MKDIR_P) tests
 	$(builddir)/nih-dbus-tool --mode=object --prefix=my --output=$@ $<
 
 

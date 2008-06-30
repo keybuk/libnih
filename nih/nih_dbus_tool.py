@@ -51,15 +51,12 @@ XMLNS = "http://www.netsplit.com/nih/dbus"
 #
 # struct type
 # variant type (at least fallback to requiring them to define the marshal?)
-#  - one way might be just to pass a container or fake message?
+ #  - one way might be just to pass a container or fake message?
 
-# async function marshalling
-# (async function dispatch too)
-#
 # "proxy" mode:
-#   function dispatch
-#   - call a function, need a connection and destination path in mind
-#     interface and name can be built-in to code
+#   async function dispatch
+#   function dispatch with no reply
+#   configurable timeout, autostart, etc. for function dispatch
 #   signal marshal
 #   - called when a signal we're expecting happens, will have a message
 #     object and will call a handler with that -- need an object equivalent,
@@ -1213,6 +1210,143 @@ return 0;
 
         return code
 
+    def dispatchPrototype(self):
+        """Dispatch function prototype.
+
+        Returns a (retval, name, args, attributes) tuple for the prototype
+        of the dispatch function.
+        """
+        in_args = DBusGroup([t for t in self.types if t.direction == "in"],
+                            const=True)
+        out_args = DBusGroup([t for t in self.types if t.direction == "out"],
+                             pointer=True)
+
+        vars = [ ( "NihDBusProxy *", "proxy" ) ]
+        vars.extend(in_args.vars())
+        # FIXME async doesn't have these, but has a callback instead
+        vars.extend(out_args.vars())
+
+        return ( "int",
+                 self.extern_name,
+                 vars,
+                 ( "warn_unused_result", ) )
+
+    def dispatchFunction(self):
+        """Marshalling function.
+
+        Returns a string containing a marshaller function that takes
+        arguments from a D-Bus message, calls a C handler function with
+        them passed properly, then constructs a reply if successful.
+        """
+        in_args = DBusGroup([t for t in self.types if t.direction == "in"],
+                            const=True)
+        out_args = DBusGroup([t for t in self.types if t.direction == "out"],
+                             pointer=True)
+
+        vars = [ ( "NihDBusProxy *", "proxy" ) ]
+        vars.extend(in_args.vars())
+        # FIXME async doesn't have these, but has a callback instead
+        vars.extend(out_args.vars())
+
+        code = "int\n%s (" % (self.extern_name, )
+        code += (",\n" + " " * (len(self.extern_name) + 2)).join(lineup_vars(vars))
+        code += ")\n{\n"
+
+        # Declare local variables for the iterator, reply and those needed
+        # for both input and output arguments.
+        vars = [ ( "DBusMessage *", "message" ),
+                 ( "DBusMessageIter", "iter" ),
+                 ( "DBusMessage *", "reply = NULL" ),
+                 ( "DBusError", "error" ) ]
+        vars.extend(in_args.locals())
+        # FIXME not for async
+        vars.extend(out_args.locals())
+        code += indent(''.join("%s;\n" % var for var in lineup_vars(vars)), 1)
+
+        # Pre-amble for the function
+        code += "\n"
+        code += indent("""\
+nih_assert (proxy != NULL);
+""", 1);
+
+        # Dispatch the input arguments into a new local message
+        code += "\n"
+        code += indent("""\
+message = dbus_message_new_method_call (proxy->dest, proxy->path, "%s", "%s");
+if (! message)
+	nih_return_no_memory_error (-1);
+
+/* Iterate the arguments to the function and dispatch into
+ * message arguments.
+ */
+dbus_message_iter_init_append (message, &iter);
+""" % (self.interface.name, self.name), 1)
+        code += "\n"
+
+        # FIXME autostart?
+
+        mem_error = indent("""\
+dbus_message_unref (message);
+nih_return_no_memory_error (-1);
+""", 1)
+        code += indent(in_args.dispatch("iter", mem_error), 1)
+
+        # FIXME timeout should be configurable
+        # FIXME expect no reply?
+        code += "\n"
+        code += indent("""\
+dbus_error_init (&error);
+
+/* Send the reply, appending it to the outgoing queue and blocking. */
+reply = dbus_connection_send_with_reply_and_block (proxy->conn, message, -1, &error);
+if (! reply) {
+	dbus_message_unref (message);
+
+	if (dbus_error_has_name (&error, DBUS_ERROR_NO_MEMORY)) {
+		dbus_error_free (&error);
+		nih_return_no_memory_error (-1);
+	} else {
+		nih_dbus_error_raise (error.name, error.message);
+		dbus_error_free (&error);
+		return -1;
+	}
+}
+
+dbus_message_unref (message);
+""", 1);
+
+        # Marshal the reply arguments into output arguments
+        code += "\n"
+        code += indent("""\
+/* Iterate the arguments to the reply and marshal into output
+ * arguments from our own function call.
+ */
+dbus_message_iter_init (reply, &iter);
+""", 1);
+        code += "\n"
+
+        mem_error = indent("""\
+dbus_message_unref (reply);
+nih_return_no_memory_error (-1);
+""", 1)
+        type_error = indent("""\
+dbus_message_unref (reply);
+nih_return_error (-1, NIH_DBUS_INVALID_ARGS, NIH_DBUS_INVALID_ARGS_STR);
+""", 1);
+        code += indent(out_args.marshal("iter", "proxy",
+                                        type_error, mem_error), 1)
+
+        code += "\n"
+        code += indent("""\
+dbus_message_unref (reply);
+
+return 0;
+""", 1)
+
+        code += "}\n"
+
+        return code
+
     def staticPrototypes(self):
         """Static prototypes.
 
@@ -1255,6 +1389,8 @@ return 0;
             functions.append(self.marshalFunction())
             if self.style == "async":
                 functions.append(self.replyFunction())
+        else:
+            functions.append(self.dispatchFunction())
 
         return functions
 
@@ -1270,6 +1406,8 @@ return 0;
         if mode == "object":
             if self.style == "async":
                 prototypes.append(self.replyPrototype())
+        else:
+            prototypes.append(self.dispatchPrototype())
 
         return prototypes
 

@@ -507,7 +507,7 @@ while (dbus_message_iter_get_arg_type (&%s) != DBUS_TYPE_INVALID) {
 
         code += "\n"
         code += indent("""\
-%s = nih_realloc (%s, message, sizeof (%s) * (%s + 1));
+%s = nih_realloc (%s, message, sizeof (%s) * ((%s) + 1));
 if (! %s) {
 %s
 }
@@ -527,12 +527,12 @@ dbus_message_iter_next (&%s);
         if self.type.c_type.endswith("*"):
             code += "\n"
             code += """\
-%s = nih_realloc (%s, message, sizeof (%s) * (%s + 1));
+%s = nih_realloc (%s, message, sizeof (%s) * ((%s) + 1));
 if (! %s) {
 %s
 }
 
-%s[%s] = NULL;
+%s[(%s)] = NULL;
 """ % (name, name, self.type.c_type, len_name,
        name, mem_error,
        name, len_name)
@@ -568,7 +568,8 @@ if (! dbus_message_iter_open_container (&%s, %s, \"%s\", &%s)) {
 for (%s%s = %s; %s && *%s; %s++) {
 """ % (len_name,
        self.realType(self.c_type, const=const), self.loop_name, name,
-       self.loop_name, self.loop_name, self.loop_name)
+       self.loop_name, self.loop_name,
+       self.loop_name)
         else:
             code += """\
 for (%s%s = %s; %s < %s + %s; %s++) {
@@ -586,6 +587,12 @@ for (%s%s = %s; %s < %s + %s; %s++) {
 
         code += "\n"
         code += indent(self.type.dispatch(self.iter_name, mem_error), 1)
+
+	if self.type.c_type.endswith("*"):
+            code += "\n"
+            code += indent("""\
+(%s)++;
+""" % (len_name, ), 1)
 
         code += """\
 }

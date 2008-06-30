@@ -1,5 +1,10 @@
 2008-06-30  Scott James Remnant  <scott@netsplit.com>
 
+	* m4/libs.m4 (NIH_LIB_DBUS): Always check for Python, but don't error
+	or disable D-Bus unless the install option is defined.  Otherwise if
+	we don't have it, don't define HAVE_PYTHON.
+	* nih/Makefile.am (noinst_SCRIPTS): Only build if we have python.
+
 	* nih/Makefile.am: Redress the Makefile such that the generated test
 	sources are actually included in the distribution tarball.
 

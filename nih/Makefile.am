@@ -68,8 +68,10 @@ if INSTALL_NIH
 bin_SCRIPTS = \
 	nih-dbus-tool
 else
+if HAVE_PYTHON
 noinst_SCRIPTS = \
 	nih-dbus-tool
+endif
 endif
 endif
 
@@ -218,29 +220,6 @@ test_error_LDADD = libnih.la
 
 
 if HAVE_DBUS
-com_netsplit_Nih_Test_object_OUTPUTS = \
-	tests/com.netsplit.Nih.Test_object.c \
-	tests/com.netsplit.Nih.Test_object.h
-
-com_netsplit_Nih_Test_object_XML = \
-	tests/com.netsplit.Nih.Test.xml
-
-$(com_netsplit_Nih_Test_object_OUTPUTS): $(com_netsplit_Nih_Test_object_XML)
-	$(MAKE) $(AM_MAKEFLAGS) nih-dbus-tool
-	$(builddir)/nih-dbus-tool --mode=object --prefix=my --output=$@ $<
-
-
-BUILT_SOURCES = \
-	$(com_netsplit_Nih_Test_object_OUTPUTS)
-
-MAINTAINERCLEANFILES = \
-	$(com_netsplit_Nih_Test_object_OUTPUTS)
-
-EXTRA_DIST += \
-	$(com_netsplit_Nih_Test_object_OUTPUTS) \
-	$(com_netsplit_Nih_Test_object_XML)
-
-
 test_dbus_SOURCES = tests/test_dbus.c
 test_dbus_CFLAGS = $(DBUS_CFLAGS)
 test_dbus_LDFLAGS = -static
@@ -252,6 +231,28 @@ test_com_netsplit_Nih_Test_object_SOURCES = \
 test_com_netsplit_Nih_Test_object_CFLAGS = $(DBUS_CFLAGS)
 test_com_netsplit_Nih_Test_object_LDFLAGS = -static
 test_com_netsplit_Nih_Test_object_LDADD = libnih.la libnih-dbus.la $(DBUS_LIBS)
+
+
+com_netsplit_Nih_Test_object_OUTPUTS = \
+	tests/com.netsplit.Nih.Test_object.c \
+	tests/com.netsplit.Nih.Test_object.h
+
+com_netsplit_Nih_Test_object_XML = \
+	tests/com.netsplit.Nih.Test.xml
+
+$(com_netsplit_Nih_Test_object_OUTPUTS): $(com_netsplit_Nih_Test_object_XML)
+	$(MAKE) $(AM_MAKEFLAGS) nih-dbus-tool
+	$(builddir)/nih-dbus-tool --mode=object --prefix=my --output=$@ $<
+
+BUILT_SOURCES = \
+	$(com_netsplit_Nih_Test_object_OUTPUTS)
+
+MAINTAINERCLEANFILES = \
+	$(com_netsplit_Nih_Test_object_OUTPUTS)
+
+EXTRA_DIST += \
+	$(com_netsplit_Nih_Test_object_OUTPUTS) \
+	$(com_netsplit_Nih_Test_object_XML)
 endif
 
 

@@ -38,10 +38,15 @@ m4_ifdef([_NIH_Option_dbus],
 		             [nih_with_dbus=yes], [nih_with_dbus=no])])])
 AS_IF([test "x$nih_with_dbus" = "xyes"],
       [PKG_CHECK_MODULES([DBUS], [DBUS_MODULES])
-       AM_PATH_PYTHON([2.5])],
+       m4_ifdef([_NIH_Option_install],
+       		[AM_PATH_PYTHON([2.5])],
+		[AM_PATH_PYTHON([2.5],, [:])])],
       [AS_IF([test "x$nih_with_dbus" != "xno"],
              [PKG_CHECK_MODULES([DBUS], [DBUS_MODULES],, [nih_have_dbus=no])
-	      AM_PATH_PYTHON([2.5],, [nih_have_dbus=no])],
+	      m4_ifdef([_NIH_Option_install],
+	               [AM_PATH_PYTHON([2.5],, [nih_have_dbus=no])],
+		       [AM_PATH_PYTHON([2.5],, [:])])],
 	     [nih_have_dbus=no])])
 AM_CONDITIONAL([HAVE_DBUS], [test "x$nih_have_dbus" != "xno"])
+AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
 ])# NIH_LIB_DBUS

@@ -1,5 +1,8 @@
 2008-06-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/errors.h (NIH_DBUS_INVALID_ARGS): Add error caused when the
+	reply arguments on a method call were not what we expected.
+
 	* nih/nih_dbus_tool.py: Implement the simplest of the method dispatch
 	cases, a blocking method call with the reply data returned as arguments
 	to the call.

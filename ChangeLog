@@ -1,5 +1,8 @@
 2008-06-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/nih_dbus_tool.py: Add parent argument to marshal functions for
+	when we need to allocate something (ie. arrays)
+
 	* nih/nih_dbus_tool.py (DBusArray.marshal): Add extra parens around
 	possible deferenced length variable, not needed for precedence but
 	helps clarity in generated code.

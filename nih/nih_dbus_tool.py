@@ -168,7 +168,7 @@ class DBusType(object):
         """
         return []
 
-    def marshal(self, iter_name, type_error, mem_error,
+    def marshal(self, iter_name, parent, type_error, mem_error,
                 pointer=False, const=False):
         """Marshalling code.
 
@@ -220,7 +220,7 @@ class DBusBasicType(DBusType):
         """
         return []
 
-    def marshal(self, iter_name, type_error, mem_error,
+    def marshal(self, iter_name, parent, type_error, mem_error,
                 pointer=False, const=False):
         """Marshalling code.
 
@@ -461,7 +461,7 @@ class DBusArray(DBusType):
 
         return vars
 
-    def marshal(self, iter_name, type_error, mem_error,
+    def marshal(self, iter_name, parent, type_error, mem_error,
                 pointer=False, const=False):
         """Marshalling code.
 
@@ -502,18 +502,18 @@ while (dbus_message_iter_get_arg_type (&%s) != DBUS_TYPE_INVALID) {
         code += indent(''.join("%s;\n" % var for var in lineup_vars(vars)), 1)
 
         code += "\n"
-        code += indent(self.type.marshal("%s_iter" % self.name,
+        code += indent(self.type.marshal("%s_iter" % self.name, parent,
                                          type_error, mem_error), 1)
 
         code += "\n"
         code += indent("""\
-%s = nih_realloc (%s, message, sizeof (%s) * ((%s) + 1));
+%s = nih_realloc (%s, %s, sizeof (%s) * ((%s) + 1));
 if (! %s) {
 %s
 }
 
 %s[(%s)++] = %s;
-""" % (name, name, self.type.c_type, len_name,
+""" % (name, name, parent, self.type.c_type, len_name,
        name, mem_error,
        name, len_name, self.type.name), 1)
 
@@ -527,13 +527,13 @@ dbus_message_iter_next (&%s);
         if self.type.c_type.endswith("*"):
             code += "\n"
             code += """\
-%s = nih_realloc (%s, message, sizeof (%s) * ((%s) + 1));
+%s = nih_realloc (%s, %s, sizeof (%s) * ((%s) + 1));
 if (! %s) {
 %s
 }
 
 %s[(%s)] = NULL;
-""" % (name, name, self.type.c_type, len_name,
+""" % (name, name, parent, self.type.c_type, len_name,
        name, mem_error,
        name, len_name)
 
@@ -649,7 +649,7 @@ class DBusGroup(object):
 
         return locals
 
-    def marshal(self, iter_name, type_error, mem_error):
+    def marshal(self, iter_name, parent, type_error, mem_error):
         """Marshalling code.
 
         Returns a string containing the code that will marshal from an
@@ -661,7 +661,7 @@ class DBusGroup(object):
         for type in self.types:
             if code:
                 code += "\n"
-            code += type.marshal(iter_name, type_error, mem_error,
+            code += type.marshal(iter_name, parent, type_error, mem_error,
                                  pointer=self.pointer, const=self.const)
 
         if code:
@@ -917,7 +917,8 @@ if (! reply) {
 
 goto send;
 """ % (self.name, mem_error), 1)
-        code += indent(in_args.marshal("iter", type_error, mem_error), 1)
+        code += indent(in_args.marshal("iter", "message",
+                                       type_error, mem_error), 1)
 
         # Construct the function call
         args = [ "object->data", "message" ]

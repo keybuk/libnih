@@ -216,33 +216,44 @@ test_error_SOURCES = tests/test_error.c
 test_error_LDFLAGS = -static
 test_error_LDADD = libnih.la
 
+
+if HAVE_DBUS
+com_netsplit_Nih_Test_object_OUTPUTS = \
+	tests/com.netsplit.Nih.Test_object.c \
+	tests/com.netsplit.Nih.Test_object.h
+
+com_netsplit_Nih_Test_object_XML = \
+	tests/com.netsplit.Nih.Test.xml
+
+$(com_netsplit_Nih_Test_object_OUTPUTS): $(com_netsplit_Nih_Test_object_XML)
+	$(MAKE) $(AM_MAKEFLAGS) nih-dbus-tool
+	$(builddir)/nih-dbus-tool --mode=object --prefix=my --output=$@ $<
+
+
+BUILT_SOURCES = \
+	$(com_netsplit_Nih_Test_object_OUTPUTS)
+
+MAINTAINERCLEANFILES = \
+	$(com_netsplit_Nih_Test_object_OUTPUTS)
+
+EXTRA_DIST += \
+	$(com_netsplit_Nih_Test_object_OUTPUTS) \
+	$(com_netsplit_Nih_Test_object_XML)
+
+
 test_dbus_SOURCES = tests/test_dbus.c
 test_dbus_CFLAGS = $(DBUS_CFLAGS)
 test_dbus_LDFLAGS = -static
 test_dbus_LDADD = libnih.la libnih-dbus.la $(DBUS_LIBS)
 
-
 test_com_netsplit_Nih_Test_object_SOURCES = \
 	tests/test_com.netsplit.Nih.Test_object.c \
-	tests/com.netsplit.Nih.Test_object.c \
-	tests/com.netsplit.Nih.Test_object.h
+	$(com_netsplit_Nih_Test_object_OUTPUTS)
 test_com_netsplit_Nih_Test_object_CFLAGS = $(DBUS_CFLAGS)
 test_com_netsplit_Nih_Test_object_LDFLAGS = -static
 test_com_netsplit_Nih_Test_object_LDADD = libnih.la libnih-dbus.la $(DBUS_LIBS)
+endif
 
-BUILT_SOURCES = \
-	tests/com.netsplit.Nih.Test_object.c \
-	tests/com.netsplit.Nih.Test_object.h
-
-EXTRA_DIST += tests/com.netsplit.Nih.Test.xml
-
-tests/com.netsplit.Nih.Test_object.c tests/com.netsplit.Nih.Test_object.h: \
-		tests/com.netsplit.Nih.Test.xml nih-dbus-tool
-	$(MKDIR_P) tests
-	$(builddir)/nih-dbus-tool --mode=object --prefix=my --output=$@ $<
-
-
-CLEANFILES += $(BUILT_SOURCES)
 
 clean-local:
 	rm -f *.gcno *.gcda

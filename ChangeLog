@@ -1,5 +1,8 @@
 2008-06-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/Makefile.am: Redress the Makefile such that the generated test
+	sources are actually included in the distribution tarball.
+
 	* nih/dbus.h (NihDDusProxy): Add definition for proxy structure
 	and prototype for function to create one.
 	* nih/nih_dbus_tool.py (Method.dispatchFunction): Adjust name of

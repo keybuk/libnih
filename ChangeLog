@@ -1,3 +1,8 @@
+2008-06-30  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/nih_dbus_tool.py: Allow mode to be changed to proxy, but don't
+	specify anything to be generated for that mode yet.
+
 2008-06-11  Scott James Remnant  <scott@netsplit.com>
 
 	* Makefile.am (SUBDIRS): po has to come last to make sure we've

@@ -34,6 +34,9 @@ PACKAGE_COPYRIGHT = "@PACKAGE_COPYRIGHT@"
 # Prefix for external functions
 extern_prefix = "dbus"
 
+# Generator mode
+mode = "object"
+
 
 # Conversion for external C names
 NAME_RE = re.compile(r'([a-z0-9])([A-Z])')
@@ -743,8 +746,7 @@ class MemberWithArgs(Member):
         types = [ DBusType.fromElement(e) for e in elem.findall("arg") ]
 
         self = cls(interface, name, types)
-        self.style = elem.get(ElementTree.QName(XMLNS, "object"),
-                              self.style)
+        self.style = elem.get(ElementTree.QName(XMLNS, mode), self.style)
         return self
 
     def __init__(self, interface, name, types):
@@ -1090,7 +1092,11 @@ return 0;
 
         Each prototype is a (retval, name, args, attributes) tuple.
         """
-        return [ self.marshalPrototype() ]
+        prototypes = []
+        if mode == "object":
+            prototypes.append(self.marshalPrototype())
+
+        return prototypes
 
     def externPrototypes(self):
         """Extern prototypes.
@@ -1101,7 +1107,11 @@ return 0;
 
         Each prototype is a (retval, name, args, attributes) tuple.
         """
-        return [ self.handlerPrototype() ]
+        prototypes = []
+        if mode =="object":
+            prototypes.append(self.handlerPrototype())
+
+        return prototypes
 
     def functions(self):
         """Functions.
@@ -1111,9 +1121,11 @@ return 0;
 
         Each function is the code to define it, including any documentation.
         """
-        functions = [ self.marshalFunction() ]
-        if self.style == "async":
-            functions.append(self.replyFunction())
+        functions = []
+        if mode == "object":
+            functions.append(self.marshalFunction())
+            if self.style == "async":
+                functions.append(self.replyFunction())
 
         return functions
 
@@ -1125,10 +1137,12 @@ return 0;
 
         Each prototype is a (retval, name, args, attributes) tuple.
         """
-        if self.style == "async":
-            return [ self.replyPrototype() ]
-        else:
-            return []
+        prototypes = []
+        if mode == "object":
+            if self.style == "async":
+                prototypes.append(self.replyPrototype())
+
+        return prototypes
 
 
 class Signal(MemberWithArgs):
@@ -1228,7 +1242,11 @@ return 0;
 
         Each function is the code to define it, including any documentation.
         """
-        return [ self.dispatchFunction() ]
+        functions = []
+        if mode == "object":
+            functions.append(self.dispatchFunction())
+
+        return functions
 
     def exportPrototypes(self):
         """Function prototypes.
@@ -1238,7 +1256,11 @@ return 0;
 
         Each prototype is a (retval, name, args, attributes) tuple.
         """
-        return [ self.dispatchPrototype() ]
+        prototypes = []
+        if mode == "object":
+            prototypes.append(self.dispatchPrototype())
+
+        return prototypes
 
 
 class Group(Generator):
@@ -1840,6 +1862,7 @@ def constify(type):
 def main():
     global options
     global extern_prefix
+    global mode
 
     usage = "%prog [OPTION]... XMLFILE"
     description = """\
@@ -1870,6 +1893,7 @@ or to that specified by --output.
         parser.error("invalid mode")
 
     extern_prefix = options.prefix
+    mode = options.mode
 
     # Figure out input and output filenames based on arguments; try and
     # do the right thing in most circumstances

@@ -108,6 +108,24 @@ typedef struct nih_dbus_message {
 
 
 /**
+ * NihDBusProxy:
+ * @name: D-Bus name of object owner,
+ * @path: path of object,
+ * @conn: associated connection.
+ *
+ * Instances of this structure may be created for remote objects that you
+ * wish to use.  Fundamentally they combine the three elements of data
+ * necessary into one easy object that is bound to the lifetime of the
+ * associated connection.
+ **/
+typedef struct nih_dbus_proxy {
+	char           *name;
+	char           *path;
+	DBusConnection *conn;
+} NihDBusProxy;
+
+
+/**
  * NihDBusMarshaller:
  * @object: D-Bus object being handled,
  * @message: information about message to marshal.
@@ -288,6 +306,12 @@ int             nih_dbus_message_error      (NihDBusMessage *msg,
 					     const char *name,
 					     const char *format, ...)
 	__attribute__ ((warn_unused_result));
+
+NihDBusProxy *  nih_dbus_proxy_new          (const void *parent,
+					     DBusConnection *conn,
+					     const char *name,
+					     const char *path)
+	__attribute__ ((malloc));
 
 char *          nih_dbus_path               (const void *parent,
 					     const char *root, ...)

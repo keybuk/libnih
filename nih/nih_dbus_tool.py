@@ -1272,7 +1272,7 @@ nih_assert (proxy != NULL);
         # Dispatch the input arguments into a new local message
         code += "\n"
         code += indent("""\
-message = dbus_message_new_method_call (proxy->dest, proxy->path, "%s", "%s");
+message = dbus_message_new_method_call (proxy->name, proxy->path, "%s", "%s");
 if (! message)
 	nih_return_no_memory_error (-1);
 

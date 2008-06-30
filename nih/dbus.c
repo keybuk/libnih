@@ -1317,6 +1317,61 @@ nih_dbus_message_error (NihDBusMessage *msg,
 
 
 /**
+ * nih_dbus_proxy_new:
+ * @parent: parent block,
+ * @conn: D-Bus connection to associate with,
+ * @name: well-known name of object owner,
+ * @path: path of object.
+ *
+ * Creates a new D-Bus proxy for a remote object @path on the well-known
+ * bus name @name.
+ *
+ * The proxy structure is allocated using nih_alloc() and will contain
+ * a reference to the given @conn, you should take care to free a proxy
+ * when the @conn is disconnected as this will not happen automatically.
+ *
+ * If @parent is not NULL, it should be a pointer to another allocated
+ * block which will be used as the parent for this block.  When @parent
+ * is freed, the returned block will be freed too.
+ *
+ * Returns: new NihDBusProxy structure on success, or NULL if
+ * insufficient memory.
+ **/
+NihDBusProxy *
+nih_dbus_proxy_new (const void     *parent,
+		    DBusConnection *conn,
+		    const char     *name,
+		    const char     *path)
+{
+	NihDBusProxy *proxy;
+
+	nih_assert (conn != NULL);
+	nih_assert (name != NULL);
+	nih_assert (path != NULL);
+
+	proxy = nih_new (parent, NihDBusProxy);
+	if (! proxy)
+		return NULL;
+
+	proxy->name = nih_strdup (proxy, name);
+	if (! proxy->name) {
+		nih_free (proxy);
+		return NULL;
+	}
+
+	proxy->path = nih_strdup (proxy, path);
+	if (! proxy->path) {
+		nih_free (proxy);
+		return NULL;
+	}
+
+	proxy->conn = conn;
+
+	return proxy;
+}
+
+
+/**
  * nih_dbus_path:
  * @parent: parent block of allocation,
  * @root: root of path.

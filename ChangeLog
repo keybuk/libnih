@@ -1,5 +1,15 @@
 2008-06-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/dbus.h (NihDDusProxy): Add definition for proxy structure
+	and prototype for function to create one.
+	* nih/nih_dbus_tool.py (Method.dispatchFunction): Adjust name of
+	destination member in the proxy.
+	* nih/dbus.c (nih_dbus_proxy_new): Simple function to create a new
+	proxy object.
+	* nih/tests/test_dbus.c (test_proxy_new): Add simple test for the
+	simple function, which will get more complicated if we add signal
+	filter registration later.
+
 	* nih/errors.h (NIH_DBUS_INVALID_ARGS): Add error caused when the
 	reply arguments on a method call were not what we expected.
 

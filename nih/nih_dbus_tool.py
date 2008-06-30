@@ -1410,8 +1410,13 @@ const NihDBusMethod %s_methods[] = {
 
         array = []
         for method in self.methods:
+            if mode == "object":
+                func = "%s_marshal" % "_".join([ self.c_name, method.c_name ])
+            else:
+                func = "NULL"
+
             array.append(( "\"%s\"" % method.name,
-                           "%s_marshal" % "_".join([ self.c_name, method.c_name ]),
+                           func,
                            "%s_args" % "_".join([ self.c_name, method.c_name ])))
 
         for line in lineup_array(array):

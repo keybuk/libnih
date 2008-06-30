@@ -1,5 +1,8 @@
 2008-06-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/nih_dbus_tool.py (Method.handlerPrototype): Only include
+	function pointers when the mode is object.
+
 	* nih/nih_dbus_tool.py: Allow mode to be changed to proxy, but don't
 	specify anything to be generated for that mode yet.
 

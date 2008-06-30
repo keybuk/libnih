@@ -1,5 +1,10 @@
 2008-06-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/nih_dbus_tool.py: Allocate a copy of string arguments when
+	passing, this makes them consistent with arrays, and also means that
+	we can actually do method dispatching which requires the reply data
+	to last longer than the underlying message.
+
 	* nih/nih_dbus_tool.py: Add parent argument to marshal functions for
 	when we need to allocate something (ie. arrays)
 

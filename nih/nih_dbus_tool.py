@@ -228,6 +228,10 @@ class DBusBasicType(DBusType):
         iterator with the name given into a local variable with the
         type and name as returned by vars().
         """
+        name = self.name
+        if pointer:
+            name = "*%s" % (name, )
+
         return """\
 if (dbus_message_iter_get_arg_type (&%s) != %s) {
 %s
@@ -237,7 +241,7 @@ dbus_message_iter_get_basic (&%s, &%s);
 
 dbus_message_iter_next (&%s);
 """ % (iter_name, self.dbus_type, type_error,
-       iter_name, self.name,
+       iter_name, name,
        iter_name)
 
     def dispatch(self, iter_name, mem_error,
@@ -248,22 +252,15 @@ dbus_message_iter_next (&%s);
         local variable with the type and name as returned by vars() to
         an iterator with the name given.
         """
+        name = self.name
+        if pointer:
+            name = "*%s" % (name, )
+
         return """\
 if (! dbus_message_iter_append_basic (&%s, %s, &%s)) {
 %s
 }
-""" % (iter_name, self.dbus_type, self.name, mem_error)
-
-
-class DBusStringType(DBusBasicType):
-    """D-Bus string type.
-
-    This abstract class represents the base of all string-derived D-Bus types
-    that we can handle.  These share the code to marshal from a DBusMessage
-    into a variable, the code to dispatch from a variable back into a
-    DBusMessage and the same basic C type.
-    """
-    c_type    = "char *"
+""" % (iter_name, self.dbus_type, name, mem_error)
 
 
 class DBusByte(DBusBasicType):
@@ -364,6 +361,87 @@ class DBusDouble(DBusBasicType):
     c_type    = "double"
     dbus_code = "d"
     dbus_type = "DBUS_TYPE_DOUBLE"
+
+
+class DBusStringType(DBusBasicType):
+    """D-Bus string type.
+
+    This abstract class represents the base of all string-derived D-Bus types
+    that we can handle.  These share the code to marshal from a DBusMessage
+    into a variable, the code to dispatch from a variable back into a
+    DBusMessage and the same basic C type.
+
+    They differ from the fundamental basic type in that the marshalled copy
+    of the string is not direct from the message, but an allocated copy;
+    this is because they cannot be simply passed by value, and may wish to
+    be stored.
+    """
+    c_type    = "char *"
+
+    def locals(self, pointer=False, const=False):
+        """Local variable type and name.
+
+        Returns a list containing necessary local variables for iteration
+        of this type.
+        """
+        return [ ( self.realType(self.c_type, const=const),
+                   "_".join((self.name, "value")) ) ]
+
+    def marshal(self, iter_name, parent, type_error, mem_error,
+                pointer=False, const=False):
+        """Marshalling code.
+
+        Returns a string containing the code that will marshal from an
+        iterator with the name given into a local variable with the
+        type and name as returned by vars().
+        """
+        name = self.name
+        if pointer:
+            name = "*%s" % (name, )
+
+        value_name = "_".join((self.name, "value"))
+
+        return """\
+if (dbus_message_iter_get_arg_type (&%s) != %s) {
+%s
+}
+
+dbus_message_iter_get_basic (&%s, &%s);
+
+%s = nih_strdup (%s, %s);
+if (! %s) {
+%s
+}
+
+dbus_message_iter_next (&%s);
+""" % (iter_name, self.dbus_type, type_error,
+       iter_name, value_name,
+       name, parent, value_name,
+       name, mem_error,
+       iter_name)
+
+    def dispatch(self, iter_name, mem_error,
+                 pointer=False, const=False):
+        """Dispatching code.
+
+        Returns a string containing the code that will dispatch from a
+        local variable with the type and name as returned by vars() to
+        an iterator with the name given.
+        """
+        name = self.name
+        if pointer:
+            name = "*%s" % (name, )
+
+        value_name = "_".join((self.name, "value"))
+
+        return """\
+%s = %s;
+if (! dbus_message_iter_append_basic (&%s, %s, &%s)) {
+%s
+}
+""" % (value_name, name,
+       iter_name, self.dbus_type, value_name, mem_error)
+
 
 class DBusString(DBusStringType):
     """D-Bus string.
@@ -1609,6 +1687,7 @@ class Output(Group):
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
+#include <nih/string.h>
 #include <nih/logging.h>
 #include <nih/error.h>
 #include <nih/errors.h>

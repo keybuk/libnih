@@ -1,5 +1,11 @@
 2008-06-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/nih_dbus_tool.py: Have a bash at sorting out the whole pointer
+	and const problem again.  Make them properties of a group, passed to
+	type functions that can add * and const as appropriate, and allows
+	DBusArray to be more clever about things.  Works for the existing
+	cases, anyway.
+
 	* nih/nih_dbus_tool.py (Method.handlerPrototype): Only include
 	function pointers when the mode is object.
 

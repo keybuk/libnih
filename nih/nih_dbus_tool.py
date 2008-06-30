@@ -132,14 +132,27 @@ class DBusType(object):
         else:
             raise AttributeError, "Unknown or unhandled type '%s'" % code
 
-    def signature(self):
+    def realType(self, c_type, pointer=False, const=False):
+        """Real type.
+
+        Returns a string containing the C type name for this type, with
+        pointer and const modifications added.
+        """
+        if pointer:
+            c_type = pointerify(c_type)
+        if const:
+            c_type = constify(c_type)
+
+        return c_type
+
+    def signature(self, pointer=False, const=False):
         """Type signature.
 
         Returns a string containing the D-Bus type signature for this type.
         """
         return None
 
-    def vars(self):
+    def vars(self, pointer=False, const=False):
         """Variable type and name.
 
         Returns a list containing a single tuple of the C type used for this
@@ -147,7 +160,7 @@ class DBusType(object):
         """
         return []
 
-    def locals(self):
+    def locals(self, pointer=False, const=False):
         """Local variable type and name.
 
         Returns a list containing necessary local variables for iteration
@@ -155,7 +168,8 @@ class DBusType(object):
         """
         return []
 
-    def marshal(self, iter_name, type_error, mem_error):
+    def marshal(self, iter_name, type_error, mem_error,
+                pointer=False, const=False):
         """Marshalling code.
 
         Returns a string containing the code that will marshal from an
@@ -164,7 +178,8 @@ class DBusType(object):
         """
         return None
 
-    def dispatch(self, iter_name, mem_error):
+    def dispatch(self, iter_name, mem_error,
+                 pointer=False, const=False):
         """Dispatching code.
 
         Returns a string containing the code that will dispatch from a
@@ -182,22 +197,22 @@ class DBusBasicType(DBusType):
     a variable and dispatch from a variable back into a DBusMessage.
     """
 
-    def signature(self):
+    def signature(self, pointer=False, const=False):
         """Type signature.
 
         Returns a string containing the D-Bus type signature for this type.
         """
         return self.dbus_code
 
-    def vars(self):
+    def vars(self, pointer=False, const=False):
         """Variable type and name.
 
         Returns a list containing a single tuple of the C type used for this
         type and the name given when creating the instance.
         """
-        return [ ( self.c_type, self.name ) ]
+        return [ ( self.realType(self.c_type, pointer, const), self.name ) ]
 
-    def locals(self):
+    def locals(self, pointer=False, const=False):
         """Local variable type and name.
 
         Returns a list containing necessary local variables for iteration
@@ -205,7 +220,8 @@ class DBusBasicType(DBusType):
         """
         return []
 
-    def marshal(self, iter_name, type_error, mem_error):
+    def marshal(self, iter_name, type_error, mem_error,
+                pointer=False, const=False):
         """Marshalling code.
 
         Returns a string containing the code that will marshal from an
@@ -224,7 +240,8 @@ dbus_message_iter_next (&%s);
        iter_name, self.name,
        iter_name)
 
-    def dispatch(self, iter_name, mem_error):
+    def dispatch(self, iter_name, mem_error,
+                 pointer=False, const=False):
         """Dispatching code.
 
         Returns a string containing the code that will dispatch from a
@@ -411,14 +428,14 @@ class DBusArray(DBusType):
 
         self.c_type = pointerify(self.type.c_type)
 
-    def signature(self):
+    def signature(self, pointer=False, const=False):
         """Type signature.
 
         Returns a string containing the D-Bus type signature for this type.
         """
         return self.dbus_code + self.type.signature()
 
-    def locals(self):
+    def locals(self, pointer=False, const=False):
         """Local variable type and name.
 
         Returns a list containing necessary local variables for iteration
@@ -430,25 +447,35 @@ class DBusArray(DBusType):
 
         return locals
 
-    def vars(self):
+    def vars(self, pointer=False, const=False):
         """Variable type and name.
 
         Returns a list containing tuples of C type and name for each type
         within this group.
         """
-        vars = [ ( self.c_type, self.name ) ]
+        vars = [ ( self.realType(self.c_type, pointer, const),
+                   self.name ) ]
         if not self.type.c_type.endswith("*"):
-            vars.append(( "size_t", self.len_name ))
+            vars.append(( self.realType("size_t", pointer, const),
+                          self.len_name ))
 
         return vars
 
-    def marshal(self, iter_name, type_error, mem_error):
+    def marshal(self, iter_name, type_error, mem_error,
+                pointer=False, const=False):
         """Marshalling code.
 
         Returns a string containing the code that will marshal from an
         iterator with the name given into local variables with the
         types and names as returned by vars().
         """
+        name = self.name
+        len_name = self.len_name
+        if pointer:
+            name = "*%s" % (name, )
+            if not self.type.c_type.endswith("*"):
+                len_name = "*%s" % (len_name, )
+
         code = """\
 if (dbus_message_iter_get_arg_type (&%s) != %s) {
 %s
@@ -467,7 +494,7 @@ while (dbus_message_iter_get_arg_type (&%s) != DBUS_TYPE_INVALID) {
 """ % (iter_name, self.dbus_type, type_error,
        iter_name, self.type.dbus_type, type_error,
        iter_name, self.iter_name,
-       self.name, self.len_name,
+       name, len_name,
        self.iter_name)
 
         vars = self.type.vars()
@@ -485,10 +512,10 @@ if (! %s) {
 %s
 }
 
-%s[%s++] = %s;
-""" % (self.name, self.name, self.type.c_type, self.len_name,
-       self.name, mem_error,
-       self.name, self.len_name, self.type.name), 1)
+%s[(%s)++] = %s;
+""" % (name, name, self.type.c_type, len_name,
+       name, mem_error,
+       name, len_name, self.type.name), 1)
 
         code += "\n"
         code += """\
@@ -506,19 +533,27 @@ if (! %s) {
 }
 
 %s[%s] = NULL;
-""" % (self.name, self.name, self.type.c_type, self.len_name,
-       self.name, mem_error,
-       self.name, self.len_name)
+""" % (name, name, self.type.c_type, len_name,
+       name, mem_error,
+       name, len_name)
 
         return code
 
-    def dispatch(self, iter_name, mem_error):
+    def dispatch(self, iter_name, mem_error,
+                 pointer=False, const=False):
         """Dispatching code.
 
         Returns a string containing the code that will dispatch from
         local variables with the types and names as returned by vars() to
         an iterator with the name given.
         """
+        name = self.name
+        len_name = self.len_name
+        if pointer:
+            name = "*%s" % (name, )
+            if not self.type.c_type.endswith("*"):
+                len_name = "*%s" % (len_name, )
+
         code = """\
 if (! dbus_message_iter_open_container (&%s, %s, \"%s\", &%s)) {
 %s
@@ -531,14 +566,14 @@ if (! dbus_message_iter_open_container (&%s, %s, \"%s\", &%s)) {
             code += """\
 %s = 0;
 for (%s%s = %s; %s && *%s; %s++) {
-""" % ("%s_len" % (self.name,),
-       self.c_type, self.loop_name, self.name,
+""" % (len_name,
+       self.realType(self.c_type, const=const), self.loop_name, name,
        self.loop_name, self.loop_name, self.loop_name)
         else:
             code += """\
 for (%s%s = %s; %s < %s + %s; %s++) {
-""" % (self.c_type, self.loop_name, self.name,
-       self.loop_name, self.name, self.len_name, self.loop_name)
+""" % (self.realType(self.c_type, const=const), self.loop_name, name,
+       self.loop_name, name, len_name, self.loop_name)
 
         vars = self.type.vars()
         vars.extend(self.type.locals())
@@ -550,8 +585,7 @@ for (%s%s = %s; %s < %s + %s; %s++) {
 """ % (self.type.name, self.loop_name), 1)
 
         code += "\n"
-        code += indent(self.type.dispatch("%s_iter" % self.name,
-                                          mem_error), 1)
+        code += indent(self.type.dispatch(self.iter_name, mem_error), 1)
 
         code += """\
 }
@@ -565,8 +599,10 @@ if (! dbus_message_iter_close_container (&%s, &%s)) {
 
 
 class DBusGroup(object):
-    def __init__(self, types):
+    def __init__(self, types, pointer=False, const=False):
         self.types = types
+        self.pointer = pointer
+        self.const = const
 
     def signature(self):
         """Type signature.
@@ -576,7 +612,7 @@ class DBusGroup(object):
         signature = ""
 
         for type in self.types:
-            signature += type.signature()
+            signature += type.signature(pointer=self.pointer, const=self.const)
 
         return signature
 
@@ -589,7 +625,7 @@ class DBusGroup(object):
         vars = []
 
         for type in self.types:
-            vars.extend(type.vars())
+            vars.extend(type.vars(pointer=self.pointer, const=self.const))
 
         return vars
 
@@ -602,7 +638,7 @@ class DBusGroup(object):
         locals = []
 
         for type in self.types:
-            locals.extend(type.locals())
+            locals.extend(type.locals(pointer=self.pointer, const=self.const))
 
         return locals
 
@@ -618,7 +654,8 @@ class DBusGroup(object):
         for type in self.types:
             if code:
                 code += "\n"
-            code += type.marshal(iter_name, type_error, mem_error)
+            code += type.marshal(iter_name, type_error, mem_error,
+                                 pointer=self.pointer, const=self.const)
 
         if code:
             code += "\n"
@@ -642,7 +679,8 @@ if (dbus_message_iter_get_arg_type (&%s) != DBUS_TYPE_INVALID) {
         for type in self.types:
             if code:
                 code += "\n"
-            code += type.dispatch(iter_name, mem_error)
+            code += type.dispatch(iter_name, mem_error,
+                                  pointer=self.pointer, const=self.const)
 
         return code
 
@@ -801,9 +839,6 @@ class Method(MemberWithArgs):
     def __init__(self, interface, name, types):
         super(Method, self).__init__(interface, name, types)
 
-        self.in_args = DBusGroup([t for t in types if t.direction == "in"])
-        self.out_args = DBusGroup([t for t in types if t.direction == "out"])
-
     def marshalPrototype(self):
         """Marshalling function prototype.
 
@@ -823,6 +858,9 @@ class Method(MemberWithArgs):
         arguments from a D-Bus message, calls a C handler function with
         them passed properly, then constructs a reply if successful.
         """
+        in_args = DBusGroup([t for t in self.types if t.direction == "in"])
+        out_args = DBusGroup([t for t in self.types if t.direction == "out"])
+
         name = "_".join([ self.interface.c_name, self.c_name, "marshal" ])
         code = """\
 static DBusHandlerResult
@@ -835,11 +873,11 @@ static DBusHandlerResult
         # for both input and output arguments.
         vars = [ ( "DBusMessageIter", "iter" ),
                  ( "DBusMessage *", "reply = NULL" ) ]
-        vars.extend(self.in_args.vars())
-        vars.extend(self.in_args.locals())
+        vars.extend(in_args.vars())
+        vars.extend(in_args.locals())
         if self.style != "async":
-            vars.extend(self.out_args.vars())
-            vars.extend(self.out_args.locals())
+            vars.extend(out_args.vars())
+            vars.extend(out_args.locals())
 
         code += indent(''.join("%s;\n" % var for var in lineup_vars(vars)), 1)
 
@@ -872,14 +910,13 @@ if (! reply) {
 
 goto send;
 """ % (self.name, mem_error), 1)
-        code += indent(self.in_args.marshal("iter",
-                                            type_error, mem_error), 1)
+        code += indent(in_args.marshal("iter", type_error, mem_error), 1)
 
         # Construct the function call
         args = [ "object->data", "message" ]
-        args.extend(n for t, n in self.in_args.vars())
+        args.extend(n for t, n in in_args.vars())
         if self.style != "async":
-            args.extend("&%s" % n for t, n in self.out_args.vars())
+            args.extend("&%s" % n for t, n in out_args.vars())
 
         code += "\n"
         code += indent("""\
@@ -950,7 +987,7 @@ dbus_message_iter_init_append (reply, &iter);
 dbus_message_unref (reply);
 return DBUS_HANDLER_RESULT_NEED_MEMORY;
 """, 1)
-            code += indent(self.out_args.dispatch("iter", mem_error), 1)
+            code += indent(out_args.dispatch("iter", mem_error), 1)
 
         # Send the reply
         code += "\nsend:\n"
@@ -976,14 +1013,16 @@ return DBUS_HANDLER_RESULT_HANDLED;
         Returns a (retval, name, args, attributes) tuple for the prototype
         of the handler function that the user must define.
         """
+        in_args = DBusGroup([t for t in self.types if t.direction == "in"],
+                            const=True)
+        out_args = DBusGroup([t for t in self.types if t.direction == "out"],
+                             pointer=True)
+
         vars = [ ("void *", "data"),
                  ("NihDBusMessage *", "message") ]
-        for type, name in self.in_args.vars():
-            vars.append((constify(type), name))
-
+        vars.extend(in_args.vars())
         if self.style != "async":
-            for type, name in self.out_args.vars():
-                vars.append((pointerify(type), name))
+            vars.extend(out_args.vars())
 
         return ( "extern int",
                  self.extern_name,
@@ -996,9 +1035,11 @@ return DBUS_HANDLER_RESULT_HANDLED;
         Returns a (retval, name, args, attributes) tuple for the prototype
         of the reply function defined for async functions.
         """
+        out_args = DBusGroup([t for t in self.types if t.direction == "out"],
+                             const=True)
+
         vars = [("NihDBusMessage *", "message") ]
-        for type, name in self.out_args.vars():
-            vars.append((constify(type), name))
+        vars.extend(out_args.vars())
 
         return ( "int",
                  "_".join([ self.extern_name, "reply" ]),
@@ -1011,10 +1052,12 @@ return DBUS_HANDLER_RESULT_HANDLED;
         Returns a string containing a reply function that takes its
         arguments and produces a D-Bus message reply.
         """
+        out_args = DBusGroup([t for t in self.types if t.direction == "out"],
+                             const=True)
+
         name = "_".join([ self.extern_name, "reply" ])
         vars = [ ( "NihDBusMessage *", "message" ) ]
-        for var_type, var_name in self.out_args.vars():
-            vars.append((constify(var_type), var_name))
+        vars.extend(out_args.vars())
 
         code = "int\n%s (" % (name, )
         code += (",\n" + " " * (len(name) + 2)).join(lineup_vars(vars))
@@ -1023,7 +1066,7 @@ return DBUS_HANDLER_RESULT_HANDLED;
         # Declare local variables for the iterator and the reply
         vars = [ ( "DBusMessageIter", "iter" ),
                  ( "DBusMessage *", "reply = NULL" ) ]
-        vars.extend(self.out_args.locals())
+        vars.extend(out_args.locals())
 
         code += indent(''.join("%s;\n" % var for var in lineup_vars(vars)), 1)
 
@@ -1063,7 +1106,7 @@ dbus_message_iter_init_append (reply, &iter);
 dbus_message_unref (reply);
 return -1;
 """, 1)
-        code += indent(self.out_args.dispatch("iter", mem_error), 1)
+        code += indent(out_args.dispatch("iter", mem_error), 1)
 
         # Send the reply
         code += "\n"
@@ -1149,21 +1192,17 @@ class Signal(MemberWithArgs):
     def __init__(self, interface, name, types):
         super(Signal, self).__init__(interface, name, types)
 
-        # Turn arguments into their const equivalent
-        for type in types:
-            type.c_type = constify(type.c_type)
-
-        self.args = DBusGroup(types)
-
     def dispatchPrototype(self):
         """Dispatch function prototype.
 
         Returns a (retval, name, args, attributes) tuple for the prototype
         of the dispatch function.
         """
+        args = DBusGroup(self.types, const=True)
+
         vars = [ ( "DBusConnection *", "connection" ),
                  ( "const char *", "origin_path" ) ]
-        vars.extend(self.args.vars())
+        vars.extend(args.vars())
 
         return ( "int",
                  self.extern_name,
@@ -1176,9 +1215,11 @@ class Signal(MemberWithArgs):
         Returns a string containing a dispatch function that takes puts
         its arguments into a D-Bus message and sends it.
         """
+        args = DBusGroup(self.types, const=True)
+
         vars = [ ( "DBusConnection *", "connection" ),
                  ( "const char *", "origin_path" ) ]
-        vars.extend(self.args.vars())
+        vars.extend(args.vars())
 
         code = "int\n%s (" % (self.extern_name, )
         code += (",\n" + " " * (len(self.extern_name) + 2)).join(lineup_vars(vars))
@@ -1187,7 +1228,7 @@ class Signal(MemberWithArgs):
         # Declare local variables for the message and iterator
         vars = [ ( "DBusMessage *", "message"),
                  ( "DBusMessageIter", "iter" ) ]
-        vars.extend(self.args.locals())
+        vars.extend(args.locals())
         code += indent(''.join("%s;\n" % var for var in lineup_vars(vars)), 1)
 
         # Pre-amble for the function
@@ -1215,7 +1256,7 @@ dbus_message_iter_init_append (message, &iter);
 dbus_message_unref (message);
 return -1;
 """, 1)
-        code += indent(self.args.dispatch("iter", mem_error), 1)
+        code += indent(args.dispatch("iter", mem_error), 1)
 
         code += "\n"
         code += indent("""\

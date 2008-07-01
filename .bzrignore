@@ -44,3 +44,5 @@ nih/nih-dbus-tool
 nih/test_*
 nih/tests/com.netsplit.Nih.Test_object.c
 nih/tests/com.netsplit.Nih.Test_object.h
+nih/tests/com.netsplit.Nih.Test_proxy.c
+nih/tests/com.netsplit.Nih.Test_proxy.h

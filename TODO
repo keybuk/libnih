@@ -1,17 +1,18 @@
 dbus:
-- connecting a signal is by nih_dbus_proxy_new, like object new it takes
-  a server, path and interfaces except instead of registering an object
-  it adds a match and the associated filter functions
-- proxy could be passed to method calls
-- proxy would combine connection, destination name and path
+- could we do signal connection by nih_dbus_proxy_new?  If it took an
+  interfaces list, that could point to auto-generated filter functions,
+  and these would be automatically hooked up and called when the signal
+  occurs
+- binding tool needs to generate marshal functions for signals
+- what if we want both proxy and object code in one source?  is there a way
+  to just generate the arrays for both?
 
 - properties need to be handled in some way
 
-- binding tool needs to generate dispatch functions for methods
-  and marshal functions for signals (which should be filter functions, no
-  generic marshaller for signals)
-- how should we set no reply flag and auto start flags on dispatch?
-- should there always be an async option, or just when required?
+- async method calls with callback function
+- could pass NULL callback to mean no reply expected
+- need to set timeout and auto start flags somehow?
+
 - binding tool needs to support structs
 - binding tool needs to at least acknowledge variants
 

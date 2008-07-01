@@ -1,5 +1,10 @@
 2008-07-01  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/com.netsplit.Nih.Test_impl.c,
+	* nih/tests/test_com.netsplit.Nih.Test_object.c (my_connect_handler)
+	(my_setup, my_teardown): Move these functions across too.
+	* nih/tests/com.netsplit.Nih.Test_impl.h: Add prototypes.
+
 	* nih/dbus.c (nih_dbus_proxy_new): Allow name to be NULL.
 	* nih/tests/test_dbus.c (test_proxy_new): Test without a name.
 

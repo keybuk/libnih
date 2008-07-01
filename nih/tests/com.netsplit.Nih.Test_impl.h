@@ -28,7 +28,8 @@
 
 NIH_BEGIN_EXTERN
 
-const NihDBusInterface **my_interfaces;
+DBusConnection *my_setup    (void);
+void            my_teardown (DBusConnection *conn);
 
 NIH_END_EXTERN
 

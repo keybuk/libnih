@@ -21,6 +21,9 @@
 
 #include <nih/test.h>
 
+#include <sys/types.h>
+#include <sys/wait.h>
+
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,6 +33,8 @@
 #include <nih/alloc.h>
 #include <nih/string.h>
 #include <nih/timer.h>
+#include <nih/signal.h>
+#include <nih/main.h>
 #include <nih/error.h>
 #include <nih/errors.h>
 
@@ -38,13 +43,11 @@
 #include "com.netsplit.Nih.Test_object.h"
 
 
-static const NihDBusInterface *_my_interfaces[] = {
+static const NihDBusInterface *my_interfaces[] = {
 	&com_netsplit_Nih_Test,
 	&com_netsplit_Nih_Glue,
 	NULL
 };
-
-const NihDBusInterface **my_interfaces = _my_interfaces;
 
 
 int
@@ -675,3 +678,82 @@ my_emit_signal (void           *data,
 
 	return 0;
 }
+
+
+static DBusConnection *server_conn = NULL;
+
+static int
+my_connect_handler (DBusServer     *server,
+		    DBusConnection *conn)
+{
+	NihDBusObject *object;
+
+	assert (server_conn == NULL);
+	server_conn = conn;
+
+	object = nih_dbus_object_new (NULL, conn, "/com/netsplit/Nih",
+				      my_interfaces, NULL);
+	assert (object != NULL);
+
+	return TRUE;
+}
+
+static pid_t server_pid;
+
+DBusConnection *
+my_setup (void)
+{
+	DBusConnection *conn;
+	int             wait_fd = -1;
+
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		DBusServer *server;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test",
+					  my_connect_handler, NULL);
+		assert (server != NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		if (server_conn) {
+			dbus_connection_close (server_conn);
+			dbus_connection_unref (server_conn);
+		}
+
+		dbus_server_disconnect (server);
+		dbus_server_unref (server);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	conn = dbus_connection_open ("unix:abstract=/com/netsplit/nih/test",
+				     NULL);
+	assert (conn != NULL);
+
+	return conn;
+}
+
+void
+my_teardown (DBusConnection *conn)
+{
+	int status;
+
+	kill (server_pid, SIGTERM);
+
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
+	dbus_connection_unref (conn);
+
+	dbus_shutdown ();
+}
+

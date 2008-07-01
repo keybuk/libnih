@@ -1,5 +1,13 @@
 2008-07-01  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_com.netsplit.Nih.Test_object.c,
+	* nih/tests/com.netsplit.Nih.Test_impl.c: Separate out the server
+	object implementation so that the proxy code could use it.
+	* nih/tests/com.netsplit.Nih.Test_impl.h: Header for object definition
+	* nih/Makefile.am (test_com_netsplit_Nih_Test_object_SOURCES)
+	(test_com_netsplit_Nih_Test_proxy_SOURCES): Include the object
+	implementation code.
+
 	* nih/tests/test_com.netsplit.Nih.Test_proxy.c: Stub file for proxy
 	test cases.
 	* nih/Makefile.am (TESTS): Build the proxy test suite.

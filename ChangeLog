@@ -1,5 +1,8 @@
 2008-07-01  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/nih_dbus_tool.py (DBusArray.marshal): Add extra parens in
+	array setting call for precedence reasons.
+
 	* nih/tests/test_com.netsplit.Nih.Test_proxy.c (test_method_dispatch):
 	Add basic tests of calls to synchronous and async methods, and the
 	usual error returns.

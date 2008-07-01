@@ -587,7 +587,7 @@ if (! %s) {
 %s
 }
 
-%s[(%s)++] = %s;
+(%s)[(%s)++] = %s;
 """ % (name, name, parent, self.type.c_type, len_name,
        name, mem_error,
        name, len_name, self.type.name), 1)
@@ -607,7 +607,7 @@ if (! %s) {
 %s
 }
 
-%s[(%s)] = NULL;
+(%s)[(%s)] = NULL;
 """ % (name, name, parent, self.type.c_type, len_name,
        name, mem_error,
        name, len_name)

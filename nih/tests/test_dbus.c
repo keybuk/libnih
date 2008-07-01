@@ -1729,10 +1729,12 @@ test_proxy_new (void)
 	DBusConnection *conn;
 	NihDBusProxy   *proxy;
 
+	TEST_FUNCTION ("nih_dbus_proxy_new");
+
 	/* Check that we can create a proxy for a remote object with all of
 	 * the right details filled in.
 	 */
-	TEST_FUNCTION ("nih_dbus_proxy_new");
+	TEST_FEATURE ("with destination name");
 	conn = dbus_bus_get (DBUS_BUS_SYSTEM, NULL);
 	assert (conn != NULL);
 
@@ -1752,6 +1754,42 @@ test_proxy_new (void)
 
 		TEST_ALLOC_PARENT (proxy->name, proxy);
 		TEST_EQ_STR (proxy->name, "com.netsplit.Nih");
+
+		TEST_ALLOC_PARENT (proxy->path, proxy);
+		TEST_EQ_STR (proxy->path, "/com/netsplit/Nih");
+
+		TEST_EQ_P (proxy->conn, conn);
+
+		nih_free (proxy);
+	}
+
+	dbus_connection_unref (conn);
+
+	dbus_shutdown ();
+
+
+	/* Check that we can create a proxy for a remote object without
+	 * a destination name in mind.
+	 */
+	TEST_FEATURE ("without destination name");
+	conn = dbus_bus_get (DBUS_BUS_SYSTEM, NULL);
+	assert (conn != NULL);
+
+	dbus_connection_set_exit_on_disconnect (conn, FALSE);
+
+	TEST_ALLOC_FAIL {
+		proxy = nih_dbus_proxy_new (NULL, conn, NULL,
+					    "/com/netsplit/Nih");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (proxy, NULL);
+
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (proxy, sizeof (NihDBusProxy));
+
+		TEST_EQ_P (proxy->name, NULL);
 
 		TEST_ALLOC_PARENT (proxy->path, proxy);
 		TEST_EQ_STR (proxy->path, "/com/netsplit/Nih");

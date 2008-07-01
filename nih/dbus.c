@@ -1346,17 +1346,19 @@ nih_dbus_proxy_new (const void     *parent,
 	NihDBusProxy *proxy;
 
 	nih_assert (conn != NULL);
-	nih_assert (name != NULL);
 	nih_assert (path != NULL);
 
 	proxy = nih_new (parent, NihDBusProxy);
 	if (! proxy)
 		return NULL;
 
-	proxy->name = nih_strdup (proxy, name);
-	if (! proxy->name) {
-		nih_free (proxy);
-		return NULL;
+	proxy->name = NULL;
+	if (name) {
+		proxy->name = nih_strdup (proxy, name);
+		if (! proxy->name) {
+			nih_free (proxy);
+			return NULL;
+		}
 	}
 
 	proxy->path = nih_strdup (proxy, path);

@@ -145,7 +145,8 @@ TESTS = \
 if HAVE_DBUS
 TESTS += \
 	test_dbus \
-	test_com.netsplit.Nih.Test_object
+	test_com.netsplit.Nih.Test_object \
+	test_com.netsplit.Nih.Test_proxy
 endif
 
 check_PROGRAMS = $(TESTS)
@@ -231,6 +232,14 @@ test_com_netsplit_Nih_Test_object_SOURCES = \
 test_com_netsplit_Nih_Test_object_CFLAGS = $(DBUS_CFLAGS)
 test_com_netsplit_Nih_Test_object_LDFLAGS = -static
 test_com_netsplit_Nih_Test_object_LDADD = libnih.la libnih-dbus.la $(DBUS_LIBS)
+
+test_com_netsplit_Nih_Test_proxy_SOURCES = \
+	tests/test_com.netsplit.Nih.Test_proxy.c \
+	$(com_netsplit_Nih_Test_object_OUTPUTS) \
+	$(com_netsplit_Nih_Test_proxy_OUTPUTS)
+test_com_netsplit_Nih_Test_proxy_CFLAGS = $(DBUS_CFLAGS)
+test_com_netsplit_Nih_Test_proxy_LDFLAGS = -static
+test_com_netsplit_Nih_Test_proxy_LDADD = libnih.la libnih-dbus.la $(DBUS_LIBS)
 
 
 com_netsplit_Nih_Test_object_OUTPUTS = \

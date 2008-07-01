@@ -1,5 +1,15 @@
 2008-07-01  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_com.netsplit.Nih.Test_proxy.c: Stub file for proxy
+	test cases.
+	* nih/Makefile.am (TESTS): Build the proxy test suite.
+	(test_com_netsplit_Nih_Test_proxy_SOURCES)
+	(test_com_netsplit_Nih_Test_proxy_CFLAGS)
+	(test_com_netsplit_Nih_Test_proxy_LDFLAGS)
+	(test_com_netsplit_Nih_Test_proxy_LDADD): Details for the proxy
+	test suite, which actually includes the object code since it needs
+	to implement objects too
+
 	* nih/nih_dbus_tool.py (MemberWithArgs.variables): Only include arg
 	array in object mode.
 

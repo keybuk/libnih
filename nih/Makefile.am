@@ -244,15 +244,32 @@ $(com_netsplit_Nih_Test_object_OUTPUTS): $(com_netsplit_Nih_Test_object_XML)
 	$(MAKE) $(AM_MAKEFLAGS) nih-dbus-tool
 	$(builddir)/nih-dbus-tool --mode=object --prefix=my --output=$@ $<
 
+
+com_netsplit_Nih_Test_proxy_OUTPUTS = \
+	tests/com.netsplit.Nih.Test_proxy.c \
+	tests/com.netsplit.Nih.Test_proxy.h
+
+com_netsplit_Nih_Test_proxy_XML = \
+	tests/com.netsplit.Nih.Test.xml
+
+$(com_netsplit_Nih_Test_proxy_OUTPUTS): $(com_netsplit_Nih_Test_proxy_XML)
+	$(MAKE) $(AM_MAKEFLAGS) nih-dbus-tool
+	$(builddir)/nih-dbus-tool --mode=proxy --prefix=proxy --output=$@ $<
+
+
 BUILT_SOURCES = \
-	$(com_netsplit_Nih_Test_object_OUTPUTS)
+	$(com_netsplit_Nih_Test_object_OUTPUTS) \
+	$(com_netsplit_Nih_Test_proxy_OUTPUTS)
 
 MAINTAINERCLEANFILES = \
-	$(com_netsplit_Nih_Test_object_OUTPUTS)
+	$(com_netsplit_Nih_Test_object_OUTPUTS) \
+	$(com_netsplit_Nih_Test_proxy_OUTPUTS)
 
 EXTRA_DIST += \
 	$(com_netsplit_Nih_Test_object_OUTPUTS) \
-	$(com_netsplit_Nih_Test_object_XML)
+	$(com_netsplit_Nih_Test_object_XML) \
+	$(com_netsplit_Nih_Test_proxy_OUTPUTS) \
+	$(com_netsplit_Nih_Test_proxy_XML)
 endif
 
 

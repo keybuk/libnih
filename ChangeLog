@@ -1,3 +1,13 @@
+2008-07-01  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/Makefile.am (com_netsplit_Nih_Test_proxy_OUTPUTS)
+	(com_netsplit_Nih_Test_proxy_XML)
+	($(com_netsplit_Nih_Test_proxy_OUTPUTS)): Generate sources in proxy
+	mode for the test interfaces.
+	(BUILT_SOURCES, MAINTAINERCLEANFILES, EXTRA_DIST): Build if necessary
+	before anything else, clean in maintainer-clean and include in the
+	distribution.
+
 2008-06-30  Scott James Remnant  <scott@netsplit.com>
 
 	* m4/libs.m4 (NIH_LIB_DBUS): Always check for Python, but don't error

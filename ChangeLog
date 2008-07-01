@@ -1,5 +1,11 @@
 2008-07-01  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_com.netsplit.Nih.Test_proxy.c (test_method_dispatch):
+	Add basic tests of calls to synchronous and async methods, and the
+	usual error returns.
+	* nih/tests/com.netsplit.Nih.Test_impl.c (async_method_reply): 
+	Add replies that have the wrong combinations of arguments.
+
 	* nih/tests/com.netsplit.Nih.Test_impl.c,
 	* nih/tests/test_com.netsplit.Nih.Test_object.c (my_connect_handler)
 	(my_setup, my_teardown): Move these functions across too.

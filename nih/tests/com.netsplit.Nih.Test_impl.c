@@ -115,10 +115,58 @@ async_method_reply (AsyncMethod *method,
 
 	TEST_NOT_FREE (method->message);
 
-	ret = my_test_async_method_reply (method->message, method->input);
-	TEST_EQ (ret, 0);
+	if (method->flags == 4) {
+		DBusMessage *reply;
 
-	TEST_FREE (method->message);
+		reply = dbus_message_new_method_return (method->message->message);
+		assert (reply != NULL);
+
+		dbus_message_append_args (reply,
+					  DBUS_TYPE_INT32, &method->flags,
+					  DBUS_TYPE_INVALID);
+
+		ret = dbus_connection_send (method->message->conn, reply, NULL);
+		assert (ret);
+
+		dbus_message_unref (reply);
+		nih_free (method->message);
+
+	} else if (method->flags == 5) {
+		DBusMessage *reply;
+
+		reply = dbus_message_new_method_return (method->message->message);
+		assert (reply != NULL);
+
+		dbus_message_append_args (reply,
+					  DBUS_TYPE_STRING, &method->input,
+					  DBUS_TYPE_INT32, &method->flags,
+					  DBUS_TYPE_INVALID);
+
+		ret = dbus_connection_send (method->message->conn, reply, NULL);
+		assert (ret);
+
+		dbus_message_unref (reply);
+		nih_free (method->message);
+
+	} else if (method->flags == 6) {
+		DBusMessage *reply;
+
+		reply = dbus_message_new_method_return (method->message->message);
+		assert (reply != NULL);
+
+		ret = dbus_connection_send (method->message->conn, reply, NULL);
+		assert (ret);
+
+		dbus_message_unref (reply);
+		nih_free (method->message);
+
+	} else {
+		ret = my_test_async_method_reply (method->message,
+						  method->input);
+		TEST_EQ (ret, 0);
+
+		TEST_FREE (method->message);
+	}
 
 	nih_free (method);
 }

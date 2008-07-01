@@ -1,5 +1,14 @@
 2008-07-01  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/Makefile.am ($(com_netsplit_Nih_Test_object_OUTPUTS)): 
+	($(com_netsplit_Nih_Test_proxy_OUTPUTS)): Must be newer than the
+	source for the python tool
+
+	* nih/nih_dbus_tool.py (Interface.variables, Interface.exports):
+	Only include the interface definition in object mode, we will need
+	something for proxying signals later, but right now this means
+	problems when building an object and its proxy together.
+
 	* nih/Makefile.am (com_netsplit_Nih_Test_proxy_OUTPUTS)
 	(com_netsplit_Nih_Test_proxy_XML)
 	($(com_netsplit_Nih_Test_proxy_OUTPUTS)): Generate sources in proxy

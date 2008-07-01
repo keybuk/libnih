@@ -240,7 +240,7 @@ com_netsplit_Nih_Test_object_OUTPUTS = \
 com_netsplit_Nih_Test_object_XML = \
 	tests/com.netsplit.Nih.Test.xml
 
-$(com_netsplit_Nih_Test_object_OUTPUTS): $(com_netsplit_Nih_Test_object_XML)
+$(com_netsplit_Nih_Test_object_OUTPUTS): $(com_netsplit_Nih_Test_object_XML) nih_dbus_tool.py
 	$(MAKE) $(AM_MAKEFLAGS) nih-dbus-tool
 	$(builddir)/nih-dbus-tool --mode=object --prefix=my --output=$@ $<
 
@@ -252,7 +252,7 @@ com_netsplit_Nih_Test_proxy_OUTPUTS = \
 com_netsplit_Nih_Test_proxy_XML = \
 	tests/com.netsplit.Nih.Test.xml
 
-$(com_netsplit_Nih_Test_proxy_OUTPUTS): $(com_netsplit_Nih_Test_proxy_XML)
+$(com_netsplit_Nih_Test_proxy_OUTPUTS): $(com_netsplit_Nih_Test_proxy_XML) nih_dbus_tool.py
 	$(MAKE) $(AM_MAKEFLAGS) nih-dbus-tool
 	$(builddir)/nih-dbus-tool --mode=proxy --prefix=proxy --output=$@ $<
 

@@ -1754,9 +1754,10 @@ const NihDBusInterface %s = {
         and default value.
         """
         variables = super(Interface, self).variables()
-        variables.append(self.methodsArray())
-        variables.append(self.signalsArray())
-        variables.append(self.interfaceStruct())
+        if mode == "object":
+            variables.append(self.methodsArray())
+            variables.append(self.signalsArray())
+            variables.append(self.interfaceStruct())
 
         return variables
 
@@ -1769,7 +1770,8 @@ const NihDBusInterface %s = {
         Each export is a (type, name) tuple.
         """
         exports = super(Interface, self).exports()
-        exports.append(self.interfacePrototype())
+        if mode == "object":
+            exports.append(self.interfacePrototype())
 
         return exports
 

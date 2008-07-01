@@ -1,5 +1,8 @@
 2008-07-01  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/nih_dbus_tool.py (MemberWithArgs.variables): Only include arg
+	array in object mode.
+
 	* nih/Makefile.am ($(com_netsplit_Nih_Test_object_OUTPUTS)): 
 	($(com_netsplit_Nih_Test_proxy_OUTPUTS)): Must be newer than the
 	source for the python tool

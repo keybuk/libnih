@@ -914,7 +914,11 @@ static const NihDBusArg %s[] = {
         Each variable is the code to define it, including any documentation
         and default value.
         """
-        return [ self.argArray() ]
+        variables = []
+        if mode == "object":
+            variables.append(self.argArray())
+
+        return variables
 
 
 class Method(MemberWithArgs):

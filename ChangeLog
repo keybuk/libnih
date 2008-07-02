@@ -1,3 +1,8 @@
+2008-07-02  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/Makefile.am (test_com_netsplit_Nih_Test_object_SOURCES)
+	(test_com_netsplit_Nih_Test_proxy_SOURCES): Add forgotten header.
+
 2008-07-01  Scott James Remnant  <scott@netsplit.com>
 
 	* TODO: Update.

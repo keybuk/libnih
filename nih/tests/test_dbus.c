@@ -212,8 +212,6 @@ test_connect (void)
 	TEST_TRUE (disconnected);
 	TEST_EQ_P (last_connection, conn);
 
-	TEST_FREE (loop_func);
-
 
 	/* Check that by using a GUID we can reuse connections to the same
 	 * server, the second call to connect just returns the same
@@ -295,8 +293,6 @@ test_connect (void)
 
 	TEST_TRUE (disconnected);
 	TEST_EQ_P (last_connection, conn);
-
-	TEST_FREE (loop_func);
 
 
 	/* Check that we can create a new connection to a listening dbus
@@ -423,6 +419,14 @@ system_bus:
 	TEST_EQ (io_watch->fd, fd);
 	TEST_NE_P (io_watch->data, NULL);
 
+	/* Reap deleted */
+	NIH_LIST_FOREACH_SAFE (nih_main_loop_functions, iter) {
+		NihMainLoopFunc *fn = (NihMainLoopFunc *)iter;
+
+		if (fn->marked_deleted)
+			nih_free (fn);
+	}
+
 	/* Should be a single main loop function. */
 	TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
 	loop_func = (NihMainLoopFunc *)nih_main_loop_functions->next;
@@ -450,6 +454,14 @@ system_bus:
 	dbus_connection_get_unix_fd (conn, &fd);
 	TEST_EQ (io_watch->fd, fd);
 	TEST_NE_P (io_watch->data, NULL);
+
+	/* Reap deleted */
+	NIH_LIST_FOREACH_SAFE (nih_main_loop_functions, iter) {
+		NihMainLoopFunc *fn = (NihMainLoopFunc *)iter;
+
+		if (fn->marked_deleted)
+			nih_free (fn);
+	}
 
 	/* Should be a single main loop function. */
 	TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
@@ -595,6 +607,14 @@ test_setup (void)
 	dbus_connection_get_unix_fd (conn, &fd);
 	TEST_EQ (io_watch->fd, fd);
 	TEST_NE_P (io_watch->data, NULL);
+
+	/* Reap deleted */
+	NIH_LIST_FOREACH_SAFE (nih_main_loop_functions, iter) {
+		NihMainLoopFunc *fn = (NihMainLoopFunc *)iter;
+
+		if (fn->marked_deleted)
+			nih_free (fn);
+	}
 
 	/* Should be a single main loop function. */
 	TEST_LIST_NOT_EMPTY (nih_main_loop_functions);

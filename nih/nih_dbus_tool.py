@@ -1302,7 +1302,7 @@ nih_return_no_memory_error (-1);
 dbus_error_init (&error);
 
 /* Send the reply, appending it to the outgoing queue and blocking. */
-reply = dbus_connection_send_with_reply_and_block (proxy->conn, message, -1, &error);
+reply = dbus_connection_send_with_reply_and_block (proxy->conn, message, INT_MAX, &error);
 if (! reply) {
 	dbus_message_unref (message);
 
@@ -1828,6 +1828,7 @@ class Output(Group):
 #include <dbus/dbus.h>
 
 #include <errno.h>
+#include <limits.h>
 
 #include <nih/macros.h>
 #include <nih/alloc.h>

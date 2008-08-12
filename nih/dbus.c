@@ -82,6 +82,7 @@ static DBusHandlerResult nih_dbus_object_introspect (DBusConnection *conn,
 						     DBusMessage *message,
 						     NihDBusObject *object);
 static int               nih_dbus_message_destroy   (NihDBusMessage *msg);
+static void              nih_dbus_release_callback  (NihMainLoopFunc *func);
 
 
 /**
@@ -292,6 +293,18 @@ nih_dbus_bus (DBusBusType              bus,
 }
 
 /**
+ * nih_dbus_release_callback:
+ * @func: main loop callback function
+ *
+ * Mark a dbus callback in the main loop deleted.
+ **/
+static void
+nih_dbus_release_callback (NihMainLoopFunc *func)
+{
+	func->delete = TRUE;
+}
+
+/**
  * nih_dbus_setup:
  * @conn: D-Bus connection to setup,
  * @disconnect_handler: function to call on disconnection.
@@ -335,7 +348,7 @@ nih_dbus_setup (DBusConnection           *conn,
 		return -1;
 
 	if (! dbus_connection_set_data (conn, main_loop_slot, loop,
-					(DBusFreeFunction)nih_free)) {
+					(DBusFreeFunction)nih_dbus_release_callback)) {
 		nih_free (loop);
 		return -1;
 	}

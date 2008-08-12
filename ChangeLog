@@ -1,3 +1,17 @@
+2008-08-12  Casey Dahlin  <cdahlin@redhat.com>
+
+	* nih/main.h (NihMainLoopFunc): Add delete member.
+	* nih/main.c (nih_main_loop): Don't run the callback for any function
+	marked for deletion, instead call nih_free on it.
+	(nih_main_loop_add_func): Initialise delete to FALSE.
+	* nih/dbus.c (nih_dbus_release_callback): Add function to mark a
+	loop function as deleted.
+	(nih_dbus_setup): and use it as the free function instead of nih_free.
+	* nih/tests/test_dbus.c (test_connect, test_bus, test_setup): Check
+	that the loop functions are marked for deletion instead of freed.
+
+	* nih/nih_dbus_tool.py (Output.sourceFile): Include limits.h
+
 2008-07-02  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/Makefile.am (test_com_netsplit_Nih_Test_object_SOURCES)

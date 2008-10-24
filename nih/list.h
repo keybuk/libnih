@@ -106,7 +106,7 @@ typedef struct nih_list_entry {
  * would be placed before the cursor and thus skipped.
  **/
 #define NIH_LIST_FOREACH_SAFE(list, iter)				\
-	for (NihList  _##iter##_cursor = { &_##iter_cursor, &_##iter_cursor }, \
+	for (NihList  _##iter##_cursor = { &_##iter##_cursor, &_##iter##_cursor }, \
 		     *_##iter = &_##iter##_cursor;			\
 	     _##iter;							\
 	     nih_list_destroy (_##iter), _##iter = NULL)		\

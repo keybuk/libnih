@@ -1,5 +1,8 @@
 2008-10-24  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/list.h (NIH_LIST_FOREACH_SAFE): Fix a typo that caused only
+	once cursor variable to be used, rather than one per iteration.
+
 	* nih/main.h, nih/main.c, nih/dbus.c, nih/tests/test_dbus.c: Revert
 	previous "delete" patch now that we can iterate linked lists
 	without tripping over the bug we found here.

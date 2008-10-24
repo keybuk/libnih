@@ -14,18 +14,25 @@
    fun:dbus_realloc
    fun:_dbus_data_slot_allocator_alloc
 }
+{
+   dbus-connection-slot
+   Memcheck:Leak
+   fun:realloc
+   obj:/lib/libdbus-1.so.*
+   fun:nih_dbus_server
+}
 
 
 # Deep inside nss lookup, we read freed memory ... encouraging
 {
    idiotic-leak
    Memcheck:Addr4
-   obj:/lib/ld-2.7.so
+   obj:/lib/ld-*.so
 }
 {
    idiotic-leak
    Memcheck:Addr8
-   obj:/lib/ld-2.7.so
+   obj:/lib/ld-*.so
 }
 
 # NSS-related leak
@@ -33,14 +40,14 @@
    nss-database-lookup
    Memcheck:Leak
    fun:malloc
-   obj:/lib/libc-2.7.so
+   obj:/lib/libc-*.so
    fun:__nss_database_lookup
 }
 {
    nss-database-lookup
    Memcheck:Leak
    fun:malloc
-   obj:/lib/tls/i686/cmov/libc-2.7.so
+   obj:/lib/tls/i686/cmov/libc-*.so
    fun:__nss_database_lookup
 }
 

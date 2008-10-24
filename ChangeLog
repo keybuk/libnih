@@ -1,5 +1,8 @@
 2008-10-24  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/libnih-dbus.supp: Update suppressions for newer glibc and
+	D-Bus without debugging enabled.
+
 	* nih/list.h (NIH_LIST_FOREACH_SAFE): Replace with a more ingenious
 	version based on work by Casey Dahlin and myself; instead of caching
 	the next pointer, place a cursor node in the list instead.  This

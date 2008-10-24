@@ -97,17 +97,22 @@ typedef struct nih_list_entry {
  * except @list itself, setting @iter to each entry for the block within
  * the loop.
  *
- * The iteration is performed safely by caching the next entry in @list
- * in another variable (named _@iter); this means that @iter can be removed
- * from the list, added to a different list, or entries added before or
- * after it.
+ * The iteration is performed safely by placing a cursor node after @iter;
+ * this means that any node including @iter can be removed from the list,
+ * added to a different list, or entries added before or after it.
  *
- * Note that if you wish an entry added after @iter to be visited, you
- * would need to use NIH_LIST_FOREACH() instead, as this would skip it.
+ * Note that if you add an entry directly after @iter and wish it to be
+ * visited, you would need to use NIH_LIST_FOREACH() instead, as this
+ * would be placed before the cursor and thus skipped.
  **/
-#define NIH_LIST_FOREACH_SAFE(list, iter) \
-	for (NihList *iter = (list)->next, *_##iter = iter->next; \
-	     iter != (list); iter = _##iter, _##iter = _##iter->next)
+#define NIH_LIST_FOREACH_SAFE(list, iter)				\
+	for (NihList  _##iter##_cursor = { &_##iter_cursor, &_##iter_cursor }, \
+		     *_##iter = &_##iter##_cursor;			\
+	     _##iter;							\
+	     nih_list_destroy (_##iter), _##iter = NULL)		\
+		for (NihList *iter = nih_list_add_after ((list)->next, _##iter)->prev; \
+		     iter != (list) && iter != _##iter;		\
+		     iter = nih_list_add_after (_##iter->next, _##iter)->prev)
 
 
 NIH_BEGIN_EXTERN

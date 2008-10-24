@@ -112,13 +112,14 @@ typedef struct nih_hash {
  * entry for the block within the loop.  A variable named _@iter_i is used
  * to iterate the hash bins.
  *
- * The iteration is performed safely by caching the next entry in the bin
- * in another variable (named _@iter); this means that @iter can be removed
- * from the bin, added to a different list or hash table, or entries added
- * before or after it.
+ * The iteration is performed safely by placing a cursor node after @iter;
+ * this means that any node including @iter can be removed from the bin,
+ * added to a different list or hash table, or entries added before or
+ * after it.
  *
- * Note that if you wish an entry added after @iter to be visited, you
- * would need to use NIH_HASH_FOREACH() instead, as this would skip it.
+ * Note that if you add an entry directly after @iter and wish it to be
+ * visited, you would need to use NIH_LIST_FOREACH() instead, as this
+ * would be placed before the cursor and thus skipped.
  **/
 #define NIH_HASH_FOREACH_SAFE(hash, iter) \
 	for (size_t _##iter##_i = 0; _##iter##_i < (hash)->size; \

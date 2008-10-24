@@ -1,3 +1,13 @@
+2008-10-24  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/list.h (NIH_LIST_FOREACH_SAFE): Replace with a more ingenious
+	version based on work by Casey Dahlin and myself; instead of caching
+	the next pointer, place a cursor node in the list instead.  This
+	solves the issue where the next pointer may be changed or freed, and,
+	in fact solves all issues of list rearrangement.
+	* nih/tests/test_list.c (test_foreach_safe): Add test cases.
+	* nih/hash.h (NIH_HASH_FOREACH_SAFE): Update comment to match.
+
 2008-08-12  Casey Dahlin  <cdahlin@redhat.com>
 
 	* nih/main.h (NihMainLoopFunc): Add delete member.

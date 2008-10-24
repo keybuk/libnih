@@ -312,11 +312,41 @@ test_foreach_safe (void)
 	NihList *list, *entry[3];
 	int      i;
 
+	TEST_FUNCTION ("NIH_LIST_FOREACH_SAFE");
+
+	/* Check that NIH_LIST_FOREACH_SAFE iterates the list correctly in
+	 * order, visiting each entry.
+	 */
+	TEST_FEATURE ("with ordinary iteration");
+	list = nih_list_new (NULL);
+	entry[0] = nih_list_add (list, nih_list_new (NULL));
+	entry[1] = nih_list_add (list, nih_list_new (NULL));
+	entry[2] = nih_list_add (list, nih_list_new (NULL));
+
+	i = 0;
+	NIH_LIST_FOREACH_SAFE (list, iter) {
+		if (i > 2)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     3, i + 1);
+
+		if (iter != entry[i])
+			TEST_FAILED ("wrong list entry, expected %p got %p",
+				     entry[i], iter);
+
+		i++;
+	}
+
+	nih_free (list);
+	nih_free (entry[0]);
+	nih_free (entry[1]);
+	nih_free (entry[2]);
+
+
 	/* Check that NIH_LIST_FOREACH_SAFE iterates the list correctly in
 	 * order, visiting each entry; and that it's safe to remove entries
 	 * while doing so.
 	 */
-	TEST_FUNCTION ("NIH_LIST_FOREACH_SAFE");
+	TEST_FEATURE ("with removal of visited node");
 	list = nih_list_new (NULL);
 	entry[0] = nih_list_add (list, nih_list_new (NULL));
 	entry[1] = nih_list_add (list, nih_list_new (NULL));
@@ -340,6 +370,40 @@ test_foreach_safe (void)
 
 	/* Check that the list is now empty */
 	TEST_LIST_EMPTY (list);
+
+	nih_free (list);
+	nih_free (entry[0]);
+	nih_free (entry[1]);
+	nih_free (entry[2]);
+
+
+	/* Check that NIH_LIST_FOREACH_SAFE iterates the list correctly in
+	 * order, visiting each entry; and that it's safe to remove the
+	 * next entry while doing so.
+	 */
+	TEST_FEATURE ("with removal of next node");
+	list = nih_list_new (NULL);
+	entry[0] = nih_list_add (list, nih_list_new (NULL));
+	entry[1] = nih_list_add (list, nih_list_new (NULL));
+	entry[2] = nih_list_add (list, nih_list_new (NULL));
+
+	i = 0;
+	NIH_LIST_FOREACH_SAFE (list, iter) {
+		if (i > 2)
+			TEST_FAILED ("wrong number of iterations, expected %d got %d",
+				     3, i + 1);
+
+		if (iter != entry[i])
+			TEST_FAILED ("wrong list entry, expected %p got %p",
+				     entry[i], iter);
+
+		if (i == 0)
+			nih_list_remove (entry[1]);
+
+		/* Next entry visited should be 2 */
+		i += 2;
+	}
+
 
 	nih_free (list);
 	nih_free (entry[0]);

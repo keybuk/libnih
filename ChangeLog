@@ -1,5 +1,9 @@
 2008-10-24  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/list.h (NIH_LIST_FOREACH_SAFE): Mark the cursor to be
+	automatically cleaned up should we exit the loop; this somewhat
+	simplifies the definition and allows returning from within the loop.
+
 	* nih/list.h (NIH_LIST_FOREACH_SAFE): Fix a typo that caused only
 	once cursor variable to be used, rather than one per iteration.
 

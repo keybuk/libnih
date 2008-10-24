@@ -106,13 +106,11 @@ typedef struct nih_list_entry {
  * would be placed before the cursor and thus skipped.
  **/
 #define NIH_LIST_FOREACH_SAFE(list, iter)				\
-	for (NihList  _##iter##_cursor = { &_##iter##_cursor, &_##iter##_cursor }, \
-		     *_##iter = &_##iter##_cursor;			\
-	     _##iter;							\
-	     nih_list_destroy (_##iter), _##iter = NULL)		\
-		for (NihList *iter = nih_list_add_after ((list)->next, _##iter)->prev; \
-		     iter != (list) && iter != _##iter;		\
-		     iter = nih_list_add_after (_##iter->next, _##iter)->prev)
+	for (NihList  _##iter __attribute__((cleanup(nih_list_destroy))) = \
+                              { &_##iter, &_##iter }, \
+		     *iter = nih_list_add_after ((list)->next, &_##iter)->prev; \
+	     iter != (list) && iter != &_##iter;				\
+	     iter = nih_list_add_after (_##iter.next, &_##iter)->prev)
 
 
 NIH_BEGIN_EXTERN

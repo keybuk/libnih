@@ -212,10 +212,7 @@ test_connect (void)
 	TEST_TRUE (disconnected);
 	TEST_EQ_P (last_connection, conn);
 
-	TEST_NOT_FREE (loop_func);
-	TEST_TRUE (loop_func->delete);
-
-	nih_free (loop_func);
+	TEST_FREE (loop_func);
 
 
 	/* Check that by using a GUID we can reuse connections to the same
@@ -299,10 +296,7 @@ test_connect (void)
 	TEST_TRUE (disconnected);
 	TEST_EQ_P (last_connection, conn);
 
-	TEST_NOT_FREE (loop_func);
-	TEST_TRUE (loop_func->delete);
-
-	nih_free (loop_func);
+	TEST_FREE (loop_func);
 
 
 	/* Check that we can create a new connection to a listening dbus
@@ -334,14 +328,6 @@ test_connect (void)
 	TEST_TRUE (disconnected);
 	TEST_EQ_P (last_connection, conn);
 
-	/* Reap deleted */
-	NIH_LIST_FOREACH_SAFE (nih_main_loop_functions, iter) {
-		NihMainLoopFunc *func = (NihMainLoopFunc *)iter;
-
-		if (func->delete)
-			nih_free (func);
-	}
-
 
 	/* Check that if we create a new connection to a non-listening
 	 * address, no object is returned.
@@ -370,7 +356,7 @@ test_bus (void)
 	DBusServer      *server;
 	DBusConnection  *conn, *last_conn;
 	NihIoWatch      *io_watch;
-	NihMainLoopFunc *loop_func = NULL;
+	NihMainLoopFunc *loop_func;
 	NihError        *err;
 	pid_t            pid1, pid2;
 	int              fd, wait_fd, status;
@@ -413,17 +399,9 @@ test_bus (void)
 
 	TEST_EQ_P (loop_func->data, conn);
 
-	TEST_FREE_TAG (loop_func);
-
 	dbus_connection_unref (conn);
 system_bus:
 	dbus_shutdown ();
-
-	if (loop_func) {
-		TEST_NOT_FREE (loop_func);
-		TEST_TRUE (loop_func->delete);
-		nih_free (loop_func);
-	}
 
 
 	/* Check that we can create a connection to the D-Bus system bus,
@@ -445,16 +423,6 @@ system_bus:
 	TEST_EQ (io_watch->fd, fd);
 	TEST_NE_P (io_watch->data, NULL);
 
-#if 0
-	/* Reap deleted */
-	NIH_LIST_FOREACH_SAFE (nih_main_loop_functions, iter) {
-		NihMainLoopFunc *fn = (NihMainLoopFunc *)iter;
-
-		if (fn->marked_deleted)
-			nih_free (fn);
-	}
-#endif
-
 	/* Should be a single main loop function. */
 	TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
 	loop_func = (NihMainLoopFunc *)nih_main_loop_functions->next;
@@ -462,14 +430,8 @@ system_bus:
 
 	TEST_EQ_P (loop_func->data, conn);
 
-	TEST_FREE_TAG (loop_func);
-
 	dbus_connection_unref (conn);
 	dbus_shutdown ();
-
-	TEST_NOT_FREE (loop_func);
-	TEST_TRUE (loop_func->delete);
-	nih_free (loop_func);
 
 
 	/* Check that we can share connections to a bus. */
@@ -488,16 +450,6 @@ system_bus:
 	dbus_connection_get_unix_fd (conn, &fd);
 	TEST_EQ (io_watch->fd, fd);
 	TEST_NE_P (io_watch->data, NULL);
-
-#if 0
-	/* Reap deleted */
-	NIH_LIST_FOREACH_SAFE (nih_main_loop_functions, iter) {
-		NihMainLoopFunc *fn = (NihMainLoopFunc *)iter;
-
-		if (fn->marked_deleted)
-			nih_free (fn);
-	}
-#endif
 
 	/* Should be a single main loop function. */
 	TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
@@ -523,7 +475,6 @@ system_bus:
 
 	/* Should be the same main loop function. */
 	TEST_NOT_FREE (loop_func);
-	TEST_FALSE (loop_func->delete);
 	TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
 	TEST_EQ_P (nih_main_loop_functions->next, &loop_func->entry);
 	TEST_EQ_P (loop_func->entry.next, nih_main_loop_functions);
@@ -532,10 +483,6 @@ system_bus:
 	dbus_connection_unref (conn);
 	dbus_connection_unref (last_conn);
 	dbus_shutdown ();
-
-	TEST_NOT_FREE (loop_func);
-	TEST_TRUE (loop_func->delete);
-	nih_free (loop_func);
 
 
 	/* Check that if the bus disconnects before registration, NULL
@@ -649,16 +596,6 @@ test_setup (void)
 	TEST_EQ (io_watch->fd, fd);
 	TEST_NE_P (io_watch->data, NULL);
 
-#if 0
-	/* Reap deleted */
-	NIH_LIST_FOREACH_SAFE (nih_main_loop_functions, iter) {
-		NihMainLoopFunc *fn = (NihMainLoopFunc *)iter;
-
-		if (fn->marked_deleted)
-			nih_free (fn);
-	}
-#endif
-
 	/* Should be a single main loop function. */
 	TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
 	loop_func = (NihMainLoopFunc *)nih_main_loop_functions->next;
@@ -688,7 +625,6 @@ test_setup (void)
 
 	/* Should be the same main loop function. */
 	TEST_NOT_FREE (loop_func);
-	TEST_FALSE (loop_func->delete);
 	TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
 	TEST_EQ_P (nih_main_loop_functions->next, &loop_func->entry);
 	TEST_EQ_P (loop_func->entry.next, nih_main_loop_functions);
@@ -696,10 +632,6 @@ test_setup (void)
 
 	dbus_connection_unref (conn);
 	dbus_shutdown ();
-
-	TEST_NOT_FREE (loop_func);
-	TEST_TRUE (loop_func->delete);
-	nih_free (loop_func);
 }
 
 

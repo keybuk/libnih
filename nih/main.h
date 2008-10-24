@@ -44,7 +44,6 @@ typedef void (*NihMainLoopCb) (void *data, NihMainLoopFunc *loop);
  * @entry: list header,
  * @callback: function called,
  * @data: pointer passed to @callback.
- * @delete: the function should be freed instead of run.
  *
  * This structure contains information about a function that should be
  * called once in each main loop iteration.
@@ -57,8 +56,6 @@ struct nih_main_loop_func {
 
 	NihMainLoopCb  callback;
 	void          *data;
-
-	int            delete;
 };
 
 

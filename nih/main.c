@@ -617,11 +617,7 @@ nih_main_loop (void)
 		NIH_LIST_FOREACH_SAFE (nih_main_loop_functions, iter) {
 			NihMainLoopFunc *func = (NihMainLoopFunc *)iter;
 
-			if (! func->delete) {
-				func->callback (func->data, func);
-			} else {
-				nih_free (iter);
-			}
+			func->callback (func->data, func);
 		}
 	}
 
@@ -705,8 +701,6 @@ nih_main_loop_add_func (const void    *parent,
 
 	func->callback = callback;
 	func->data = data;
-
-	func->delete = FALSE;
 
 	nih_list_add (nih_main_loop_functions, &func->entry);
 

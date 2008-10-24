@@ -1,5 +1,9 @@
 2008-10-24  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/main.h, nih/main.c, nih/dbus.c, nih/tests/test_dbus.c: Revert
+	previous "delete" patch now that we can iterate linked lists
+	without tripping over the bug we found here.
+
 	* nih/libnih-dbus.supp: Update suppressions for newer glibc and
 	D-Bus without debugging enabled.
 

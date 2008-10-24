@@ -1828,7 +1828,6 @@ class Output(Group):
 #include <dbus/dbus.h>
 
 #include <errno.h>
-#include <limits.h>
 
 #include <nih/macros.h>
 #include <nih/alloc.h>

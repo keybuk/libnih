@@ -2,7 +2,7 @@
  *
  * signal.c - easier and main-loop signal handling
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -247,7 +247,7 @@ nih_signal_reset (void)
 
 /**
  * nih_signal_add_handler:
- * @parent: parent of structure,
+ * @parent: parent object for new signal,
  * @signum: signal number to catch,
  * @handler: function to call,
  * @data: pointer to pass to @handler.
@@ -261,9 +261,10 @@ nih_signal_reset (void)
  *
  * Removal of the handler can be performed by freeing it.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned signal.  When all parents
+ * of the returned signal are freed, the returned signal will also be
+ * freed.
  *
  * Returns: the signal information, or NULL if insufficient memory.
  **/
@@ -287,7 +288,7 @@ nih_signal_add_handler (const void       *parent,
 
 	nih_list_init (&signal->entry);
 
-	nih_alloc_set_destructor (signal, (NihDestructor)nih_list_destroy);
+	nih_alloc_set_destructor (signal, nih_list_destroy);
 
 	signal->signum = signum;
 

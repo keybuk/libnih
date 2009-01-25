@@ -1,5 +1,8 @@
 2009-01-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/logging.c: Include nih/macros.h
+	* nih/logging.h: Add documentation for header.
+
 	* nih/config.c (nih_config_next_token, nih_config_next_arg)
 	(nih_config_parse_args, nih_config_parse_command)
 	(nih_config_parse_block): Update documentation to match new

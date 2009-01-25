@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,17 @@
 
 #ifndef NIH_LOGGING_H
 #define NIH_LOGGING_H
+
+/**
+ * These functions provide a logging interface for outputting messages
+ * at different priorities, and filtering based on them.
+ *
+ * The output for the logger can be selected using nih_log_set_logger(),
+ * where nih_logger_printf() is the default and nih_logger_syslog() another
+ * popular alternative.
+ *
+ * Log messages are output with different macros.
+ **/
 
 #include <stdlib.h>
 

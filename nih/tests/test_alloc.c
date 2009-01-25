@@ -49,6 +49,7 @@ test_new (void)
 	ptr1 = nih_new (NULL, int);
 
 	TEST_ALLOC_SIZE (ptr1, sizeof (int));
+	TEST_ALLOC_ORPHAN (ptr1);
 
 
 	/* Check that nih_new works if we do give a parent. */
@@ -56,7 +57,7 @@ test_new (void)
 	ptr2 = nih_new (ptr1, char);
 
 	TEST_ALLOC_SIZE (ptr2, sizeof (char));
-	TEST_ALLOC_HAS_REF (ptr2, ptr1);
+	TEST_ALLOC_PARENT (ptr2, ptr1);
 
 	nih_free (ptr1);
 
@@ -85,6 +86,7 @@ test_alloc (void)
 	memset (ptr1, 'x', 8096);
 
 	TEST_ALLOC_SIZE (ptr1, 8096);
+	TEST_ALLOC_ORPHAN (ptr1);
 
 
 	/* Check that allocation with a parent remembers the parent */
@@ -93,7 +95,7 @@ test_alloc (void)
 	memset (ptr2, 'x', 10);
 
 	TEST_ALLOC_SIZE (ptr2, 10);
-	TEST_ALLOC_HAS_REF (ptr2, ptr1);
+	TEST_ALLOC_PARENT (ptr2, ptr1);
 
 	nih_free (ptr1);
 
@@ -130,6 +132,7 @@ test_realloc (void)
 	memset (ptr1, 'x', 4096);
 
 	TEST_ALLOC_SIZE (ptr1, 4096);
+	TEST_ALLOC_ORPHAN (ptr1);
 
 	nih_free (ptr1);
 
@@ -144,6 +147,7 @@ test_realloc (void)
 	memset (ptr1, 'x', 8096);
 
 	TEST_ALLOC_SIZE (ptr1, 8096);
+	TEST_ALLOC_ORPHAN (ptr1);
 
 
 	/* Check that nih_realloc works if the block has a parent, the size
@@ -157,7 +161,7 @@ test_realloc (void)
 	memset (ptr2, 'x', 10);
 
 	TEST_ALLOC_SIZE (ptr2, 10);
-	TEST_ALLOC_HAS_REF (ptr2, ptr1);
+	TEST_ALLOC_PARENT (ptr2, ptr1);
 
 	nih_free (ptr1);
 
@@ -176,7 +180,7 @@ test_realloc (void)
 	ptr3 = nih_realloc (ptr1, NULL, 1024);
 	memset (ptr3, 'x', 1024);
 
-	TEST_ALLOC_HAS_REF (ptr2, ptr3);
+	TEST_ALLOC_PARENT (ptr2, ptr3);
 
 	nih_free (ptr3);
 
@@ -382,7 +386,7 @@ test_ref (void)
 
 	nih_ref (ptr1, ptr2);
 
-	TEST_ALLOC_HAS_REF (ptr1, ptr2);
+	TEST_ALLOC_PARENT (ptr1, ptr2);
 
 	nih_free (ptr2);
 
@@ -402,8 +406,8 @@ test_ref (void)
 
 	nih_ref (ptr2, ptr3);
 
-	TEST_ALLOC_HAS_REF (ptr2, ptr1);
-	TEST_ALLOC_HAS_REF (ptr2, ptr3);
+	TEST_ALLOC_PARENT (ptr2, ptr1);
+	TEST_ALLOC_PARENT (ptr2, ptr3);
 
 	nih_free (ptr1);
 	nih_free (ptr3);
@@ -438,7 +442,7 @@ test_unref (void)
 	nih_unref (ptr2, ptr1);
 
 	TEST_FALSE (destructor_was_called);
-	TEST_ALLOC_HAS_REF (ptr2, ptr3);
+	TEST_ALLOC_PARENT (ptr2, ptr3);
 
 	nih_free (ptr1);
 	nih_free (ptr3);
@@ -465,6 +469,77 @@ test_unref (void)
 }
 
 
+void
+test_parent (void)
+{
+	void *ptr1, *ptr2, *ptr3;
+
+	TEST_FUNCTION ("nih_alloc_parent");
+
+
+	/* Check that nih_alloc_parent returns TRUE when the passed object
+	 * is a child of the passed parent.
+	 */
+	TEST_FEATURE ("with child and parent");
+	ptr1 = nih_alloc (NULL, 10);
+	ptr2 = nih_alloc (ptr1, 10);
+
+	TEST_TRUE (nih_alloc_parent (ptr2, ptr1));
+
+	nih_free (ptr1);
+
+
+	/* Check that nih_alloc_parent returns TRUE when the passed object
+	 * has a parent and NULL is passed.
+	 */
+	TEST_FEATURE ("with child and NULL");
+	ptr1 = nih_alloc (NULL, 10);
+	ptr2 = nih_alloc (ptr1, 10);
+
+	TEST_TRUE (nih_alloc_parent (ptr2, ptr1));
+
+	nih_free (ptr1);
+
+
+	/* Check that nih_alloc_parent returns FALSE when the passed object
+	 * is a child but not of the passed parent.
+	 */
+	TEST_FEATURE ("with child and wrong parent");
+	ptr1 = nih_alloc (NULL, 10);
+	ptr2 = nih_alloc (ptr1, 10);
+	ptr3 = nih_alloc (NULL, 10);
+
+	TEST_FALSE (nih_alloc_parent (ptr2, ptr3));
+
+	nih_free (ptr1);
+	nih_free (ptr3);
+
+
+	/* Check that nih_alloc_parent returns FALSE when the passed object
+	 * is an orphan.
+	 */
+	TEST_FEATURE ("with orphan");
+	ptr1 = nih_alloc (NULL, 10);
+	ptr2 = nih_alloc (NULL, 10);
+
+	TEST_FALSE (nih_alloc_parent (ptr2, ptr1));
+
+	nih_free (ptr1);
+	nih_free (ptr2);
+
+
+	/* Check that nih_alloc_parent returns FALSE when the passed object
+	 * is an orphan and NULL is passed.
+	 */
+	TEST_FEATURE ("with orphan and NULL");
+	ptr1 = nih_alloc (NULL, 10);
+
+	TEST_FALSE (nih_alloc_parent (ptr1, NULL));
+
+	nih_free (ptr1);
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -476,6 +551,7 @@ main (int   argc,
 	test_discard ();
 	test_ref ();
 	test_unref ();
+	test_parent ();
 
 	return 0;
 }

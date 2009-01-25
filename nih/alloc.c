@@ -539,25 +539,33 @@ nih_alloc_ref_free (NihAllocRef *ref,
 
 
 /**
- * nih_alloc_has_ref:
+ * nih_alloc_parent:
  * @ptr: object to query,
  * @parent: parent object to look for.
+ *
+ * If @parent is NULL any parent will match.
  *
  * Returns: TRUE if @parent has a reference to @ptr, FALSE otherwise.
  **/
 int
-nih_alloc_has_ref (void       *ptr,
-		   const void *parent)
+nih_alloc_parent (void       *ptr,
+		  const void *parent)
 {
-	NihAllocRef *ref;
+	NihAllocCtx *ctx;
 
 	nih_assert (ptr != NULL);
-	nih_assert (parent != NULL);
 
-	ref = nih_alloc_ref_lookup (NIH_ALLOC_CTX (parent),
-				    NIH_ALLOC_CTX (ptr));
+	ctx = NIH_ALLOC_CTX (ptr);
 
-	return ref ? TRUE : FALSE;
+	if (parent) {
+		NihAllocRef *ref;
+
+		ref = nih_alloc_ref_lookup (NIH_ALLOC_CTX (parent), ctx);
+
+		return ref ? TRUE : FALSE;
+	} else {
+		return NIH_LIST_EMPTY (&ctx->parents) ? FALSE : TRUE;
+	}
 }
 
 /**
@@ -565,7 +573,7 @@ nih_alloc_has_ref (void       *ptr,
  * @parent: parent context,
  * @child: child context.
  *
- * This is the internal function used by nih_unref() and nih_alloc_has_ref()
+ * This is the internal function used by nih_unref() and nih_alloc_parent()
  * to lookup a reference between the @parent and @child contexts.
  *
  * Returns: NihAllocRef structure or NULL if no reference exists.

@@ -1,5 +1,12 @@
 2009-01-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (nih_alloc_has_ref): Rename back to nih_alloc_parent.
+	(nih_alloc_parent): Accept NULL, if given returns TRUE if there are
+	any parents.
+	* nih/alloc.h: Update prototype.
+	* nih/tests/test_alloc.c (test_parent): Since it's a bit more
+	complex, we should probably explicitly test this ;-)
+
 	* nih/test.h, nih/test_output.h, nih/test_values.h, nih/test_process.h,
 	nih/test_divert.h, nih/test_files.h, nih/test_alloc.h, nih/test_list.h,
 	nih/test_hash.h, nih/test_dbus.h: Split the test macros out into

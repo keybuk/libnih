@@ -181,6 +181,7 @@ void   nih_alloc_real_set_destructor (void *ptr, NihDestructor destructor);
 
 void   nih_ref                       (void *ptr, const void *parent);
 void   nih_unref                     (void *ptr, const void *parent);
+void   nih_unref_only                (void *ptr, const void *parent);
 
 int    nih_alloc_parent              (const void *ptr, const void *parent);
 

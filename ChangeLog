@@ -1,5 +1,10 @@
 2009-01-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (nih_unref_only): Add function to allow unreferencing
+	without freeing, for example if we return something from our state
+	and want to reparent but still allow NULL.
+	* nih/alloc.h: Add prototype.
+
 	* nih/io.c (nih_io_add_watch, nih_io_message_new, nih_io_reopen):
 	Update documentation to match new nih_alloc(), no need to cast
 	destructor function.

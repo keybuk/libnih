@@ -536,6 +536,31 @@ nih_unref (void       *ptr,
 }
 
 /**
+ * nih_unref_only:
+ * @ptr: object to unreference,
+ * @parent: parent object to remove.
+ *
+ * Removes the reference to the object @ptr from @parent, but will not
+ * automatically free @ptr even if this is the last reference.
+ **/
+void
+nih_unref_only (void       *ptr,
+		const void *parent)
+{
+	NihAllocRef *ref;
+
+	nih_assert (ptr != NULL);
+	nih_assert (parent != NULL);
+
+	ref = nih_alloc_ref_lookup (NIH_ALLOC_CTX (parent),
+				    NIH_ALLOC_CTX (ptr));
+
+	nih_assert (ref != NULL);
+
+	nih_alloc_ref_free (ref, FALSE);
+}
+
+/**
  * nih_alloc_ref_free:
  * @parent: parent context,
  * @child: child context.

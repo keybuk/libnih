@@ -1,5 +1,48 @@
 2009-01-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/string.c: Update all documentation to match new nih_alloc()
+	(nih_str_array_addp): Take a reference to the passed variable
+	instead of reparenting (which isn't possible anymore).
+	(nih_str_array_add, nih_str_array_addn): Since these just call
+	nih_str_array_addp() which now takes a reference rather than
+	reparents, we can change these functions to make new_str as a
+	local variable.
+	(nih_strv_free): Drop this function, it's not used and it's utterly
+	inconsistent with the others as it expressly isn't used with
+	nih_alloc().
+	* nih/string.h: Add a documentation string and drop prototype.
+	* nih/tests/test_string.c (test_strv_free): Drop.
+	(test_sprintf, test_vsprintf, test_strdup, test_strndup): Replace
+	TEST_ALLOC_PARENT calls with NULL as the second argument with
+	TEST_ALLOC_ORPHAN instead.
+	(test_strcat, test_strncat, test_strcat_sprintf)
+	(test_strcat_vsprintf): Strangely these test cases don't appear to
+	have worked before, the functions return NULL in case of memory
+	allocation failure so we need to check the string against a temporary
+	copy stored before.
+
+	* nih/test_alloc.h: Expose references to nih_alloc()'s pointers to
+	malloc, realloc and free so we can replace them for testing purposes.
+	(TEST_ALLOC_SIZE): Since this returns the size of the allocated object,
+	rather than the request, check that the block is at least as large
+	as the argument given - not exactly as large.
+	(TEST_ALLOC_PARENT): Call nih_alloc_parent directly with both
+	arguments, since it's compatible with our calling - can't output the
+	current parent now they're may be multiple though.  When passed NULL
+	this now checks if it *has* a parent (almost the exact inverse of the
+	previous meaning).
+	(TEST_ALLOC_ORPHAN): New test to make sure that an object does not
+	have a parent.
+	(_test_free_tag): Reimplement to lookup the tag block in a linked
+	list, instead of a static array, and only return TRUE or FALSE.
+	(_test_destructor): Drop, we can just use nih_list_destroy instead.
+	(TEST_FREE_TAG): Reimplement to allocate the tag struct itself as
+	the child, and place in a linked list.
+	(_test_malloc): Add malloc wrapper.
+	(_test_allocator): Rename to _test_realloc
+	(TEST_ALLOC_FAIL, TEST_ALLOC_SAFE): Change allocator through the
+	exposed variables.
+
 	* nih/alloc.h (nih_local): Macro to add a variable attribute that
 	calls a nih_discard() as a cleanup function when the variable goes
 	out of scope.

@@ -28,6 +28,16 @@
 #include <stddef.h>
 
 #include <nih/alloc.h>
+#include <nih/list.h>
+
+
+/* When testing, we need to be able to override the malloc, realloc and free
+ * functions called by nih_alloc().  We can't use libc malloc hooks because
+ * valgrind doesn't implement them - and I like valgrind.
+ */
+extern void *(*__nih_malloc)(size_t size);
+extern void *(*__nih_realloc)(void *ptr, size_t size);
+extern void (*__nih_free)(void *ptr);
 
 
 /**
@@ -35,13 +45,13 @@
  * @_ptr: allocated pointer,
  * @_sz: expected size.
  *
- * Check that the pointer @_ptr was allocated with nih_alloc(), and is @_sz
- * bytes in length (which includes the context).
+ * Check that the pointer @_ptr was allocated with nih_alloc(), and has
+ * enough space for at least @_sz bytes.
  **/
-#define TEST_ALLOC_SIZE(_ptr, _sz) \
-	if (nih_alloc_size (_ptr) != (_sz)) \
+#define TEST_ALLOC_SIZE(_ptr, _sz)					\
+	if (nih_alloc_size (_ptr) < (_sz))				\
 		TEST_FAILED ("wrong size of block %p (%s), expected %zu got %zu", \
-			     (_ptr), #_ptr, (size_t)(_sz), \
+			     (_ptr), #_ptr, (size_t)(_sz),		\
 			     nih_alloc_size (_ptr))
 
 /**
@@ -50,13 +60,26 @@
  * @_parent: expected parent.
  *
  * Check that the pointer @_ptr was allocated with nih_alloc() and has
- * the other block @_parent as a parent.
+ * the other block @_parent as a parent.  If @_parent is NULL, tests
+ * whether @_ptr has any parents.
  **/
-#define TEST_ALLOC_PARENT(_ptr, _parent) \
-	if (nih_alloc_parent (_ptr) != (_parent)) \
-		TEST_FAILED ("wrong parent of block %p (%s), expected %p (%s) got %p", \
-			     (_ptr), #_ptr, (_parent), #_parent, \
-			     nih_alloc_parent (_ptr))
+#define TEST_ALLOC_PARENT(_ptr, _parent)				\
+	if (! nih_alloc_parent ((_ptr), (_parent)))			\
+		TEST_FAILED ("wrong parent of block %p (%s), expected %p (%s)",	\
+			     (_ptr), #_ptr, (_parent), #_parent)
+
+/**
+ * TEST_ALLOC_ORPHAN:
+ * @_ptr: allocated pointer.
+ *
+ * Check that the pointer @_ptr was allocated with nih_alloc() and has
+ * no parent references.
+ **/
+#define TEST_ALLOC_ORPHAN(_ptr)						\
+	if (nih_alloc_parent ((_ptr), NULL))				\
+		TEST_FAILED ("wrong parent of block %p (%s), expected none", \
+			     (_ptr), #_ptr)
+
 
 
 /**
@@ -81,20 +104,18 @@ static int _test_alloc_count = 0;
 static int _test_alloc_call = 0;
 
 /**
- * _test_allocator:
+ * _test_realloc:
  *
- * Allocator used by TEST_ALLOC_FAIL; when test_alloc_failed is zero, it
- * increments test_alloc_count and returns whatever realloc does.  Otherwise
- * it internally counts the number of times it is called, and if that matches
- * test_alloc_failed, then it returns NULL.
+ * realloc() wrapper used by TEST_ALLOC_FAIL.
+ *
+ * When test_alloc_failed is zero, it increments test_alloc_count and returns
+ * whatever realloc does.  Otherwise it internally counts the number of times
+ * it is called, and if that matches test_alloc_failed, then it returns NULL.
  **/
 static inline  __attribute__ ((used)) void *
-_test_allocator (void   *ptr,
-		 size_t  size)
+_test_realloc (void   *ptr,
+	       size_t  size)
 {
-	if (! size)
-		return realloc (ptr, size);
-
 	if (! test_alloc_failed) {
 		_test_alloc_count++;
 
@@ -111,6 +132,19 @@ _test_allocator (void   *ptr,
 }
 
 /**
+ * _test_malloc:
+ *
+ * malloc() wrapped used by TEST_ALLOC_FAIL.
+ *
+ * Calls _test_realloc with a NULL pointer.
+ **/
+static inline __attribute__ ((used)) void *
+_test_malloc (size_t size)
+{
+	return _test_realloc (NULL, size);
+}
+
+/**
  * TEST_ALLOC_FAIL:
  *
  * This macro expands to code that runs the following block repeatedly; the
@@ -122,17 +156,19 @@ _test_allocator (void   *ptr,
  * This cannot be nested as it relies on setting an alternate allocator
  * and sharing a global state.
  **/
-#define TEST_ALLOC_FAIL \
-	for (test_alloc_failed = -1; \
-	     test_alloc_failed <= (_test_alloc_count + 1); \
-	     test_alloc_failed++, _test_alloc_call = 0) \
-		if (test_alloc_failed < 0) { \
-			_test_alloc_count = 0; \
-			nih_alloc_set_allocator (_test_allocator); \
-		} else if (test_alloc_failed \
-			   && (test_alloc_failed == \
-			       (_test_alloc_count + 1))) { \
-			nih_alloc_set_allocator (realloc); \
+#define TEST_ALLOC_FAIL						   \
+	for (test_alloc_failed = -1;				   \
+	     test_alloc_failed <= (_test_alloc_count + 1);	   \
+	     test_alloc_failed++, _test_alloc_call = 0)		   \
+		if (test_alloc_failed < 0) {			   \
+			_test_alloc_count = 0;			   \
+			__nih_malloc = _test_malloc;		   \
+			__nih_realloc = _test_realloc;		   \
+		} else if (test_alloc_failed			   \
+			   && (test_alloc_failed ==		   \
+			       (_test_alloc_count + 1))) {	   \
+			__nih_malloc = malloc;			   \
+			__nih_realloc = realloc;		   \
 		} else
 
 /**
@@ -141,105 +177,98 @@ _test_allocator (void   *ptr,
  * This macro may be used within a TEST_ALLOC_FAIL block to guard the
  * following block of code from failing allocation.
  **/
-#define TEST_ALLOC_SAFE \
-	for (int _test_alloc_safe = 0; _test_alloc_safe < 3; \
-	     _test_alloc_safe++) \
-		if (_test_alloc_safe < 1) { \
-			nih_alloc_set_allocator (realloc); \
-		} else if (_test_alloc_safe > 1) { \
-			nih_alloc_set_allocator (_test_allocator); \
+#define TEST_ALLOC_SAFE						   \
+	for (int _test_alloc_safe = 0; _test_alloc_safe < 3;	   \
+	     _test_alloc_safe++)				   \
+		if (_test_alloc_safe < 1) {			   \
+			__nih_malloc = malloc;			   \
+			__nih_realloc = realloc;		   \
+		} else if (_test_alloc_safe > 1) {		   \
+			__nih_malloc = _test_malloc;		   \
+			__nih_realloc = _test_realloc;		   \
 		} else
+
 
 
 /**
  * struct _test_free_tag:
- * @ptr: allocated block,
- * @tag: tag block.
+ * @entry: list entry,
+ * @ptr: tagged object.
  *
- * This structure is used to find out whether an nih_alloc() allocated block
- * is freed.  It works by pairing the allocated block with a tag block that
- * is an nih_alloc() child.  When that child is freed, this array is
- * cleared again.
+ * This structure is used to find out whether an nih_alloc() allocated object
+ * has been freed or not.  It works by being allocated as a child of the
+ * tagged object, and added to a linked list of known tags.  When freed,
+ * it is removed from the linked list.
  **/
 struct _test_free_tag {
-	void *ptr;
-	void *tag;
+	NihList  entry;
+	void    *ptr;
 };
 
 /**
  * _test_free_tags:
  *
- * Array of suitable tag pairings, set the upper limit of this to taste.
+ * Linked list of tagged blocks.
  **/
-static struct _test_free_tag _test_free_tags[1024] = { { NULL, NULL } };
+static NihList _test_free_tags = { NULL, NULL };
 
 /**
  * _test_free_tag:
- * @ptr: allocated block.
+ * @ptr: tagged object.
  *
- * Finds the tag pairing structure for @ptr in the array and returns it;
- * NULL can be used to find the first empty structure in the array for use
- * by a new tag.
- *
- * Return: tag structure for @ptr.
+ * Returns: TRUE if @ptr is tagged (not freed), FALSE if not (freed).
  **/
-static inline struct _test_free_tag *
+static inline int
 _test_free_tag (void *ptr)
 {
-	int i;
+	NIH_LIST_FOREACH (&_test_free_tags, iter) {
+		struct _test_free_tag *tag = (struct _test_free_tag *)iter;
 
-	for (i = 0; i < 1024; i++)
-		if (_test_free_tags[i].ptr == ptr)
-			return &(_test_free_tags[i]);
+		if (tag->ptr == ptr)
+			return TRUE;
+	}
 
-	return NULL;
-}
-
-/**
- * _test_destructor:
- * @tag: tag block.
- *
- * Destructor used to clear the tag for @tag and its parent block.
- *
- * Returns: zero
- **/
-static int __attribute__ ((used))
-_test_destructor (void *tag)
-{
-	struct _test_free_tag *_test_tag;
-
-	_test_tag = _test_free_tag (nih_alloc_parent (tag));
-	if (_test_tag)
-		_test_tag->ptr = _test_tag->tag = NULL;
-
-	return 0;
+	return FALSE;
 }
 
 
 /**
  * TEST_FREE_TAG:
- * @_ptr: allocated block.
+ * @_ptr: allocated object.
  *
- * This macro is used to tag an nih_alloc() allocated structure or block
- * to determine whether or not it is freed by code between it and either
- * TEST_FREED or TEST_NOT_FREED.
+ * This macro is used to tag an nih_alloc() allocated object to determine
+ * whether or not it is freed.  It works by allocating a child object of
+ * @_ptr and storing it in a linked list.
+ *
+ * This can be tested with either the TEST_FREE or TEST_NOT_FREE macros as
+ * many times as you like.
  **/
 #define TEST_FREE_TAG(_ptr)						\
 	do {								\
+		extern void *(*_test__nih_malloc)(size_t size) = __nih_malloc; \
 		struct _test_free_tag *_test_tag;			\
+									\
+		__nih_malloc = malloc;					\
+		_test_tag = nih_new ((_ptr), struct _test_free_tag);	\
 		assert ((_ptr) != NULL);				\
-		_test_tag = _test_free_tag (NULL);			\
+		__nih_malloc = _test__nih_malloc;			\
+									\
+		nih_list_init (&_test_tag->entry);			\
 		_test_tag->ptr = (_ptr);				\
-		_test_tag->tag = nih_alloc_using (realloc, (_ptr), 1);	\
-		nih_alloc_set_destructor (_test_tag->tag, _test_destructor); \
+		nih_alloc_set_destructor (_test_tag, nih_list_destroy); \
+									\
+		if (! _test_free_tags.next)				\
+			nih_list_init (&_test_free_tags);		\
+		nih_list_add (&_test_free_tags, &_test_tag->entry);	\
 	} while (0)
 
 /**
  * TEST_FREE:
- * @_ptr: allocated block.
+ * @_ptr: allocated object.
  *
- * Check that the data structure or block @_ptr was freed as expected; it
- * must have been first prepared by using TEST_FREE_TAG on it.
+ * Check that the nih_alloc() allocated object @_ptr was freed as expected; it
+ * must have been first prepared by using TEST_FREE_TAG on it otherwise this
+ * will always fail.
  **/
 #define TEST_FREE(_ptr)						    \
 	if (_test_free_tag (_ptr))				    \
@@ -251,8 +280,9 @@ _test_destructor (void *tag)
  * TEST_NOT_FREE:
  * @_ptr: allocated block.
  *
- * Check that the data structure or block @_ptr was not freed unexpectedly; it
- * must have been first prepared by using TEST_FREE_TAG on it.
+ * Check that the nih_alloc() allocated object @_ptr was not freed
+ * unexpectedly; it must have been first prepared by using TEST_FREE_TAG
+ * on it otherwise this will always succeed.
  **/
 #define TEST_NOT_FREE(_ptr)					 \
 	if (! _test_free_tag (_ptr))				 \

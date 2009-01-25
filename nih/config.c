@@ -2,7 +2,7 @@
  *
  * config.c - configuration file parsing
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -277,7 +277,7 @@ finish:
 
 /**
  * nih_config_next_token:
- * @parent: parent of returned argument,
+ * @parent: parent object for returned token,
  * @file: file or string to parse,
  * @len: length of @file,
  * @pos: offset within @file,
@@ -305,9 +305,10 @@ finish:
  * If you also want quotes to be removed and escaped characters to be
  * replaced with the character itself, set @dequote to TRUE.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned token.  When all parents
+ * of the returned token are freed, the returned token will also be
+ * freed.
  *
  * Returns: the token found or NULL on raised error.
  **/
@@ -358,7 +359,7 @@ finish:
 
 /**
  * nih_config_next_arg:
- * @parent: parent of returned argument,
+ * @parent: parent object for returned argument,
  * @file: file or string to parse,
  * @len: length of @file,
  * @pos: offset within @file,
@@ -380,9 +381,10 @@ finish:
  * If @lineno is given it will be incremented each time a new line is
  * discovered in the file.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned argument.  When all parents
+ * of the returned argument are freed, the returned argument will also be
+ * freed.
  *
  * Returns: the argument found or NULL on raised error.
  **/
@@ -544,7 +546,7 @@ nih_config_skip_comment (const char *file,
 
 /**
  * nih_config_parse_args:
- * @parent: parent of returned array,
+ * @parent: parent object for returned array,
  * @file: file or string to parse,
  * @len: length of @file,
  * @pos: offset within @file,
@@ -568,9 +570,10 @@ nih_config_skip_comment (const char *file,
  * The arguments are returned as a NULL-terminated array, with each argument
  * dequoted before being returned.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned array.  When all parents
+ * of the returned array are freed, the returned array will also be
+ * freed.
  *
  * Returns: the list of arguments found or NULL on raised error.
  **/
@@ -626,7 +629,7 @@ finish:
 
 /**
  * nih_config_parse_command:
- * @parent: parent of returned string,
+ * @parent: parent object for returned string,
  * @file: file or string to parse,
  * @len: length of @file,
  * @pos: offset within @file,
@@ -649,9 +652,10 @@ finish:
  *
  * The command is returned as a string allocated with nih_alloc().
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the returned string will also be
+ * freed.
  *
  * Returns: the command found or NULL on raised error.
  **/
@@ -703,7 +707,7 @@ finish:
 
 /**
  * nih_config_parse_block:
- * @parent: parent of returned string,
+ * @parent: parent object for returned string,
  * @file: file or string to parse,
  * @len: length of @file,
  * @pos: offset within @file,
@@ -729,9 +733,10 @@ finish:
  *
  * The block is returned as a string allocated with nih_alloc().
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the returned string will also be
+ * freed.
  *
  * Returns: the text contained within the block or NULL on raised error.
  **/
@@ -1176,7 +1181,7 @@ finish:
  * @stanzas: table of stanza handlers,
  * @data: pointer to pass to stanza handler.
  *
- * Maps @filename into memory and them parses configuration lines from it
+ * Reads @filename into memory and them parses configuration lines from it
  * using nih_config_parse_file().
  *
  * If @pos is given then it will be used as the offset within @file to
@@ -1195,13 +1200,13 @@ nih_config_parse (const char      *filename,
 		  NihConfigStanza *stanzas,
 		  void            *data)
 {
-	const char *file;
-	size_t      len;
-	int         ret;
+	nih_local char *file;
+	size_t          len;
+	int             ret;
 
 	nih_assert (filename != NULL);
 
-	file = nih_file_map (filename, O_RDONLY | O_NOCTTY, &len);
+	file = nih_file_read (NULL, filename, &len);
 	if (! file)
 		return -1;
 
@@ -1209,9 +1214,6 @@ nih_config_parse (const char      *filename,
 		*lineno = 1;
 
 	ret = nih_config_parse_file (file, len, pos, lineno, stanzas, data);
-
-	if (nih_file_unmap ((void *)file, len) < 0)
-		return -1;
 
 	return ret;
 }

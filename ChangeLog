@@ -1,5 +1,15 @@
 2009-01-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/config.c (nih_config_next_token, nih_config_next_arg)
+	(nih_config_parse_args, nih_config_parse_command)
+	(nih_config_parse_block): Update documentation to match new
+	nih_alloc()
+	(nih_config_parse): Rewrite to use nih_file_read() into an nih_local
+	variable, instead of mmap which has strange behaviours in the face
+	of updates.
+	* nih/config.h: Add documentation header.
+	* nih/tests/test_config.c: Include limits.h
+
 	* nih/command.c (nih_command_parser): Update documentation to
 	match new nih_alloc(), use nih_local where possible to clean up
 	code.

@@ -2,7 +2,7 @@
  *
  * test_config.c - test suite for nih/config.c
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 #include <nih/test.h>
 
 #include <errno.h>
+#include <limits.h>
 #include <unistd.h>
 
 #include <nih/macros.h>

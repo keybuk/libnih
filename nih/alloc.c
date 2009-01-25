@@ -327,6 +327,28 @@ nih_discard (void *ptr)
 }
 
 /**
+ * _nih_discard_local:
+ * @ptr: address of local object to be discarded.
+ *
+ * This function should never be called directly, it is used as part of the
+ * implementation of nih_local and simply calls nih_discard() with the local
+ * variable itself.
+ **/
+void
+_nih_discard_local (void *ptraddr)
+{
+	/* Can't just take void ** as a parameter, since that will upset
+	 * gcc typechecking, and we want to be able to be used on any
+	 * pointer type.
+	 */
+	void **ptr = (void **)ptraddr;
+
+	if (*ptr)
+		nih_discard (*ptr);
+}
+
+
+/**
  * nih_alloc_context_free:
  * @ctx: context to free.
  *

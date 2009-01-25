@@ -540,6 +540,59 @@ test_parent (void)
 }
 
 
+void
+test_local (void)
+{
+	void *parent, *_ptr;
+
+	TEST_GROUP ("nih_local");
+
+
+	/* Make sure that when a variable goes out of scope, it's freed. */
+	TEST_FEATURE ("with variable going out of scope");
+	do {
+		nih_local void *ptr;
+
+		ptr = nih_alloc (NULL, 100);
+
+		nih_alloc_set_destructor (ptr, destructor_called);
+		destructor_was_called = 0;
+	} while (0);
+
+	TEST_TRUE (destructor_was_called);
+
+
+	/* Make sure that if a variable is referenced while in scope, it
+	 * is not freed.
+	 */
+	TEST_FEATURE ("with referenced variable");
+	parent = nih_alloc (NULL, 100);
+
+	do {
+		nih_local void *ptr;
+
+		ptr = nih_alloc (NULL, 100);
+		nih_ref (ptr, parent);
+		_ptr = ptr;
+
+		nih_alloc_set_destructor (ptr, destructor_called);
+		destructor_was_called = 0;
+	} while (0);
+
+	TEST_FALSE (destructor_was_called);
+	TEST_ALLOC_PARENT (_ptr, parent);
+
+	nih_free (parent);
+
+
+	/* Make sure we don't need to allocate the variable. */
+	TEST_FEATURE ("with NULL variable");
+	do {
+		nih_local void *ptr = NULL;
+	} while (0);
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -552,6 +605,7 @@ main (int   argc,
 	test_ref ();
 	test_unref ();
 	test_parent ();
+	test_local ();
 
 	return 0;
 }

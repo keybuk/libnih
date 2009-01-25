@@ -61,6 +61,8 @@
  * When finished, you need to discard the object safely; if no references
  * were taken, it should be freed - otherwise it's safe to leave.  Use
  * nih_discard() instead of nih_free() to do this.
+ *
+ * Such constructs are often better handled using nih_local variables.
  **/
 
 #include <nih/macros.h>
@@ -140,6 +142,28 @@ typedef int (*NihDestructor) (void *ptr);
 	nih_alloc_real_set_destructor (ptr, (NihDestructor)destructor)
 
 
+/**
+ * nih_local:
+ *
+ * This macro may be used in a variable definition when the variable
+ * should be automatically cleaned up when it goes out of scope.  You
+ * should ensure that the pointer is either allocated with nih_alloc()
+ * or set to NULL;
+ *
+ *   {
+ *     nih_local char *foo = NULL;
+ *
+ *     foo = nih_strdup (NULL, "some data");
+ *   } // foo is automatically discarded
+ *
+ * It is permissible to take references to foo within its scope, or by
+ * functions called, in which case it will not be freed.  Also it is
+ * generally nonsensical to allocate with a parent, since this too will
+ * prevent it from beign freed.
+ **/
+#define nih_local __attribute__ ((cleanup(_nih_discard_local)))
+
+
 NIH_BEGIN_EXTERN
 
 void * nih_alloc                     (const void *parent, size_t size)
@@ -151,6 +175,7 @@ void * nih_realloc                   (void *ptr, const void *parent,
 
 int    nih_free                      (void *ptr);
 int    nih_discard                   (void *ptr);
+void   _nih_discard_local            (void *ptraddr);
 
 void   nih_alloc_real_set_destructor (void *ptr, NihDestructor destructor);
 

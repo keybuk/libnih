@@ -1,5 +1,14 @@
 2009-01-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.h (nih_local): Macro to add a variable attribute that
+	calls a nih_discard() as a cleanup function when the variable goes
+	out of scope.
+	* nih/alloc.c (_nih_discard_local): gcc cleanup function wrapper that
+	takes the address of the local variable, it gets the actual pointer
+	out and passes it to nih_discard().  Unlike the other functions,
+	this actually allows the pointer to be NULL.
+	* nih/tests/test_alloc.c (test_local): Test local variables work!
+
 	* nih/alloc.c (nih_alloc_has_ref): Rename back to nih_alloc_parent.
 	(nih_alloc_parent): Accept NULL, if given returns TRUE if there are
 	any parents.

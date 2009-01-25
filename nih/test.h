@@ -20,6 +20,11 @@
 #ifndef NIH_TEST_H
 #define NIH_TEST_H
 
+/* For _GNU_SOURCE */
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif /* HAVE_CONFIG_H */
+
 #define NIH_IN_TEST_H
 
 #include <nih/test_output.h>

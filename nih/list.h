@@ -21,15 +21,53 @@
 #define NIH_LIST_H
 
 /**
- * Defines a generic linked list type that may be embedded directly in
- * iterable structures though NihList, or used in a data-pointer manner
- * through NihListEntry.
+ * Provides a generic circular doubly-linked list implementation.  Like
+ * all doubly-linked lists, each entry carries both a pointer to the
+ * previous entry in the list and a pointer to the next entry in the list.
+ * However this is also circular, so instead of the first entry's previous
+ * pointer and last entry's next pointers containing NULL, they instead
+ * point to the last entry and first entry respectively.
  *
- * The list will be a doubly-linked circular list.
+ * A single NihList structure is generally used as the list head, so
+ * for an empty list, that structure's previous and next pointers point
+ * to itself.
  *
- * The usual way in which it is used is to have an NihList structure as
- * the "list head", and add other nodes with nih_list_add.  When you
- * iterate, all nodes except the list head are visitied.
+ * This has the advantage over other implementations of a constant time
+ * operation to append or prepend an entry to the list, insert before or
+ * after a known entry, and remove an entry from the list.
+ *
+ * List entries may be created in one of two ways.  The most common is to
+ * embed the NihList structure as the frist member of your own structure,
+ * and initialise it with nih_list_init() after allocating the structure.
+ * Alternatively you may create NihListEntry structures with
+ * nih_list_entry_new() and point at your own data from them.
+ *
+ * The list head itself may be created with nih_list_new().
+ *
+ * Entries are added to the list with nih_list_add(), passing an existing
+ * entry which is most commonly the list head.  This adds the entry "before"
+ * the given entry, in the list head case this appends the entry to the list.
+ * To add "after" the given entry (prepending in the list head case) use
+ * nih_list_add_before().
+ *
+ * To remove an entry from the list use nih_list_remove().  The entry
+ * effectively becomes the list head of an empty list.
+ *
+ * Entries may be moved between lists, or rearranged within a list, by
+ * simply calling nih_list_add() - there's no need to call nih_list_remove()
+ * first.
+ *
+ * List iteration may be performed by following the prev or next pointers
+ * in a for loop.  Since this is an extremely common operation, the
+ * NIH_LIST_FOREACH() macro is provided that expands to this for loop.
+ *
+ * Since this macro only holds a pointer to the entry being iterated, most
+ * operations that change a list are not safe.  To change a list safely
+ * while iterating, including being able to free the visited node, use
+ * the NIH_LIST_FOREACH_SAFE() macro.  However note that since this macro
+ * changes the list as it iterates it itself, it is not safe to traverse
+ * or iterate the list and make assumptions about the type of node being
+ * seen.
  **/
 
 #include <nih/macros.h>

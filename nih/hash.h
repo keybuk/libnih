@@ -21,9 +21,9 @@
 #define NIH_HASH_H
 
 /**
- * Defines a generic hash table, where the bins are implemented as NihList
- * members so may be any structure (including NihListEntry) that embeds
- * a list head.
+ * Provides a generic hash table implementation using NihList for the bins,
+ * which means that entries may be freely moved between lists and hash
+ * tables.
  *
  * Members are identified by a constant key, which is used for both hashing
  * and comparison.  The key function takes a given member (referenced by
@@ -31,11 +31,22 @@
  * hash function for hashing and the comparison function for comparison.
  *
  * The key, hash and comparison function are given when creating the hash
- * table.
+ * table with nih_hash_new().
  *
  * The most common use of this pointer is a string, generally a constant
  * one found as the first member in the structure after the list head.
  * For this case, you may use nih_hash_string_new() instead.
+ *
+ * Entries may be added to a hash table using nih_hash_add(), no assumption
+ * is made about whether duplicate entries are permitted or not.  To add
+ * and fail if the entry already exists use nih_hash_add_unique(), to add
+ * and replace an existing entry use nih_hash_replace().
+ *
+ * The hash table may be iterated with nih_hash_search(), passing the return
+ * value to subsequent calls iterates all values with the given key.
+ *
+ * To lookup the first value nih_hash_lookup() is a convenient simpler
+ * function.
  **/
 
 #include <nih/macros.h>

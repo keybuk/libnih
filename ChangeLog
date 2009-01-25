@@ -1,5 +1,7 @@
 2009-01-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/list.h, nih/hash.h: Provide a much better documentation string.
+
 	* nih/tree.c (nih_tree_new, nih_tree_entry_new): Update documentation
 	to match new nih_alloc(); no need to cast destructor function
 	* nih/tree.h: Add documentation string for the header.

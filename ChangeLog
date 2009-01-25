@@ -1,5 +1,13 @@
 2009-01-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/file.c (nih_file_read): Update documentation to match
+	new nih_alloc()
+	(nih_dir_walk, nih_dir_walk_visit): No need to cast destructor
+	function, use nih_local to clean up code a little bit.
+	(nih_dir_walk_scan): Use nih_local to make this easier.
+	* nih/tests/test_file.c: Include limits.h
+	(my_visitor): No need to cast destructor
+
 	* nih/test.h: Include config.h since that defines _GNU_SOURCE
 	* nih/tests/test_child.c, nih/tests/test_signal.c: Remove extra
 	double include.

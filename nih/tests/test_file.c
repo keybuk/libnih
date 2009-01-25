@@ -2,7 +2,7 @@
  *
  * test_file.c - test suite for nih/file.c
  *
- * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <limits.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -662,7 +663,7 @@ my_visitor (void        *data,
 	TEST_ALLOC_SAFE {
 		v = nih_new (visited, Visited);
 		nih_list_init (&v->entry);
-		nih_alloc_set_destructor (v, (NihDestructor)nih_list_destroy);
+		nih_alloc_set_destructor (v, nih_list_destroy);
 
 		v->data = data;
 		v->dirname = nih_strdup (v, dirname);

@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,24 @@
 
 #ifndef NIH_OPTION_H
 #define NIH_OPTION_H
+
+/**
+ * Provides a flexible command-line option and arguments parser that
+ * automatically provides built-in options for adjusting output verbosity
+ * and provides --help output.
+ *
+ * Describe your commands options using an array of NihOption members
+ * and pass this along with the argc and argv variables to
+ * nih_option_parser().
+ *
+ * Options can be set from arguments with helper functions, nih_option_count()
+ * and nih_option_int() are provided for you.
+ *
+ * Help and usage output can be customised with the nih_option_set_usage(),
+ * nih_option_set_usage_stem(), nih_option_set_synopsis(),
+ * nih_option_set_help() and nih_option_set_footer() functions.  Be sure
+ * to call these before the option parser.
+ **/
 
 #include <nih/macros.h>
 

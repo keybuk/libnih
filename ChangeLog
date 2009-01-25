@@ -1,5 +1,12 @@
 2009-01-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/option.c (nih_option_parser): Update documentation to match
+	new nih_alloc(), should not use parent for any old allocation.
+	(nih_option_join): Update documentation to match new nih_alloc()
+	(nih_option_help): Use nih_local for temporary strings and groups
+	(nih_option_group_help): Use nih_local for temporary string.
+	* nih/option.h: Add documentation string for header.
+
 	* nih/list.h, nih/hash.h: Provide a much better documentation string.
 
 	* nih/tree.c (nih_tree_new, nih_tree_entry_new): Update documentation

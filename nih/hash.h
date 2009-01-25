@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,24 @@
 
 #ifndef NIH_HASH_H
 #define NIH_HASH_H
+
+/**
+ * Defines a generic hash table, where the bins are implemented as NihList
+ * members so may be any structure (including NihListEntry) that embeds
+ * a list head.
+ *
+ * Members are identified by a constant key, which is used for both hashing
+ * and comparison.  The key function takes a given member (referenced by
+ * its list head) and returns a pointer, this pointer is passed to the
+ * hash function for hashing and the comparison function for comparison.
+ *
+ * The key, hash and comparison function are given when creating the hash
+ * table.
+ *
+ * The most common use of this pointer is a string, generally a constant
+ * one found as the first member in the structure after the list head.
+ * For this case, you may use nih_hash_string_new() instead.
+ **/
 
 #include <nih/macros.h>
 #include <nih/list.h>
@@ -94,12 +112,17 @@ typedef struct nih_hash {
  * for the block within the loop.  A variable named _@iter_i is used to
  * iterate the hash bins.
  *
- * If you wish to modify the hash, e.g. remove entries, use
- * NIH_HASH_FOREACH_SAFE() instead.
+ * This is the cheapest form of iteration, however it is not safe to perform
+ * various modifications to the hash; most importantly, you must not change
+ * the member being iterated in any way, including removing it from the hash
+ * or freeing it.  If you need to do that, use NIH_HASH_FOREACH_SAFE() instead.
+ *
+ * However since it doesn't modify the hash being iterated in any way, it
+ * is safe to traverse or iterate the hash again while iterating.
  **/
-#define NIH_HASH_FOREACH(hash, iter) \
-	for (size_t _##iter##_i = 0; _##iter##_i < (hash)->size; \
-	     _##iter##_i++) \
+#define NIH_HASH_FOREACH(hash, iter)					\
+	for (size_t _##iter##_i = 0; _##iter##_i < (hash)->size;	\
+	     _##iter##_i++)						\
 		NIH_LIST_FOREACH (&(hash)->bins[_##iter##_i], iter)
 
 /**
@@ -113,45 +136,24 @@ typedef struct nih_hash {
  * to iterate the hash bins.
  *
  * The iteration is performed safely by placing a cursor node after @iter;
- * this means that any node including @iter can be removed from the bin,
- * added to a different list or hash table, or entries added before or
- * after it.
+ * this means that any node including @iter can be removed from the hash,
+ * added to a different hash or list, or entries added before or after it.
  *
  * Note that if you add an entry directly after @iter and wish it to be
- * visited, you would need to use NIH_LIST_FOREACH() instead, as this
+ * visited, you would need to use NIH_HASH_FOREACH() instead, as this
  * would be placed before the cursor and thus skipped.
+ *
+ * Also since the hash has an extra node during iteration of a different
+ * type, it is expressly not safe to traverse or iterate the hash while
+ * iterating - including performing lookups.  If you need to perform
+ * multiple iterations, lookups, or reference the next or previous pointers
+ * of a node, you must use NIH_HASH_FOREACH().
  **/
-#define NIH_HASH_FOREACH_SAFE(hash, iter) \
-	for (size_t _##iter##_i = 0; _##iter##_i < (hash)->size; \
-	     _##iter##_i++) \
+#define NIH_HASH_FOREACH_SAFE(hash, iter)				\
+	for (size_t _##iter##_i = 0; _##iter##_i < (hash)->size;	\
+	     _##iter##_i++)						\
 		NIH_LIST_FOREACH_SAFE (&(hash)->bins[_##iter##_i], iter)
 
-
-/**
- * nih_hash_pointer_new:
- * @parent: parent of new hash,
- * @entries: rough number of entries expected,
- *
- * Allocates a new hash table, the number of buckets selected is a prime
- * number that is no larger than @entries; this should be set to a rough
- * number of expected entries to ensure optimum distribution.
- *
- * Individual members of the hash table are unique NihList members, for
- * which their pointers will be used as the hash key and compared directly.
- *
- * The structure is allocated using nih_alloc() so it can be used as a
- * context to other allocations; there is no non-allocated version of this
- * function because the hash must be usable as a parent context to its bins.
- *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
- *
- * Returns: the new hash table or NULL if the allocation failed.
- **/
-#define nih_hash_pointer_new(parent, entries)			\
-	nih_hash_new (parent, entries, nih_hash_pointer_key,	\
-		      nih_hash_pointer_hash, nih_hash_pointer_cmp)
 
 /**
  * nih_hash_string_new:
@@ -170,9 +172,10 @@ typedef struct nih_hash {
  * context to other allocations; there is no non-allocated version of this
  * function because the hash must be usable as a parent context to its bins.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned hash table.  When all parents
+ * of the returned hash table are freed, the returned hash table will also be
+ * freed.
  *
  * Returns: the new hash table or NULL if the allocation failed.
  **/
@@ -198,10 +201,6 @@ NihList *   nih_hash_replace      (NihHash *hash, NihList *entry);
 NihList *   nih_hash_search       (NihHash *hash, const void *key,
 				   NihList *entry);
 NihList *   nih_hash_lookup       (NihHash *hash, const void *key);
-
-const void *nih_hash_pointer_key  (NihList *entry);
-uint32_t    nih_hash_pointer_hash (const void *key);
-int         nih_hash_pointer_cmp  (const void *key1, const void *key2);
 
 const char *nih_hash_string_key   (NihList *entry);
 uint32_t    nih_hash_string_hash  (const char *key);

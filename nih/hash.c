@@ -2,7 +2,7 @@
  *
  * hash.c - Fuller/Noll/Vo hash table implementation
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,8 +70,6 @@ static const uint32_t primes[] = {
 static const size_t num_primes = sizeof (primes) / sizeof (uint32_t);
 
 
-
-
 /**
  * nih_hash_new:
  * @parent: parent of new hash,
@@ -87,18 +85,18 @@ static const size_t num_primes = sizeof (primes) / sizeof (uint32_t);
  * Individual members of the hash table are NihList members, so to
  * associate them with a constant key @key_function must be provided, to
  * convert that key into a hash @hash_function must be provided and to
- * compare keys @cmp_function must be provided.  The nih_hash_pointer_new()
- * and nih_hash_string_new() macros wrap this function for the most common
- * two cases of pointer equality and a string key as the first structure
- * member.
+ * compare keys @cmp_function must be provided.  The nih_hash_string_new()
+ * macro wraps this function for the most common case of a string key as
+ * the first structure member.
  *
  * The structure is allocated using nih_alloc() so it can be used as a
  * context to other allocations; there is no non-allocated version of this
  * function because the hash must be usable as a parent context to its bins.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned hash table.  When all parents
+ * of the returned hash table are freed, the returned hash table will also be
+ * freed.
  *
  * Returns: the new hash table or NULL if the allocation failed.
  **/
@@ -120,7 +118,7 @@ nih_hash_new (const void      *parent,
 	if (! hash)
 		return NULL;
 
-	/* Pick a prime number larger than the number of entries */
+	/* Pick the largest prime number smaller than the number of entries */
 	hash->size = primes[0];
 	for (i = 0; (i < num_primes) && (primes[i] < entries); i++)
 		hash->size = primes[i];
@@ -332,78 +330,6 @@ nih_hash_lookup (NihHash    *hash,
 		 const void *key)
 {
 	return nih_hash_search (hash, key, NULL);
-}
-
-
-/**
- * nih_hash_pointer_key:
- * @entry: entry to create key for.
- *
- * Key function that can be used for any structure that should be compared
- * directly.
- *
- * Returns: pointer to the structure.
- **/
-const void *
-nih_hash_pointer_key (NihList *entry)
-{
-	nih_assert (entry != NULL);
-
-	return entry;
-}
-
-/**
- * nih_hash_pointer_hash:
- * @key: pointer key to hash.
- *
- * Generates and returns a 32-bit hash for the given pointer key using the
- * FNV-1 algorithm as documented at http://www.isthe.com/chongo/tech/comp/fnv/
- *
- * The returned key will need to be bounded within the number of bins
- * used in the hash table.
- *
- * Returns: 32-bit hash.
- **/
-uint32_t
-nih_hash_pointer_hash (const void *key)
-{
-	register uint32_t hash = FNV_OFFSET_BASIS;
-	size_t            i;
-
-	nih_assert (key != NULL);
-
-	for (i = 0; i < sizeof (key); i++) {
-		hash *= FNV_PRIME;
-		hash ^= ((char *)&key)[i];
-	}
-
-	return hash;
-}
-
-/**
- * nih_hash_pointer_cmp:
- * @key1: key to compare,
- * @key2: key to compare against.
- *
- * Compares @key1 to @key2 for exact equality.
- *
- * Returns: integer less than, equal to or greater than zero if @key1 is
- * respectively less then, equal to or greater than @key2.
- **/
-int
-nih_hash_pointer_cmp (const void *key1,
-		      const void *key2)
-{
-	nih_assert (key1 != NULL);
-	nih_assert (key2 != NULL);
-
-	if (key1 < key2) {
-		return -1;
-	} else if (key1 > key2) {
-		return 1;
-	} else {
-		return 0;
-	}
 }
 
 

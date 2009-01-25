@@ -1,5 +1,20 @@
 2009-01-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/hash.c (nih_hash_new): Update documentation to match
+	new nih_alloc(); update comment to reflect what we actually do to
+	pick a prime.
+	(nih_hash_pointer_key, nih_hash_pointer_hash)
+	(nih_hash_pointer_cmp): Drop these, we were looking at the raw bytes
+	of a pointer, which is almost certainly naughty.
+	* nih/hash.h: Add documentation string, remove prototypes.
+	(NIH_HASH_FOREACH, NIH_HASH_FOREACH_SAFE): Update documentation in
+	same manner as the list functions.
+	(nih_hash_pointer_new): Drop, this is probably illegal C ;-)
+	(nih_hash_string_new): Update documentation to match new nih_alloc()
+	* nih/tests/test_hash.c (test_pointer_new, test_pointer_key): Drop.
+	(test_lookup): Modify to use string hashes instead.
+	(test_foreach, test_foreach_safe): Fix function name comment.
+
 	* nih/list.c (nih_list_new, nih_list_entry_new): Update documentation
 	to match new nih_alloc(); No need to cast the destructor function
 	anymore.

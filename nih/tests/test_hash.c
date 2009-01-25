@@ -2,7 +2,7 @@
  *
  * test_hash.c - test suite for nih/hash.c
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -150,44 +150,6 @@ test_new (void)
 		}
 
 		TEST_EQ (hash->size, 10250323);
-		TEST_NE_P (hash->bins, NULL);
-		TEST_ALLOC_PARENT (hash->bins, hash);
-
-		for (i = 0; i < hash->size; i++)
-			TEST_LIST_EMPTY (&hash->bins[i]);
-
-		nih_free (hash);
-	}
-}
-
-void
-test_pointer_new (void)
-{
-	NihHash *hash;
-	size_t   i;
-
-	/* Check that we can create a small hash table; a small prime number
-	 * should be selected for the actual size, and that number of empty
-	 * bins should be allocated as a child of the hash table.
-	 */
-	TEST_FUNCTION ("nih_hash_pointer_new");
-	TEST_ALLOC_FAIL {
-		hash = nih_hash_pointer_new (NULL, 0);
-
-		if (test_alloc_failed) {
-			TEST_EQ_P (hash, NULL);
-			continue;
-		}
-
-		TEST_ALLOC_SIZE (hash, sizeof(NihHash));
-		TEST_EQ_P (hash->key_function,
-			   (NihKeyFunction)nih_hash_pointer_key);
-		TEST_EQ_P (hash->hash_function,
-			   (NihHashFunction)nih_hash_pointer_hash);
-		TEST_EQ_P (hash->cmp_function,
-			   (NihCmpFunction)nih_hash_pointer_cmp);
-
-		TEST_EQ (hash->size, 17);
 		TEST_NE_P (hash->bins, NULL);
 		TEST_ALLOC_PARENT (hash->bins, hash);
 
@@ -511,28 +473,28 @@ test_lookup (void)
 	NihList *entry1, *entry2, *entry3, *ptr;
 
 	TEST_FUNCTION ("nih_hash_lookup");
-	hash = nih_hash_pointer_new (NULL, 0);
+	hash = nih_hash_string_new (NULL, 0);
 	entry1 = nih_hash_add (hash, new_entry (hash, "entry 1"));
 	entry2 = nih_hash_add (hash, new_entry (hash, "entry 2"));
 	entry3 = new_entry (hash, "entry 3");
 
 	/* Check that we find a single matching entry. */
 	TEST_FEATURE ("with single match");
-	ptr = nih_hash_lookup (hash, entry1);
+	ptr = nih_hash_lookup (hash, "entry 1");
 
 	TEST_EQ_P (ptr, entry1);
 
 
 	/* Check that we find the first matching entry. */
 	TEST_FEATURE ("with multiple matches");
-	ptr = nih_hash_lookup (hash, entry2);
+	ptr = nih_hash_lookup (hash, "entry 2");
 
 	TEST_EQ_P (ptr, entry2);
 
 
 	/* Check that we get NULL when there are no matching entries. */
 	TEST_FEATURE ("with no matches");
-	ptr = nih_hash_lookup (hash, entry3);
+	ptr = nih_hash_lookup (hash, "entry 3");
 
 	TEST_EQ_P (ptr, NULL);
 
@@ -552,7 +514,7 @@ test_foreach (void)
 	 * in the hash in the order we expect them to come out in, but add
 	 * them in a different order for sanity.
 	 */
-	TEST_FUNCTION ("nih_HASH_FOREACH");
+	TEST_FUNCTION ("NIH_HASH_FOREACH");
 	hash = nih_hash_string_new (NULL, 0);
 	entry0 = entry[2] = new_entry (hash, "entry 1");
 	entry1 = entry[1] = new_entry (hash, "entry 2");
@@ -591,7 +553,7 @@ test_foreach_safe (void)
 	 * order, visiting each entry in each bin; and that it's safe to
 	 * remove the entries while doing so.
 	 */
-	TEST_FUNCTION ("nih_HASH_FOREACH");
+	TEST_FUNCTION ("NIH_HASH_FOREACH_SAFE");
 	hash = nih_hash_string_new (NULL, 0);
 	entry0 = entry[2] = new_entry (hash, "entry 1");
 	entry1 = entry[1] = new_entry (hash, "entry 2");
@@ -623,24 +585,6 @@ test_foreach_safe (void)
 
 
 void
-test_pointer_key (void)
-{
-	NihList    *entry;
-	const void *key;
-
-	/* Check that the pointer key function returns the pointer passed. */
-	TEST_FUNCTION ("nih_hash_pointer_key");
-	entry = new_entry (NULL, "my entry");
-
-	key = nih_hash_pointer_key (entry);
-
-	TEST_EQ_P (key, entry);
-
-	nih_free (entry);
-}
-
-
-void
 test_string_key (void)
 {
 	NihList    *entry;
@@ -667,7 +611,6 @@ main (int   argc,
       char *argv[])
 {
 	test_new ();
-	test_pointer_new ();
 	test_string_new ();
 	test_add ();
 	test_add_unique ();
@@ -676,7 +619,6 @@ main (int   argc,
 	test_lookup ();
 	test_foreach ();
 	test_foreach_safe ();
-	test_pointer_key ();
 	test_string_key ();
 
 	return 0;

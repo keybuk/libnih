@@ -1,5 +1,13 @@
 2009-01-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/test.h, nih/test_output.h, nih/test_values.h, nih/test_process.h,
+	nih/test_divert.h, nih/test_files.h, nih/test_alloc.h, nih/test_list.h,
+	nih/test_hash.h, nih/test_dbus.h: Split the test macros out into
+	separate files to make maintaining them easier.  None of them may
+	be included directly, execept nih/test_dbus.h which is now no longer
+	included by default.
+	* nih/Makefile.am (nihinclude_HEADERS): Install new headers.
+
 	* nih/alloc.c: Re-implement as a multi-reference allocator; an object
 	may now have as many parents as you wish, each one holding its own
 	reference to it.

@@ -114,11 +114,20 @@ nihinclude_HEADERS = \
 	error.h \
 	errors.h \
 	inotify.h \
-	test.h
+	test.h \
+	test_output.h \
+	test_values.h \
+	test_process.h \
+	test_divert.h \
+	test_files.h \
+	test_alloc.h \
+	test_list.h \
+	test_hash.h
 
 if HAVE_DBUS
 nihinclude_HEADERS += \
-	dbus.h
+	dbus.h \
+	test_dbus.h
 endif
 endif
 

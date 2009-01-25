@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,38 @@
 
 #ifndef NIH_ERROR_H
 #define NIH_ERROR_H
+
+/**
+ * Many functions in libnih use these functions to report information about
+ * errors, those that don't use the ordinary errno mechnism which can
+ * also be reported within this framework.
+ *
+ * Errors are raised as NihError structures, kept globally.  Only one error
+ * may be active at any one time, raising an error when another is already
+ * raised will emit a warning log message.
+ *
+ * Errors are raised with the nih_error_raise() or nih_error_raise_printf()
+ * functions, passing the error number and a human-readable messages.
+ *
+ * System errors can be raised with nih_error_raise_system(), and both
+ * caught errors and self-allocated errors can be raised with
+ * nih_error_raise_again().
+ *
+ * You then report the error condition through your return value, or some
+ * other stack-based method.
+ *
+ * A higher function that wishes to handle the error calls nih_error_get()
+ * to retrieve it, it's an error to do so if you do not know that an error
+ * is pending.  This returns the error structure and removes it from the
+ * global.
+ *
+ * Errors may be partitioned using contexts, a new context is pushed with
+ * nih_error_push_context(); any errors raised are now stored in this
+ * context and any previous raised errors are hidden from view.  The context
+ * can be popped again with nih_error_pop_context() any raised errors are
+ * lost (with a warning log message) and the previously hidden raised errors
+ * are now visible again.
+ **/
 
 #include <nih/macros.h>
 
@@ -61,7 +93,7 @@ typedef struct nih_error_info {
  * Will return from the current function with @retval, which may be left
  * empty to return from a void function.
  **/
-#define nih_return_error(retval, number,  message) \
+#define nih_return_error(retval, number,  message)			\
 	do { nih_error_raise (number, message); return retval; } while (0)
 
 /**
@@ -75,7 +107,7 @@ typedef struct nih_error_info {
  * Will return from the current function with @retval, which may be left
  * empty to return from a void function.
  **/
-#define nih_return_system_error(retval) \
+#define nih_return_system_error(retval)					\
 	do { nih_error_raise_system (); return retval; } while (0)
 
 /**
@@ -89,12 +121,25 @@ typedef struct nih_error_info {
  * Will return from the current function with @retval, which may be left
  * empty to return from a void function.
  **/
-#define nih_return_no_memory_error(retval) \
+#define nih_return_no_memory_error(retval)			\
 	do { nih_error_raise (ENOMEM, strerror (ENOMEM));	\
 	     return retval; } while (0)
 
 
-/* Force a true value, checking for ENOMEM on a false one */
+/**
+ * NIH_SHOULD:
+ * @_e: C expression.
+ *
+ * Repeats the expression @_e until it either yields a true value, or
+ * raises an error other than ENOMEM.
+ *
+ * This can only be used when the expression always raises an error if
+ * it does not yield a true value.
+ *
+ * The raised error remains raised and should be dealt with following
+ * this function, thus you should store the value of the expression so you
+ * know whether or not an error occurred.
+ **/
 #define NIH_SHOULD(_e)						  \
 	while (! (_e)) {					  \
 		NihError *_nih_should_err;			  \

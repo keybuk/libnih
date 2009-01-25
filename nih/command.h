@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,20 @@
 
 #ifndef NIH_COMMAND_H
 #define NIH_COMMAND_H
+
+/**
+ * Builds on the command-line option and arguments parser to provide an
+ * application interface where the first non-option argument is the name
+ * of a command.  Both global and command-specific options are permitted,
+ * and global options may appear both before and after the command.
+ *
+ * Description your commands using an array of NihCommand members,
+ * with each describing its options using an array of NihOption members.
+ * Pass this all to nih_command_parser().
+ *
+ * Commands are implemented with a handler function that is called,
+ * when nih_command_parser returns it has completed its work.
+ **/
 
 #include <nih/macros.h>
 

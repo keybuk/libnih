@@ -1,5 +1,15 @@
 2009-01-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/command.c (nih_command_parser): Update documentation to
+	match new nih_alloc(), use nih_local where possible to clean up
+	code.
+	(nih_command_join): Update documentation to match new nih_alloc()
+	(nih_command_handle): Update documentation to match new nih_alloc(),
+	use nih_local where possible to clean up code.
+	(nih_command_help): Use nih_local for groups array
+	(nih_command_group_help): Use nih_local for wrapped string
+	* nih/command.h: Add documentation string for header.
+
 	* nih/option.c (nih_option_parser): Update documentation to match
 	new nih_alloc(), should not use parent for any old allocation.
 	(nih_option_join): Update documentation to match new nih_alloc()

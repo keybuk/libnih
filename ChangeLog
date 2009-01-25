@@ -1,5 +1,9 @@
 2009-01-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/timer.c (nih_timer_add_timeout, nih_timer_add_periodic)
+	(nih_timer_add_scheduled): Update documentation to match new
+	nih_alloc(), no need to cast destructor function.
+
 	* nih/alloc.c (nih_alloc_parent, nih_alloc_size): Pointer argument
 	should be const since we don't modify it.
 	* nih/alloc.h: Update prototype.

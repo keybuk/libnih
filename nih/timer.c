@@ -2,7 +2,7 @@
  *
  * timer.c - timeouts, periodic and scheduled timers
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@ nih_timer_init (void)
 
 /**
  * nih_timer_add_timeout:
- * @parent: parent of timer,
+ * @parent: parent object for new timer,
  * @timeout: seconds to wait before triggering,
  * @callback: function to be called,
  * @data: pointer to pass to function as first argument.
@@ -77,9 +77,10 @@ nih_timer_init (void)
  *
  * Cancellation of the timer can be performed by freeing it.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned timer.  When all parents
+ * of the returned timer are freed, the returned timer will also be
+ * freed.
  *
  * Returns: the new timer information, or NULL if insufficient memory.
  **/
@@ -101,7 +102,7 @@ nih_timer_add_timeout (const void *parent,
 
 	nih_list_init (&timer->entry);
 
-	nih_alloc_set_destructor (timer, (NihDestructor)nih_list_destroy);
+	nih_alloc_set_destructor (timer, nih_list_destroy);
 
 	timer->type = NIH_TIMER_TIMEOUT;
 	timer->timeout = timeout;
@@ -118,7 +119,7 @@ nih_timer_add_timeout (const void *parent,
 
 /**
  * nih_timer_add_periodic:
- * @parent: parent of timer,
+ * @parent: parent object for new timer,
  * @period: number of seconds between calls,
  * @callback: function to be called,
  * @data: pointer to pass to function as first argument.
@@ -132,9 +133,10 @@ nih_timer_add_timeout (const void *parent,
  *
  * Cancellation of the timer can be performed by freeing it.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned timer.  When all parents
+ * of the returned timer are freed, the returned timer will also be
+ * freed.
  *
  * Returns: the new timer information, or NULL if insufficient memory.
  **/
@@ -157,7 +159,7 @@ nih_timer_add_periodic (const void *parent,
 
 	nih_list_init (&timer->entry);
 
-	nih_alloc_set_destructor (timer, (NihDestructor)nih_list_destroy);
+	nih_alloc_set_destructor (timer, nih_list_destroy);
 
 	timer->type = NIH_TIMER_PERIODIC;
 	timer->period = period;
@@ -174,7 +176,7 @@ nih_timer_add_periodic (const void *parent,
 
 /**
  * nih_timer_add_scheduled:
- * @parent: parent of timer,
+ * @parent: parent object for new timer,
  * @schedule: trigger schedule,
  * @callback: function to be called,
  * @data: pointer to pass to function as first argument.
@@ -188,9 +190,10 @@ nih_timer_add_periodic (const void *parent,
  *
  * Cancellation of the timer can be performed by freeing it.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned timer.  When all parents
+ * of the returned timer are freed, the returned timer will also be
+ * freed.
  *
  * Returns: the new timer information, or NULL if insufficient memory.
  **/
@@ -213,7 +216,7 @@ nih_timer_add_scheduled (const void       *parent,
 
 	nih_list_init (&timer->entry);
 
-	nih_alloc_set_destructor (timer, (NihDestructor)nih_list_destroy);
+	nih_alloc_set_destructor (timer, nih_list_destroy);
 
 	timer->type = NIH_TIMER_SCHEDULED;
 	memcpy (&timer->schedule, schedule, sizeof (NihTimerSchedule));

@@ -2,7 +2,7 @@
  *
  * string.c - useful string utility functions
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,15 +41,16 @@
 
 /**
  * nih_sprintf:
- * @parent: parent block of allocation,
+ * @parent: parent object for new string,
  * @format: format string.
  *
  * Writes a new string according to @format as sprintf(), except that the
  * string is allocated using nih_alloc().
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the returned string will also be
+ * freed.
  *
  * Returns: newly allocated string or NULL if insufficient memory.
  **/
@@ -72,16 +73,17 @@ nih_sprintf (const void *parent,
 
 /**
  * nih_vsprintf:
- * @parent: parent block of allocation,
+ * @parent: parent object for new string,
  * @format: format string,
  * @args: arguments to format string.
  *
  * Writes a new string according to @format as vsprintf(), except that the
  * string is allocated using nih_alloc().
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the returned string will also be
+ * freed.
  *
  * Returns: newly allocated string or NULL if insufficient memory.
  **/
@@ -116,15 +118,16 @@ nih_vsprintf (const void *parent,
 
 /**
  * nih_strdup:
- * @parent: parent block of allocation,
+ * @parent: parent object for new string,
  * @str: string to duplicate.
  *
  * Allocates enough memory to store a duplicate of @str and writes a
  * copy of the string to it.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the returned string will also be
+ * freed.
  *
  * Returns: duplicated string or NULL if insufficient memory.
  **/
@@ -142,7 +145,7 @@ nih_strdup (const void *parent,
 
 /**
  * nih_strndup:
- * @parent: parent block of allocation,
+ * @parent: parent object for new string,
  * @str: string to duplicate,
  * @len: length of string to duplicate.
  *
@@ -150,9 +153,10 @@ nih_strdup (const void *parent,
  * is shorter, @len bytes.  A copy of the string is written to this
  * block with a NUL byte appended.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the returned string will also be
+ * freed.
  *
  * Returns: duplicated string or NULL if insufficient memory.
  **/
@@ -179,13 +183,21 @@ nih_strndup (const void *parent,
 /**
  * nih_strcat:
  * @str: pointer to string to modify,
- * @parent: parent of @str,
+ * @parent: parent object of new string,
  * @src: string to append to @str.
  *
  * Modifies @str, concatenating the contents of @src to it.  The new string
  * is allocated using nih_alloc(), and @str will be updated to point to the
  * new pointer; use the return value simply to check for success.
- * @parent must be its parent.
+ *
+ * If the string pointed to by @str is NULL, this is equivalent to
+ * nih_strdup() and if @parent is not NULL, it should be a pointer to another
+ * object which will be used as a parent for the returned string.  When all
+ * parents of the returned string are freed, the returned string will also be
+ * freed.
+ *
+ * When the string pointed to by @str is not NULL, @parent is ignored;
+ * though it usual to pass a parent of @str for style reasons.
  *
  * Returns: new string pointer or NULL if insufficient memory.
  **/
@@ -203,14 +215,23 @@ nih_strcat (char       **str,
 /**
  * nih_strncat:
  * @str: pointer to string to modify,
- * @parent: parent of @str,
+ * @parent: parent object of new string,
  * @src: string to append to @str,
  * @len: length of @src.
  *
  * Modifies @str, concatenating up to @len characters of the contents of @src
  * to it.  The new string is allocated using nih_alloc(), and @str will be
  * updated to point to the new pointer; use the return value simply to check
- * for success. @parent must be its parent.
+ * for success.
+ *
+ * If the string pointed to by @str is NULL, this is equivalent to
+ * nih_strdup() and if @parent is not NULL, it should be a pointer to another
+ * object which will be used as a parent for the returned string.  When all
+ * parents of the returned string are freed, the returned string will also be
+ * freed.
+ *
+ * When the string pointed to by @str is not NULL, @parent is ignored;
+ * though it usual to pass a parent of @str for style reasons.
  *
  * Returns: new string pointer or NULL if insufficient memory.
  **/
@@ -220,15 +241,18 @@ nih_strncat (char       **str,
 	     const char  *src,
 	     size_t       len)
 {
-	ssize_t  str_len;
-	char    *ret;
+	char *ret;
 
 	nih_assert (str != NULL);
 	nih_assert (src != NULL);
 
-	str_len = *str ? strlen (*str) : 0;
+	if (! *str) {
+		*str = nih_strndup (parent, src, len);
+		return *str;
+	}
 
-	ret = nih_realloc (*str, parent, str_len + len + 1);
+
+	ret = nih_realloc (*str, parent, strlen (*str) + len + 1);
 	if (! ret)
 		return NULL;
 
@@ -243,13 +267,21 @@ nih_strncat (char       **str,
 /**
  * nih_strcat_sprintf:
  * @str: pointer to string to modify,
- * @parent: parent of @str,
+ * @parent: parent object of new string,
  * @format: format string to append to @str.
  *
  * Modifies @str, concatenating according to @format as sprintf().  The new
  * string is allocated using nih_alloc(), and @str will be updated to point
  * to the new pointer; use the return value simply to check for success.
- * @parent must be its parent.
+ *
+ * If the string pointed to by @str is NULL, this is equivalent to
+ * nih_sprintf() and if @parent is not NULL, it should be a pointer to another
+ * object which will be used as a parent for the returned string.  When all
+ * parents of the returned string are freed, the returned string will also be
+ * freed.
+ *
+ * When the string pointed to by @str is not NULL, @parent is ignored;
+ * though it usual to pass a parent of @str for style reasons.
  *
  * Returns: new string pointer or NULL if insufficient memory.
  **/
@@ -275,14 +307,22 @@ nih_strcat_sprintf (char       **str,
 /**
  * nih_strcat_vsprintf:
  * @str: pointer to string to modify,
- * @parent: parent of @str,
+ * @parent: parent object of new string,
  * @format: format string to append to @str,
  * @args: arguments to format string.
  *
  * Modifies @str, concatenating according to @format as vsprintf().  The new
  * string is allocated using nih_alloc(), and @str will be updated to point
  * to the new pointer; use the return value simply to check for success.
- * @parent must be its parent.
+ *
+ * If the string pointed to by @str is NULL, this is equivalent to
+ * nih_vsprintf() and if @parent is not NULL, it should be a pointer to another
+ * object which will be used as a parent for the returned string.  When all
+ * parents of the returned string are freed, the returned string will also be
+ * freed.
+ *
+ * When the string pointed to by @str is not NULL, @parent is ignored;
+ * though it usual to pass a parent of @str for style reasons.
  *
  * Returns: new string pointer or NULL if insufficient memory.
  **/
@@ -323,7 +363,7 @@ nih_strcat_vsprintf (char       **str,
 
 /**
  * nih_str_split:
- * @parent: parent of returned array,
+ * @parent: parent object of new array,
  * @str: string to split,
  * @delim: characters to split on,
  * @repeat: allow repeated characters.
@@ -335,11 +375,12 @@ nih_strcat_vsprintf (char       **str,
  * The last element in the array is always NULL.
  *
  * The individual strings are allocated using nih_alloc() so you may just use
- * nih_free() on the returned array and must NOT use nih_strv_free().
+ * nih_free() on the returned array.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned array.  When all parents
+ * of the returned string are freed, the returned array will also be
+ * freed.
  *
  * Returns: allocated array or NULL if insufficient memory.
  **/
@@ -389,16 +430,17 @@ nih_str_split (const void *parent,
 
 /**
  * nih_str_array_new:
- * @parent: parent of array.
+ * @parent: parent object of new array.
  *
  * Allocates a new NULL-terminated array of strings with zero elements;
  * use nih_str_array_add() to append new strings to the array.  Because
  * each array element will be allocated using nih_alloc() as a child of
  * the array itself, the entire array can be freed with nih_free().
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned array.  When all parents
+ * of the returned object are freed, the returned array will also be
+ * freed.
  *
  * Returns: newly allocated array or NULL if insufficient memory.
  **/
@@ -419,14 +461,13 @@ nih_str_array_new (const void *parent)
 /**
  * nih_str_array_add:
  * @array: array of strings,
- * @parent: parent of @array,
+ * @parent: parent object of new array,
  * @len: length of @array,
  * @str: string to add.
  *
  * Extend the NULL-terminated string @array (which has @len elements,
  * excluding the final NULL element), appending a copy of @str to it.
  * Both the array and the new string are allocated using nih_alloc(),
- * @parent must be that of @array.
  *
  * @len will be updated to contain the new array length and @array will
  * be updated to point to the new array pointer; use the return value
@@ -435,6 +476,15 @@ nih_str_array_new (const void *parent)
  * If you don't know or care about the length, @len may be set to NULL;
  * this is less efficient as it necessates counting the length on each
  * invocation.
+ *
+ * If the array pointed to by @array is NULL, the array will be allocated
+ * and @ptr the first element, and if @parent is not NULL, it should be a
+ * pointer to another object which will be used as a parent for the returned
+ * array.  When all parents of the returned array are freed, the returned
+ * array will also be freed.
+ *
+ * When the array pointed to by @array is not NULL, @parent is ignored;
+ * though it usual to pass a parent of @array for style reasons.
  *
  * Returns: new array pointer or NULL if insufficient memory.
  **/
@@ -444,29 +494,22 @@ nih_str_array_add (char       ***array,
 		   size_t       *len,
 		   const char   *str)
 {
-	char  *new_str;
-	char **new_array;
+	nih_local char *new_str;
 
 	nih_assert (array != NULL);
 	nih_assert (str != NULL);
 
-	new_str = nih_strdup (*array, str);
+	new_str = nih_strdup (NULL, str);
 	if (! new_str)
 		return NULL;
 
-	new_array = nih_str_array_addp (array, parent, len, new_str);
-	if (! new_array) {
-		nih_free (new_str);
-		return NULL;
-	}
-
-	return new_array;
+	return nih_str_array_addp (array, parent, len, new_str);
 }
 
 /**
  * nih_str_array_addn:
  * @array: array of strings,
- * @parent: parent of @array,
+ * @parent: parent object of new array,
  * @len: length of @array,
  * @str: string to add,
  * @strlen: length of @str.
@@ -476,7 +519,6 @@ nih_str_array_add (char       ***array,
  * @strlen bytes of @str to it.
  *
  * Both the array and the new string are allocated using nih_alloc(),
- * @parent must be that of @array.
  *
  * @len will be updated to contain the new array length and @array will
  * be updated to point to the new array pointer; use the return value
@@ -485,6 +527,15 @@ nih_str_array_add (char       ***array,
  * If you don't know or care about the length, @len may be set to NULL;
  * this is less efficient as it necessates counting the length on each
  * invocation.
+ *
+ * If the array pointed to by @array is NULL, the array will be allocated
+ * and @ptr the first element, and if @parent is not NULL, it should be a
+ * pointer to another object which will be used as a parent for the returned
+ * array.  When all parents of the returned array are freed, the returned
+ * array will also be freed.
+ *
+ * When the array pointed to by @array is not NULL, @parent is ignored;
+ * though it usual to pass a parent of @array for style reasons.
  *
  * Returns: new array pointer or NULL if insufficient memory.
  **/
@@ -495,38 +546,33 @@ nih_str_array_addn (char       ***array,
 		    const char   *str,
 		    size_t        strlen)
 {
-	char  *new_str;
-	char **new_array;
+	nih_local char *new_str;
 
 	nih_assert (array != NULL);
 	nih_assert (str != NULL);
 
-	new_str = nih_strndup (*array, str, strlen);
+	new_str = nih_strndup (NULL, str, strlen);
 	if (! new_str)
 		return NULL;
 
-	new_array = nih_str_array_addp (array, parent, len, new_str);
-	if (! new_array) {
-		nih_free (new_str);
-		return NULL;
-	}
-
-	return new_array;
+	return nih_str_array_addp (array, parent, len, new_str);
 }
 
 /**
  * nih_str_array_addp:
  * @array: array of strings,
- * @parent: parent of @array,
+ * @parent: parent object of new array,
  * @len: length of @array,
  * @ptr: pointer to add.
  *
  * Extend the NULL-terminated string @array (which has @len elements,
  * excluding the final NULL element), appending the nih_alloc() allocated
- * block @ptr to it.
+ * object @ptr to it.
  *
- * The array is allocated using nih_alloc(), @parent must be that of @array;
- * @ptr will be reparented to be a child of the new array.
+ * The array is allocated using nih_alloc(), and @ptr will be referenced
+ * by the new array.  After calling this function, you should never use
+ * nih_free() to free @ptr and instead use nih_unref() or nih_discard()
+ * if you no longer need to use it.
  *
  * @len will be updated to contain the new array length and @array will
  * be updated to point to the new array pointer; use the return value
@@ -535,6 +581,15 @@ nih_str_array_addn (char       ***array,
  * If you don't know or care about the length, @len may be set to NULL;
  * this is less efficient as it necessates counting the length on each
  * invocation.
+ *
+ * If the array pointed to by @array is NULL, the array will be allocated
+ * and @ptr the first element, and if @parent is not NULL, it should be a
+ * pointer to another object which will be used as a parent for the returned
+ * array.  When all parents of the returned array are freed, the returned
+ * array will also be freed.
+ *
+ * When the array pointed to by @array is not NULL, @parent is ignored;
+ * though it usual to pass a parent of @array for style reasons.
  *
  * Returns: new array pointer or NULL if insufficient memory.
  **/
@@ -564,7 +619,7 @@ nih_str_array_addp (char       ***array,
 
 	*array = new_array;
 
-	nih_alloc_reparent (ptr, *array);
+	nih_ref (ptr, *array);
 
 	(*array)[(*len)++] = ptr;
 	(*array)[*len] = NULL;
@@ -574,7 +629,7 @@ nih_str_array_addp (char       ***array,
 
 /**
  * nih_str_array_copy:
- * @parent: parent of array.
+ * @parent: parent object of new array.
  * @len: length of new array,
  * @array: array of strings to copy.
  *
@@ -589,9 +644,10 @@ nih_str_array_addp (char       ***array,
  * about the length, @len may be set to NULL; this is less efficient as it
  * necessates counting the length on each future add operation.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned array.  When all parents
+ * of the returned array are freed, the returned array will also be
+ * freed.
  *
  * Returns: newly allocated array or NULL if insufficient memory.
  **/
@@ -619,7 +675,7 @@ nih_str_array_copy (const void   *parent,
 /**
  * nih_str_array_append:
  * @array: array of strings,
- * @parent: parent of @array,
+ * @parent: parent object of new array,
  * @len: length of @array,
  * @args: array of strings to add.
  *
@@ -627,7 +683,6 @@ nih_str_array_copy (const void   *parent,
  * excluding the final NULL element), appending a copy of each element in
  * the additional NULL-terminated string array @args to it.
  * Both the array and the new strings are allocated using nih_alloc(),
- * @parent must be that of @array.
  *
  * @len will be updated to contain the new array length and @array will
  * be updated to point to the new array pointer; use the return value
@@ -636,6 +691,15 @@ nih_str_array_copy (const void   *parent,
  * If you don't know or care about the length, @len may be set to NULL;
  * this is less efficient as it necessates counting the length on each
  * operation.
+ *
+ * If the array pointed to by @array is NULL, this is equivalent to
+ * nih_str_array_copy() and if @parent is not NULL, it should be a pointer to
+ * another object which will be used as a parent for the returned array.
+ * When all parents of the returned array are freed, the returned array will
+ * also be freed.
+ *
+ * When the array pointed to by @array is not NULL, @parent is ignored;
+ * though it usual to pass a parent of @array for style reasons.
  *
  * Returns: new array pointer or NULL if insufficient memory.
  **/
@@ -692,29 +756,8 @@ nih_str_array_append (char         ***array,
 
 
 /**
- * nih_strv_free:
- * @strv: array of strings:
- *
- * Free the given array of strings which should NOT have been allocated
- * using nih_alloc() (as you could just free the parent array if you used
- * that).
- *
- * The last member of the array should be NULL, and the array itself is
- * not freed.
- **/
-void
-nih_strv_free (char **strv)
-{
-	register char **s;
-
-	for (s = strv; *s; s++)
-		free (*s);
-}
-
-
-/**
  * nih_str_wrap:
- * @parent: parent of returned string,
+ * @parent: parent object of new string,
  * @str: string to be wrapped,
  * @len: length of line to fit into,
  * @first_indent: indent for first line,
@@ -729,9 +772,10 @@ nih_strv_free (char **strv)
  * subsequent lines may be intended by an extra @indent characters.  These
  * are added to the string as whitespace characters.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the returned string will also be
+ * freed.
  *
  * Returns: newly allocated string or NULL if insufficient memory.
  **/
@@ -872,7 +916,7 @@ nih_str_screen_width (void)
 
 /**
  * nih_str_screen_wrap:
- * @parent: parent of returned string,
+ * @parent: parent object of new string,
  * @str: string to be wrapped,
  * @first_indent: indent for first line,
  * @indent: indent for subsequent lines.
@@ -889,9 +933,10 @@ nih_str_screen_width (void)
  * subsequent lines may be intended by an extra @indent characters.  These
  * are added to the string as whitespace characters.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the returned string will also be
+ * freed.
  *
  * Returns: newly allocated string or NULL if insufficient memory.
  **/

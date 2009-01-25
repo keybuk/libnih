@@ -2,7 +2,7 @@
  *
  * test_string.c - test suite for nih/string.c
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@ test_sprintf (void)
 			continue;
 		}
 
-		TEST_ALLOC_PARENT (str1, NULL);
+		TEST_ALLOC_ORPHAN (str1);
 		TEST_ALLOC_SIZE (str1, strlen (str1) + 1);
 		TEST_EQ_STR (str1, "this is a test 54321");
 
@@ -121,7 +121,7 @@ test_vsprintf (void)
 			continue;
 		}
 
-		TEST_ALLOC_PARENT (str1, NULL);
+		TEST_ALLOC_ORPHAN (str1);
 		TEST_ALLOC_SIZE (str1, strlen (str1) + 1);
 		TEST_EQ_STR (str1, "this is a test 54321");
 
@@ -171,7 +171,7 @@ test_strdup (void)
 			continue;
 		}
 
-		TEST_ALLOC_PARENT (str1, NULL);
+		TEST_ALLOC_ORPHAN (str1);
 		TEST_ALLOC_SIZE (str1, strlen (str1) + 1);
 		TEST_EQ_STR (str1, "this is a test");
 
@@ -221,7 +221,7 @@ test_strndup (void)
 			continue;
 		}
 
-		TEST_ALLOC_PARENT (str1, NULL);
+		TEST_ALLOC_ORPHAN (str1);
 		TEST_ALLOC_SIZE (str1, 8);
 		TEST_EQ_STR (str1, "this is");
 
@@ -277,30 +277,60 @@ test_strcat (void)
 {
 	char *str, *ret;
 
+	TEST_FUNCTION ("nih_strcat");
+
 	/* Check that we can extend a string with another, resulting in the
 	 * original string being modified and the new pointer stored in the
 	 * argument and returned.
 	 */
-	TEST_FUNCTION ("nih_strcat");
+	TEST_FEATURE ("with string");
 	TEST_ALLOC_FAIL {
+		char *tmp;
+
 		TEST_ALLOC_SAFE {
 			str = nih_strdup (NULL, "this is a test");
 		}
 
+		tmp = str;
 		ret = nih_strcat (&str, NULL, " of strdup");
 
 		if (test_alloc_failed) {
-			TEST_EQ_P (ret, str);
+			TEST_EQ_P (ret, NULL);
+			TEST_EQ_P (str, tmp);
 			TEST_EQ_STR (str, "this is a test");
+
+			nih_free (str);
 			continue;
 		}
 
 		TEST_NE (ret, NULL);
 		TEST_EQ_P (ret, str);
 
-		TEST_ALLOC_PARENT (str, NULL);
 		TEST_ALLOC_SIZE (str, 25);
 		TEST_EQ_STR (str, "this is a test of strdup");
+
+		nih_free (str);
+	}
+
+
+	/* Check that when no string is passed, this behaves as strdup.
+	 */
+	TEST_FEATURE ("with NULL");
+	TEST_ALLOC_FAIL {
+		str = NULL;
+		ret = nih_strcat (&str, NULL, "test of strdup");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_NE (ret, NULL);
+		TEST_EQ_P (ret, str);
+
+		TEST_ALLOC_SIZE (str, 15);
+		TEST_EQ_STR (str, "test of strdup");
 
 		nih_free (str);
 	}
@@ -319,22 +349,27 @@ test_strncat (void)
 	 */
 	TEST_FEATURE ("with larger string than length");
 	TEST_ALLOC_FAIL {
+		char *tmp;
+
 		TEST_ALLOC_SAFE {
 			str = nih_strdup (NULL, "this is a test");
 		}
 
+		tmp = str;
 		ret = nih_strncat (&str, NULL, " of strndup", 3);
 
 		if (test_alloc_failed) {
-			TEST_EQ_P (ret, str);
+			TEST_EQ_P (ret, NULL);
+			TEST_EQ_P (str, tmp);
 			TEST_EQ_STR (str, "this is a test");
+
+			nih_free (str);
 			continue;
 		}
 
 		TEST_NE (ret, NULL);
 		TEST_EQ_P (ret, str);
 
-		TEST_ALLOC_PARENT (str, NULL);
 		TEST_ALLOC_SIZE (str, 18);
 		TEST_EQ_STR (str, "this is a test of");
 
@@ -347,24 +382,52 @@ test_strncat (void)
 	 */
 	TEST_FEATURE ("with larger length than string");
 	TEST_ALLOC_FAIL {
+		char *tmp;
+
 		TEST_ALLOC_SAFE {
 			str = nih_strdup (NULL, "this is a test");
 		}
 
+		tmp = str;
 		ret = nih_strncat (&str, NULL, " of strndup", 21);
 
 		if (test_alloc_failed) {
-			TEST_EQ_P (ret, str);
+			TEST_EQ_P (ret, NULL);
+			TEST_EQ_P (str, tmp);
 			TEST_EQ_STR (str, "this is a test");
+
+			nih_free (str);
 			continue;
 		}
 
 		TEST_NE (ret, NULL);
 		TEST_EQ_P (ret, str);
 
-		TEST_ALLOC_PARENT (str, NULL);
 		TEST_ALLOC_SIZE (str, 36);
 		TEST_EQ_STR (str, "this is a test of strndup");
+
+		nih_free (str);
+	}
+
+
+	/* Check that when no string is passed, this behaves as strndup.
+	 */
+	TEST_FEATURE ("with NULL");
+	TEST_ALLOC_FAIL {
+		str = NULL;
+		ret = nih_strncat (&str, NULL, "test of strndup", 12);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_NE (ret, NULL);
+		TEST_EQ_P (ret, str);
+
+		TEST_ALLOC_SIZE (str, 13);
+		TEST_EQ_STR (str, "test of strn");
 
 		nih_free (str);
 	}
@@ -376,31 +439,62 @@ test_strcat_sprintf (void)
 {
 	char *str, *ret;
 
+	TEST_FUNCTION ("test_strcat_sprintf");
+
 	/* Check that we can extend a string with a formatted string,
 	 * resulting in the original string being modified and the new
 	 * pointer stored in the argument and returned.
 	 */
-	TEST_FUNCTION ("test_strcat_sprintf");
+	TEST_FEATURE ("with original string");
 	TEST_ALLOC_FAIL {
+		char *tmp;
+
 		TEST_ALLOC_SAFE {
 			str = nih_strdup (NULL, "this");
 		}
 
+		tmp = str;
 		ret = nih_strcat_sprintf (&str, NULL,
 					  " %s a test %d", "is", 54321);
 
 		if (test_alloc_failed) {
-			TEST_EQ_P (ret, str);
+			TEST_EQ_P (ret, NULL);
+			TEST_EQ_P (str, tmp);
 			TEST_EQ_STR (str, "this");
+
+			nih_free (str);
 			continue;
 		}
 
 		TEST_NE (ret, NULL);
 		TEST_EQ_P (ret, str);
 
-		TEST_ALLOC_PARENT (str, NULL);
 		TEST_ALLOC_SIZE (str, 21);
 		TEST_EQ_STR (str, "this is a test 54321");
+
+		nih_free (str);
+	}
+
+
+	/* Check that when no string is passed, this behaves as sprintf.
+	 */
+	TEST_FEATURE ("with NULL");
+	TEST_ALLOC_FAIL {
+		str = NULL;
+		ret = nih_strcat_sprintf (&str, NULL,
+					  "%s a test %d", "is", 54321);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_NE (ret, NULL);
+		TEST_EQ_P (ret, str);
+
+		TEST_ALLOC_SIZE (str, 15);
+		TEST_EQ_STR (str, "is a test 54321");
 
 		nih_free (str);
 	}
@@ -427,31 +521,62 @@ test_strcat_vsprintf (void)
 {
 	char *str, *ret;
 
+	TEST_FUNCTION ("test_strcat_vsprintf");
+
 	/* Check that we can extend a string with a formatted string,
 	 * resulting in the original string being modified and the new
 	 * pointer stored in the argument and returned.
 	 */
-	TEST_FUNCTION ("test_strcat_vsprintf");
+	TEST_FEATURE ("with original string");
 	TEST_ALLOC_FAIL {
+		char *tmp;
+
 		TEST_ALLOC_SAFE {
 			str = nih_strdup (NULL, "this");
 		}
 
+		tmp = str;
 		ret = my_strcat_vsprintf (&str, NULL,
 					  " %s a test %d", "is", 54321);
 
 		if (test_alloc_failed) {
-			TEST_EQ_P (ret, str);
+			TEST_EQ_P (ret, NULL);
+			TEST_EQ_P (str, tmp);
 			TEST_EQ_STR (str, "this");
+
+			nih_free (str);
 			continue;
 		}
 
 		TEST_NE (ret, NULL);
 		TEST_EQ_P (ret, str);
 
-		TEST_ALLOC_PARENT (str, NULL);
 		TEST_ALLOC_SIZE (str, 21);
 		TEST_EQ_STR (str, "this is a test 54321");
+
+		nih_free (str);
+	}
+
+
+	/* Check that when no string is passed, this behaves as sprintf.
+	 */
+	TEST_FEATURE ("with NULL");
+	TEST_ALLOC_FAIL {
+		str = NULL;
+		ret = my_strcat_vsprintf (&str, NULL,
+					  "%s a test %d", "is", 54321);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_NE (ret, NULL);
+		TEST_EQ_P (ret, str);
+
+		TEST_ALLOC_SIZE (str, 15);
+		TEST_EQ_STR (str, "is a test 54321");
 
 		nih_free (str);
 	}
@@ -473,6 +598,7 @@ test_str_split (void)
 	 */
 	TEST_FEATURE ("with no repeat");
 	TEST_ALLOC_FAIL {
+		printf ("%d/%d\n", test_alloc_failed, _test_alloc_count);
 		array = nih_str_split (NULL, "this is  a\ttest", " \t", FALSE);
 
 		if (test_alloc_failed) {
@@ -1013,26 +1139,6 @@ test_array_append (void)
 	nih_free (args);
 }
 
-void
-test_strv_free (void)
-{
-	char **strv;
-
-	/* Check that we can free a NULL-termianted array of allocated strings,
-	 * this doesn't use nih_alloc so the only way to test it is to see
-	 * whether this crashes.
-	 */
-	TEST_FUNCTION ("nih_strv_free");
-	strv = malloc (sizeof (char *) * 5);
-	strv[0] = strdup ("This");
-	strv[1] = strdup ("is");
-	strv[2] = strdup ("a");
-	strv[3] = strdup ("test");
-	strv[4] = NULL;
-
-	nih_strv_free (strv);
-	free (strv);
-}
 
 void
 test_str_wrap (void)
@@ -1405,7 +1511,6 @@ main (int   argc,
 	test_array_addp ();
 	test_array_copy ();
 	test_array_append ();
-	test_strv_free ();
 	test_str_wrap ();
 	test_str_screen_width ();
 	test_str_screen_wrap ();

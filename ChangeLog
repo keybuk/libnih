@@ -10,6 +10,8 @@
 	(nih_strv_free): Drop this function, it's not used and it's utterly
 	inconsistent with the others as it expressly isn't used with
 	nih_alloc().
+	(nih_strncat): This function worryingly did not work if NULL was
+	passed, catch that and call nih_strndup() instead.
 	* nih/string.h: Add a documentation string and drop prototype.
 	* nih/tests/test_string.c (test_strv_free): Drop.
 	(test_sprintf, test_vsprintf, test_strdup, test_strndup): Replace
@@ -19,7 +21,8 @@
 	(test_strcat_vsprintf): Strangely these test cases don't appear to
 	have worked before, the functions return NULL in case of memory
 	allocation failure so we need to check the string against a temporary
-	copy stored before.
+	copy stored before, and we need to free that string as well. 
+	Also add test cases for NULL being passed in as the source string.
 
 	* nih/test_alloc.h: Expose references to nih_alloc()'s pointers to
 	malloc, realloc and free so we can replace them for testing purposes.

@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,13 @@
 
 #ifndef NIH_STRING_H
 #define NIH_STRING_H
+
+/**
+ * These functions provide string utilities that use the nih_alloc()
+ * functions for memory management.  This allows you to create and modify
+ * strings, and arrays of strings, which may be referenced by other objects
+ * and cleaned up automatically.
+ **/
 
 #include <stdarg.h>
 
@@ -74,8 +81,6 @@ char **nih_str_array_copy   (const void *parent, size_t *len,
 char **nih_str_array_append (char ***array, const void *parent, size_t *len,
 			     char * const *args)
 	__attribute__ ((warn_unused_result, malloc));
-
-void   nih_strv_free        (char **strv);
 
 char * nih_str_wrap         (const void *parent, const char *str, size_t len,
 		             size_t first_indent, size_t indent)

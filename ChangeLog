@@ -1,5 +1,9 @@
 2009-01-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (nih_alloc_parent, nih_alloc_size): Pointer argument
+	should be const since we don't modify it.
+	* nih/alloc.h: Update prototype.
+
 	* nih/error.h: Add documentation for header.
 	(NIH_SHOULD): Much needed docstring.
 

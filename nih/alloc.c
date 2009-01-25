@@ -570,7 +570,7 @@ nih_alloc_ref_free (NihAllocRef *ref,
  * Returns: TRUE if @parent has a reference to @ptr, FALSE otherwise.
  **/
 int
-nih_alloc_parent (void       *ptr,
+nih_alloc_parent (const void *ptr,
 		  const void *parent)
 {
 	NihAllocCtx *ctx;
@@ -627,7 +627,7 @@ nih_alloc_ref_lookup (NihAllocCtx *parent,
  * originally requested.
  **/
 size_t
-nih_alloc_size (void *ptr)
+nih_alloc_size (const void *ptr)
 {
 	NihAllocCtx *ctx;
 

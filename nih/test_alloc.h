@@ -245,7 +245,7 @@ _test_free_tag (void *ptr)
  **/
 #define TEST_FREE_TAG(_ptr)						\
 	do {								\
-		extern void *(*_test__nih_malloc)(size_t size) = __nih_malloc; \
+		void *(*_test__nih_malloc)(size_t size) = __nih_malloc; \
 		struct _test_free_tag *_test_tag;			\
 									\
 		__nih_malloc = malloc;					\

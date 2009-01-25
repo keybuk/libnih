@@ -2,7 +2,7 @@
  *
  * test_child.c - test suite for nih/child.c
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,11 @@
  */
 
 #include <nih/test.h>
+
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif /* HAVE_CONFIG_H */
+
 
 #if HAVE_VALGRIND_VALGRIND_H
 #include <valgrind/valgrind.h>

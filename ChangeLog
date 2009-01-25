@@ -1,5 +1,9 @@
 2009-01-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/child.c (nih_child_add_watch): Update documentation to match new
+	nih_alloc(), no need to cast destructor function.
+	* nih/tests/test_child.c: Include config.h
+	
 	* nih/signal.c (nih_signal_add_handler): Update documentation to
 	match new nih_alloc(), no need to cast destructor function.
 	* nih/tests/test_signal.c: Include config.h

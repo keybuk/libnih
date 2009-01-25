@@ -2,7 +2,7 @@
  *
  * child.c - child process termination handling
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ nih_child_init (void)
 
 /**
  * nih_child_add_watch:
- * @parent: parent of watch,
+ * @parent: parent object for new watch,
  * @pid: process id to watch or -1,
  * @events: events to watch for,
  * @handler: function to call on @events,
@@ -87,9 +87,10 @@ nih_child_init (void)
  *
  * Removal of the watch can be performed by freeing it.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned watch.  When all parents
+ * of the returned watch are freed, the returned watch will also be
+ * freed.
  *
  * Returns: the watch information, or NULL if insufficient memory.
  **/
@@ -113,7 +114,7 @@ nih_child_add_watch (const void      *parent,
 
 	nih_list_init (&watch->entry);
 
-	nih_alloc_set_destructor (watch, (NihDestructor)nih_list_destroy);
+	nih_alloc_set_destructor (watch, nih_list_destroy);
 
 	watch->pid = pid;
 	watch->events = events;

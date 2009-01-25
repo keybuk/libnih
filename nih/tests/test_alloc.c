@@ -2,7 +2,7 @@
  *
  * test_alloc.c - test suite for nih/alloc.c
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,12 +21,54 @@
 
 #include <nih/test.h>
 
+#include <malloc.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
 
+
+static void *
+malloc_null (size_t size)
+{
+	return NULL;
+}
+
+void
+test_new (void)
+{
+	void *ptr1, *ptr2;
+
+	TEST_FUNCTION ("nih_new");
+
+	/* Check that nih_new works if we don't give it a parent, the block
+	 * should be allocated with the size of the type given.
+	 */
+	TEST_FEATURE ("with no parent");
+	ptr1 = nih_new (NULL, int);
+
+	TEST_ALLOC_SIZE (ptr1, sizeof (int));
+
+
+	/* Check that nih_new works if we do give a parent. */
+	TEST_FEATURE ("with parent");
+	ptr2 = nih_new (ptr1, char);
+
+	TEST_ALLOC_SIZE (ptr2, sizeof (char));
+	TEST_ALLOC_HAS_REF (ptr2, ptr1);
+
+	nih_free (ptr1);
+
+
+	/* Check that nih_new returns NULL if allocation fails. */
+	TEST_FEATURE ("with failed allocation");
+	__nih_malloc = malloc_null;
+	ptr1 = nih_new (NULL, int);
+	__nih_malloc = malloc;
+
+	TEST_EQ_P (ptr1, NULL);
+}
 
 void
 test_alloc (void)
@@ -43,7 +85,6 @@ test_alloc (void)
 	memset (ptr1, 'x', 8096);
 
 	TEST_ALLOC_SIZE (ptr1, 8096);
-	TEST_ALLOC_PARENT (ptr1, NULL);
 
 
 	/* Check that allocation with a parent remembers the parent */
@@ -52,56 +93,26 @@ test_alloc (void)
 	memset (ptr2, 'x', 10);
 
 	TEST_ALLOC_SIZE (ptr2, 10);
-	TEST_ALLOC_PARENT (ptr2, ptr1);
-
+	TEST_ALLOC_HAS_REF (ptr2, ptr1);
 
 	nih_free (ptr1);
+
+
+	/* Check that nih_alloc returns NULL if allocation fails. */
+	TEST_FEATURE ("with failed allocation");
+	__nih_malloc = malloc_null;
+	ptr1 = nih_new (NULL, int);
+	__nih_malloc = malloc;
+
+	TEST_EQ_P (ptr1, NULL);
 }
 
-
-static int last_size = 0;
 
 static void *
-my_realloc (void *ptr, size_t size)
+realloc_null (void   *ptr,
+	      size_t  size)
 {
-	last_size = size;
-	return realloc (ptr, size);
-}
-
-static void *
-null_realloc (void *ptr, size_t size)
-{
-	if (size > 100) {
-		return NULL;
-	} else {
-		return realloc (ptr, size);
-	}
-}
-
-void
-test_alloc_using (void)
-{
-	void *ptr;
-
-	TEST_FUNCTION ("nih_alloc_using");
-
-	/* Check that the allocator function is passed the size, and that
-	 * it's at least the size we asked for.
-	 */
-	TEST_FEATURE ("with realloc");
-	ptr = nih_alloc_using (my_realloc, NULL, 8096);
-	memset (ptr, 'x', 8096);
-
-	TEST_GE (last_size, 8096);
-
-	nih_free (ptr);
-
-
-	/* Check that we get NULL if the allocator fails */
-	TEST_FEATURE ("with failing realloc");
-	ptr = nih_alloc_using (null_realloc, NULL, 8096);
-
-	TEST_EQ_P (ptr, NULL);
+	return NULL;
 }
 
 void
@@ -119,13 +130,11 @@ test_realloc (void)
 	memset (ptr1, 'x', 4096);
 
 	TEST_ALLOC_SIZE (ptr1, 4096);
-	TEST_ALLOC_PARENT (ptr1, NULL);
 
 	nih_free (ptr1);
 
 
-	/* Check that nih_realloc works if the block doesn't have a parent,
-	 * the size should change and the parent should remain NULL.
+	/* Check that nih_realloc works if the block doesn't have a parent.
 	 */
 	TEST_FEATURE ("with no parent");
 	ptr1 = nih_alloc (NULL, 4096);
@@ -135,7 +144,6 @@ test_realloc (void)
 	memset (ptr1, 'x', 8096);
 
 	TEST_ALLOC_SIZE (ptr1, 8096);
-	TEST_ALLOC_PARENT (ptr1, NULL);
 
 
 	/* Check that nih_realloc works if the block has a parent, the size
@@ -149,16 +157,16 @@ test_realloc (void)
 	memset (ptr2, 'x', 10);
 
 	TEST_ALLOC_SIZE (ptr2, 10);
-	TEST_ALLOC_PARENT (ptr2, ptr1);
+	TEST_ALLOC_HAS_REF (ptr2, ptr1);
 
 	nih_free (ptr1);
 
 
 	/* Check that nih_realloc works if the block being reallocated has
-	 * children.  This is fiddly as they need their parent pointers
+	 * a child.  This is fiddly as they need their parent pointers
 	 * adjusted.
 	 */
-	TEST_FEATURE ("with existant children");
+	TEST_FEATURE ("with a child");
 	ptr1 = nih_alloc (NULL, 128);
 	memset (ptr1, 'x', 128);
 
@@ -168,7 +176,7 @@ test_realloc (void)
 	ptr3 = nih_realloc (ptr1, NULL, 1024);
 	memset (ptr3, 'x', 1024);
 
-	TEST_ALLOC_PARENT (ptr2, ptr3);
+	TEST_ALLOC_HAS_REF (ptr2, ptr3);
 
 	nih_free (ptr3);
 
@@ -177,10 +185,13 @@ test_realloc (void)
 	 * if the allocator fails.
 	 */
 	TEST_FEATURE ("with failing realloc");
-	ptr1 = nih_alloc_using (null_realloc, NULL, 10);
+	ptr1 = nih_alloc (NULL, 10);
+	assert (ptr1);
 	memset (ptr1, 'x', 10);
 
+	__nih_realloc = realloc_null;
 	ptr2 = nih_realloc (ptr1, NULL, 200);
+	__nih_realloc = realloc;
 
 	TEST_EQ_P (ptr2, NULL);
 	TEST_ALLOC_SIZE (ptr1, 10);
@@ -188,48 +199,23 @@ test_realloc (void)
 	nih_free (ptr1);
 }
 
-void
-test_new (void)
-{
-	void *ptr1, *ptr2;
 
-	TEST_FUNCTION ("nih_new");
-
-	/* Check that nih_new works if we don't give it a parent, the block
-	 * should be allocated with the size of the type given.
-	 */
-	TEST_FEATURE ("with no parent");
-	ptr1 = nih_new (NULL, int);
-
-	TEST_ALLOC_SIZE (ptr1, sizeof (int));
-	TEST_ALLOC_PARENT (ptr1, NULL);
-
-
-	/* Check that nih_new works if we do give a parent. */
-	TEST_FEATURE ("with parent");
-	ptr2 = nih_new (ptr1, char);
-
-	TEST_ALLOC_SIZE (ptr2, sizeof (char));
-	TEST_ALLOC_PARENT (ptr2, ptr1);
-
-	nih_free (ptr1);
-}
-
-
-static int was_called;
+static int destructor_was_called;
 
 static int
 destructor_called (void *ptr)
 {
-	was_called++;
+	destructor_was_called++;
 
 	return 2;
 }
 
+static int child_destructor_was_called;
+
 static int
 child_destructor_called (void *ptr)
 {
-	was_called++;
+	child_destructor_was_called++;
 
 	return 20;
 }
@@ -242,20 +228,36 @@ test_free (void)
 
 	TEST_FUNCTION ("nih_free");
 
-	/* Check that nih_free works if the block has no parent.  Allocator
-	 * should get called with zero as the size argument, the destructor
-	 * should get called and nih_free should return that return value.
+	/* Check that nih_free works if the block has no parent.  The
+	 * destructor should get called and nih_free should return that
+	 * return value.
 	 */
 	TEST_FEATURE ("with no parent");
-	ptr1 = nih_alloc_using (my_realloc, NULL, 10);
+	ptr1 = nih_alloc (NULL, 10);
 	nih_alloc_set_destructor (ptr1, destructor_called);
-	last_size = -1;
-	was_called = 0;
+	destructor_was_called = 0;
 	ret = nih_free (ptr1);
 
-	TEST_EQ (last_size, 0);
-	TEST_TRUE (was_called);
+	TEST_TRUE (destructor_was_called);
 	TEST_EQ (ret, 2);
+
+
+	/* Check that nih_free works if the block has a parent.  The
+	 * destructor should get called and nih_free should return that
+	 * return value.
+	 */
+	TEST_FEATURE ("with parent");
+	ptr2 = nih_alloc (NULL, 20);
+
+	ptr1 = nih_alloc (ptr2, 10);
+	nih_alloc_set_destructor (ptr1, destructor_called);
+	destructor_was_called = 0;
+	ret = nih_free (ptr1);
+
+	TEST_TRUE (destructor_was_called);
+	TEST_EQ (ret, 2);
+
+	nih_free (ptr2);
 
 
 	/* Check that the destructor on any children also gets called, which
@@ -263,14 +265,12 @@ test_free (void)
 	 */
 	TEST_FEATURE ("with destructor on child");
 	ptr1 = nih_alloc (NULL, 10);
-	ptr2 = nih_alloc_using (my_realloc, ptr1, 10);
+	ptr2 = nih_alloc (ptr1, 10);
 	nih_alloc_set_destructor (ptr2, child_destructor_called);
-	last_size = -1;
-	was_called = 0;
+	child_destructor_was_called = 0;
 	ret = nih_free (ptr1);
 
-	TEST_EQ (last_size, 0);
-	TEST_TRUE (was_called);
+	TEST_TRUE (child_destructor_was_called);
 	TEST_EQ (ret, 0);
 
 
@@ -282,124 +282,186 @@ test_free (void)
 	ptr2 = nih_alloc (ptr1, 10);
 	nih_alloc_set_destructor (ptr1, destructor_called);
 	nih_alloc_set_destructor (ptr2, child_destructor_called);
-	was_called = 0;
+	destructor_was_called = 0;
+	child_destructor_was_called = 0;
 	ret = nih_free (ptr1);
 
-	TEST_EQ (was_called, 2);
+	TEST_TRUE (destructor_was_called);
+	TEST_TRUE (child_destructor_was_called);
 	TEST_EQ (ret, 2);
 }
 
+
 void
-test_reparent (void)
+test_discard (void)
 {
-	void *ptr1, *ptr2, *ptr3;
+	void *ptr1, *ptr2;
+	int   ret;
 
-	TEST_FUNCTION ("nih_alloc_reparent");
+	TEST_FUNCTION ("nih_discard");
 
-	/* Check that a no-op works, a block without a parent being orphaned.
-	 * Parent should remain NULL after, and this should be silent.
+	/* Check that nih_discard works if the block has no parent, freeing
+	 * the object.  The destructor should get called and nih_discard
+	 * should return that return value.
 	 */
-	TEST_FEATURE ("with orphan and no parent");
-	ptr1 = nih_alloc (NULL, 100);
-	memset (ptr1, 'x', 100);
+	TEST_FEATURE ("with no parent");
+	ptr1 = nih_alloc (NULL, 10);
+	nih_alloc_set_destructor (ptr1, destructor_called);
+	destructor_was_called = 0;
+	ret = nih_discard (ptr1);
 
-	nih_alloc_reparent (ptr1, NULL);
-
-	TEST_ALLOC_PARENT (ptr1, NULL);
-
-
-	/* Check that we can assign a parent to an orphan. */
-	TEST_FEATURE ("with orphan and new parent");
-	ptr2 = nih_alloc (NULL, 50);
-	memset (ptr2, 'x', 50);
-
-	nih_alloc_reparent (ptr2, ptr1);
-
-	TEST_ALLOC_PARENT (ptr2, ptr1);
-
-	/* Free the block's new parent, this should also free the block */
-	was_called = 0;
-	nih_alloc_set_destructor (ptr2, destructor_called);
-	nih_free (ptr1);
-
-	TEST_TRUE (was_called);
+	TEST_TRUE (destructor_was_called);
+	TEST_EQ (ret, 2);
 
 
-	/* Check that we can orphan a block with a parent. */
-	TEST_FEATURE ("with child and no parent");
-	ptr1 = nih_alloc (NULL, 100);
-	memset (ptr1, 'x', 100);
+	/* Check that nih_discard does nothing it the block has a parent.
+	 */
+	TEST_FEATURE ("with parent");
+	ptr2 = nih_alloc (NULL, 20);
 
-	ptr2 = nih_alloc (ptr1, 50);
-	memset (ptr2, 'x', 50);
+	ptr1 = nih_alloc (ptr2, 10);
+	nih_alloc_set_destructor (ptr1, destructor_called);
+	destructor_was_called = 0;
+	ret = nih_discard (ptr1);
 
-	nih_alloc_reparent (ptr2, NULL);
-
-	TEST_ALLOC_PARENT (ptr2, NULL);
-
-	/* Freeing the original parent should not free the block. */
-	was_called = 0;
-	nih_alloc_set_destructor (ptr2, destructor_called);
-	nih_free (ptr1);
-
-	TEST_FALSE (was_called);
+	TEST_FALSE (destructor_was_called);
+	TEST_EQ (ret, 0);
 
 	nih_free (ptr2);
 
 
-	/* Check that we can reparent a block that already had a parent. */
-	TEST_FEATURE ("with child and new parent");
+	/* Check that the destructor on any children also gets called, which
+	 * is as good a indication as any that the children are being freed.
+	 */
+	TEST_FEATURE ("with destructor on child");
+	ptr1 = nih_alloc (NULL, 10);
+	ptr2 = nih_alloc (ptr1, 10);
+	nih_alloc_set_destructor (ptr2, child_destructor_called);
+	child_destructor_was_called = 0;
+	ret = nih_discard (ptr1);
+
+	TEST_TRUE (child_destructor_was_called);
+	TEST_EQ (ret, 0);
+
+
+	/* Check that both destructors on parent and children are called,
+	 * and that the return value from nih_discard is that of the parent's.
+	 */
+	TEST_FEATURE ("with child and destructors");
+	ptr1 = nih_alloc (NULL, 10);
+	ptr2 = nih_alloc (ptr1, 10);
+	nih_alloc_set_destructor (ptr1, destructor_called);
+	nih_alloc_set_destructor (ptr2, child_destructor_called);
+	destructor_was_called = 0;
+	child_destructor_was_called = 0;
+	ret = nih_discard (ptr1);
+
+	TEST_TRUE (destructor_was_called);
+	TEST_TRUE (child_destructor_was_called);
+	TEST_EQ (ret, 2);
+}
+
+
+void
+test_ref (void)
+{
+	void *ptr1, *ptr2, *ptr3;
+
+	TEST_FUNCTION ("nih_ref");
+
+
+	/* Check that we can add a reference to an object that has no
+	 * parent.
+	 */
+	TEST_FEATURE ("with no existing parent");
 	ptr1 = nih_alloc (NULL, 100);
 	memset (ptr1, 'x', 100);
 
-	ptr2 = nih_alloc (ptr1, 50);
-	memset (ptr2, 'x', 50);
+	ptr2 = nih_alloc (NULL, 100);
+	memset (ptr2, 'y', 100);
 
-	ptr3 = nih_alloc (NULL, 75);
-	memset (ptr3, 'x', 75);
+	nih_ref (ptr1, ptr2);
 
-	nih_alloc_reparent (ptr2, ptr3);
+	TEST_ALLOC_HAS_REF (ptr1, ptr2);
 
-	TEST_ALLOC_PARENT (ptr2, ptr3);
+	nih_free (ptr2);
 
-	/* Freeing the original parent should not free the block. */
-	was_called = 0;
-	nih_alloc_set_destructor (ptr2, destructor_called);
+
+	/* Check that we can add a reference to an object that already has
+	 * a parent, and that both shall be parents afterwards.
+	 */
+	TEST_FEATURE ("with existing parent");
+	ptr1 = nih_alloc (NULL, 100);
+	memset (ptr1, 'x', 100);
+
+	ptr2 = nih_alloc (ptr1, 100);
+	memset (ptr2, 'y', 100);
+
+	ptr3 = nih_alloc (NULL, 100);
+	memset (ptr2, 'z', 100);
+
+	nih_ref (ptr2, ptr3);
+
+	TEST_ALLOC_HAS_REF (ptr2, ptr1);
+	TEST_ALLOC_HAS_REF (ptr2, ptr3);
+
 	nih_free (ptr1);
-
-	TEST_FALSE (was_called);
-
-	/* Freeing the new parent should free the block. */
-	was_called = 0;
-	nih_alloc_set_destructor (ptr2, destructor_called);
 	nih_free (ptr3);
-
-	TEST_TRUE (was_called);
 }
 
 void
-test_set_allocator (void)
+test_unref (void)
 {
-	void *ptr;
+	void *ptr1, *ptr2, *ptr3;
 
-	/* Check that the function alters the default allocator by allocating
-	 * and freeing a block with it afterwards.
+	TEST_FUNCTION ("nih_unref");
+
+
+	/* Check that we can remove a reference from an object with multiple
+	 * parents, which means the object will not be freed.
 	 */
-	TEST_FUNCTION ("nih_alloc_set_allocator");
+	TEST_FEATURE ("with multiple parents");
+	ptr1 = nih_alloc (NULL, 100);
+	memset (ptr1, 'x', 100);
 
-	nih_alloc_set_allocator (my_realloc);
+	ptr2 = nih_alloc (ptr1, 100);
+	memset (ptr2, 'y', 100);
 
-	last_size = 0;
-	ptr = nih_alloc (NULL, 10);
+	ptr3 = nih_alloc (NULL, 100);
+	memset (ptr2, 'z', 100);
 
-	TEST_GE (last_size, 10);
+	nih_ref (ptr2, ptr3);
 
-	last_size = 0;
-	nih_free (ptr);
+	nih_alloc_set_destructor (ptr2, destructor_called);
+	destructor_was_called = 0;
 
-	TEST_EQ (last_size, 0);
+	nih_unref (ptr2, ptr1);
 
-	nih_alloc_set_allocator (realloc);
+	TEST_FALSE (destructor_was_called);
+	TEST_ALLOC_HAS_REF (ptr2, ptr3);
+
+	nih_free (ptr1);
+	nih_free (ptr3);
+
+
+	/* Check that when we remove the last reference from an object,
+	 * the object is freed.
+	 */
+	TEST_FEATURE ("with last parent");
+	ptr1 = nih_alloc (NULL, 100);
+	memset (ptr1, 'x', 100);
+
+	ptr2 = nih_alloc (ptr1, 100);
+	memset (ptr2, 'y', 100);
+
+	nih_alloc_set_destructor (ptr2, destructor_called);
+	destructor_was_called = 0;
+
+	nih_unref (ptr2, ptr1);
+
+	TEST_TRUE (destructor_was_called);
+
+	nih_free (ptr1);
 }
 
 
@@ -407,13 +469,13 @@ int
 main (int   argc,
       char *argv[])
 {
-	test_alloc ();
-	test_alloc_using ();
-	test_realloc ();
 	test_new ();
+	test_alloc ();
+	test_realloc ();
 	test_free ();
-	test_reparent ();
-	test_set_allocator ();
+	test_discard ();
+	test_ref ();
+	test_unref ();
 
 	return 0;
 }

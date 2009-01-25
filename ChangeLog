@@ -1,3 +1,55 @@
+2009-01-25  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/alloc.c: Re-implement as a multi-reference allocator; an object
+	may now have as many parents as you wish, each one holding its own
+	reference to it.
+	(NihAllocCtx): Restructure.
+	(NihAllocRef): New object linked by context to hold a reference.
+	(nih_alloc_init, nih_alloc_set_allocator, nih_alloc_using): Drop
+	support for custom allocators, knowing that we always use malloc
+	is useful for the implementation - we still allow the test suite
+	to change them, but nothing else.
+	(nih_alloc): Reimplement from original nih_alloc_using() function,
+	now calls nih_alloc_ref_new() if parent is not NULL.
+	(nih_realloc): Reimplement for multi-referenceness; much of the
+	this remains the same.
+	(nih_free): Reimplement as a wrap around nih_alloc_context_free().
+	(nih_discard): New function to discard an object if it has no
+	parent references, used if you believe references may have been
+	taken by functions you have called.
+	(nih_alloc_context_free): Common function to free an object, calling
+	its destructor after discarding parent references but before cleaning
+	up children.
+	(nih_alloc_reparent): Drop, it's no longer possible to simply reparent
+	an object.  Instead you should call the new functions:
+	(nih_ref, nih_alloc_ref_new, nih_unref, nih_alloc_ref_free): Handle
+	NihAllocRef objects, linking them to a context and removing them from
+	a context; when the last reference to a child is removed, we
+	automatically call nih_alloc_context_free().
+	(nih_alloc_parent, nih_alloc_has_ref): Replace the former function
+	with the latter, it's no longer possible to query the exact parent
+	since there isn't one.
+	(nih_alloc_ref_lookup): Internal function to find a reference.
+	(nih_alloc_size): Reimplement assuming malloc, which saves us some
+	space in the context structure.
+	* nih/alloc.h: Update all prototypes and documentation, including
+	adding module documentation to the top of the header file.
+	(NihAllocator): Drop typedef.
+	(nih_alloc_set_destructor): Add casting macro with name of original
+	function that calls nih_alloc_real_set_destructor().
+	* nih/tests/test_alloc.c (test_new, test_alloc): Fix to check for a
+	reference rather than the explicit parent; also include a test for
+	allocation failure using a malloc hook.
+	(test_realloc): Fix to check for a reference rather than the
+	explicit parent, change allocatil failure test to use a realloc hook
+	instead of a different allocator.
+	(test_free): Add a with parent test.
+	(test_discard): New test, as test_free() but with different expected
+	result for the parent test.
+	(test_set_allocator): Drop test.
+	(test_reparent, test_ref, test_unref): Drop the former test and
+	replace with checking that referencing and unreferencing works.
+
 2008-10-24  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/list.h (NIH_LIST_FOREACH_SAFE): Mark the cursor to be

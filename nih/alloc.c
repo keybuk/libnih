@@ -1,8 +1,8 @@
 /* libnih
  *
- * alloc.c - hierarchial allocator
+ * alloc.c - multi-reference hierarchial allocator
  *
- * Copyright © 2006 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #endif /* HAVE_CONFIG_H */
 
 
+#include <malloc.h>
 #include <stdlib.h>
 
 #include <nih/macros.h>
@@ -35,27 +36,42 @@
 
 /**
  * NihAllocCtx:
- * @entry: list header,
- * @size: size of requested allocation,
- * @parent: parent context, when freed we will be,
- * @children: child blocks that will be freed when we are,
- * @allocator: function to call to return memory,
+ * @parents: parents of this context,
+ * @children: children of this context,
  * @destructor: function to be called when freed.
  *
  * This structure is placed before all allocations in memory and is used
- * to build up a tree of them.  When an allocation is freed, all children
- * are also freed and any destructors are called.
+ * to build up an n-ary tree of them.  Allocations may have multiple
+ * parent references and multiple children.  Allocations are automatically
+ * freed if the last parent reference is freed.  When an allocation is
+ * freed, all children are unreferenced and any destructors called.
+ *
+ * Members of @parents and @children are both NihAllocRef objects.
  **/
 typedef struct nih_alloc_ctx {
-	NihList               entry;
-	size_t                size;
-
-	struct nih_alloc_ctx *parent;
-	NihList               children;
-
-	NihAllocator          allocator;
-	NihDestructor         destructor;
+	NihList       parents;
+	NihList       children;
+	NihDestructor destructor;
 } NihAllocCtx;
+
+/**
+ * NihAllocRef:
+ * @children_entry: list head in parent's children list,
+ * @parents_entry: list head in child's parents list,
+ * @parent: pointer to parent context,
+ * @child: pointer to child context.
+ *
+ * This structure is shared by both @parent and @child denoting a reference
+ * between the two of them.  It is placed in @parent's children list through
+ * @children_entry and @child's parents list through @parents_entry.
+ **/
+typedef struct nih_alloc_ref {
+	NihList      children_entry;
+	NihList      parents_entry;
+	NihAllocCtx *parent;
+	NihAllocCtx *child;
+} NihAllocRef;
+
 
 /**
  * NIH_ALLOC_CTX:
@@ -80,140 +96,81 @@ typedef struct nih_alloc_ctx {
 #define NIH_ALLOC_PTR(ctx) ((void *)((NihAllocCtx *)(ctx) + 1))
 
 
-/**
- * allocator:
- *
- * Function used to allocate and free memory for the majority of blocks.
- **/
-static NihAllocator allocator = NULL;
+/* Prototypes for static functions */
+static inline int          nih_alloc_context_free   (NihAllocCtx *ctx);
+
+static inline NihAllocRef *nih_alloc_ref_new        (NihAllocCtx *parent,
+						     NihAllocCtx *child)
+	__attribute__ ((malloc));
+static inline void         nih_alloc_ref_free       (NihAllocRef *ref,
+						     int recurse);
+static inline NihAllocRef *nih_alloc_ref_lookup     (NihAllocCtx *parent,
+						     NihAllocCtx *child);
 
 
-/**
- * nih_alloc_init:
- *
- * Initialise the default allocator.
- **/
-static inline void
-nih_alloc_init (void)
-{
-	if (! allocator)
-		nih_alloc_set_allocator (realloc);
-}
+/* Point to the functions we actually call for allocation. */
+void *(*__nih_malloc)(size_t size) = malloc;
+void *(*__nih_realloc)(void *ptr, size_t size) = realloc;
+void (*__nih_free)(void *ptr) = free;
 
-/**
- * nih_alloc_set_allocator:
- * @new_allocator: new default allocator function.
- *
- * Sets the function that will be used to allocate memory for all further
- * blocks requested and return it to the system.  The behaviour of the
- * function should be the same of that as the standard realloc() function.
- *
- * This function should generally only be used in the initialisation
- * portion of your program, and should not be used to switch allocators
- * temporarily.  Use nih_alloc_using() to allocate a block with an
- * alternate allocator.
- **/
-void
-nih_alloc_set_allocator (NihAllocator new_allocator)
-{
-	nih_assert (new_allocator != NULL);
-
-	allocator = new_allocator;
-}
-
-
-/**
- * nih_alloc_using:
- * @allocator: allocator to use for this block,
- * @parent: parent block of allocation,
- * @size: size of requested block.
- *
- * Allocates a block of memory of at least @size bytes with the @allocator
- * function and returns a pointer to it.
- *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
- *
- * Returns: requested memory block or NULL if allocation fails.
- **/
-void *
-nih_alloc_using (NihAllocator  allocator,
-		 const void   *parent,
-		 size_t        size)
-{
-	NihAllocCtx *ctx;
-
-	nih_assert (allocator != NULL);
-
-	ctx = allocator (NULL, sizeof (NihAllocCtx) + size);
-	if (! ctx)
-		return NULL;
-
-	ctx->size = size;
-
-	nih_list_init (&ctx->entry);
-	nih_list_init (&ctx->children);
-
-	ctx->allocator = allocator;
-	ctx->destructor = NULL;
-
-	if (parent) {
-		ctx->parent = NIH_ALLOC_CTX (parent);
-
-		nih_list_add_after (&ctx->parent->children, &ctx->entry);
-	} else {
-		ctx->parent = NULL;
-	}
-
-	return NIH_ALLOC_PTR (ctx);
-}
 
 /**
  * nih_alloc:
- * @parent: parent block of allocation,
- * @size: size of requested block.
+ * @parent: parent object for new object,
+ * @size: size of requested object.
  *
- * Allocates a block of memory of at least @size bytes and returns
- * a pointer to it.
+ * Allocates an object in memory of at least @size bytes and returns a
+ * pointer to it.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.  If you have clean-up
- * that would need to be run, you can assign a destructor function using
- * the nih_alloc_set_destructor() function.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned object.  When all parents
+ * of the returned object are freed, the returned object will also be
+ * freed.
  *
- * Returns: requested memory block or NULL if allocation fails.
+ * If you have clean-up that you would like to run, you can assign a
+ * destructor using the nih_alloc_set_destructor() function.
+ *
+ * Returns: newly allocated object or NULL if insufficient memory.
  **/
 void *
 nih_alloc (const void *parent,
 	   size_t      size)
 {
-	nih_alloc_init ();
+	NihAllocCtx *ctx;
 
-	return nih_alloc_using (allocator, parent, size);
+	ctx = __nih_malloc (sizeof (NihAllocCtx) + size);
+	if (! ctx)
+		return NULL;
+
+	nih_list_init (&ctx->parents);
+	nih_list_init (&ctx->children);
+
+	ctx->destructor = NULL;
+
+	if (parent)
+		nih_alloc_ref_new (NIH_ALLOC_CTX (parent), ctx);
+
+	return NIH_ALLOC_PTR (ctx);
 }
+
 
 /**
  * nih_realloc:
- * @ptr: block to reallocate or NULL,
- * @parent: parent block of allocation,
- * @size: size of new block.
+ * @ptr: object to reallocate,
+ * @parent: parent object of new object,
+ * @size: size of new object.
  *
- * Adjusts the size of the block of memory allocated for @ptr to be at
- * least @size bytes and returns the new pointer.  If @ptr is NULL then
- * this is equivalent to nih_alloc().
+ * Adjusts the size of the object @ptr to be at least @size bytes, which
+ * may be larger or smaller than the existing object, and returns the
+ * new pointer.
  *
- * If @parent is not NULL, it must be the same object as the parent to
- * @ptr, unless that is also NULL in which case it should be a pointer to
- * another block which will be used as the parent for the newly allocated
- * block.  When @parent is freed, the returned block will be freed too.
- * If you have clean-up that would need to be run, you can assign a
- * destructor function using the nih_alloc_set_destructor() function.
+ * If @ptr is NULL, this simply calls nih_alloc() and passes both @parent
+ * and @size to it, returning the returned object.
  *
- * Returns: reallocated block or NULL if reallocation fails.
+ * If @ptr is not NULL, @parent is ignored; though it is usual to pass a
+ * parent of @ptr for style reasons.
+ *
+ * Returns: reallocated object or NULL if insufficient memory.
  **/
 void *
 nih_realloc (void       *ptr,
@@ -221,6 +178,7 @@ nih_realloc (void       *ptr,
 	     size_t      size)
 {
 	NihAllocCtx *ctx;
+	NihList     *first_parent = NULL;
 	NihList     *first_child = NULL;
 
 	if (! ptr)
@@ -228,77 +186,76 @@ nih_realloc (void       *ptr,
 
 	ctx = NIH_ALLOC_CTX (ptr);
 
-	if (parent)
-		nih_assert (ctx->parent == NIH_ALLOC_CTX (parent));
-
 	/* This is somewhat more difficult than alloc or free because we
-	 * have a tree of pointers to worry about.  Fortunately the
-	 * properties of the nih_list_* functions we use help us a lot here.
+	 * have two lists of pointers to worry about.  Fortunately the
+	 * properties of NihList help us a lot here.
 	 *
-	 * The problem is that references in the parent to this ptr's list
-	 * entry or references in children to this ptr's children list
-	 * entry are invalid once the allocator has been called.
+	 * The problem is that references between us and our parents,
+	 * and references between us and our children, all contain list
+	 * pointers that are potentially invalid once relloc has been
+	 * called.
 	 *
-	 * We could strip it all down before the allocator, then rebuild it
-	 * afterwards, but that's expensive and could be error-prone in the
-	 * case where the allocator fails.
+	 * We could strip it all down before calling realloc then rebuild
+	 * it afterwards, but that's expensive and could be error-prone in
+	 * the case where the allocator fails.
 	 *
-	 * The solution is to rely on a property of nih_list_add(); the
+	 * The solution is to rely on a property of nih_list_add().  The
 	 * entry passed (to be added) is cut out of its containing list
-	 * without deferencing the return pointers, this means we can cut
-	 * the bad pointers out simply by calling nih_list_add() to put the
-	 * new entry back in the same position.
+	 * without dereferencing the return pointers, this means we can
+	 * cut the bad pointers out simply by calling nih_list_add()
+	 * to put the new entry back in the same position.
 	 *
 	 * Of course, this only works in the non-empty list case as trying
-	 * to cut an entry out of an empty list would deference those
-	 * invalid pointers.  Happily all we need to do for the non-empty
+	 * to cut an entry out of an empty list would dereference those
+	 * invalid pointers.  Happily all we need to do for the empty
 	 * list case is call nih_list_init() again.
 	 *
-	 * For the primary list entry this is if we don't have a parent.
-	 * For the children list entry, this is if we don't have children,
-	 * which is difficult to detect after the allocator has been
-	 * called.  The easiest thing to do is stash a pointer to the first
-	 * child, if non-NULL then we use it for nih_list_add(), if NULL
-	 * then we call nih_list_init().
+	 * So we just remember the first parent and first child reference,
+	 * or NULL if the list is empty.
 	 */
 
+	if (! NIH_LIST_EMPTY (&ctx->parents))
+		first_parent = ctx->parents.next;
 	if (! NIH_LIST_EMPTY (&ctx->children))
 		first_child = ctx->children.next;
 
-	/* Now we do the actual realloc(), if this fails then the original
-	 * structure is still intact in memory so we can just return NULL
+	/* Now do the actual realloc(), if this fails then we can just
+	 * return NULL since we've not actually changed anything.
 	 */
-	ctx = ctx->allocator (ctx, sizeof (NihAllocCtx) + size);
+	ctx = __nih_realloc (ctx, sizeof (NihAllocCtx) + size);
 	if (! ctx)
 		return NULL;
 
-	ctx->size = size;
-
-	/* Either update our entry in our parent's list of children,
-	 * or reinitialise the list entry so it doesn't point to nowhere.
+	/* Now update our parents and children lists, or reinitialise,
+	 * as noted above this ensures that all the pointers are correct
 	 */
-	if (ctx->parent) {
-		nih_list_add_after (&ctx->parent->children, &ctx->entry);
+	if (first_parent) {
+		nih_list_add (first_parent, &ctx->parents);
 	} else {
-		nih_list_init (&ctx->entry);
+		nih_list_init (&ctx->parents);
 	}
 
-	/* Likewise update the head entry in our own list of children,
-	 * or reinitialise it so it doesn't point to nowhere.
-	 */
 	if (first_child) {
 		nih_list_add (first_child, &ctx->children);
 	} else {
 		nih_list_init (&ctx->children);
 	}
 
-	/* Finally fix up the parent pointer in all of our children so they
-	 * point to our new location
+	/* We still have to fix up the parent and child pointers, but
+	 * that's easy.
 	 */
-	NIH_LIST_FOREACH (&ctx->children, iter) {
-		NihAllocCtx *child_ctx = (NihAllocCtx *)iter;
+	NIH_LIST_FOREACH (&ctx->parents, iter) {
+		NihAllocRef *ref = NIH_LIST_ITER (iter, NihAllocRef,
+						  parents_entry);
 
-		child_ctx->parent = ctx;
+		ref->child = ctx;
+	}
+
+	NIH_LIST_FOREACH (&ctx->children, iter) {
+		NihAllocRef *ref = NIH_LIST_ITER (iter, NihAllocRef,
+						  children_entry);
+
+		ref->parent = ctx;
 	}
 
 	return NIH_ALLOC_PTR (ctx);
@@ -307,58 +264,154 @@ nih_realloc (void       *ptr,
 
 /**
  * nih_free:
- * @ptr: pointer to block to free.
+ * @ptr: object to free.
  *
- * Return the block of memory at @ptr to the allocator so it may be
- * re-used by something else.  The destructor is called, and then any
- * children of the block are freed (with their destructors called and
- * children freed also, etc.)
+ * Returns the object @ptr to the allocator so the memory consumed may be
+ * re-used by something else.
  *
- * Returns: return value from destructor, or 0.
+ * All parent references are discarded, the destructor is called, then
+ * all children of the object are unreferenced.  Should this be the last
+ * reference to any of the children, their destructor will be called and
+ * they too will be freed (along with their children, etc.)
+ *
+ * If you call nih_free() on an object with parent references, you should
+ * make sure that any pointers to the object are reset.  If you are unsure
+ * whether or not there are references you should call nih_discard(), if
+ * you only want to discard a particular parent reference you should call
+ * nih_unref().
+ *
+ * Returns: return value from @ptr's destructor, or 0.
  **/
 int
 nih_free (void *ptr)
 {
 	NihAllocCtx *ctx;
-	int          ret = 0;
 
 	nih_assert (ptr != NULL);
 
 	ctx = NIH_ALLOC_CTX (ptr);
 
-	if (ctx->destructor)
-		ret = ctx->destructor (ptr);
+	return nih_alloc_context_free (ctx);
+}
 
-	NIH_LIST_FOREACH_SAFE (&ctx->children, iter) {
-		void *ptr;
+/**
+ * nih_discard:
+ * @ptr: object to discard.
+ *
+ * If the object @ptr has no parent references, then returns it to the
+ * allocator so the memory consumed may be re-used by something else.
+ *
+ * If @ptr has parent references, this function does nothing and returns.
+ *
+ * You would use nih_discard() when you allocated @ptr without any parent
+ * but have passed it to functions that may have taken a reference to it
+ * in the meantime.  Compare with nih_free() which acts even if there are
+ * parent references, and nih_unref() which only removes a single parent
+ * reference.
+ *
+ * Returns: return value from @ptr's destructor, or 0.
+ **/
+int
+nih_discard (void *ptr)
+{
+	NihAllocCtx *ctx;
 
-		ptr = NIH_ALLOC_PTR (iter);
-		nih_free (ptr);
+	nih_assert (ptr != NULL);
+
+	ctx = NIH_ALLOC_CTX (ptr);
+
+	if (NIH_LIST_EMPTY (&ctx->parents))
+		return nih_alloc_context_free (ctx);
+
+	return 0;
+}
+
+/**
+ * nih_alloc_context_free:
+ * @ctx: context to free.
+ *
+ * This is the internal function called by nih_free(), nih_discard() and
+ * nih_unref() to actually free an allocated context and its attached
+ * object.
+ *
+ * All parent references are discarded, the destructor is called, then
+ * all children of the object are unreferenced.  Should this be the last
+ * reference to any of the children, their destructor will be called and
+ * they too will be freed (along with their children, etc.)
+ *
+ * Returns: return value from @ptr's destructor, or 0.
+ **/
+static inline int
+nih_alloc_context_free (NihAllocCtx *ctx)
+{
+	int ret = 0;
+
+	nih_assert (ctx != NULL);
+
+	/* Cast off our parents first, without recursing.  This ensures
+	 * we always have zero references before we call the destructor,
+	 * and has the somewhat neat property of breaking any reference
+	 * loops.
+	 */
+	NIH_LIST_FOREACH_SAFE (&ctx->parents, iter) {
+		NihAllocRef *ref = NIH_LIST_ITER (iter, NihAllocRef,
+						  parents_entry);
+
+		nih_alloc_ref_free (ref, FALSE);
 	}
 
-	nih_list_remove (&ctx->entry);
+	if (ctx->destructor)
+		ret = ctx->destructor (NIH_ALLOC_PTR (ctx));
 
-	ctx->allocator (ctx, 0);
+	/* This is safe against other changes to the list, because even if
+	 * our child references one of its siblings, we still hold a ref
+	 * as well so the sibling won't be freed until we get there.
+	 */
+	NIH_LIST_FOREACH_SAFE (&ctx->children, iter) {
+		NihAllocRef *ref = NIH_LIST_ITER (iter, NihAllocRef,
+						  children_entry);
+
+		nih_alloc_ref_free (ref, TRUE);
+	}
+
+	__nih_free (ctx);
 
 	return ret;
 }
 
+
 /**
- * nih_alloc_set_destructor:
- * @ptr: pointer to block,
+ * nih_alloc_real_set_destructor:
+ * @ptr: pointer to object,
  * @destructor: destructor function to set.
  *
- * Sets the destructor function of the block to @destructor, which may be
- * NULL.
+ * Sets the destructor of the allocated object @ptr to @destructor, which
+ * may be NULL to unset an existing destructor.  Normally you would use
+ * the nih_alloc_set_destructor() macro which expands to this function
+ * but casts @destructor to the correct type, since almost all destructors
+ * will be defined with their argument to be the type of the object
+ * rather than void *.
  *
- * The destructor function will be called when the block is freed, either
- * directly or as a result as a parent being freed.  The block will be
- * passed as a pointer to the destructor, and the destructor may return
- * a value which will be the return value of the nih_free() function.
+ * The destructor will be called before the object is freed, either
+ * explicitly by nih_free() or nih_discard(), or because the last parent
+ * has unreferenced the object.
+ *
+ * When the destructor is called, the parent references to the object will
+ * have already been discarded but all children references will be intact
+ * and none of the children will have been freed.  There is no need to use
+ * a destructor to unreference or free children, that is automatic.
+ *
+ * The pointer @ptr passed to the destructor is that of the object being
+ * freed, and the destructor may return a value which will be the return
+ * value of nih_free() or nih_discard() if used directly on the object.
+ *
+ * Since objects may also be freed by unreferencing, and the value is not
+ * returned in this case, it should only be used for informational or
+ * debugging purposes.
  **/
 void
-nih_alloc_set_destructor (void          *ptr,
-			  NihDestructor  destructor)
+nih_alloc_real_set_destructor (void          *ptr,
+			       NihDestructor  destructor)
 {
 	NihAllocCtx *ctx;
 
@@ -370,73 +423,187 @@ nih_alloc_set_destructor (void          *ptr,
 
 
 /**
- * nih_alloc_reparent:
- * @ptr: pointer to block to reparent,
- * @parent: new parent block.
+ * nih_ref:
+ * @ptr: object to reference,
+ * @parent: new parent object.
  *
- * Disassociate the block of memory at @ptr from its current parent, if
- * any, and optionally assign a new parent.
+ * Adds a reference to the object @ptr from @parent, adding to any other
+ * objects referencing @ptr.  The reference can be broken using nih_unref().
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * @ptr will only be automatically freed when the last parent unreferences
+ * it.  It may still be manually freed with nih_free(), though this doesn't
+ * sort out any pointers.
+ *
+ * This function is generally used when accepting an object that you wish
+ * to hold a reference to, which is cheaper than making a copy.  The caller
+ * must be careful to only use nih_discard() or nih_unref() to drop its own
+ * reference.
  **/
 void
-nih_alloc_reparent (void       *ptr,
-		    const void *parent)
+nih_ref (void       *ptr,
+	 const void *parent)
 {
-	NihAllocCtx *ctx;
+	nih_assert (ptr != NULL);
+	nih_assert (parent != NULL);
+
+	nih_alloc_ref_new (NIH_ALLOC_CTX (parent), NIH_ALLOC_CTX (ptr));
+}
+
+/**
+ * nih_alloc_ref_new:
+ * @parent: parent context,
+ * @child: child context.
+ *
+ * This is the internal function used by nih_ref() and nih_alloc() to
+ * create a new reference between the @parent and @child contexts.
+ *
+ * Returns: new reference, already linked to both objects.
+ **/
+static inline NihAllocRef *
+nih_alloc_ref_new (NihAllocCtx *parent,
+		   NihAllocCtx *child)
+{
+	NihAllocRef *ref;
+
+	nih_assert (parent != NULL);
+	nih_assert (child != NULL);
+
+	NIH_MUST (ref = malloc (sizeof (NihAllocRef)));
+
+	nih_list_init (&ref->children_entry);
+	nih_list_init (&ref->parents_entry);
+
+	ref->parent = parent;
+	ref->child = child;
+
+	nih_list_add (&parent->children, &ref->children_entry);
+	nih_list_add (&child->parents, &ref->parents_entry);
+
+	return ref;
+}
+
+
+/**
+ * nih_unref:
+ * @ptr: object to unreference,
+ * @parent: parent object to remove.
+ *
+ * Removes the reference to the object @ptr from @parent, if this is the
+ * last reference to @ptr then @ptr will be automatically freed.
+ *
+ * You never need to call this in your own destructors since children
+ * are unreferenced automatically, however this function is useful if you
+ * only hold a reference to an object for a short period and wish to
+ * discard it.
+ **/
+void
+nih_unref (void       *ptr,
+	   const void *parent)
+{
+	NihAllocRef *ref;
 
 	nih_assert (ptr != NULL);
+	nih_assert (parent != NULL);
 
-	ctx = NIH_ALLOC_CTX (ptr);
+	ref = nih_alloc_ref_lookup (NIH_ALLOC_CTX (parent),
+				    NIH_ALLOC_CTX (ptr));
 
-	if (parent) {
-		ctx->parent = NIH_ALLOC_CTX (parent);
+	nih_assert (ref != NULL);
 
-		nih_list_add_after (&ctx->parent->children, &ctx->entry);
-	} else {
-		ctx->parent = NULL;
+	nih_alloc_ref_free (ref, TRUE);
+}
 
-		nih_list_remove (&ctx->entry);
+/**
+ * nih_alloc_ref_free:
+ * @parent: parent context,
+ * @child: child context.
+ *
+ * This is the internal function used by nih_unref() and
+ * nih_alloc_context_free() to remove a reference between the @parent
+ * and @child contexts.
+ **/
+static inline void
+nih_alloc_ref_free (NihAllocRef *ref,
+		    int          recurse)
+{
+	nih_assert (ref != NULL);
+
+	nih_list_destroy (&ref->children_entry);
+	nih_list_destroy (&ref->parents_entry);
+
+	if (recurse && NIH_LIST_EMPTY (&ref->child->parents))
+		nih_alloc_context_free (ref->child);
+
+	free (ref);
+}
+
+
+/**
+ * nih_alloc_has_ref:
+ * @ptr: object to query,
+ * @parent: parent object to look for.
+ *
+ * Returns: TRUE if @parent has a reference to @ptr, FALSE otherwise.
+ **/
+int
+nih_alloc_has_ref (void       *ptr,
+		   const void *parent)
+{
+	NihAllocRef *ref;
+
+	nih_assert (ptr != NULL);
+	nih_assert (parent != NULL);
+
+	ref = nih_alloc_ref_lookup (NIH_ALLOC_CTX (parent),
+				    NIH_ALLOC_CTX (ptr));
+
+	return ref ? TRUE : FALSE;
+}
+
+/**
+ * nih_alloc_ref_lookup:
+ * @parent: parent context,
+ * @child: child context.
+ *
+ * This is the internal function used by nih_unref() and nih_alloc_has_ref()
+ * to lookup a reference between the @parent and @child contexts.
+ *
+ * Returns: NihAllocRef structure or NULL if no reference exists.
+ **/
+static inline NihAllocRef *
+nih_alloc_ref_lookup (NihAllocCtx *parent,
+		      NihAllocCtx *child)
+{
+	nih_assert (parent != NULL);
+	nih_assert (child != NULL);
+
+	NIH_LIST_FOREACH (&child->parents, iter) {
+		NihAllocRef *ref = NIH_LIST_ITER (iter, NihAllocRef,
+						  parents_entry);
+
+		if (ref->parent == parent)
+			return ref;
 	}
+
+	return NULL;
 }
 
 
 /**
  * nih_alloc_size:
- * @ptr: pointer to block.
+ * @ptr: pointer to object.
  *
- * Returns: the size of the allocated block, excluding the context.
+ * Returns: the size of the allocated object, which may be larger than
+ * originally requested.
  **/
 size_t
-nih_alloc_size (const void *ptr)
+nih_alloc_size (void *ptr)
 {
 	NihAllocCtx *ctx;
 
 	nih_assert (ptr != NULL);
 
 	ctx = NIH_ALLOC_CTX (ptr);
-	return ctx->size;
-}
 
-/**
- * nih_alloc_parent:
- * @ptr: pointer to block.
- *
- * Returns: the parent block or NULL if none.
- **/
-void *
-nih_alloc_parent (const void *ptr)
-{
-	NihAllocCtx *ctx;
-
-	nih_assert (ptr != NULL);
-
-	ctx = NIH_ALLOC_CTX (ptr);
-	if (ctx->parent) {
-		return NIH_ALLOC_PTR (ctx->parent);
-	} else {
-		return NULL;
-	}
+	return malloc_usable_size (ctx) - sizeof (NihAllocCtx);
 }

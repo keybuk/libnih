@@ -2,7 +2,7 @@
  *
  * tree.c - generic binary tree implementation
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ nih_tree_init (NihTree *tree)
 
 /**
  * nih_tree_new:
- * @parent: parent of new node.
+ * @parent: parent object for new node.
  *
  * Allocates a new tree structure, usually used as the root of a new
  * binary tree.  You may prefer to allocate the NihTree structure statically
@@ -57,9 +57,10 @@ nih_tree_init (NihTree *tree)
  * The structure is allocated using nih_alloc() so can be used as a context
  * to other allocations.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned tree node.  When all parents
+ * of the returned tree node are freed, the returned tree node will also be
+ * freed.
  *
  * Returns: the new tree node or NULL if the allocation failed.
  **/
@@ -74,14 +75,14 @@ nih_tree_new (const void *parent)
 
 	nih_tree_init (tree);
 
-	nih_alloc_set_destructor (tree, (NihDestructor)nih_tree_destroy);
+	nih_alloc_set_destructor (tree, nih_tree_destroy);
 
 	return tree;
 }
 
 /**
  * nih_tree_entry_new:
- * @parent: parent of new node.
+ * @parent: parent object for new entry.
  *
  * Allocates a new tree entry structure, leaving the caller to set the
  * data of the entry.
@@ -89,11 +90,12 @@ nih_tree_new (const void *parent)
  * The structure is allocated using nih_alloc() so can be used as a context
  * to other allocations.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned tree entry.  When all parents
+ * of the returned tree entry are freed, the returned tree entry will also be
+ * freed.
  *
- * Returns: the new tree node or NULL if the allocation failed.
+ * Returns: the new tree entry or NULL if the allocation failed.
  **/
 NihTreeEntry *
 nih_tree_entry_new (const void *parent)
@@ -106,7 +108,7 @@ nih_tree_entry_new (const void *parent)
 
 	nih_tree_init (&tree->node);
 
-	nih_alloc_set_destructor (tree, (NihDestructor)nih_tree_destroy);
+	nih_alloc_set_destructor (tree, nih_tree_destroy);
 
 	tree->data = NULL;
 

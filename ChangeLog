@@ -1,5 +1,9 @@
 2009-01-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tree.c (nih_tree_new, nih_tree_entry_new): Update documentation
+	to match new nih_alloc(); no need to cast destructor function
+	* nih/tree.h: Add documentation string for the header.
+
 	* nih/hash.c (nih_hash_new): Update documentation to match
 	new nih_alloc(); update comment to reflect what we actually do to
 	pick a prime.

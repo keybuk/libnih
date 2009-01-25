@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,49 @@
 #define NIH_TREE_H
 
 #include <nih/macros.h>
+
+/**
+ * Provides a generic binary tree implementation.  No assumption is
+ * made about the structure of the tree, or its rules.  Instead when
+ * you add a node to a tree, you must specify the parent node and whether
+ * to add the new node to its left or right.
+ *
+ * Tree nodes may be created in one of two ways.  The most common is to
+ * embed the NihTree structure as the first member of your own structure,
+ * and initialise it with nih_tree_init() after allocating the structure.
+ * Alternatively you may create NihTreeEntry structures with
+ * nih_tree_entry_new() and point at your own data from them.
+ *
+ * If you need no data for the tree root, you may use NihTree itself and
+ * allocate it with nih_tree_new().
+ *
+ * Nodes may be added to the tree with nih_tree_add(), passing the parent
+ * node, the new node and whether to add to the left or right.
+ *
+ * To remove a node from the tree, and its children, use nih_tree_remove();
+ * the node removed becomes the root of a new tree.
+ *
+ * Nodes may be moved between trees, or relocated within a tree, by simply
+ * calling nih_tree_add() - there's no need to call nih_tree_remove() first.
+ *
+ * A node may also be removed from a tree and from its children using
+ * nih_tree_unlink(); the node removed, and each of its children, become
+ * the roots of new trees.
+ *
+ * Tree-iteration may be performed non-recursively in a pre-order, in-order
+ * or post-order fashion; forwards or backwards.  The functions
+ * nih_tree_next_full(), nih_tree_prev_full(), nih_tree_next_pre_full(),
+ * nih_tree_prev_pre_full(), nih_tree_next_post_full() and
+ * nih_tree_prev_post_full() all return the next or previous node, allowing
+ * for filtering.  If you do not need to filter macros are provided that
+ * pass NULL, named without the _full extension.
+ *
+ * These are almost always used in a for loop, so macros are provided that
+ * expand to a for loop for each of the different orders;
+ * NIH_TREE_FOREACH_FULL(), NIH_TREE_FOREACH_PRE_FULL() and
+ * NIH_TREE_FOREACH_POST_FULL().  Versions which pass NULL for the filter
+ * are provided without the _FULL extension.
+ **/
 
 
 /**
@@ -112,9 +155,9 @@ typedef int (*NihTreeFilter) (void *data, NihTree *node);
  * You should not make changes to the structure of the tree while iterating,
  * since the order will be relatively unpredictable.
  **/
-#define NIH_TREE_FOREACH_FULL(tree, iter, filter, data) \
+#define NIH_TREE_FOREACH_FULL(tree, iter, filter, data)			\
 	for (NihTree *iter = nih_tree_next_full ((tree), NULL, (filter), (data)); \
-	     iter != NULL; \
+	     iter != NULL;						\
 	     iter = nih_tree_next_full ((tree), iter, (filter), (data)))
 
 /**
@@ -133,9 +176,9 @@ typedef int (*NihTreeFilter) (void *data, NihTree *node);
  * You should not make changes to the structure of the tree while iterating,
  * since the order will be relatively unpredictable.
  **/
-#define NIH_TREE_FOREACH_PRE_FULL(tree, iter, filter, data) \
+#define NIH_TREE_FOREACH_PRE_FULL(tree, iter, filter, data)		\
 	for (NihTree *iter = nih_tree_next_pre_full ((tree), NULL, (filter), (data)); \
-	     iter != NULL; \
+	     iter != NULL;						\
 	     iter = nih_tree_next_pre_full ((tree), iter, (filter), (data)))
 
 /**
@@ -154,9 +197,9 @@ typedef int (*NihTreeFilter) (void *data, NihTree *node);
  * You should not make changes to the structure of the tree while iterating,
  * since the order will be relatively unpredictable.
  **/
-#define NIH_TREE_FOREACH_POST_FULL(tree, iter, filter, data) \
+#define NIH_TREE_FOREACH_POST_FULL(tree, iter, filter, data)		\
 	for (NihTree *iter = nih_tree_next_post_full ((tree), NULL, (filter), (data)); \
-	     iter != NULL; \
+	     iter != NULL;						\
 	     iter = nih_tree_next_post_full ((tree), iter, (filter), (data)))
 
 
@@ -172,7 +215,7 @@ typedef int (*NihTreeFilter) (void *data, NihTree *node);
  *
  * Returns: next in-order node within @tree or NULL if no further nodes.
  **/
-#define nih_tree_next(tree, node) \
+#define nih_tree_next(tree, node)			\
 	nih_tree_next_full ((tree), (node), NULL, NULL)
 
 /**
@@ -187,7 +230,7 @@ typedef int (*NihTreeFilter) (void *data, NihTree *node);
  *
  * Returns: previous in-order node within @tree or NULL if no further nodes.
  **/
-#define nih_tree_prev(tree, node) \
+#define nih_tree_prev(tree, node)			\
 	nih_tree_prev_full ((tree), (node), NULL, NULL)
 
 /**
@@ -202,7 +245,7 @@ typedef int (*NihTreeFilter) (void *data, NihTree *node);
  *
  * Returns: next in-order node within @tree or NULL if no further nodes.
  **/
-#define nih_tree_next_pre(tree, node) \
+#define nih_tree_next_pre(tree, node)				\
 	nih_tree_next_pre_full ((tree), (node), NULL, NULL)
 
 /**
@@ -217,7 +260,7 @@ typedef int (*NihTreeFilter) (void *data, NihTree *node);
  *
  * Returns: previous in-order node within @tree or NULL if no further nodes.
  **/
-#define nih_tree_prev_pre(tree, node) \
+#define nih_tree_prev_pre(tree, node)				\
 	nih_tree_prev_pre_full ((tree), (node), NULL, NULL)
 
 /**
@@ -232,7 +275,7 @@ typedef int (*NihTreeFilter) (void *data, NihTree *node);
  *
  * Returns: next in-order node within @tree or NULL if no further nodes.
  **/
-#define nih_tree_next_post(tree, node) \
+#define nih_tree_next_post(tree, node)				\
 	nih_tree_next_post_full ((tree), (node), NULL, NULL)
 
 /**
@@ -247,7 +290,7 @@ typedef int (*NihTreeFilter) (void *data, NihTree *node);
  *
  * Returns: previous in-order node within @tree or NULL if no further nodes.
  **/
-#define nih_tree_prev_post(tree, node) \
+#define nih_tree_prev_post(tree, node)				\
 	nih_tree_prev_post_full ((tree), (node), NULL, NULL)
 
 
@@ -262,7 +305,7 @@ typedef int (*NihTreeFilter) (void *data, NihTree *node);
  * You should not make changes to the structure of the tree while iterating,
  * since the order will be relatively unpredictable.
  **/
-#define NIH_TREE_FOREACH(tree, iter) \
+#define NIH_TREE_FOREACH(tree, iter)					\
 	for (NihTree *iter = nih_tree_next ((tree), NULL); iter != NULL; \
 	     iter = nih_tree_next ((tree), iter))
 
@@ -277,7 +320,7 @@ typedef int (*NihTreeFilter) (void *data, NihTree *node);
  * You should not make changes to the structure of the tree while iterating,
  * since the order will be relatively unpredictable.
  **/
-#define NIH_TREE_FOREACH_PRE(tree, iter) \
+#define NIH_TREE_FOREACH_PRE(tree, iter)				\
 	for (NihTree *iter = nih_tree_next_pre ((tree), NULL); iter != NULL; \
 	     iter = nih_tree_next_pre ((tree), iter))
 
@@ -292,7 +335,7 @@ typedef int (*NihTreeFilter) (void *data, NihTree *node);
  * You should not make changes to the structure of the tree while iterating,
  * since the order will be relatively unpredictable.
  **/
-#define NIH_TREE_FOREACH_POST(tree, iter) \
+#define NIH_TREE_FOREACH_POST(tree, iter)				\
 	for (NihTree *iter = nih_tree_next_post ((tree), NULL); iter != NULL; \
 	     iter = nih_tree_next_post ((tree), iter))
 

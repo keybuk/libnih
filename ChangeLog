@@ -1,5 +1,9 @@
 2009-01-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/macros.h: Add sorely-missed documentation strings, including
+	one for the header itself.
+	(NULL): Drop, NULL is defined by the C compiler.
+
 	* nih/string.c: Update all documentation to match new nih_alloc()
 	(nih_str_array_addp): Take a reference to the passed variable
 	instead of reparenting (which isn't possible anymore).

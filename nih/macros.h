@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,14 +20,33 @@
 #ifndef NIH_MACROS_H
 #define NIH_MACROS_H
 
+/**
+ * This header tends to be included by every file that uses libnih, it makes
+ * sure various sensible macros and types (including standard ones from the
+ * C library) are defined.
+ **/
+
+
 /* Get standard definitions from C library */
 #include <stddef.h>
 #include <stdint.h>
 
 
-/* Allow headers to be imported from C++, marking as C. */
 #ifdef __cplusplus
+/**
+ * NIH_BEGIN_EXTERN:
+ *
+ * Use before beginning external definitions in header files, so that they
+ * may be safely included from C++ code. Must be paired with NIH_END_EXTERN.
+ **/
 # define NIH_BEGIN_EXTERN  extern "C" {
+
+/**
+ * NIH_END_EXTERN:
+ *
+ * Use after external definitions in header files, so that they may be safely
+ * included from C++ code.  Must be paired with NIH_BEGIN_EXTERN.
+ **/
 # define NIH_END_EXTERN    }
 #else
 # define NIH_BEGIN_EXTERN
@@ -35,38 +54,103 @@
 #endif /* __cplusplus */
 
 
-/* Define NULL if we haven't got it */
-#ifndef NULL
-# define NULL ((void *) 0)
-#endif /* NULL */
-
-/* Define TRUE and FALSE if we haven't got them */
+/**
+ * FALSE:
+ *
+ * Defined to be zero.
+ **/
 #ifndef FALSE
 # define FALSE 0
 #endif /* FALSE */
+
+/**
+ * TRUE:
+ *
+ * Defined to be the opposite of zero, you don't need to know what that is ;)
+ **/
 #ifndef TRUE
 # define TRUE (!FALSE)
 #endif /* TRUE */
 
-/* Define MIN and MAX if we haven't got them */
+
+/**
+ * MIN:
+ * @_a: first value,
+ * @_b: second value.
+ *
+ * Compares the two values @_a and @_b, which must be compatible C types.
+ *
+ * Returns: the smaller of the two values.
+ **/
 #ifndef MIN
 # define MIN(_a, _b) ((_a) > (_b) ? (_b) : (_a))
 #endif /* MIN */
+
+/**
+ * MAX:
+ * @_a: first value,
+ * @_b: second value.
+ *
+ * Compares the two values @_a and @_b, which must be compatible C types.
+ *
+ * Returns: the larger of the two values.
+ **/
 #ifndef MAX
 # define MAX(_a, _b) ((_a) > (_b) ? (_a) : (_b))
 #endif /* MAX */
 
 
-/* Hack to turn numeric macros into a string */
+/**
+ * NIH_STRINGIFY:
+ * @_s: macro.
+ *
+ * Turns the macro @_s into a string.
+ **/
 #define _STRINGIFY_AGAIN(_s) #_s
 #define NIH_STRINGIFY(_s)    _STRINGIFY_AGAIN(_s)
 
-/* Branch prediction */
+
+/**
+ * NIH_LIKELY:
+ * @_e: C expression.
+ *
+ * Indicates to the compiler that the expression @_e is likely to be true,
+ * can aid optimisation when used properly.
+ **/
 #define NIH_LIKELY(_e)   __builtin_expect ((_e) ? TRUE : FALSE, TRUE)
+
+/**
+ * NIH_UNLIKELY:
+ * @_e: C expression.
+ *
+ * Indicates to the compiler that the expression @_e is likely to be false,
+ * can aid optimisation when used properly.
+ **/
 #define NIH_UNLIKELY(_e) __builtin_expect ((_e) ? TRUE : FALSE, FALSE)
 
-/* Force a true or false value, _e must be an assignment expression */
+
+/**
+ * NIH_MUST:
+ * @_e: C expression.
+ *
+ * Repeats the expression @_e until it yields a true value, normally used
+ * around functions that perform memory allocation and return a pointer to
+ * spin in out-of-memory situations.
+ *
+ * For situations where the the expression can raise an NihError and returns
+ * false, where an error can include out-of-memory, you may want to use
+ * NIH_SHOULD() to spin on OOM but break on other conditions.
+ **/
 #define NIH_MUST(_e) while (! (_e))
+
+/**
+ * NIH_ZERO:
+ * @_e: C expression.
+ *
+ * Repeats the expression @_e until it yields a zero value, normally used
+ * around functions that return zero to indicate success and non-zero to
+ * indicate a temporary failure.
+ **/
 #define NIH_ZERO(_e) while ((_e))
 
 
@@ -75,9 +159,41 @@
 # include <libintl.h>
 # include <locale.h>
 
-# define _(_str)  gettext (_str)
+/**
+ * _:
+ * @_str:
+ *
+ * Marks the string @str for translation, if gettext is available.
+ *
+ * Returns: @_str or translated string.
+ **/
+# define _(_str) gettext (_str)
+
+/**
+ * _n:
+ * @_str1: singular form,
+ * @_str2: plural form,
+ * @_num: number.
+ *
+ * Selects the appropriate plural form from @_str1 and @_str2 based on @_num,
+ * translating if gettext is available.
+ *
+ * Returns: @_str1, @_str2 or translated string.
+ **/
 # define _n(_str1, _str2, _num) ngettext (_str1, _str2, _num)
+
+/**
+ * N_:
+ * @_str:
+ *
+ * Marks the static string @_str for translation by gettext, but does not
+ * return the translation.  You must call gettext() on the string before
+ * presenting it to the user.
+ *
+ * Returns: @_str
+ **/
 # define N_(_str) (_str)
+
 #else /* ENABLE_NLS */
 # define _(_str)  (_str)
 # define _n(_str1, _str2, _num) ((_num) == 1 ? (_str1) : (_str2))

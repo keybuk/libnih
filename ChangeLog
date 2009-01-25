@@ -1,5 +1,14 @@
 2009-01-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/list.c (nih_list_new, nih_list_entry_new): Update documentation
+	to match new nih_alloc(); No need to cast the destructor function
+	anymore.
+	* nih/list.h: Add documentation string for the header.
+	(NIH_LIST_FOREACH, NIH_LIST_FOREACH_SAFE): Improve documentation
+	about which is best.
+	(NIH_LIST_ITER): Add macro to make iterating a list with an offset
+	head easier.
+
 	* nih/macros.h: Add sorely-missed documentation strings, including
 	one for the header itself.
 	(NULL): Drop, NULL is defined by the C compiler.

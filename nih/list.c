@@ -2,7 +2,7 @@
  *
  * list.c - generic circular doubly-linked list implementation
  *
- * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ nih_list_init (NihList *entry)
 
 /**
  * nih_list_new:
- * @parent: parent of new list.
+ * @parent: parent object for new list.
  *
  * Allocates a new list structure, usually used as the start of a new
  * list.  You may prefer to allocate the NihList structure statically and
@@ -61,11 +61,12 @@ nih_list_init (NihList *entry)
  * The structure is allocated using nih_alloc() so can be used as a context
  * to other allocations.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned list.  When all parents
+ * of the returned list are freed, the returned list will also be
+ * freed.
  *
- * Returns: the new list entry or NULL if the allocation failed.
+ * Returns: the new list or NULL if the allocation failed.
  **/
 NihList *
 nih_list_new (const void *parent)
@@ -78,14 +79,14 @@ nih_list_new (const void *parent)
 
 	nih_list_init (list);
 
-	nih_alloc_set_destructor (list, (NihDestructor)nih_list_destroy);
+	nih_alloc_set_destructor (list, nih_list_destroy);
 
 	return list;
 }
 
 /**
  * nih_list_entry_new:
- * @parent: parent of new list entry.
+ * @parent: parent object for new list entry.
  *
  * Allocates a new list entry structure, leaving the caller to set the
  * data of the entry.
@@ -93,9 +94,10 @@ nih_list_new (const void *parent)
  * The structure is allocated using nih_alloc() so can be used as a context
  * to other allocations.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned list entry.  When all parents
+ * of the returned list entry are freed, the returned list entry will also be
+ * freed.
  *
  * Returns: the new list entry or NULL if the allocation failed.
  **/
@@ -110,7 +112,7 @@ nih_list_entry_new (const void *parent)
 
 	nih_list_init (&list->entry);
 
-	nih_alloc_set_destructor (list, (NihDestructor)nih_list_destroy);
+	nih_alloc_set_destructor (list, nih_list_destroy);
 
 	list->data = NULL;
 

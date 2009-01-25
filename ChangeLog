@@ -1,5 +1,19 @@
 2009-01-25  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.c (nih_io_add_watch, nih_io_message_new, nih_io_reopen):
+	Update documentation to match new nih_alloc(), no need to cast
+	destructor function.
+	(nih_io_buffer_new, nih_io_buffer_pop, nih_io_read, nih_io_get):
+	Update documentation to match new nih_alloc()
+	(nih_io_read_message): Update documentation to match new nih_alloc(),
+	reparent message by referencing to parent before unreferencing from
+	io structure.
+	* nih/tests/test_io.c (test_read_message, test_send_message):
+	Replace TEST_ALLOC_PARENT with NULL parent with TEST_ALLOC_OPRHAN
+	(test_read_message): Message must reference the io watch
+	(test_message_add_control): Remove strange allocator changing.
+	(test_message_recv): Call nih_error_init to avoid valgrind issue
+
 	* nih/child.c (nih_child_add_watch): Update documentation to match new
 	nih_alloc(), no need to cast destructor function.
 	* nih/tests/test_child.c: Include config.h

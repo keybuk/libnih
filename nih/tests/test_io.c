@@ -2,7 +2,7 @@
  *
  * test_io.c - test suite for nih/io.c
  *
- * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
  */
 
 #include <nih/test.h>
+
+#include <linux/socket.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -628,9 +630,7 @@ test_message_add_control (void)
 
 	TEST_FUNCTION ("nih_io_message_add_control");
 	test_alloc_failed = 0;
-	nih_alloc_set_allocator (_test_allocator);
 	msg = nih_io_message_new (NULL);
-	nih_alloc_set_allocator (realloc);
 
 	/* Check that we can add a control message header to a message that
 	 * doesn't yet have one.  The array should be increased in size and
@@ -721,6 +721,8 @@ test_message_recv (void)
 	int                 fds[2], *fdptr;
 
 	TEST_FUNCTION ("nih_io_message_recv");
+	nih_error_init ();
+
 	socketpair (PF_UNIX, SOCK_DGRAM, 0, fds);
 
 	msghdr.msg_name = NULL;
@@ -2185,7 +2187,7 @@ test_read_message (void)
 	ptr = nih_io_read_message (NULL, io);
 
 	TEST_EQ_P (ptr, msg);
-	TEST_ALLOC_PARENT (msg, NULL);
+	TEST_ALLOC_ORPHAN (msg);
 	TEST_LIST_EMPTY (&msg->entry);
 	TEST_LIST_EMPTY (io->recv_q);
 
@@ -2203,6 +2205,7 @@ test_read_message (void)
 	TEST_FEATURE ("with shutdown socket");
 	TEST_FREE_TAG (io);
 
+	nih_ref (msg, io);
 	nih_list_add (io->recv_q, &msg->entry);
 	nih_io_shutdown (io);
 	ptr = nih_io_read_message (NULL, io);
@@ -2242,7 +2245,7 @@ test_send_message (void)
 	nih_io_send_message (io, msg1);
 
 	TEST_EQ_P (io->send_q->next, &msg1->entry);
-	TEST_ALLOC_PARENT (msg1, NULL);
+	TEST_ALLOC_ORPHAN (msg1);
 
 	TEST_TRUE (io->watch->events & NIH_IO_WRITE);
 

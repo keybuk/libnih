@@ -2,7 +2,7 @@
  *
  * io.c - file and socket input/output handling
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -88,7 +88,7 @@ nih_io_init (void)
 
 /**
  * nih_io_add_watch:
- * @parent: parent of watch,
+ * @parent: parent object for new watch,
  * @fd: file descriptor or socket to watch,
  * @events: events to watch for,
  * @watcher: function to call when @events occur on @fd,
@@ -105,9 +105,10 @@ nih_io_init (void)
  *
  * Removal of the watch can be performed by freeing it.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned watch.  When all parents
+ * of the returned watch are freed, the returned watch will also be
+ * freed.
  *
  * Returns: the watch structure, or NULL if insufficient memory.
  **/
@@ -131,7 +132,7 @@ nih_io_add_watch (const void   *parent,
 
 	nih_list_init (&watch->entry);
 
-	nih_alloc_set_destructor (watch, (NihDestructor)nih_list_destroy);
+	nih_alloc_set_destructor (watch, nih_list_destroy);
 
 	watch->fd = fd;
 	watch->events = events;
@@ -236,7 +237,7 @@ nih_io_handle_fds (fd_set *readfds,
 
 /**
  * nih_io_buffer_new:
- * @parent: parent of new buffer.
+ * @parent: parent object for new buffer.
  *
  * Allocates a new NihIoBuffer structure containing an empty buffer.
  *
@@ -245,9 +246,10 @@ nih_io_handle_fds (fd_set *readfds,
  * itself, so this can be freed using nih_free(); there is no non-allocated
  * version because of this,
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned buffer.  When all parents
+ * of the returned buffer are freed, the returned buffer will also be
+ * freed.
  *
  * Returns: new buffer, or NULL if insufficient memory.
  **/
@@ -327,7 +329,7 @@ nih_io_buffer_resize (NihIoBuffer *buffer,
 
 /**
  * nih_io_buffer_pop:
- * @parent: parent of new pointer,
+ * @parent: parent object for new object,
  * @buffer: buffer to shrink,
  * @len: bytes to take.
  *
@@ -341,9 +343,10 @@ nih_io_buffer_resize (NihIoBuffer *buffer,
  * If there are not @len bytes in the buffer, the maximum amount there is
  * will be returned, if there is nothing you'll get a zero-length string.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned object.  When all parents
+ * of the returned watch are freed, the returned object will also be
+ * object.
  *
  * Returns: newly allocated data pointer, or NULL if insufficient memory.
  **/
@@ -430,7 +433,7 @@ nih_io_buffer_push (NihIoBuffer *buffer,
 
 /**
  * nih_io_message_new:
- * @parent: parent of new message.
+ * @parent: parent object for new message.
  *
  * Allocates a new NihIoMessage structure with empty buffers.
  *
@@ -439,9 +442,10 @@ nih_io_buffer_push (NihIoBuffer *buffer,
  * message freed using nih_free(); there is no non-allocated version because
  * of this.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned message.  When all parents
+ * of the returned message are freed, the returned message will also be
+ * freed.
  *
  * Returns: new message, or NULL if insufficient memory.
  **/
@@ -456,7 +460,7 @@ nih_io_message_new (const void *parent)
 
 	nih_list_init (&message->entry);
 
-	nih_alloc_set_destructor (message, (NihDestructor)nih_list_destroy);
+	nih_alloc_set_destructor (message, nih_list_destroy);
 
 	message->addr = NULL;
 	message->addrlen = 0;
@@ -539,7 +543,7 @@ nih_io_message_add_control (NihIoMessage *message,
 
 /**
  * nih_io_message_recv:
- * @parent: parent of new message,
+ * @parent: parent object for new message,
  * @fd: file descriptor to read from,
  * @len: number of bytes read.
  *
@@ -556,9 +560,10 @@ nih_io_message_add_control (NihIoMessage *message,
  * data is an nih_alloc() child of the message or its buffers, so the entire
  * message freed using nih_free().
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned message.  When all parents
+ * of the returned message are freed, the returned message will also be
+ * freed.
  *
  * Returns: new message, or NULL on raised error.
  */
@@ -768,7 +773,7 @@ error:
 
 /**
  * nih_io_reopen:
- * @parent: parent pointer of new structure,
+ * @parent: parent object for new structure,
  * @fd: file descriptor to manage,
  * @type: handling mode,
  * @reader: function to call when new data available,
@@ -807,9 +812,10 @@ error:
  * and watches are allocated as children so will be automatically freed;
  * there is no non-allocated version because of this.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned structure.  When all parents
+ * of the returned structure are freed, the returned structure will also be
+ * freed.
  *
  * Returns: newly allocated structure, or NULL on raised error.
  **/
@@ -883,7 +889,7 @@ nih_io_reopen (const void        *parent,
 	if (nih_io_set_nonblock (fd) < 0)
 		goto error;
 
-	nih_alloc_set_destructor (io, (NihDestructor)nih_io_destroy);
+	nih_alloc_set_destructor (io, nih_io_destroy);
 
 	return io;
 error:
@@ -1345,7 +1351,7 @@ nih_io_first_message (NihIo *io)
 
 /**
  * nih_io_read_message:
- * @parent: parent of new message,
+ * @parent: parent object for new message,
  * @io: structure to read from.
  *
  * Obtains the oldest message in the receive queue of @io, removes it
@@ -1353,9 +1359,10 @@ nih_io_first_message (NihIo *io)
  *
  * This may only be used when @io is in message mode.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned message.  When all parents
+ * of the returned message are freed, the returned message will also be
+ * freed.
  *
  * Returns: message from queue, or NULL if the queue is empty.
  **/
@@ -1372,7 +1379,9 @@ nih_io_read_message (const void *parent,
 	if (message) {
 		nih_list_remove (&message->entry);
 
-		nih_alloc_reparent (message, parent);
+		nih_unref_only (message, io);
+		if (parent)
+			nih_ref (message, parent);
 	}
 
 	nih_io_shutdown_check (io);
@@ -1412,7 +1421,7 @@ nih_io_send_message (NihIo        *io,
 
 /**
  * nih_io_read:
- * @parent: parent of new string,
+ * @parent: parent object for new string,
  * @io: structure to read from,
  * @len: number of bytes to read.
  *
@@ -1431,9 +1440,10 @@ nih_io_send_message (NihIo        *io,
  * receive queue, and the next call to this function will operate on the
  * next oldest message in the queue.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the returned string will also be
+ * freed.
  *
  * Returns: newly allocated string, or NULL if insufficient memory.
  **/
@@ -1543,7 +1553,7 @@ nih_io_write (NihIo      *io,
 
 /**
  * nih_io_get:
- * @parent: parent of new string,
+ * @parent: parent object for new string,
  * @io: structure to read from,
  * @delim: character to read until.
  *
@@ -1561,9 +1571,10 @@ nih_io_write (NihIo      *io,
  * receive queue, and the next call to this function will operate on the
  * next oldest message in the queue.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the returned string will also be
+ * freed.
  *
  * Returns: newly allocated string or NULL if delimiter not found or
  * insufficient memory.

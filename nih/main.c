@@ -2,7 +2,7 @@
  *
  * main.c - main loop handling and functions often called from main()
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -258,7 +258,7 @@ nih_main_suggest_help (void)
 void
 nih_main_version (void)
 {
-	char *str;
+	nih_local char *str;
 
 	nih_assert (program_name != NULL);
 
@@ -273,7 +273,6 @@ nih_main_version (void)
 				  "not even for MERCHANTABILITY or FITNESS "
 				  "FOR A PARTICULAR PURPOSE."), 0, 0));
 	printf ("%s\n", str);
-	nih_free (str);
 }
 
 
@@ -444,11 +443,11 @@ nih_main_read_pidfile (void)
 int
 nih_main_write_pidfile (pid_t pid)
 {
-	FILE       *pidfile;
-	const char *filename, *ptr;
-	char       *tmpname;
-	mode_t      oldmask;
-	int         ret = -1;
+	FILE           *pidfile;
+	const char     *filename, *ptr;
+	nih_local char *tmpname;
+	mode_t          oldmask;
+	int             ret = -1;
 
 	nih_assert (pid > 0);
 
@@ -488,10 +487,7 @@ nih_main_write_pidfile (pid_t pid)
 
 	ret = 0;
 error:
-
 	umask (oldmask);
-
-	nih_free (tmpname);
 
 	return ret;
 }
@@ -664,7 +660,7 @@ nih_main_loop_exit (int status)
 
 /**
  * nih_main_loop_add_func:
- * @parent: parent of callback,
+ * @parent: parent object for new callback,
  * @callback: function to call,
  * @data: pointer to pass to @callback.
  *
@@ -674,9 +670,10 @@ nih_main_loop_exit (int status)
  * The callback structure is allocated using nih_alloc() and stored in a
  * linked list. Removal of the callback can be performed by freeing it.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned callback.  When all parents
+ * of the returned callback are freed, the returned callback will also be
+ * freed.
  *
  * Returns: the function information, or NULL if insufficient memory.
  **/
@@ -697,7 +694,7 @@ nih_main_loop_add_func (const void    *parent,
 
 	nih_list_init (&func->entry);
 
-	nih_alloc_set_destructor (func, (NihDestructor)nih_list_destroy);
+	nih_alloc_set_destructor (func, nih_list_destroy);
 
 	func->callback = callback;
 	func->data = data;

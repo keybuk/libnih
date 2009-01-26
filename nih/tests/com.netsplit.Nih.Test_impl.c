@@ -2,7 +2,7 @@
  *
  * com.netsplit.Nih.Test_impl.c - implementation of test object interfaces
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -214,6 +214,7 @@ my_test_async_method (void           *data,
 
 	NIH_MUST (method = nih_new (NULL, AsyncMethod));
 
+	nih_ref (message, method);
 	method->message = message;
 	TEST_FREE_TAG (method->message);
 

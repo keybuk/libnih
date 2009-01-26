@@ -10,6 +10,14 @@
 {
    dbus-connection-slot
    Memcheck:Leak
+   fun:malloc
+   fun:realloc
+   fun:dbus_realloc
+   fun:_dbus_data_slot_allocator_alloc
+}
+{
+   dbus-connection-slot
+   Memcheck:Leak
    fun:realloc
    fun:dbus_realloc
    fun:_dbus_data_slot_allocator_alloc

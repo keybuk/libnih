@@ -1,5 +1,9 @@
 2009-01-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/com.netsplit.Nih.Test_impl.c (my_test_async_method):
+	Take a reference to the message
+	* nih/libnih-dbus.supp: Update D-Bus suppressions.
+
 	* TODO: Update
 
 	* nih/libnih.supp: Update suppressions for new calling stack

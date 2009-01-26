@@ -2,7 +2,7 @@
  *
  * watch.c - watching of files and directories with inotify
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -80,7 +80,7 @@ static void            nih_watch_handle      (NihWatch *watch,
 
 /**
  * nih_watch_new:
- * @parent: parent of new structure,
+ * @parent: parent object for new watch,
  * @path: full path to be watched,
  * @subdirs: include sub-directories of @path,
  * @create: call @create_handler for existing files,
@@ -118,9 +118,10 @@ static void            nih_watch_handle      (NihWatch *watch,
  * children of the returned structure; there is no non-allocated version
  * because of this.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned watch.  When all parents
+ * of the returned watch are freed, the returned watch will also be
+ * freed.
  *
  * Returns: new NihWatch structure, or NULL on raised error.
  **/
@@ -183,7 +184,7 @@ nih_watch_new (const void       *parent,
 		return NULL;
 	}
 
-	nih_alloc_set_destructor (watch, (NihDestructor)nih_watch_destroy);
+	nih_alloc_set_destructor (watch, nih_watch_destroy);
 
 	return watch;
 }
@@ -277,7 +278,7 @@ nih_watch_add (NihWatch   *watch,
 
 	nih_list_init (&handle->entry);
 
-	nih_alloc_set_destructor (handle, (NihDestructor)nih_list_destroy);
+	nih_alloc_set_destructor (handle, nih_list_destroy);
 
 	/* Get a watch descriptor for the path */
 	handle->wd = inotify_add_watch (watch->fd, path, INOTIFY_EVENTS);
@@ -309,7 +310,8 @@ nih_watch_add (NihWatch   *watch,
 			nih_error_raise_again (err);
 			nih_free (handle);
 			return -1;
-		}
+		} else
+			nih_free (err);
 	}
 
 	return 0;
@@ -474,10 +476,10 @@ nih_watch_handle (NihWatch       *watch,
 		  const char     *name,
 		  int            *caught_free)
 {
-	NihListEntry *entry;
-	int           delayed = FALSE;
-	struct stat   statbuf;
-	char         *path;
+	NihListEntry   *entry;
+	int             delayed = FALSE;
+	struct stat     statbuf;
+	nih_local char *path = NULL;
 
 	nih_assert (watch != NULL);
 	nih_assert (handle != NULL);
@@ -503,11 +505,11 @@ nih_watch_handle (NihWatch       *watch,
 	if ((! name) || strchr (name, '/'))
 		return;
 
-	NIH_MUST (path = nih_sprintf (watch, "%s/%s", handle->path, name));
+	NIH_MUST (path = nih_sprintf (NULL, "%s/%s", handle->path, name));
 
 	/* Check the filter */
 	if (watch->filter && watch->filter (watch->data, path))
-		goto finish;
+		return;
 
 	/* Look to see whether we have a delayed create handler for this
 	 * path - it's handled differently depending on the events and
@@ -522,12 +524,12 @@ nih_watch_handle (NihWatch       *watch,
 	/* Handle it differently depending on the events mask */
 	if ((events & IN_CREATE) || (events & IN_MOVED_TO)) {
 		if (stat (path, &statbuf) < 0)
-			goto finish;
+			return;
 
 		/* Delay the create handler when files are first created. */
 		if ((events & IN_CREATE) && (! S_ISDIR (statbuf.st_mode))) {
 			NIH_MUST (entry = nih_list_entry_new (watch));
-			nih_alloc_reparent (path, entry);
+			nih_ref (path, entry);
 			entry->str = path;
 
 			nih_hash_add (watch->created, &entry->entry);
@@ -538,7 +540,7 @@ nih_watch_handle (NihWatch       *watch,
 			watch->create_handler (watch->data, watch,
 					       path, &statbuf);
 		if (*caught_free)
-			goto finish;
+			return;
 
 		/* See if it's a sub-directory, and we're handling those
 		 * ourselves.  Add a watch to the directory and any
@@ -558,7 +560,7 @@ nih_watch_handle (NihWatch       *watch,
 
 	} else if (events & IN_CLOSE_WRITE) {
 		if (stat (path, &statbuf) < 0)
-			goto finish;
+			return;
 
 		/* Use the create handler when a newly created file is
 		 * closed.
@@ -570,7 +572,7 @@ nih_watch_handle (NihWatch       *watch,
 			watch->modify_handler (watch->data, watch,
 					       path, &statbuf);
 		if (*caught_free)
-			goto finish;
+			return;
 
 	} else if ((events & IN_DELETE) || (events & IN_MOVED_FROM)) {
 		NihWatchHandle *path_handle;
@@ -579,7 +581,7 @@ nih_watch_handle (NihWatch       *watch,
 		if ((! delayed) && watch->delete_handler)
 			watch->delete_handler (watch->data, watch, path);
 		if (*caught_free)
-			goto finish;
+			return;
 
 		/* If there's a watch for that path, we act as if it got
 		 * IN_IGNORED or IN_MOVE_SELF; just in case it's a symlink
@@ -591,7 +593,4 @@ nih_watch_handle (NihWatch       *watch,
 			nih_free (path_handle);
 		}
 	}
-
-finish:
-	nih_free (path);
 }

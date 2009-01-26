@@ -1,3 +1,21 @@
+2009-01-26  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/watch.c (nih_watch_new): Update documentation to match new
+	nih_alloc(), no need to cast destructor function.
+	(nih_watch_add): No need to cast destructor function; free the
+	not a directory error as well.
+	(nih_watch_handle): Use nih_local on the path so it's always cleaned
+	up if we don't reference it; reference it when delaying the create
+	handler instead of reparenting
+	* nih/tests/test_watch.c: Include limits.h
+	(test_new): Free watch inside loop, don't select fds; no idea why
+	this code is here.
+	(test_reader): Can't just call select then handle, we actually have
+	to wait for activity first.
+	(my_create_handler, my_modify_handler, my_delete_handler): Loop over
+	allocations, we can't use TEST_ALLOC_SAFE if we don't know we're in
+	a TEST_ALLOC_FAIL.
+
 2009-01-25  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/file.c (nih_file_read): Update documentation to match

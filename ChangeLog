@@ -1,5 +1,14 @@
 2009-01-26  Scott James Remnant  <scott@netsplit.com>
 
+	* configure.ac (AC_INIT): Bump version to 0.2.0 since we're making
+	a number of large API changes.
+	(AC_COPYRIGHT): Bump the copyright year too.
+	* NEWS (0.1.0): Declare 0.1.0 to have happened at revision 600 before
+	we started the most recent round of changes; this is the version
+	shipped with Upstart 0.5 but with the fixed list iteration.
+	(0.2.0): Begin documenting changes in the API since then; this file
+	can therefore be used as a checklist for updating software.
+
 	* nih-dbus/dbus.c, nih-dbus/dbus.h: Seperate out the code into
 	separate files to make maintenance much easier.  The new files are
 	nih-dbus/dbus_error.c, nih-dbus/dbus_error.h,

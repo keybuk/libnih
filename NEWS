@@ -1,4 +1,79 @@
-0.1.0  XXXX-XX-XX
+0.2.0  XXXX-XX-XX
+
+	* nih_alloc_set_allocator() is now a macro that casts the function
+	  to the right typedef, so such casts are no longer needed
+
+	* nih_alloc() now permits multiple parent references
+	  - nih_ref(ptr, parent) creates a new parent reference
+	  - nih_unref(ptr, parent) drops a reference and frees if the last
+	  - nih_unref_only(ptr, parent) drops a reference without freeing
+	  - nih_free() unconditionally frees as it always has
+	  - nih_discard() only frees if there are no references
+
+	* nih_local may be added to variable definitions to have the
+	  pointer automatically discarded when it goes out of scope, unless
+	  it is referenced in the meantime:
+
+		{
+			nih_local char *str = NULL;
+			str = nih_strdup (NULL, "some string");
+			pass_to_func (str);
+		}
+
+	* nih_alloc_reparent() has been dropped, it can be replaced with
+	  an nih_unref_only()/nih_ref() pair - however many uses of this
+	  are no longer necessary and it's worth taking some time to refactor
+	  the code.
+
+	* nih_alloc_parent() has changed; it now accepts both an object ptr
+	  and a parent and returns TRUE if the object has that parent, if
+	  parent is NULL is returns TRUE of the object has any parent.
+	  (previously it was used to return _the_ parent).
+
+	* TEST_ALLOC_PARENT() now behaves as nih_alloc_parent(), which means
+	  testing for no parent with NULL has the exact opposite behaviour
+	  use the new TEST_ALLOC_ORPHAN(ptr) macro instead.
+
+	* nih_str_array_addp() now references the passed pointer, instead
+	  of reparenting it.  Calling code should be modified to make sure
+	  it either calls nih_discard() or uses nih_local to be safe in case
+	  of error.
+
+	* nih_strv_free() has been dropped since it did not match the
+	  behaviour of the other functions
+
+	* new NIH_LIST_ITER(iter, type, member) macro to handle the case of
+	  an offset head in an iterated structure
+
+	* nih_hash_pointer_new(), nih_hash_pointer_key(),
+	  nih_hash_pointer_hash() and nih_hash_pointer_cmp() have been dropped
+	  since they did strange things to pointers that probably aren't
+	  legal C.
+
+	* nih_config_parse() now reads the file into memory, instead of using
+	  mmap().  The API is unchanged, however the errors may be different.
+
+	* The D-Bus bindings have been moved into a separate sub-directory
+	  and split out into multiple files.  You will need to update your
+	  includes as follows:
+	  - NihDBusError and nih_dbus_error_*() are in nih-dbus/dbus_error.h
+	  - nih_dbus_connect(), nih_dbus_bus(), nih_dbus_setup() and
+	    nih_dbus_server() are in nih-dbus/dbus_connection.h
+	  - NihDBusMessage and nih_dbus_message_*() are in
+	    nih-dbus/dbus_message.h
+	  - NihDBusObject, NihDBusInterface and nih_dbus_object_new() are in
+	    nih-dbus/dbus_object.h
+	  - NihDBusProxy and nih_dbus_proxy_new() are in nih-dbus/dbus_proxy.h
+	  - nih_dbus_path() is now in nih-dbus/dbus_util.h
+
+	* The D-Bus test macros are now in nih-dbus/test_dbus.h
+
+	* nih_dbus_message_new() now exists as a function in its own right
+
+	* Asynchronous method callbacks must take a reference to the
+	  NihDBusMessage object they are passed, otherwise it will be freed.
+
+0.1.0  2008-10-24
  
 	* Initial public release.
 

@@ -1,5 +1,20 @@
 2009-01-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/dbus.c (nih_dbus_object_new): Update documentation to match
+	new nih_alloc(), no need to cast destructor
+	(nih_dbus_proxy_new, nih_dbus_path): Update documentation to match
+	new nih_alloc()
+	(nih_dbus_object_message): Make the message nih_local, this means
+	the handler must now reference the message otherwise it will be
+	freed.
+	(nih_dbus_object_introspect): Make the xml string nih_local
+	(nih_dbus_message_error): Make the string nih_local
+	* nih/tests/test_dbus.c (test_error_raise)
+	(test_error_raise_printf): Don't check for no parent if we don't
+	need to.
+	(my_return_error): Must reference the message
+	(test_error_raise, test_error_raise_printf): Must mean TEST_ALLOC_FAIL
+
 	* nih/main.c (nih_main_loop_add_func): Update documentation to match
 	new nih_alloc(), no need to cast destructor function.
 	(nih_main_version): Use nih_local

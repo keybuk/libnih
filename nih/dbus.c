@@ -2,7 +2,7 @@
  *
  * dbus.c - D-Bus bindings
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -833,7 +833,7 @@ nih_dbus_new_connection (DBusServer     *server,
 
 /**
  * nih_dbus_object_new:
- * @parent: parent block,
+ * @parent: parent object for new object,
  * @conn: D-Bus connection to associate with,
  * @path: path of object,
  * @interfaces: interfaces list to attach,
@@ -852,9 +852,10 @@ nih_dbus_new_connection (DBusServer     *server,
  * the given @conn, it can be unregistered by freeing it and it will be
  * automatically unregistered should @conn be disconnected.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned object.  When all parents
+ * of the returned object are freed, the returned object will also be
+ * freed.
  *
  * Returns: new NihDBusObject structure on success, or NULL if
  * insufficient memory.
@@ -895,8 +896,7 @@ nih_dbus_object_new (const void              *parent,
 	}
 
 	object->registered = TRUE;
-	nih_alloc_set_destructor (object,
-				  (NihDestructor)nih_dbus_object_destroy);
+	nih_alloc_set_destructor (object, nih_dbus_object_destroy);
 
 	return object;
 }
@@ -1005,8 +1005,8 @@ nih_dbus_object_message (DBusConnection *conn,
 			if (dbus_message_is_method_call (message,
 							 (*interface)->name,
 							 method->name)) {
-				NihDBusMessage    *msg;
-				DBusHandlerResult  result;
+				nih_local NihDBusMessage *msg = NULL;
+				DBusHandlerResult         result;
 
 				msg = nih_new (NULL, NihDBusMessage);
 				if (! msg)
@@ -1024,13 +1024,12 @@ nih_dbus_object_message (DBusConnection *conn,
 
 				result = method->marshaller (object, msg);
 
-				/* Async function, the handler will ensure
-				 * the message is replied to and freed.
+				/* Async function, the handler must take
+				 * a reference to the message if it needs it,
+				 * and must reply to it.
 				 */
 				if (result == DBUS_HANDLER_RESULT_NOT_YET_HANDLED)
 					return DBUS_HANDLER_RESULT_HANDLED;
-
-				nih_free (msg);
 
 				return result;
 			}
@@ -1058,7 +1057,8 @@ nih_dbus_object_introspect (DBusConnection *conn,
 			    NihDBusObject  *object)
 {
 	const NihDBusInterface **interface;
-	char                    *xml = NULL, **children = NULL, **child;
+	nih_local char          *xml = NULL;
+	char                   **children = NULL, **child;
 	DBusMessage             *reply = NULL;
 	int                      have_props = FALSE;
 
@@ -1069,12 +1069,12 @@ nih_dbus_object_introspect (DBusConnection *conn,
 
 	xml = nih_strdup (NULL, DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE);
 	if (! xml)
-		goto error;
+		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
 	/* Root node */
 	if (! nih_strcat_sprintf (&xml, NULL, "<node name=\"%s\">\n",
 				  object->path))
-		goto error;
+		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
 	/* Obviously we support introspection */
 	if (! nih_strcat_sprintf (&xml, NULL,
@@ -1084,7 +1084,7 @@ nih_dbus_object_introspect (DBusConnection *conn,
 				  "    </method>\n"
 				  "  </interface>\n",
 				  DBUS_INTERFACE_INTROSPECTABLE))
-		goto error;
+		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
 	/* Add each interface definition */
 	for (interface = object->interfaces; interface && *interface;
@@ -1096,7 +1096,7 @@ nih_dbus_object_introspect (DBusConnection *conn,
 		if (! nih_strcat_sprintf (&xml, NULL,
 					  "  <interface name=\"%s\">\n",
 					  (*interface)->name))
-			goto error;
+			return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
 		for (method = (*interface)->methods; method && method->name;
 		     method++) {
@@ -1105,7 +1105,7 @@ nih_dbus_object_introspect (DBusConnection *conn,
 			if (! nih_strcat_sprintf (&xml, NULL,
 						  "    <method name=\"%s\">\n",
 						  method->name))
-				goto error;
+				return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
 			for (arg = method->args; arg && arg->type; arg++) {
 				if (! nih_strcat_sprintf (
@@ -1115,11 +1115,11 @@ nih_dbus_object_introspect (DBusConnection *conn,
 					    arg->name, arg->type,
 					    (arg->dir == NIH_DBUS_ARG_IN ? "in"
 					     : "out")))
-					goto error;
+					return DBUS_HANDLER_RESULT_NEED_MEMORY;
 			}
 
 			if (! nih_strcat (&xml, NULL, "    </method>\n"))
-				goto error;
+				return DBUS_HANDLER_RESULT_NEED_MEMORY;
 		}
 
 		for (signal = (*interface)->signals; signal && signal->name;
@@ -1129,18 +1129,18 @@ nih_dbus_object_introspect (DBusConnection *conn,
 			if (! nih_strcat_sprintf (&xml, NULL,
 						  "    <signal name=\"%s\">\n",
 						  signal->name))
-				goto error;
+				return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
 			for (arg = signal->args; arg && arg->type; arg++) {
 				if (! nih_strcat_sprintf (
 					    &xml, NULL,
 					    "      <arg name=\"%s\" type=\"%s\"/>\n",
 					    arg->name, arg->type))
-					goto error;
+					return DBUS_HANDLER_RESULT_NEED_MEMORY;
 			}
 
 			if (! nih_strcat (&xml, NULL, "    </signal>\n"))
-				goto error;
+				return DBUS_HANDLER_RESULT_NEED_MEMORY;
 		}
 
 		for (property = (*interface)->properties;
@@ -1154,11 +1154,11 @@ nih_dbus_object_introspect (DBusConnection *conn,
 				    (property->access == NIH_DBUS_READ ? "read"
 				     : (property->access == NIH_DBUS_WRITE
 					? "write" : "readwrite"))))
-				goto error;
+				return DBUS_HANDLER_RESULT_NEED_MEMORY;
 		}
 
 		if (! nih_strcat (&xml, NULL, "  </interface>\n"))
-		    goto error;
+			return DBUS_HANDLER_RESULT_NEED_MEMORY;
 	}
 
 	/* We may also support properties, but don't want to announce that
@@ -1184,53 +1184,48 @@ nih_dbus_object_introspect (DBusConnection *conn,
 			    "    </method>\n"
 			    "  </interface>\n",
 			    DBUS_INTERFACE_PROPERTIES))
-			goto error;
+			return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
 	/* Add node items for children */
 	if (! dbus_connection_list_registered (conn, object->path, &children))
-		goto error;
+		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
 	for (child = children; *child; child++) {
 		if (! nih_strcat_sprintf (&xml, NULL, "  <node name=\"%s\"/>\n",
-					  *child))
-			goto error;
+					  *child)) {
+			dbus_free_string_array (children);
+			return DBUS_HANDLER_RESULT_NEED_MEMORY;
+		}
 	}
 
-	if (! nih_strcat (&xml, NULL, "</node>\n"))
-		goto error;
+	if (! nih_strcat (&xml, NULL, "</node>\n")) {
+		dbus_free_string_array (children);
+		return DBUS_HANDLER_RESULT_NEED_MEMORY;
+	}
 
 	dbus_free_string_array (children);
-	children = NULL;
 
 
 	/* Generate and send the reply */
 	reply = dbus_message_new_method_return (message);
 	if (! reply)
-		goto error;
+		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
 	if (! dbus_message_append_args (reply,
 					DBUS_TYPE_STRING, &xml,
-					DBUS_TYPE_INVALID))
-		goto error;
+					DBUS_TYPE_INVALID)) {
+		dbus_message_unref (reply);
+		return DBUS_HANDLER_RESULT_NEED_MEMORY;
+	}
 
-	if (! dbus_connection_send (conn, reply, NULL))
-		goto error;
+	if (! dbus_connection_send (conn, reply, NULL)) {
+		dbus_message_unref (reply);
+		return DBUS_HANDLER_RESULT_NEED_MEMORY;
+	}
 
 	dbus_message_unref (reply);
 
-	nih_free (xml);
-
 	return DBUS_HANDLER_RESULT_HANDLED;
-
-error:
-	if (reply)
-		dbus_message_unref (reply);
-	if (children)
-		dbus_free_string_array (children);
-	if (xml)
-		nih_free (xml);
-
-	return DBUS_HANDLER_RESULT_NEED_MEMORY;
 }
 
 
@@ -1274,9 +1269,9 @@ nih_dbus_message_error (NihDBusMessage *msg,
 			const char     *format,
 			...)
 {
-	DBusMessage *message;
-	va_list      args;
-	char        *str;
+	DBusMessage    *message;
+	va_list         args;
+	nih_local char *str;
 
 	nih_assert (msg != NULL);
 	nih_assert (name != NULL);
@@ -1292,23 +1287,18 @@ nih_dbus_message_error (NihDBusMessage *msg,
 
 	/* And the reply */
 	message = dbus_message_new_error (msg->message, name, str);
-	if (! message) {
-		nih_free (str);
+	if (! message)
 		return -1;
-	}
 
 	/* Send the error back to the connection the original message
 	 * was received from.
 	 */
 	if (! dbus_connection_send (msg->conn, message, NULL)) {
 		dbus_message_unref (message);
-		nih_free (str);
-
 		return -1;
 	}
 
 	dbus_message_unref (message);
-	nih_free (str);
 
 	nih_free (msg);
 
@@ -1318,7 +1308,7 @@ nih_dbus_message_error (NihDBusMessage *msg,
 
 /**
  * nih_dbus_proxy_new:
- * @parent: parent block,
+ * @parent: parent object for new proxy,
  * @conn: D-Bus connection to associate with,
  * @name: well-known name of object owner,
  * @path: path of object.
@@ -1330,9 +1320,10 @@ nih_dbus_message_error (NihDBusMessage *msg,
  * a reference to the given @conn, you should take care to free a proxy
  * when the @conn is disconnected as this will not happen automatically.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned proxy.  When all parents
+ * of the returned proxy are freed, the returned proxy will also be
+ * freed.
  *
  * Returns: new NihDBusProxy structure on success, or NULL if
  * insufficient memory.
@@ -1375,7 +1366,7 @@ nih_dbus_proxy_new (const void     *parent,
 
 /**
  * nih_dbus_path:
- * @parent: parent block of allocation,
+ * @parent: parent object for new string,
  * @root: root of path.
  *
  * Generates a D-Bus path suitable for object registration rooted at
@@ -1385,9 +1376,10 @@ nih_dbus_proxy_new (const void     *parent,
  * The final argument to this function must be NULL to signify the end
  * of elements.
  *
- * If @parent is not NULL, it should be a pointer to another allocated
- * block which will be used as the parent for this block.  When @parent
- * is freed, the returned block will be freed too.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the returned string will also be
+ * freed.
  *
  * Returns: newly allocated string or NULL if insufficient memory.
  **/

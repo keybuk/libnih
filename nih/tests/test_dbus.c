@@ -2,7 +2,7 @@
  *
  * test_dbus.c - test suite for nih/dbus.c
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
  */
 
 #include <nih/test.h>
+#include <nih/test_dbus.h>
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -47,15 +48,16 @@ test_error_raise (void)
 	NihError     *error;
 	NihDBusError *err;
 
+	nih_error_init ();
+
 	/* Make sure that an NIH_DBUS_ERROR is raised with the name and
 	 * message we give.
 	 */
 	TEST_FUNCTION ("nih_dbus_error_raise");
-	TEST_ALLOC_SAFE {
+	TEST_ALLOC_FAIL {
 		nih_dbus_error_raise ("foo", "bar");
 		error = nih_error_get ();
 
-		TEST_ALLOC_PARENT (error, NULL);
 		TEST_ALLOC_SIZE (error, sizeof (NihDBusError));
 		TEST_EQ (error->number, NIH_DBUS_ERROR);
 
@@ -79,12 +81,11 @@ test_error_raise_printf (void)
 	 * formatted message we give.
 	 */
 	TEST_FUNCTION ("nih_dbus_error_raise_printf");
-	TEST_ALLOC_SAFE {
+	TEST_ALLOC_FAIL {
 		nih_dbus_error_raise_printf ("foo", "hello %d this is a %s",
 					     123, "test");
 		error = nih_error_get ();
 
-		TEST_ALLOC_PARENT (error, NULL);
 		TEST_ALLOC_SIZE (error, sizeof (NihDBusError));
 		TEST_EQ (error->number, NIH_DBUS_ERROR);
 
@@ -1607,6 +1608,9 @@ my_return_error (NihDBusObject  *object,
 	NIH_MUST (nih_timer_add_timeout (NULL, 1,
 					 (NihTimerCb)my_return_error_cb,
 					 message));
+
+	/* must reference the message */
+	nih_ref (message, object);
 
 	TEST_FREE_TAG (message);
 

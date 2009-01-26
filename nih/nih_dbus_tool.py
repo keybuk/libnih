@@ -1381,6 +1381,7 @@ return;
 callback (%s);
 
 dbus_message_unref (reply);
+dbus_pending_call_unref (call);
 
 return;
 """ % ", ".join(out_args.names()), 1)

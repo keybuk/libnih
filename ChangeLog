@@ -1,5 +1,7 @@
 2009-01-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/libnih.supp: Update suppressions for new calling stack
+
 	* nih/dbus.c (nih_dbus_object_new): Update documentation to match
 	new nih_alloc(), no need to cast destructor
 	(nih_dbus_proxy_new, nih_dbus_path): Update documentation to match

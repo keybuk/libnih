@@ -12,8 +12,6 @@
    nih-child-init
    Memcheck:Leak
    fun:malloc
-   fun:realloc
-   fun:nih_alloc_using
    fun:nih_alloc
    fun:nih_list_new
    fun:nih_child_init
@@ -23,10 +21,17 @@
    nih-error-init
    Memcheck:Leak
    fun:malloc
-   fun:realloc
-   fun:nih_alloc_using
    fun:nih_alloc
    fun:nih_list_new
+   fun:nih_error_init
+}
+{
+   nih-error-init
+   Memcheck:Leak
+   fun:malloc
+   fun:nih_alloc_ref_new
+   fun:nih_alloc
+   fun:nih_error_push_context
    fun:nih_error_init
 }
 
@@ -34,8 +39,6 @@
    nih-file-init
    Memcheck:Leak
    fun:malloc
-   fun:realloc
-   fun:nih_alloc_using
    fun:nih_alloc
    fun:nih_list_new
    fun:nih_file_init
@@ -45,8 +48,6 @@
    nih-io-init
    Memcheck:Leak
    fun:malloc
-   fun:realloc
-   fun:nih_alloc_using
    fun:nih_alloc
    fun:nih_list_new
    fun:nih_io_init
@@ -56,8 +57,6 @@
    nih-signal-init
    Memcheck:Leak
    fun:malloc
-   fun:realloc
-   fun:nih_alloc_using
    fun:nih_alloc
    fun:nih_list_new
    fun:nih_signal_init
@@ -67,8 +66,6 @@
    nih-timer-init
    Memcheck:Leak
    fun:malloc
-   fun:realloc
-   fun:nih_alloc_using
    fun:nih_alloc
    fun:nih_list_new
    fun:nih_timer_init
@@ -78,8 +75,6 @@
    nih-main-loop-init
    Memcheck:Leak
    fun:malloc
-   fun:realloc
-   fun:nih_alloc_using
    fun:nih_alloc
    fun:nih_list_new
    fun:nih_main_loop_init
@@ -93,8 +88,6 @@
    nih-main-package-string
    Memcheck:Leak
    fun:malloc
-   fun:realloc
-   fun:nih_alloc_using
    fun:nih_alloc
    fun:nih_vsprintf
    fun:nih_sprintf
@@ -105,8 +98,8 @@
    Memcheck:Leak
    fun:malloc
    fun:realloc
-   fun:_test_allocator
-   fun:nih_alloc_using
+   fun:_test_realloc
+   fun:_test_malloc
    fun:nih_alloc
    fun:nih_vsprintf
    fun:nih_sprintf
@@ -130,12 +123,13 @@
    Memcheck:Leak
    fun:malloc
    fun:realloc
-   fun:_test_allocator
-   fun:nih_alloc_using
+   fun:_test_realloc
+   fun:_test_malloc
    fun:nih_alloc
    fun:nih_command_join
    fun:nih_command_parser
 }
+
 
 # nih_option_parser also inherently leaks its internal state in the same
 # situations
@@ -143,8 +137,18 @@
    nih-option-parser
    Memcheck:Leak
    fun:realloc
-   fun:_test_allocator
+   fun:_test_realloc
    fun:nih_realloc
+   fun:nih_str_array_addp
+   fun:nih_str_array_add
+   fun:nih_option_parser
+}
+{
+   nih-option-parser
+   Memcheck:Leak
+   fun:malloc
+   fun:nih_alloc_ref_new
+   fun:nih_ref
    fun:nih_str_array_addp
    fun:nih_str_array_add
    fun:nih_option_parser

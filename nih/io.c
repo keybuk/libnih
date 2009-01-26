@@ -952,8 +952,7 @@ nih_io_watcher (NihIo       *io,
 					io->reader (io->data, io,
 						    io->recv_buf->buf,
 						    io->recv_buf->len);
-				if (caught_free)
-					return;
+
 				break;
 			case NIH_IO_MESSAGE: {
 				NihIoMessage *last = NULL, *message;
@@ -968,7 +967,7 @@ nih_io_watcher (NihIo       *io,
 						    message->data->buf,
 						    message->data->len);
 					if (caught_free)
-						return;
+						break;
 					last = message;
 				}
 				break;
@@ -992,6 +991,9 @@ nih_io_watcher (NihIo       *io,
 				nih_free (err);
 				break;
 			default:
+				if (caught_free)
+					return;
+
 				nih_error_raise_again (err);
 				nih_io_error (io);
 				if (caught_free)
@@ -999,6 +1001,10 @@ nih_io_watcher (NihIo       *io,
 				goto finish;
 			}
 		}
+
+		/* We might have been freed */
+		if (caught_free)
+			return;
 
 		/* Deal with socket being closed */
 		if ((io->type == NIH_IO_STREAM) && (! len)) {

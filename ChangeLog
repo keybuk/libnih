@@ -1,5 +1,8 @@
 2009-01-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.c (nih_io_watcher): Can't just break if we catch a free,
+	we have to at least process errors first!
+
 	* nih/watch.c (nih_watch_new): Update documentation to match new
 	nih_alloc(), no need to cast destructor function.
 	(nih_watch_add): No need to cast destructor function; free the

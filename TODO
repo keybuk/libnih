@@ -27,6 +27,8 @@ main:
   have a select() and handle() function - we'd then just have one per
   timer, etc.
 - we could do that using signalfd() and timerfd_*()
+- use poll rather than select
+- loop on signalfd read calling wait inside
 
 io:
 - there's a couple of tricky tests left to do:

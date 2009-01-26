@@ -1,5 +1,9 @@
 2009-01-26  Scott James Remnant  <scott@netsplit.com>
 
+	* configure.ac: Officially mandate libtool 2.2
+	* HACKING: Bump dependency on libtool to 2.2.4
+	* NEWS: Document change.
+
 	* configure.ac (AC_INIT): Bump version to 0.2.0 since we're making
 	a number of large API changes.
 	(AC_COPYRIGHT): Bump the copyright year too.

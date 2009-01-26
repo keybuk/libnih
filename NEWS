@@ -71,7 +71,9 @@
 	* nih_dbus_message_new() now exists as a function in its own right
 
 	* Asynchronous method callbacks must take a reference to the
-	  NihDBusMessage object they are passed, otherwise it will be freed.
+	  NihDBusMessage object they are passed, otherwise it will be freed
+
+	* libtool 2.2.4 is now required
 
 0.1.0  2008-10-24
  

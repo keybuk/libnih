@@ -26,7 +26,7 @@ installed.
 
 	* GNU Autoconf 2.61
 	* GNU Automake 1.10
-	* GNU Libtool 1.5.22
+	* GNU Libtool 2.2.4
 	* GNU Gettext 0.16.1
 
 After checking out libnih from Bazaar you will need to use these

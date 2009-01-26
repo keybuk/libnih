@@ -17,19 +17,38 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef DBUS__COM_NETSPLIT_NIH_TEST_IMPL_H
-#define DBUS__COM_NETSPLIT_NIH_TEST_IMPL_H
+#ifndef NIH_DBUS_PROXY_H
+#define NIH_DBUS_PROXY_H
+
+#include <nih/macros.h>
 
 #include <dbus/dbus.h>
 
-#include <nih/macros.h>
+
+/**
+ * NihDBusProxy:
+ * @name: D-Bus name of object owner,
+ * @path: path of object,
+ * @conn: associated connection.
+ *
+ * Instances of this structure may be created for remote objects that you
+ * wish to use.  Fundamentally they combine the three elements of data
+ * necessary into one easy object that is bound to the lifetime of the
+ * associated connection.
+ **/
+typedef struct nih_dbus_proxy {
+	char           *name;
+	char           *path;
+	DBusConnection *conn;
+} NihDBusProxy;
 
 
 NIH_BEGIN_EXTERN
 
-DBusConnection *my_setup    (void);
-void            my_teardown (DBusConnection *conn);
+NihDBusProxy *nih_dbus_proxy_new (const void *parent, DBusConnection *conn,
+				  const char *name, const char *path)
+	__attribute__ ((malloc));
 
 NIH_END_EXTERN
 
-#endif /* DBUS__COM_NETSPLIT_NIH_TEST_IMPL_H */
+#endif /* NIH_DBUS_PROXY_H */

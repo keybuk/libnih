@@ -29,7 +29,8 @@
 #include <nih/error.h>
 #include <nih/errors.h>
 
-#include <nih-dbus/dbus.h>
+#include <nih-dbus/dbus_error.h>
+#include <nih-dbus/dbus_proxy.h>
 
 #include "com.netsplit.Nih.Test_proxy.h"
 #include "com.netsplit.Nih.Test_impl.h"

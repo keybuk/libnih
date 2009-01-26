@@ -17,19 +17,37 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef DBUS__COM_NETSPLIT_NIH_TEST_IMPL_H
-#define DBUS__COM_NETSPLIT_NIH_TEST_IMPL_H
-
-#include <dbus/dbus.h>
+#ifndef NIH_DBUS_ERROR_H
+#define NIH_DBUS_ERROR_H
 
 #include <nih/macros.h>
+#include <nih/error.h>
+
+
+/**
+ * NihDBusError:
+ * @error: ordinary NihError,
+ * @name: D-Bus name.
+ *
+ * This structure builds on NihError to include an additional @name field
+ * required for transport across D-Bus.
+ *
+ * If you receive a NIH_DBUS_ERROR, the returned NihError structure is
+ * actually this structure and can be cast to get the additional fields.
+ **/
+typedef struct nih_dbus_error {
+	NihError  error;
+	char     *name;
+} NihDBusError;
 
 
 NIH_BEGIN_EXTERN
 
-DBusConnection *my_setup    (void);
-void            my_teardown (DBusConnection *conn);
+void nih_dbus_error_raise        (const char *name, const char *message);
+
+void nih_dbus_error_raise_printf (const char *name, const char *format, ...)
+	__attribute__ ((format (printf, 2, 3)));
 
 NIH_END_EXTERN
 
-#endif /* DBUS__COM_NETSPLIT_NIH_TEST_IMPL_H */
+#endif /* NIH_DBUS_ERROR_H */

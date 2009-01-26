@@ -17,53 +17,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef NIH_DBUS_H
-#define NIH_DBUS_H
+#ifndef NIH_DBUS_OBJECT_H
+#define NIH_DBUS_OBJECT_H
 
 #include <nih/macros.h>
-#include <nih/error.h>
+
+#include <nih-dbus/dbus_message.h>
 
 #include <dbus/dbus.h>
-
-
-/**
- * NihDBusError:
- * @error: ordinary NihError,
- * @name: D-Bus name.
- *
- * This structure builds on NihError to include an additional @name field
- * required for transport across D-Bus.
- *
- * If you receive a NIH_DBUS_ERROR, the returned NihError structure is
- * actually this structure and can be cast to get the additional fields.
- **/
-typedef struct nih_dbus_error {
-	NihError  error;
-	char     *name;
-} NihDBusError;
-
-
-/**
- * NihDBusDisconnectHandler:
- * @conn: Connection that was lost.
- *
- * A D-Bus disconnect handler is a function called when the D-Bus connection
- * @conn is disconnected from its server.  Once called, the connection is
- * automatically unreferenced.
- **/
-typedef void (*NihDBusDisconnectHandler) (DBusConnection *conn);
-
-/**
- * NihDBusConnectHandler:
- * @server: Server that received new connection,
- * @conn: New connection.
- *
- * A D-Bus connection handler is a function called when the D-Bus @server
- * receives a new connection @conn.  The function must return TRUE for the
- * connection to be accepted, otherwise it will be dropped.
- **/
-typedef int (*NihDBusConnectHandler) (DBusServer *server,
-				      DBusConnection *conn);
 
 
 /**
@@ -88,41 +49,6 @@ typedef struct nih_dbus_object {
 	const NihDBusInterface **interfaces;
 	int                      registered;
 } NihDBusObject;
-
-/**
- * NihDBusMessage:
- * @conn: D-Bus connection message was received on,
- * @message: message object received.
- *
- * This structure is used as a context for the processing of a message; the
- * primary reason for its existance is to be used as an nih_alloc() context
- * for any reply data.
- *
- * Instances are allocated automatically and passed to marshaller functions,
- * and freed on their return.
- **/
-typedef struct nih_dbus_message {
-	DBusConnection *conn;
-	DBusMessage    *message;
-} NihDBusMessage;
-
-
-/**
- * NihDBusProxy:
- * @name: D-Bus name of object owner,
- * @path: path of object,
- * @conn: associated connection.
- *
- * Instances of this structure may be created for remote objects that you
- * wish to use.  Fundamentally they combine the three elements of data
- * necessary into one easy object that is bound to the lifetime of the
- * associated connection.
- **/
-typedef struct nih_dbus_proxy {
-	char           *name;
-	char           *path;
-	DBusConnection *conn;
-} NihDBusProxy;
 
 
 /**
@@ -273,50 +199,12 @@ struct nih_dbus_interface {
 
 NIH_BEGIN_EXTERN
 
-void            nih_dbus_error_raise        (const char *name,
-					     const char *message);
-
-void            nih_dbus_error_raise_printf (const char *name,
-					     const char *format, ...)
-	__attribute__ ((format (printf, 2, 3)));
-
-DBusConnection *nih_dbus_connect            (const char *address,
-				             NihDBusDisconnectHandler disconnect_handler)
-	__attribute__ ((warn_unused_result));
-DBusConnection *nih_dbus_bus                (DBusBusType bus,
-					     NihDBusDisconnectHandler disconnect_handler)
-	__attribute__ ((warn_unused_result));
-int             nih_dbus_setup              (DBusConnection *conn,
-				             NihDBusDisconnectHandler disconnect_handler)
-	__attribute__ ((warn_unused_result));
-
-DBusServer *    nih_dbus_server             (const char *address,
-					     NihDBusConnectHandler connect_handler,
-					     NihDBusDisconnectHandler disconnect_handler)
-	__attribute__ ((warn_unused_result));
-
-NihDBusObject * nih_dbus_object_new         (const void *parent,
-					     DBusConnection *conn,
-					     const char *path,
-					     const NihDBusInterface **interfaces,
-					     void *data)
+NihDBusObject *nih_dbus_object_new (const void *parent, DBusConnection *conn,
+				    const char *path,
+				    const NihDBusInterface **interfaces,
+				    void *data)
 	__attribute__ ((malloc));
-
-int             nih_dbus_message_error      (NihDBusMessage *msg,
-					     const char *name,
-					     const char *format, ...)
-	__attribute__ ((warn_unused_result));
-
-NihDBusProxy *  nih_dbus_proxy_new          (const void *parent,
-					     DBusConnection *conn,
-					     const char *name,
-					     const char *path)
-	__attribute__ ((malloc));
-
-char *          nih_dbus_path               (const void *parent,
-					     const char *root, ...)
-	__attribute__ ((sentinel, warn_unused_result, malloc));
 
 NIH_END_EXTERN
 
-#endif /* NIH_DBUS_H */
+#endif /* NIH_DBUS_OBJECT_H */

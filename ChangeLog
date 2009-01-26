@@ -1,5 +1,59 @@
 2009-01-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus.c, nih-dbus/dbus.h: Seperate out the code into
+	separate files to make maintenance much easier.  The new files are
+	nih-dbus/dbus_error.c, nih-dbus/dbus_error.h,
+	nih-dbus/dbus_connection.c, nih-dbus/dbus_connection.h,
+	nih-dbus/dbus_message.c, nih-dbus/dbus_message.h,
+	nih-dbus/dbus_object.c, nih-dbus/dbus_object.h,
+	nih-dbus/dbus_proxy.c, nih-dbus/dbus_proxy.h,
+	nih-dbus/dbus_util.c, nih-dbus/dbus_util.h.
+	* nih-dbus/nih_dbus_tool.py (Output.sourceFile): Change include
+	to separate ones for error, message, object and proxy.
+	(Output.headerFile): Change include to separate ones for message,
+	object and proxy.
+	* nih-dbus/dbus_message.c (nih_dbus_message_new): New function
+	separated out of nih_dbus_object_message(); also no need to cast
+	the destructor.
+	* nih-dbus/dbus_object.c (nih_dbus_object_message): Clean up to
+	call new nih_dbus_message_new function.
+	* nih-dbus/libnih-dbus.h: New top-level header to include everything
+	* nih-dbus/tests/test_dbus.c: Separate out the tests into files
+	to match the sources.  The new files are
+	nih-dbus/tests/test_dbus_error.c,
+	nih-dbus/tests/test_dbus_connection.c,
+	nih-dbus/tests/test_dbus_message.c,
+	nih-dbus/tests/test_dbus_object.c,
+	nih-dbus/tests/test_dbus_proxy.c,
+	nih-dbus/tests/test_dbus_util.c.
+	* nih-dbus/tests/test_dbus_error.c (test_error_raise_printf):
+	Looks like this function was never run in the old test suite, oops.
+	* nih-dbus/tests/test_dbus_message.c (test_message_new): Test the
+	new function
+	* nih-dbus/tests/test_com.netsplit.Nih.Test_object.c: Drop includes
+	we don't actually seem to use the library!
+	* nih-dbus/tests/test_com.netsplit.Nih.Test_proxy.c: Update includes
+	to include proxy
+	* nih-dbus/tests/com.netsplit.Nih.Test_impl.c: Replace includes
+	with separate ones.
+	* nih-dbus/tests/com.netsplit.Nih.Test_impl.h: Drop include.
+	* nih-dbus/Makefile.am (include_HEADERS): Install the top-level header
+	(nihdbusinclude_HEADERS): Update paths to new headers
+	(libnih_dbus_la_SOURCES): Build from new sources
+	(TESTS, test_dbus_error_SOURCES, test_dbus_error_CFLAGS)
+	(test_dbus_error_LDFLAGS, test_dbus_error_LDADD)
+	(test_dbus_connection_SOURCES, test_dbus_connection_CFLAGS)
+	(test_dbus_connection_LDFLAGS, test_dbus_connection_LDADD)
+	(test_dbus_message_SOURCES, test_dbus_message_CFLAGS)
+	(test_dbus_message_LDFLAGS, test_dbus_message_LDADD)
+	(test_dbus_object_SOURCES, test_dbus_object_CFLAGS)
+	(test_dbus_object_LDFLAGS, test_dbus_object_LDADD)
+	(test_dbus_proxy_SOURCES, test_dbus_proxy_CFLAGS)
+	(test_dbus_proxy_LDFLAGS, test_dbus_proxy_LDADD)
+	(test_dbus_util_SOURCES, test_dbus_util_CFLAGS)
+	(test_dbus_util_LDFLAGS, test_dbus_util_LDADD): Add details for
+	new tests, replacing old ones
+
 	* nih/dbus.c, nih/dbus.h, nih/libnih-dbus.supp, nih/libnih-dbus.ver,
 	nih/nih_dbus_tool.py, nih/test_dbus.h,
 	nih/tests/com.netsplit.Nih.Test.xml,

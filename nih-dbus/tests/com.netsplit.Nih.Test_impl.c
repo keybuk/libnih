@@ -38,7 +38,10 @@
 #include <nih/error.h>
 #include <nih/errors.h>
 
-#include <nih-dbus/dbus.h>
+#include <nih-dbus/dbus_error.h>
+#include <nih-dbus/dbus_connection.h>
+#include <nih-dbus/dbus_message.h>
+#include <nih-dbus/dbus_object.h>
 
 #include "com.netsplit.Nih.Test_object.h"
 

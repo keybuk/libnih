@@ -1836,7 +1836,10 @@ class Output(Group):
 #include <nih/error.h>
 #include <nih/errors.h>
 
-#include <nih-dbus/dbus.h>
+#include <nih-dbus/dbus_error.h>
+#include <nih-dbus/dbus_message.h>
+#include <nih-dbus/dbus_object.h>
+#include <nih-dbus/dbus_proxy.h>
 
 #include "%s.h"
 """ % (self.basename, )
@@ -1926,7 +1929,9 @@ class Output(Group):
 
 #include <nih/macros.h>
 
-#include <nih-dbus/dbus.h>
+#include <nih-dbus/dbus_message.h>
+#include <nih-dbus/dbus_object.h>
+#include <nih-dbus/dbus_proxy.h>
 """ % (sentry, sentry)
 
         # Append structure definitions

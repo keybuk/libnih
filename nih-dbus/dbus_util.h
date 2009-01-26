@@ -17,19 +17,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef DBUS__COM_NETSPLIT_NIH_TEST_IMPL_H
-#define DBUS__COM_NETSPLIT_NIH_TEST_IMPL_H
-
-#include <dbus/dbus.h>
+#ifndef NIH_DBUS_UTIL_H
+#define NIH_DBUS_UTIL_H
 
 #include <nih/macros.h>
 
 
 NIH_BEGIN_EXTERN
 
-DBusConnection *my_setup    (void);
-void            my_teardown (DBusConnection *conn);
+char *nih_dbus_path (const void *parent, const char *root, ...)
+	__attribute__ ((sentinel, warn_unused_result, malloc));
 
 NIH_END_EXTERN
 
-#endif /* DBUS__COM_NETSPLIT_NIH_TEST_IMPL_H */
+#endif /* NIH_DBUS_UTIL_H */

@@ -17,19 +17,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef DBUS__COM_NETSPLIT_NIH_TEST_IMPL_H
-#define DBUS__COM_NETSPLIT_NIH_TEST_IMPL_H
+#ifndef NIH_LIBNIH_DBUS_H
+#define NIH_LIBNIH_DBUS_H
 
-#include <dbus/dbus.h>
+#include <nih-dbus/dbus_error.h>
+#include <nih-dbus/dbus_connection.h>
+#include <nih-dbus/dbus_message.h>
+#include <nih-dbus/dbus_object.h>
+#include <nih-dbus/dbus_proxy.h>
+#include <nih-dbus/dbus_util.h>
 
-#include <nih/macros.h>
-
-
-NIH_BEGIN_EXTERN
-
-DBusConnection *my_setup    (void);
-void            my_teardown (DBusConnection *conn);
-
-NIH_END_EXTERN
-
-#endif /* DBUS__COM_NETSPLIT_NIH_TEST_IMPL_H */
+#endif /* NIH_LIBNIH_DBUS_H */

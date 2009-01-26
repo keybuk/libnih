@@ -27,8 +27,6 @@
 #include <nih/macros.h>
 #include <nih/alloc.h>
 
-#include <nih-dbus/dbus.h>
-
 #include "com.netsplit.Nih.Test_impl.h"
 
 

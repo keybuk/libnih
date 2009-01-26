@@ -38,7 +38,7 @@
 #include <nih/error.h>
 #include <nih/errors.h>
 
-#include <nih/dbus.h>
+#include <nih-dbus/dbus.h>
 
 #include "com.netsplit.Nih.Test_object.h"
 

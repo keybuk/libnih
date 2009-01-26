@@ -3,7 +3,7 @@
  * test_com.netsplit.Nih.Test_object.c - test suite for auto-generated
  * object bindings.
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 #include <nih/macros.h>
 #include <nih/alloc.h>
 
-#include <nih/dbus.h>
+#include <nih-dbus/dbus.h>
 
 #include "com.netsplit.Nih.Test_impl.h"
 

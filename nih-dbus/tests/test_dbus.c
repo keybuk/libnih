@@ -20,7 +20,7 @@
  */
 
 #include <nih/test.h>
-#include <nih/test_dbus.h>
+#include <nih-dbus/test_dbus.h>
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -39,7 +39,7 @@
 #include <nih/error.h>
 #include <nih/errors.h>
 
-#include <nih/dbus.h>
+#include <nih-dbus/dbus.h>
 
 
 void

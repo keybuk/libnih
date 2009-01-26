@@ -1,5 +1,32 @@
 2009-01-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/dbus.c, nih/dbus.h, nih/libnih-dbus.supp, nih/libnih-dbus.ver,
+	nih/nih_dbus_tool.py, nih/test_dbus.h,
+	nih/tests/com.netsplit.Nih.Test.xml,
+	nih/tests/com.netsplit.Nih.Test_impl.c,
+	nih/tests/com.netsplit.Nih.Test_impl.h,
+	nih/tests/test_com.netsplit.Nih.Test_object.c,
+	nih/tests/test_com.netsplit.Nih.Test_proxy.c,
+	nih/tests/test_dbus.c: Move all D-Bus related code into a new
+	sub-directory
+	* nih/Makefile.am: Move D-Bus related rules into
+	* nih-dbus/Makefile.am: here.
+	* nih-dbus/tests/test_dbus.c: Update include path for D-Bus test
+	macros and dbus.h
+	* nih-dbus/tests/test_com.netsplit.Nih.Test_object.c: Update include
+	path for dbus.h
+	* nih-dbus/tests/test_com.netsplit.Nih.Test_proxy.c: Update include
+	path for dbus.h
+	* nih-dbus/tests/com.netsplit.Nih.Test_impl.c: Update include path
+	for dbus.h
+	* nih-dbus/tests/com.netsplit.Nih.Test_impl.h: Update include path
+	for dbus.h
+	* nih-dbus/nih_dbus_tool.py (Output.sourceFile, Output.headerFile):
+	Generate includes with correct path for dbus.h
+	* Makefile.am (SUBDIRS): Iterate into new sub-directory
+	* configure.ac (AC_CONFIG_FILES): Generate new Makefile
+	* nihify: Create symlink to nih-dbus as well
+
 	* nih/tests/com.netsplit.Nih.Test_impl.c (my_test_async_method):
 	Take a reference to the message
 	* nih/libnih-dbus.supp: Update D-Bus suppressions.

@@ -39,10 +39,11 @@ po/Rules-quot
 po/stamp-po
 po/libnih.pot
 nih/libnih.la
-nih/libnih-dbus.la
-nih/nih-dbus-tool
 nih/test_*
-nih/tests/com.netsplit.Nih.Test_object.c
-nih/tests/com.netsplit.Nih.Test_object.h
-nih/tests/com.netsplit.Nih.Test_proxy.c
-nih/tests/com.netsplit.Nih.Test_proxy.h
+nih-dbus/libnih-dbus.la
+nih-dbus/test_*
+nih-dbus/nih-dbus-tool
+nih-dbus/tests/com.netsplit.Nih.Test_object.c
+nih-dbus/tests/com.netsplit.Nih.Test_object.h
+nih-dbus/tests/com.netsplit.Nih.Test_proxy.c
+nih-dbus/tests/com.netsplit.Nih.Test_proxy.h

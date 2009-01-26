@@ -28,7 +28,7 @@ NIH_INIT([install])
 
 # Other checks
 
-AC_CONFIG_FILES([ Makefile m4/Makefile po/Makefile.in intl/Makefile
-		  nih/Makefile ])
+AC_CONFIG_FILES([ Makefile m4/Makefile intl/Makefile
+		  nih/Makefile nih-dbus/Makefile po/Makefile.in ])
 AC_CONFIG_HEADERS([config.h])
 AC_OUTPUT

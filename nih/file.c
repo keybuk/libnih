@@ -708,7 +708,7 @@ nih_dir_walk_visit (const char          *dirname,
 		/* Record the device and inode numbers in the stack so that
 		 * we can detect directory loops.
 		 */
-		NIH_MUST (entry = nih_new (dirs, NihDirEntry));
+		NIH_MUST (entry = nih_new (NULL, NihDirEntry));
 		nih_list_init (&entry->entry);
 		nih_alloc_set_destructor (entry, nih_list_destroy);
 		entry->dev = statbuf.st_dev;

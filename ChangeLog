@@ -1,5 +1,8 @@
 2009-01-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/file.c (nih_dir_walk_visit): Can't allocate nih_local var
+	with a parent, otherwise it'll never be cleaned up.
+
 	* nih/config.c (nih_config_parse): Initialise nih_local var to NULL.
 
 	* nih/alloc.c (nih_alloc_context_free): After the destructor has

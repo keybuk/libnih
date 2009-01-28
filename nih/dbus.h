@@ -261,9 +261,9 @@ typedef struct nih_dbus_property {
  * be used directly by the user.
  **/
 typedef struct nih_async_notify_data {
-    void         *handler;
-    void         *userdata;
-    NihDBusProxy *proxy;
+	void         *handler;
+	void         *userdata;
+	NihDBusProxy *proxy;
 } NihAsyncNotifyData;
 
 /**

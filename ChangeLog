@@ -1,5 +1,7 @@
 2009-01-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/config.c (nih_config_parse): Initialise nih_local var to NULL.
+
 	* nih/alloc.c (nih_alloc_context_free): After the destructor has
 	been called, an object is dead.  Attempting to reference it should
 	fail, so we need to store a flag that this has happened.

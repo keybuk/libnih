@@ -1200,7 +1200,7 @@ nih_config_parse (const char      *filename,
 		  NihConfigStanza *stanzas,
 		  void            *data)
 {
-	nih_local char *file;
+	nih_local char *file = NULL;
 	size_t          len;
 	int             ret;
 

@@ -251,6 +251,22 @@ typedef struct nih_dbus_property {
 
 
 /**
+ * NihAsyncNotifyData:
+ * @handler: The user handler that our libnih handler should call,
+ * @userdata: Data to pass to @handler,
+ * @proxy: The proxy object to which the call was made.
+ *
+ * This structure contains information that is assembled during an asynchronous
+ * method call and passed to the handler on the method's return. It should never
+ * be used directly by the user.
+ **/
+struct nih_async_notify_data {
+    void *handler;
+    void *userdata;
+    NihDBusProxy *proxy;
+};
+
+/**
  * NihDBusInterface:
  * @name: name of the interface,
  * @methods: NULL-terminated array of methods,

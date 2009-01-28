@@ -56,6 +56,7 @@ test_method_dispatch (void)
 	char           **str_array;
 	size_t           array_len;
 	int              ret;
+	int              called;
 
 	TEST_GROUP ("method dispatching");
 
@@ -77,6 +78,40 @@ test_method_dispatch (void)
 	TEST_NE_P (output, NULL);
 	TEST_ALLOC_PARENT (output, proxy);
 	TEST_EQ_STR (output, "test data");
+
+	nih_free (proxy);
+
+	my_teardown (conn);
+
+
+	/* Check that we can make an asynchronous D-Bus method call, passing in
+	 * the expected arguments and receiving the expected arguments in the
+	 * callback.
+	 */
+	TEST_FEATURE ("with valid argument (async)");
+	conn = my_setup ();
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+
+	auto void async_with_valid_argument (void *userdata, char *output);
+
+	called = 0;
+
+	ret = proxy_test_method_async (proxy, async_with_valid_argument,
+				       "userdata", "test data", 0);
+
+	TEST_EQ (ret, 0);
+
+	void async_with_valid_argument (void *userdata, char *async_output)
+	{
+		TEST_NE_P (async_output, NULL);
+		TEST_ALLOC_PARENT (async_output, proxy);
+		TEST_EQ_STR (async_output, "test data");
+		TEST_EQ_STR (userdata, "userdata");
+		called = 1;
+	}
+
+	while (! called)
+		dbus_connection_read_write_dispatch (conn, -1);
 
 	nih_free (proxy);
 

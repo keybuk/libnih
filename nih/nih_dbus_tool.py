@@ -1259,13 +1259,8 @@ return 0;
         Returns a (retval, name, args, attributes) tuple for the prototype
         of the asynchronous dispatch function.
         """
-        in_args = DBusGroup([t for t in self.types if t.direction == "in"],
-                            const=True)
-        out_args = DBusGroup([t for t in self.types if t.direction == "out"])
-
         vars = [ ( "DBusPendingCall *", "call" ),
-                ( "void", "(*callback)(%s)"
-                    % ", ".join(lineup_vars(out_args.vars())) ) ]
+                ( "struct nih_async_notify_data *", "data" ) ]
 
         return ( "void",
                  self.extern_name + "_async_notify",
@@ -1283,7 +1278,8 @@ return 0;
 
         vars = [ ( "NihDBusProxy *", "proxy" ),
                 ( "void", "(*callback)(%s)" % 
-                    ", ".join(lineup_vars(out_args.vars())) ) ]
+                    ", ".join(lineup_vars([( "void *", "userdata")]+out_args.vars())) ),
+                ( "void *", "userdata" ) ]
         vars.extend(in_args.vars())
 
         return ( "int",
@@ -1318,13 +1314,10 @@ return 0;
         Called when an asynchronously dispatched function returns something.
         Fetches out the arguments and passes them to a user-supplied function.
         """
-        in_args = DBusGroup([t for t in self.types if t.direction == "in"],
-                            const=True)
         out_args = DBusGroup([t for t in self.types if t.direction == "out"])
 
         vars = [ ( "DBusPendingCall *", "call" ),
-                ( "void", "(*callback)(%s)"
-                    % ", ".join(lineup_vars(out_args.vars())) ) ]
+                ( "struct nih_async_notify_data *", "data" ) ]
 
         code = "void\n%s (" % (self.extern_name + "_async_notify", )
         code += (",\n" + " " * (len(self.extern_name + "_async_notify") + 2)).join(lineup_vars(vars))
@@ -1348,8 +1341,6 @@ if (! reply) {
         nih_error_raise (ENOMEM, strerror (ENOMEM));
         return;
 }
-
-dbus_pending_call_unref (call);
 """, 1);
 
         # Marshal the reply arguments into output arguments
@@ -1372,19 +1363,22 @@ nih_error_raise (ENOMEM, strerror (ENOMEM));
 return;
 """, 1);
         # FIXME: Reply isn't the best parent for this, but proxy isn't here.
-        code += indent(out_args.marshal("iter", "reply",
+        code += indent(out_args.marshal("iter", "data->proxy",
                                         type_error, mem_error), 1)
 
-        code += "\n"
+        code += "\n\n"
         code += indent("""\
+((void (*)(%s))data->handler)(%s);
+""" % (", ".join(lineup_vars([( "void *", "userdata" )] + out_args.vars())),
+       ", ".join([ "data->userdata" ] + out_args.names())), 1)
 
-callback (%s);
+        code += indent("""\
 
 dbus_message_unref (reply);
 dbus_pending_call_unref (call);
 
 return;
-""" % ", ".join(out_args.names()), 1)
+""", 1)
 
         code += "}\n"
 
@@ -1405,7 +1399,8 @@ return;
 
         vars = [ ( "NihDBusProxy *", "proxy" ),
                 ( "void", "(*callback)(%s)" % 
-                    ", ".join(lineup_vars(out_args.vars())) ) ]
+                    ", ".join(lineup_vars([( "void *", "userdata")]+out_args.vars())) ),
+                ( "void *", "userdata" ) ]
         vars.extend(in_args.vars())
 
         code = "int\n%s (" % (self.extern_name + "_async", )
@@ -1416,7 +1411,8 @@ return;
         # for both input and output arguments.
         vars = [ ( "DBusMessage *", "message" ),
                  ( "DBusMessageIter", "iter" ),
-                 ( "DBusPendingCall *", "call" ) ]
+                 ( "DBusPendingCall *", "call" ),
+                 ( "struct nih_async_notify_data *", "data" ) ]
         vars.extend(in_args.locals())
         code += indent(''.join("%s;\n" % var for var in lineup_vars(vars)), 1)
 
@@ -1429,6 +1425,14 @@ nih_assert (proxy != NULL);
         # Dispatch the input arguments into a new local message
         code += "\n"
         code += indent("""\
+data = nih_alloc (proxy, sizeof (struct nih_async_notify_data));
+if (! data)
+	nih_return_no_memory_error (-1);
+
+data->proxy    = proxy;
+data->userdata = userdata;
+data->handler  = callback;
+
 message = dbus_message_new_method_call (proxy->name, proxy->path, "%s", "%s");
 if (! message)
 	nih_return_no_memory_error (-1);
@@ -1458,7 +1462,7 @@ if (! dbus_connection_send_with_reply (proxy->conn, message, &call, -1)) {
         nih_return_no_memory_error (-1);
 }
 
-dbus_pending_call_set_notify(call, (DBusPendingCallNotifyFunction)%s_async_notify, callback, NULL);
+dbus_pending_call_set_notify(call, (DBusPendingCallNotifyFunction)%s_async_notify, data, NULL);
 
 dbus_message_unref (message);
 return 0;
@@ -1597,6 +1601,8 @@ return 0;
         prototypes = []
         if mode == "object":
             prototypes.append(self.marshalPrototype())
+        else:
+            prototypes.append(self.asyncNotifyPrototype())
 
         return prototypes
 
@@ -1650,7 +1656,6 @@ return 0;
         else:
             prototypes.append(self.dispatchPrototype())
             prototypes.append(self.asyncDispatchPrototype())
-            prototypes.append(self.asyncNotifyPrototype())
 
         return prototypes
 

@@ -1260,7 +1260,7 @@ return 0;
         of the asynchronous dispatch function.
         """
         vars = [ ( "DBusPendingCall *", "call" ),
-                ( "struct nih_async_notify_data *", "data" ) ]
+                ( "NihAsyncNotifyData *", "data" ) ]
 
         return ( "void",
                  self.extern_name + "_async_notify",
@@ -1317,7 +1317,7 @@ return 0;
         out_args = DBusGroup([t for t in self.types if t.direction == "out"])
 
         vars = [ ( "DBusPendingCall *", "call" ),
-                ( "struct nih_async_notify_data *", "data" ) ]
+                ( "NihAsyncNotifyData *", "data" ) ]
 
         code = "void\n%s (" % (self.extern_name + "_async_notify", )
         code += (",\n" + " " * (len(self.extern_name + "_async_notify") + 2)).join(lineup_vars(vars))
@@ -1412,7 +1412,7 @@ return;
         vars = [ ( "DBusMessage *", "message" ),
                  ( "DBusMessageIter", "iter" ),
                  ( "DBusPendingCall *", "call" ),
-                 ( "struct nih_async_notify_data *", "data" ) ]
+                 ( "NihAsyncNotifyData *", "data" ) ]
         vars.extend(in_args.locals())
         code += indent(''.join("%s;\n" % var for var in lineup_vars(vars)), 1)
 
@@ -1425,7 +1425,7 @@ nih_assert (proxy != NULL);
         # Dispatch the input arguments into a new local message
         code += "\n"
         code += indent("""\
-data = nih_alloc (proxy, sizeof (struct nih_async_notify_data));
+data = nih_alloc (proxy, sizeof (NihAsyncNotifyData));
 if (! data)
 	nih_return_no_memory_error (-1);
 

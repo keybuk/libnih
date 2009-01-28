@@ -260,11 +260,11 @@ typedef struct nih_dbus_property {
  * method call and passed to the handler on the method's return. It should never
  * be used directly by the user.
  **/
-struct nih_async_notify_data {
+typedef struct nih_async_notify_data {
     void *handler;
     void *userdata;
     NihDBusProxy *proxy;
-};
+} NihAsyncNotifyData;
 
 /**
  * NihDBusInterface:

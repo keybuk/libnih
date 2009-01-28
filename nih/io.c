@@ -173,17 +173,17 @@ nih_io_select_fds (int    *nfds,
 
 		if (watch->events & NIH_IO_READ) {
 			FD_SET (watch->fd, readfds);
-			*nfds = MAX (*nfds, watch->fd + 1);
+			*nfds = nih_max (*nfds, watch->fd + 1);
 		}
 
 		if (watch->events & NIH_IO_WRITE) {
 			FD_SET (watch->fd, writefds);
-			*nfds = MAX (*nfds, watch->fd + 1);
+			*nfds = nih_max (*nfds, watch->fd + 1);
 		}
 
 		if (watch->events & NIH_IO_EXCEPT) {
 			FD_SET (watch->fd, exceptfds);
-			*nfds = MAX (*nfds, watch->fd + 1);
+			*nfds = nih_max (*nfds, watch->fd + 1);
 		}
 	}
 }
@@ -360,7 +360,7 @@ nih_io_buffer_pop (const void  *parent,
 	nih_assert (buffer != NULL);
 	nih_assert (len != NULL);
 
-	*len = MIN (*len, buffer->len);
+	*len = nih_min (*len, buffer->len);
 
 	str = nih_alloc (parent, *len + 1);
 	if (! str)
@@ -390,7 +390,7 @@ nih_io_buffer_shrink (NihIoBuffer *buffer,
 {
 	nih_assert (buffer != NULL);
 
-	len = MIN (len, buffer->len);
+	len = nih_min (len, buffer->len);
 
 	memmove (buffer->buf, buffer->buf + len, buffer->len - len);
 	buffer->len -= len;

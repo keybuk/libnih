@@ -74,7 +74,7 @@
 
 
 /**
- * MIN:
+ * nih_min:
  * @_a: first value,
  * @_b: second value.
  *
@@ -82,12 +82,12 @@
  *
  * Returns: the smaller of the two values.
  **/
-#ifndef MIN
-# define MIN(_a, _b) ((_a) > (_b) ? (_b) : (_a))
-#endif /* MIN */
+#define nih_min(_a, _b)					   \
+	({ typeof (_a) __a = (_a); typeof (_b) __b = (_b); \
+		__a < __b ? __a : __b; })
 
 /**
- * MAX:
+ * nih_max:
  * @_a: first value,
  * @_b: second value.
  *
@@ -95,10 +95,9 @@
  *
  * Returns: the larger of the two values.
  **/
-#ifndef MAX
-# define MAX(_a, _b) ((_a) > (_b) ? (_a) : (_b))
-#endif /* MAX */
-
+#define nih_max(_a, _b)					   \
+	({ typeof (_a) __a = (_a); typeof (_b) __b = (_b); \
+		__a > __b ? __a : __b; })
 
 /**
  * NIH_STRINGIFY:

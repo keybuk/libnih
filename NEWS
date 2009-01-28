@@ -78,6 +78,10 @@
 
 	* libtool 2.2.4 is now required
 
+	* The MIN() and MAX() macros are no longer defined, instead use
+	  nih_min() and nih_max() which do not re-evaluate their parameters
+	  multiple times.
+
 0.1.0  2008-10-24
  
 	* Initial public release.

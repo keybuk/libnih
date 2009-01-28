@@ -127,7 +127,7 @@ test_select_fds (void)
 	FD_ZERO (&exceptfds);
 	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
 
-	TEST_EQ (nfds, MAX (fds[0], fds[1]) + 1);
+	TEST_EQ (nfds, nih_max (fds[0], fds[1]) + 1);
 	TEST_TRUE (FD_ISSET (fds[0], &readfds));
 	TEST_FALSE (FD_ISSET (fds[0], &writefds));
 	TEST_TRUE (FD_ISSET (fds[0], &exceptfds));

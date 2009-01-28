@@ -1,5 +1,15 @@
 2009-01-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/macros.h (MIN, MAX): Replace with newer evaluation-safe
+	nih_min() and nih_max()
+	* nih/io.c (nih_io_select_fds): Replace MAX with nih_max
+	(nih_io_buffer_pop): Replace MIN with nih_min
+	(nih_io_buffer_shrink): Replace MIN with nih_min
+	* nih/command.c (nih_command_group_help): Replace MAX with nih_max,
+	nicely avoiding multiple function call there.
+	* nih/option.c (nih_option_group_help): Likewise.
+	* nih/tests/test_io.c (test_select_fds): Replace MAX with nih_max
+
 	* nih-dbus/nih_dbus_tool.py (Method.replyFunction): Don't free the
 	message passed in to the function.  Since we now require the handler
 	function to take a reference to the message during async processing,

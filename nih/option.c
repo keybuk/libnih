@@ -937,7 +937,7 @@ nih_option_group_help (NihOptionGroup  *group,
 		printf (_("Options:\n"));
 	}
 
-	width = MAX (nih_str_screen_width (), 50) - 31;
+	width = nih_max (nih_str_screen_width (), 50) - 31;
 
 	for (opt = options; (opt->option || opt->long_option); opt++) {
 		nih_local char *str = NULL;

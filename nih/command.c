@@ -433,7 +433,7 @@ nih_command_group_help (NihCommandGroup  *group,
 		printf (_("Commands:\n"));
 	}
 
-	width = MAX (nih_str_screen_width (), 50) - 30;
+	width = nih_max (nih_str_screen_width (), 50) - 30;
 
 	for (cmd = commands; cmd->command; cmd++) {
 		nih_local char *str = NULL;

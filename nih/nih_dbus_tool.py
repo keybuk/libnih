@@ -1362,7 +1362,6 @@ return;
 nih_error_raise (ENOMEM, strerror (ENOMEM));
 return;
 """, 1);
-        # FIXME: Reply isn't the best parent for this, but proxy isn't here.
         code += indent(out_args.marshal("iter", "data->proxy",
                                         type_error, mem_error), 1)
 

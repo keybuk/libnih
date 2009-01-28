@@ -95,6 +95,14 @@ typedef struct nih_alloc_ref {
  **/
 #define NIH_ALLOC_PTR(ctx) ((void *)((NihAllocCtx *)(ctx) + 1))
 
+/**
+ * NIH_ALLOC_FINALISED:
+ *
+ * Flag placed in the destructor field of a context to indicate the
+ * destructor has been called and the object is pending being freed.
+ **/
+#define NIH_ALLOC_FINALISED ((void *)-1)
+
 
 /* Prototypes for static functions */
 static inline int          nih_alloc_context_free   (NihAllocCtx *ctx);
@@ -184,6 +192,7 @@ nih_realloc (void       *ptr,
 		return nih_alloc (parent, size);
 
 	ctx = NIH_ALLOC_CTX (ptr);
+	nih_assert (ctx->destructor != NIH_ALLOC_FINALISED);
 
 	/* This is somewhat more difficult than alloc or free because we
 	 * have two lists of pointers to worry about.  Fortunately the
@@ -290,6 +299,7 @@ nih_free (void *ptr)
 	nih_assert (ptr != NULL);
 
 	ctx = NIH_ALLOC_CTX (ptr);
+	nih_assert (ctx->destructor != NIH_ALLOC_FINALISED);
 
 	/* Cast off our parents first, without recursing.  This ensures
 	 * we always have zero references before we call the destructor,
@@ -331,6 +341,7 @@ nih_discard (void *ptr)
 	nih_assert (ptr != NULL);
 
 	ctx = NIH_ALLOC_CTX (ptr);
+	nih_assert (ctx->destructor != NIH_ALLOC_FINALISED);
 
 	if (NIH_LIST_EMPTY (&ctx->parents))
 		return nih_alloc_context_free (ctx);
@@ -384,6 +395,7 @@ nih_alloc_context_free (NihAllocCtx *ctx)
 	int ret = 0;
 
 	nih_assert (ctx != NULL);
+	nih_assert (ctx->destructor != NIH_ALLOC_FINALISED);
 	nih_assert (NIH_LIST_EMPTY (&ctx->parents));
 
 	/* We have no parents, call our destructor before doing anything
@@ -392,6 +404,7 @@ nih_alloc_context_free (NihAllocCtx *ctx)
 	 */
 	if (ctx->destructor)
 		ret = ctx->destructor (NIH_ALLOC_PTR (ctx));
+	ctx->destructor = NIH_ALLOC_FINALISED;
 
 	/* Recursively finalise all of our children. */
 	NIH_LIST_FOREACH_SAFE (&ctx->children, iter) {
@@ -415,6 +428,7 @@ nih_alloc_context_free (NihAllocCtx *ctx)
 		 */
 		if (ref->child->destructor)
 			ref->child->destructor (NIH_ALLOC_PTR (ref->child));
+		ref->child->destructor = NIH_ALLOC_FINALISED;
 
 		/* Reparent all of its own children to us so that they too
 		 * will be finalised if the last reference is removed.
@@ -494,6 +508,8 @@ nih_alloc_real_set_destructor (void          *ptr,
 	nih_assert (ptr != NULL);
 
 	ctx = NIH_ALLOC_CTX (ptr);
+	nih_assert (ctx->destructor != NIH_ALLOC_FINALISED);
+
 	ctx->destructor = destructor;
 }
 
@@ -542,7 +558,9 @@ nih_alloc_ref_new (NihAllocCtx *parent,
 	NihAllocRef *ref;
 
 	nih_assert (parent != NULL);
+	nih_assert (parent->destructor != NIH_ALLOC_FINALISED);
 	nih_assert (child != NULL);
+	nih_assert (child->destructor != NIH_ALLOC_FINALISED);
 
 	NIH_MUST (ref = malloc (sizeof (NihAllocRef)));
 
@@ -583,6 +601,7 @@ nih_unref (void       *ptr,
 	nih_assert (parent != NULL);
 
 	ctx = NIH_ALLOC_CTX (ptr);
+	nih_assert (ctx->destructor != NIH_ALLOC_FINALISED);
 
 	ref = nih_alloc_ref_lookup (NIH_ALLOC_CTX (parent), ctx);
 
@@ -659,6 +678,7 @@ nih_alloc_parent (const void *ptr,
 	nih_assert (ptr != NULL);
 
 	ctx = NIH_ALLOC_CTX (ptr);
+	nih_assert (ctx->destructor != NIH_ALLOC_FINALISED);
 
 	if (parent) {
 		NihAllocRef *ref;
@@ -686,7 +706,9 @@ nih_alloc_ref_lookup (NihAllocCtx *parent,
 		      NihAllocCtx *child)
 {
 	nih_assert (parent != NULL);
+	nih_assert (parent->destructor != NIH_ALLOC_FINALISED);
 	nih_assert (child != NULL);
+	nih_assert (child->destructor != NIH_ALLOC_FINALISED);
 
 	NIH_LIST_FOREACH (&child->parents, iter) {
 		NihAllocRef *ref = NIH_LIST_ITER (iter, NihAllocRef,
@@ -715,6 +737,7 @@ nih_alloc_size (const void *ptr)
 	nih_assert (ptr != NULL);
 
 	ctx = NIH_ALLOC_CTX (ptr);
+	nih_assert (ctx->destructor != NIH_ALLOC_FINALISED);
 
 	return malloc_usable_size (ctx) - sizeof (NihAllocCtx);
 }

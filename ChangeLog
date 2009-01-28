@@ -1,5 +1,13 @@
 2009-01-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (nih_alloc_context_free): After the destructor has
+	been called, an object is dead.  Attempting to reference it should
+	fail, so we need to store a flag that this has happened.
+	(nih_realloc, nih_free, nih_discard, nih_alloc_real_set_destructor)
+	(nih_alloc_ref_new, nih_unref, nih_alloc_parent)
+	(nih_alloc_ref_lookup, nih_alloc_size): Forbid operations on
+	finalised objects.
+
 	* nih/tests/test_alloc.c (test_free): Once again I've tripped over
 	bugs where the ordering of allocations between siblings in a child
 	matters if they refer to each other in their destructor (typical

@@ -117,9 +117,6 @@ nih_dbus_message_destroy (NihDBusMessage *msg)
  * Replies to an asynchronous D-Bus message @msg with the D-Bus error
  * @name with a human-readable message parsed according to @format.
  *
- * As with the binding-generated reply functions, this is considered to
- * complete @msg on success, so will free it.
- *
  * Returns: zero on success, negative value on insufficient memory.
  **/
 int
@@ -158,8 +155,6 @@ nih_dbus_message_error (NihDBusMessage *msg,
 	}
 
 	dbus_message_unref (message);
-
-	nih_free (msg);
 
 	return 0;
 }

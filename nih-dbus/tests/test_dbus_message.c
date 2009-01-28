@@ -97,7 +97,9 @@ my_return_error_cb (NihDBusMessage *message,
 
 	TEST_EQ (ret, 0);
 
-	TEST_FREE (message);
+	TEST_NOT_FREE (message);
+
+	nih_free (message);
 }
 
 static DBusHandlerResult

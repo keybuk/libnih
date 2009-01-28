@@ -73,6 +73,9 @@
 	* Asynchronous method callbacks must take a reference to the
 	  NihDBusMessage object they are passed, otherwise it will be freed
 
+	* Reply functions and nih_dbus_message_error() no longer free the
+	  message passed in, this is consistent with the above change.
+
 	* libtool 2.2.4 is now required
 
 0.1.0  2008-10-24

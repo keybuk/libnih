@@ -1,3 +1,19 @@
+2009-01-28  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus/nih_dbus_tool.py (Method.replyFunction): Don't free the
+	message passed in to the function.  Since we now require the handler
+	function to take a reference to the message during async processing,
+	we can't just go around freeing it.
+	(Method.replyPrototype): Warn if the error from the reply function
+	is ignored, since this is important.
+	* nih-dbus/dbus_message.c (nih_dbus_message_error): Likewise we
+	should not free the message when passed in for a caller either.
+	* nih-dbus/tests/test_dbus_message.c (my_return_error_cb): Update
+	to make sure the message is not freed.
+	* nih-dbus/tests/com.netsplit.Nih.Test_impl.c (async_method_reply):
+	Make sure message is not freed.
+	* NEWS: Document the change
+
 2009-01-26  Scott James Remnant  <scott@netsplit.com>
 
 	* configure.ac: Officially mandate libtool 2.2

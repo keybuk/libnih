@@ -168,7 +168,7 @@ async_method_reply (AsyncMethod *method,
 						  method->input);
 		TEST_EQ (ret, 0);
 
-		TEST_FREE (method->message);
+		TEST_NOT_FREE (method->message);
 	}
 
 	nih_free (method);

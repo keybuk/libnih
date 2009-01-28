@@ -1131,7 +1131,7 @@ return DBUS_HANDLER_RESULT_HANDLED;
         return ( "int",
                  "_".join([ self.extern_name, "reply" ]),
                  vars,
-                 None )
+                 ( "warn_unused_result", ) )
 
     def replyFunction(self):
         """Reply function.
@@ -1170,10 +1170,8 @@ nih_assert (message != NULL);
 /* If the sender doesn't care about a reply, don't bother wasting
  * effort constructing and sending one.
  */
-if (dbus_message_get_no_reply (message->message)) {
-	nih_free (message);
+if (dbus_message_get_no_reply (message->message))
 	return 0;
-}
 """, 1)
 
         # Create reply and dispatch the local variables into output
@@ -1205,7 +1203,6 @@ if (! dbus_connection_send (message->conn, reply, NULL)) {
 }
 
 dbus_message_unref (reply);
-nih_free (message);
 
 return 0;
 """, 1)

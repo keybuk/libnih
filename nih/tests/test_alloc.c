@@ -27,6 +27,7 @@
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
+#include <nih/list.h>
 
 
 static void *
@@ -224,11 +225,50 @@ child_destructor_called (void *ptr)
 	return 20;
 }
 
+typedef struct child {
+	NihList entry;
+	int     invalid;
+} Child;
+
+typedef struct parent {
+	NihList *list;
+	Child   *child;
+} Parent;
+
+
+static void *list_head_ptr = NULL;
+static int list_head_free = FALSE;
+
+static void *
+my_list_head_malloc (size_t size)
+{
+	list_head_ptr = malloc (size);
+	list_head_free = FALSE;
+	return list_head_ptr;
+}
+
+static void
+my_list_head_free (void *ptr)
+{
+	if (ptr == list_head_ptr)
+		list_head_free = TRUE;
+	free (ptr);
+}
+
+static int
+child_destructor_test (Child *child)
+{
+	TEST_FALSE (list_head_free);
+
+	return 0;
+}
+
 void
 test_free (void)
 {
-	void *ptr1, *ptr2;
-	int   ret;
+	void   *ptr1, *ptr2;
+	Parent *parent;
+	int     ret;
 
 	TEST_FUNCTION ("nih_free");
 
@@ -293,6 +333,54 @@ test_free (void)
 	TEST_TRUE (destructor_was_called);
 	TEST_TRUE (child_destructor_was_called);
 	TEST_EQ (ret, 2);
+
+
+	/* Check that a child of an object may be included in a sibling
+	 * linked list allocated earlier.  At the point the child destructor
+	 * is called, the sibling must not have been freed otherwise it
+	 * cannot cut itself out.
+	 */
+	TEST_FEATURE ("with child in older sibling list");
+	parent = nih_new (NULL, Parent);
+
+	__nih_malloc = my_list_head_malloc;
+	parent->list = nih_new (parent, NihList);
+	nih_list_init (parent->list);
+	__nih_malloc = malloc;
+
+	parent->child = nih_new (parent, Child);
+	nih_list_init (&parent->child->entry);
+
+	nih_list_add (parent->list, &parent->child->entry);
+	nih_alloc_set_destructor (parent->child, child_destructor_test);
+
+	__nih_free = my_list_head_free;
+	nih_free (parent);
+	__nih_free = free;
+
+
+	/* Check that a child of an object may be included in a sibling
+	 * linked list allocated later.  At the point the child destructor
+	 * is called, the sibling must not have been freed otherwise it
+	 * cannot cut itself out.
+	 */
+	TEST_FEATURE ("with child in younger sibling list");
+	parent = nih_new (NULL, Parent);
+
+	parent->child = nih_new (parent, Child);
+	nih_list_init (&parent->child->entry);
+
+	__nih_malloc = my_list_head_malloc;
+	parent->list = nih_new (parent, NihList);
+	nih_list_init (parent->list);
+	__nih_malloc = malloc;
+
+	nih_list_add (parent->list, &parent->child->entry);
+	nih_alloc_set_destructor (parent->child, child_destructor_test);
+
+	__nih_free = my_list_head_free;
+	nih_free (parent);
+	__nih_free = free;
 }
 
 

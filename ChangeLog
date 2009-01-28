@@ -1,5 +1,29 @@
 2009-01-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_alloc.c (test_free): Once again I've tripped over
+	bugs where the ordering of allocations between siblings in a child
+	matters if they refer to each other in their destructor (typical
+	case, a hash table in a struct).
+	* nih/alloc.c (nih_realloc, nih_alloc_ref_new): Reverse the free
+	order, so that the last member allocated is the first one freed.
+	This was the original fix for the above bug, but this just moves
+	the problem without really fixing it.  I do think it's generally
+	correct that the order should be backwards though.
+	(nih_free): Since this is the only function that needs to do it,
+	take care of casting off parents here.
+	(nih_unref): Again, since this is the only function that needs
+	to free the context when there are no parents, do it here after
+	freeing the reference.
+	(nih_alloc_ref_free): Which means this function no longer needs
+	to recurse; nih_free() and nih_discard() always directly free a
+	context, and nih_unref() knows to if there are no parents left;
+	nih_unref() explicitly doesn't free the context.
+	(nih_unref_only): No need to pass FALSE to nih_alloc_ref_free() now.
+	(nih_alloc_context_free): This gets the big rewrite; rather than
+	just recursively freeing the heirarchy, finalise them first by
+	calling destructors and then reparenting them to the context
+	being freed.  Only free the objects after all destructors are called.
+
 	* nih/macros.h (MIN, MAX): Replace with newer evaluation-safe
 	nih_min() and nih_max()
 	* nih/io.c (nih_io_select_fds): Replace MAX with nih_max

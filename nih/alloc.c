@@ -102,8 +102,7 @@ static inline int          nih_alloc_context_free   (NihAllocCtx *ctx);
 static inline NihAllocRef *nih_alloc_ref_new        (NihAllocCtx *parent,
 						     NihAllocCtx *child)
 	__attribute__ ((malloc));
-static inline void         nih_alloc_ref_free       (NihAllocRef *ref,
-						     int recurse);
+static inline void         nih_alloc_ref_free       (NihAllocRef *ref);
 static inline NihAllocRef *nih_alloc_ref_lookup     (NihAllocCtx *parent,
 						     NihAllocCtx *child);
 
@@ -230,13 +229,13 @@ nih_realloc (void       *ptr,
 	 * as noted above this ensures that all the pointers are correct
 	 */
 	if (first_parent) {
-		nih_list_add (first_parent, &ctx->parents);
+		nih_list_add_after (first_parent, &ctx->parents);
 	} else {
 		nih_list_init (&ctx->parents);
 	}
 
 	if (first_child) {
-		nih_list_add (first_child, &ctx->children);
+		nih_list_add_after (first_child, &ctx->children);
 	} else {
 		nih_list_init (&ctx->children);
 	}
@@ -269,10 +268,11 @@ nih_realloc (void       *ptr,
  * Returns the object @ptr to the allocator so the memory consumed may be
  * re-used by something else.
  *
- * All parent references are discarded, the destructor is called, then
- * all children of the object are unreferenced.  Should this be the last
- * reference to any of the children, their destructor will be called and
- * they too will be freed (along with their children, etc.)
+ * All parent references are discarded and the destructor for @ptr is called.
+ * Then all children are recursively unreferenced.  Those that have no
+ * remaining parent references will also have their destructors called and
+ * their children unreferenced, etc.  Once all destructors have been called,
+ * the objects themselves are freed.
  *
  * If you call nih_free() on an object with parent references, you should
  * make sure that any pointers to the object are reset.  If you are unsure
@@ -290,6 +290,18 @@ nih_free (void *ptr)
 	nih_assert (ptr != NULL);
 
 	ctx = NIH_ALLOC_CTX (ptr);
+
+	/* Cast off our parents first, without recursing.  This ensures
+	 * we always have zero references before we call the destructor,
+	 * and has the somewhat neat property of breaking any reference
+	 * loops.
+	 */
+	NIH_LIST_FOREACH_SAFE (&ctx->parents, iter) {
+		NihAllocRef *ref = NIH_LIST_ITER (iter, NihAllocRef,
+						  parents_entry);
+
+		nih_alloc_ref_free (ref);
+	}
 
 	return nih_alloc_context_free (ctx);
 }
@@ -354,12 +366,15 @@ _nih_discard_local (void *ptraddr)
  *
  * This is the internal function called by nih_free(), nih_discard() and
  * nih_unref() to actually free an allocated context and its attached
- * object.
+ * objects.
  *
- * All parent references are discarded, the destructor is called, then
- * all children of the object are unreferenced.  Should this be the last
- * reference to any of the children, their destructor will be called and
- * they too will be freed (along with their children, etc.)
+ * All parent references must have been discarded prior to calling this
+ * function.
+ *
+ * The destructor for @ctx is called, and then all children are recursively
+ * unreferenced.  Those that have no remaining parent references will also
+ * have their destructors called and their children unreferenced, etc.
+ * Once all destructors have been called, the objects themselves are freed.
  *
  * Returns: return value from @ptr's destructor, or 0.
  **/
@@ -369,33 +384,72 @@ nih_alloc_context_free (NihAllocCtx *ctx)
 	int ret = 0;
 
 	nih_assert (ctx != NULL);
+	nih_assert (NIH_LIST_EMPTY (&ctx->parents));
 
-	/* Cast off our parents first, without recursing.  This ensures
-	 * we always have zero references before we call the destructor,
-	 * and has the somewhat neat property of breaking any reference
-	 * loops.
+	/* We have no parents, call our destructor before doing anything
+	 * to our children.  Save the return value, since this is what
+	 * we return.
 	 */
-	NIH_LIST_FOREACH_SAFE (&ctx->parents, iter) {
-		NihAllocRef *ref = NIH_LIST_ITER (iter, NihAllocRef,
-						  parents_entry);
-
-		nih_alloc_ref_free (ref, FALSE);
-	}
-
 	if (ctx->destructor)
 		ret = ctx->destructor (NIH_ALLOC_PTR (ctx));
 
-	/* This is safe against other changes to the list, because even if
-	 * our child references one of its siblings, we still hold a ref
-	 * as well so the sibling won't be freed until we get there.
+	/* Recursively finalise all of our children. */
+	NIH_LIST_FOREACH_SAFE (&ctx->children, iter) {
+		NihAllocRef *ref = NIH_LIST_ITER (iter, NihAllocRef,
+						  children_entry);
+
+		/* Disassociate the child from its parent.
+		 * If that was not the last parent, the child should not
+		 * be freed, so destroy the rest of the reference and move
+		 * on.
+		 */
+		nih_list_destroy (&ref->parents_entry);
+		if (! NIH_LIST_EMPTY (&ref->child->parents)) {
+			nih_list_destroy (&ref->children_entry);
+			free (ref);
+			continue;
+		}
+
+		/* Child is to be destroyed and has no links back to its
+		 * parents.  We call the destructor now.
+		 */
+		if (ref->child->destructor)
+			ref->child->destructor (NIH_ALLOC_PTR (ref->child));
+
+		/* Reparent all of its own children to us so that they too
+		 * will be finalised if the last reference is removed.
+		 *
+		 * In order to do this depth-first while preserving order,
+		 * we insert the items before our cursor; and then put the
+		 * cursor back at the head of them.
+		 */
+		NIH_LIST_FOREACH_SAFE (&ref->child->children, citer) {
+			NihAllocRef *cref = NIH_LIST_ITER (citer, NihAllocRef,
+							   children_entry);
+
+			nih_list_add (&_iter, &cref->children_entry);
+		}
+
+		nih_list_add_after (iter, &_iter);
+	}
+
+	/* We now have a single list of children all of which have no
+	 * references back to us as their parent, and all of had their
+	 * destructors called.
+	 *
+	 * Now we free them.
 	 */
 	NIH_LIST_FOREACH_SAFE (&ctx->children, iter) {
 		NihAllocRef *ref = NIH_LIST_ITER (iter, NihAllocRef,
 						  children_entry);
 
-		nih_alloc_ref_free (ref, TRUE);
+		__nih_free (ref->child);
+
+		nih_list_destroy (&ref->children_entry);
+		free (ref);
 	}
 
+	/* And now we can free ourselves. */
 	__nih_free (ctx);
 
 	return ret;
@@ -498,8 +552,8 @@ nih_alloc_ref_new (NihAllocCtx *parent,
 	ref->parent = parent;
 	ref->child = child;
 
-	nih_list_add (&parent->children, &ref->children_entry);
-	nih_list_add (&child->parents, &ref->parents_entry);
+	nih_list_add_after (&parent->children, &ref->children_entry);
+	nih_list_add_after (&child->parents, &ref->parents_entry);
 
 	return ref;
 }
@@ -522,17 +576,21 @@ void
 nih_unref (void       *ptr,
 	   const void *parent)
 {
+	NihAllocCtx *ctx;
 	NihAllocRef *ref;
 
 	nih_assert (ptr != NULL);
 	nih_assert (parent != NULL);
 
-	ref = nih_alloc_ref_lookup (NIH_ALLOC_CTX (parent),
-				    NIH_ALLOC_CTX (ptr));
+	ctx = NIH_ALLOC_CTX (ptr);
+
+	ref = nih_alloc_ref_lookup (NIH_ALLOC_CTX (parent), ctx);
 
 	nih_assert (ref != NULL);
+	nih_alloc_ref_free (ref);
 
-	nih_alloc_ref_free (ref, TRUE);
+	if (NIH_LIST_EMPTY (&ctx->parents))
+		nih_alloc_context_free (ctx);
 }
 
 /**
@@ -556,30 +614,28 @@ nih_unref_only (void       *ptr,
 				    NIH_ALLOC_CTX (ptr));
 
 	nih_assert (ref != NULL);
-
-	nih_alloc_ref_free (ref, FALSE);
+	nih_alloc_ref_free (ref);
 }
 
 /**
  * nih_alloc_ref_free:
- * @parent: parent context,
- * @child: child context.
+ * @ref: reference to free.
  *
- * This is the internal function used by nih_unref() and
- * nih_alloc_context_free() to remove a reference between the @parent
- * and @child contexts.
+ * This is the internal function used by nih_free(), nih_unref() and
+ * nih_unref_only() to remove the reference @ref from its parent and child
+ * contexts.  It does not free the child context, even if this is the last
+ * reference.
+ *
+ * This function is notably not called by nih_alloc_context_unref() since
+ * that manipulates the references to perform finalisation.
  **/
 static inline void
-nih_alloc_ref_free (NihAllocRef *ref,
-		    int          recurse)
+nih_alloc_ref_free (NihAllocRef *ref)
 {
 	nih_assert (ref != NULL);
 
 	nih_list_destroy (&ref->children_entry);
 	nih_list_destroy (&ref->parents_entry);
-
-	if (recurse && NIH_LIST_EMPTY (&ref->child->parents))
-		nih_alloc_context_free (ref->child);
 
 	free (ref);
 }

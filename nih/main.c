@@ -347,7 +347,7 @@ void
 nih_main_set_pidfile (const char *filename)
 {
 	if (pid_file)
-		nih_free (pid_file);
+		nih_discard (pid_file);
 
 	pid_file = NULL;
 

@@ -1,4 +1,4 @@
-0.2.0  XXXX-XX-XX
+0.2.0  2009-01-29
 
 	* nih_alloc_set_allocator() is now a macro that casts the function
 	  to the right typedef, so such casts are no longer needed

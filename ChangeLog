@@ -1,3 +1,8 @@
+2009-01-29  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus/tests/test_com.netsplit.Nih.Test_proxy.c (test_method_dispatch): 
+	Fix the test case to not compare a void * with strcmp
+
 2008-01-29  Casey Dahlin  <cdahlin@redhat.com>
 
 	* nih/nih_dbus_tool.py (Method.asyncDispatchPrototype): Prototype for
@@ -19,6 +24,7 @@
 	notify function then sets up the error to be handled by the errback
 	or marshalls the return values to the callback.
 	(Generator.exportTypedefs): This function returns a list of tuples
+	* nih-dbus/tests/test_com.netsplit.Nih.Test_proxy.c (test_method_dispatch): 
 	of (type, name, args) format for typedefs to be placed in the
 	generated header file. Args is present for defining function
 	arguments for function pointer typedefs.

@@ -109,7 +109,7 @@ test_method_dispatch (void)
 		TEST_NE_P (async_output, NULL);
 		TEST_ALLOC_PARENT (async_output, proxy);
 		TEST_EQ_STR (async_output, "test data");
-		TEST_EQ_STR (userdata, "userdata");
+		TEST_EQ_STR ((char *)userdata, "userdata");
 		TEST_EQ_P (my_proxy, proxy);
 		called = 1;
 	}

@@ -295,7 +295,7 @@ nih_io_buffer_resize (NihIoBuffer *buffer,
 	if (! new_len) {
 		/* No bytes to store, so clean up the buffer */
 		if (buffer->buf)
-			nih_free (buffer->buf);
+			nih_unref (buffer->buf, buffer);
 
 		buffer->buf = NULL;
 		buffer->size = 0;
@@ -447,6 +447,9 @@ nih_io_buffer_push (NihIoBuffer *buffer,
  * of the returned message are freed, the returned message will also be
  * freed.
  *
+ * @parent should not be the NihIo object this is to be sent with, that
+ * will take a reference when you send the message.
+ *
  * Returns: new message, or NULL if insufficient memory.
  **/
 NihIoMessage *
@@ -572,12 +575,12 @@ nih_io_message_recv  (const void *parent,
 		      int         fd,
 		      size_t     *len)
 {
-	NihIoMessage   *message;
-	NihIoBuffer    *ctrl_buf = NULL;
-	struct msghdr   msghdr;
-	struct iovec    iov[1];
-	struct cmsghdr *cmsg;
-	ssize_t         recv_len;
+	NihIoMessage          *message;
+	nih_local NihIoBuffer *ctrl_buf = NULL;
+	struct msghdr          msghdr;
+	struct iovec           iov[1];
+	struct cmsghdr        *cmsg;
+	ssize_t                recv_len;
 
 	nih_assert (fd >= 0);
 	nih_assert (len != NULL);
@@ -683,14 +686,10 @@ nih_io_message_recv  (const void *parent,
 						      CMSG_DATA (cmsg)));
 	}
 
-	nih_free (ctrl_buf);
-
 	return message;
 
 error:
 	nih_error_raise_system ();
-	if (ctrl_buf)
-		nih_free (ctrl_buf);
 	if (message)
 		nih_free (message);
 	return NULL;
@@ -715,11 +714,11 @@ ssize_t
 nih_io_message_send (NihIoMessage *message,
 		     int           fd)
 {
-	NihIoBuffer     *ctrl_buf;
-	struct msghdr    msghdr;
-	struct iovec     iov[1];
-	struct cmsghdr **ptr;
-	ssize_t          len;
+	nih_local NihIoBuffer  *ctrl_buf = NULL;
+	struct msghdr           msghdr;
+	struct iovec            iov[1];
+	struct cmsghdr        **ptr;
+	ssize_t                 len;
 
 	nih_assert (message != NULL);
 	nih_assert (fd >= 0);
@@ -745,7 +744,7 @@ nih_io_message_send (NihIoMessage *message,
 		len = CMSG_SPACE ((*ptr)->cmsg_len
 				  - CMSG_ALIGN (sizeof (struct cmsghdr)));
 		if (nih_io_buffer_resize (ctrl_buf, len) < 0)
-			goto error;
+			nih_return_system_error (-1);
 
 		memcpy (ctrl_buf->buf + ctrl_buf->len, *ptr, (*ptr)->cmsg_len);
 		ctrl_buf->len += len;
@@ -758,16 +757,9 @@ nih_io_message_send (NihIoMessage *message,
 
 	len = sendmsg (fd, &msghdr, 0);
 	if (len < 0)
-		goto error;
-
-	nih_free (ctrl_buf);
+		nih_return_system_error (-1);
 
 	return len;
-
-error:
-	nih_error_raise_system ();
-	nih_free (ctrl_buf);
-	return -1;
 }
 
 
@@ -1170,7 +1162,7 @@ nih_io_watcher_write (NihIo      *io,
 			if (len < 0)
 				return -1;
 
-			nih_free (message);
+			nih_unref (message, io);
 		}
 
 		/* Don't check for writability if we have nothing to write */
@@ -1420,6 +1412,7 @@ nih_io_send_message (NihIo        *io,
 	nih_assert (message != NULL);
 
 	nih_list_add (io->send_q, &message->entry);
+	nih_ref (message, io);
 
 	io->watch->events |= NIH_IO_WRITE;
 }
@@ -1490,7 +1483,7 @@ nih_io_read (const void *parent,
 	str = nih_io_buffer_pop (parent, buf, len);
 
 	if (message && (! message->data->len))
-		nih_free (message);
+		nih_unref (message, io);
 
 finish:
 	nih_io_shutdown_check (io);
@@ -1530,7 +1523,7 @@ nih_io_write (NihIo      *io,
 		buf = io->send_buf;
 		break;
 	case NIH_IO_MESSAGE:
-		message = nih_io_message_new (io);
+		message = nih_io_message_new (NULL);
 		if (! message)
 			return -1;
 
@@ -1630,7 +1623,7 @@ nih_io_get (const void *parent,
 	}
 
 	if (message && (! message->data->len))
-		nih_free (message);
+		nih_unref (message, io);
 
 finish:
 	nih_io_shutdown_check (io);

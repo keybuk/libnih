@@ -1,5 +1,22 @@
 2009-01-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.c (nih_io_buffer_resize): Use nih_unref() instead of
+	nih_free(), while nothing should have taken a reference, it's a
+	good pattern to stick to.
+	(nih_io_message_recv): Use nih_local for ctrl_buf
+	(nih_io_message_send): Use nih_local for ctrl_buf
+	(nih_io_send_message): Take a reference to messages on the send q
+	(nih_io_watcher_write): Unreference the message from the NihIo
+	object instead of freeing, in case a reference is used elsewhere
+	(nih_io_read): Unreference instead of freeing
+	(nih_io_get): Unreference instead of freeing
+	(nih_io_message_new): Parent should not be the NihIo
+	(nih_io_write): Obey that rule here
+
+	* nih/tests/test_io.c (test_send_message): Make sure that a
+	reference is taken after all.
+	(test_watcher): Don't create object with parent as io
+
 	* nih/file.c (nih_file_read): Minor clean-up
 
 	* nih/main.c (nih_main_set_pidfile): Discard the pid file in case

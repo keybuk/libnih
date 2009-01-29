@@ -2026,7 +2026,7 @@ test_watcher (void)
 
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
-			msg = nih_io_message_new (io);
+			msg = nih_io_message_new (NULL);
 			assert0 (nih_io_buffer_push (msg->data,
 						     "this is a test", 14));
 			nih_io_send_message (io, msg);
@@ -2067,7 +2067,7 @@ test_watcher (void)
 	 * should also go straight out and have the writability cleared.
 	 */
 	TEST_FEATURE ("with another message to write");
-	msg = nih_io_message_new (io);
+	msg = nih_io_message_new (NULL);
 	assert0 (nih_io_buffer_push (msg->data, "another test", 12));
 	nih_io_send_message (io, msg);
 
@@ -2092,13 +2092,13 @@ test_watcher (void)
 	 * have them all go straight out.
 	 */
 	TEST_FEATURE ("with multiple messages to write");
-	msg = nih_io_message_new (io);
+	msg = nih_io_message_new (NULL);
 	assert0 (nih_io_buffer_push (msg->data, "this is a test", 14));
 	nih_io_send_message (io, msg);
 
 	TEST_FREE_TAG (msg);
 
-	msg2 = nih_io_message_new (io);
+	msg2 = nih_io_message_new (NULL);
 	assert0 (nih_io_buffer_push (msg2->data, "another test", 12));
 	nih_io_send_message (io, msg2);
 
@@ -2134,7 +2134,7 @@ test_watcher (void)
 	last_data = NULL;
 	last_error = NULL;
 
-	msg = nih_io_message_new (io);
+	msg = nih_io_message_new (NULL);
 	assert0 (nih_io_buffer_push (msg->data, "one more test", 13));
 	nih_io_send_message (io, msg);
 
@@ -2235,8 +2235,8 @@ test_send_message (void)
 
 
 	/* Check that we can send a message into the empty send queue, it
-	 * should be added directly to the send queue, and not changed or
-	 * reparented, etc.
+	 * should be added directly to the send queue, and a reference
+	 * taken.
 	 */
 	TEST_FEATURE ("with empty send queue");
 	msg1 = nih_io_message_new (NULL);
@@ -2245,7 +2245,7 @@ test_send_message (void)
 	nih_io_send_message (io, msg1);
 
 	TEST_EQ_P (io->send_q->next, &msg1->entry);
-	TEST_ALLOC_ORPHAN (msg1);
+	TEST_ALLOC_PARENT (msg1, io);
 
 	TEST_TRUE (io->watch->events & NIH_IO_WRITE);
 

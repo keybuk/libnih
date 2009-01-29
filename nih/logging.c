@@ -122,9 +122,9 @@ nih_log_message (NihLogLevel  priority,
 		 const char  *format,
 		 ...)
 {
-	char    *message = NULL;
-	va_list  args;
-	int      ret;
+	nih_local char *message = NULL;
+	va_list         args;
+	int             ret;
 
 	nih_assert (format != NULL);
 
@@ -139,7 +139,6 @@ nih_log_message (NihLogLevel  priority,
 
 	/* Output the message */
 	ret = logger (priority, message);
-	nih_free (message);
 
 	return ret;
 }

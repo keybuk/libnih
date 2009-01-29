@@ -107,7 +107,7 @@ nih_file_read (const void *parent,
 
 	fp = fopen (path, "r");
 	if (! fp)
-		return NULL;
+		nih_return_system_error (NULL);
 
 	if (fstat (fileno (fp), &statbuf) < 0)
 		goto error;

@@ -1,5 +1,9 @@
 2009-01-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/file.c (nih_file_read): Never trust a changelog entry that
+	says "minor clean-up"; make sure we raise the error before returning
+	NULL.
+
 	* nih-dbus/dbus_connection.c (nih_dbus_setup)
 	(nih_dbus_add_watch, nih_dbus_add_timeout): We should discard
 	objects attached to the D-Bus connection since they're floating;

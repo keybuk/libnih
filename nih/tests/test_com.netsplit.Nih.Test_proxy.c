@@ -92,7 +92,7 @@ test_method_dispatch (void)
 	conn = my_setup ();
 	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
 
-	auto void async_with_valid_argument (void *userdata, char *output);
+	auto void async_with_valid_argument (NihDBusProxy *proxy, void *userdata, char *output);
 
 	called = 0;
 
@@ -101,12 +101,13 @@ test_method_dispatch (void)
 
 	TEST_EQ (ret, 0);
 
-	void async_with_valid_argument (void *userdata, char *async_output)
+	void async_with_valid_argument (NihDBusProxy *my_proxy, void *userdata, char *async_output)
 	{
 		TEST_NE_P (async_output, NULL);
 		TEST_ALLOC_PARENT (async_output, proxy);
 		TEST_EQ_STR (async_output, "test data");
 		TEST_EQ_STR (userdata, "userdata");
+		TEST_EQ_P (my_proxy, proxy);
 		called = 1;
 	}
 

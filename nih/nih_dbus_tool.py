@@ -1377,7 +1377,7 @@ return;
         code += "\n\n"
         code += indent("""\
 ((NihDBusCallback_%s)data->handler)(%s);
-""" % (self.extern_name, ", ".join([ "data->userdata" ] + out_args.names())), 1)
+""" % (self.extern_name, ", ".join([ "data->proxy", "data->userdata" ] + out_args.names())), 1)
 
         code += indent("""\
 
@@ -1609,7 +1609,8 @@ return 0;
         if mode == "proxy":
             typedefs.append( ("void",
                               "(*NihDBusCallback_%s)" % self.extern_name,
-                              [( "void *", "userdata")] + out_args.vars()
+                              [ ( "NihDBusProxy *", "proxy" ),
+                                ( "void *", "userdata") ] + out_args.vars()
                            ) )
         return typedefs
 

@@ -19,7 +19,13 @@ nih/watch.c
 
 nih/errors.h
 
-nih/dbus.c
+nih-dbus/dbus_connection.c
+nih-dbus/dbus_error.c
+nih-dbus/dbus_message.c
+nih-dbus/dbus_object.c
+nih-dbus/dbus_proxy.c
+nih-dbus/dbus_util.c
 
 # More to test the build system than anything else
-nih/tests/com.netsplit.Nih.Test_object.c
+nih-dbus/tests/com.netsplit.Nih.Test_object.c
+

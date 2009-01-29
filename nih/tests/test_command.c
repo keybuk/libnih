@@ -2,7 +2,7 @@
  *
  * test_command.c - test suite for nih/command.c
  *
- * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -588,7 +588,7 @@ void
 test_help (void)
 {
 	FILE  *output;
-	char  *argv[3];
+	char  *argv[4];
 	pid_t  pid;
 	int    argc, status;
 

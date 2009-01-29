@@ -1,5 +1,8 @@
 2009-01-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_command.c (test_help): Array was too small, increase
+	the size.
+
 	* nih/tests/test_string.c (test_str_split): Oops, left some debugging
 	in here.
 

@@ -235,7 +235,7 @@ nih_dbus_setup (DBusConnection           *conn,
 		return -1;
 
 	if (! dbus_connection_set_data (conn, main_loop_slot, loop,
-					(DBusFreeFunction)nih_free)) {
+					(DBusFreeFunction)nih_discard)) {
 		nih_free (loop);
 		return -1;
 	}
@@ -406,7 +406,7 @@ nih_dbus_add_watch (DBusWatch *watch,
 	if (! io_watch)
 		return FALSE;
 
-	dbus_watch_set_data (watch, io_watch, (DBusFreeFunction)nih_free);
+	dbus_watch_set_data (watch, io_watch, (DBusFreeFunction)nih_discard);
 
 	if (! dbus_watch_get_enabled (watch))
 		nih_list_remove (&io_watch->entry);
@@ -530,7 +530,7 @@ nih_dbus_add_timeout (DBusTimeout *timeout,
 	if (! timer)
 		return FALSE;
 
-	dbus_timeout_set_data (timeout, timer, (DBusFreeFunction)nih_free);
+	dbus_timeout_set_data (timeout, timer, (DBusFreeFunction)nih_discard);
 
 	if (! dbus_timeout_get_enabled (timeout))
 		nih_list_remove (&timer->entry);

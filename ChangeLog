@@ -1,5 +1,10 @@
 2009-01-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_connection.c (nih_dbus_setup)
+	(nih_dbus_add_watch, nih_dbus_add_timeout): We should discard
+	objects attached to the D-Bus connection since they're floating;
+	nobody should take a reference, but good practice and all that.
+
 	* nih/alloc.h: Document the different usage patterns
 
 	* nih/io.c (nih_io_buffer_resize): Use nih_unref() instead of

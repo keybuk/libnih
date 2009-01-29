@@ -1654,9 +1654,9 @@ nih_io_printf (NihIo      *io,
 	       const char *format,
 	       ...)
 {
-	char    *str;
-	va_list  args;
-	int      ret;
+	nih_local char *str = NULL;
+	va_list         args;
+	int             ret;
 
 	nih_assert (io != NULL);
 	nih_assert (format != NULL);
@@ -1669,7 +1669,6 @@ nih_io_printf (NihIo      *io,
 		return -1;
 
 	ret = nih_io_write (io, str, strlen (str));
-	nih_free (str);
 
 	return ret;
 }

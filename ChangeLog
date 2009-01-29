@@ -1,5 +1,13 @@
 2009-01-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (nih_alloc_real_set_destructor): Does not modify the
+	actual data, so the pointer can be const.
+	(nih_ref): Does not modify the actual data, so the pointer can be
+	const.
+	(nih_unref_only): Does not modify the actual data, and unlike
+	nih_unref(), does not free it; so the pointer can be const
+	* nih/alloc.h: Update prototypes.
+
 	* configure.ac: Bump version to 0.2.1
 	* NEWS: Begin 0.2.1
 

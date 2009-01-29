@@ -500,7 +500,7 @@ nih_alloc_context_free (NihAllocCtx *ctx)
  * debugging purposes.
  **/
 void
-nih_alloc_real_set_destructor (void          *ptr,
+nih_alloc_real_set_destructor (const void    *ptr,
 			       NihDestructor  destructor)
 {
 	NihAllocCtx *ctx;
@@ -532,7 +532,7 @@ nih_alloc_real_set_destructor (void          *ptr,
  * reference.
  **/
 void
-nih_ref (void       *ptr,
+nih_ref (const void *ptr,
 	 const void *parent)
 {
 	nih_assert (ptr != NULL);
@@ -621,7 +621,7 @@ nih_unref (void       *ptr,
  * automatically free @ptr even if this is the last reference.
  **/
 void
-nih_unref_only (void       *ptr,
+nih_unref_only (const void *ptr,
 		const void *parent)
 {
 	NihAllocRef *ref;

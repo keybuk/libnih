@@ -96,8 +96,8 @@ test_method_dispatch (void)
 
 	called = 0;
 
-	ret = proxy_test_method_async (proxy, async_with_valid_argument,
-				       "userdata", "test data", 0);
+	ret = proxy_test_method_async (proxy, "test data", 0,
+			async_with_valid_argument, "userdata");
 
 	TEST_EQ (ret, 0);
 

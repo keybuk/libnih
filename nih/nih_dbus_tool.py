@@ -817,6 +817,16 @@ class Generator(object):
         """
         return []
 
+    def exportTypedefs(self):
+        """Exported typedefs.
+
+        Type definitions that should be placed in the header.
+
+        Each typedef is the code to define it, including any documentation and
+        default value.
+        """
+        return []
+
     def externPrototypes(self):
         """Extern prototypes.
 
@@ -1276,11 +1286,10 @@ return 0;
                             const=True)
         out_args = DBusGroup([t for t in self.types if t.direction == "out"])
 
-        vars = [ ( "NihDBusProxy *", "proxy" ),
-                ( "void", "(*callback)(%s)" % 
-                    ", ".join(lineup_vars([( "void *", "userdata")]+out_args.vars())) ),
-                ( "void *", "userdata" ) ]
+        vars =  [ ( "NihDBusProxy *", "proxy" ) ]
         vars.extend(in_args.vars())
+        vars += [ ( "NihDBusCallback_%s" % self.extern_name, "callback" ),
+                ( "void *", "userdata" ) ]
 
         return ( "int",
                  self.extern_name + "_async",
@@ -1396,11 +1405,10 @@ return;
                             const=True)
         out_args = DBusGroup([t for t in self.types if t.direction == "out"])
 
-        vars = [ ( "NihDBusProxy *", "proxy" ),
-                ( "void", "(*callback)(%s)" % 
-                    ", ".join(lineup_vars([( "void *", "userdata")]+out_args.vars())) ),
-                ( "void *", "userdata" ) ]
+        vars =  [ ( "NihDBusProxy *", "proxy" ) ]
         vars.extend(in_args.vars())
+        vars += [ ( "NihDBusCallback_%s" % self.extern_name, "callback" ),
+                ( "void *", "userdata" ) ]
 
         code = "int\n%s (" % (self.extern_name + "_async", )
         code += (",\n" + " " * (len(self.extern_name + "_async") + 2)).join(lineup_vars(vars))
@@ -1588,6 +1596,23 @@ return 0;
         code += "}\n"
 
         return code
+
+    def exportTypedefs(self):
+        """Exported typedefs.
+
+        Type definitions that should be placed in the header.
+
+        Each typedef is the code to define it, including any documentation and
+        default value.
+        """
+        typedefs = []
+        out_args = DBusGroup([t for t in self.types if t.direction == "out"])
+        if mode == "proxy":
+            typedefs.append( ("void",
+                              "(*NihDBusCallback_%s)" % self.extern_name,
+                              [( "void *", "userdata")] + out_args.vars()
+                           ) )
+        return typedefs
 
     def staticPrototypes(self):
         """Static prototypes.
@@ -1807,6 +1832,20 @@ class Group(Generator):
             prototypes.extend(member.externPrototypes())
 
         return prototypes
+
+    def exportTypedefs(self):
+        """Exported typedefs.
+
+        Type definitions that should be placed in the header.
+
+        Each typedef is the code to define it, including any documentation and
+        default value.
+        """
+        typedefs = []
+        for member in self.members:
+            typedefs.extend(member.exportTypedefs())
+
+        return typedefs
 
     def variables(self):
         """Variables.
@@ -2082,7 +2121,25 @@ class Output(Group):
 
 #include "%s.h"
 """ % (self.basename, )
-
+        if mode == "proxy":
+            if code:
+                code += "\n\n"
+            code += """\
+/**
+ * NihAsyncNotifyData:
+ * @handler: The user handler that our libnih handler should call,
+ * @userdata: Data to pass to @handler,
+ * @proxy: The proxy object to which the call was made.
+ *
+ * This structure contains information that is assembled during an asynchronous
+ * method call and passed to the handler on the method's return. It should never
+ * be used directly by the user.
+ **/
+typedef struct nih_async_notify_data {
+	void         *handler;
+	void         *userdata;
+	NihDBusProxy *proxy;
+} NihAsyncNotifyData;"""
         # Extern function prototypes
         protos = self.externPrototypes()
         if protos:
@@ -2180,6 +2237,15 @@ class Output(Group):
                     code += "\n"
                 code += definition
 
+        # Typedefs
+        typedefs = self.exportTypedefs()
+        if typedefs:
+            if code:
+                code += "\n\n"
+            for line in lineup_typedefs(typedefs):
+                code += line
+                code += "\n"
+
         # Guard extern prototypes for C++ inclusion
         if code:
             code += "\n\n"
@@ -2274,6 +2340,40 @@ def lineup_vars(vars):
         lines.append(code)
 
     return lines
+
+def typedef_lineup_prefix(type):
+    """Pads a type name on the left so indent starts past (*
+    
+    If a string begins with (* returns it. If it begins with * pad it on the
+    left with one space. If it begins with 0 pad with two spaces.
+    """
+    if type.startswith("(*"):
+        return type
+    if type.startswith("*"):
+        return " " + type
+    return "  " + type
+
+def lineup_typedefs(typedefs):
+    """ Lineup typedef lists.
+
+    Returns an array of lines of C code to declare each of the typedefs
+    in typedefs, which should be an array of (type, name, args)
+    """
+    defs = []
+    max_type = max(len(t) for t,n,a in typedefs)
+    max_name = max(len(typedef_lineup_prefix(n)) for t,n,a in typedefs)
+
+    for type,name,args in typedefs:
+        code = "typedef "
+        code += type.ljust(max_type+1)
+        code += typedef_lineup_prefix(name).ljust(max_name+1)
+        code += "("
+        code += ", ".join("%s%s%s" % (type, not type.endswith("*") and " " or "",
+                                      name) for type,name in args)
+        code += ");"
+        defs.append(code)
+
+    return defs
 
 def lineup_protos(protos):
     """Lineup prototype lists.

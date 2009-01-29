@@ -1,5 +1,7 @@
 2009-01-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/file.c (nih_file_read): Minor clean-up
+
 	* nih/main.c (nih_main_set_pidfile): Discard the pid file in case
 	someone took a reference to it.
 

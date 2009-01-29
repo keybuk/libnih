@@ -1,5 +1,8 @@
 2009-01-29  Scott James Remnant  <scott@netsplit.com>
 
+	* configure.ac: Bump version to 0.2.1
+	* NEWS: Begin 0.2.1
+
 	* NEWS: Update
 
 	* nih/test_alloc.h (TEST_ALLOC_FAIL): Initialise the count in the

@@ -1272,7 +1272,7 @@ return 0;
         vars = [ ( "DBusPendingCall *", "call" ),
                 ( "NihAsyncNotifyData *", "data" ) ]
 
-        return ( "void",
+        return ( "static void",
                  self.extern_name + "_async_notify",
                  vars, ( ) )
 
@@ -1328,7 +1328,7 @@ return 0;
         vars = [ ( "DBusPendingCall *", "call" ),
                 ( "NihAsyncNotifyData *", "data" ) ]
 
-        code = "void\n%s (" % (self.extern_name + "_async_notify", )
+        code = "static void\n%s (" % (self.extern_name + "_async_notify", )
         code += (",\n" + " " * (len(self.extern_name + "_async_notify") + 2)).join(lineup_vars(vars))
         code += ")\n{\n"
 
@@ -1376,9 +1376,8 @@ return;
 
         code += "\n\n"
         code += indent("""\
-((void (*)(%s))data->handler)(%s);
-""" % (", ".join(lineup_vars([( "void *", "userdata" )] + out_args.vars())),
-       ", ".join([ "data->userdata" ] + out_args.names())), 1)
+((NihDBusCallback_%s)data->handler)(%s);
+""" % (self.extern_name, ", ".join([ "data->userdata" ] + out_args.names())), 1)
 
         code += indent("""\
 

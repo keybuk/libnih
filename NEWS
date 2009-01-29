@@ -82,6 +82,9 @@
 	  nih_min() and nih_max() which do not re-evaluate their parameters
 	  multiple times.
 
+	* The nih_main_package_string() function has been dropped, instead
+	  just access the package_string global set by nih_main_init_full()
+
 0.1.0  2008-10-24
  
 	* Initial public release.

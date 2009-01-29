@@ -1,5 +1,15 @@
 2009-01-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/main.c (nih_main_init_full): Discard the package string in
+	case another part of the code has taken a reference to it; since
+	it never changes unless this function is called, generate it here
+	(nih_main_package_string): dropping this function
+	(nih_main_version): Fetch package_string
+	* nih/main.h: Add external package_string and drop function proto.
+	* nih/tests/test_main.c (test_package_string): Fold these tests into
+	(test_init): here.
+	* nih/libnih.supp: Update suppression
+
 	* nih/logging.c (nih_log_message): Use nih_local for message
 
 	* nih/io.c (nih_io_printf): Use nih_local for str

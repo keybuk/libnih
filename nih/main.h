@@ -1,6 +1,6 @@
 /* libnih
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -107,6 +107,7 @@ const char *package_name;
 const char *package_version;
 const char *package_copyright;
 const char *package_bugreport;
+const char *package_string;
 
 NihList *nih_main_loop_functions;
 
@@ -117,7 +118,6 @@ void             nih_main_init_full      (const char *argv0,
 					  const char *bugreport,
 					  const char *copyright);
 
-const char *     nih_main_package_string (void);
 void             nih_main_suggest_help   (void);
 void             nih_main_version        (void);
 

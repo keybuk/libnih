@@ -81,20 +81,20 @@
 }
 
 
-# nih_main_package_string stores the generated string in a
+# nih_main_init_full stores the pacakge_string string in a
 # heap-allocated pointer.  It survives the life of the process and
 # is only not freed because there's little point in doing so.
 {
-   nih-main-package-string
+   nih-package-string
    Memcheck:Leak
    fun:malloc
    fun:nih_alloc
    fun:nih_vsprintf
    fun:nih_sprintf
-   fun:nih_main_package_string
+   fun:nih_main_init_full
 }
 {
-   nih-main-package-string-test
+   nih-package-string-test
    Memcheck:Leak
    fun:malloc
    fun:realloc
@@ -103,7 +103,7 @@
    fun:nih_alloc
    fun:nih_vsprintf
    fun:nih_sprintf
-   fun:nih_main_package_string
+   fun:nih_main_init_full
 }
 
 # tmpfile is used by some test cases ... valgrind doesn't have a built-in

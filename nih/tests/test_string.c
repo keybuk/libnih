@@ -598,7 +598,6 @@ test_str_split (void)
 	 */
 	TEST_FEATURE ("with no repeat");
 	TEST_ALLOC_FAIL {
-		printf ("%d/%d\n", test_alloc_failed, _test_alloc_count);
 		array = nih_str_split (NULL, "this is  a\ttest", " \t", FALSE);
 
 		if (test_alloc_failed) {

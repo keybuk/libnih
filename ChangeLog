@@ -1,5 +1,8 @@
 2009-01-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_string.c (test_str_split): Oops, left some debugging
+	in here.
+
 	* nih/file.c (nih_file_read): Never trust a changelog entry that
 	says "minor clean-up"; make sure we raise the error before returning
 	NULL.

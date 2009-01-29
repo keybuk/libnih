@@ -1063,7 +1063,7 @@ nih_config_parse_stanza (const char      *file,
 			 void            *data)
 {
 	NihConfigStanza *stanza;
-	char            *name;
+	nih_local char  *name = NULL;
 	size_t           p;
 	int              ret = -1;
 
@@ -1080,14 +1080,9 @@ nih_config_parse_stanza (const char      *file,
 
 	/* Lookup the stanza for it */
 	stanza = nih_config_get_stanza (name, stanzas);
-	if (! stanza) {
-		nih_error_raise (NIH_CONFIG_UNKNOWN_STANZA,
-				 _(NIH_CONFIG_UNKNOWN_STANZA_STR));
-		nih_free (name);
-		return -1;
-	}
-
-	nih_free (name);
+	if (! stanza)
+		nih_return_error (-1, NIH_CONFIG_UNKNOWN_STANZA,
+				  _(NIH_CONFIG_UNKNOWN_STANZA_STR));
 
 	ret = stanza->handler (data, stanza, file, len, &p, lineno);
 

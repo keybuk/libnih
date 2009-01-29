@@ -1,3 +1,7 @@
+2009-01-29  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/config.c (nih_config_parse_stanza): Use nih_local for name.
+
 2009-01-28  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/file.c (nih_dir_walk_visit): Can't allocate nih_local var

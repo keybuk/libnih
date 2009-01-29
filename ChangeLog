@@ -1,5 +1,7 @@
 2009-01-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.h: Document the different usage patterns
+
 	* nih/io.c (nih_io_buffer_resize): Use nih_unref() instead of
 	nih_free(), while nothing should have taken a reference, it's a
 	good pattern to stick to.

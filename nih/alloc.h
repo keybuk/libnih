@@ -63,6 +63,156 @@
  * nih_discard() instead of nih_free() to do this.
  *
  * Such constructs are often better handled using nih_local variables.
+ *
+ *
+ * = Common patterns =
+ *
+ * At first, it seems like there's a bewildering array of different ways
+ * you can shoot yourself in the foot with this library, however if you
+ * stick to the usual patterns it's a very safe and versatile library.
+ *
+ * == Structures ==
+ *
+ * When allocating structures, you tend to write your function so that
+ * the prospective parent is passed in as the first argument and always
+ * allocate with that.
+ *
+ *   obj = nih_new (parent, Object);
+ *
+ * That way, the caller decides how they want your object linked to
+ * other things.  But what if there's an error while populating the
+ * structure?  You can't call nih_unref() because that won't accept
+ * NULL as the parent, and you can't call nih_discard() because that
+ * won't work if there is a parent.
+ *
+ * You might be tempted to call one or the other depending on whether
+ * parent is NULL or not, however it's by far better style to just call
+ * nih_free()
+ *
+ *   error:
+ *     nih_free (obj);
+ *     return NULL;
+ *
+ * Since you're putting it together, this use of nih_free() is perfectly
+ * acceptable.
+ *
+ * == Structure members ==
+ *
+ * Structure members are just about always allocated with the structure
+ * as their parent context.
+ *
+ *   obj->child = nih_new (obj, Child);
+ *
+ * This pretty much saves you from ever worrying about them, as they
+ * will be automatically freed whenever you free the parent object;
+ * including error handling cases.
+ *
+ * Should you ever replace the child, you shouldn't call nih_free() but
+ * nih_unref(), to be safe against other code having taken a reference.
+ *
+ *   nih_unref (obj->child, obj);
+ *   obj->child = nih_new (obj, Child);
+ *
+ * This will clean up the child, unless someone else is using it.
+ *
+ * == Floating objects ==
+ *
+ * Often in a function you'll want to allocate an object but won't yet
+ * have anything to attach it to.  This also often applies to global
+ * variables as well.
+ *
+ * You simply pass NULL in as the parent; the returned object has no
+ * references, and is known as a floating object.
+ *
+ *   obj = nih_new (NULL, Object);
+ *
+ * If anything takes a reference to this, it will no longer be floating
+ * and will instead be referenced.  Should that reference be dropped,
+ * obj will be freed.
+ *
+ * To discard the floating object you should use nih_discard() instead
+ * of nih_free(), which will not free the object if another function
+ * you've called in the meantime took a reference to it.
+ *
+ * Better yet, use nih_local to have the object automatically discarded
+ * when it goes out of scope:
+ *
+ *   {
+ *     nih_local Object *obj = NULL;
+ *     obj = nih_new (NULL, Object);
+ *
+ *     // work with obj, including passing it to functions that may
+ *     // reference it
+ *   }
+ *
+ * == Taking a reference ==
+ *
+ * Provided the above patterns are followed, taking a reference to an
+ * object you are passed is perfectly safe.  Simply call nih_ref(),
+ * for example to store it in your own structure:
+ *
+ *   adopt->obj = obj;
+ *   nih_ref (adopt->obj, adopt);
+ *
+ * When you want to drop your reference, you should only ever use
+ * nih_unref().
+ *
+ *   nih_unref (adopt->obj, adopt);
+ *   adopt->obj = NULL;
+ *
+ * == Returning a member ==
+ *
+ * This is a relatively rare case, but examples exist.
+ *
+ * Sometimes you want to provide a function that returns one of your
+ * structure members, disowning it in the process.  Your function will
+ * most likely take a parent object to which you want to reparent the
+ * member.
+ *
+ * It's not quite as easy as referencing the parent and dropping your
+ * own reference, because the parent could be NULL.  And if you did
+ * that, and held the last reference on the member, it would be freed
+ * before returning.
+ *
+ * Instead use nih_unref_only(), which may leave the object floating
+ *
+ *   nih_unref_only (obj->child, obj);
+ *
+ *   child = obj->child;
+ *   obj->child = NULL;
+ *
+ *   if (parent)
+ *     nih_ref (child, parent);
+ *
+ *   // child may now be returned
+ *
+ * == Worker objects ==
+ *
+ * Finally another pattern exits in the nih_alloc() world that doesn't
+ * quite obey the above rules, and instead takes advantage of the design
+ * to provide something that wouldn't be possible otherwise.
+ *
+ * A worker is an object that performs some function out-of-band on
+ * behalf of another object.  They may be stored elsewhere, such as a
+ * linked list, and will be set up such that if they are freed, the
+ * work they are doing is cancelled.
+ *
+ * A good example would be a timer object; you'd have a list of timers
+ * which you iterate in the main loop.  The destructor of the timer
+ * object removes it from this list.  When the timer expires, some
+ * work occurs, and the timer object frees itself.
+ *
+ * Thus to attach a timer to our object, all we need do is create the
+ * timer with our object as a parent.  There is absolutely no need
+ * to store the timer as a structure member, unless we would need to
+ * cancel it for other reasons.
+ *
+ * If our object is freed, the timer is freed to so there's no danger
+ * of the callback firing and acting on a freed object.  If the timer
+ * fires, the callback can do its work, and the timer will be freed
+ * afterwards.
+ *
+ * Much of the main loop related objects in libnih behave in this way.
  **/
 
 #include <nih/macros.h>

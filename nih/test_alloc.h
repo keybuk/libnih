@@ -157,11 +157,10 @@ _test_malloc (size_t size)
  * and sharing a global state.
  **/
 #define TEST_ALLOC_FAIL						   \
-	for (test_alloc_failed = -1;				   \
+	for (test_alloc_failed = -1, _test_alloc_count = 0;	   \
 	     test_alloc_failed <= (_test_alloc_count + 1);	   \
 	     test_alloc_failed++, _test_alloc_call = 0)		   \
 		if (test_alloc_failed < 0) {			   \
-			_test_alloc_count = 0;			   \
 			__nih_malloc = _test_malloc;		   \
 			__nih_realloc = _test_realloc;		   \
 		} else if (test_alloc_failed			   \

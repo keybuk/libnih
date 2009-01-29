@@ -1,5 +1,9 @@
 2009-01-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/test_alloc.h (TEST_ALLOC_FAIL): Initialise the count in the
+	loop pre-condition, still doesn't solve gcc's issues but I prefer
+	it.
+
 	* nih/tests/test_command.c (test_help): Array was too small, increase
 	the size.
 

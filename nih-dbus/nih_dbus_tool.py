@@ -157,6 +157,14 @@ class DBusType(object):
         """
         return []
 
+    def names(self, pointer=False, const=False):
+        """Variable name.
+
+        Returns a list containing a single string; the name given when creating
+        the instance.
+        """
+        return []
+
     def locals(self, pointer=False, const=False):
         """Local variable type and name.
 
@@ -208,6 +216,14 @@ class DBusBasicType(DBusType):
         type and the name given when creating the instance.
         """
         return [ ( self.realType(self.c_type, pointer, const), self.name ) ]
+
+    def names(self, pointer=False, const=False):
+        """Variable name.
+
+        Returns a list containing a single string; the name given when creating
+        the instance.
+        """
+        return [ self.name ]
 
     def locals(self, pointer=False, const=False):
         """Local variable type and name.
@@ -536,6 +552,18 @@ class DBusArray(DBusType):
 
         return vars
 
+    def names(self, pointer=False, const=False):
+        """Variable name.
+
+        Returns a list containing a single string; the name given when creating
+        the instance.
+        """
+        names = [ self.name ]
+        if not self.type.c_type.endswith("*"):
+            names.append(self.len_name)
+
+        return names
+
     def marshal(self, iter_name, parent, type_error, mem_error,
                 pointer=False, const=False):
         """Marshalling code.
@@ -711,6 +739,17 @@ class DBusGroup(object):
 
         return vars
 
+    def names(self):
+        """Variable names.
+
+        Returns a list of names of all types in this group.
+        """
+        names = []
+
+        for type in self.types:
+            names.extend(type.names())
+        return names
+
     def locals(self):
         """Local variable type and name.
 
@@ -775,6 +814,16 @@ class Generator(object):
         placed in a block at the top of the source file.
 
         Each prototype is a (retval, name, args, attributes) tuple.
+        """
+        return []
+
+    def exportTypedefs(self):
+        """Exported typedefs.
+
+        Type definitions that should be placed in the header.
+
+        Each typedef is the code to define it, including any documentation and
+        default value.
         """
         return []
 
@@ -1211,6 +1260,40 @@ return 0;
 
         return code
 
+    def asyncNotifyPrototype(self):
+        """Asynchronous dispatch function prototype.
+
+        Returns a (retval, name, args, attributes) tuple for the prototype
+        of the asynchronous dispatch function.
+        """
+        vars = [ ( "DBusPendingCall *", "call" ),
+                ( "NihAsyncNotifyData *", "data" ) ]
+
+        return ( "static void",
+                 self.extern_name + "_async_notify",
+                 vars, ( ) )
+
+    def asyncDispatchPrototype(self):
+        """Asynchronous dispatch function prototype.
+
+        Returns a (retval, name, args, attributes) tuple for the prototype
+        of the asynchronous dispatch function.
+        """
+        in_args = DBusGroup([t for t in self.types if t.direction == "in"],
+                            const=True)
+        out_args = DBusGroup([t for t in self.types if t.direction == "out"])
+
+        vars =  [ ( "NihDBusProxy *", "proxy" ) ]
+        vars.extend(in_args.vars())
+        vars += [ ( "NihDBusCallback_%s" % self.extern_name, "callback" ),
+                  ( "NihDBusErrback_%s" % self.extern_name, "errback" ),
+                  ( "void *", "userdata" ) ]
+
+        return ( "int",
+                 self.extern_name + "_async",
+                 vars,
+                 ( "warn_unused_result", ) )
+
     def dispatchPrototype(self):
         """Dispatch function prototype.
 
@@ -1232,12 +1315,187 @@ return 0;
                  vars,
                  ( "warn_unused_result", ) )
 
-    def dispatchFunction(self):
-        """Marshalling function.
+    def asyncNotifyFunction(self):
+        """Asynchronous notification function.
 
-        Returns a string containing a marshaller function that takes
-        arguments from a D-Bus message, calls a C handler function with
-        them passed properly, then constructs a reply if successful.
+        Called when an asynchronously dispatched function returns something.
+        Fetches out the arguments and passes them to a user-supplied function.
+        """
+        out_args = DBusGroup([t for t in self.types if t.direction == "out"])
+
+        vars = [ ( "DBusPendingCall *", "call" ),
+                ( "NihAsyncNotifyData *", "data" ) ]
+
+        code = "static void\n%s (" % (self.extern_name + "_async_notify", )
+        code += (",\n" + " " * (len(self.extern_name + "_async_notify") + 2)).join(lineup_vars(vars))
+        code += ")\n{\n"
+
+        # Declare local variables for the iterator, reply and those needed
+        # for both input and output arguments.
+        vars = [ ( "DBusMessage *", "reply" ),
+                 ( "DBusMessageIter", "iter" ) ]
+        vars.extend(out_args.locals())
+        vars.extend(out_args.vars())
+        code += indent(''.join("%s;\n" % var for var in lineup_vars(vars)), 1)
+
+        # Pre-amble for the function
+        code += "\n"
+
+        code += indent("""\
+reply = dbus_pending_call_steal_reply(call);
+
+nih_assert (reply != NULL);
+""", 1);
+
+        # Marshal the reply arguments into output arguments
+        code += "\n"
+        code += indent("""\
+/* Iterate the arguments to the reply and marshal into output
+ * arguments from our own function call.
+ */
+dbus_message_iter_init (reply, &iter);
+""", 1);
+        code += "\n"
+
+        mem_error = indent("""\
+dbus_message_unref (reply);
+nih_error_raise (ENOMEM, strerror (ENOMEM));
+return;
+""", 1)
+        type_error = indent("""\
+nih_error_raise (NIH_DBUS_INVALID_ARGS, NIH_DBUS_INVALID_ARGS_STR);
+((NihDBusErrback_%s)data->err_handler)(data->proxy, data->userdata);
+return;
+""" % self.extern_name, 1);
+        code += indent(out_args.marshal("iter", "data->proxy",
+                                        type_error, mem_error), 1)
+
+        code += "\n\n"
+        code += indent("""\
+((NihDBusCallback_%s)data->handler)(%s);
+""" % (self.extern_name, ", ".join([ "data->proxy", "data->userdata" ] + out_args.names())), 1)
+
+        code += indent("""\
+
+dbus_message_unref (reply);
+dbus_pending_call_unref (call);
+
+return;
+""", 1)
+
+        code += "}\n"
+
+        return code
+
+    def asyncDispatchFunction(self):
+        """Asynchronous dispatching function.
+
+        Returns a string containing a dispatcher function that takes arguments
+        identical to those taken by a particular dbus method, and pointers to
+        variables where the return values from that method might be stored. Then
+        sends a dbus message and waits for a reply to come, and populates the
+        reply arguments with the contents of the reply message.
+        """
+        in_args = DBusGroup([t for t in self.types if t.direction == "in"],
+                            const=True)
+        out_args = DBusGroup([t for t in self.types if t.direction == "out"])
+
+        vars =  [ ( "NihDBusProxy *", "proxy" ) ]
+        vars.extend(in_args.vars())
+        vars += [ ( "NihDBusCallback_%s" % self.extern_name, "callback" ),
+                  ( "NihDBusErrback_%s" % self.extern_name, "errback" ),
+                  ( "void *", "userdata" ) ]
+
+        code = "int\n%s (" % (self.extern_name + "_async", )
+        code += (",\n" + " " * (len(self.extern_name + "_async") + 2)).join(lineup_vars(vars))
+        code += ")\n{\n"
+
+        # Declare local variables for the iterator, reply and those needed
+        # for both input and output arguments.
+        vars = [ ( "DBusMessage *", "message" ),
+                 ( "DBusMessageIter", "iter" ),
+                 ( "DBusPendingCall *", "call" ),
+                 ( "NihAsyncNotifyData *", "data" ) ]
+        vars.extend(in_args.locals())
+        code += indent(''.join("%s;\n" % var for var in lineup_vars(vars)), 1)
+
+        # Pre-amble for the function
+        code += "\n"
+        code += indent("""\
+nih_assert (proxy != NULL);
+nih_assert ((errback != NULL && callback != NULL) ||
+	    (errback == NULL && callback == NULL));
+""", 1);
+
+        # Dispatch the input arguments into a new local message
+        code += "\n"
+        code += indent("""\
+message = dbus_message_new_method_call (proxy->name, proxy->path, "%s", "%s");
+if (! message)
+	nih_return_no_memory_error (-1);
+
+/* Iterate the arguments to the function and dispatch into
+ * message arguments.
+ */
+dbus_message_iter_init_append (message, &iter);
+""" % (self.interface.name, self.name), 1)
+        code += "\n"
+
+        # FIXME autostart?
+
+        mem_error = indent("""\
+dbus_message_unref (message);
+nih_return_no_memory_error (-1);
+""", 1)
+        code += indent(in_args.dispatch("iter", mem_error), 1)
+
+        # FIXME timeout should be configurable
+        # FIXME expect no reply?
+        code += "\n"
+        code += indent("""\
+/* If we don't specify a callback, just finish it now */
+if (! callback) {
+	dbus_bool_t succ = dbus_connection_send (proxy->conn, message, NULL);
+	dbus_message_unref (message);
+	if (! succ)
+		nih_return_no_memory_error (-1);
+	return 0;
+}
+
+/* Send the reply, appending it to the outgoing queue and blocking. */
+if (! dbus_connection_send_with_reply (proxy->conn, message, &call, -1)) {
+	dbus_message_unref (message);
+        nih_return_no_memory_error (-1);
+}
+
+data = nih_new (proxy, NihAsyncNotifyData);
+if (! data)
+	nih_return_no_memory_error (-1);
+
+data->proxy       = proxy;
+data->userdata    = userdata;
+data->handler     = callback;
+data->err_handler = errback;
+
+
+dbus_pending_call_set_notify(call, (DBusPendingCallNotifyFunction)%s_async_notify, data, (DBusFreeFunction)nih_free);
+
+dbus_message_unref (message);
+return 0;
+""" % self.extern_name, 1);
+
+        code += "}\n"
+
+        return code
+
+    def dispatchFunction(self):
+        """Dispatching function.
+
+        Returns a string containing a dispatcher function that takes arguments
+        identical to those taken by a particular dbus method, and pointers to
+        variables where the return values from that method might be stored. Then
+        sends a dbus message and waits for a reply to come, and populates the
+        reply arguments with the contents of the reply message.
         """
         in_args = DBusGroup([t for t in self.types if t.direction == "in"],
                             const=True)
@@ -1348,6 +1606,29 @@ return 0;
 
         return code
 
+    def exportTypedefs(self):
+        """Exported typedefs.
+
+        Type definitions that should be placed in the header.
+
+        Each typedef is the code to define it, including any documentation and
+        default value.
+        """
+        typedefs = []
+        out_args = DBusGroup([t for t in self.types if t.direction == "out"])
+        if mode == "proxy":
+            typedefs.append( ("void",
+                              "(*NihDBusCallback_%s)" % self.extern_name,
+                              [ ( "NihDBusProxy *", "proxy" ),
+                                ( "void *", "userdata") ] + out_args.vars()
+                           ) )
+            typedefs.append( ("void",
+                              "(*NihDBusErrback_%s)" % self.extern_name,
+                              [ ( "NihDBusProxy *", "proxy" ),
+                                ( "void *", "userdata") ]
+                           ) )
+        return typedefs
+
     def staticPrototypes(self):
         """Static prototypes.
 
@@ -1359,6 +1640,8 @@ return 0;
         prototypes = []
         if mode == "object":
             prototypes.append(self.marshalPrototype())
+        else:
+            prototypes.append(self.asyncNotifyPrototype())
 
         return prototypes
 
@@ -1392,6 +1675,8 @@ return 0;
                 functions.append(self.replyFunction())
         else:
             functions.append(self.dispatchFunction())
+            functions.append(self.asyncDispatchFunction())
+            functions.append(self.asyncNotifyFunction())
 
         return functions
 
@@ -1409,6 +1694,7 @@ return 0;
                 prototypes.append(self.replyPrototype())
         else:
             prototypes.append(self.dispatchPrototype())
+            prototypes.append(self.asyncDispatchPrototype())
 
         return prototypes
 
@@ -1561,6 +1847,20 @@ class Group(Generator):
             prototypes.extend(member.externPrototypes())
 
         return prototypes
+
+    def exportTypedefs(self):
+        """Exported typedefs.
+
+        Type definitions that should be placed in the header.
+
+        Each typedef is the code to define it, including any documentation and
+        default value.
+        """
+        typedefs = []
+        for member in self.members:
+            typedefs.extend(member.exportTypedefs())
+
+        return typedefs
 
     def variables(self):
         """Variables.
@@ -1840,7 +2140,26 @@ class Output(Group):
 
 #include "%s.h"
 """ % (self.basename, )
-
+        if mode == "proxy":
+            if code:
+                code += "\n\n"
+            code += """\
+/**
+ * NihAsyncNotifyData:
+ * @handler: The user handler that our libnih handler should call,
+ * @userdata: Data to pass to @handler,
+ * @proxy: The proxy object to which the call was made.
+ *
+ * This structure contains information that is assembled during an asynchronous
+ * method call and passed to the handler on the method's return. It should never
+ * be used directly by the user.
+ **/
+typedef struct nih_async_notify_data {
+	void         *handler;
+	void         *err_handler;
+	void         *userdata;
+	NihDBusProxy *proxy;
+} NihAsyncNotifyData;"""
         # Extern function prototypes
         protos = self.externPrototypes()
         if protos:
@@ -1941,6 +2260,15 @@ class Output(Group):
                     code += "\n"
                 code += definition
 
+        # Typedefs
+        typedefs = self.exportTypedefs()
+        if typedefs:
+            if code:
+                code += "\n\n"
+            for line in lineup_typedefs(typedefs):
+                code += line
+                code += "\n"
+
         # Guard extern prototypes for C++ inclusion
         if code:
             code += "\n\n"
@@ -2035,6 +2363,40 @@ def lineup_vars(vars):
         lines.append(code)
 
     return lines
+
+def typedef_lineup_prefix(type):
+    """Pads a type name on the left so indent starts past (*
+    
+    If a string begins with (* returns it. If it begins with * pad it on the
+    left with one space. If it begins with 0 pad with two spaces.
+    """
+    if type.startswith("(*"):
+        return type
+    if type.startswith("*"):
+        return " " + type
+    return "  " + type
+
+def lineup_typedefs(typedefs):
+    """ Lineup typedef lists.
+
+    Returns an array of lines of C code to declare each of the typedefs
+    in typedefs, which should be an array of (type, name, args)
+    """
+    defs = []
+    max_type = max(len(t) for t,n,a in typedefs)
+    max_name = max(len(typedef_lineup_prefix(n)) for t,n,a in typedefs)
+
+    for type,name,args in typedefs:
+        code = "typedef "
+        code += type.ljust(max_type+1)
+        code += typedef_lineup_prefix(name).ljust(max_name+1)
+        code += "("
+        code += ", ".join("%s%s%s" % (type, not type.endswith("*") and " " or "",
+                                      name) for type,name in args)
+        code += ");"
+        defs.append(code)
+
+    return defs
 
 def lineup_protos(protos):
     """Lineup prototype lists.

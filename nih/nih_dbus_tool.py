@@ -1289,7 +1289,8 @@ return 0;
         vars =  [ ( "NihDBusProxy *", "proxy" ) ]
         vars.extend(in_args.vars())
         vars += [ ( "NihDBusCallback_%s" % self.extern_name, "callback" ),
-                ( "void *", "userdata" ) ]
+                  ( "NihDBusErrback_%s" % self.extern_name, "errback" ),
+                  ( "void *", "userdata" ) ]
 
         return ( "int",
                  self.extern_name + "_async",
@@ -1346,10 +1347,7 @@ return 0;
         code += indent("""\
 reply = dbus_pending_call_steal_reply(call);
 
-if (! reply) {
-        nih_error_raise (ENOMEM, strerror (ENOMEM));
-        return;
-}
+nih_assert (reply != NULL);
 """, 1);
 
         # Marshal the reply arguments into output arguments
@@ -1368,9 +1366,10 @@ nih_error_raise (ENOMEM, strerror (ENOMEM));
 return;
 """, 1)
         type_error = indent("""\
-nih_error_raise (ENOMEM, strerror (ENOMEM));
+nih_error_raise (NIH_DBUS_INVALID_ARGS, NIH_DBUS_INVALID_ARGS_STR);
+((NihDBusErrback_%s)data->err_handler)(data->proxy, data->userdata);
 return;
-""", 1);
+""" % self.extern_name, 1);
         code += indent(out_args.marshal("iter", "data->proxy",
                                         type_error, mem_error), 1)
 
@@ -1407,7 +1406,8 @@ return;
         vars =  [ ( "NihDBusProxy *", "proxy" ) ]
         vars.extend(in_args.vars())
         vars += [ ( "NihDBusCallback_%s" % self.extern_name, "callback" ),
-                ( "void *", "userdata" ) ]
+                  ( "NihDBusErrback_%s" % self.extern_name, "errback" ),
+                  ( "void *", "userdata" ) ]
 
         code = "int\n%s (" % (self.extern_name + "_async", )
         code += (",\n" + " " * (len(self.extern_name + "_async") + 2)).join(lineup_vars(vars))
@@ -1426,19 +1426,13 @@ return;
         code += "\n"
         code += indent("""\
 nih_assert (proxy != NULL);
+nih_assert ((errback != NULL && callback != NULL) ||
+	    (errback == NULL && callback == NULL));
 """, 1);
 
         # Dispatch the input arguments into a new local message
         code += "\n"
         code += indent("""\
-data = nih_alloc (proxy, sizeof (NihAsyncNotifyData));
-if (! data)
-	nih_return_no_memory_error (-1);
-
-data->proxy    = proxy;
-data->userdata = userdata;
-data->handler  = callback;
-
 message = dbus_message_new_method_call (proxy->name, proxy->path, "%s", "%s");
 if (! message)
 	nih_return_no_memory_error (-1);
@@ -1462,13 +1456,32 @@ nih_return_no_memory_error (-1);
         # FIXME expect no reply?
         code += "\n"
         code += indent("""\
+/* If we don't specify a callback, just finish it now */
+if (! callback) {
+	dbus_bool_t succ = dbus_connection_send (proxy->conn, message, NULL);
+	dbus_message_unref (message);
+	if (! succ)
+		nih_return_no_memory_error (-1);
+	return 0;
+}
+
 /* Send the reply, appending it to the outgoing queue and blocking. */
 if (! dbus_connection_send_with_reply (proxy->conn, message, &call, -1)) {
 	dbus_message_unref (message);
         nih_return_no_memory_error (-1);
 }
 
-dbus_pending_call_set_notify(call, (DBusPendingCallNotifyFunction)%s_async_notify, data, NULL);
+data = nih_new (proxy, NihAsyncNotifyData);
+if (! data)
+	nih_return_no_memory_error (-1);
+
+data->proxy       = proxy;
+data->userdata    = userdata;
+data->handler     = callback;
+data->err_handler = errback;
+
+
+dbus_pending_call_set_notify(call, (DBusPendingCallNotifyFunction)%s_async_notify, data, (DBusFreeFunction)nih_free);
 
 dbus_message_unref (message);
 return 0;
@@ -1611,6 +1624,11 @@ return 0;
                               "(*NihDBusCallback_%s)" % self.extern_name,
                               [ ( "NihDBusProxy *", "proxy" ),
                                 ( "void *", "userdata") ] + out_args.vars()
+                           ) )
+            typedefs.append( ("void",
+                              "(*NihDBusErrback_%s)" % self.extern_name,
+                              [ ( "NihDBusProxy *", "proxy" ),
+                                ( "void *", "userdata") ]
                            ) )
         return typedefs
 
@@ -2137,6 +2155,7 @@ class Output(Group):
  **/
 typedef struct nih_async_notify_data {
 	void         *handler;
+	void         *err_handler;
 	void         *userdata;
 	NihDBusProxy *proxy;
 } NihAsyncNotifyData;"""

@@ -35,6 +35,8 @@
 #include "com.netsplit.Nih.Test_impl.h"
 
 
+static void async_fail_errback (NihDBusProxy *my_proxy, void *userdata);
+
 void
 test_method_dispatch (void)
 {
@@ -97,7 +99,7 @@ test_method_dispatch (void)
 	called = 0;
 
 	ret = proxy_test_method_async (proxy, "test data", 0,
-			async_with_valid_argument, "userdata");
+			async_with_valid_argument, async_fail_errback, "userdata");
 
 	TEST_EQ (ret, 0);
 
@@ -946,6 +948,13 @@ test_method_dispatch (void)
 	nih_free (proxy);
 
 	my_teardown (conn);
+}
+
+
+static void
+async_fail_errback (NihDBusProxy *my_proxy, void *userdata)
+{
+	TEST_FAILED ("Called asynchronous error handler when we shouldn't");
 }
 
 

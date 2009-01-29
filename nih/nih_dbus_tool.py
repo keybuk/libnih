@@ -1481,7 +1481,7 @@ data->handler     = callback;
 data->err_handler = errback;
 
 
-dbus_pending_call_set_notify(call, (DBusPendingCallNotifyFunction)%s_async_notify, data, (DBusFreeFunction)async_notify_data_free);
+dbus_pending_call_set_notify(call, (DBusPendingCallNotifyFunction)%s_async_notify, data, (DBusFreeFunction)nih_free);
 
 dbus_message_unref (message);
 return 0;
@@ -2158,13 +2158,7 @@ typedef struct nih_async_notify_data {
 	void         *err_handler;
 	void         *userdata;
 	NihDBusProxy *proxy;
-} NihAsyncNotifyData;
-
-static void
-async_notify_data_free (void *data)
-{
-	nih_free (data);
-}"""
+} NihAsyncNotifyData;"""
         # Extern function prototypes
         protos = self.externPrototypes()
         if protos:

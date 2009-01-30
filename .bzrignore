@@ -4,7 +4,6 @@
 *.gcno
 .deps
 .libs
-core
 Makefile
 Makefile.in
 Makefile.in.in

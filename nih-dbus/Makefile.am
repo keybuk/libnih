@@ -6,14 +6,10 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/intl
 
 
-if HAVE_DBUS
-libraries = libnih-dbus.la
-
 if INSTALL_NIH
-lib_LTLIBRARIES = $(libraries)
+lib_LTLIBRARIES = libnih-dbus.la
 else
-noinst_LTLIBRARIES = $(libraries)
-endif
+noinst_LTLIBRARIES = libnih-dbus.la
 endif
 
 libnih_dbus_la_SOURCES = \
@@ -39,16 +35,12 @@ endif
 EXTRA_DIST = libnih-dbus.ver libnih-dbus.supp
 
 
-if HAVE_DBUS
 if INSTALL_NIH
 bin_SCRIPTS = \
 	nih-dbus-tool
 else
-if HAVE_PYTHON
 noinst_SCRIPTS = \
 	nih-dbus-tool
-endif
-endif
 endif
 
 CLEANFILES = nih-dbus-tool
@@ -64,7 +56,6 @@ nih-dbus-tool: nih_dbus_tool.py
 	chmod +x $@
 
 
-if HAVE_DBUS
 if INSTALL_NIH
 include_HEADERS = \
 	libnih-dbus.h
@@ -79,10 +70,8 @@ nihdbusinclude_HEADERS = \
 	dbus_util.h \
 	test_dbus.h
 endif
-endif
 
 
-if HAVE_DBUS
 TESTS = \
 	test_dbus_error \
 	test_dbus_connection \
@@ -180,7 +169,6 @@ EXTRA_DIST += \
 	$(com_netsplit_Nih_Test_object_XML) \
 	$(com_netsplit_Nih_Test_proxy_OUTPUTS) \
 	$(com_netsplit_Nih_Test_proxy_XML)
-endif
 
 
 clean-local:

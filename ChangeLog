@@ -1,3 +1,10 @@
+2009-01-30  Scott James Remnant  <scott@netsplit.com>
+
+	* Makefile.am (SUBDIRS): conditionally add the nih-dbus directory
+	depending on HAVE_DBUS
+	* nih-dbus/Makefile.am: which means we don't have to conditionalise
+	anything in this file, cleaning things up a bit.
+
 2009-01-29  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus/tests/test_com.netsplit.Nih.Test_proxy.c (test_method_dispatch): 

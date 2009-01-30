@@ -1,6 +1,10 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = m4 intl nih nih-dbus po
+SUBDIRS = m4 intl nih po
+
+if HAVE_DBUS
+SUBDIRS += nih-dbus
+endif
 
 EXTRA_DIST = HACKING
 

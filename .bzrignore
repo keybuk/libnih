@@ -41,8 +41,9 @@ nih/libnih.la
 nih/test_*
 nih-dbus/libnih-dbus.la
 nih-dbus/test_*
-nih-dbus/nih-dbus-tool
-nih-dbus/tests/com.netsplit.Nih.Test_object.c
-nih-dbus/tests/com.netsplit.Nih.Test_object.h
-nih-dbus/tests/com.netsplit.Nih.Test_proxy.c
-nih-dbus/tests/com.netsplit.Nih.Test_proxy.h
+nih-dbus-tool/nih-dbus-tool
+nih-dbus-tool/test_*
+nih-dbus-tool/tests/com.netsplit.Nih.Test_object.c
+nih-dbus-tool/tests/com.netsplit.Nih.Test_object.h
+nih-dbus-tool/tests/com.netsplit.Nih.Test_proxy.c
+nih-dbus-tool/tests/com.netsplit.Nih.Test_proxy.h

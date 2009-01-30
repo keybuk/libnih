@@ -3,7 +3,7 @@
 SUBDIRS = m4 intl nih po
 
 if HAVE_DBUS
-SUBDIRS += nih-dbus
+SUBDIRS += nih-dbus nih-dbus-tool
 endif
 
 EXTRA_DIST = HACKING

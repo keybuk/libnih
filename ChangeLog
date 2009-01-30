@@ -1,5 +1,18 @@
 2009-01-30  Scott James Remnant  <scott@netsplit.com>
 
+	* configure.ac: Create nih-dbus-tool Makefile
+	* Makefile.am (SUBDIRS): Add nih-dbus-tool sub-directory
+	* nih-dbus-tool/Makefile.am: Include rules to create nih-dbus-tool
+	and its tests
+	* nih-dbus/Makefile.am: Remove those rules from here
+	* nih-dbus/nih_dbus_tool.py: Move to nih-dbus-tool/nih_dbus_tool.py
+	* nih-dbus/tests/com.netsplit.Nih.Test.xml,
+	nih-dbus/tests/com.netsplit.Nih.Test_impl.c,
+	nih-dbus/tests/com.netsplit.Nih.Test_impl.h,
+	nih-dbus/tests/test_com.netsplit.Nih.Test_object.c,
+	nih-dbus/tests/test_com.netsplit.Nih.Test_proxy.c: Move to
+	nih-dbus-tool/tests
+	
 	* Makefile.am (SUBDIRS): conditionally add the nih-dbus directory
 	depending on HAVE_DBUS
 	* nih-dbus/Makefile.am: which means we don't have to conditionalise

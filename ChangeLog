@@ -1,5 +1,7 @@
 2009-01-30  Scott James Remnant  <scott@netsplit.com>
 
+	* Makefile.am (SUBDIRS): po needs to be last, so always append
+
 	* configure.ac: Create nih-dbus-tool Makefile
 	* Makefile.am (SUBDIRS): Add nih-dbus-tool sub-directory
 	* nih-dbus-tool/Makefile.am: Include rules to create nih-dbus-tool

@@ -206,7 +206,8 @@ nih_option_parser (const void *parent,
 		char *arg;
 
 		arg = ctx.argv[ctx.arg];
-		if ((arg[0] != '-') || (ctx.optend && ctx.arg > ctx.optend)) {
+		if ((arg[0] != '-') || (arg[1] == '\0')
+		    || (ctx.optend && ctx.arg > ctx.optend)) {
 			/* Not an option */
 			if (ctx.arg > ctx.nonopt) {
 				NIH_MUST (nih_str_array_add

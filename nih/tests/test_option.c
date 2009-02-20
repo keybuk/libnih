@@ -146,6 +146,25 @@ test_parser (void)
 	}
 
 
+	/* Check that a dash on its own is not taken from the arguments.
+	 */
+	TEST_FEATURE ("with lone dash");
+	TEST_ALLOC_FAIL {
+		argc = 0;
+		argv[argc++] = "ignored";
+		argv[argc++] = "-";
+		argv[argc] = NULL;
+
+		args = nih_option_parser (NULL, argc, argv, options, FALSE);
+
+		TEST_NE_P (args, NULL);
+		TEST_EQ_STR (args[0], "-");
+		TEST_EQ_P (args[1], NULL);
+
+		nih_free (args);
+	}
+
+
 	/* Check that a single short option is taken from the arguments and
 	 * the appropriate variable set.
 	 */

@@ -1,5 +1,9 @@
 2009-02-20  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/option.c (nih_option_parser): Fix a bug where a lone dash
+	would be eaten instead of treated as an argument
+	* nih/tests/test_option.c (test_parser): Add test case
+
 	* nih/option.c (nih_option_help): Support the bugs address being
 	a URL, and slightly change the wording we use.
 

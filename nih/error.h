@@ -139,19 +139,26 @@ typedef struct nih_error_info {
  * The raised error remains raised and should be dealt with following
  * this function, thus you should store the value of the expression so you
  * know whether or not an error occurred.
+ *
+ * Returns: value of expression @_e which will be evaluated as many times
+ * as necessary to become true.
  **/
-#define NIH_SHOULD(_e)						  \
-	while (! (_e)) {					  \
-		NihError *_nih_should_err;			  \
-								  \
-		_nih_should_err = nih_error_get ();		  \
-		if (_nih_should_err->number == ENOMEM) {	  \
-			nih_free (_nih_should_err);		  \
-		} else {					  \
-			nih_error_raise_again (_nih_should_err);  \
-			break;					  \
-		}						  \
-	}
+#define NIH_SHOULD(_e)							\
+	({								\
+		typeof (_e) __ret;					\
+		while (! (__ret = (_e))) {				\
+			NihError *_nih_should_err;			\
+									\
+			_nih_should_err = nih_error_get ();		\
+			if (_nih_should_err->number == ENOMEM) {	\
+				nih_free (_nih_should_err);		\
+			} else {					\
+				nih_error_raise_again (_nih_should_err); \
+				break;					\
+			}						\
+		}							\
+		__ret;							\
+	})
 
 
 NIH_BEGIN_EXTERN

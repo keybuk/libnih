@@ -139,8 +139,12 @@
  * For situations where the the expression can raise an NihError and returns
  * false, where an error can include out-of-memory, you may want to use
  * NIH_SHOULD() to spin on OOM but break on other conditions.
+ *
+ * Returns: value of expression @_e which will be evaluated as many times
+ * as necessary to become true.
  **/
-#define NIH_MUST(_e) while (! (_e))
+#define NIH_MUST(_e)				\
+	({ typeof (_e) __ret; while (! (__ret = (_e))); __ret; })
 
 /**
  * NIH_ZERO:
@@ -149,8 +153,12 @@
  * Repeats the expression @_e until it yields a zero value, normally used
  * around functions that return zero to indicate success and non-zero to
  * indicate a temporary failure.
+ *
+ * Returns: value of expression @_e which will be evaluated as many times
+ * as necessary to become zero.
  **/
-#define NIH_ZERO(_e) while ((_e))
+#define NIH_ZERO(_e)						\
+	({ typeof (_e) __ret; while ((__ret = (_e))); __ret; })
 
 
 /* Make gettext friendlier */

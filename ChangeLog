@@ -1,9 +1,14 @@
+2009-02-20  Casey Dahlin  <cdahlin@redhat.com>
+
+	* nih/macros.h (NIH_MUST, NIH_ZERO): Use the GCC statement
+	expression extension (also used by nih_min and nih_max) to allow
+	these macros to return the value of their expression.
+	* nih/error.h (NIH_SHOULD): Also return its value.
+
 2009-02-20  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/Makefile.am (test_com_netsplit_Nih_Test_object_LDADD)
 	(test_com_netsplit_Nih_Test_proxy_LDADD): Fix path to libnih-dbus.la
-
-2009-02-20  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/option.c (nih_option_parser): Fix a bug where a lone dash
 	would be eaten instead of treated as an argument

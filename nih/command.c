@@ -370,8 +370,6 @@ nih_command_help (NihCommand  *commands)
 
 	/* Count the number of command groups */
 	for (cmd = commands; cmd->command; cmd++) {
-		NihCommandGroup **new_groups;
-
 		if (! cmd->group) {
 			other = TRUE;
 			continue;
@@ -385,10 +383,9 @@ nih_command_help (NihCommand  *commands)
 		if (group < ngroups)
 			continue;
 
-		new_groups = NIH_MUST (nih_realloc (groups, NULL,
+		groups = NIH_MUST (nih_realloc (groups, NULL,
 						    (sizeof (NihCommandGroup *)
 						     * (ngroups + 1))));
-		groups = new_groups;
 		groups[ngroups++] = cmd->group;
 	}
 

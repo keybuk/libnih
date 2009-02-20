@@ -835,8 +835,6 @@ nih_option_help (NihOption *options)
 	/* Count the number of option groups */
 	ngroups = 0;
 	for (opt = options; (opt->option || opt->long_option); opt++) {
-		NihOptionGroup **new_groups;
-
 		if (! opt->group) {
 			other = TRUE;
 			continue;
@@ -850,10 +848,9 @@ nih_option_help (NihOption *options)
 		if (group < ngroups)
 			continue;
 
-		new_groups = NIH_MUST (nih_realloc (groups, NULL,
+		groups = NIH_MUST (nih_realloc (groups, NULL,
 						    (sizeof (NihOptionGroup *)
 						     * (ngroups + 1))));
-		groups = new_groups;
 		groups[ngroups++] = opt->group;
 	}
 

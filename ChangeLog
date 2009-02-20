@@ -1,5 +1,11 @@
 2009-02-20  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/option.c (nih_option_help),
+	* nih/command.c (nih_command_help),
+	* nih-dbus-tool/tests/com.netsplit.Nih.Test_impl.c (my_str_to_int32_array): 
+	No need for a new_* temporary variable when looping over nih_realloc
+	with NIH_MUST.
+
 	* nihify: Add nih-dbus-tool symlink too
 
 	* nih/watch.c (nih_watch_new): Update to set variable outside of

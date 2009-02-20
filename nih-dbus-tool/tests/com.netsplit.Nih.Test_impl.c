@@ -580,15 +580,13 @@ my_str_to_int32_array (void            *data,
 
 	parts = nih_str_split (NULL, input, " ", FALSE);
 	for (p = parts; p && *p; p++) {
-		int      i;
-		int32_t *new_array;
+		int i;
 
 		sscanf (*p, "%d", &i);
 
-		new_array = NIH_MUST (nih_realloc (
+		*array = NIH_MUST (nih_realloc (
 				  *array, message,
 				  sizeof (int32_t) * (*array_len + 1)));
-		*array = new_array;
 		(*array)[(*array_len)++] = i;
 	}
 

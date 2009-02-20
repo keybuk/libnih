@@ -1,5 +1,7 @@
 2009-02-20  Scott James Remnant  <scott@netsplit.com>
 
+	* nihify: Add nih-dbus-tool symlink too
+
 	* nih/watch.c (nih_watch_new): Update to set variable outside of
 	NIH_SHOULD and NIH_MUST macros.
 	(nih_watch_add, nih_watch_handle),

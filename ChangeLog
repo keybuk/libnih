@@ -1,5 +1,8 @@
 2009-02-20  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/option.c (nih_option_help): Support the bugs address being
+	a URL, and slightly change the wording we use.
+
 	* nih/libnih.ver: We have to export anything beginning _nih_* and
 	the program_name and package_* variables.
 

@@ -906,8 +906,13 @@ nih_option_help (NihOption *options)
 	}
 
 	/* Append the bug report address */
-	if (package_bugreport)
-		printf (_("Report bugs to <%s>\n"), package_bugreport);
+	if (package_bugreport) {
+		if (strchr (package_bugreport, '@')) {
+			printf (_("Report bugs to <%s>\n"), package_bugreport);
+		} else {
+			printf (_("Report bugs at <%s>\n"), package_bugreport);
+		}
+	}
 }
 
 /**

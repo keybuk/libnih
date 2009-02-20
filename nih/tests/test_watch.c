@@ -79,10 +79,10 @@ my_create_handler (void        *data,
 		char *old;
 
 		old = last_path;
-		NIH_MUST (last_path = nih_sprintf (NULL, "%s::%s", old, path));
+		last_path = NIH_MUST (nih_sprintf (NULL, "%s::%s", old, path));
 		nih_free (old);
 	} else {
-		NIH_MUST (last_path = nih_strdup (NULL, path));
+		last_path = NIH_MUST (nih_strdup (NULL, path));
 	}
 }
 
@@ -99,7 +99,7 @@ my_modify_handler (void        *data,
 	if (last_path)
 		nih_free (last_path);
 
-	NIH_MUST (last_path = nih_strdup (NULL, path));
+	last_path = NIH_MUST (nih_strdup (NULL, path));
 }
 
 static void
@@ -115,7 +115,7 @@ my_delete_handler (void       *data,
 		nih_free (last_path);
 
 	if (path) {
-		NIH_MUST (last_path = nih_strdup (NULL, path));
+		last_path = NIH_MUST (nih_strdup (NULL, path));
 		if (! strcmp (path, watch->path))
 			nih_free (watch);
 	} else {

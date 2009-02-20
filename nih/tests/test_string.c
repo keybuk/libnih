@@ -870,7 +870,7 @@ test_array_copy (void)
 	size_t   len;
 
 	TEST_FUNCTION ("nih_str_array_copy");
-	NIH_MUST (args = nih_str_array_new (NULL));
+	args = NIH_MUST (nih_str_array_new (NULL));
 	NIH_MUST (nih_str_array_add (&args, NULL, NULL, "this"));
 	NIH_MUST (nih_str_array_add (&args, NULL, NULL, "is"));
 	NIH_MUST (nih_str_array_add (&args, NULL, NULL, "a"));
@@ -939,7 +939,7 @@ test_array_copy (void)
 	 * element and have the same returned.
 	 */
 	TEST_FEATURE ("with zero-length array");
-	NIH_MUST (args = nih_str_array_new (NULL));
+	args = NIH_MUST (nih_str_array_new (NULL));
 
 	TEST_ALLOC_FAIL {
 		len = 0;
@@ -968,7 +968,7 @@ test_array_append (void)
 	size_t   len;
 
 	TEST_FUNCTION ("nih_str_array_append");
-	NIH_MUST (args = nih_str_array_new (NULL));
+	args = NIH_MUST (nih_str_array_new (NULL));
 	NIH_MUST (nih_str_array_add (&args, NULL, NULL, "this"));
 	NIH_MUST (nih_str_array_add (&args, NULL, NULL, "is"));
 	NIH_MUST (nih_str_array_add (&args, NULL, NULL, "a"));

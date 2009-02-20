@@ -1,3 +1,35 @@
+2009-02-20  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/watch.c (nih_watch_new): Update to set variable outside of
+	NIH_SHOULD and NIH_MUST macros.
+	(nih_watch_add, nih_watch_handle),
+	* nih/alloc.c (nih_alloc_ref_new),
+	* nih/timer.c (nih_timer_init),
+	* nih/signal.c (nih_signal_init),
+	* nih/child.c (nih_child_init),
+	* nih/io.c (nih_io_init),
+	* nih/file.c (nih_dir_walk, nih_dir_walk_scan)
+	(nih_dir_walk_visit),
+	* nih/main.c (nih_main_init_full, nih_main_version)
+	(nih_main_set_pidfile, nih_main_get_pidfile)
+	(nih_main_write_pidfile, nih_main_loop_init),
+	* nih/option.c (nih_option_parser, nih_option_handle_arg)
+	(nih_option_join, nih_option_help, nih_option_group_help),
+	* nih/command.c (nih_command_parser, nih_command_join)
+	(nih_command_help, nih_command_group_help),
+	* nih/logging.c (nih_log_message),
+	* nih/error.c (nih_error_init, nih_error_raise)
+	(nih_error_raise_printf, nih_error_raise_system)
+	(nih_error_push_context),
+	* nih/tests/test_string.c (test_array_copy, test_array_append),
+	* nih/tests/test_watch.c (my_create_handler, my_modify_handler)
+	(my_delete_handler),
+	* nih-dbus/dbus_error.c (nih_dbus_error_raise)
+	(nih_dbus_error_raise_printf),
+	* nih-dbus-tool/tests/com.netsplit.Nih.Test_impl.c ()
+	(my_test_async_method, my_str_to_int32_array): Update to set
+	variable outside of NIH_MUST macro.
+
 2009-02-20  Casey Dahlin  <cdahlin@redhat.com>
 
 	* nih/macros.h (NIH_MUST, NIH_ZERO): Use the GCC statement

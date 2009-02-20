@@ -83,7 +83,7 @@ void
 nih_io_init (void)
 {
 	if (! nih_io_watches)
-		NIH_MUST (nih_io_watches = nih_list_new (NULL));
+		nih_io_watches = NIH_MUST (nih_list_new (NULL));
 }
 
 /**

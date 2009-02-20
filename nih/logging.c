@@ -134,7 +134,7 @@ nih_log_message (NihLogLevel  priority,
 		return 1;
 
 	va_start (args, format);
-	NIH_MUST (message = nih_vsprintf (NULL, format, args));
+	message = NIH_MUST (nih_vsprintf (NULL, format, args));
 	va_end (args);
 
 	/* Output the message */

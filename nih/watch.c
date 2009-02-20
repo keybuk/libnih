@@ -141,9 +141,9 @@ nih_watch_new (const void       *parent,
 	nih_assert (path != NULL);
 
 	/* Allocate the NihWatch structure */
-	NIH_MUST (watch = nih_new (parent, NihWatch));
-	NIH_MUST (watch->path = nih_strdup (watch, path));
-	NIH_MUST (watch->created = nih_hash_string_new (watch, 0));
+	watch = NIH_MUST (nih_new (parent, NihWatch));
+	watch->path = NIH_MUST (nih_strdup (watch, path));
+	watch->created = NIH_MUST (nih_hash_string_new (watch, 0));
 
 	watch->subdirs = subdirs;
 	watch->create = create;
@@ -175,7 +175,7 @@ nih_watch_new (const void       *parent,
 	}
 
 	/* Create an NihIo to handle incoming events. */
-	NIH_SHOULD (watch->io = nih_io_reopen (watch, watch->fd, NIH_IO_STREAM,
+	watch->io = NIH_SHOULD (nih_io_reopen (watch, watch->fd, NIH_IO_STREAM,
 					       (NihIoReader)nih_watch_reader,
 					       NULL, NULL, watch));
 	if (! watch->io) {
@@ -273,8 +273,8 @@ nih_watch_add (NihWatch   *watch,
 	nih_assert (path != NULL);
 
 	/* Allocate the NihWatchHandle structure */
-	NIH_MUST (handle = nih_new (watch, NihWatchHandle));
-	NIH_MUST (handle->path = nih_strdup (handle, path));
+	handle = NIH_MUST (nih_new (watch, NihWatchHandle));
+	handle->path = NIH_MUST (nih_strdup (handle, path));
 
 	nih_list_init (&handle->entry);
 
@@ -505,7 +505,7 @@ nih_watch_handle (NihWatch       *watch,
 	if ((! name) || strchr (name, '/'))
 		return;
 
-	NIH_MUST (path = nih_sprintf (NULL, "%s/%s", handle->path, name));
+	path = NIH_MUST (nih_sprintf (NULL, "%s/%s", handle->path, name));
 
 	/* Check the filter */
 	if (watch->filter && watch->filter (watch->data, path))
@@ -528,7 +528,7 @@ nih_watch_handle (NihWatch       *watch,
 
 		/* Delay the create handler when files are first created. */
 		if ((events & IN_CREATE) && (! S_ISDIR (statbuf.st_mode))) {
-			NIH_MUST (entry = nih_list_entry_new (watch));
+			entry = NIH_MUST (nih_list_entry_new (watch));
 			nih_ref (path, entry);
 			entry->str = path;
 

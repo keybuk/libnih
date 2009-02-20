@@ -196,7 +196,7 @@ nih_option_parser (const void *parent,
 	ctx.options = nih_option_join (NULL, options, default_options);
 
 	ctx.nargs = 0;
-	NIH_MUST (ctx.args = nih_str_array_new (parent));
+	ctx.args = NIH_MUST (nih_str_array_new (parent));
 
 	ctx.nonopt = 0;
 	ctx.optend = 0;
@@ -509,7 +509,7 @@ nih_option_handle_arg (NihOptionCtx *ctx,
 		if (*value)
 			nih_free (*value);
 
-		NIH_MUST (*value = nih_strdup (ctx->parent, arg));
+		*value = NIH_MUST (nih_strdup (ctx->parent, arg));
 	}
 
 	return 0;
@@ -593,7 +593,7 @@ nih_option_join (const void      *parent,
 		blen++;
 
 	/* Allocate combined list */
-	NIH_MUST (opts = nih_alloc (parent,
+	opts = NIH_MUST (nih_alloc (parent,
 				    sizeof (NihOption) * (alen + blen + 1)));
 
 	/* Copy options, making sure to copy the last option from b */
@@ -850,7 +850,7 @@ nih_option_help (NihOption *options)
 		if (group < ngroups)
 			continue;
 
-		NIH_MUST (new_groups = nih_realloc (groups, NULL,
+		new_groups = NIH_MUST (nih_realloc (groups, NULL,
 						    (sizeof (NihOptionGroup *)
 						     * (ngroups + 1))));
 		groups = new_groups;
@@ -871,7 +871,7 @@ nih_option_help (NihOption *options)
 	if (synopsis_string) {
 		nih_local char *str;
 
-		NIH_MUST (str = nih_str_screen_wrap (NULL, synopsis_string,
+		str = NIH_MUST (nih_str_screen_wrap (NULL, synopsis_string,
 						     0, 0));
 		printf ("%s\n", str);
 	}
@@ -891,7 +891,7 @@ nih_option_help (NihOption *options)
 	if (help_string) {
 		nih_local char *str;
 
-		NIH_MUST (str = nih_str_screen_wrap (NULL, help_string, 0, 0));
+		str = NIH_MUST (nih_str_screen_wrap (NULL, help_string, 0, 0));
 		printf ("%s\n", str);
 
 		if (package_bugreport || footer_string)
@@ -998,7 +998,7 @@ nih_option_group_help (NihOptionGroup  *group,
 		/* Format the help string to fit in the latter
 		 * half of the screen
 		 */
-		NIH_MUST (str = nih_str_wrap (NULL, opt->help, width, 0, 2));
+		str = NIH_MUST (nih_str_wrap (NULL, opt->help, width, 0, 2));
 
 		/* Write the description to the screen */
 		ptr = str;

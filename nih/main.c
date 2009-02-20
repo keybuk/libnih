@@ -203,12 +203,12 @@ nih_main_init_full (const char *argv0,
 		nih_discard ((char *)package_string);
 
 	if (strcmp (program_name, package_name)) {
-		NIH_MUST (package_string = nih_sprintf (NULL, "%s (%s %s)",
+		package_string = NIH_MUST (nih_sprintf (NULL, "%s (%s %s)",
 							program_name,
 							package_name,
 							package_version));
 	} else {
-		NIH_MUST (package_string = nih_sprintf (NULL, "%s %s",
+		package_string = NIH_MUST (nih_sprintf (NULL, "%s %s",
 							package_name,
 							package_version));
 	}
@@ -246,7 +246,7 @@ nih_main_version (void)
 		printf ("%s\n", package_copyright);
 	printf ("\n");
 
-	NIH_MUST (str = nih_str_screen_wrap (
+	str = NIH_MUST (nih_str_screen_wrap (
 			  NULL, _("This is free software; see the source for "
 				  "copying conditions.  There is NO warranty; "
 				  "not even for MERCHANTABILITY or FITNESS "
@@ -353,7 +353,7 @@ nih_main_set_pidfile (const char *filename)
 
 	if (filename) {
 		nih_assert (filename[0] == '/');
-		NIH_MUST (pid_file = nih_strdup (NULL, filename));
+		pid_file = NIH_MUST (nih_strdup (NULL, filename));
 	}
 }
 
@@ -371,7 +371,7 @@ nih_main_get_pidfile (void)
 	nih_assert (program_name != NULL);
 
 	if (! pid_file)
-		NIH_MUST (pid_file = nih_sprintf (NULL, "%s/%s.pid",
+		pid_file = NIH_MUST (nih_sprintf (NULL, "%s/%s.pid",
 						  VAR_RUN, program_name));
 
 	return pid_file;
@@ -435,7 +435,7 @@ nih_main_write_pidfile (pid_t pid)
 	 */
 	filename = nih_main_get_pidfile ();
 	ptr = strrchr (filename, '/');
-	NIH_MUST (tmpname = nih_sprintf (NULL, "%.*s/.%s.tmp",
+	tmpname = NIH_MUST (nih_sprintf (NULL, "%.*s/.%s.tmp",
 					 (int)(ptr - filename),
 					 filename, ptr + 1));
 
@@ -498,7 +498,7 @@ void
 nih_main_loop_init (void)
 {
 	if (! nih_main_loop_functions)
-		NIH_MUST (nih_main_loop_functions = nih_list_new (NULL));
+		nih_main_loop_functions = NIH_MUST (nih_list_new (NULL));
 
 	/* Set up the interrupt pipe, we need it to be non blocking so that
 	 * we don't accidentally block if there's too many signals been

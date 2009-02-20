@@ -2,7 +2,7 @@
  *
  * error.c - error handling
  *
- * Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ void
 nih_error_init (void)
 {
 	if (! context_stack) {
-		NIH_MUST (context_stack = nih_list_new (NULL));
+		context_stack = NIH_MUST (nih_list_new (NULL));
 
 		nih_error_push_context ();
 	}
@@ -117,7 +117,7 @@ nih_error_raise (int         number,
 
 	nih_error_init ();
 
-	NIH_MUST (error = nih_new (CURRENT_CONTEXT, NihError));
+	error = NIH_MUST (nih_new (CURRENT_CONTEXT, NihError));
 
 	error->number = number;
 	error->message = message;
@@ -150,12 +150,12 @@ nih_error_raise_printf (int         number,
 
 	nih_error_init ();
 
-	NIH_MUST (error = nih_new (CURRENT_CONTEXT, NihError));
+	error = NIH_MUST (nih_new (CURRENT_CONTEXT, NihError));
 
 	error->number = number;
 
 	va_start (args, format);
-	NIH_MUST (error->message = nih_vsprintf (error, format, args));
+	error->message = NIH_MUST (nih_vsprintf (error, format, args));
 	va_end (args);
 
 	nih_error_raise_again (error);
@@ -179,10 +179,10 @@ nih_error_raise_system (void)
 
 	nih_error_init ();
 
-	NIH_MUST (error = nih_new (CURRENT_CONTEXT, NihError));
+	error = NIH_MUST (nih_new (CURRENT_CONTEXT, NihError));
 
 	error->number = saved_errno;
-	NIH_MUST (error->message = nih_strdup (error, strerror (saved_errno)));
+	error->message = NIH_MUST (nih_strdup (error, strerror (saved_errno)));
 
 	nih_error_raise_again (error);
 	errno = saved_errno;
@@ -276,7 +276,7 @@ nih_error_push_context (void)
 
 	nih_error_init ();
 
-	NIH_MUST (new_context = nih_new (context_stack, NihErrorCtx));
+	new_context = NIH_MUST (nih_new (context_stack, NihErrorCtx));
 
 	nih_list_init (&new_context->entry);
 	new_context->error = NULL;

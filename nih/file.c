@@ -547,12 +547,12 @@ nih_dir_walk (const char          *path,
 		return -1;
 
 
-	NIH_MUST (dirs = nih_list_new (NULL));
+	dirs = NIH_MUST (nih_list_new (NULL));
 
 	if (stat (path, &statbuf) == 0) {
 		NihDirEntry *entry;
 
-		NIH_MUST (entry = nih_new (dirs, NihDirEntry));
+		entry = NIH_MUST (nih_new (dirs, NihDirEntry));
 		nih_list_init (&entry->entry);
 		nih_alloc_set_destructor (entry, nih_list_destroy);
 		entry->dev = statbuf.st_dev;
@@ -599,7 +599,7 @@ nih_dir_walk_scan (const char    *path,
 		nih_return_system_error (NULL);
 
 	npaths = 0;
-	NIH_MUST (paths = nih_str_array_new (NULL));
+	paths = NIH_MUST (nih_str_array_new (NULL));
 
 	while ((ent = readdir (dir)) != NULL) {
 		nih_local char *subpath = NULL;
@@ -609,7 +609,7 @@ nih_dir_walk_scan (const char    *path,
 		    || (! strcmp (ent->d_name, "..")))
 			continue;
 
-		NIH_MUST (subpath = nih_sprintf (NULL, "%s/%s",
+		subpath = NIH_MUST (nih_sprintf (NULL, "%s/%s",
 						 path, ent->d_name));
 
 		if (filter && filter (data, subpath))
@@ -707,7 +707,7 @@ nih_dir_walk_visit (const char          *dirname,
 		/* Record the device and inode numbers in the stack so that
 		 * we can detect directory loops.
 		 */
-		NIH_MUST (entry = nih_new (NULL, NihDirEntry));
+		entry = NIH_MUST (nih_new (NULL, NihDirEntry));
 		nih_list_init (&entry->entry);
 		nih_alloc_set_destructor (entry, nih_list_destroy);
 		entry->dev = statbuf.st_dev;

@@ -63,7 +63,7 @@ void
 nih_child_init (void)
 {
 	if (! nih_child_watches)
-		NIH_MUST (nih_child_watches = nih_list_new (NULL));
+		nih_child_watches = NIH_MUST (nih_list_new (NULL));
 }
 
 

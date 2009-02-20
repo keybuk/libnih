@@ -562,7 +562,7 @@ nih_alloc_ref_new (NihAllocCtx *parent,
 	nih_assert (child != NULL);
 	nih_assert (child->destructor != NIH_ALLOC_FINALISED);
 
-	NIH_MUST (ref = malloc (sizeof (NihAllocRef)));
+	ref = NIH_MUST (malloc (sizeof (NihAllocRef)));
 
 	nih_list_init (&ref->children_entry);
 	nih_list_init (&ref->parents_entry);

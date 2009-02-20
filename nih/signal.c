@@ -140,7 +140,7 @@ void
 nih_signal_init (void)
 {
 	if (! nih_signals)
-		NIH_MUST (nih_signals = nih_list_new (NULL));
+		nih_signals = NIH_MUST (nih_list_new (NULL));
 }
 
 

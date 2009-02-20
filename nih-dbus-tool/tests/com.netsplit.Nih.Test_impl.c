@@ -215,13 +215,13 @@ my_test_async_method (void           *data,
 		return -1;
 	}
 
-	NIH_MUST (method = nih_new (NULL, AsyncMethod));
+	method = NIH_MUST (nih_new (NULL, AsyncMethod));
 
 	nih_ref (message, method);
 	method->message = message;
 	TEST_FREE_TAG (method->message);
 
-	NIH_MUST (method->input = nih_strdup (method, input));
+	method->input = NIH_MUST (nih_strdup (method, input));
 
 	method->flags = flags;
 
@@ -585,7 +585,7 @@ my_str_to_int32_array (void            *data,
 
 		sscanf (*p, "%d", &i);
 
-		NIH_MUST (new_array = nih_realloc (
+		new_array = NIH_MUST (nih_realloc (
 				  *array, message,
 				  sizeof (int32_t) * (*array_len + 1)));
 		*array = new_array;

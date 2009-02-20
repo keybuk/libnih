@@ -56,7 +56,7 @@ void
 nih_timer_init (void)
 {
 	if (! nih_timers)
-		NIH_MUST (nih_timers = nih_list_new (NULL));
+		nih_timers = NIH_MUST (nih_list_new (NULL));
 }
 
 

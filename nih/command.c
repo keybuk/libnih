@@ -136,7 +136,7 @@ nih_command_parser (const void *parent,
 					   options, cmds, cmd);
 
 	/* Set help strings to make ordinary --help look right */
-	NIH_MUST (footer = nih_sprintf (NULL, _("For a list of commands, "
+	footer = NIH_MUST (nih_sprintf (NULL, _("For a list of commands, "
 						"try `%s help'."),
 					program_name));
 	nih_option_set_footer (footer);
@@ -174,7 +174,7 @@ nih_command_parser (const void *parent,
 		;
 
 	/* Set the usage stem to include the command name */
-	NIH_MUST (stem = nih_sprintf (NULL, _("%s [OPTION]..."),
+	stem = NIH_MUST (nih_sprintf (NULL, _("%s [OPTION]..."),
 				      cmd->command));
 	nih_option_set_usage_stem (stem);
 
@@ -230,7 +230,7 @@ nih_command_join (const void       *parent,
 		blen++;
 
 	/* Allocate combined list */
-	NIH_MUST (cmds = nih_alloc (parent,
+	cmds = NIH_MUST (nih_alloc (parent,
 				    sizeof (NihCommand) * (alen + blen + 1)));
 
 	/* Copy options, making sure to copy the last option from b */
@@ -385,7 +385,7 @@ nih_command_help (NihCommand  *commands)
 		if (group < ngroups)
 			continue;
 
-		NIH_MUST (new_groups = nih_realloc (groups, NULL,
+		new_groups = NIH_MUST (nih_realloc (groups, NULL,
 						    (sizeof (NihCommandGroup *)
 						     * (ngroups + 1))));
 		groups = new_groups;
@@ -457,7 +457,7 @@ nih_command_group_help (NihCommandGroup  *group,
 		/* Format the synopsis string to fit in the latter
 		 * half of the screen
 		 */
-		NIH_MUST (str = nih_str_wrap (NULL, cmd->synopsis,
+		str = NIH_MUST (nih_str_wrap (NULL, cmd->synopsis,
 					      width, 0, 2));
 
 		/* Write the description to the screen */

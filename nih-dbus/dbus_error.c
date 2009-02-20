@@ -59,11 +59,11 @@ nih_dbus_error_raise (const char *name,
 	nih_assert (name != NULL);
 	nih_assert (message != NULL);
 
-	NIH_MUST (err = nih_new (NULL, NihDBusError));
+	err = NIH_MUST (nih_new (NULL, NihDBusError));
 
 	err->error.number = NIH_DBUS_ERROR;
-	NIH_MUST (err->name = nih_strdup (err, name));
-	NIH_MUST (err->error.message = nih_strdup (err, message));
+	err->name = NIH_MUST (nih_strdup (err, name));
+	err->error.message = NIH_MUST (nih_strdup (err, message));
 
 	nih_error_raise_again (&err->error);
 }
@@ -96,14 +96,14 @@ nih_dbus_error_raise_printf (const char *name,
 	nih_assert (name != NULL);
 	nih_assert (format != NULL);
 
-	NIH_MUST (err = nih_new (NULL, NihDBusError));
+	err = NIH_MUST (nih_new (NULL, NihDBusError));
 
 	err->error.number = NIH_DBUS_ERROR;
 
-	NIH_MUST (err->name = nih_strdup (err, name));
+	err->name = NIH_MUST (nih_strdup (err, name));
 
 	va_start (args, format);
-	NIH_MUST (err->error.message = nih_vsprintf (err, format, args));
+	err->error.message = NIH_MUST (nih_vsprintf (err, format, args));
 	va_end (args);
 
 	nih_error_raise_again (&err->error);

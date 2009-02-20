@@ -1,6 +1,13 @@
 LIBNIH_0 {
 	global:
 		nih_*;
+		_nih_*;
+		program_name;
+		package_name;
+		package_version;
+		package_copyright;
+		package_bugreport;
+		package_string;
 	local:
 		*;
 };

@@ -1,5 +1,8 @@
 2009-02-20  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/libnih.ver: We have to export anything beginning _nih_* and
+	the program_name and package_* variables.
+
 	* configure.ac (AC_INIT): Give bugs address as a URL
 
 2009-01-30  Scott James Remnant  <scott@netsplit.com>

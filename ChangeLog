@@ -1,5 +1,10 @@
 2009-02-20  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/Makefile.am (test_com_netsplit_Nih_Test_object_LDADD)
+	(test_com_netsplit_Nih_Test_proxy_LDADD): Fix path to libnih-dbus.la
+
+2009-02-20  Scott James Remnant  <scott@netsplit.com>
+
 	* nih/option.c (nih_option_parser): Fix a bug where a lone dash
 	would be eaten instead of treated as an argument
 	* nih/tests/test_option.c (test_parser): Add test case

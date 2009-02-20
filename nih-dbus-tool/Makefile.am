@@ -39,7 +39,7 @@ test_com_netsplit_Nih_Test_object_SOURCES = \
 	tests/com.netsplit.Nih.Test_impl.c tests/com.netsplit.Nih.Test_impl.h
 test_com_netsplit_Nih_Test_object_CFLAGS = $(DBUS_CFLAGS)
 test_com_netsplit_Nih_Test_object_LDFLAGS = -static
-test_com_netsplit_Nih_Test_object_LDADD = ../nih/libnih.la libnih-dbus.la $(DBUS_LIBS)
+test_com_netsplit_Nih_Test_object_LDADD = ../nih/libnih.la ../nih-dbus/libnih-dbus.la $(DBUS_LIBS)
 
 test_com_netsplit_Nih_Test_proxy_SOURCES = \
 	tests/test_com.netsplit.Nih.Test_proxy.c \
@@ -48,7 +48,7 @@ test_com_netsplit_Nih_Test_proxy_SOURCES = \
 	tests/com.netsplit.Nih.Test_impl.c tests/com.netsplit.Nih.Test_impl.h
 test_com_netsplit_Nih_Test_proxy_CFLAGS = $(DBUS_CFLAGS)
 test_com_netsplit_Nih_Test_proxy_LDFLAGS = -static
-test_com_netsplit_Nih_Test_proxy_LDADD = ../nih/libnih.la libnih-dbus.la $(DBUS_LIBS)
+test_com_netsplit_Nih_Test_proxy_LDADD = ../nih/libnih.la ../nih-dbus/libnih-dbus.la $(DBUS_LIBS)
 
 
 com_netsplit_Nih_Test_object_OUTPUTS = \

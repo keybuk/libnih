@@ -1,3 +1,8 @@
+2009-03-22  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/test_files.h (TEST_FILE_MATCH): Add test that lets us match
+	the content of a file line against a wildcard pattern.
+
 2009-02-20  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/option.c (nih_option_help),

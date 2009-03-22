@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <fnmatch.h>
 
 
 /**
@@ -64,6 +65,25 @@
 		if (strcmp (_test_file, (_line))) \
 			TEST_FAILED ("wrong content in file %p (%s), expected '%s' got '%s'", \
 			     (_file), #_file, (_line), _test_file); \
+	} while (0)
+
+/**
+ * TEST_FILE_MATCH:
+ * @_file: FILE to read from,
+ * @_pattern: pattern to expect.
+ *
+ * Check that the next line in the file @_file matches the glob pattern
+ * @_pattern, which should include the terminating newline if one is expected.
+ **/
+#define TEST_FILE_MATCH(_file, _pattern) \
+	do { \
+		char _test_file[512]; \
+		if (! fgets (_test_file, sizeof (_test_file), (_file))) \
+			TEST_FAILED ("eof on file %p (%s), expected '%s'", \
+				     (_file), #_file, (_pattern)); \
+		if (fnmatch ((_pattern), _test_file, 0))		\
+			TEST_FAILED ("wrong content in file %p (%s), expected '%s' got '%s'", \
+			     (_file), #_file, (_pattern), _test_file); \
 	} while (0)
 
 /**

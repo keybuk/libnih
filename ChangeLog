@@ -1,5 +1,9 @@
 2009-03-22  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/Makefile.am (tests): Add rule to build all test cases without
+	running them (useful when using valgrind).
+	* nih-dbus/Makefile.am (tests): Add the same rule.
+
 	* nih/test_values.h (TEST_EQ_STR, TEST_EQ_STRN, TEST_EQ_MEM)
 	(TEST_NE_STR, TEST_NE_STRN, TEST_NE_MEM): Guard against NULL being
 	parsed.

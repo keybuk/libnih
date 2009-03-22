@@ -49,7 +49,10 @@ extern void (*__nih_free)(void *ptr);
  * enough space for at least @_sz bytes.
  **/
 #define TEST_ALLOC_SIZE(_ptr, _sz)					\
-	if (nih_alloc_size (_ptr) < (_sz))				\
+	if ((_ptr) == NULL) {						\
+		TEST_FAILED ("wrong value for block %s, got unexpected NULL", \
+			     #_ptr);					\
+	} else if (nih_alloc_size (_ptr) < (_sz))			\
 		TEST_FAILED ("wrong size of block %p (%s), expected %zu got %zu", \
 			     (_ptr), #_ptr, (size_t)(_sz),		\
 			     nih_alloc_size (_ptr))
@@ -64,7 +67,10 @@ extern void (*__nih_free)(void *ptr);
  * whether @_ptr has any parents.
  **/
 #define TEST_ALLOC_PARENT(_ptr, _parent)				\
-	if (! nih_alloc_parent ((_ptr), (_parent)))			\
+	if ((_ptr) == NULL) {						\
+		TEST_FAILED ("wrong value for block %s, got unexpected NULL", \
+			     #_ptr);					\
+	} else if (! nih_alloc_parent ((_ptr), (_parent)))		\
 		TEST_FAILED ("wrong parent of block %p (%s), expected %p (%s)",	\
 			     (_ptr), #_ptr, (_parent), #_parent)
 
@@ -76,7 +82,10 @@ extern void (*__nih_free)(void *ptr);
  * no parent references.
  **/
 #define TEST_ALLOC_ORPHAN(_ptr)						\
-	if (nih_alloc_parent ((_ptr), NULL))				\
+	if ((_ptr) == NULL) {						\
+		TEST_FAILED ("wrong value for block %s, got unexpected NULL", \
+			     #_ptr);					\
+	} else if (nih_alloc_parent ((_ptr), NULL))				\
 		TEST_FAILED ("wrong parent of block %p (%s), expected none", \
 			     (_ptr), #_ptr)
 

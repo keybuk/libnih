@@ -108,7 +108,10 @@
  * Check that the two strings @_a and @_b are equal.
  **/
 #define TEST_EQ_STR(_a, _b) \
-	if (strcmp ((_a), (_b))) \
+	if ((_a) == NULL) {						\
+		TEST_FAILED ("wrong value for %s, expected '%s' got NULL", \
+			     #_a, (_b));				\
+	} else if (strcmp ((_a), (_b)))					\
 		TEST_FAILED ("wrong value for %s, expected '%s' got '%s'", \
 			     #_a, (_b), (_a))
 
@@ -121,9 +124,12 @@
  * the second string.
  **/
 #define TEST_EQ_STRN(_a, _b) \
-	if (strncmp ((_a), (_b), strlen (_b))) \
+	if ((_a) == NULL) {						\
+		TEST_FAILED ("wrong value for %s, expected '%.*s' got NULL", \
+			     #_a, (int)strlen (_b), (_b));		\
+	} else if (strncmp ((_a), (_b), strlen (_b)))			\
 		TEST_FAILED ("wrong value for %s, expected '%.*s' got '%.*s'", \
-			     #_a, (int)strlen (_b), (_b), \
+			     #_a, (int)strlen (_b), (_b),		\
 			     (int)strlen (_b), (_a))
 
 /**
@@ -136,7 +142,10 @@
  * identical.
  **/
 #define TEST_EQ_MEM(_a, _b, _l) \
-	if (memcmp ((_a), (_b), (_l))) \
+	if ((_a) == NULL) {						\
+		TEST_FAILED ("wrong value for %s, got unexpected NULL",	\
+			     #_a);					\
+	} else if (memcmp ((_a), (_b), (_l)))				\
 		TEST_FAILED ("wrong %zu bytes at %p (%s), expected %p (%s)", \
 			     (size_t)(_l), (_a), #_a, (_b), #_b)
 
@@ -186,7 +195,10 @@
  * Check that the two strings @_a and @_b are not equal.
  **/
 #define TEST_NE_STR(_a, _b) \
-	if (! strcmp ((_a), (_b))) \
+	if ((_a) == NULL) {						\
+		TEST_FAILED ("wrong value for %s, expected string got NULL", \
+			     #_a);					\
+	} else if (! strcmp ((_a), (_b)))				\
 		TEST_FAILED ("wrong value for %s, got unexpected '%s'", \
 			     #_a, (_b))
 
@@ -199,7 +211,10 @@
  * of the second string.
  **/
 #define TEST_NE_STRN(_a, _b) \
-	if (! strncmp ((_a), (_b), strlen (_b))) \
+	if ((_a) == NULL) {						\
+		TEST_FAILED ("wrong value for %s, got unexpected NULL",	\
+			     #_a);					\
+	} else if (! strncmp ((_a), (_b), strlen (_b)))			\
 		TEST_FAILED ("wrong value for %s, got unexpected '%.*s'", \
 			     #_a, (int)strlen (_b), (_b))
 
@@ -213,7 +228,10 @@
  * different.
  **/
 #define TEST_NE_MEM(_a, _b, _l) \
-	if (! memcmp ((_a), (_b), (_l))) \
+	if ((_a) == NULL) {						\
+		TEST_FAILED ("wrong value for %s, got unexpected NULL",	\
+			     #_a);					\
+	} else if (! memcmp ((_a), (_b), (_l)))				\
 		TEST_FAILED ("wrong %zu bytes at %p (%s), got unexpected %p (%s)", \
 			     (size_t)(_l), (_a), #_a, (_b), #_b)
 

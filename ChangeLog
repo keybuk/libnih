@@ -1,5 +1,8 @@
 2009-03-27  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/com.netsplit.Nih.Test_impl.c: Add missing
+	signal.h include.
+
 	* m4/compiler.m4: Add -Wextra, but turn off some of the silly ones.
 	* nih/io.c (nih_io_buffer_resize): Remove unnecessary assert.
 	* nih/file.c (nih_file_read, nih_file_map): Be explicit when

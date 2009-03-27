@@ -112,7 +112,7 @@ nih_file_read (const void *parent,
 	if (fstat (fileno (fp), &statbuf) < 0)
 		goto error;
 
-	if (statbuf.st_size > (typeof (statbuf.st_size))SIZE_MAX) {
+	if ((size_t)statbuf.st_size > SIZE_MAX) {
 		errno = EFBIG;
 		goto error;
 	}
@@ -177,7 +177,7 @@ nih_file_map (const char *path,
 	if (fstat (fd, &statbuf) < 0)
 		goto error;
 
-	if (statbuf.st_size > (typeof (statbuf.st_size))SIZE_MAX) {
+	if ((size_t)statbuf.st_size > SIZE_MAX) {
 		errno = EFBIG;
 		goto error;
 	}

@@ -51,10 +51,10 @@ static DBusHandlerResult nih_dbus_object_introspect (DBusConnection *conn,
  *
  * Table of functions for handling D-Bus objects.
  **/
-const static DBusObjectPathVTable nih_dbus_object_vtable = {
+static const DBusObjectPathVTable nih_dbus_object_vtable = {
 	(DBusObjectPathUnregisterFunction)nih_dbus_object_unregister,
 	(DBusObjectPathMessageFunction)nih_dbus_object_message,
-	NULL
+	NULL,
 };
 
 

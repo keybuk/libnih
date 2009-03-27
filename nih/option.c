@@ -384,7 +384,7 @@ nih_option_long (NihOptionCtx *ctx)
 	 */
 	arg = ctx->argv[ctx->arg] + 2;
 	ptr = strchr (arg, '=');
-	len = (ptr ? ptr - arg : strlen (arg));
+	len = (ptr ? (size_t)(ptr - arg) : strlen (arg));
 
 	/* Find the option */
 	opt = nih_option_get_long (ctx, arg, len);
@@ -940,7 +940,7 @@ nih_option_group_help (NihOptionGroup  *group,
 		printf (_("Options:\n"));
 	}
 
-	width = nih_max (nih_str_screen_width (), 50) - 31;
+	width = nih_max (nih_str_screen_width (), 50U) - 31;
 
 	for (opt = options; (opt->option || opt->long_option); opt++) {
 		nih_local char *str = NULL;

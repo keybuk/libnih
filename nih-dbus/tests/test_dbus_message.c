@@ -127,15 +127,15 @@ my_error_connect (DBusServer     *server,
 {
 	NihDBusObject *object;
 
-	const static NihDBusMethod com_netsplit_Nih_Glue_methods[] = {
+	static const NihDBusMethod com_netsplit_Nih_Glue_methods[] = {
 		{ "ReturnError", my_return_error, NULL },
 		{ NULL }
 	};
-	const static NihDBusInterface com_netsplit_Nih_Glue = {
+	static const NihDBusInterface com_netsplit_Nih_Glue = {
 		"com.netsplit.Nih.Glue",
 		com_netsplit_Nih_Glue_methods, NULL, NULL
 	};
-	const static NihDBusInterface *my_interfaces[] = {
+	static const NihDBusInterface *my_interfaces[] = {
 		&com_netsplit_Nih_Glue,
 		NULL,
 	};

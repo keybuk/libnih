@@ -2434,7 +2434,7 @@ test_parse_stanza (void)
 	TEST_EQ_P (last_file, buf);
 	TEST_EQ (last_len, strlen (buf));
 	TEST_EQ (last_pos, 4);
-	TEST_EQ (last_lineno, -1);
+	TEST_EQ (last_lineno, (size_t)-1);
 
 	TEST_EQ (ret, 100);
 
@@ -2461,7 +2461,7 @@ test_parse_stanza (void)
 	TEST_EQ_P (last_file, buf);
 	TEST_EQ (last_len, strlen (buf));
 	TEST_EQ (last_pos, 10);
-	TEST_EQ (last_lineno, -1);
+	TEST_EQ (last_lineno, (size_t)-1);
 
 	TEST_EQ (ret, 100);
 	TEST_EQ (pos, 10);
@@ -2541,7 +2541,7 @@ test_parse_stanza (void)
 	TEST_EQ_P (last_file, buf);
 	TEST_EQ (last_len, strlen (buf));
 	TEST_EQ (last_pos, 7);
-	TEST_EQ (last_lineno, -1);
+	TEST_EQ (last_lineno, (size_t)-1);
 
 	TEST_EQ (ret, 100);
 

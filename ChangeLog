@@ -1,3 +1,19 @@
+2009-03-27  Scott James Remnant  <scott@netsplit.com>
+
+	* m4/compiler.m4: Add -Wextra, but turn off some of the silly ones.
+	* nih/io.c (nih_io_buffer_resize): Remove unnecessary assert.
+	* nih/file.c (nih_file_read, nih_file_map): Be explicit when
+	comparing signed and unsigned types.
+	* nih/option.c (nih_option_long): Cast pointer difference to size_t
+	(nih_option_group_help): Use unsigned constant.
+	* nih/command.c (nih_command_group_help): Use unsigned constant.
+	* nih/tests/test_config.c (test_parse_stanza): Cast -1 to size_t
+	to get the real number.
+	* nih-dbus/dbus_object.c (nih_dbus_object_vtable): Move static to
+	before const.
+	* nih-dbus/tests/test_dbus_message.c (my_error_connect): Put
+	static before const.
+
 2009-03-22  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/Makefile.am (tests): Add rule to build all test cases without

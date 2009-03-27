@@ -2,7 +2,7 @@
 #
 # compiler.m4 - autoconf macros for compiler settings
 #
-# Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+# Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -34,9 +34,9 @@ AC_DEFUN([NIH_COMPILER_WARNINGS],
 	               [Enable additional compiler warnings]),
 [AS_IF([test "x$enable_compiler_warnings" = "xyes"],
        [AS_IF([test "x$GCC" = "xyes"],
-              [CFLAGS="-Wall -Wformat-security -Werror -D_FORTIFY_SOURCE=2 $CFLAGS"])
+              [CFLAGS="-Wall -Wextra -Wno-empty-body -Wno-missing-field-initializers -Wno-unused-parameter -Wformat-security -Werror -D_FORTIFY_SOURCE=2 $CFLAGS"])
         AS_IF([test "x$GXX" = "xyes"],
-       	      [CXXFLAGS="-Wall -Wformat-security -Werror -D_FORTIFY_SOURCE=2 $CXXFLAGS"])])
+       	      [CXXFLAGS="-Wall -Wextra -Wno-empty-body -Wno-missing-field-initializers -Wno-unused-parameter -Wformat-security -Werror -D_FORTIFY_SOURCE=2 $CXXFLAGS"])])
 ])dnl
 ])# NIH_COMPILER_WARNINGS
 

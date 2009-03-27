@@ -289,7 +289,6 @@ nih_io_buffer_resize (NihIoBuffer *buffer,
 	size_t  new_len, new_size;
 
 	nih_assert (buffer != NULL);
-	nih_assert (grow >= 0);
 
 	new_len = buffer->len + grow;
 	if (! new_len) {

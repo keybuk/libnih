@@ -4,6 +4,9 @@
 	  extended to add -Wextra, but turns off a few of the more extreme
 	  warnings
 
+	* TEST_FILE_MATCH() added to allow matching of a line in a file
+	  against a wildcard string
+
 0.2.0  2009-01-29
 
 	* nih_alloc_set_allocator() is now a macro that casts the function

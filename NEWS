@@ -18,6 +18,9 @@
 	  This style is preferred to the previous way of doing it (set ret
 	  inside the macro call) and the code has been updated.
 
+	* nih_option_parser() fixed to not eat an argument containing a
+	  lone dash.
+
 0.2.0  2009-01-29
 
 	* nih_alloc_set_allocator() is now a macro that casts the function

@@ -363,7 +363,7 @@ main (int   argc,
 		int fd;
 
 		fd = open (filename, O_RDONLY);
-		if (! fd) {
+		if (fd < 0) {
 			nih_error ("%s: %s: %s", filename,
 				   _("Unable to open"),
 				   strerror (errno));

@@ -1,5 +1,8 @@
 2009-03-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/main.c (main): open() returns less-than-zero on error
+	not zero, which is standard input!
+
 	* nih-dbus-tool/Makefile.am (test_com_netsplit_Nih_Test_object_CFLAGS)
 	(test_com_netsplit_Nih_Test_proxy_CFLAGS): Remove the CFLAGS
 	overrides, we set this globally in the file.

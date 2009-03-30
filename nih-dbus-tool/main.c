@@ -59,47 +59,13 @@ typedef enum output_mode {
 /* Prototypes for option functions */
 int mode_option (NihOption *option, const char *arg);
 
-
-/**
- * output_mode:
- *
- * Output mode; set to OUTPUT_OBJECT to output code for a local object
- * implementation wrapping existing C functions or OUTPUT_PROXY to output
- * code for a remote object providing C access methods.
- **/
-static OutputMode output_mode = OUTPUT_OBJECT;
-
-/**
- * prefix:
- *
- * Prefix of expected and generated functions.
- **/
-static const char *prefix = NULL;
-
-/**
- * output_path:
- *
- * Path to output C code to, header is automatically placed alongside.
- **/
-static const char *output_path = NULL;
-
-
-
-/**
- * options:
- *
- * Command-line options accepted by this tool.
- **/
-static NihOption options[] = {
-	{ 0,   "mode", N_("output mode: object, or proxy [default: object]"),
-	  NULL, "MODE", &output_mode, mode_option },
-	{ 0,   "prefix", N_("prefix for C functions [default: dbus]"),
-	  NULL, "PREFIX", &prefix, NULL },
-	{ 'o', "output", N_("write C source to FILENAME, header alongside"),
-	  NULL, "FILENAME", &output_path, NULL },
-
-	NIH_OPTION_LAST
-};
+/* Prototypes for local functions */
+char *source_file_path (const void *parent, const char *output_path,
+			const char *filename)
+	__attribute__ ((malloc, warn_unused_result));
+char *header_file_path (const void *parent, const char *output_path,
+			const char *filename)
+	__attribute__ ((malloc, warn_unused_result));
 
 
 /**
@@ -140,15 +106,227 @@ mode_option (NihOption  *option,
 }
 
 
+/**
+ * source_file_path:
+ * @parent: parent object for new string,
+ * @output_path: output path,
+ * @filename: input filename.
+ *
+ * Generates a path to the output source (.c) file from either the output
+ * path given in @output_path or the input filename given in @filename,
+ * depending on which one is not NULL.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the returned string will also be
+ * freed.
+ *
+ * Returns: newly allocated string or NULL if insufficient memory.
+ **/
+char *
+source_file_path (const void *parent,
+		  const char *output_path,
+		  const char *filename)
+{
+	char *path;
+
+	nih_assert ((output_path != NULL) || (filename != NULL));
+
+	if (output_path) {
+		char *ptr;
+
+		/* When the output path is given, return it; but allow for
+		 * the output path being the header to make Makefile rules
+		 * easier, and replace extension with .c when given one.
+		 */
+		ptr = strrchr (output_path, '.');
+		if (ptr && (! strcmp (ptr, ".h"))) {
+			path = nih_strndup (parent, output_path,
+					    ptr - output_path);
+			if (! path)
+				return NULL;
+
+			if (! nih_strcat (&path, parent, ".c")) {
+				nih_free (path);
+				return NULL;
+			}
+		} else {
+			path = nih_strdup (parent, output_path);
+		}
+
+	} else if (filename) {
+		char *ptr;
+
+		/* Always output to the current directory */
+		ptr = strrchr (filename, '/');
+		if (ptr)
+			filename = ptr + 1;
+
+		/* When the input filename is given, strip the extension off
+		 * and replace with .c unless the extension is .c or .h in
+		 * which case we append the .c extension instead
+		 */
+		ptr = strrchr (filename, '.');
+		if (ptr && strcmp (ptr, ".c") && strcmp (ptr, ".h")) {
+			path = nih_strndup (parent, filename, ptr - filename);
+			if (! path)
+				return NULL;
+		} else {
+			path = nih_strdup (parent, filename);
+			if (! path)
+				return NULL;
+		}
+
+		if (! nih_strcat (&path, parent, ".c")) {
+			nih_free (path);
+			return NULL;
+		}
+	}
+
+	return path;
+}
+
+/**
+ * header_file_path:
+ * @parent: parent object for new string,
+ * @output_path: output path,
+ * @filename: input filename.
+ *
+ * Generates a path to the output header (.h) file from either the output
+ * path given in @output_path or the input filename given in @filename,
+ * depending on which one is not NULL.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the returned string will also be
+ * freed.
+ *
+ * Returns: newly allocated string or NULL if insufficient memory.
+ **/
+char *
+header_file_path (const void *parent,
+		  const char *output_path,
+		  const char *filename)
+{
+	char *path;
+
+	nih_assert ((output_path != NULL) || (filename != NULL));
+
+	if (output_path) {
+		char *ptr;
+
+		/* When the output path is given, and is the header file,
+		 * return it; otherwise replace the extension with .h or
+		 * append it if there was no extension
+		 */
+		ptr = strrchr (output_path, '.');
+		if (ptr && (! strcmp (ptr, ".h"))) {
+			path = nih_strdup (parent, output_path);
+		} else if (ptr) {
+			path = nih_strndup (parent, output_path,
+					    ptr - output_path);
+			if (! path)
+				return NULL;
+
+			if (! nih_strcat (&path, parent, ".h")) {
+				nih_free (path);
+				return NULL;
+			}
+		} else {
+			path = nih_strdup (parent, output_path);
+			if (! path)
+				return NULL;
+
+			if (! nih_strcat (&path, parent, ".h")) {
+				nih_free (path);
+				return NULL;
+			}
+		}
+
+
+	} else if (filename) {
+		char *ptr;
+
+		/* Always output to the current directory */
+		ptr = strrchr (filename, '/');
+		if (ptr)
+			filename = ptr + 1;
+
+		/* When the input filename is given, strip the extension off
+		 * and replace with .h unless the extension is .c or .h in
+		 * which case we append the .h extension instead
+		 */
+		ptr = strrchr (filename, '.');
+		if (ptr && strcmp (ptr, ".c") && strcmp (ptr, ".h")) {
+			path = nih_strndup (parent, filename, ptr - filename);
+			if (! path)
+				return NULL;
+		} else {
+			path = nih_strdup (parent, filename);
+			if (! path)
+				return NULL;
+		}
+
+		if (! nih_strcat (&path, parent, ".h")) {
+			nih_free (path);
+			return NULL;
+		}
+	}
+
+	return path;
+}
+
+
+#ifndef TEST
+/**
+ * output_mode:
+ *
+ * Output mode; set to OUTPUT_OBJECT to output code for a local object
+ * implementation wrapping existing C functions or OUTPUT_PROXY to output
+ * code for a remote object providing C access methods.
+ **/
+static OutputMode output_mode = OUTPUT_OBJECT;
+
+/**
+ * prefix:
+ *
+ * Prefix of expected and generated functions.
+ **/
+static const char *prefix = NULL;
+
+/**
+ * output_path:
+ *
+ * Path to output C code to, header is automatically placed alongside.
+ **/
+static const char *output_path = NULL;
+
+
+/**
+ * options:
+ *
+ * Command-line options accepted by this tool.
+ **/
+static NihOption options[] = {
+	{ 0,   "mode", N_("output mode: object, or proxy [default: object]"),
+	  NULL, "MODE", &output_mode, mode_option },
+	{ 0,   "prefix", N_("prefix for C functions [default: dbus]"),
+	  NULL, "PREFIX", &prefix, NULL },
+	{ 'o', "output", N_("write C source to FILENAME, header alongside"),
+	  NULL, "FILENAME", &output_path, NULL },
+
+	NIH_OPTION_LAST
+};
+
+
 int
 main (int   argc,
       char *argv[])
 {
-	char           **args;
-	char            *filename;
-	nih_local char  *source_path = NULL;
-	nih_local char  *header_path = NULL;
-	Node            *node;
+	char **args;
+	char  *filename;
+	char  *path = NULL;
+	Node  *node;
 
 	nih_main_init (argv[0]);
 
@@ -160,63 +338,24 @@ main (int   argc,
 	if (! args)
 		exit (1);
 
-	/* Filename must be specified */
+	/* Filename defaults to standard input when not specified, or when
+	 * specified as "-".
+	 */
 	filename = args[0];
 	if (filename && (! strcmp (filename, "-")))
 		filename = NULL;
 
-	/* Set default prefix if not set */
-	if (! prefix)
-		prefix = "dbus";
-
-	/* Figure out a sane output filename for the source file and header
-	 * file based on either the output path given (which can be the
-	 * header to make Makefile rules easier) or the input filename.
-	 */
-	if (output_path) {
-		char *ptr;
-
-		ptr = strrchr (output_path, '.');
-		if (! ptr) {
-			source_path = nih_strdup (NULL, output_path);
-			header_path = nih_sprintf (NULL, "%s.h", output_path);
-		} else if (strcmp (ptr, ".h")) {
-			source_path = nih_strdup (NULL, output_path);
-			header_path = nih_sprintf (NULL, "%.*s.h",
-						   (int)(ptr - output_path),
-						   output_path);
-		} else {
-			source_path = nih_sprintf (NULL, "%.*s.c",
-						   (int)(ptr - output_path),
-						   output_path);
-			header_path = nih_strdup (NULL, output_path);
-		}
-	} else if (filename) {
-		char *ptr;
-
-		ptr = strrchr (filename, '.');
-		if (ptr && strcmp (ptr, ".c") && strcmp (ptr, ".h")) {
-			source_path = nih_sprintf (NULL, "%.*s.c",
-						   (int)(ptr - filename),
-						   filename);
-			header_path = nih_sprintf (NULL, "%.*s.h",
-						   (int)(ptr - filename),
-						   filename);
-		} else {
-			source_path = nih_sprintf (NULL, "%s.c", filename);
-			header_path = nih_sprintf (NULL, "%s.h", filename);
-		}
-	} else {
+	/* Output path must be specified when we're using standard input */
+	if ((! filename) && (! output_path)) {
 		fprintf (stderr, _("%s: --output must be specified when using standard input\n"),
 			 program_name);
 		nih_main_suggest_help ();
 		exit (1);
 	}
 
-	if ((! source_path) || (! header_path)) {
-		nih_error ("%s", strerror (errno));
-		exit (1);
-	}
+	/* Set default prefix if not set */
+	if (! prefix)
+		prefix = "dbus";
 
 
 	/* Parse the input file, which may be standard input */
@@ -240,5 +379,28 @@ main (int   argc,
 			exit (1);
 	}
 
+	/* Output source file */
+	path = source_file_path (NULL, output_path, filename);
+	if (! path) {
+		nih_error ("%s", strerror (ENOMEM));
+		exit (1);
+	}
+
+	/* FIXME */
+
+	nih_free (path);
+
+	/* Output header file */
+	path = header_file_path (NULL, output_path, filename);
+	if (! path) {
+		nih_error ("%s", strerror (ENOMEM));
+		exit (1);
+	}
+
+	/* FIXME */
+
+	nih_free (path);
+
 	return 0;
 }
+#endif

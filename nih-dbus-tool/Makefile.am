@@ -39,6 +39,7 @@ nih_dbus_tool_LDADD = \
 
 
 TESTS = \
+	test_main \
 	test_symbol \
 	test_node \
 	test_interface \
@@ -52,6 +53,11 @@ TESTS = \
 	test_com.netsplit.Nih.Test_proxy
 
 check_PROGRAMS = $(TESTS)
+
+test_main_SOURCES = tests/test_main.c main.c
+test_main_CFLAGS = $(AM_CFLAGS) -DTEST
+test_main_LDFLAGS = -static
+test_main_LDADD = ../nih/libnih.la
 
 test_symbol_SOURCES = tests/test_symbol.c
 test_symbol_LDFLAGS = -static

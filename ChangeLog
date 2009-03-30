@@ -1,5 +1,23 @@
 2009-03-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/main.c: Re-order so that the option variables, the
+	options list and the main() function can be contained inside a #if
+	directive so we can test the rest.
+	(source_file_path, header_file_path): Factor out the code from
+	main() that generated the source and header file paths so we can
+	test; at the same time, fix them so they don't cast ptrdiff_t to int
+	and always output to the current working directory unless output_path
+	includes one.
+	* nih-dbus-tool/tests/test_main.c: Which means we can test the
+	mode_option(), source_file_path() and header_file_path() functions
+	* nih-dbus-tool/Makefile.am (TESTS): Build and run test_main
+	(test_main_SOURCES, test_main_LDFLAGS, test_main_LDADD): usual
+	details for test_main, except we use main.c as a SOURCE rather than
+	linking in LDADD like we normally do
+	(test_main_CFLAGS): Override CFLAGS to set -DTEST, this causes us
+	to recompile main.c specially for test_main with the main() function
+	#ifdef'd out.
+
 	* nih-dbus/Makefile.am (tests): Move to the bottom of the file
 	* nih/Makefile.am (tests): Move to the bottom of the file
 	* nih-dbus-tool/Makefile.am (tests): Move to the bottom of the file

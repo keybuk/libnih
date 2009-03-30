@@ -61,8 +61,6 @@ TESTS = \
 
 check_PROGRAMS = $(TESTS)
 
-tests: $(BUILT_SOURCES) $(check_PROGRAMS)
-
 test_dbus_error_SOURCES = tests/test_dbus_error.c
 test_dbus_error_CFLAGS = $(DBUS_CFLAGS)
 test_dbus_error_LDFLAGS = -static
@@ -93,6 +91,8 @@ test_dbus_util_CFLAGS = $(DBUS_CFLAGS)
 test_dbus_util_LDFLAGS = -static
 test_dbus_util_LDADD = ../nih/libnih.la libnih-dbus.la $(DBUS_LIBS)
 
+
+tests: $(BUILT_SOURCES) $(check_PROGRAMS)
 
 clean-local:
 	rm -f *.gcno *.gcda

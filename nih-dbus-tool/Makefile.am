@@ -53,8 +53,6 @@ TESTS = \
 
 check_PROGRAMS = $(TESTS)
 
-tests: $(BUILT_SOURCES) $(check_PROGRAMS)
-
 test_symbol_SOURCES = tests/test_symbol.c
 test_symbol_LDFLAGS = -static
 test_symbol_LDADD = \
@@ -189,6 +187,8 @@ EXTRA_DIST = \
 	$(com_netsplit_Nih_Test_proxy_OUTPUTS) \
 	$(com_netsplit_Nih_Test_proxy_XML)
 
+
+tests: $(BUILT_SOURCES) $(check_PROGRAMS)
 
 clean-local:
 	rm -f *.gcno *.gcda

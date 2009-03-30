@@ -105,8 +105,6 @@ TESTS = \
 
 check_PROGRAMS = $(TESTS)
 
-tests: $(BUILT_SOURCES) $(check_PROGRAMS)
-
 test_alloc_SOURCES = tests/test_alloc.c
 test_alloc_LDFLAGS = -static
 test_alloc_LDADD = libnih.la
@@ -175,6 +173,8 @@ test_error_SOURCES = tests/test_error.c
 test_error_LDFLAGS = -static
 test_error_LDADD = libnih.la
 
+
+tests: $(BUILT_SOURCES) $(check_PROGRAMS)
 
 clean-local:
 	rm -f *.gcno *.gcda

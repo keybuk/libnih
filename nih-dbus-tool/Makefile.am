@@ -1,37 +1,137 @@
 ## Process this file with automake to produce Makefile.in
 
+AM_CFLAGS = \
+	$(DBUS_CFLAGS)
+
 AM_CPPFLAGS = \
 	-DLOCALEDIR="\"$(localedir)\"" \
-	-I$(top_builddir) -I$(top_srcdir) \
+	-I$(top_builddir) -I$(top_srcdir) -iquote$(srcdir) \
 	-I$(top_srcdir)/intl
 
 
 if INSTALL_NIH
-bin_SCRIPTS = \
+bin_PROGRAMS = \
 	nih-dbus-tool
 else
-noinst_SCRIPTS = \
+noinst_PROGRAMS = \
 	nih-dbus-tool
 endif
 
-CLEANFILES = nih-dbus-tool
-EXTRA_DIST = nih_dbus_tool.py
+nih_dbus_tool_SOURCES = \
+	main.c \
+	symbol.c symbol.h \
+	node.c node.h \
+	interface.c interface.h \
+	method.c method.h \
+	signal.c signal.h \
+	property.c property.h \
+	argument.c argument.h \
+	annotation.c annotation.h \
+	parse.c parse.h \
+	errors.h
 
-do_subst = sed \
-	-e '1s|\#!.*|\#!$(PYTHON)|g' \
-	-e 's|[@]PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
-	-e 's|[@]PACKAGE_COPYRIGHT[@]|$(PACKAGE_COPYRIGHT)|g'
-
-nih-dbus-tool: nih_dbus_tool.py
-	$(do_subst) $< > $@
-	chmod +x $@
+nih_dbus_tool_LDADD = \
+	../nih/libnih.la \
+	../nih-dbus/libnih-dbus.la \
+	$(LTLIBINTL) \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
 
 
 TESTS = \
+	test_symbol \
+	test_node \
+	test_interface \
+	test_method \
+	test_signal \
+	test_property \
+	test_argument \
+	test_annotation \
+	test_parse \
 	test_com.netsplit.Nih.Test_object \
 	test_com.netsplit.Nih.Test_proxy
 
 check_PROGRAMS = $(TESTS)
+
+tests: $(BUILT_SOURCES) $(check_PROGRAMS)
+
+test_symbol_SOURCES = tests/test_symbol.c
+test_symbol_LDFLAGS = -static
+test_symbol_LDADD = \
+	symbol.o \
+	../nih/libnih.la
+
+test_node_SOURCES = tests/test_node.c
+test_node_LDFLAGS = -static
+test_node_LDADD = \
+	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
+
+test_interface_SOURCES = tests/test_interface.c
+test_interface_LDFLAGS = -static
+test_interface_LDADD = \
+	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
+
+test_method_SOURCES = tests/test_method.c
+test_method_LDFLAGS = -static
+test_method_LDADD = \
+	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
+
+test_signal_SOURCES = tests/test_signal.c
+test_signal_LDFLAGS = -static
+test_signal_LDADD = \
+	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
+
+test_property_SOURCES = tests/test_property.c
+test_property_LDFLAGS = -static
+test_property_LDADD = \
+	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
+
+test_argument_SOURCES = tests/test_argument.c
+test_argument_LDFLAGS = -static
+test_argument_LDADD = \
+	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
+
+test_annotation_SOURCES = tests/test_annotation.c
+test_annotation_LDFLAGS = -static
+test_annotation_LDADD = \
+	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
+
+test_parse_SOURCES = tests/test_parse.c
+test_parse_LDFLAGS = -static
+test_parse_LDADD = \
+	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
 
 test_com_netsplit_Nih_Test_object_SOURCES = \
 	tests/test_com.netsplit.Nih.Test_object.c \
@@ -83,7 +183,7 @@ MAINTAINERCLEANFILES = \
 	$(com_netsplit_Nih_Test_object_OUTPUTS) \
 	$(com_netsplit_Nih_Test_proxy_OUTPUTS)
 
-EXTRA_DIST += \
+EXTRA_DIST = \
 	$(com_netsplit_Nih_Test_object_OUTPUTS) \
 	$(com_netsplit_Nih_Test_object_XML) \
 	$(com_netsplit_Nih_Test_proxy_OUTPUTS) \

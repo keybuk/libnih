@@ -2,7 +2,7 @@
 #
 # misc.m4 - miscellaneous autoconf macros
 #
-# Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+# Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -55,6 +55,8 @@ AC_DEFUN([NIH_INIT],
 
 m4_ifdef([_NIH_Option_install], [nih_install=yes])
 AM_CONDITIONAL([INSTALL_NIH], [test "x$nih_install" = "xyes"])
+
+PKG_PROG_PKG_CONFIG([0.22])
 
 # Checks for libraries
 NIH_LIB_DBUS

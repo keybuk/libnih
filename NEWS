@@ -27,6 +27,14 @@
 	* The D-Bus binding tool has moved into a separate nih-dbus-tool
 	  subdirectory.
 
+	* D-Bus 1.2.4 is now required.
+
+	* pkg-config 0.22 is now required, it probably was anyway but we
+	  now explicitly check for it.
+
+	* Dependency on Python for the D-Bus binding tool has been dropped
+	  and replaced with a dependency on expat 2.0.0
+
 0.2.0  2009-01-29
 
 	* nih_alloc_set_allocator() is now a macro that casts the function

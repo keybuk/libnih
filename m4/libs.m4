@@ -2,7 +2,7 @@
 #
 # libs.m4 - autoconf macros for library detection
 #
-# Copyright © 2008 Scott James Remnant <scott@netsplit.com>.
+# Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -29,7 +29,7 @@
 # Detect whether we can/should build the optional dbus bindings
 AC_DEFUN([NIH_LIB_DBUS],
 [AC_REQUIRE([PKG_PROG_PKG_CONFIG])dnl
-m4_define([DBUS_MODULES], [dbus-1 >= 1.1.1])
+m4_define([DBUS_MODULES], [dbus-1 >= 1.2.4])
 m4_ifdef([_NIH_Option_dbus],
 	 [nih_with_dbus=yes],
 	 [AC_ARG_WITH(dbus,
@@ -38,15 +38,18 @@ m4_ifdef([_NIH_Option_dbus],
 		             [nih_with_dbus=yes], [nih_with_dbus=no])])])
 AS_IF([test "x$nih_with_dbus" = "xyes"],
       [PKG_CHECK_MODULES([DBUS], [DBUS_MODULES])
-       m4_ifdef([_NIH_Option_install],
-       		[AM_PATH_PYTHON([2.5])],
-		[AM_PATH_PYTHON([2.5],, [:])])],
+       AC_CHECK_LIB([expat], [XML_ParserCreate],
+		    [AC_CHECK_LIB([expat], [XML_StopParser],
+				  [AC_SUBST([EXPAT_LIBS], [-lexpat])],
+				  [AC_MSG_ERROR([expat >= 2.0.0 required])])],
+		    [AC_MSG_ERROR([expat library not found])])],
       [AS_IF([test "x$nih_with_dbus" != "xno"],
              [PKG_CHECK_MODULES([DBUS], [DBUS_MODULES],, [nih_have_dbus=no])
-	      m4_ifdef([_NIH_Option_install],
-	               [AM_PATH_PYTHON([2.5],, [nih_have_dbus=no])],
-		       [AM_PATH_PYTHON([2.5],, [:])])],
+	      AC_CHECK_LIB([expat], [XML_ParserCreate],
+			   [AC_CHECK_LIB([expat], [XML_StopParser],
+					 [AC_SUBST([EXPAT_LIBS], [-lexpat])],
+					 [nih_have_dbus=no])],
+			   [nih_have_dbus=no])],			
 	     [nih_have_dbus=no])])
 AM_CONDITIONAL([HAVE_DBUS], [test "x$nih_have_dbus" != "xno"])
-AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
 ])# NIH_LIB_DBUS

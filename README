@@ -42,11 +42,15 @@ Dependencies
 In order to query the availability of external libraries, libnih uses
 the pkg-config tool:
 
-	* pkg-config
+	* pkg-config 0.22
 
 To build the optional libnih-dbus bindings library you will need the
-D-Bus development files for the library itself and the Python
-interpreter for the binding generation tool:
+D-Bus development files for the library itself:
 
-	* D-Bus 1.1.1
-	* Python 2.5
+	* D-Bus 1.2.4
+
+To build the D-Bus binding tool you will need the dependencies of the
+libnih-dbus library and the development files for the expat XML
+parsing library:
+
+	* expat 2.0.0

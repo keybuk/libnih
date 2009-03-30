@@ -1,3 +1,54 @@
+2009-03-30  Scott James Remnant  <scott@netsplit.com>
+
+	Begin replacing the old Python D-Bus bindings tool with one
+	written in C, starting with the code that parses the introspection
+	data.
+
+	* nih-dbus-tool/Makefile.am (bin_SCRIPTS, noinst_SCRIPTS)
+	(bin_PROGRAMS, noinst_PROGRAMS): Replace the nih-dbus-tool script
+	with a program that we need to compile.
+	(CLEANFILES, EXTRA_DIST, do_subst, nih-dbus-tool): Drop the rules
+	to generate the script by replacing bits out of the Python source
+	(nih_dbus_tool_SOURCES, nih_dbus_tool_LDADD): Instead build from
+	C sources, and link to libnih, libnih-dbus, expat and libdbus
+	(AM_CFLAGS): Require the D-Bus CFLAGS when compiling the tool
+	(AM_CPPFLAGS): Include quoted headers from the source directory
+	so the test suite can get at them
+	(TESTS): Add tests for the various bits of the C tool
+	(tests): Rule to generate binaries for the test suite
+	(test_symbol_SOURCES, test_symbol_LDFLAGS, test_symbol_LDADD)
+	(test_node_SOURCES, test_node_LDFLAGS, test_node_LDADD)
+	(test_interface_SOURCES, test_interface_LDFLAGS)
+	(test_interface_LDADD, test_method_SOURCES, test_method_LDFLAGS)
+	(test_method_LDADD, test_signal_SOURCES, test_signal_LDFLAGS)
+	(test_signal_LDADD, test_property_SOURCES)
+	(test_property_LDFLAGS, test_property_LDADD)
+	(test_argument_SOURCES, test_argument_LDFLAGS)
+	(test_argument_LDADD, test_annotation_SOURCES)
+	(test_annotation_LDFLAGS, test_annotation_LDADD)
+	(test_parse_SOURCES, test_parse_LDFLAGS, test_parse_LDADD): Test
+	suite details
+	* nih-dbus-tool/main.c, nih-dbus-tool/symbol.c, nih-dbus-tool/symbol.h,
+	nih-dbus-tool/tests/test_symbol.c, nih-dbus-tool/node.c,
+	nih-dbus-tool/node.h, nih-dbus-tool/tests/test_node.c,
+	nih-dbus-tool/interface.c, nih-dbus-tool/interface.h,
+	nih-dbus-tool/tests/test_interface.c, nih-dbus-tool/method.c,
+	nih-dbus-tool/method.h, nih-dbus-tool/tests/test_method.c,
+	nih-dbus-tool/signal.c, nih-dbus-tool/signal.h,
+	nih-dbus-tool/tests/test_signal.c, nih-dbus-tool/property.c,
+	nih-dbus-tool/property.h, nih-dbus-tool/tests/test_property.c,
+	nih-dbus-tool/argument.c, nih-dbus-tool/argument.h,
+	nih-dbus-tool/tests/test_argument.c, nih-dbus-tool/annotation.c,
+	nih-dbus-tool/annotation.h, nih-dbus-tool/tests/test_annotation.h,
+	nih-dbus-tool/parse.c, nih-dbus-tool/parse.h,
+	nih-dbus-tool/tests/test_parse.c, nih-dbus-tool/errors.h: Source
+	for the tool
+	* m4/misc.m4 (NIH_INIT): Explicitly check for pkg-config 0.22
+	* m4/libs.m4 (NIH_LIB_DBUS): Replace check for Python with a check
+	for the expat library, removing the HAVE_PYTHON conditional
+	entirely.  Update required D-Bus version to 1.2.4
+	* README: Update dependencies documentation
+
 2009-03-27  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/file.c (nih_file_read, nih_file_map): Cast to the bigger type.

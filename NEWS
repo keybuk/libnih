@@ -21,6 +21,9 @@
 	* nih_option_parser() fixed to not eat an argument containing a
 	  lone dash.
 
+	* nih_option_help() produces slightly different output if the
+	  bug reporting address is a URL.
+
 0.2.0  2009-01-29
 
 	* nih_alloc_set_allocator() is now a macro that casts the function

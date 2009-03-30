@@ -24,6 +24,9 @@
 	* nih_option_help() produces slightly different output if the
 	  bug reporting address is a URL.
 
+	* The D-Bus binding tool has moved into a separate nih-dbus-tool
+	  subdirectory.
+
 0.2.0  2009-01-29
 
 	* nih_alloc_set_allocator() is now a macro that casts the function

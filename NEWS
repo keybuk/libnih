@@ -7,6 +7,17 @@
 	* TEST_FILE_MATCH() added to allow matching of a line in a file
 	  against a wildcard string
 
+	* NIH_MUST(), NIH_ZERO() and NIH_SHOULD() now expand to an
+	  expression with the value of the expression inside.  This means
+	  that the code like the following is now valid:
+
+		ret = NIH_SHOULD (some_function_call ());
+		if (ret < 0)
+			...
+
+	  This style is preferred to the previous way of doing it (set ret
+	  inside the macro call) and the code has been updated.
+
 0.2.0  2009-01-29
 
 	* nih_alloc_set_allocator() is now a macro that casts the function

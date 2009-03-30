@@ -1,5 +1,9 @@
 2009-03-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/Makefile.am (test_com_netsplit_Nih_Test_object_CFLAGS)
+	(test_com_netsplit_Nih_Test_proxy_CFLAGS): Remove the CFLAGS
+	overrides, we set this globally in the file.
+
 	* nih-dbus-tool/indent.c (indent): Function to indent the lines in
 	a string using the specified number of tabs.
 	(comment): Function to prepend the traditional " * " comment prefix

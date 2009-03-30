@@ -1,5 +1,15 @@
 2009-03-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/indent.c (indent): Function to indent the lines in
+	a string using the specified number of tabs.
+	(comment): Function to prepend the traditional " * " comment prefix
+	to the lines in a string.
+	* nih-dbus-tool/indent.h: Prototypes.
+	* nih-dbus-tool/tests/test_indent.c: Test cases.
+	* nih-dbus-tool/Makefile.am (TESTS): Build the indent test cases
+	(test_indent_SOURCES, test_indent_LDFLAGS, test_indent_LDADD): Details
+	for indent test cases
+
 	* nih-dbus-tool/main.c: Re-order so that the option variables, the
 	options list and the main() function can be contained inside a #if
 	directive so we can test the rest.

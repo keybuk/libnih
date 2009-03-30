@@ -28,6 +28,7 @@ nih_dbus_tool_SOURCES = \
 	argument.c argument.h \
 	annotation.c annotation.h \
 	parse.c parse.h \
+	indent.c indent.h \
 	errors.h
 
 nih_dbus_tool_LDADD = \
@@ -49,6 +50,7 @@ TESTS = \
 	test_argument \
 	test_annotation \
 	test_parse \
+	test_indent \
 	test_com.netsplit.Nih.Test_object \
 	test_com.netsplit.Nih.Test_proxy
 
@@ -136,6 +138,12 @@ test_parse_LDADD = \
 	../nih/libnih.la \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
+
+test_indent_SOURCES = tests/test_indent.c
+test_indent_LDFLAGS = -static
+test_indent_LDADD = \
+	indent.o \
+	../nih/libnih.la
 
 test_com_netsplit_Nih_Test_object_SOURCES = \
 	tests/test_com.netsplit.Nih.Test_object.c \

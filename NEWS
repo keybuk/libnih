@@ -1,5 +1,9 @@
 0.2.1  XXXX-XX-XX
 
+	* The --enable-compiler-warnings configure option has been
+	  extended to add -Wextra, but turns off a few of the more extreme
+	  warnings
+
 0.2.0  2009-01-29
 
 	* nih_alloc_set_allocator() is now a macro that casts the function

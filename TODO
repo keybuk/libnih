@@ -25,6 +25,10 @@ error:
 - rather than using raise_again(), why not just expect the error to be
   freed?  if not freed, or at least removed from the list, then it's still
   raised
+- we should always push an error context before calling a handler that
+  cannot return to indicate an error
+- include a raised error in the context for errbacks, so the errback has to
+  free it
 
 main:
 - there's an argument for making the main loop more generic; having io,

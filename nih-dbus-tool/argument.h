@@ -47,30 +47,30 @@
  * used.
  **/
 typedef struct argument {
-	NihList        entry;
-	char          *name;
-	char          *symbol;
-	char          *type;
-	NihDBusArgDir  direction;
+	NihList       entry;
+	char *        name;
+	char *        symbol;
+	char *        type;
+	NihDBusArgDir direction;
 } Argument;
 
 
 NIH_BEGIN_EXTERN
 
-int       argument_name_valid       (const char *name);
+int       argument_name_valid (const char *name);
 
-Argument *argument_new              (const void *parent, const char *name,
-				     const char *type, NihDBusArgDir direction)
+Argument *argument_new        (const void *parent, const char *name,
+			       const char *type, NihDBusArgDir direction)
 	__attribute__ ((malloc, warn_unused_result));
 
-int       argument_start_tag        (XML_Parser xmlp, const char *tag,
-				     char * const *attr)
+int       argument_start_tag  (XML_Parser xmlp, const char *tag,
+			       char * const *attr)
 	__attribute__ ((warn_unused_result));
-int       argument_end_tag          (XML_Parser xmlp, const char *tag)
+int       argument_end_tag    (XML_Parser xmlp, const char *tag)
 	__attribute__ ((warn_unused_result));
 
-int       argument_annotation       (Argument *argument,
-				     const char *name, const char *value)
+int       argument_annotation (Argument *argument,
+			       const char *name, const char *value)
 	__attribute__ ((warn_unused_result));
 
 NIH_END_EXTERN

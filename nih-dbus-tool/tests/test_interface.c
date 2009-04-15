@@ -170,15 +170,16 @@ test_new (void)
 void
 test_start_tag (void)
 {
-	ParseContext  context;
-	ParseStack   *parent = NULL, *entry  = NULL;
-	XML_Parser    xmlp;
-	Node         *node = NULL;
-	Interface    *interface;
-	char         *attr[5];
-	int           ret;
-	NihError     *err;
-	FILE         *output;
+	ParseContext context;
+	ParseStack * parent = NULL;
+	ParseStack * entry = NULL;
+	XML_Parser   xmlp;
+	Node *       node = NULL;
+	Interface *  interface;
+	char *       attr[5];
+	int          ret;
+	NihError *   err;
+	FILE *       output;
 
 	TEST_FUNCTION ("interface_start_tag");
 	context.parent = NULL;
@@ -420,13 +421,15 @@ test_start_tag (void)
 void
 test_end_tag (void)
 {
-	ParseContext  context;
-	ParseStack   *parent = NULL, *entry = NULL;
-	XML_Parser    xmlp;
-	Node         *node = NULL;
-	Interface    *interface = NULL, *other = NULL;
-	int           ret;
-	NihError     *err;
+	ParseContext context;
+	ParseStack * parent = NULL;
+	ParseStack * entry = NULL;
+	XML_Parser   xmlp;
+	Node *       node = NULL;
+	Interface *  interface = NULL;
+	Interface *  other = NULL;
+	int          ret;
+	NihError *   err;
 
 	TEST_FUNCTION ("interface_end_tag");
 	context.parent = NULL;
@@ -580,10 +583,10 @@ test_end_tag (void)
 void
 test_annotation (void)
 {
-	Interface  *interface = NULL;
-	char       *symbol;
-	int         ret;
-	NihError   *err;
+	Interface *interface = NULL;
+	char *     symbol;
+	int        ret;
+	NihError * err;
 
 	TEST_FUNCTION ("interface_annotation");
 
@@ -797,8 +800,10 @@ void
 test_lookup_method (void)
 {
 	Interface *interface = NULL;
-	Method    *method1 = NULL, *method2 = NULL, *method3 = NULL;
-	Method    *ret;
+	Method *   method1 = NULL;
+	Method *   method2 = NULL;
+	Method *   method3 = NULL;
+	Method *   ret;
 
 	TEST_FUNCTION ("interface_lookup_method");
 
@@ -863,8 +868,10 @@ void
 test_lookup_signal (void)
 {
 	Interface *interface = NULL;
-	Signal    *signal1 = NULL, *signal2 = NULL, *signal3 = NULL;
-	Signal    *ret;
+	Signal *   signal1 = NULL;
+	Signal *   signal2 = NULL;
+	Signal *   signal3 = NULL;
+	Signal *   ret;
 
 	TEST_FUNCTION ("interface_lookup_signal");
 
@@ -929,8 +936,10 @@ void
 test_lookup_property (void)
 {
 	Interface *interface = NULL;
-	Property  *property1 = NULL, *property2 = NULL, *property3 = NULL;
-	Property  *ret;
+	Property * property1 = NULL;
+	Property * property2 = NULL;
+	Property * property3 = NULL;
+	Property * ret;
 
 	TEST_FUNCTION ("interface_lookup_property");
 

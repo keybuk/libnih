@@ -49,12 +49,13 @@
  * Returns: modified @str or NULL if insufficient memory.
  **/
 char *
-indent (char       **str,
-	const void  *parent,
-	int          level)
+indent (char **     str,
+	const void *parent,
+	int         level)
 {
-	char   *s, *ret;
-	size_t  len;
+	char * s;
+	char * ret;
+	size_t len;
 
 	nih_assert (str != NULL);
 	nih_assert (*str != NULL);
@@ -106,11 +107,12 @@ indent (char       **str,
  * Returns: modified @str or NULL if insufficient memory.
  **/
 char *
-comment (char       **str,
-	 const void  *parent)
+comment (char **     str,
+	 const void *parent)
 {
-	char   *s, *ret;
-	size_t  len;
+	char * s;
+	char * ret;
+	size_t len;
 
 	nih_assert (str != NULL);
 	nih_assert (*str != NULL);

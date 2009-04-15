@@ -38,10 +38,10 @@ extern int mode_option (NihOption *option, const char *arg);
 void
 test_mode_option (void)
 {
-	NihOption   opt;
-	OutputMode  value;
-	FILE       *output;
-	int         ret;
+	NihOption  opt;
+	OutputMode value;
+	FILE *     output;
+	int        ret;
 
 	TEST_FUNCTION ("mode_option");
 	opt.value = &value;

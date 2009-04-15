@@ -49,13 +49,13 @@
  * final components of @name required to ensure uniqueness will be used.
  **/
 typedef struct interface {
-	NihList  entry;
-	char    *name;
-	char    *symbol;
-	int      deprecated;
-	NihList  methods;
-	NihList  signals;
-	NihList  properties;
+	NihList entry;
+	char *  name;
+	char *  symbol;
+	int     deprecated;
+	NihList methods;
+	NihList signals;
+	NihList properties;
 } Interface;
 
 

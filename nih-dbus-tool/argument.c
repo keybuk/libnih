@@ -100,10 +100,10 @@ argument_name_valid (const char *name)
  * Returns: the new argument or NULL if the allocation failed.
  **/
 Argument *
-argument_new (const void    *parent,
-	      const char    *name,
-	      const char    *type,
-	      NihDBusArgDir  direction)
+argument_new (const void *  parent,
+	      const char *  name,
+	      const char *  type,
+	      NihDBusArgDir direction)
 {
 	Argument *argument;
 
@@ -169,17 +169,17 @@ argument_new (const void    *parent,
  **/
 int
 argument_start_tag (XML_Parser    xmlp,
-		    const char   *tag,
+		    const char *  tag,
 		    char * const *attr)
 {
-	ParseContext  *context;
-	ParseStack    *parent;
-	Argument      *argument;
-	char * const  *key;
-	char * const  *value;
-	const char    *name = NULL;
-	const char    *type = NULL;
-	const char    *direction_str = NULL;
+	ParseContext * context;
+	ParseStack *   parent;
+	Argument *     argument;
+	char * const * key;
+	char * const * value;
+	const char *   name = NULL;
+	const char *   type = NULL;
+	const char *   direction_str = NULL;
 	NihDBusArgDir  direction;
 	DBusError      error;
 
@@ -310,10 +310,12 @@ argument_end_tag (XML_Parser  xmlp,
 		  const char *tag)
 {
 	ParseContext *context;
-	ParseStack   *entry, *parent;
-	Argument     *argument, *conflict;
-	Method       *method;
-	Signal       *signal;
+	ParseStack *  entry;
+	ParseStack *  parent;
+	Argument *    argument;
+	Argument *    conflict;
+	Method *      method;
+	Signal *      signal;
 
 	nih_assert (xmlp != NULL);
 	nih_assert (tag != NULL);
@@ -433,7 +435,7 @@ argument_end_tag (XML_Parser  xmlp,
  * Returns: zero on success, negative value on raised error.
  **/
 int
-argument_annotation (Argument   *argument,
+argument_annotation (Argument *  argument,
 		     const char *name,
 		     const char *value)
 {

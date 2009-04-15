@@ -46,13 +46,13 @@
  * style and used instead.
  **/
 typedef struct method {
-	NihList  entry;
-	char    *name;
-	char    *symbol;
-	int      deprecated;
-	int      async;
-	int      no_reply;
-	NihList  arguments;
+	NihList entry;
+	char *  name;
+	char *  symbol;
+	int     deprecated;
+	int     async;
+	int     no_reply;
+	NihList arguments;
 } Method;
 
 

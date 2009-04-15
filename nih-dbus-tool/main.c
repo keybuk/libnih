@@ -80,7 +80,7 @@ char *header_file_path (const void *parent, const char *output_path,
  * The arg_name member of @option must not be NULL.
  **/
 int
-mode_option (NihOption  *option,
+mode_option (NihOption * option,
 	     const char *arg)
 {
 	OutputMode *value;
@@ -324,9 +324,9 @@ main (int   argc,
       char *argv[])
 {
 	char **args;
-	char  *filename;
-	char  *path = NULL;
-	Node  *node;
+	char * filename;
+	char * path = NULL;
+	Node * node;
 
 	nih_main_init (argv[0]);
 

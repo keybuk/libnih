@@ -171,16 +171,17 @@ test_new (void)
 void
 test_start_tag (void)
 {
-	ParseContext  context;
-	ParseStack   *parent = NULL, *entry;
-	XML_Parser    xmlp;
-	Method       *method = NULL;
-	Signal       *signal = NULL;
-	Argument     *argument;
-	char         *attr[7];
-	int           ret;
-	NihError     *err;
-	FILE         *output;
+	ParseContext context;
+	ParseStack * parent = NULL;
+	ParseStack * entry;
+	XML_Parser   xmlp;
+	Method *     method = NULL;
+	Signal *     signal = NULL;
+	Argument *   argument;
+	char *       attr[7];
+	int          ret;
+	NihError *   err;
+	FILE *       output;
 
 	TEST_FUNCTION ("argument_start_tag");
 	context.parent = NULL;
@@ -857,14 +858,17 @@ test_start_tag (void)
 void
 test_end_tag (void)
 {
-	ParseContext  context;
-	ParseStack   *parent = NULL, *entry = NULL;
-	XML_Parser    xmlp;
-	Method       *method = NULL;
-	Signal       *signal = NULL;
-	Argument     *argument = NULL, *other1 = NULL, *other2 = NULL;
-	int           ret;
-	NihError     *err;
+	ParseContext context;
+	ParseStack * parent = NULL;
+	ParseStack * entry = NULL;
+	XML_Parser   xmlp;
+	Method *     method = NULL;
+	Signal *     signal = NULL;
+	Argument *   argument = NULL;
+	Argument *   other1 = NULL;
+	Argument *   other2 = NULL;
+	int          ret;
+	NihError *   err;
 
 	TEST_FUNCTION ("argument_end_tag");
 	context.parent = NULL;
@@ -1390,7 +1394,7 @@ void
 test_annotation (void)
 {
 	Argument *argument = NULL;
-	char     *symbol;
+	char *    symbol;
 	int       ret;
 	NihError *err;
 

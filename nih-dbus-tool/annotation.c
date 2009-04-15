@@ -62,15 +62,15 @@
  **/
 int
 annotation_start_tag (XML_Parser    xmlp,
-		      const char   *tag,
+		      const char *  tag,
 		      char * const *attr)
 {
 	ParseContext *context;
-	ParseStack   *parent;
+	ParseStack *  parent;
 	char * const *key;
 	char * const *value;
-	const char   *name = NULL;
-	const char   *val = NULL;
+	const char *  name = NULL;
+	const char *  val = NULL;
 	int           ret;
 
 	nih_assert (xmlp != NULL);
@@ -227,7 +227,7 @@ annotation_end_tag (XML_Parser  xmlp,
 		    const char *tag)
 {
 	ParseContext *context;
-	ParseStack   *entry;
+	ParseStack *  entry;
 
 	nih_assert (xmlp != NULL);
 	nih_assert (tag != NULL);

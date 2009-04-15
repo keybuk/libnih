@@ -97,8 +97,9 @@ char *
 symbol_from_name (const void *parent,
 		  const char *name)
 {
-	char   *symbol, *ptr;
-	size_t  len = 0;
+	char * symbol;
+	char * ptr;
+	size_t len = 0;
 
 	nih_assert (name != NULL);
 

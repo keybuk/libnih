@@ -153,15 +153,15 @@ signal_new (const void *parent,
  **/
 int
 signal_start_tag (XML_Parser    xmlp,
-		  const char   *tag,
+		  const char *  tag,
 		  char * const *attr)
 {
 	ParseContext *context;
-	ParseStack   *parent;
-	Signal       *signal;
+	ParseStack *  parent;
+	Signal *      signal;
 	char * const *key;
 	char * const *value;
-	const char   *name = NULL;
+	const char *  name = NULL;
 
 	nih_assert (xmlp != NULL);
 	nih_assert (tag != NULL);
@@ -242,9 +242,11 @@ signal_end_tag (XML_Parser  xmlp,
 		const char *tag)
 {
 	ParseContext *context;
-	ParseStack   *entry, *parent;
-	Signal       *signal, *conflict;
-	Interface    *interface;
+	ParseStack *  entry;
+	ParseStack *  parent;
+	Signal *      signal;
+	Signal *      conflict;
+	Interface *   interface;
 
 	nih_assert (xmlp != NULL);
 	nih_assert (tag != NULL);
@@ -306,7 +308,7 @@ signal_end_tag (XML_Parser  xmlp,
  * Returns: zero on success, negative value on raised error.
  **/
 int
-signal_annotation (Signal     *signal,
+signal_annotation (Signal *    signal,
 		   const char *name,
 		   const char *value)
 {
@@ -367,8 +369,8 @@ signal_annotation (Signal     *signal,
  * Returns: argument found or NULL if no argument matches.
  **/
 Argument *
-signal_lookup_argument (Signal  *signal,
-			 const char *symbol)
+signal_lookup_argument (Signal *    signal,
+			const char *symbol)
 {
 	nih_assert (signal != NULL);
 	nih_assert (symbol != NULL);

@@ -102,10 +102,10 @@ property_name_valid (const char *name)
  * Returns: the new property or NULL if the allocation failed.
  **/
 Property *
-property_new (const void    *parent,
-	      const char    *name,
-	      const char    *type,
-	      NihDBusAccess  access)
+property_new (const void *  parent,
+	      const char *  name,
+	      const char *  type,
+	      NihDBusAccess access)
 {
 	Property *property;
 
@@ -168,19 +168,19 @@ property_new (const void    *parent,
  **/
 int
 property_start_tag (XML_Parser    xmlp,
-		    const char   *tag,
+		    const char *  tag,
 		    char * const *attr)
 {
-	ParseContext  *context;
-	ParseStack    *parent;
-	Property      *property;
-	char * const  *key;
-	char * const  *value;
-	const char    *name = NULL;
-	const char    *type = NULL;
-	const char    *access_str = NULL;
-	NihDBusAccess  access;
-	DBusError      error;
+	ParseContext *context;
+	ParseStack *  parent;
+	Property *    property;
+	char * const *key;
+	char * const *value;
+	const char *  name = NULL;
+	const char *  type = NULL;
+	const char *  access_str = NULL;
+	NihDBusAccess access;
+	DBusError     error;
 
 	nih_assert (xmlp != NULL);
 	nih_assert (tag != NULL);
@@ -294,9 +294,11 @@ property_end_tag (XML_Parser  xmlp,
 		  const char *tag)
 {
 	ParseContext *context;
-	ParseStack   *entry, *parent;
-	Property     *property, *conflict;
-	Interface    *interface;
+	ParseStack *  entry;
+	ParseStack *  parent;
+	Property *    property;
+	Property *    conflict;
+	Interface *   interface;
 
 	nih_assert (xmlp != NULL);
 	nih_assert (tag != NULL);
@@ -358,7 +360,7 @@ property_end_tag (XML_Parser  xmlp,
  * Returns: zero on success, negative value on raised error.
  **/
 int
-property_annotation (Property   *property,
+property_annotation (Property *  property,
 		     const char *name,
 		     const char *value)
 {

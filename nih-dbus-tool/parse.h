@@ -58,16 +58,16 @@ typedef enum parse_stack_type {
  * the @data pointer is part of a union of the different types of pointer.
  **/
 typedef struct parse_stack {
-	NihList             entry;
-	ParseStackType      type;
+	NihList            entry;
+	ParseStackType     type;
 	union {
-		void       *data;
-		Node       *node;
-		Interface  *interface;
-		Method     *method;
-		Signal     *signal;
-		Property   *property;
-		Argument   *argument;
+		void *     data;
+		Node *     node;
+		Interface *interface;
+		Method *   method;
+		Signal *   signal;
+		Property * property;
+		Argument * argument;
 	};
 } ParseStack;
 
@@ -87,7 +87,7 @@ typedef struct parse_context {
 	const void *parent;
 	NihList     stack;
 	const char *filename;
-	Node       *node;
+	Node *      node;
 } ParseContext;
 
 

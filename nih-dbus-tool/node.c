@@ -153,15 +153,15 @@ node_new (const void *parent,
  **/
 int
 node_start_tag (XML_Parser    xmlp,
-		const char   *tag,
+		const char *  tag,
 		char * const *attr)
 {
 	ParseContext *context;
-	ParseStack   *parent;
-	Node         *node;
+	ParseStack *  parent;
+	Node *        node;
 	char * const *key;
 	char * const *value;
-	const char   *name = NULL;
+	const char *  name = NULL;
 
 	nih_assert (xmlp != NULL);
 	nih_assert (tag != NULL);
@@ -243,7 +243,7 @@ node_end_tag (XML_Parser  xmlp,
 	      const char *tag)
 {
 	ParseContext *context;
-	ParseStack   *entry;
+	ParseStack *  entry;
 
 	nih_assert (xmlp != NULL);
 	nih_assert (tag != NULL);
@@ -279,7 +279,7 @@ node_end_tag (XML_Parser  xmlp,
  * Returns: interface found or NULL if no interface matches.
  **/
 Interface *
-node_lookup_interface (Node       *node,
+node_lookup_interface (Node *      node,
 		       const char *symbol)
 {
 	nih_assert (node != NULL);

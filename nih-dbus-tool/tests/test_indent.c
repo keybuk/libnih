@@ -33,7 +33,8 @@
 void
 test_indent (void)
 {
-	char *str, *ret;
+	char *str;
+	char *ret;
 
 	TEST_FUNCTION ("indent");
 
@@ -274,7 +275,8 @@ test_indent (void)
 void
 test_comment (void)
 {
-	char *str, *ret;
+	char *str;
+	char *ret;
 
 	TEST_FUNCTION ("comment");
 

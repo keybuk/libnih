@@ -76,10 +76,10 @@
  * Returns: new entry or NULL if the allocation failed.
  **/
 ParseStack *
-parse_stack_push (const void     *parent,
-		  NihList        *stack,
-		  ParseStackType  type,
-		  void           *data)
+parse_stack_push (const void *   parent,
+		  NihList *      stack,
+		  ParseStackType type,
+		  void *         data)
 {
 	ParseStack *entry;
 
@@ -151,13 +151,13 @@ parse_stack_top (NihList *stack)
  **/
 void
 parse_start_tag (XML_Parser    xmlp,
-		 const char   *tag,
+		 const char *  tag,
 		 char * const *attr)
 {
-	XML_ParsingStatus  status;
-	ParseContext      *context;
-	ParseStack        *parent;
-	int                ret = 0;
+	XML_ParsingStatus status;
+	ParseContext *    context;
+	ParseStack *      parent;
+	int               ret = 0;
 
 	nih_assert (xmlp != NULL);
 	nih_assert (tag != NULL);
@@ -240,10 +240,10 @@ void
 parse_end_tag (XML_Parser  xmlp,
 	       const char *tag)
 {
-	XML_ParsingStatus  status;
-	ParseContext      *context;
-	ParseStack        *entry;
-	int                ret = 0;
+	XML_ParsingStatus status;
+	ParseContext *    context;
+	ParseStack *      entry;
+	int               ret = 0;
 
 	nih_assert (xmlp != NULL);
 	nih_assert (tag != NULL);
@@ -344,9 +344,9 @@ parse_xml (const void *parent,
 			       (XML_EndElementHandler)parse_end_tag);
 
 	do {
-		enum XML_Status  status;
-		enum XML_Error   error;
-		void            *buf;
+		enum XML_Status status;
+		enum XML_Error  error;
+		void *          buf;
 
 		buf = XML_GetBuffer (xmlp, BUF_SIZE);
 		if (! buf) {

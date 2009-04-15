@@ -155,15 +155,15 @@ method_new (const void *parent,
  **/
 int
 method_start_tag (XML_Parser    xmlp,
-		  const char   *tag,
+		  const char *  tag,
 		  char * const *attr)
 {
 	ParseContext *context;
-	ParseStack   *parent;
-	Method       *method;
+	ParseStack *  parent;
+	Method *      method;
 	char * const *key;
 	char * const *value;
-	const char   *name = NULL;
+	const char *  name = NULL;
 
 	nih_assert (xmlp != NULL);
 	nih_assert (tag != NULL);
@@ -244,9 +244,11 @@ method_end_tag (XML_Parser  xmlp,
 		const char *tag)
 {
 	ParseContext *context;
-	ParseStack   *entry, *parent;
-	Method       *method, *conflict;
-	Interface    *interface;
+	ParseStack *  entry;
+	ParseStack *  parent;
+	Method *      method;
+	Method *      conflict;
+	Interface *   interface;
 
 	nih_assert (xmlp != NULL);
 	nih_assert (tag != NULL);
@@ -309,7 +311,7 @@ method_end_tag (XML_Parser  xmlp,
  * Returns: zero on success, negative value on raised error.
  **/
 int
-method_annotation (Method     *method,
+method_annotation (Method *    method,
 		   const char *name,
 		   const char *value)
 {
@@ -398,8 +400,8 @@ method_annotation (Method     *method,
  * Returns: argument found or NULL if no argument matches.
  **/
 Argument *
-method_lookup_argument (Method  *method,
-			 const char *symbol)
+method_lookup_argument (Method *    method,
+			const char *symbol)
 {
 	nih_assert (method != NULL);
 	nih_assert (symbol != NULL);

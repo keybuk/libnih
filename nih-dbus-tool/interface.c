@@ -186,15 +186,15 @@ interface_new (const void *parent,
  **/
 int
 interface_start_tag (XML_Parser    xmlp,
-		     const char   *tag,
+		     const char *  tag,
 		     char * const *attr)
 {
 	ParseContext *context;
-	ParseStack   *parent;
-	Interface    *interface;
+	ParseStack *  parent;
+	Interface *   interface;
 	char * const *key;
 	char * const *value;
-	const char   *name = NULL;
+	const char *  name = NULL;
 
 	nih_assert (xmlp != NULL);
 	nih_assert (tag != NULL);
@@ -276,9 +276,11 @@ interface_end_tag (XML_Parser  xmlp,
 		   const char *tag)
 {
 	ParseContext *context;
-	ParseStack   *entry, *parent;
-	Interface    *interface, *conflict;
-	Node         *node;
+	ParseStack *  entry;
+	ParseStack *  parent;
+	Interface *   interface;
+	Interface *   conflict;
+	Node *        node;
 
 	nih_assert (xmlp != NULL);
 	nih_assert (tag != NULL);
@@ -346,7 +348,7 @@ interface_end_tag (XML_Parser  xmlp,
  * Returns: zero on success, negative value on raised error.
  **/
 int
-interface_annotation (Interface  *interface,
+interface_annotation (Interface * interface,
 		      const char *name,
 		      const char *value)
 {
@@ -407,7 +409,7 @@ interface_annotation (Interface  *interface,
  * Returns: method found or NULL if no method matches.
  **/
 Method *
-interface_lookup_method (Interface  *interface,
+interface_lookup_method (Interface * interface,
 			 const char *symbol)
 {
 	nih_assert (interface != NULL);
@@ -435,7 +437,7 @@ interface_lookup_method (Interface  *interface,
  * Returns: signal found or NULL if no signal matches.
  **/
 Signal *
-interface_lookup_signal (Interface  *interface,
+interface_lookup_signal (Interface * interface,
 			 const char *symbol)
 {
 	nih_assert (interface != NULL);
@@ -463,7 +465,7 @@ interface_lookup_signal (Interface  *interface,
  * Returns: property found or NULL if no property matches.
  **/
 Property *
-interface_lookup_property (Interface  *interface,
+interface_lookup_property (Interface * interface,
 			   const char *symbol)
 {
 	nih_assert (interface != NULL);

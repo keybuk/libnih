@@ -37,25 +37,25 @@
  * a specific D-Bus object with the path given in @path.
  **/
 typedef struct node {
-	char    *path;
-	NihList  interfaces;
+	char *  path;
+	NihList interfaces;
 } Node;
 
 
 NIH_BEGIN_EXTERN
 
-int        node_path_valid           (const char *name);
+int        node_path_valid       (const char *name);
 
-Node *     node_new                  (const void *parent, const char *path)
+Node *     node_new              (const void *parent, const char *path)
 	__attribute__ ((malloc, warn_unused_result));
 
-int        node_start_tag            (XML_Parser xmlp, const char *tag,
-				 char * const *attr)
+int        node_start_tag        (XML_Parser xmlp, const char *tag,
+				  char * const *attr)
 	__attribute__ ((warn_unused_result));
-int        node_end_tag              (XML_Parser xmlp, const char *tag)
+int        node_end_tag          (XML_Parser xmlp, const char *tag)
 	__attribute__ ((warn_unused_result));
 
-Interface *node_lookup_interface     (Node *node, const char *symbol);
+Interface *node_lookup_interface (Node *node, const char *symbol);
 
 NIH_END_EXTERN
 

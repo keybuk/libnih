@@ -44,11 +44,11 @@
  * style and used instead.
  **/
 typedef struct signal {
-	NihList  entry;
-	char    *name;
-	char    *symbol;
-	int      deprecated;
-	NihList  arguments;
+	NihList entry;
+	char *  name;
+	char *  symbol;
+	int     deprecated;
+	NihList arguments;
 } Signal;
 
 

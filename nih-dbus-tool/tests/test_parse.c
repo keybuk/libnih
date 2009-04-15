@@ -51,13 +51,14 @@ void
 test_stack_push (void)
 {
 	NihList     stack;
-	ParseStack *entry, base;
-	Node       *node = NULL;
-	Interface  *interface = NULL;
-	Method     *method = NULL;
-	Signal     *signal = NULL;
-	Property   *property = NULL;
-	Argument   *argument = NULL;
+	ParseStack *entry;
+	ParseStack  base;
+	Node *      node = NULL;
+	Interface * interface = NULL;
+	Method *    method = NULL;
+	Signal *    signal = NULL;
+	Property *  property = NULL;
+	Argument *  argument = NULL;
 
 	TEST_FUNCTION ("parse_stack_push");
 
@@ -356,8 +357,10 @@ test_stack_push (void)
 void
 test_stack_top (void)
 {
-	NihList    stack;
-	ParseStack entry1, entry2, *ret;
+	NihList     stack;
+	ParseStack  entry1;
+	ParseStack  entry2;
+	ParseStack *ret;
 
 	TEST_FUNCTION ("parse_stack_top");
 
@@ -409,19 +412,20 @@ test_stack_top (void)
 void
 test_start_tag (void)
 {
-	XML_ParsingStatus  status;
-	ParseContext       context;
-	ParseStack        *parent = NULL, *entry;
-	XML_Parser         xmlp;
-	Node              *node = NULL;
-	Interface         *interface = NULL;
-	Method            *method = NULL;
-	Signal            *signal;
-	Property          *property;
-	Argument          *argument;
-	char              *attr[7];
-	NihError          *err;
-	FILE              *output;
+	XML_ParsingStatus status;
+	ParseContext      context;
+	ParseStack *      parent = NULL;
+	ParseStack *      entry;
+	XML_Parser        xmlp;
+	Node *            node = NULL;
+	Interface *       interface = NULL;
+	Method *          method = NULL;
+	Signal *          signal;
+	Property *        property;
+	Argument *        argument;
+	char *            attr[7];
+	NihError *        err;
+	FILE *            output;
 
 	TEST_FUNCTION ("parse_start_tag");
 	context.parent = NULL;
@@ -1015,17 +1019,18 @@ test_start_tag (void)
 void
 test_end_tag (void)
 {
-	XML_ParsingStatus  status;
-	ParseContext       context;
-	ParseStack        *parent = NULL, *entry = NULL;
-	XML_Parser         xmlp;
-	Node              *node = NULL;
-	Interface         *interface = NULL;
-	Method            *method = NULL;
-	Signal            *signal = NULL;
-	Property          *property = NULL;
-	Argument          *argument = NULL;
-	NihError          *err;
+	XML_ParsingStatus status;
+	ParseContext      context;
+	ParseStack *      parent = NULL;
+	ParseStack *      entry = NULL;
+	XML_Parser        xmlp;
+	Node *            node = NULL;
+	Interface *       interface = NULL;
+	Method *          method = NULL;
+	Signal *          signal = NULL;
+	Property *        property = NULL;
+	Argument *        argument = NULL;
+	NihError *        err;
 
 	TEST_FUNCTION ("node_end_tag");
 	context.parent = NULL;
@@ -1519,13 +1524,14 @@ test_end_tag (void)
 void
 test_parse_xml (void)
 {
-	FILE      *fp, *output;
-	Node      *node = NULL;
+	FILE *     fp;
+	FILE *     output;
+	Node *     node = NULL;
 	Interface *interface;
-	Method    *method;
-	Signal    *signal;
-	Property  *property;
-	Argument  *argument;
+	Method *   method;
+	Signal *   signal;
+	Property * property;
+	Argument * argument;
 
 	TEST_FUNCTION ("parse_xml");
 	fp = tmpfile ();

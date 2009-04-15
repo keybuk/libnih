@@ -154,14 +154,15 @@ test_new (void)
 void
 test_start_tag (void)
 {
-	ParseContext  context;
-	ParseStack   *parent = NULL, *entry;
-	XML_Parser    xmlp;
-	Node         *node;
-	char         *attr[5];
-	int           ret;
-	NihError     *err;
-	FILE         *output;
+	ParseContext context;
+	ParseStack * parent = NULL;
+	ParseStack * entry;
+	XML_Parser   xmlp;
+	Node *       node;
+	char *       attr[5];
+	int          ret;
+	NihError *   err;
+	FILE *       output;
 
 	TEST_FUNCTION ("node_start_tag");
 	context.parent = NULL;
@@ -398,13 +399,13 @@ test_start_tag (void)
 void
 test_end_tag (void)
 {
-	ParseContext  context;
-	ParseStack   *entry = NULL;
-	XML_Parser    xmlp;
-	Node         *node = NULL;
-	int           ret;
-	NihError     *err;
-	void         *parent;
+	ParseContext context;
+	ParseStack * entry = NULL;
+	XML_Parser   xmlp;
+	Node *       node = NULL;
+	int          ret;
+	NihError *   err;
+	void *       parent;
 
 	TEST_FUNCTION ("node_end_tag");
 	context.parent = NULL;
@@ -506,8 +507,10 @@ test_end_tag (void)
 void
 test_lookup_interface (void)
 {
-	Node      *node = NULL;
-	Interface *interface1 = NULL, *interface2 = NULL, *interface3 = NULL;
+	Node *     node = NULL;
+	Interface *interface1 = NULL;
+	Interface *interface2 = NULL;
+	Interface *interface3 = NULL;
 	Interface *ret;
 
 	TEST_FUNCTION ("node_lookup_interface");

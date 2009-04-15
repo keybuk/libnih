@@ -156,15 +156,16 @@ test_new (void)
 void
 test_start_tag (void)
 {
-	ParseContext  context;
-	ParseStack   *parent = NULL, *entry;
-	XML_Parser    xmlp;
-	Interface    *interface = NULL;
-	Signal       *signal;
-	char         *attr[5];
-	int           ret;
-	NihError     *err;
-	FILE         *output;
+	ParseContext context;
+	ParseStack * parent = NULL;
+	ParseStack * entry;
+	XML_Parser   xmlp;
+	Interface *  interface = NULL;
+	Signal *     signal;
+	char *       attr[5];
+	int          ret;
+	NihError *   err;
+	FILE *       output;
 
 	TEST_FUNCTION ("signal_start_tag");
 	context.parent = NULL;
@@ -402,13 +403,15 @@ test_start_tag (void)
 void
 test_end_tag (void)
 {
-	ParseContext  context;
-	ParseStack   *parent = NULL, *entry = NULL;
-	XML_Parser    xmlp;
-	Interface    *interface = NULL;
-	Signal       *signal = NULL, *other = NULL;
-	int           ret;
-	NihError     *err;
+	ParseContext context;
+	ParseStack * parent = NULL;
+	ParseStack * entry = NULL;
+	XML_Parser   xmlp;
+	Interface *  interface = NULL;
+	Signal *     signal = NULL;
+	Signal *     other = NULL;
+	int          ret;
+	NihError *   err;
 
 	TEST_FUNCTION ("signal_end_tag");
 	context.parent = NULL;
@@ -560,8 +563,8 @@ test_end_tag (void)
 void
 test_annotation (void)
 {
-	Signal   *signal = NULL;
-	char     *symbol;
+	Signal *  signal = NULL;
+	char *    symbol;
 	int       ret;
 	NihError *err;
 
@@ -775,8 +778,10 @@ test_annotation (void)
 void
 test_lookup_argument (void)
 {
-	Signal   *signal = NULL;
-	Argument *argument1 = NULL, *argument2 = NULL, *argument3 = NULL;
+	Signal *  signal = NULL;
+	Argument *argument1 = NULL;
+	Argument *argument2 = NULL;
+	Argument *argument3 = NULL;
 	Argument *ret;
 
 	TEST_FUNCTION ("signal_lookup_argument");

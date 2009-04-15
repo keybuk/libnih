@@ -48,18 +48,19 @@
 void
 test_start_tag (void)
 {
-	ParseContext  context;
-	ParseStack   *parent = NULL, *entry;
-	XML_Parser    xmlp;
-	Interface    *interface = NULL;
-	Method       *method = NULL;
-	Signal       *signal = NULL;
-	Property     *property = NULL;
-	Argument     *argument = NULL;
-	char         *attr[7];
-	int           ret;
-	NihError     *err;
-	FILE         *output;
+	ParseContext context;
+	ParseStack * parent = NULL;
+	ParseStack * entry;
+	XML_Parser   xmlp;
+	Interface *  interface = NULL;
+	Method *     method = NULL;
+	Signal *     signal = NULL;
+	Property *   property = NULL;
+	Argument *   argument = NULL;
+	char *       attr[7];
+	int          ret;
+	NihError *   err;
+	FILE *       output;
 
 	TEST_FUNCTION ("annotation_start_tag");
 	context.parent = NULL;
@@ -680,12 +681,13 @@ test_start_tag (void)
 void
 test_end_tag (void)
 {
-	ParseContext  context;
-	ParseStack   *parent = NULL, *entry = NULL;
-	XML_Parser    xmlp;
-	Method       *method = NULL;
-	int           ret;
-	NihError     *err;
+	ParseContext context;
+	ParseStack * parent = NULL;
+	ParseStack * entry = NULL;
+	XML_Parser   xmlp;
+	Method *     method = NULL;
+	int          ret;
+	NihError *   err;
 
 	/* Check that when we parse the end tag for an annotation, we pop
 	 * the top of the stack off and free it.

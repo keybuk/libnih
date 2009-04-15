@@ -200,9 +200,9 @@ parse_start_tag (XML_Parser    xmlp,
 	} else if (! strcmp (tag, "annotation")) {
 		ret = annotation_start_tag (xmlp, tag, attr);
 	} else {
-		nih_warn ("%s:%zi:%zi: %s: %s", context->filename,
-			  XML_GetCurrentLineNumber (xmlp),
-			  XML_GetCurrentColumnNumber (xmlp),
+		nih_warn ("%s:%zu:%zu: %s: %s", context->filename,
+			  (size_t)XML_GetCurrentLineNumber (xmlp),
+			  (size_t)XML_GetCurrentColumnNumber (xmlp),
 			  _("Ignored unknown tag"),
 			  tag);
 
@@ -371,16 +371,16 @@ parse_xml (const void *parent,
 				NihError *err;
 
 				err = nih_error_get ();
-				nih_error ("%s:%zi:%zi: %s", context.filename,
-					   XML_GetCurrentLineNumber (xmlp),
-					   XML_GetCurrentColumnNumber (xmlp),
+				nih_error ("%s:%zu:%zu: %s", context.filename,
+					   (size_t)XML_GetCurrentLineNumber (xmlp),
+					   (size_t)XML_GetCurrentColumnNumber (xmlp),
 					   err->message);
 				nih_free (err);
 			} else {
-				nih_error ("%s:%zi:%zi: %s: %s",
+				nih_error ("%s:%zu:%zu: %s: %s",
 					   context.filename,
-					   XML_GetCurrentLineNumber (xmlp),
-					   XML_GetCurrentColumnNumber (xmlp),
+					   (size_t)XML_GetCurrentLineNumber (xmlp),
+					   (size_t)XML_GetCurrentColumnNumber (xmlp),
 					   _("XML parse error"),
 					   XML_ErrorString (error));
 			}

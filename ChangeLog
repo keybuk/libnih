@@ -1,3 +1,17 @@
+2009-04-04  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/parse.c (parse_start_tag, parse_xml): Cast return
+	value of XML_GetCurrentLineNumber and XML_GetCurrentColumnNumber to
+	size_t and use %zu
+	* nih-dbus-tool/node.c (node_start_tag): Likewise.
+	* nih-dbus-tool/interface.c (interface_start_tag): Likewise.
+	* nih-dbus-tool/method.c (method_start_tag): Likewise.
+	* nih-dbus-tool/signal.c (signal_start_tag): Likewise.
+	* nih-dbus-tool/property.c (property_start_tag): Likewise.
+	* nih-dbus-tool/annotation.c (annotation_start_tag): Likewise.
+	* nih-dbus-tool/argument.c (argument_start_tag): Likewise.
+	(argument_end_tag): Use %zu for the unsigned count, not %zi
+
 2009-03-30  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/main.c (main): open() returns less-than-zero on error

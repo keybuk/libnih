@@ -175,9 +175,9 @@ method_start_tag (XML_Parser    xmlp,
 	/* Methods should only appear inside interfaces. */
 	parent = parse_stack_top (&context->stack);
 	if ((! parent) || (parent->type != PARSE_INTERFACE)) {
-		nih_warn ("%s:%zi:%zi: %s", context->filename,
-			  XML_GetCurrentLineNumber (xmlp),
-			  XML_GetCurrentColumnNumber (xmlp),
+		nih_warn ("%s:%zu:%zu: %s", context->filename,
+			  (size_t)XML_GetCurrentLineNumber (xmlp),
+			  (size_t)XML_GetCurrentColumnNumber (xmlp),
 			  _("Ignored unexpected <method> tag"));
 
 		if (! parse_stack_push (NULL, &context->stack,
@@ -195,9 +195,9 @@ method_start_tag (XML_Parser    xmlp,
 		if (! strcmp (*key, "name")) {
 			name = *value;
 		} else {
-			nih_warn ("%s:%zi:%zi: %s: %s", context->filename,
-				  XML_GetCurrentLineNumber (xmlp),
-				  XML_GetCurrentColumnNumber (xmlp),
+			nih_warn ("%s:%zu:%zu: %s: %s", context->filename,
+				  (size_t)XML_GetCurrentLineNumber (xmlp),
+				  (size_t)XML_GetCurrentColumnNumber (xmlp),
 				  _("Ignored unknown <method> attribute"),
 				  *key);
 		}

@@ -195,9 +195,9 @@ argument_start_tag (XML_Parser    xmlp,
 	if ((! parent) || ((parent->type != PARSE_METHOD)
 			   && (parent->type != PARSE_SIGNAL)))
 	{
-		nih_warn ("%s:%zi:%zi: %s", context->filename,
-			  XML_GetCurrentLineNumber (xmlp),
-			  XML_GetCurrentColumnNumber (xmlp),
+		nih_warn ("%s:%zu:%zu: %s", context->filename,
+			  (size_t)XML_GetCurrentLineNumber (xmlp),
+			  (size_t)XML_GetCurrentColumnNumber (xmlp),
 			  _("Ignored unexpected <arg> tag"));
 
 		if (! parse_stack_push (NULL, &context->stack,
@@ -219,9 +219,9 @@ argument_start_tag (XML_Parser    xmlp,
 		} else if (! strcmp (*key, "direction")) {
 			direction_str = *value;
 		} else {
-			nih_warn ("%s:%zi:%zi: %s: %s", context->filename,
-				  XML_GetCurrentLineNumber (xmlp),
-				  XML_GetCurrentColumnNumber (xmlp),
+			nih_warn ("%s:%zu:%zu: %s: %s", context->filename,
+				  (size_t)XML_GetCurrentLineNumber (xmlp),
+				  (size_t)XML_GetCurrentColumnNumber (xmlp),
 				  _("Ignored unknown <arg> attribute"),
 				  *key);
 		}
@@ -348,7 +348,7 @@ argument_end_tag (XML_Parser  xmlp,
 			NIH_LIST_FOREACH (&method->arguments, iter)
 				count++;
 
-			argument->symbol = nih_sprintf (argument, "arg%zi",
+			argument->symbol = nih_sprintf (argument, "arg%zu",
 							++count);
 			if (! argument->symbol) {
 				nih_list_add_after (&context->stack,
@@ -382,7 +382,7 @@ argument_end_tag (XML_Parser  xmlp,
 			NIH_LIST_FOREACH (&signal->arguments, iter)
 				count++;
 
-			argument->symbol = nih_sprintf (argument, "arg%zi",
+			argument->symbol = nih_sprintf (argument, "arg%zu",
 							++count);
 			if (! argument->symbol) {
 				nih_list_add_after (&context->stack,

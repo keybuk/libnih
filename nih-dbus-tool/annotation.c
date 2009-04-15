@@ -88,9 +88,9 @@ annotation_start_tag (XML_Parser    xmlp,
 			   && (parent->type != PARSE_PROPERTY)
 			   && (parent->type != PARSE_ARGUMENT)))
 	{
-		nih_warn ("%s:%zi:%zi: %s", context->filename,
-			  XML_GetCurrentLineNumber (xmlp),
-			  XML_GetCurrentColumnNumber (xmlp),
+		nih_warn ("%s:%zu:%zu: %s", context->filename,
+			  (size_t)XML_GetCurrentLineNumber (xmlp),
+			  (size_t)XML_GetCurrentColumnNumber (xmlp),
 			  _("Ignored unexpected <annotation> tag"));
 
 		if (! parse_stack_push (NULL, &context->stack,
@@ -110,9 +110,9 @@ annotation_start_tag (XML_Parser    xmlp,
 		} else if (! strcmp (*key, "value")) {
 			val = *value;
 		} else {
-			nih_warn ("%s:%zi:%zi: %s: %s", context->filename,
-				  XML_GetCurrentLineNumber (xmlp),
-				  XML_GetCurrentColumnNumber (xmlp),
+			nih_warn ("%s:%zu:%zu: %s: %s", context->filename,
+				  (size_t)XML_GetCurrentLineNumber (xmlp),
+				  (size_t)XML_GetCurrentColumnNumber (xmlp),
 				  _("Ignored unknown <annotation> attribute"),
 				  *key);
 		}
@@ -153,37 +153,37 @@ annotation_start_tag (XML_Parser    xmlp,
 		err = nih_error_get ();
 		switch (err->number) {
 		case INTERFACE_UNKNOWN_ANNOTATION:
-			nih_warn ("%s:%zi:%zi: %s: %s", context->filename,
-				  XML_GetCurrentLineNumber (xmlp),
-				  XML_GetCurrentColumnNumber (xmlp),
+			nih_warn ("%s:%zu:%zu: %s: %s", context->filename,
+				  (size_t)XML_GetCurrentLineNumber (xmlp),
+				  (size_t)XML_GetCurrentColumnNumber (xmlp),
 				  _("Ignored unknown interface annotation"),
 				  name);
 			break;
 		case METHOD_UNKNOWN_ANNOTATION:
-			nih_warn ("%s:%zi:%zi: %s: %s", context->filename,
-				  XML_GetCurrentLineNumber (xmlp),
-				  XML_GetCurrentColumnNumber (xmlp),
+			nih_warn ("%s:%zu:%zu: %s: %s", context->filename,
+				  (size_t)XML_GetCurrentLineNumber (xmlp),
+				  (size_t)XML_GetCurrentColumnNumber (xmlp),
 				  _("Ignored unknown method annotation"),
 				  name);
 			break;
 		case SIGNAL_UNKNOWN_ANNOTATION:
-			nih_warn ("%s:%zi:%zi: %s: %s", context->filename,
-				  XML_GetCurrentLineNumber (xmlp),
-				  XML_GetCurrentColumnNumber (xmlp),
+			nih_warn ("%s:%zu:%zu: %s: %s", context->filename,
+				  (size_t)XML_GetCurrentLineNumber (xmlp),
+				  (size_t)XML_GetCurrentColumnNumber (xmlp),
 				  _("Ignored unknown signal annotation"),
 				  name);
 			break;
 		case PROPERTY_UNKNOWN_ANNOTATION:
-			nih_warn ("%s:%zi:%zi: %s: %s", context->filename,
-				  XML_GetCurrentLineNumber (xmlp),
-				  XML_GetCurrentColumnNumber (xmlp),
+			nih_warn ("%s:%zu:%zu: %s: %s", context->filename,
+				  (size_t)XML_GetCurrentLineNumber (xmlp),
+				  (size_t)XML_GetCurrentColumnNumber (xmlp),
 				  _("Ignored unknown property annotation"),
 				  name);
 			break;
 		case ARGUMENT_UNKNOWN_ANNOTATION:
-			nih_warn ("%s:%zi:%zi: %s: %s", context->filename,
-				  XML_GetCurrentLineNumber (xmlp),
-				  XML_GetCurrentColumnNumber (xmlp),
+			nih_warn ("%s:%zu:%zu: %s: %s", context->filename,
+				  (size_t)XML_GetCurrentLineNumber (xmlp),
+				  (size_t)XML_GetCurrentColumnNumber (xmlp),
 				  _("Ignored unknown argument annotation"),
 				  name);
 			break;

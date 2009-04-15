@@ -176,9 +176,9 @@ node_start_tag (XML_Parser    xmlp,
 	parent = parse_stack_top (&context->stack);
 	if (parent) {
 		if (parent->type != PARSE_NODE) {
-			nih_warn ("%s:%zi:%zi: %s", context->filename,
-				  XML_GetCurrentLineNumber (xmlp),
-				  XML_GetCurrentColumnNumber (xmlp),
+			nih_warn ("%s:%zu:%zu: %s", context->filename,
+				  (size_t)XML_GetCurrentLineNumber (xmlp),
+				  (size_t)XML_GetCurrentColumnNumber (xmlp),
 				  _("Ignored unexpected <node> tag"));
 		}
 
@@ -197,9 +197,9 @@ node_start_tag (XML_Parser    xmlp,
 		if (! strcmp (*key, "name")) {
 			name = *value;
 		} else {
-			nih_warn ("%s:%zi:%zi: %s: %s", context->filename,
-				  XML_GetCurrentLineNumber (xmlp),
-				  XML_GetCurrentColumnNumber (xmlp),
+			nih_warn ("%s:%zu:%zu: %s: %s", context->filename,
+				  (size_t)XML_GetCurrentLineNumber (xmlp),
+				  (size_t)XML_GetCurrentColumnNumber (xmlp),
 				  _("Ignored unknown <node> attribute"),
 				  *key);
 		}

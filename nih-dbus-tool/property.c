@@ -192,9 +192,9 @@ property_start_tag (XML_Parser    xmlp,
 	/* Properties should only appear inside interfaces. */
 	parent = parse_stack_top (&context->stack);
 	if ((! parent) || (parent->type != PARSE_INTERFACE)) {
-		nih_warn ("%s:%zi:%zi: %s", context->filename,
-			  XML_GetCurrentLineNumber (xmlp),
-			  XML_GetCurrentColumnNumber (xmlp),
+		nih_warn ("%s:%zu:%zu: %s", context->filename,
+			  (size_t)XML_GetCurrentLineNumber (xmlp),
+			  (size_t)XML_GetCurrentColumnNumber (xmlp),
 			  _("Ignored unexpected <property> tag"));
 
 		if (! parse_stack_push (NULL, &context->stack,
@@ -216,9 +216,9 @@ property_start_tag (XML_Parser    xmlp,
 		} else if (! strcmp (*key, "access")) {
 			access_str = *value;
 		} else {
-			nih_warn ("%s:%zi:%zi: %s: %s", context->filename,
-				  XML_GetCurrentLineNumber (xmlp),
-				  XML_GetCurrentColumnNumber (xmlp),
+			nih_warn ("%s:%zu:%zu: %s: %s", context->filename,
+				  (size_t)XML_GetCurrentLineNumber (xmlp),
+				  (size_t)XML_GetCurrentColumnNumber (xmlp),
 				  _("Ignored unknown <property> attribute"),
 				  *key);
 		}

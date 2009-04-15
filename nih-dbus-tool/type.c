@@ -162,8 +162,10 @@ type_of (const void *       parent,
 		nih_assert (signature[0] == DBUS_STRUCT_BEGIN_CHAR);
 		nih_assert (signature[strlen (signature) - 1] == DBUS_STRUCT_END_CHAR);
 
-		c_type = nih_sprintf (parent, "struct dbus_struct_%.*s *",
-				      strlen (signature) - 2, signature + 1);
+		signature[strlen (signature) - 1] = '\0';
+
+		c_type = nih_sprintf (parent, "struct dbus_struct_%s *",
+				      signature + 1);
 
 		dbus_free (signature);
 

@@ -29,6 +29,9 @@ nih_dbus_tool_SOURCES = \
 	annotation.c annotation.h \
 	parse.c parse.h \
 	indent.c indent.h \
+	type.c type.h \
+	marshal.c marshal.h \
+	demarshal.c demarshal.h \
 	errors.h
 
 nih_dbus_tool_LDADD = \
@@ -51,10 +54,16 @@ TESTS = \
 	test_annotation \
 	test_parse \
 	test_indent \
+	test_type \
+	test_marshal \
+	test_demarshal \
 	test_com.netsplit.Nih.Test_object \
 	test_com.netsplit.Nih.Test_proxy
 
-check_PROGRAMS = $(TESTS)
+check_PROGRAMS = \
+	$(TESTS) \
+	marshal_factory \
+	demarshal_factory
 
 test_main_SOURCES = tests/test_main.c main.c
 test_main_CFLAGS = $(AM_CFLAGS) -DTEST
@@ -145,6 +154,31 @@ test_indent_LDADD = \
 	indent.o \
 	../nih/libnih.la
 
+test_type_SOURCES = tests/test_type.c
+test_type_LDFLAGS = -static
+test_type_LDADD = \
+	type.o \
+	../nih/libnih.la \
+	$(DBUS_LIBS)
+
+test_marshal_SOURCES = \
+	tests/test_marshal.c \
+	tests/marshal_code.c tests/marshal_code.h
+test_marshal_LDFLAGS = -static
+test_marshal_LDADD = \
+	marshal.o type.o indent.o \
+	../nih/libnih.la \
+	$(DBUS_LIBS)
+
+test_demarshal_SOURCES = \
+	tests/test_demarshal.c \
+	tests/demarshal_code.c tests/demarshal_code.h
+test_demarshal_LDFLAGS = -static
+test_demarshal_LDADD = \
+	demarshal.o type.o indent.o \
+	../nih/libnih.la \
+	$(DBUS_LIBS)
+
 test_com_netsplit_Nih_Test_object_SOURCES = \
 	tests/test_com.netsplit.Nih.Test_object.c \
 	$(com_netsplit_Nih_Test_object_OUTPUTS) \
@@ -198,6 +232,32 @@ EXTRA_DIST = \
 	$(com_netsplit_Nih_Test_object_XML) \
 	$(com_netsplit_Nih_Test_proxy_OUTPUTS) \
 	$(com_netsplit_Nih_Test_proxy_XML)
+
+
+marshal_factory_SOURCES = tests/marshal_factory.c
+marshal_factory_LDFLAGS = -static
+marshal_factory_LDADD = \
+	marshal.o type.o indent.o \
+	../nih/libnih.la \
+	$(DBUS_LIBS)
+
+tests/marshal_code.c: $(builddir)/marshal_factory
+	$(builddir)/marshal_factory > $@.tmp
+	mv $@.tmp $@
+
+
+demarshal_factory_SOURCES = tests/demarshal_factory.c
+demarshal_factory_LDFLAGS = -static
+demarshal_factory_LDADD = \
+	demarshal.o type.o indent.o \
+	../nih/libnih.la \
+	$(DBUS_LIBS)
+
+tests/demarshal_code.c: $(builddir)/demarshal_factory
+	$(builddir)/demarshal_factory > $@.tmp
+	mv $@.tmp $@
+
+CLEANFILES = tests/marshal_code.c tests/demarshal_code.c
 
 
 tests: $(BUILT_SOURCES) $(check_PROGRAMS)

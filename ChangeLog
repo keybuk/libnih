@@ -1,3 +1,45 @@
+2009-04-15  Scott James Remnant  <scott@netsplit.com>
+
+	Continue porting the D-Bus binding tool from Python to C, this code
+	implements the type marshalling and demarshalling with additional
+	support for arrays of arrays of fixed types and structures that the
+	Python code never had.
+
+	* nih-dbus-tool/type.c, nih-dbus-tool/type.h: Functions to identify
+	C types from D-Bus type signatures, and to handle variable
+	declarations
+	* nih-dbus-tool/test_type.c: Test cases
+	* nih-dbus-tool/marshal.c, nih-dbus-tool/marshal.h: Generate code
+	to marshal data from C standard types with given variable names
+	into a D-Bus message.
+	* nih-dbus-tool/tests/marshal_factory.c: Generate functions that
+	contain the generated code for types that we test
+	* nih-dbus-tool/tests/marshal_code.h: Header for generated code
+	* nih-dbus-tool/tests/test_marshal.c: Test both the output strings
+	and the behaviour of the generated code
+	* nih-dbus-tool/demarshal.c, nih-dbus-tool/demarshal.h: Generate
+	code to demarshal data from a D-Bus message into C standard types
+	with requested variable names.
+	* nih-dbus-tool/tests/demarshal_factory.c: Generate functions that
+	contain the generated code for types that we test
+	* nih-dbus-tool/tests/demarshal_code.h: Header for generated code
+	* nih-dbus-tool/tests/test_demarshal.c: Test both the output strings
+	and the behaviour of the generated code
+	* nih-dbus-tool/Makefile.am (nih_dbus_tool_SOURCES): Build and
+	link new source files
+	(TESTS): Run test cases for new source files
+	(test_type_SOURCES, test_type_LDFLAGS, test_type_LDADD)
+	(test_marshal_SOURCES, test_marshal_LDFLAGS, test_marshal_LDADD)
+	(test_demarshal_SOURCES, test_demarshal_LDFLAGS)
+	(test_demarshal_LDADD): Details for test cases.
+	(check_PROGRAMS, marshal_factory_SOURCES)
+	(marshal_factory_LDFLAGS, marshal_factory_LDADD)
+	(tests/marshal_code.c, demarshal_factory_SOURCES)
+	(demarshal_factory_LDFLAGS, demarshal_factory_LDADD)
+	(tests/demarshal_code.c, CLEANFILES): In order to test the output
+	code, we generate a C file containing it and link it to the test
+	cases.  This gets cleaned up on "clean" rather than maintainer-clean
+	
 2009-04-04  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/parse.c (parse_start_tag, parse_xml): Cast return

@@ -881,7 +881,7 @@ test_marshal (void)
 			continue;
 		}
 
-		TEST_EQ_STR (str, ("/* Marshal a const char * onto the message */\n"
+		TEST_EQ_STR (str, ("/* Marshal a char * onto the message */\n"
 				   "if (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &value)) {\n"
 				   "\treturn -1;\n"
 				   "}\n"));
@@ -890,7 +890,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "const char *");
+		TEST_EQ_STR (var->type, "char *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -969,7 +969,7 @@ test_marshal (void)
 			continue;
 		}
 
-		TEST_EQ_STR (str, ("/* Marshal a const char * onto the message */\n"
+		TEST_EQ_STR (str, ("/* Marshal a char * onto the message */\n"
 				   "if (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_OBJECT_PATH, &value)) {\n"
 				   "\treturn -1;\n"
 				   "}\n"));
@@ -978,7 +978,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "const char *");
+		TEST_EQ_STR (var->type, "char *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -1057,7 +1057,7 @@ test_marshal (void)
 			continue;
 		}
 
-		TEST_EQ_STR (str, ("/* Marshal a const char * onto the message */\n"
+		TEST_EQ_STR (str, ("/* Marshal a char * onto the message */\n"
 				   "if (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_SIGNATURE, &value)) {\n"
 				   "\treturn -1;\n"
 				   "}\n"));
@@ -1066,7 +1066,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "const char *");
+		TEST_EQ_STR (var->type, "char *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -1171,7 +1171,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "const int16_t *");
+		TEST_EQ_STR (var->type, "int16_t *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -1388,7 +1388,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "int16_t * const *");
+		TEST_EQ_STR (var->type, "int16_t **");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -1398,7 +1398,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "const size_t *");
+		TEST_EQ_STR (var->type, "size_t *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_len");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -1626,7 +1626,7 @@ test_marshal (void)
 				   "\n"
 				   "\tvalue_element = value[value_i];\n"
 				   "\n"
-				   "\t/* Marshal a const char * onto the message */\n"
+				   "\t/* Marshal a char * onto the message */\n"
 				   "\tif (! dbus_message_iter_append_basic (&value_iter, DBUS_TYPE_STRING, &value_element)) {\n"
 				   "\t\treturn -1;\n"
 				   "\t}\n"
@@ -1640,7 +1640,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "char * const *");
+		TEST_EQ_STR (var->type, "char **");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -1793,7 +1793,7 @@ test_marshal (void)
 				   "\n"
 				   "\t\tvalue_element_element = value_element[value_element_i];\n"
 				   "\n"
-				   "\t\t/* Marshal a const char * onto the message */\n"
+				   "\t\t/* Marshal a char * onto the message */\n"
 				   "\t\tif (! dbus_message_iter_append_basic (&value_element_iter, DBUS_TYPE_STRING, &value_element_element)) {\n"
 				   "\t\t\treturn -1;\n"
 				   "\t\t}\n"
@@ -1812,7 +1812,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "char ** const *");
+		TEST_EQ_STR (var->type, "char ***");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -2002,7 +2002,7 @@ test_marshal (void)
 				   "\n"
 				   "value_item0 = value->item0;\n"
 				   "\n"
-				   "/* Marshal a const char * onto the message */\n"
+				   "/* Marshal a char * onto the message */\n"
 				   "if (! dbus_message_iter_append_basic (&value_iter, DBUS_TYPE_STRING, &value_item0)) {\n"
 				   "\treturn -1;\n"
 				   "}\n"
@@ -2026,7 +2026,7 @@ test_marshal (void)
 				   "\n"
 				   "\tvalue_item2_element = value_item2[value_item2_i];\n"
 				   "\n"
-				   "\t/* Marshal a const char * onto the message */\n"
+				   "\t/* Marshal a char * onto the message */\n"
 				   "\tif (! dbus_message_iter_append_basic (&value_item2_iter, DBUS_TYPE_STRING, &value_item2_element)) {\n"
 				   "\t\treturn -1;\n"
 				   "\t}\n"
@@ -2067,7 +2067,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "const struct dbus_struct_suasan *");
+		TEST_EQ_STR (var->type, "struct dbus_struct_suasan *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -2393,7 +2393,7 @@ test_marshal (void)
 				   "\n"
 				   "\tvalue_element_item0 = value_element->item0;\n"
 				   "\n"
-				   "\t/* Marshal a const char * onto the message */\n"
+				   "\t/* Marshal a char * onto the message */\n"
 				   "\tif (! dbus_message_iter_append_basic (&value_element_iter, DBUS_TYPE_STRING, &value_element_item0)) {\n"
 				   "\t\treturn -1;\n"
 				   "\t}\n"
@@ -2418,7 +2418,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "struct dbus_struct_su * const *");
+		TEST_EQ_STR (var->type, "struct dbus_struct_su **");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);

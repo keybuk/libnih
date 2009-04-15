@@ -1,5 +1,20 @@
 2009-04-15  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/marshal.c (marshal_basic): Do not make the input
+	variable const, when used in method object/signal proxy mode we
+	might modify the local variable before passing it to the marshalling
+	code so can't have it const.
+	(marshal_array, marshal_struct): Instead of making the input
+	variable const, make the local we copy into const.
+	* nih-dbus-tool/tests/marshal_factory.c (marshal_function): Make
+	passed-in inputs const.
+	* nih-dbus-tool/tests/test_marshal.c (test_marshal): Make sure that
+	const does not appear in the inputs, or comments, but that all locals
+	are still const (as they are only copies) even in source.
+
+	* nih-dbus-tool/type.c (type_of): can't pass a size_t to a format
+	length, and don't want to cast down to int in case of underrun
+
 	Continue porting the D-Bus binding tool from Python to C, this code
 	implements the type marshalling and demarshalling with additional
 	support for arrays of arrays of fixed types and structures that the

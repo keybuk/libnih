@@ -204,13 +204,8 @@ marshal_basic (const void *       parent,
 	if (! indent (&oom_error_block, NULL, 1))
 		return NULL;
 
-	/* We make our C type const as a promise that we never modify the
-	 * value, if it's a pointer.
-	 */
 	c_type = type_of (NULL, iter);
 	if (! c_type)
-		return NULL;
-	if (! type_to_const (&c_type, NULL))
 		return NULL;
 
 	if (! nih_strcat_sprintf (&code, parent,
@@ -396,11 +391,11 @@ marshal_array (const void *       parent,
 
 	/* Each of the inputs of the marshalling code equates to one of our
 	 * own inputs, except that we add another level of pointers for the
-	 * array and make them const to promise we won't modify the values;
-	 * at the same time, we keep the suffix and append it to our own name.
-	 * Instead of mucking around with pointers and structure members,
-	 * we also append the inputs onto the local lists and array for the
-	 * value to be marshalled into this variable.
+	 * array; at the same time, we keep the suffix and append it to our
+	 * own name.  Instead of mucking around with pointers and structure
+	 * members, we also append the inputs onto the local lists (making it
+	 * const in the process) for the value to be marshalled into this
+	 * variable.
 	 */
 	NIH_LIST_FOREACH_SAFE (&element_inputs, iter) {
 		TypeVar *       input_var = (TypeVar *)iter;
@@ -416,11 +411,6 @@ marshal_array (const void *       parent,
 		}
 
 		if (! type_to_pointer (&var_type, NULL)) {
-			nih_free (code);
-			return NULL;
-		}
-
-		if (! type_to_const (&var_type, NULL)) {
 			nih_free (code);
 			return NULL;
 		}
@@ -447,6 +437,11 @@ marshal_array (const void *       parent,
 					  "%s = %s[%s];\n",
 					  input_var->name, var_name,
 					  loop_name)) {
+			nih_free (code);
+			return NULL;
+		}
+
+		if (! type_to_const (&input_var->type, input_var)) {
 			nih_free (code);
 			return NULL;
 		}
@@ -603,13 +598,8 @@ marshal_struct (const void *       parent,
 	if (! indent (&oom_error_block, NULL, 1))
 		return NULL;
 
-	/* We make our C type const as a promise that we never modify the
-	 * value, if it's a pointer.
-	 */
 	c_type = type_of (NULL, iter);
 	if (! c_type)
-		return NULL;
-	if (! type_to_const (&c_type, NULL))
 		return NULL;
 
 	/* Open the struct container, for that we need to know whether this
@@ -683,12 +673,17 @@ marshal_struct (const void *       parent,
 
 		/* Instead of mucking around with pointers and structure
 		 * members, each of the marshalling code inputs is appended
-		 * onto the local list and we copy the value from the
-		 * array into this variable.
+		 * onto the local list (and made const) and we copy the
+		 * value from the array into this variable.
 		 */
 		NIH_LIST_FOREACH_SAFE (&item_inputs, iter) {
 			TypeVar *input_var = (TypeVar *)iter;
 			char *   suffix;
+
+			if (! type_to_const (&input_var->type, input_var)) {
+				nih_free (code);
+				return NULL;
+			}
 
 			nih_list_add (locals, &input_var->entry);
 			nih_ref (input_var, code);

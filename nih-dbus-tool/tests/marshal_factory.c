@@ -70,6 +70,8 @@ marshal_function (const char *name,
 	NIH_LIST_FOREACH (&inputs, iter) {
 		TypeVar *var = (TypeVar *)iter;
 
+		assert (type_to_const (&var->type, var));
+
 		printf (", %s %s", var->type, var->name);
 	}
 

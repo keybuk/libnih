@@ -1,3 +1,18 @@
+2009-04-16  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/demarshal.c (demarshal_basic): Do not make the output
+	variable a pointer, when used in method object/signal proxy mode we
+	actually have this as a local variable and want the demarshalled
+	value placed directly into it.
+	(demarshal_array, demarshal_struct): Instead of making the output
+	variable a pointer, demarshal into a local and copy that into the
+	output variable.
+	* nih-dbus-tool/tests/demarshal_factory.c (demarshal_function): Make
+	passed in outputs pointers, copy into them after demarshalling
+	* nih-dbus-tool/tests/test_demarshal.c (test_demarshal): Make sure
+	that const does not appear in the inputs, or comments, but that all
+	locals are still const (as they are only copies) even in source.
+
 2009-04-15  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/marshal.c (marshal_basic): Do not make the input

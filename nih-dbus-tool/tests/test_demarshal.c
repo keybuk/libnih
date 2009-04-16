@@ -90,12 +90,12 @@ test_demarshal (void)
 			continue;
 		}
 
-		TEST_EQ_STR (str, ("/* Demarshal a uint8_t * from the message */\n"
+		TEST_EQ_STR (str, ("/* Demarshal a uint8_t from the message */\n"
 				   "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_BYTE) {\n"
 				   "\treturn 1;\n"
 				   "}\n"
 				   "\n"
-				   "dbus_message_iter_get_basic (&iter, value);\n"
+				   "dbus_message_iter_get_basic (&iter, &value);\n"
 				   "\n"
 				   "dbus_message_iter_next (&iter);\n"));
 
@@ -103,7 +103,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)outputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "uint8_t *");
+		TEST_EQ_STR (var->type, "uint8_t");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -213,12 +213,12 @@ test_demarshal (void)
 			continue;
 		}
 
-		TEST_EQ_STR (str, ("/* Demarshal a int * from the message */\n"
+		TEST_EQ_STR (str, ("/* Demarshal a int from the message */\n"
 				   "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_BOOLEAN) {\n"
 				   "\treturn 1;\n"
 				   "}\n"
 				   "\n"
-				   "dbus_message_iter_get_basic (&iter, value);\n"
+				   "dbus_message_iter_get_basic (&iter, &value);\n"
 				   "\n"
 				   "dbus_message_iter_next (&iter);\n"));
 
@@ -226,7 +226,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)outputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "int *");
+		TEST_EQ_STR (var->type, "int");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -336,12 +336,12 @@ test_demarshal (void)
 			continue;
 		}
 
-		TEST_EQ_STR (str, ("/* Demarshal a int16_t * from the message */\n"
+		TEST_EQ_STR (str, ("/* Demarshal a int16_t from the message */\n"
 				   "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INT16) {\n"
 				   "\treturn 1;\n"
 				   "}\n"
 				   "\n"
-				   "dbus_message_iter_get_basic (&iter, value);\n"
+				   "dbus_message_iter_get_basic (&iter, &value);\n"
 				   "\n"
 				   "dbus_message_iter_next (&iter);\n"));
 
@@ -349,7 +349,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)outputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "int16_t *");
+		TEST_EQ_STR (var->type, "int16_t");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -459,12 +459,12 @@ test_demarshal (void)
 			continue;
 		}
 
-		TEST_EQ_STR (str, ("/* Demarshal a uint16_t * from the message */\n"
+		TEST_EQ_STR (str, ("/* Demarshal a uint16_t from the message */\n"
 				   "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_UINT16) {\n"
 				   "\treturn 1;\n"
 				   "}\n"
 				   "\n"
-				   "dbus_message_iter_get_basic (&iter, value);\n"
+				   "dbus_message_iter_get_basic (&iter, &value);\n"
 				   "\n"
 				   "dbus_message_iter_next (&iter);\n"));
 
@@ -472,7 +472,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)outputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "uint16_t *");
+		TEST_EQ_STR (var->type, "uint16_t");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -582,12 +582,12 @@ test_demarshal (void)
 			continue;
 		}
 
-		TEST_EQ_STR (str, ("/* Demarshal a int32_t * from the message */\n"
+		TEST_EQ_STR (str, ("/* Demarshal a int32_t from the message */\n"
 				   "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INT32) {\n"
 				   "\treturn 1;\n"
 				   "}\n"
 				   "\n"
-				   "dbus_message_iter_get_basic (&iter, value);\n"
+				   "dbus_message_iter_get_basic (&iter, &value);\n"
 				   "\n"
 				   "dbus_message_iter_next (&iter);\n"));
 
@@ -595,7 +595,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)outputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "int32_t *");
+		TEST_EQ_STR (var->type, "int32_t");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -705,12 +705,12 @@ test_demarshal (void)
 			continue;
 		}
 
-		TEST_EQ_STR (str, ("/* Demarshal a uint32_t * from the message */\n"
+		TEST_EQ_STR (str, ("/* Demarshal a uint32_t from the message */\n"
 				   "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_UINT32) {\n"
 				   "\treturn 1;\n"
 				   "}\n"
 				   "\n"
-				   "dbus_message_iter_get_basic (&iter, value);\n"
+				   "dbus_message_iter_get_basic (&iter, &value);\n"
 				   "\n"
 				   "dbus_message_iter_next (&iter);\n"));
 
@@ -718,7 +718,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)outputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "uint32_t *");
+		TEST_EQ_STR (var->type, "uint32_t");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -828,12 +828,12 @@ test_demarshal (void)
 			continue;
 		}
 
-		TEST_EQ_STR (str, ("/* Demarshal a int64_t * from the message */\n"
+		TEST_EQ_STR (str, ("/* Demarshal a int64_t from the message */\n"
 				   "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INT64) {\n"
 				   "\treturn 1;\n"
 				   "}\n"
 				   "\n"
-				   "dbus_message_iter_get_basic (&iter, value);\n"
+				   "dbus_message_iter_get_basic (&iter, &value);\n"
 				   "\n"
 				   "dbus_message_iter_next (&iter);\n"));
 
@@ -841,7 +841,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)outputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "int64_t *");
+		TEST_EQ_STR (var->type, "int64_t");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -951,12 +951,12 @@ test_demarshal (void)
 			continue;
 		}
 
-		TEST_EQ_STR (str, ("/* Demarshal a uint64_t * from the message */\n"
+		TEST_EQ_STR (str, ("/* Demarshal a uint64_t from the message */\n"
 				   "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_UINT64) {\n"
 				   "\treturn 1;\n"
 				   "}\n"
 				   "\n"
-				   "dbus_message_iter_get_basic (&iter, value);\n"
+				   "dbus_message_iter_get_basic (&iter, &value);\n"
 				   "\n"
 				   "dbus_message_iter_next (&iter);\n"));
 
@@ -964,7 +964,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)outputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "uint64_t *");
+		TEST_EQ_STR (var->type, "uint64_t");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -1074,12 +1074,12 @@ test_demarshal (void)
 			continue;
 		}
 
-		TEST_EQ_STR (str, ("/* Demarshal a double * from the message */\n"
+		TEST_EQ_STR (str, ("/* Demarshal a double from the message */\n"
 				   "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_DOUBLE) {\n"
 				   "\treturn 1;\n"
 				   "}\n"
 				   "\n"
-				   "dbus_message_iter_get_basic (&iter, value);\n"
+				   "dbus_message_iter_get_basic (&iter, &value);\n"
 				   "\n"
 				   "dbus_message_iter_next (&iter);\n"));
 
@@ -1087,7 +1087,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)outputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "double *");
+		TEST_EQ_STR (var->type, "double");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -1201,15 +1201,15 @@ test_demarshal (void)
 			continue;
 		}
 
-		TEST_EQ_STR (str, ("/* Demarshal a char ** from the message */\n"
+		TEST_EQ_STR (str, ("/* Demarshal a char * from the message */\n"
 				   "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING) {\n"
 				   "\treturn 1;\n"
 				   "}\n"
 				   "\n"
 				   "dbus_message_iter_get_basic (&iter, &value_dbus);\n"
 				   "\n"
-				   "*value = nih_strdup (parent, value_dbus);\n"
-				   "if (! *value) {\n"
+				   "value = nih_strdup (parent, value_dbus);\n"
+				   "if (! value) {\n"
 				   "\treturn -1;\n"
 				   "}\n"
 				   "\n"
@@ -1219,7 +1219,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)outputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "char **");
+		TEST_EQ_STR (var->type, "char *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -1346,15 +1346,15 @@ test_demarshal (void)
 			continue;
 		}
 
-		TEST_EQ_STR (str, ("/* Demarshal a char ** from the message */\n"
+		TEST_EQ_STR (str, ("/* Demarshal a char * from the message */\n"
 				   "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_OBJECT_PATH) {\n"
 				   "\treturn 1;\n"
 				   "}\n"
 				   "\n"
 				   "dbus_message_iter_get_basic (&iter, &value_dbus);\n"
 				   "\n"
-				   "*value = nih_strdup (parent, value_dbus);\n"
-				   "if (! *value) {\n"
+				   "value = nih_strdup (parent, value_dbus);\n"
+				   "if (! value) {\n"
 				   "\treturn -1;\n"
 				   "}\n"
 				   "\n"
@@ -1364,7 +1364,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)outputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "char **");
+		TEST_EQ_STR (var->type, "char *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -1491,15 +1491,15 @@ test_demarshal (void)
 			continue;
 		}
 
-		TEST_EQ_STR (str, ("/* Demarshal a char ** from the message */\n"
+		TEST_EQ_STR (str, ("/* Demarshal a char * from the message */\n"
 				   "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_SIGNATURE) {\n"
 				   "\treturn 1;\n"
 				   "}\n"
 				   "\n"
 				   "dbus_message_iter_get_basic (&iter, &value_dbus);\n"
 				   "\n"
-				   "*value = nih_strdup (parent, value_dbus);\n"
-				   "if (! *value) {\n"
+				   "value = nih_strdup (parent, value_dbus);\n"
+				   "if (! value) {\n"
 				   "\treturn -1;\n"
 				   "}\n"
 				   "\n"
@@ -1509,7 +1509,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)outputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "char **");
+		TEST_EQ_STR (var->type, "char *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -1645,53 +1645,51 @@ test_demarshal (void)
 				   "\n"
 				   "dbus_message_iter_recurse (&iter, &value_iter);\n"
 				   "\n"
-				   "value_size = 0;\n"
+				   "value_len = 0;\n"
 				   "\n"
-				   "*value = NULL;\n"
+				   "value = NULL;\n"
 				   "\n"
 				   "while (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_INVALID) {\n"
 				   "\tint16_t * value_tmp;\n"
-				   "\tint16_t * value_element;\n"
+				   "\tint16_t value_element;\n"
 				   "\n"
-				   "\tif (value_size + 1 > SIZE_MAX / sizeof (int16_t)) {\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
+				   "\t/* Demarshal a int16_t from the message */\n"
+				   "\tif (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_INT16) {\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
 				   "\t\treturn 1;\n"
 				   "\t}\n"
 				   "\n"
-				   "\tvalue_tmp = nih_realloc (*value, parent, sizeof (int16_t) * (value_size + 1));\n"
+				   "\tdbus_message_iter_get_basic (&value_iter, &value_element);\n"
+				   "\n"
+				   "\tdbus_message_iter_next (&value_iter);\n"
+				   "\n"
+				   "\tif (value_len + 1 > SIZE_MAX / sizeof (int16_t)) {\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\treturn 1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue_tmp = nih_realloc (value, parent, sizeof (int16_t) * (value_len + 1));\n"
 				   "\tif (! value_tmp) {\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
 				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
-				   "\t*value = value_tmp;\n"
-				   "\tvalue_element = *value + value_size;\n"
+				   "\tvalue = value_tmp;\n"
+				   "\tvalue[value_len] = value_element;\n"
 				   "\n"
-				   "\tvalue_size++;\n"
-				   "\n"
-				   "\t/* Demarshal a int16_t * from the message */\n"
-				   "\tif (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_INT16) {\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
-				   "\t\treturn 1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\tdbus_message_iter_get_basic (&value_iter, value_element);\n"
-				   "\n"
-				   "\tdbus_message_iter_next (&value_iter);\n"
+				   "\tvalue_len++;\n"
 				   "}\n"
 				   "\n"
-				   "dbus_message_iter_next (&iter);\n"
-				   "\n"
-				   "*value_len = value_size;\n"));
+				   "dbus_message_iter_next (&iter);\n"));
 
 		TEST_LIST_NOT_EMPTY (&outputs);
 
 		var = (TypeVar *)outputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "int16_t **");
+		TEST_EQ_STR (var->type, "int16_t *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -1701,7 +1699,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)outputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "size_t *");
+		TEST_EQ_STR (var->type, "size_t");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_len");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -1719,15 +1717,6 @@ test_demarshal (void)
 		TEST_ALLOC_PARENT (var->name, var);
 		nih_free (var);
 
-		TEST_LIST_NOT_EMPTY (&locals);
-
-		var = (TypeVar *)locals.next;
-		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "size_t");
-		TEST_ALLOC_PARENT (var->type, var);
-		TEST_EQ_STR (var->name, "value_size");
-		TEST_ALLOC_PARENT (var->name, var);
-		nih_free (var);
 		TEST_LIST_EMPTY (&locals);
 
 		nih_free (str);
@@ -1854,8 +1843,7 @@ test_demarshal (void)
 
 	/* Check that when a int16 array is expected, but a different type is
 	 * found inside the array, the type error code is run and the function
-	 * returns - the pointer may be modified though, trying to avoid that
-	 * just makes the code harder for no benefit.
+	 * returns without modifying the pointer.
 	 */
 	TEST_FEATURE ("with wrong type inside int16 array (generated code)");
 	TEST_ALLOC_FAIL {
@@ -1891,6 +1879,8 @@ test_demarshal (void)
 		}
 
 		TEST_GT (ret, 0);
+		TEST_EQ_P (int16_array, NULL);
+		TEST_EQ (int16_array_len, 0);
 
 		dbus_message_unref (message);
 
@@ -1935,117 +1925,116 @@ test_demarshal (void)
 				   "\n"
 				   "value_size = 0;\n"
 				   "\n"
-				   "*value = nih_alloc (parent, sizeof (int16_t *));\n"
-				   "if (! *value) {\n"
+				   "value = nih_alloc (parent, sizeof (int16_t *));\n"
+				   "if (! value) {\n"
 				   "\treturn -1;\n"
 				   "}\n"
 				   "\n"
-				   "(*value)[value_size] = NULL;\n"
+				   "value[value_size] = NULL;\n"
 				   "\n"
-				   "*value_len = NULL;\n"
+				   "value_len = NULL;\n"
 				   "\n"
 				   "while (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_INVALID) {\n"
 				   "\tDBusMessageIter value_element_iter;\n"
-				   "\tsize_t value_element_size;\n"
 				   "\tint16_t ** value_tmp;\n"
-				   "\tint16_t ** value_element;\n"
+				   "\tint16_t * value_element;\n"
 				   "\tsize_t * value_len_tmp;\n"
-				   "\tsize_t * value_element_len;\n"
-				   "\n"
-				   "\tif (value_size + 2 > SIZE_MAX / sizeof (int16_t *)) {\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
-				   "\t\treturn 1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\tvalue_tmp = nih_realloc (*value, parent, sizeof (int16_t *) * (value_size + 2));\n"
-				   "\tif (! value_tmp) {\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
-				   "\t\treturn -1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\t*value = value_tmp;\n"
-				   "\tvalue_element = *value + value_size;\n"
-				   "\t(*value)[value_size + 1] = NULL;\n"
-				   "\n"
-				   "\tif (value_size + 1 > SIZE_MAX / sizeof (size_t)) {\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
-				   "\t\treturn 1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\tvalue_len_tmp = nih_realloc (*value_len, *value, sizeof (size_t) * (value_size + 1));\n"
-				   "\tif (! value_len_tmp) {\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
-				   "\t\treturn -1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\t*value_len = value_len_tmp;\n"
-				   "\tvalue_element_len = *value_len + value_size;\n"
-				   "\n"
-				   "\tvalue_size++;\n"
+				   "\tsize_t value_element_len;\n"
 				   "\n"
 
 				   "\t/* Demarshal an array from the message */\n"
 				   "\tif (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_ARRAY) {\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
 				   "\t\treturn 1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\tdbus_message_iter_recurse (&value_iter, &value_element_iter);\n"
 				   "\n"
-				   "\tvalue_element_size = 0;\n"
+				   "\tvalue_element_len = 0;\n"
 				   "\n"
-				   "\t*value_element = NULL;\n"
+				   "\tvalue_element = NULL;\n"
 				   "\n"
 				   "\twhile (dbus_message_iter_get_arg_type (&value_element_iter) != DBUS_TYPE_INVALID) {\n"
 				   "\t\tint16_t * value_element_tmp;\n"
-				   "\t\tint16_t * value_element_element;\n"
+				   "\t\tint16_t value_element_element;\n"
 				   "\n"
-				   "\t\tif (value_element_size + 1 > SIZE_MAX / sizeof (int16_t)) {\n"
-				   "\t\t\tif (*value_element)\n"
-				   "\t\t\t\tnih_free (*value_element);\n"
-				   "\t\t\tif (*value)\n"
-				   "\t\t\t\tnih_free (*value);\n"
+
+				   "\t\t/* Demarshal a int16_t from the message */\n"
+				   "\t\tif (dbus_message_iter_get_arg_type (&value_element_iter) != DBUS_TYPE_INT16) {\n"
+				   "\t\t\tif (value_element)\n"
+				   "\t\t\t\tnih_free (value_element);\n"
+				   "\t\t\tif (value)\n"
+				   "\t\t\t\tnih_free (value);\n"
 				   "\t\t\treturn 1;\n"
 				   "\t\t}\n"
 				   "\n"
-				   "\t\tvalue_element_tmp = nih_realloc (*value_element, *value, sizeof (int16_t) * (value_element_size + 1));\n"
+				   "\t\tdbus_message_iter_get_basic (&value_element_iter, &value_element_element);\n"
+				   "\n"
+				   "\t\tdbus_message_iter_next (&value_element_iter);\n"
+				   "\n"
+
+				   "\t\tif (value_element_len + 1 > SIZE_MAX / sizeof (int16_t)) {\n"
+				   "\t\t\tif (value_element)\n"
+				   "\t\t\t\tnih_free (value_element);\n"
+				   "\t\t\tif (value)\n"
+				   "\t\t\t\tnih_free (value);\n"
+				   "\t\t\treturn 1;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tvalue_element_tmp = nih_realloc (value_element, value, sizeof (int16_t) * (value_element_len + 1));\n"
 				   "\t\tif (! value_element_tmp) {\n"
-				   "\t\t\tif (*value_element)\n"
-				   "\t\t\t\tnih_free (*value_element);\n"
-				   "\t\t\tif (*value)\n"
-				   "\t\t\t\tnih_free (*value);\n"
+				   "\t\t\tif (value_element)\n"
+				   "\t\t\t\tnih_free (value_element);\n"
+				   "\t\t\tif (value)\n"
+				   "\t\t\t\tnih_free (value);\n"
 				   "\t\t\treturn -1;\n"
 				   "\t\t}\n"
 				   "\n"
-				   "\t\t*value_element = value_element_tmp;\n"
-				   "\t\tvalue_element_element = *value_element + value_element_size;\n"
+				   "\t\tvalue_element = value_element_tmp;\n"
+				   "\t\tvalue_element[value_element_len] = value_element_element;\n"
 				   "\n"
-				   "\t\tvalue_element_size++;\n"
-				   "\n"
-
-				   "\t\t/* Demarshal a int16_t * from the message */\n"
-				   "\t\tif (dbus_message_iter_get_arg_type (&value_element_iter) != DBUS_TYPE_INT16) {\n"
-				   "\t\t\tif (*value_element)\n"
-				   "\t\t\t\tnih_free (*value_element);\n"
-				   "\t\t\tif (*value)\n"
-				   "\t\t\t\tnih_free (*value);\n"
-				   "\t\t\treturn 1;\n"
-				   "\t\t}\n"
-				   "\n"
-				   "\t\tdbus_message_iter_get_basic (&value_element_iter, value_element_element);\n"
-				   "\n"
-				   "\t\tdbus_message_iter_next (&value_element_iter);\n"
+				   "\t\tvalue_element_len++;\n"
 
 				   "\t}\n"
 				   "\n"
 				   "\tdbus_message_iter_next (&value_iter);\n"
 				   "\n"
-				   "\t*value_element_len = value_element_size;\n"
+
+				   "\tif (value_size + 2 > SIZE_MAX / sizeof (int16_t *)) {\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\treturn 1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue_tmp = nih_realloc (value, parent, sizeof (int16_t *) * (value_size + 2));\n"
+				   "\tif (! value_tmp) {\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue = value_tmp;\n"
+				   "\tvalue[value_size] = value_element;\n"
+				   "\tvalue[value_size + 1] = NULL;\n"
+				   "\n"
+				   "\tif (value_size + 1 > SIZE_MAX / sizeof (size_t)) {\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\treturn 1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue_len_tmp = nih_realloc (value_len, value, sizeof (size_t) * (value_size + 1));\n"
+				   "\tif (! value_len_tmp) {\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue_len = value_len_tmp;\n"
+				   "\tvalue_len[value_size] = value_element_len;\n"
+				   "\n"
+				   "\tvalue_size++;\n"
 
 				   "}\n"
 				   "\n"
@@ -2055,7 +2044,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)outputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "int16_t ***");
+		TEST_EQ_STR (var->type, "int16_t **");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -2065,7 +2054,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)outputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "size_t **");
+		TEST_EQ_STR (var->type, "size_t *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_len");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -2213,11 +2202,11 @@ test_demarshal (void)
 	}
 
 
-	/* Check that when a int16 array is expected, but a different type is
-	 * found at the top-level, the type error code is run and the function
-	 * returns without modifying the pointer.
+	/* Check that when a int16 array array is expected, but a different
+	 * type is found at the top-level, the type error code is run and
+	 * the function returns without modifying the pointer.
 	 */
-	TEST_FEATURE ("with wrong type for int16 array (generated code)");
+	TEST_FEATURE ("with wrong type for int16 array array (generated code)");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			message = dbus_message_new (DBUS_MESSAGE_TYPE_METHOD_CALL);
@@ -2229,12 +2218,12 @@ test_demarshal (void)
 							&double_value);
 		}
 
-		int16_array = NULL;
-		int16_array_len = 0;
+		int16_array_array = NULL;
+		int16_array_array_len = NULL;
 
-		ret = my_int16_array_demarshal (NULL, message,
-						&int16_array,
-						&int16_array_len);
+		ret = my_int16_array_array_demarshal (NULL, message,
+						      &int16_array_array,
+						      &int16_array_array_len);
 
 		if (test_alloc_failed) {
 			TEST_LT (ret, 0);
@@ -2245,8 +2234,8 @@ test_demarshal (void)
 		}
 
 		TEST_GT (ret, 0);
-		TEST_EQ_P (int16_array, NULL);
-		TEST_EQ (int16_array_len, 0);
+		TEST_EQ_P (int16_array_array, NULL);
+		TEST_EQ_P (int16_array_array_len, NULL);
 
 		dbus_message_unref (message);
 
@@ -2254,12 +2243,11 @@ test_demarshal (void)
 	}
 
 
-	/* Check that when a int16 array is expected, but a different type is
-	 * found inside the array, the type error code is run and the function
-	 * returns - the pointer may be modified though, trying to avoid that
-	 * just makes the code harder for no benefit.
+	/* Check that when a int16 array array is expected, but a different
+	 * type is found inside the top array, the type error code is run and
+	 * the function returns without modifying the pointer.
 	 */
-	TEST_FEATURE ("with wrong type inside int16 array (generated code)");
+	TEST_FEATURE ("with wrong type inside int16 array array (generated code)");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			message = dbus_message_new (DBUS_MESSAGE_TYPE_METHOD_CALL);
@@ -2277,12 +2265,12 @@ test_demarshal (void)
 			dbus_message_iter_close_container (&iter, &subiter);
 		}
 
-		int16_array = NULL;
-		int16_array_len = 0;
+		int16_array_array = NULL;
+		int16_array_array_len = NULL;
 
-		ret = my_int16_array_demarshal (NULL, message,
-						&int16_array,
-						&int16_array_len);
+		ret = my_int16_array_array_demarshal (NULL, message,
+						      &int16_array_array,
+						      &int16_array_array_len);
 
 		if (test_alloc_failed) {
 			TEST_LT (ret, 0);
@@ -2293,6 +2281,62 @@ test_demarshal (void)
 		}
 
 		TEST_GT (ret, 0);
+		TEST_EQ_P (int16_array_array, NULL);
+		TEST_EQ_P (int16_array_array_len, NULL);
+
+		dbus_message_unref (message);
+
+		dbus_shutdown ();
+	}
+
+
+	/* Check that when a int16 array array is expected, but a different
+	 * type is found inside the second array, the type error code is run
+	 * and the function returns without modifying the pointer.
+	 */
+	TEST_FEATURE ("with wrong type deep inside int16 array array (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			message = dbus_message_new (DBUS_MESSAGE_TYPE_METHOD_CALL);
+
+			dbus_message_iter_init_append (message, &iter);
+
+			dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+							  (DBUS_TYPE_ARRAY_AS_STRING
+							   DBUS_TYPE_DOUBLE_AS_STRING),
+							  &subiter);
+
+			dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+							  DBUS_TYPE_DOUBLE_AS_STRING,
+							  &subsubiter);
+
+			double_value = 3.14;
+			dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_DOUBLE,
+							&double_value);
+
+			dbus_message_iter_close_container (&subiter, &subsubiter);
+
+			dbus_message_iter_close_container (&iter, &subiter);
+		}
+
+		int16_array_array = NULL;
+		int16_array_array_len = NULL;
+
+		ret = my_int16_array_array_demarshal (NULL, message,
+						      &int16_array_array,
+						      &int16_array_array_len);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_message_unref (message);
+			dbus_shutdown ();
+			continue;
+		}
+
+		TEST_GT (ret, 0);
+		TEST_EQ_P (int16_array_array, NULL);
+		TEST_EQ_P (int16_array_array_len, NULL);
 
 		dbus_message_unref (message);
 
@@ -2335,54 +2379,54 @@ test_demarshal (void)
 				   "\n"
 				   "value_size = 0;\n"
 				   "\n"
-				   "*value = nih_alloc (parent, sizeof (char *));\n"
-				   "if (! *value) {\n"
+				   "value = nih_alloc (parent, sizeof (char *));\n"
+				   "if (! value) {\n"
 				   "\treturn -1;\n"
 				   "}\n"
 				   "\n"
-				   "(*value)[value_size] = NULL;\n"
+				   "value[value_size] = NULL;\n"
 				   "\n"
 				   "while (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_INVALID) {\n"
 				   "\tconst char * value_element_dbus;\n"
 				   "\tchar ** value_tmp;\n"
-				   "\tchar ** value_element;\n"
+				   "\tchar * value_element;\n"
 				   "\n"
-				   "\tif (value_size + 2 > SIZE_MAX / sizeof (char *)) {\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
-				   "\t\treturn 1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\tvalue_tmp = nih_realloc (*value, parent, sizeof (char *) * (value_size + 2));\n"
-				   "\tif (! value_tmp) {\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
-				   "\t\treturn -1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\t*value = value_tmp;\n"
-				   "\tvalue_element = *value + value_size;\n"
-				   "\t(*value)[value_size + 1] = NULL;\n"
-				   "\n"
-				   "\tvalue_size++;\n"
-				   "\n"
-				   "\t/* Demarshal a char ** from the message */\n"
+				   "\t/* Demarshal a char * from the message */\n"
 				   "\tif (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_STRING) {\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
 				   "\t\treturn 1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\tdbus_message_iter_get_basic (&value_iter, &value_element_dbus);\n"
 				   "\n"
-				   "\t*value_element = nih_strdup (*value, value_element_dbus);\n"
-				   "\tif (! *value_element) {\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
+				   "\tvalue_element = nih_strdup (value, value_element_dbus);\n"
+				   "\tif (! value_element) {\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
 				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\tdbus_message_iter_next (&value_iter);\n"
+				   "\n"
+				   "\tif (value_size + 2 > SIZE_MAX / sizeof (char *)) {\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\treturn 1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue_tmp = nih_realloc (value, parent, sizeof (char *) * (value_size + 2));\n"
+				   "\tif (! value_tmp) {\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue = value_tmp;\n"
+				   "\tvalue[value_size] = value_element;\n"
+				   "\tvalue[value_size + 1] = NULL;\n"
+				   "\n"
+				   "\tvalue_size++;\n"
 				   "}\n"
 				   "\n"
 				   "dbus_message_iter_next (&iter);\n"));
@@ -2391,7 +2435,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)outputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "char ***");
+		TEST_EQ_STR (var->type, "char **");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -2534,8 +2578,7 @@ test_demarshal (void)
 
 	/* Check that when a string array is expected, but a different type is
 	 * found inside the array, the type error code is run and the function
-	 * returns - the pointer may be modified though, trying to avoid that
-	 * just makes the code harder for no benefit.
+	 * returns without modifying the pointer.
 	 */
 	TEST_FEATURE ("with wrong type inside string array (generated code)");
 	TEST_ALLOC_FAIL {
@@ -2569,6 +2612,7 @@ test_demarshal (void)
 		}
 
 		TEST_GT (ret, 0);
+		TEST_EQ_P (str_array, NULL);
 
 		dbus_message_unref (message);
 
@@ -2613,42 +2657,23 @@ test_demarshal (void)
 				   "\n"
 				   "value_size = 0;\n"
 				   "\n"
-				   "*value = nih_alloc (parent, sizeof (char **));\n"
-				   "if (! *value) {\n"
+				   "value = nih_alloc (parent, sizeof (char **));\n"
+				   "if (! value) {\n"
 				   "\treturn -1;\n"
 				   "}\n"
 				   "\n"
-				   "(*value)[value_size] = NULL;\n"
+				   "value[value_size] = NULL;\n"
 				   "\n"
 				   "while (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_INVALID) {\n"
 				   "\tDBusMessageIter value_element_iter;\n"
 				   "\tsize_t value_element_size;\n"
 				   "\tchar *** value_tmp;\n"
-				   "\tchar *** value_element;\n"
-				   "\n"
-				   "\tif (value_size + 2 > SIZE_MAX / sizeof (char **)) {\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
-				   "\t\treturn 1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\tvalue_tmp = nih_realloc (*value, parent, sizeof (char **) * (value_size + 2));\n"
-				   "\tif (! value_tmp) {\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
-				   "\t\treturn -1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\t*value = value_tmp;\n"
-				   "\tvalue_element = *value + value_size;\n"
-				   "\t(*value)[value_size + 1] = NULL;\n"
-				   "\n"
-				   "\tvalue_size++;\n"
+				   "\tchar ** value_element;\n"
 				   "\n"
 				   "\t/* Demarshal an array from the message */\n"
 				   "\tif (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_ARRAY) {\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
 				   "\t\treturn 1;\n"
 				   "\t}\n"
 				   "\n"
@@ -2656,67 +2681,86 @@ test_demarshal (void)
 				   "\n"
 				   "\tvalue_element_size = 0;\n"
 				   "\n"
-				   "\t*value_element = nih_alloc (*value, sizeof (char *));\n"
-				   "\tif (! *value_element) {\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
+				   "\tvalue_element = nih_alloc (value, sizeof (char *));\n"
+				   "\tif (! value_element) {\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
 				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
-				   "\t(*value_element)[value_element_size] = NULL;\n"
+				   "\tvalue_element[value_element_size] = NULL;\n"
 				   "\n"
 				   "\twhile (dbus_message_iter_get_arg_type (&value_element_iter) != DBUS_TYPE_INVALID) {\n"
 				   "\t\tconst char * value_element_element_dbus;\n"
 				   "\t\tchar ** value_element_tmp;\n"
-				   "\t\tchar ** value_element_element;\n"
+				   "\t\tchar * value_element_element;\n"
 				   "\n"
-				   "\t\tif (value_element_size + 2 > SIZE_MAX / sizeof (char *)) {\n"
-				   "\t\t\tif (*value_element)\n"
-				   "\t\t\t\tnih_free (*value_element);\n"
-				   "\t\t\tif (*value)\n"
-				   "\t\t\t\tnih_free (*value);\n"
-				   "\t\t\treturn 1;\n"
-				   "\t\t}\n"
-				   "\n"
-				   "\t\tvalue_element_tmp = nih_realloc (*value_element, *value, sizeof (char *) * (value_element_size + 2));\n"
-				   "\t\tif (! value_element_tmp) {\n"
-				   "\t\t\tif (*value_element)\n"
-				   "\t\t\t\tnih_free (*value_element);\n"
-				   "\t\t\tif (*value)\n"
-				   "\t\t\t\tnih_free (*value);\n"
-				   "\t\t\treturn -1;\n"
-				   "\t\t}\n"
-				   "\n"
-				   "\t\t*value_element = value_element_tmp;\n"
-				   "\t\tvalue_element_element = *value_element + value_element_size;\n"
-				   "\t\t(*value_element)[value_element_size + 1] = NULL;\n"
-				   "\n"
-				   "\t\tvalue_element_size++;\n"
-				   "\n"
-				   "\t\t/* Demarshal a char ** from the message */\n"
+				   "\t\t/* Demarshal a char * from the message */\n"
 				   "\t\tif (dbus_message_iter_get_arg_type (&value_element_iter) != DBUS_TYPE_STRING) {\n"
-				   "\t\t\tif (*value_element)\n"
-				   "\t\t\t\tnih_free (*value_element);\n"
-				   "\t\t\tif (*value)\n"
-				   "\t\t\t\tnih_free (*value);\n"
+				   "\t\t\tif (value_element)\n"
+				   "\t\t\t\tnih_free (value_element);\n"
+				   "\t\t\tif (value)\n"
+				   "\t\t\t\tnih_free (value);\n"
 				   "\t\t\treturn 1;\n"
 				   "\t\t}\n"
 				   "\n"
 				   "\t\tdbus_message_iter_get_basic (&value_element_iter, &value_element_element_dbus);\n"
 				   "\n"
-				   "\t\t*value_element_element = nih_strdup (*value_element, value_element_element_dbus);\n"
-				   "\t\tif (! *value_element_element) {\n"
-				   "\t\t\tif (*value_element)\n"
-				   "\t\t\t\tnih_free (*value_element);\n"
-				   "\t\t\tif (*value)\n"
-				   "\t\t\t\tnih_free (*value);\n"
+				   "\t\tvalue_element_element = nih_strdup (value_element, value_element_element_dbus);\n"
+				   "\t\tif (! value_element_element) {\n"
+				   "\t\t\tif (value_element)\n"
+				   "\t\t\t\tnih_free (value_element);\n"
+				   "\t\t\tif (value)\n"
+				   "\t\t\t\tnih_free (value);\n"
 				   "\t\t\treturn -1;\n"
 				   "\t\t}\n"
 				   "\n"
 				   "\t\tdbus_message_iter_next (&value_element_iter);\n"
+				   "\n"
+				   "\t\tif (value_element_size + 2 > SIZE_MAX / sizeof (char *)) {\n"
+				   "\t\t\tif (value_element)\n"
+				   "\t\t\t\tnih_free (value_element);\n"
+				   "\t\t\tif (value)\n"
+				   "\t\t\t\tnih_free (value);\n"
+				   "\t\t\treturn 1;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tvalue_element_tmp = nih_realloc (value_element, value, sizeof (char *) * (value_element_size + 2));\n"
+				   "\t\tif (! value_element_tmp) {\n"
+				   "\t\t\tif (value_element)\n"
+				   "\t\t\t\tnih_free (value_element);\n"
+				   "\t\t\tif (value)\n"
+				   "\t\t\t\tnih_free (value);\n"
+				   "\t\t\treturn -1;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tvalue_element = value_element_tmp;\n"
+				   "\t\tvalue_element[value_element_size] = value_element_element;\n"
+				   "\t\tvalue_element[value_element_size + 1] = NULL;\n"
+				   "\n"
+				   "\t\tvalue_element_size++;\n"
 				   "\t}\n"
 				   "\n"
 				   "\tdbus_message_iter_next (&value_iter);\n"
+				   "\n"
+				   "\tif (value_size + 2 > SIZE_MAX / sizeof (char **)) {\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\treturn 1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue_tmp = nih_realloc (value, parent, sizeof (char **) * (value_size + 2));\n"
+				   "\tif (! value_tmp) {\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue = value_tmp;\n"
+				   "\tvalue[value_size] = value_element;\n"
+				   "\tvalue[value_size + 1] = NULL;\n"
+				   "\n"
+				   "\tvalue_size++;\n"
 				   "}\n"
 				   "\n"
 				   "dbus_message_iter_next (&iter);\n"));
@@ -2725,7 +2769,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)outputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "char ****");
+		TEST_EQ_STR (var->type, "char ***");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -2908,9 +2952,7 @@ test_demarshal (void)
 
 	/* Check that when an array of string arrays is expected, but a
 	 * different type is found inside the array, the type error code
-	 * is run and the function returns - the pointer may be modified
-	 * though, trying to avoid that just makes the code harder for no
-	 * benefit.
+	 * is run and the function returns without modifying the pointer.
 	 */
 	TEST_FEATURE ("with wrong type inside string array array (generated code)");
 	TEST_ALLOC_FAIL {
@@ -2944,6 +2986,7 @@ test_demarshal (void)
 		}
 
 		TEST_GT (ret, 0);
+		TEST_EQ_P (str_array_array, NULL);
 
 		dbus_message_unref (message);
 
@@ -2953,9 +2996,7 @@ test_demarshal (void)
 
 	/* Check that when an array of string arrays is expected, but a
 	 * different type is found deep inside the array, the type error code
-	 * is run and the function returns - the pointer may be modified
-	 * though, trying to avoid that just makes the code harder for no
-	 * benefit.
+	 * is run and the function returns without modifying the pointer.
 	 */
 	TEST_FEATURE ("with wrong type deep inside string array array (generated code)");
 	TEST_ALLOC_FAIL {
@@ -2996,6 +3037,7 @@ test_demarshal (void)
 		}
 
 		TEST_GT (ret, 0);
+		TEST_EQ_P (str_array_array, NULL);
 
 		dbus_message_unref (message);
 
@@ -3041,49 +3083,47 @@ test_demarshal (void)
 				   "\n"
 				   "dbus_message_iter_recurse (&iter, &value_iter);\n"
 				   "\n"
-				   "*value = nih_new (parent, struct dbus_struct_suasan);\n"
-				   "if (! *value) {\n"
+				   "value = nih_new (parent, struct dbus_struct_suasan);\n"
+				   "if (! value) {\n"
 				   "\treturn -1;\n"
 				   "}\n"
 				   "\n"
 
-				   "value_item0 = &(*value)->item0;\n"
-				   "\n"
-				   "/* Demarshal a char ** from the message */\n"
+				   "/* Demarshal a char * from the message */\n"
 				   "if (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_STRING) {\n"
-				   "\tnih_free (*value);\n"
+				   "\tnih_free (value);\n"
 				   "\treturn 1;\n"
 				   "}\n"
 				   "\n"
 				   "dbus_message_iter_get_basic (&value_iter, &value_item0_dbus);\n"
 				   "\n"
-				   "*value_item0 = nih_strdup (*value, value_item0_dbus);\n"
-				   "if (! *value_item0) {\n"
-				   "\tnih_free (*value);\n"
+				   "value_item0 = nih_strdup (value, value_item0_dbus);\n"
+				   "if (! value_item0) {\n"
+				   "\tnih_free (value);\n"
 				   "\treturn -1;\n"
 				   "}\n"
 				   "\n"
 				   "dbus_message_iter_next (&value_iter);\n"
 				   "\n"
-
-				   "value_item1 = &(*value)->item1;\n"
+				   "value->item0 = value_item0;\n"
 				   "\n"
-				   "/* Demarshal a uint32_t * from the message */\n"
+
+				   "/* Demarshal a uint32_t from the message */\n"
 				   "if (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_UINT32) {\n"
-				   "\tnih_free (*value);\n"
+				   "\tnih_free (value);\n"
 				   "\treturn 1;\n"
 				   "}\n"
 				   "\n"
-				   "dbus_message_iter_get_basic (&value_iter, value_item1);\n"
+				   "dbus_message_iter_get_basic (&value_iter, &value_item1);\n"
 				   "\n"
 				   "dbus_message_iter_next (&value_iter);\n"
 				   "\n"
-
-				   "value_item2 = &(*value)->item2;\n"
+				   "value->item1 = value_item1;\n"
 				   "\n"
+
 				   "/* Demarshal an array from the message */\n"
 				   "if (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_ARRAY) {\n"
-				   "\tnih_free (*value);\n"
+				   "\tnih_free (value);\n"
 				   "\treturn 1;\n"
 				   "}\n"
 				   "\n"
@@ -3091,123 +3131,123 @@ test_demarshal (void)
 				   "\n"
 				   "value_item2_size = 0;\n"
 				   "\n"
-				   "*value_item2 = nih_alloc (*value, sizeof (char *));\n"
-				   "if (! *value_item2) {\n"
-				   "\tnih_free (*value);\n"
+				   "value_item2 = nih_alloc (value, sizeof (char *));\n"
+				   "if (! value_item2) {\n"
+				   "\tnih_free (value);\n"
 				   "\treturn -1;\n"
 				   "}\n"
 				   "\n"
-				   "(*value_item2)[value_item2_size] = NULL;\n"
+				   "value_item2[value_item2_size] = NULL;\n"
 				   "\n"
 				   "while (dbus_message_iter_get_arg_type (&value_item2_iter) != DBUS_TYPE_INVALID) {\n"
 				   "\tconst char * value_item2_element_dbus;\n"
 				   "\tchar ** value_item2_tmp;\n"
-				   "\tchar ** value_item2_element;\n"
+				   "\tchar * value_item2_element;\n"
 				   "\n"
-				   "\tif (value_item2_size + 2 > SIZE_MAX / sizeof (char *)) {\n"
-				   "\t\tif (*value_item2)\n"
-				   "\t\t\tnih_free (*value_item2);\n"
-				   "\t\tnih_free (*value);\n"
-				   "\t\treturn 1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\tvalue_item2_tmp = nih_realloc (*value_item2, *value, sizeof (char *) * (value_item2_size + 2));\n"
-				   "\tif (! value_item2_tmp) {\n"
-				   "\t\tif (*value_item2)\n"
-				   "\t\t\tnih_free (*value_item2);\n"
-				   "\t\tnih_free (*value);\n"
-				   "\t\treturn -1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\t*value_item2 = value_item2_tmp;\n"
-				   "\tvalue_item2_element = *value_item2 + value_item2_size;\n"
-				   "\t(*value_item2)[value_item2_size + 1] = NULL;\n"
-				   "\n"
-				   "\tvalue_item2_size++;\n"
-				   "\n"
-				   "\t/* Demarshal a char ** from the message */\n"
+				   "\t/* Demarshal a char * from the message */\n"
 				   "\tif (dbus_message_iter_get_arg_type (&value_item2_iter) != DBUS_TYPE_STRING) {\n"
-				   "\t\tif (*value_item2)\n"
-				   "\t\t\tnih_free (*value_item2);\n"
-				   "\t\tnih_free (*value);\n"
+				   "\t\tif (value_item2)\n"
+				   "\t\t\tnih_free (value_item2);\n"
+				   "\t\tnih_free (value);\n"
 				   "\t\treturn 1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\tdbus_message_iter_get_basic (&value_item2_iter, &value_item2_element_dbus);\n"
 				   "\n"
-				   "\t*value_item2_element = nih_strdup (*value_item2, value_item2_element_dbus);\n"
-				   "\tif (! *value_item2_element) {\n"
-				   "\t\tif (*value_item2)\n"
-				   "\t\t\tnih_free (*value_item2);\n"
-				   "\t\tnih_free (*value);\n"
+				   "\tvalue_item2_element = nih_strdup (value_item2, value_item2_element_dbus);\n"
+				   "\tif (! value_item2_element) {\n"
+				   "\t\tif (value_item2)\n"
+				   "\t\t\tnih_free (value_item2);\n"
+				   "\t\tnih_free (value);\n"
 				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\tdbus_message_iter_next (&value_item2_iter);\n"
+				   "\n"
+				   "\tif (value_item2_size + 2 > SIZE_MAX / sizeof (char *)) {\n"
+				   "\t\tif (value_item2)\n"
+				   "\t\t\tnih_free (value_item2);\n"
+				   "\t\tnih_free (value);\n"
+				   "\t\treturn 1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue_item2_tmp = nih_realloc (value_item2, value, sizeof (char *) * (value_item2_size + 2));\n"
+				   "\tif (! value_item2_tmp) {\n"
+				   "\t\tif (value_item2)\n"
+				   "\t\t\tnih_free (value_item2);\n"
+				   "\t\tnih_free (value);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue_item2 = value_item2_tmp;\n"
+				   "\tvalue_item2[value_item2_size] = value_item2_element;\n"
+				   "\tvalue_item2[value_item2_size + 1] = NULL;\n"
+				   "\n"
+				   "\tvalue_item2_size++;\n"
 				   "}\n"
 				   "\n"
 				   "dbus_message_iter_next (&value_iter);\n"
 				   "\n"
-
-				   "value_item3 = &(*value)->item3;\n"
-				   "value_item3_len = &(*value)->item3_len;\n"
+				   "value->item2 = value_item2;\n"
 				   "\n"
+
 				   "/* Demarshal an array from the message */\n"
 				   "if (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_ARRAY) {\n"
-				   "\tnih_free (*value);\n"
+				   "\tnih_free (value);\n"
 				   "\treturn 1;\n"
 				   "}\n"
 				   "\n"
 				   "dbus_message_iter_recurse (&value_iter, &value_item3_iter);\n"
 				   "\n"
-				   "value_item3_size = 0;\n"
+				   "value_item3_len = 0;\n"
 				   "\n"
-				   "*value_item3 = NULL;\n"
+				   "value_item3 = NULL;\n"
 				   "\n"
 				   "while (dbus_message_iter_get_arg_type (&value_item3_iter) != DBUS_TYPE_INVALID) {\n"
 				   "\tint16_t * value_item3_tmp;\n"
-				   "\tint16_t * value_item3_element;\n"
+				   "\tint16_t value_item3_element;\n"
 				   "\n"
-				   "\tif (value_item3_size + 1 > SIZE_MAX / sizeof (int16_t)) {\n"
-				   "\t\tif (*value_item3)\n"
-				   "\t\t\tnih_free (*value_item3);\n"
-				   "\t\tnih_free (*value);\n"
+				   "\t/* Demarshal a int16_t from the message */\n"
+				   "\tif (dbus_message_iter_get_arg_type (&value_item3_iter) != DBUS_TYPE_INT16) {\n"
+				   "\t\tif (value_item3)\n"
+				   "\t\t\tnih_free (value_item3);\n"
+				   "\t\tnih_free (value);\n"
 				   "\t\treturn 1;\n"
 				   "\t}\n"
 				   "\n"
-				   "\tvalue_item3_tmp = nih_realloc (*value_item3, *value, sizeof (int16_t) * (value_item3_size + 1));\n"
+				   "\tdbus_message_iter_get_basic (&value_item3_iter, &value_item3_element);\n"
+				   "\n"
+				   "\tdbus_message_iter_next (&value_item3_iter);\n"
+				   "\n"
+				   "\tif (value_item3_len + 1 > SIZE_MAX / sizeof (int16_t)) {\n"
+				   "\t\tif (value_item3)\n"
+				   "\t\t\tnih_free (value_item3);\n"
+				   "\t\tnih_free (value);\n"
+				   "\t\treturn 1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue_item3_tmp = nih_realloc (value_item3, value, sizeof (int16_t) * (value_item3_len + 1));\n"
 				   "\tif (! value_item3_tmp) {\n"
-				   "\t\tif (*value_item3)\n"
-				   "\t\t\tnih_free (*value_item3);\n"
-				   "\t\tnih_free (*value);\n"
+				   "\t\tif (value_item3)\n"
+				   "\t\t\tnih_free (value_item3);\n"
+				   "\t\tnih_free (value);\n"
 				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
-				   "\t*value_item3 = value_item3_tmp;\n"
-				   "\tvalue_item3_element = *value_item3 + value_item3_size;\n"
+				   "\tvalue_item3 = value_item3_tmp;\n"
+				   "\tvalue_item3[value_item3_len] = value_item3_element;\n"
 				   "\n"
-				   "\tvalue_item3_size++;\n"
-				   "\n"
-				   "\t/* Demarshal a int16_t * from the message */\n"
-				   "\tif (dbus_message_iter_get_arg_type (&value_item3_iter) != DBUS_TYPE_INT16) {\n"
-				   "\t\tif (*value_item3)\n"
-				   "\t\t\tnih_free (*value_item3);\n"
-				   "\t\tnih_free (*value);\n"
-				   "\t\treturn 1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\tdbus_message_iter_get_basic (&value_item3_iter, value_item3_element);\n"
-				   "\n"
-				   "\tdbus_message_iter_next (&value_item3_iter);\n"
+				   "\tvalue_item3_len++;\n"
 				   "}\n"
 				   "\n"
 				   "dbus_message_iter_next (&value_iter);\n"
+				   "\n"
+				   "value->item3 = value_item3;\n"
+				   "value->item3_len = value_item3_len;\n"
+				   "\n"
 
-				   "\n"
-				   "*value_item3_len = value_item3_size;\n"
-				   "\n"
 				   "if (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_INVALID) {\n"
-				   "\tnih_free (*value);\n"
+				   "\tnih_free (value);\n"
 				   "\treturn 1;\n"
 				   "}\n"
 				   "\n"
@@ -3217,7 +3257,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)outputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "struct dbus_struct_suasan **");
+		TEST_EQ_STR (var->type, "struct dbus_struct_suasan *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -3249,7 +3289,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)locals.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "char **");
+		TEST_EQ_STR (var->type, "char *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_item0");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -3259,7 +3299,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)locals.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "uint32_t *");
+		TEST_EQ_STR (var->type, "uint32_t");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_item1");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -3289,7 +3329,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)locals.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "char ***");
+		TEST_EQ_STR (var->type, "char **");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_item2");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -3309,17 +3349,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)locals.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "size_t");
-		TEST_ALLOC_PARENT (var->type, var);
-		TEST_EQ_STR (var->name, "value_item3_size");
-		TEST_ALLOC_PARENT (var->name, var);
-		nih_free (var);
-
-		TEST_LIST_NOT_EMPTY (&locals);
-
-		var = (TypeVar *)locals.next;
-		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "int16_t **");
+		TEST_EQ_STR (var->type, "int16_t *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_item3");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -3329,7 +3359,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)locals.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "size_t *");
+		TEST_EQ_STR (var->type, "size_t");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_item3_len");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -3503,8 +3533,7 @@ test_demarshal (void)
 
 	/* Check that when a structure member is expected, but a different
 	 * member type is found, the type error code is run and the function
-	 * returns.  We can't guarantee the pointer is modified, because
-	 * that code would be just too messy for words.
+	 * returns without modifying the pointer.
 	 */
 	TEST_FEATURE ("with wrong type for structure member (generated code)");
 	TEST_ALLOC_FAIL {
@@ -3545,6 +3574,7 @@ test_demarshal (void)
 		}
 
 		TEST_GT (ret, 0);
+		TEST_EQ_P (struct_value, NULL);
 
 		dbus_message_unref (message);
 
@@ -3554,8 +3584,7 @@ test_demarshal (void)
 
 	/* Check that when an item inside a complex structure member is
 	 * expected, but a different type is found, the type error code
-	 * is run and the function returns.  We can't guarantee the pointer
-	 * is modified, because that code would be just too messy for words.
+	 * is run and the function returns without modifying the pointer.
 	 */
 	TEST_FEATURE ("with wrong type inside structure member (generated code)");
 	TEST_ALLOC_FAIL {
@@ -3602,6 +3631,7 @@ test_demarshal (void)
 		}
 
 		TEST_GT (ret, 0);
+		TEST_EQ_P (struct_value, NULL);
 
 		dbus_message_unref (message);
 
@@ -3647,103 +3677,104 @@ test_demarshal (void)
 				   "\n"
 				   "value_size = 0;\n"
 				   "\n"
-				   "*value = nih_alloc (parent, sizeof (struct dbus_struct_su *));\n"
-				   "if (! *value) {\n"
+				   "value = nih_alloc (parent, sizeof (struct dbus_struct_su *));\n"
+				   "if (! value) {\n"
 				   "\treturn -1;\n"
 				   "}\n"
 				   "\n"
-				   "(*value)[value_size] = NULL;\n"
+				   "value[value_size] = NULL;\n"
 				   "\n"
 				   "while (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_INVALID) {\n"
 				   "\tDBusMessageIter value_element_iter;\n"
 				   "\tconst char * value_element_item0_dbus;\n"
-				   "\tchar ** value_element_item0;\n"
-				   "\tuint32_t * value_element_item1;\n"
+				   "\tchar * value_element_item0;\n"
+				   "\tuint32_t value_element_item1;\n"
 				   "\tstruct dbus_struct_su ** value_tmp;\n"
-				   "\tstruct dbus_struct_su ** value_element;\n"
-				   "\n"
-				   "\tif (value_size + 2 > SIZE_MAX / sizeof (struct dbus_struct_su *)) {\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
-				   "\t\treturn 1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\tvalue_tmp = nih_realloc (*value, parent, sizeof (struct dbus_struct_su *) * (value_size + 2));\n"
-				   "\tif (! value_tmp) {\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
-				   "\t\treturn -1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\t*value = value_tmp;\n"
-				   "\tvalue_element = *value + value_size;\n"
-				   "\t(*value)[value_size + 1] = NULL;\n"
-				   "\n"
-				   "\tvalue_size++;\n"
+				   "\tstruct dbus_struct_su * value_element;\n"
 				   "\n"
 
 				   "\t/* Demarshal a structure from the message */\n"
 				   "\tif (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_STRUCT) {\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
 				   "\t\treturn 1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\tdbus_message_iter_recurse (&value_iter, &value_element_iter);\n"
 				   "\n"
-				   "\t*value_element = nih_new (*value, struct dbus_struct_su);\n"
-				   "\tif (! *value_element) {\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
+				   "\tvalue_element = nih_new (value, struct dbus_struct_su);\n"
+				   "\tif (! value_element) {\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
 				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
 
-				   "\tvalue_element_item0 = &(*value_element)->item0;\n"
-				   "\n"
-				   "\t/* Demarshal a char ** from the message */\n"
+				   "\t/* Demarshal a char * from the message */\n"
 				   "\tif (dbus_message_iter_get_arg_type (&value_element_iter) != DBUS_TYPE_STRING) {\n"
-				   "\t\tnih_free (*value_element);\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
+				   "\t\tnih_free (value_element);\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
 				   "\t\treturn 1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\tdbus_message_iter_get_basic (&value_element_iter, &value_element_item0_dbus);\n"
 				   "\n"
-				   "\t*value_element_item0 = nih_strdup (*value_element, value_element_item0_dbus);\n"
-				   "\tif (! *value_element_item0) {\n"
-				   "\t\tnih_free (*value_element);\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
+				   "\tvalue_element_item0 = nih_strdup (value_element, value_element_item0_dbus);\n"
+				   "\tif (! value_element_item0) {\n"
+				   "\t\tnih_free (value_element);\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
 				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\tdbus_message_iter_next (&value_element_iter);\n"
 				   "\n"
-
-				   "\tvalue_element_item1 = &(*value_element)->item1;\n"
+				   "\tvalue_element->item0 = value_element_item0;\n"
 				   "\n"
-				   "\t/* Demarshal a uint32_t * from the message */\n"
+
+				   "\t/* Demarshal a uint32_t from the message */\n"
 				   "\tif (dbus_message_iter_get_arg_type (&value_element_iter) != DBUS_TYPE_UINT32) {\n"
-				   "\t\tnih_free (*value_element);\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
+				   "\t\tnih_free (value_element);\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
 				   "\t\treturn 1;\n"
 				   "\t}\n"
 				   "\n"
-				   "\tdbus_message_iter_get_basic (&value_element_iter, value_element_item1);\n"
+				   "\tdbus_message_iter_get_basic (&value_element_iter, &value_element_item1);\n"
 				   "\n"
 				   "\tdbus_message_iter_next (&value_element_iter);\n"
 				   "\n"
+				   "\tvalue_element->item1 = value_element_item1;\n"
+				   "\n"
+
 				   "\tif (dbus_message_iter_get_arg_type (&value_element_iter) != DBUS_TYPE_INVALID) {\n"
-				   "\t\tnih_free (*value_element);\n"
-				   "\t\tif (*value)\n"
-				   "\t\t\tnih_free (*value);\n"
+				   "\t\tnih_free (value_element);\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
 				   "\t\treturn 1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\tdbus_message_iter_next (&value_iter);\n"
+				   "\n"
+				   "\tif (value_size + 2 > SIZE_MAX / sizeof (struct dbus_struct_su *)) {\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\treturn 1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue_tmp = nih_realloc (value, parent, sizeof (struct dbus_struct_su *) * (value_size + 2));\n"
+				   "\tif (! value_tmp) {\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue = value_tmp;\n"
+				   "\tvalue[value_size] = value_element;\n"
+				   "\tvalue[value_size + 1] = NULL;\n"
+				   "\n"
+				   "\tvalue_size++;\n"
 				   "}\n"
 				   "\n"
 				   "dbus_message_iter_next (&iter);\n"));
@@ -3752,7 +3783,7 @@ test_demarshal (void)
 
 		var = (TypeVar *)outputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_EQ_STR (var->type, "struct dbus_struct_su ***");
+		TEST_EQ_STR (var->type, "struct dbus_struct_su **");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -3910,9 +3941,8 @@ test_demarshal (void)
 
 
 	/* Check that when a structure array is expected, but a different
-	 * type is found in the array, the type error code is run.  We
-	 * can't guarantee the pointer is modified, because that code
-	 * would be just too messy for words.
+	 * type is found in the array, the type error code is run and
+	 * the function returns without modifying the pointer.
 	 */
 	TEST_FEATURE ("with wrong array member type for structure array (generated code)");
 	TEST_ALLOC_FAIL {
@@ -3946,6 +3976,7 @@ test_demarshal (void)
 		}
 
 		TEST_GT (ret, 0);
+		TEST_EQ_P (struct_array, NULL);
 
 		dbus_message_unref (message);
 
@@ -3955,8 +3986,7 @@ test_demarshal (void)
 
 	/* Check that when a structure array member is expected, but a
 	 * different member type is found, the type error code is run
-	 * and the function returns.  We can't guarantee the pointer is
-	 * modified, because that code would be just too messy for words.
+	 * and the function returns without modifying the pointer.
 	 */
 	TEST_FEATURE ("with wrong type for structure member (generated code)");
 	TEST_ALLOC_FAIL {
@@ -4002,6 +4032,7 @@ test_demarshal (void)
 		}
 
 		TEST_GT (ret, 0);
+		TEST_EQ_P (struct_array, NULL);
 
 		dbus_message_unref (message);
 

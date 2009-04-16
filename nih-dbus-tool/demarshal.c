@@ -243,13 +243,8 @@ demarshal_basic (const void *       parent,
 	if (! indent (&type_error_block, NULL, 1))
 		return NULL;
 
-	/* We make our C type a pointer since we modify it to point
-	 * at the returned value.
-	 */
 	c_type = type_of (NULL, iter);
 	if (! c_type)
-		return NULL;
-	if (! type_to_pointer (&c_type, NULL))
 		return NULL;
 
 	if (! nih_strcat_sprintf (&code, parent,
@@ -265,7 +260,7 @@ demarshal_basic (const void *       parent,
 
 	if (dbus_type_is_fixed (dbus_type)) {
 		if (! nih_strcat_sprintf (&code, parent,
-					  "dbus_message_iter_get_basic (&%s, %s);\n"
+					  "dbus_message_iter_get_basic (&%s, &%s);\n"
 					  "\n",
 					  iter_name, name)) {
 			nih_free (code);
@@ -275,8 +270,8 @@ demarshal_basic (const void *       parent,
 		nih_local char *local_name = NULL;
 		nih_local char *local_type = NULL;
 
-		/* We need a local variable to store the const value we get from
-		 * D-Bus before we allocate the copy that we return.
+		/* We need a local variable to store the const value we get
+		 * from D-Bus before we allocate the copy that we return.
 		 */
 		local_name = nih_sprintf (NULL, "%s_dbus", name);
 		if (! local_name) {
@@ -298,8 +293,8 @@ demarshal_basic (const void *       parent,
 		if (! nih_strcat_sprintf (&code, parent,
 					  "dbus_message_iter_get_basic (&%s, &%s);\n"
 					  "\n"
-					  "*%s = nih_strdup (%s, %s);\n"
-					  "if (! *%s) {\n"
+					  "%s = nih_strdup (%s, %s);\n"
+					  "if (! %s) {\n"
 					  "%s"
 					  "}\n"
 					  "\n",
@@ -395,7 +390,6 @@ demarshal_array (const void *       parent,
 		 NihList *          outputs,
 		 NihList *          locals)
 {
-	nih_local char *   element_parent_name = NULL;
 	nih_local char *   array_iter_name = NULL;
 	nih_local char *   element_name = NULL;
 	nih_local char *   size_name = NULL;
@@ -424,9 +418,8 @@ demarshal_array (const void *       parent,
 	nih_assert (outputs != NULL);
 	nih_assert (locals != NULL);
 
-	element_parent_name = nih_sprintf (NULL, "*%s", name);
-	if (! element_parent_name)
-		return NULL;
+	dbus_signature_iter_recurse (iter, &subiter);
+	element_type = dbus_signature_iter_get_current_type (&subiter);
 
 	array_iter_name = nih_sprintf (NULL, "%s_iter", name);
 	if (! array_iter_name)
@@ -436,9 +429,15 @@ demarshal_array (const void *       parent,
 	if (! element_name)
 		return NULL;
 
-	size_name = nih_sprintf (NULL, "%s_size", name);
-	if (! size_name)
-		return NULL;
+	if (dbus_type_is_fixed (element_type)) {
+		size_name = nih_sprintf (NULL, "%s_len", name);
+		if (! size_name)
+			return NULL;
+	} else {
+		size_name = nih_sprintf (NULL, "%s_size", name);
+		if (! size_name)
+			return NULL;
+	}
 
 	oom_error_block = nih_strdup (NULL, oom_error_code);
 	if (! oom_error_block)
@@ -446,8 +445,8 @@ demarshal_array (const void *       parent,
 	if (! indent (&oom_error_block, NULL, 1))
 		return NULL;
 
-	child_oom_error_code = nih_sprintf (NULL, ("if (*%s)\n"
-						   "\tnih_free (*%s);\n"
+	child_oom_error_code = nih_sprintf (NULL, ("if (%s)\n"
+						   "\tnih_free (%s);\n"
 						   "%s"),
 					    name, name, oom_error_code);
 	if (! child_oom_error_code)
@@ -465,8 +464,8 @@ demarshal_array (const void *       parent,
 	if (! indent (&type_error_block, NULL, 1))
 		return NULL;
 
-	child_type_error_code = nih_sprintf (NULL, ("if (*%s)\n"
-						    "\tnih_free (*%s);\n"
+	child_type_error_code = nih_sprintf (NULL, ("if (%s)\n"
+						    "\tnih_free (%s);\n"
 						    "%s"),
 					     name, name, type_error_code);
 	if (! child_type_error_code)
@@ -479,9 +478,6 @@ demarshal_array (const void *       parent,
 		return NULL;
 
 	/* Recurse into the array */
-	dbus_signature_iter_recurse (iter, &subiter);
-	element_type = dbus_signature_iter_get_current_type (&subiter);
-
 	if (! nih_strcat_sprintf (&code, parent,
 				  "/* Demarshal an array from the message */\n"
 				  "if (dbus_message_iter_get_arg_type (&%s) != DBUS_TYPE_ARRAY) {\n"
@@ -505,8 +501,8 @@ demarshal_array (const void *       parent,
 	nih_list_add (locals, &array_iter_var->entry);
 
 	/* We need a variable to keep track of the array sizes for
-	 * allocation; for fixed types, this ends up being the same as the
-	 * output length but for non-fixed types we never pass it back.
+	 * allocation; for fixed types, this is an output but for non-fixed
+	 * types it's a local.
 	 */
 	size_var = type_var_new (code, "size_t", size_name);
 	if (! size_var) {
@@ -514,7 +510,9 @@ demarshal_array (const void *       parent,
 		return NULL;
 	}
 
-	nih_list_add (locals, &size_var->entry);
+	if (! dbus_type_is_fixed (element_type))
+		nih_list_add (locals, &size_var->entry);
+
 
 	if (! nih_strcat_sprintf (&code, parent,
 				  "%s = 0;\n"
@@ -530,8 +528,7 @@ demarshal_array (const void *       parent,
 	nih_list_init (&element_outputs);
 	nih_list_init (&element_locals);
 	element_block = demarshal (NULL, &subiter,
-				   element_parent_name,
-				   array_iter_name, element_name,
+				   name, array_iter_name, element_name,
 				   child_oom_error_code,
 				   child_type_error_code,
 				   &element_outputs, &element_locals);
@@ -552,13 +549,11 @@ demarshal_array (const void *       parent,
 	 * NULL pointer.
 	 *
 	 * Instead of mucking around with pointers and structure members,
-	 * we also append the outputs onto the local lists and point the
-	 * local pointer to the array member so the demarshalling code
-	 * fills it in.
+	 * we also append the outputs onto the local lists and fill in our
+	 * variable from this.
 	 */
 	NIH_LIST_FOREACH_SAFE (&element_outputs, iter) {
 		TypeVar *       output_var = (TypeVar *)iter;
-		nih_local char *alloc_type = NULL;
 		char *          ptr;
 		nih_local char *var_type = NULL;
 		const char *    suffix;
@@ -566,22 +561,6 @@ demarshal_array (const void *       parent,
 		TypeVar *       var;
 		nih_local char *tmp_name = NULL;
 		const char *    var_parent;
-
-		/* Outputs are always pointers, we need to remove a level
-		 * of pointer to get the fundamental type and use that for
-		 * array element sizes.
-		 */
-		alloc_type = nih_strdup (NULL, output_var->type);
-		if (! alloc_type) {
-			nih_free (code);
-			return NULL;
-		}
-
-		ptr = alloc_type + strlen (alloc_type) - 1;
-		nih_assert (*ptr == '*');
-		*(ptr--) = '\0';
-		if (*ptr == ' ')
-			*(ptr--) = '\0';
 
 		/* Output variable */
 		var_type = nih_strdup (NULL, output_var->type);
@@ -624,7 +603,7 @@ demarshal_array (const void *       parent,
 			return NULL;
 		}
 
-		var = type_var_new (element_block, output_var->type, tmp_name);
+		var = type_var_new (element_block, var_type, tmp_name);
 		if (! var) {
 			nih_free (code);
 			return NULL;
@@ -633,11 +612,12 @@ demarshal_array (const void *       parent,
 		nih_list_add (&element_locals, &var->entry);
 
 		/* Code to allocate and reallocate */
-		var_parent = (*suffix ? element_parent_name : parent_name);
+		var_parent = (*suffix ? name : parent_name);
 
+		ptr = output_var->type + strlen (output_var->type) - 1;
 		if (*ptr != '*') {
 			if (! nih_strcat_sprintf (&code, parent,
-						  "*%s = NULL;\n"
+						  "%s = NULL;\n"
 						  "\n",
 						  var_name)) {
 				nih_free (code);
@@ -649,34 +629,34 @@ demarshal_array (const void *       parent,
 						  "%s"
 						  "}\n"
 						  "\n"
-						  "%s = nih_realloc (*%s, %s, sizeof (%s) * (%s + 1));\n"
+						  "%s = nih_realloc (%s, %s, sizeof (%s) * (%s + 1));\n"
 						  "if (! %s) {\n"
 						  "%s"
 						  "}\n"
 						  "\n"
-						  "*%s = %s;\n"
-						  "%s = *%s + %s;\n"
+						  "%s = %s;\n"
+						  "%s[%s] = %s;\n"
 						  "\n",
-						  size_name, alloc_type,
+						  size_name, output_var->type,
 						  child_type_error_block,
-						  tmp_name, var_name, var_parent, alloc_type, size_name,
+						  tmp_name, var_name, var_parent, output_var->type, size_name,
 						  tmp_name,
 						  child_oom_error_block,
 						  var_name, tmp_name,
-						  output_var->name, var_name, size_name)) {
+						  var_name, size_name, output_var->name)) {
 				nih_free (code);
 				return NULL;
 			}
 		} else {
 			if (! nih_strcat_sprintf (&code, parent,
-						  "*%s = nih_alloc (%s, sizeof (%s));\n"
-						  "if (! *%s) {\n"
+						  "%s = nih_alloc (%s, sizeof (%s));\n"
+						  "if (! %s) {\n"
 						  "%s"
 						  "}\n"
 						  "\n"
-						  "(*%s)[%s] = NULL;\n"
+						  "%s[%s] = NULL;\n"
 						  "\n",
-						  var_name, var_parent, alloc_type,
+						  var_name, var_parent, output_var->type,
 						  var_name,
 						  (*suffix ? child_oom_error_block : oom_error_block),
 						  var_name, size_name)) {
@@ -689,22 +669,22 @@ demarshal_array (const void *       parent,
 						  "%s"
 						  "}\n"
 						  "\n"
-						  "%s = nih_realloc (*%s, %s, sizeof (%s) * (%s + 2));\n"
+						  "%s = nih_realloc (%s, %s, sizeof (%s) * (%s + 2));\n"
 						  "if (! %s) {\n"
 						  "%s"
 						  "}\n"
 						  "\n"
-						  "*%s = %s;\n"
-						  "%s = *%s + %s;\n"
-						  "(*%s)[%s + 1] = NULL;\n"
+						  "%s = %s;\n"
+						  "%s[%s] = %s;\n"
+						  "%s[%s + 1] = NULL;\n"
 						  "\n",
-						  size_name, alloc_type,
+						  size_name, output_var->type,
 						  child_type_error_block,
-						  tmp_name, var_name, var_parent, alloc_type, size_name,
+						  tmp_name, var_name, var_parent, output_var->type, size_name,
 						  tmp_name,
 						  child_oom_error_block,
 						  var_name, tmp_name,
-						  output_var->name, var_name, size_name,
+						  var_name, size_name, output_var->name,
 						  var_name, size_name)) {
 				nih_free (code);
 				return NULL;
@@ -751,26 +731,25 @@ demarshal_array (const void *       parent,
 		return NULL;
 	}
 
-	if (! indent (&block, NULL, 1)) {
-		nih_free (code);
-		return NULL;
-	}
-
 	if (! indent (&element_block, NULL, 1)) {
 		nih_free (code);
 		return NULL;
 	}
 
+	if (! indent (&block, NULL, 1)) {
+		nih_free (code);
+		return NULL;
+	}
 
 	if (! nih_strcat_sprintf (&code, parent,
-			   "%s"
-			   "\n"
-			   "%s"
-			   "\n"
-			   "%s",
-			   vars_block,
-			   block,
-			   element_block)) {
+				  "%s"
+				  "\n"
+				  "%s"
+				  "\n"
+				  "%s",
+				  vars_block,
+				  element_block,
+				  block)) {
 		nih_free (code);
 		return NULL;
 	}
@@ -785,35 +764,8 @@ demarshal_array (const void *       parent,
 		return NULL;
 	}
 
-	/* For arrays of fixed types, we need to output how long it is
-	 * copied from our internal size variable.
-	 */
-	if (dbus_type_is_fixed (element_type)) {
-		nih_local char *len_name = NULL;
-		TypeVar *       len_var;
-
-		len_name = nih_sprintf (NULL, "%s_len", name);
-		if (! len_name) {
-			nih_free (code);
-			return NULL;
-		}
-
-		len_var = type_var_new (code, "size_t *", len_name);
-		if (! len_var) {
-			nih_free (code);
-			return NULL;
-		}
-
-		nih_list_add (outputs, &len_var->entry);
-
-		if (! nih_strcat_sprintf (&code, parent,
-					  "\n"
-					  "*%s = %s;\n",
-					  len_name, size_name)) {
-			nih_free (code);
-			return NULL;
-		}
-	}
+	if (dbus_type_is_fixed (element_type))
+		nih_list_add (outputs, &size_var->entry);
 
 	return code;
 }
@@ -871,7 +823,6 @@ demarshal_struct (const void *       parent,
 		  NihList *          outputs,
 		  NihList *          locals)
 {
-	nih_local char *  item_parent_name = NULL;
 	nih_local char *  struct_iter_name = NULL;
 	nih_local char *  oom_error_block = NULL;
 	nih_local char *  child_oom_error_code = NULL;
@@ -899,10 +850,6 @@ demarshal_struct (const void *       parent,
 	nih_assert (outputs != NULL);
 	nih_assert (locals != NULL);
 
-	item_parent_name = nih_sprintf (NULL, "*%s", name);
-	if (! item_parent_name)
-		return NULL;
-
 	struct_iter_name = nih_sprintf (NULL, "%s_iter", name);
 	if (! struct_iter_name)
 		return NULL;
@@ -913,7 +860,7 @@ demarshal_struct (const void *       parent,
 	if (! indent (&oom_error_block, NULL, 1))
 		return NULL;
 
-	child_oom_error_code = nih_sprintf (NULL, ("nih_free (*%s);\n"
+	child_oom_error_code = nih_sprintf (NULL, ("nih_free (%s);\n"
 						   "%s"),
 					    name, oom_error_code);
 	if (! child_oom_error_code)
@@ -931,7 +878,7 @@ demarshal_struct (const void *       parent,
 	if (! indent (&type_error_block, NULL, 1))
 		return NULL;
 
-	child_type_error_code = nih_sprintf (NULL, ("nih_free (*%s);\n"
+	child_type_error_code = nih_sprintf (NULL, ("nih_free (%s);\n"
 						    "%s"),
 					     name, type_error_code);
 	if (! child_type_error_code)
@@ -975,9 +922,6 @@ demarshal_struct (const void *       parent,
 
 	nih_list_add (locals, &struct_iter_var->entry);
 
-	/* Our C type is a pointer to a structure, so we have to have a
-	 * pointer to that as our output so we can modify the value.
-	 */
 	/* FIXME need a better generic name for the structure based on more
 	 * than just the variable name (i.e. at least include the method
 	 * name or something)
@@ -987,11 +931,6 @@ demarshal_struct (const void *       parent,
 	 */
 	c_type = type_of (NULL, iter);
 	if (! c_type) {
-		nih_free (code);
-		return NULL;
-	}
-
-	if (! type_to_pointer (&c_type, NULL)) {
 		nih_free (code);
 		return NULL;
 	}
@@ -1013,8 +952,8 @@ demarshal_struct (const void *       parent,
 		*(ptr--) = '\0';
 
 	if (! nih_strcat_sprintf (&code, parent,
-				  "*%s = nih_new (%s, %s);\n"
-				  "if (! *%s) {\n"
+				  "%s = nih_new (%s, %s);\n"
+				  "if (! %s) {\n"
 				  "%s"
 				  "}\n"
 				  "\n",
@@ -1049,8 +988,7 @@ demarshal_struct (const void *       parent,
 		nih_list_init (&item_outputs);
 		nih_list_init (&item_locals);
 		item_code = demarshal (NULL, &subiter,
-				       item_parent_name,
-				       struct_iter_name, item_name,
+				       name, struct_iter_name, item_name,
 				       child_oom_error_code,
 				       child_type_error_code,
 				       &item_outputs, &item_locals);
@@ -1069,10 +1007,19 @@ demarshal_struct (const void *       parent,
 			nih_ref (item_local_var, code);
 		}
 
+		/* Append item demarshalling code block */
+		if (! nih_strcat_sprintf (&code, parent,
+					  "%s"
+					  "\n",
+					  item_code)) {
+			nih_free (code);
+			return NULL;
+		}
+
 		/* Instead of mucking around with pointers and structure
 		 * members, each of the marshalling code outputs is appended
-		 * onto the local list and we copy the address of our
-		 * variable into this variable.
+		 * onto the local list and we copy from the local into
+		 * our output variable.
 		 */
 		NIH_LIST_FOREACH_SAFE (&item_outputs, iter) {
 			TypeVar *output_var = (TypeVar *)iter;
@@ -1086,20 +1033,15 @@ demarshal_struct (const void *       parent,
 			suffix = output_var->name + strlen (item_name);
 
 			if (! nih_strcat_sprintf (&code, parent,
-						  "%s = &(*%s)->item%zu%s;\n",
-						  output_var->name, name,
-						  count, suffix)) {
+						  "%s->item%zu%s = %s;\n",
+						  name, count, suffix,
+						  output_var->name)) {
 				nih_free (code);
 				return NULL;
 			}
 		}
 
-		/* Append item demarshalling code block */
-		if (! nih_strcat_sprintf (&code, parent,
-					  "\n"
-					  "%s"
-					  "\n",
-					  item_code)) {
+		if (! nih_strcat (&code, parent, "\n")) {
 			nih_free (code);
 			return NULL;
 		}

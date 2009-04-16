@@ -27,11 +27,13 @@
 #include <dbus/dbus.h>
 
 #include <stdio.h>
+#include <string.h>
 #include <assert.h>
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
 #include <nih/list.h>
+#include <nih/string.h>
 
 #include "indent.h"
 #include "type.h"
@@ -54,7 +56,7 @@ demarshal_function (const char *name,
 	dbus_signature_iter_init (&iter, signature);
 
 	code = demarshal (NULL, &iter,
-			  "parent", "iter", "value",
+			  "parent", "iter", "local",
 			  "return -1;\n",
 			  "return 1;\n",
 			  &outputs, &locals);
@@ -67,9 +69,15 @@ demarshal_function (const char *name,
 		name);
 
 	NIH_LIST_FOREACH (&outputs, iter) {
-		TypeVar *var = (TypeVar *)iter;
+		TypeVar *       var = (TypeVar *)iter;
+		nih_local char *arg_type = NULL;
+		char *          suffix;
 
-		printf (", %s %s", var->type, var->name);
+		assert (arg_type = nih_strdup (NULL, var->type));
+		assert (type_to_pointer (&arg_type, NULL));
+
+		suffix = var->name + strlen ("local");
+		printf (", %s %s%s", arg_type, "value", suffix);
 	}
 
 	printf (")\n"
@@ -81,6 +89,11 @@ demarshal_function (const char *name,
 
 		printf ("\t%s %s;\n", local_var->type, local_var->name);
 	}
+	NIH_LIST_FOREACH (&outputs, iter) {
+		TypeVar *output_var = (TypeVar *)iter;
+
+		printf ("\t%s %s;\n", output_var->type, output_var->name);
+	}
 
 	printf ("\n" /* FIXME */
 		"\tnih_assert (message != NULL);\n"
@@ -89,7 +102,15 @@ demarshal_function (const char *name,
 		"\n");
 
 	assert (indent (&code, NULL, 1));
-	printf ("%s", code);
+	printf ("%s\n", code);
+
+	NIH_LIST_FOREACH (&outputs, iter) {
+		TypeVar *var = (TypeVar *)iter;
+		char *   suffix;
+
+		suffix = var->name + strlen ("local");
+		printf ("\t*%s%s = %s;\n", "value", suffix, var->name);
+	}
 
 	printf ("\n"
 		"\treturn 0;\n"

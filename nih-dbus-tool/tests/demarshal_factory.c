@@ -46,7 +46,6 @@ demarshal_function (const char *name,
 {
 	DBusSignatureIter iter;
 	nih_local char *  code = NULL;
-	nih_local char *  type = NULL;
 	NihList           outputs;
 	NihList           locals;
 
@@ -60,9 +59,6 @@ demarshal_function (const char *name,
 			  "return -1;\n",
 			  "return 1;\n",
 			  &outputs, &locals);
-
-	type = type_of (NULL, &iter);
-	assert (type_to_pointer (&type, NULL));
 
 	printf ("int\n"
 		"my_%s_demarshal (const void *parent, DBusMessage *message",

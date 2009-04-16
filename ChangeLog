@@ -1,5 +1,12 @@
 2009-04-16  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/marshal_factory.c (marshal_function): Remove
+	code to get type which we never use now we have the demarshalling
+	function outputs
+	* nih-dbus-tool/tests/demarshal_factory.c (demarshal_function): Remove
+	code to get type which we never use now we have the marshalling
+	function inputs.
+
 	* nih-dbus-tool/demarshal.c (demarshal_basic): Do not make the output
 	variable a pointer, when used in method object/signal proxy mode we
 	actually have this as a local variable and want the demarshalled

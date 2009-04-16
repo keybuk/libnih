@@ -44,7 +44,6 @@ marshal_function (const char *name,
 {
 	DBusSignatureIter iter;
 	nih_local char *  code = NULL;
-	nih_local char *  type = NULL;
 	NihList           locals;
 	NihList           inputs;
 
@@ -57,11 +56,6 @@ marshal_function (const char *name,
 			"iter", "value",
 			"return -1;\n",
 			&inputs, &locals);
-
-
-	type = type_of (NULL, &iter);
-	assert (type_to_const (&type, NULL));
-
 
 	printf ("int\n"
 		"my_%s_marshal (DBusMessage *message",

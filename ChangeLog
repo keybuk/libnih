@@ -1,5 +1,7 @@
 2009-04-17  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_method.c: Oops, commented out the test.
+
 	* nih-dbus-tool/tests/test_method.c (test_object_function): Add
 	test cases for the no reply expected flag on an incoming message.
 

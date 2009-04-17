@@ -2911,7 +2911,7 @@ main (int   argc,
 	test_lookup_argument ();
 
 	test_object_function ();
-	//test_reply_function ();
+	test_reply_function ();
 
 	return 0;
 }

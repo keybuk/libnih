@@ -30,11 +30,15 @@
 
 NIH_BEGIN_EXTERN
 
-DBusHandlerResult MyMethod_handle      (NihDBusObject *object,
-					NihDBusMessage *message);
+DBusHandlerResult MyMethod_handle       (NihDBusObject *object,
+					 NihDBusMessage *message);
 
-DBusHandlerResult MyAsyncMethod_handle (NihDBusObject *object,
-					NihDBusMessage *message);
+DBusHandlerResult MyAsyncMethod_handle  (NihDBusObject *object,
+					 NihDBusMessage *message);
+
+int               my_async_method_reply (NihDBusMessage *message,
+					 char * const *output)
+	__attribute__ ((warn_unused_result));
 
 NIH_END_EXTERN
 

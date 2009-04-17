@@ -1,5 +1,15 @@
 2009-04-17  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_reply_function): Generate code for
+	a function that sends a reply to an asynchronous method call.
+	* nih-dbus-tool/method.h: Add prototype.
+	* nih-dbus-tool/tests/method_factory.c: Call method_reply_function()
+	to generate a reply function and place it in a C file for testing.
+	* nih-dbus-tool/tests/method_code.h: Expected prototype.
+	* nih-dbus-tool/tests/test_method.c (test_reply_function): Add test
+	cases for the code, the generated code, and the no reply expected
+	case.
+
 	* nih-dbus-tool/tests/test_method.c (test_object_function): Add
 	tests for too many arguments in method call
 	* nih-dbus-tool/method.c (method_object_function): Add a block of

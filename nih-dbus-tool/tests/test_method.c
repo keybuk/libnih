@@ -1395,11 +1395,9 @@ test_object_function (void)
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
-
 			nih_free (object);
 			nih_free (message);
 			dbus_message_unref (method_call);
-
 			continue;
 		}
 
@@ -1463,8 +1461,8 @@ test_object_function (void)
 
 		nih_free (object);
 		nih_free (message);
-		dbus_message_unref (method_call);
 		dbus_message_unref (reply);
+		dbus_message_unref (method_call);
 	}
 
 
@@ -1515,11 +1513,9 @@ test_object_function (void)
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
-
 			nih_free (object);
 			nih_free (message);
 			dbus_message_unref (method_call);
-
 			continue;
 		}
 
@@ -1536,8 +1532,8 @@ test_object_function (void)
 
 		nih_free (object);
 		nih_free (message);
-		dbus_message_unref (method_call);
 		dbus_message_unref (reply);
+		dbus_message_unref (method_call);
 	}
 
 
@@ -1589,11 +1585,9 @@ test_object_function (void)
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
-
 			nih_free (object);
 			nih_free (message);
 			dbus_message_unref (method_call);
-
 			continue;
 		}
 
@@ -1617,8 +1611,8 @@ test_object_function (void)
 
 		nih_free (object);
 		nih_free (message);
-		dbus_message_unref (method_call);
 		dbus_message_unref (reply);
+		dbus_message_unref (method_call);
 	}
 
 
@@ -1665,11 +1659,9 @@ test_object_function (void)
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
-
 			nih_free (object);
 			nih_free (message);
 			dbus_message_unref (method_call);
-
 			continue;
 		}
 
@@ -1686,8 +1678,8 @@ test_object_function (void)
 
 		nih_free (object);
 		nih_free (message);
-		dbus_message_unref (method_call);
 		dbus_message_unref (reply);
+		dbus_message_unref (method_call);
 	}
 
 
@@ -1734,11 +1726,9 @@ test_object_function (void)
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
-
 			nih_free (object);
 			nih_free (message);
 			dbus_message_unref (method_call);
-
 			continue;
 		}
 
@@ -1755,8 +1745,8 @@ test_object_function (void)
 
 		nih_free (object);
 		nih_free (message);
-		dbus_message_unref (method_call);
 		dbus_message_unref (reply);
+		dbus_message_unref (method_call);
 	}
 
 
@@ -1811,11 +1801,9 @@ test_object_function (void)
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
-
 			nih_free (object);
 			nih_free (message);
 			dbus_message_unref (method_call);
-
 			continue;
 		}
 
@@ -1832,8 +1820,8 @@ test_object_function (void)
 
 		nih_free (object);
 		nih_free (message);
-		dbus_message_unref (method_call);
 		dbus_message_unref (reply);
+		dbus_message_unref (method_call);
 	}
 
 
@@ -2039,11 +2027,9 @@ test_object_function (void)
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
-
 			nih_free (object);
 			nih_free (message);
 			dbus_message_unref (method_call);
-
 			continue;
 		}
 
@@ -2104,11 +2090,9 @@ test_object_function (void)
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
-
 			nih_free (object);
 			nih_free (message);
 			dbus_message_unref (method_call);
-
 			continue;
 		}
 
@@ -2125,8 +2109,8 @@ test_object_function (void)
 
 		nih_free (object);
 		nih_free (message);
-		dbus_message_unref (method_call);
 		dbus_message_unref (reply);
+		dbus_message_unref (method_call);
 	}
 
 
@@ -2178,11 +2162,9 @@ test_object_function (void)
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
-
 			nih_free (object);
 			nih_free (message);
 			dbus_message_unref (method_call);
-
 			continue;
 		}
 
@@ -2206,8 +2188,8 @@ test_object_function (void)
 
 		nih_free (object);
 		nih_free (message);
-		dbus_message_unref (method_call);
 		dbus_message_unref (reply);
+		dbus_message_unref (method_call);
 	}
 
 
@@ -2255,11 +2237,9 @@ test_object_function (void)
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
-
 			nih_free (object);
 			nih_free (message);
 			dbus_message_unref (method_call);
-
 			continue;
 		}
 
@@ -2276,8 +2256,8 @@ test_object_function (void)
 
 		nih_free (object);
 		nih_free (message);
-		dbus_message_unref (method_call);
 		dbus_message_unref (reply);
+		dbus_message_unref (method_call);
 	}
 
 
@@ -2325,11 +2305,9 @@ test_object_function (void)
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
-
 			nih_free (object);
 			nih_free (message);
 			dbus_message_unref (method_call);
-
 			continue;
 		}
 
@@ -2346,8 +2324,8 @@ test_object_function (void)
 
 		nih_free (object);
 		nih_free (message);
-		dbus_message_unref (method_call);
 		dbus_message_unref (reply);
+		dbus_message_unref (method_call);
 	}
 
 
@@ -2403,11 +2381,9 @@ test_object_function (void)
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
-
 			nih_free (object);
 			nih_free (message);
 			dbus_message_unref (method_call);
-
 			continue;
 		}
 
@@ -2424,8 +2400,346 @@ test_object_function (void)
 
 		nih_free (object);
 		nih_free (message);
-		dbus_message_unref (method_call);
 		dbus_message_unref (reply);
+		dbus_message_unref (method_call);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_reply_function (void)
+{
+	pid_t             dbus_pid;
+	DBusConnection *  server_conn;
+	DBusConnection *  client_conn;
+	Method *          method = NULL;
+	Argument *        argument1 = NULL;
+	Argument *        argument2 = NULL;
+	Argument *        argument3 = NULL;
+	char *            str;
+	int32_t           flags;
+	char **           output;
+	DBusMessage *     method_call;
+	DBusMessage *     next_call;
+	DBusMessageIter   iter;
+	DBusMessageIter   subiter;
+	DBusMessage *     reply;
+	NihDBusMessage *  message;
+	NihDBusObject *   object;
+	dbus_uint32_t     serial;
+	dbus_uint32_t     next_serial;
+	int               ret;
+
+	TEST_FUNCTION ("method_reply_function");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (server_conn);
+	TEST_DBUS_OPEN (client_conn);
+
+
+	/* Check that we can generate a function that marhals its arguments
+	 * into a D-Bus message and sends them as a reply to a previous
+	 * D-Bus method call.
+	 */
+	TEST_FEATURE ("with reply");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			method = method_new (NULL, "MyAsyncMethod");
+			method->symbol = nih_strdup (method, "my_async_method");
+
+			argument1 = argument_new (method, "Str",
+						  "s", NIH_DBUS_ARG_IN);
+			argument1->symbol = nih_strdup (argument1, "str");
+			nih_list_add (&method->arguments, &argument1->entry);
+
+			argument2 = argument_new (method, "Flags",
+						  "i", NIH_DBUS_ARG_IN);
+			argument2->symbol = nih_strdup (argument2, "flags");
+			nih_list_add (&method->arguments, &argument2->entry);
+
+			argument3 = argument_new (method, "Output",
+						  "as", NIH_DBUS_ARG_OUT);
+			argument3->symbol = nih_strdup (argument3, "output");
+			nih_list_add (&method->arguments, &argument3->entry);
+		}
+
+		str = method_reply_function (NULL, method,
+					     "my_async_method_reply");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (method);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "my_async_method_reply (NihDBusMessage *message, char * const * output)\n"
+				   "{\n"
+				   "\tDBusMessage * reply;\n"
+				   "\tDBusMessageIter iter;\n"
+				   "\tDBusMessageIter output_iter;\n"
+				   "\n"
+				   "\tnih_assert (message != NULL);\n"
+				   "\tnih_assert (output != NULL);\n"
+				   "\n"
+				   "\t/* If the sender doesn't care about a reply, don't bother wasting\n"
+				   "\t * effort constructing and sending one.\n"
+				   "\t */\n"
+				   "\tif (dbus_message_get_no_reply (message->message))\n"
+				   "\t\treturn 0;\n"
+				   "\n"
+				   "\t/* Construct the reply message. */\n"
+				   "\treply = dbus_message_new_method_return (message->message);\n"
+				   "\tif (! reply)\n"
+				   "\t\treturn -1;\n"
+				   "\n"
+				   "\tdbus_message_iter_init_append (reply, &iter);\n"
+				   "\n"
+				   "\t/* Marshal an array onto the message */\n"
+				   "\tif (! dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, \"s\", &output_iter)) {\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tfor (size_t output_i = 0; output[output_i]; output_i++) {\n"
+				   "\t\tconst char * output_element;\n"
+				   "\n"
+				   "\t\toutput_element = output[output_i];\n"
+				   "\n"
+				   "\t\t/* Marshal a char * onto the message */\n"
+				   "\t\tif (! dbus_message_iter_append_basic (&output_iter, DBUS_TYPE_STRING, &output_element)) {\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treturn -1;\n"
+				   "\t\t}\n"
+				   "\t}\n"
+				   "\n"
+				   "\tif (! dbus_message_iter_close_container (&iter, &output_iter)) {\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Send the reply, appending it to the outgoing queue. */\n"
+				   "\tif (! dbus_connection_send (message->conn, reply, NULL)) {\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_unref (reply);\n"
+				   "\n"
+				   "\treturn 0;\n"
+				   "}\n"));
+
+		nih_free (str);
+		nih_free (method);
+	}
+
+
+	/* Check that we can use the generated code to reply to a method
+	 * call we created, and that we can receive the reply.
+	 */
+	TEST_FEATURE ("with reply (generated code)");
+	TEST_ALLOC_FAIL {
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (client_conn),
+			"/com/netsplit/Nih",
+			"com.netsplit.Nih",
+			"MyMethod");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str = "this is a test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str);
+
+		flags = 0;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32,
+						&flags);
+
+		dbus_connection_send (server_conn, method_call, &serial);
+		dbus_connection_flush (server_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_MESSAGE (client_conn, method_call);
+		assert (dbus_message_get_serial (method_call) == serial);
+
+		TEST_ALLOC_SAFE {
+			message = nih_new (NULL, NihDBusMessage);
+			message->conn = client_conn;
+			message->message = method_call;
+
+			object = nih_new (NULL, NihDBusObject);
+			object->path = "/com/netsplit/Nih";
+			object->conn = client_conn;
+			object->data = NULL;
+			object->interfaces = NULL;
+			object->registered = TRUE;
+
+			output = nih_str_split (NULL, "this is a test",
+						" ", TRUE);
+		}
+
+		ret = my_async_method_reply (message, output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			nih_free (output);
+			nih_free (object);
+			nih_free (message);
+			dbus_message_unref (method_call);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		TEST_DBUS_MESSAGE (server_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_iter_init (reply, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_ARRAY);
+
+		TEST_EQ (dbus_message_iter_get_element_type (&iter),
+			 DBUS_TYPE_STRING);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+
+		dbus_message_iter_get_basic (&subiter, &str);
+		TEST_EQ_STR (str, "this");
+
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+
+		dbus_message_iter_get_basic (&subiter, &str);
+		TEST_EQ_STR (str, "is");
+
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+
+		dbus_message_iter_get_basic (&subiter, &str);
+		TEST_EQ_STR (str, "a");
+
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+
+		dbus_message_iter_get_basic (&subiter, &str);
+		TEST_EQ_STR (str, "test");
+
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_iter_next (&iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_INVALID);
+
+		nih_free (output);
+		nih_free (object);
+		nih_free (message);
+		dbus_message_unref (reply);
+		dbus_message_unref (method_call);
+	}
+
+	/* Check that when no reply is expected, none is sent but the
+	 * function returns success.
+	 */
+	TEST_FEATURE ("with no reply expected (generated code)");
+	TEST_ALLOC_FAIL {
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (client_conn),
+			"/com/netsplit/Nih",
+			"com.netsplit.Nih",
+			"MyMethod");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str = "this is a test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str);
+
+		flags = 0;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32,
+						&flags);
+
+		dbus_message_set_no_reply (method_call, TRUE);
+
+		dbus_connection_send (server_conn, method_call, &serial);
+		dbus_connection_flush (server_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_MESSAGE (client_conn, method_call);
+		assert (dbus_message_get_serial (method_call) == serial);
+
+		TEST_ALLOC_SAFE {
+			message = nih_new (NULL, NihDBusMessage);
+			message->conn = client_conn;
+			message->message = method_call;
+
+			object = nih_new (NULL, NihDBusObject);
+			object->path = "/com/netsplit/Nih";
+			object->conn = client_conn;
+			object->data = NULL;
+			object->interfaces = NULL;
+			object->registered = TRUE;
+
+			output = nih_str_split (NULL, "this is a test",
+						" ", TRUE);
+		}
+
+		ret = my_async_method_reply (message, output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			nih_free (output);
+			nih_free (object);
+			nih_free (message);
+			dbus_message_unref (method_call);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		next_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			"com.netsplit.Nih",
+			"NextMethod");
+
+		dbus_connection_send (server_conn, next_call, &next_serial);
+		dbus_connection_flush (server_conn);
+		dbus_message_unref (next_call);
+
+		TEST_DBUS_MESSAGE (server_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_CALL);
+		TEST_EQ (dbus_message_get_serial (reply), next_serial);
+
+		nih_free (output);
+		nih_free (object);
+		nih_free (message);
+		dbus_message_unref (reply);
+		dbus_message_unref (next_call);
+		dbus_message_unref (method_call);
 	}
 
 
@@ -2452,6 +2766,7 @@ main (int   argc,
 	test_lookup_argument ();
 
 	test_object_function ();
+	//test_reply_function ();
 
 	return 0;
 }

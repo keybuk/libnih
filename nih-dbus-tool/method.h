@@ -79,6 +79,10 @@ char *    method_object_function (const void *parent, Method *method,
 				  const char *name, const char *handler_name)
 	__attribute__ ((malloc, warn_unused_result));
 
+char *    method_reply_function  (const void *parent, Method *method,
+				  const char *name)
+	__attribute__ ((malloc, warn_unused_result));
+
 NIH_END_EXTERN
 
 #endif /* NIH_DBUS_TOOL_METHOD_H */

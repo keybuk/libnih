@@ -423,7 +423,7 @@ method_lookup_argument (Method *    method,
 
 
 /**
- * marshal_object_function:
+ * method_object_function:
  * @parent: parent object for new string.
  * @method: method to generate function for,
  * @name: name of function to generate,
@@ -777,6 +777,200 @@ method_object_function (const void *parent,
 			    "%s"
 			    "}\n",
 			    name,
+			    body);
+	if (! code)
+		return NULL;
+
+	return code;
+}
+
+/**
+ * method_reply_function:
+ * @parent: parent object for new string.
+ * @method: method to generate function for,
+ * @name: name of function to generate.
+ *
+ * Generates C code for a function @name to send a reply for the method
+ * @method by marshalling the arguments.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the return string will also be
+ * freed.
+ *
+ * Returns: newly allocated string or NULL if insufficient memory.
+ **/
+char *
+method_reply_function (const void *parent,
+		       Method *    method,
+		       const char *name)
+{
+	NihList            locals;
+	nih_local TypeVar *reply_var = NULL;
+	nih_local TypeVar *iter_var = NULL;
+	nih_local char *   marshal_block = NULL;
+	nih_local char *   args = NULL;
+	nih_local char *   assert_block = NULL;
+	nih_local char *   vars_block = NULL;
+	nih_local char *   body = NULL;
+	char *             code = NULL;
+
+	nih_assert (method != NULL);
+
+	nih_list_init (&locals);
+
+	/* The function requires a reply message pointer, which we allocate,
+	 * and an iterator for it to append the arguments.  Rather than
+	 * deal with these by hand, it's far easier to put them on the
+	 * locals list and deal with them along with the rest.
+	 */
+	reply_var = type_var_new (NULL, "DBusMessage *", "reply");
+	if (! reply_var)
+		return NULL;
+
+	nih_list_add (&locals, &reply_var->entry);
+
+	iter_var = type_var_new (NULL, "DBusMessageIter", "iter");
+	if (! iter_var)
+		return NULL;
+
+	nih_list_add (&locals, &iter_var->entry);
+
+
+	/* Create the reply and set up the iterator to append to it. */
+	if (! nih_strcat_sprintf (&marshal_block, NULL,
+				  "/* If the sender doesn't care about a reply, don't bother wasting\n"
+				  " * effort constructing and sending one.\n"
+				  " */\n"
+				  "if (dbus_message_get_no_reply (message->message))\n"
+				  "\treturn 0;\n"
+				  "\n"
+				  "/* Construct the reply message. */\n"
+				  "reply = dbus_message_new_method_return (message->message);\n"
+				  "if (! reply)\n"
+				  "\treturn -1;\n"
+				  "\n"
+				  "dbus_message_iter_init_append (reply, &iter);\n"
+				  "\n"))
+		return NULL;
+
+	/* Iterate over the method's output arguments, for each one we
+	 * append the code to the marshalling code and at the same time
+	 * build up our own expected arguments themselves.
+	 */
+	NIH_LIST_FOREACH (&method->arguments, iter) {
+		Argument *        argument = (Argument *)iter;
+		NihList           arg_vars;
+		NihList           arg_locals;
+		DBusSignatureIter iter;
+		nih_local char *  oom_error_code = NULL;
+		nih_local char *  type_error_code = NULL;
+		nih_local char *  block = NULL;
+
+		if (argument->direction != NIH_DBUS_ARG_OUT)
+			continue;
+
+		nih_list_init (&arg_vars);
+		nih_list_init (&arg_locals);
+
+		dbus_signature_iter_init (&iter, argument->type);
+
+		/* In case of out of memory, simply return; the caller
+		 * can try again.
+		 */
+		oom_error_code = nih_strdup (NULL,
+					     "dbus_message_unref (reply);\n"
+					     "return -1;\n");
+		if (! oom_error_code)
+			return NULL;
+
+		block = marshal (NULL, &iter, "iter", argument->symbol,
+				 oom_error_code,
+				 &arg_vars, &arg_locals);
+		if (! block)
+			return NULL;
+
+		if (! nih_strcat_sprintf (&marshal_block, NULL,
+					  "%s"
+					  "\n",
+					  block))
+			return NULL;
+
+		/* We take a parameter of the expected type and name of
+		 * the marshal input variable; if it's a pointer, we
+		 * assert that it's not NULL and make sure it's const.
+		 */
+		NIH_LIST_FOREACH_SAFE (&arg_vars, iter) {
+			TypeVar *var = (TypeVar *)iter;
+
+			if (! type_to_const (&var->type, var))
+				return NULL;
+
+			if (! nih_strcat_sprintf (&args, NULL,
+						  ", %s %s",
+						  var->type, var->name))
+				return NULL;
+
+			if (strchr (var->type, '*'))
+				if (! nih_strcat_sprintf (&assert_block, NULL,
+							  "nih_assert (%s != NULL);\n",
+							  var->name))
+					return NULL;
+		}
+
+		NIH_LIST_FOREACH_SAFE (&arg_locals, iter) {
+			TypeVar *var = (TypeVar *)iter;
+
+			nih_list_add (&locals, &var->entry);
+			nih_ref (var, marshal_block);
+		}
+	}
+
+	/* Lay out the function body, indenting it all before placing it
+	 * in the function code.
+	 */
+	/* FIXME have a function to do this! */
+	NIH_LIST_FOREACH (&locals, iter) {
+		TypeVar *var = (TypeVar *)iter;
+
+		if (! nih_strcat_sprintf (&vars_block, NULL, "%s %s;\n",
+					  var->type,
+					  var->name))
+			return NULL;
+	}
+
+	if (! nih_strcat_sprintf (&body, NULL,
+				  "%s"
+				  "\n"
+				  "nih_assert (message != NULL);\n"
+				  "%s"
+				  "\n"
+				  "%s"
+				  "/* Send the reply, appending it to the outgoing queue. */\n"
+				  "if (! dbus_connection_send (message->conn, reply, NULL)) {\n"
+				  "\tdbus_message_unref (reply);\n"
+				  "\treturn -1;\n"
+				  "}\n"
+				  "\n"
+				  "dbus_message_unref (reply);\n"
+				  "\n"
+				  "return 0;\n",
+				  vars_block,
+				  assert_block,
+				  marshal_block))
+		return NULL;
+
+	if (! indent (&body, NULL, 1))
+		return NULL;
+
+	/* FIXME have a function to do this */
+	code = nih_sprintf (parent,
+			    "int\n"
+			    "%s (NihDBusMessage *message%s)\n"
+			    "{\n"
+			    "%s"
+			    "}\n",
+			    name, args,
 			    body);
 	if (! code)
 		return NULL;

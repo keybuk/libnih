@@ -99,6 +99,12 @@ main (int   argc,
 				       "my_async_method_handler");
 
 	printf ("%s", code);
+	printf ("\n");
+
+	code = method_reply_function (NULL, method,
+				      "my_async_method_reply");
+
+	printf ("%s", code);
 
 	return 0;
 }

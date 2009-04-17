@@ -1129,6 +1129,7 @@ test_object_function (void)
 	Argument *        argument3 = NULL;
 	char *            str;
 	int32_t           flags;
+	double            double_arg;
 	DBusMessage *     method_call;
 	DBusMessageIter   iter;
 	DBusMessageIter   subiter;
@@ -1247,6 +1248,22 @@ test_object_function (void)
 				   "\n"
 				   "\tdbus_message_iter_next (&iter);\n"
 				   "\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
+				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
+				   "\t\t                                _(\"Invalid arguments to MyMethod method\"));\n"
+				   "\t\tif (! reply)\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\n"
+				   "\t\tif (! dbus_connection_send (message->conn, reply, NULL)) {\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Call the handler function */\n"
 				   "\tif (my_method_handler (object->data, message, str, flags, &output) < 0) {\n"
 				   "\t\tNihError *err;\n"
 				   "\n"
@@ -1743,6 +1760,83 @@ test_object_function (void)
 	}
 
 
+	/* Check that an extra argument to the method also results in an
+	 * error reply being received and the function not being called.
+	 */
+	TEST_FEATURE ("with too many arguments in method (generated code)");
+	TEST_ALLOC_FAIL {
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (client_conn),
+			"/com/netsplit/Nih",
+			"com.netsplit.Nih",
+			"MyMethod");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str = "this is a test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str);
+
+		flags = 0;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32,
+						&flags);
+
+		double_arg = 3.14;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_DOUBLE,
+						&double_arg);
+
+		dbus_connection_send (server_conn, method_call, &serial);
+		dbus_connection_flush (server_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_MESSAGE (client_conn, method_call);
+		assert (dbus_message_get_serial (method_call) == serial);
+
+		TEST_ALLOC_SAFE {
+			message = nih_new (NULL, NihDBusMessage);
+			message->conn = client_conn;
+			message->message = method_call;
+
+			object = nih_new (NULL, NihDBusObject);
+			object->path = "/com/netsplit/Nih";
+			object->conn = client_conn;
+			object->data = NULL;
+			object->interfaces = NULL;
+			object->registered = TRUE;
+		}
+
+		my_method_handler_called = 0;
+
+		result = MyMethod_handle (object, message);
+
+		if (test_alloc_failed
+		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
+
+			nih_free (object);
+			nih_free (message);
+			dbus_message_unref (method_call);
+
+			continue;
+		}
+
+		TEST_FALSE (my_method_handler_called);
+		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
+
+		TEST_DBUS_MESSAGE (server_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_ERROR);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		TEST_EQ_STR (dbus_message_get_error_name (reply),
+			     DBUS_ERROR_INVALID_ARGS);
+
+		nih_free (object);
+		nih_free (message);
+		dbus_message_unref (method_call);
+		dbus_message_unref (reply);
+	}
+
+
 	/* Check that we can generate an asynchronous method call that
 	 * demarshals a D-Bus message, calls a handler function with the
 	 * demarshalled arguments and then returns the magic "not yet
@@ -1751,8 +1845,8 @@ test_object_function (void)
 	TEST_FEATURE ("with asynchronous method");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyMethod");
-			method->symbol = nih_strdup (method, "my_method");
+			method = method_new (NULL, "MyAsyncMethod");
+			method->symbol = nih_strdup (method, "my_async_method");
 			method->async = TRUE;
 
 			argument1 = argument_new (method, "Str",
@@ -1802,7 +1896,7 @@ test_object_function (void)
 				   "\t/* Demarshal a char * from the message */\n"
 				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING) {\n"
 				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to MyMethod method\"));\n"
+				   "\t\t                                _(\"Invalid arguments to MyAsyncMethod method\"));\n"
 				   "\t\tif (! reply)\n"
 				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
 				   "\n"
@@ -1827,7 +1921,7 @@ test_object_function (void)
 				   "\t/* Demarshal a int32_t from the message */\n"
 				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INT32) {\n"
 				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to MyMethod method\"));\n"
+				   "\t\t                                _(\"Invalid arguments to MyAsyncMethod method\"));\n"
 				   "\t\tif (! reply)\n"
 				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
 				   "\n"
@@ -1844,6 +1938,22 @@ test_object_function (void)
 				   "\n"
 				   "\tdbus_message_iter_next (&iter);\n"
 				   "\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
+				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
+				   "\t\t                                _(\"Invalid arguments to MyAsyncMethod method\"));\n"
+				   "\t\tif (! reply)\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\n"
+				   "\t\tif (! dbus_connection_send (message->conn, reply, NULL)) {\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Call the handler function */\n"
 				   "\tif (my_async_method_handler (object->data, message, str, flags) < 0) {\n"
 				   "\t\tNihError *err;\n"
 				   "\n"
@@ -1891,7 +2001,7 @@ test_object_function (void)
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
 			"com.netsplit.Nih",
-			"MyMethod");
+			"MyAsyncMethod");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
@@ -1956,7 +2066,7 @@ test_object_function (void)
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
 			"com.netsplit.Nih",
-			"MyMethod");
+			"MyAsyncMethod");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
@@ -2030,7 +2140,7 @@ test_object_function (void)
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
 			"com.netsplit.Nih",
-			"MyMethod");
+			"MyAsyncMethod");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
@@ -2111,7 +2221,7 @@ test_object_function (void)
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
 			"com.netsplit.Nih",
-			"MyMethod");
+			"MyAsyncMethod");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
@@ -2181,13 +2291,91 @@ test_object_function (void)
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
 			"com.netsplit.Nih",
-			"MyMethod");
+			"MyAsyncMethod");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
 		str = "this is a test";
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
 						&str);
+
+		dbus_connection_send (server_conn, method_call, &serial);
+		dbus_connection_flush (server_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_MESSAGE (client_conn, method_call);
+		assert (dbus_message_get_serial (method_call) == serial);
+
+		TEST_ALLOC_SAFE {
+			message = nih_new (NULL, NihDBusMessage);
+			message->conn = client_conn;
+			message->message = method_call;
+
+			object = nih_new (NULL, NihDBusObject);
+			object->path = "/com/netsplit/Nih";
+			object->conn = client_conn;
+			object->data = NULL;
+			object->interfaces = NULL;
+			object->registered = TRUE;
+		}
+
+		my_async_method_handler_called = 0;
+
+		result = MyAsyncMethod_handle (object, message);
+
+		if (test_alloc_failed
+		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
+
+			nih_free (object);
+			nih_free (message);
+			dbus_message_unref (method_call);
+
+			continue;
+		}
+
+		TEST_FALSE (my_async_method_handler_called);
+		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
+
+		TEST_DBUS_MESSAGE (server_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_ERROR);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		TEST_EQ_STR (dbus_message_get_error_name (reply),
+			     DBUS_ERROR_INVALID_ARGS);
+
+		nih_free (object);
+		nih_free (message);
+		dbus_message_unref (method_call);
+		dbus_message_unref (reply);
+	}
+
+
+	/* Check that an extra argument to the method also results in an
+	 * error reply being received and the function not being called,
+	 * again this counts as being handled.
+	 */
+	TEST_FEATURE ("with too many arguments in async method (generated code)");
+	TEST_ALLOC_FAIL {
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (client_conn),
+			"/com/netsplit/Nih",
+			"com.netsplit.Nih",
+			"MyAsyncMethod");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str = "this is a test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str);
+
+		flags = 0;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32,
+						&flags);
+
+		double_arg = 3.14;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_DOUBLE,
+						&double_arg);
 
 		dbus_connection_send (server_conn, method_call, &serial);
 		dbus_connection_flush (server_conn);

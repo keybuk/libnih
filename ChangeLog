@@ -1,5 +1,10 @@
 2009-04-17  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_method.c (test_object_function): Add
+	tests for too many arguments in method call
+	* nih-dbus-tool/method.c (method_object_function): Add a block of
+	code to check for extra function arguments.
+
 	* nih-dbus-tool/method.c (method_object_function): When the method
 	is marked async, ignore the output arguments and don't try and send
 	any reply - instead returning the magic "not yet handled" code.

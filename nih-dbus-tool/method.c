@@ -490,6 +490,7 @@ method_object_function (const void *parent,
 
 	/* Begin the handler calling block */
 	if (! nih_strcat_sprintf (&call_block, NULL,
+				  "/* Call the handler function */\n"
 				  "if (%s (object->data, message",
 				  handler_name))
 		return NULL;
@@ -644,6 +645,28 @@ method_object_function (const void *parent,
 			nih_assert_not_reached ();
 		}
 	}
+
+	/* Complete the demarshalling block, checking for any unexpected
+	 * arguments which we also want to error on.
+	 */
+	if (! nih_strcat_sprintf (&demarshal_block, NULL,
+				  "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
+				  "\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
+				  "\t                                _(\"Invalid arguments to %s method\"));\n"
+				  "\tif (! reply)\n"
+				  "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				  "\n"
+				  "\tif (! dbus_connection_send (message->conn, reply, NULL)) {\n"
+				  "\t\tdbus_message_unref (reply);\n"
+				  "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				  "\t}\n"
+				  "\n"
+				  "\tdbus_message_unref (reply);\n"
+				  "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				  "}\n"
+				  "\n",
+				  method->name))
+	    return NULL;
 
 	/* Complete the call block, handling errors from the called function;
 	 * out of memory is easy, we return that to D-Bus and let that decide

@@ -20,11 +20,15 @@
  */
 
 #include <nih/test.h>
+#include <nih-dbus/test_dbus.h>
+
+#include <dbus/dbus.h>
 
 #include <expat.h>
 
 #include <errno.h>
 #include <assert.h>
+#include <string.h>
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
@@ -33,11 +37,15 @@
 #include <nih/main.h>
 #include <nih/error.h>
 
+#include <nih-dbus/dbus_error.h>
+#include <nih-dbus/dbus_message.h>
+
 #include "node.h"
 #include "method.h"
 #include "argument.h"
 #include "parse.h"
 #include "errors.h"
+#include "tests/method_code.h"
 
 
 void
@@ -1034,6 +1042,678 @@ test_lookup_argument (void)
 }
 
 
+static int my_method_handler_called = 0;
+
+int
+my_method_handler (void *          data,
+		   NihDBusMessage *message,
+		   const char *    str,
+		   int32_t         flags,
+		   char ***        output)
+{
+	my_method_handler_called++;
+
+	TEST_EQ_P (data, NULL);
+
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->conn, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_EQ_STR (str, "this is a test");
+	TEST_ALLOC_PARENT (str, message);
+
+	TEST_NE_P (output, NULL);
+
+	switch (flags) {
+	case 0:
+		*output = nih_str_split (message, str, " ", TRUE);
+		if (! *output)
+			nih_return_no_memory_error (-1);
+
+		break;
+	case 1:
+		nih_dbus_error_raise ("com.netsplit.Nih.MyMethod.Fail",
+				      "MyMethod failed");
+		return -1;
+	case 2:
+		nih_error_raise (EBADF, strerror (EBADF));
+		return -1;
+	}
+
+	return 0;
+}
+
+void
+test_object_function (void)
+{
+	pid_t             dbus_pid;
+	DBusConnection *  server_conn;
+	DBusConnection *  client_conn;
+	Method *          method = NULL;
+	Argument *        argument1 = NULL;
+	Argument *        argument2 = NULL;
+	Argument *        argument3 = NULL;
+	char *            str;
+	int32_t           flags;
+	DBusMessage *     method_call;
+	DBusMessageIter   iter;
+	DBusMessageIter   subiter;
+	DBusMessage *     reply;
+	NihDBusMessage *  message;
+	NihDBusObject *   object;
+	dbus_uint32_t     serial;
+	DBusHandlerResult result;
+	DBusError         dbus_error;
+
+	TEST_FUNCTION ("method_object_function");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (server_conn);
+	TEST_DBUS_OPEN (client_conn);
+
+
+	/* Check that we can generate a method call that demarshals a
+	 * D-Bus message, calls a handler function with the demarshalled
+	 * arguments and pointers to output arguments, then marshals those
+	 * back into a reply message or an error as appropriate.
+	 */
+	TEST_FEATURE ("with standard method");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			method = method_new (NULL, "MyMethod");
+			method->symbol = nih_strdup (method, "my_method");
+
+			argument1 = argument_new (method, "Str",
+						  "s", NIH_DBUS_ARG_IN);
+			argument1->symbol = nih_strdup (argument1, "str");
+			nih_list_add (&method->arguments, &argument1->entry);
+
+			argument2 = argument_new (method, "Flags",
+						  "i", NIH_DBUS_ARG_IN);
+			argument2->symbol = nih_strdup (argument2, "flags");
+			nih_list_add (&method->arguments, &argument2->entry);
+
+			argument3 = argument_new (method, "Output",
+						  "as", NIH_DBUS_ARG_OUT);
+			argument3->symbol = nih_strdup (argument3, "output");
+			nih_list_add (&method->arguments, &argument3->entry);
+		}
+
+		str = method_object_function (NULL, method,
+					      "MyMethod_handle",
+					      "my_method_handler");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (method);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("DBusHandlerResult\n"
+				   "MyMethod_handle (NihDBusObject * object, NihDBusMessage *message)\n"
+				   "{\n"
+				   "\tDBusMessageIter iter;\n"
+				   "\tDBusMessage * reply;\n"
+				   "\tchar * str;\n"
+				   "\tconst char * str_dbus;\n"
+				   "\tint32_t flags;\n"
+				   "\tchar ** output;\n"
+				   "\tDBusMessageIter output_iter;\n"
+				   "\n"
+				   "\tnih_assert (object != NULL);\n"
+				   "\tnih_assert (message != NULL);\n"
+				   "\n"
+				   "\t/* Iterate the arguments to the message and demarshal into arguments\n"
+				   "\t * for our own function call.\n"
+				   "\t */\n"
+				   "\tdbus_message_iter_init (message->message, &iter);\n"
+				   "\n"
+				   "\t/* Demarshal a char * from the message */\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING) {\n"
+				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
+				   "\t\t                                _(\"Invalid arguments to MyMethod method\"));\n"
+				   "\t\tif (! reply)\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\n"
+				   "\t\tif (! dbus_connection_send (message->conn, reply, NULL)) {\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_get_basic (&iter, &str_dbus);\n"
+				   "\n"
+				   "\tstr = nih_strdup (message, str_dbus);\n"
+				   "\tif (! str) {\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_next (&iter);\n"
+				   "\n"
+				   "\t/* Demarshal a int32_t from the message */\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INT32) {\n"
+				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
+				   "\t\t                                _(\"Invalid arguments to MyMethod method\"));\n"
+				   "\t\tif (! reply)\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\n"
+				   "\t\tif (! dbus_connection_send (message->conn, reply, NULL)) {\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_get_basic (&iter, &flags);\n"
+				   "\n"
+				   "\tdbus_message_iter_next (&iter);\n"
+				   "\n"
+				   "\tif (my_method_handler (object->data, message, str, flags, &output) < 0) {\n"
+				   "\t\tNihError *err;\n"
+				   "\n"
+				   "\t\terr = nih_error_get ();\n"
+				   "\t\tif (err->number == ENOMEM) {\n"
+				   "\t\t\tnih_free (err);\n"
+				   "\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\t\t} else if (err->number == NIH_DBUS_ERROR) {\n"
+				   "\t\t\tNihDBusError *dbus_err = (NihDBusError *)err;\n"
+				   "\n"
+				   "\t\t\treply = NIH_MUST (dbus_message_new_error (message->message, dbus_err->name, err->message));\n"
+				   "\t\t\tnih_free (err);\n"
+				   "\n"
+				   "\t\t\tNIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
+				   "\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "\t\t} else {\n"
+				   "\t\t\treply = NIH_MUST (dbus_message_new_error (message->message, DBUS_ERROR_FAILED, err->message));\n"
+				   "\t\t\tnih_free (err);\n"
+				   "\n"
+				   "\t\t\tNIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
+				   "\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "\t\t}\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* If the sender doesn't care about a reply, don't bother wasting\n"
+				   "\t * effort constructing and sending one.\n"
+				   "\t */\n"
+				   "\tif (dbus_message_get_no_reply (message->message))\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "\n"
+				   "\tdo {\n"
+				   "\t\t/* Construct the reply message. */\n"
+				   "\t\treply = dbus_message_new_method_return (message->message);\n"
+				   "\t\tif (! reply)\n"
+				   "\t\t\tcontinue;\n"
+				   "\n"
+				   "\t\tdbus_message_iter_init_append (reply, &iter);\n"
+				   "\n"
+				   "\t\t/* Marshal an array onto the message */\n"
+				   "\t\tif (! dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, \"s\", &output_iter)) {\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treply = NULL;\n"
+				   "\t\t\tcontinue;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tfor (size_t output_i = 0; output[output_i]; output_i++) {\n"
+				   "\t\t\tconst char * output_element;\n"
+				   "\n"
+				   "\t\t\toutput_element = output[output_i];\n"
+				   "\n"
+				   "\t\t\t/* Marshal a char * onto the message */\n"
+				   "\t\t\tif (! dbus_message_iter_append_basic (&output_iter, DBUS_TYPE_STRING, &output_element)) {\n"
+				   "\t\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\t\treply = NULL;\n"
+				   "\t\t\t\tcontinue;\n"
+				   "\t\t\t}\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tif (! dbus_message_iter_close_container (&iter, &output_iter)) {\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treply = NULL;\n"
+				   "\t\t\tcontinue;\n"
+				   "\t\t}\n"
+				   "\t} while (! reply);\n"
+				   "\n"
+				   "\t/* Send the reply, appending it to the outgoing queue. */\n"
+				   "\tNIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
+				   "\n"
+				   "\tdbus_message_unref (reply);\n"
+				   "\n"
+				   "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "}\n"));
+
+		nih_free (str);
+		nih_free (method);
+	}
+
+
+	/* Check that we can use the generated code to convert a message we
+	 * send to a function call which on return causes a reply message
+	 * to be sent back to us.
+	 */
+	TEST_FEATURE ("with normal return (generated code)");
+	TEST_ALLOC_FAIL {
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (client_conn),
+			"/com/netsplit/Nih",
+			"com.netsplit.Nih",
+			"MyMethod");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str = "this is a test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str);
+
+		flags = 0;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32,
+						&flags);
+
+		dbus_connection_send (server_conn, method_call, &serial);
+		dbus_connection_flush (server_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_MESSAGE (client_conn, method_call);
+		assert (dbus_message_get_serial (method_call) == serial);
+
+		TEST_ALLOC_SAFE {
+			message = nih_new (NULL, NihDBusMessage);
+			message->conn = client_conn;
+			message->message = method_call;
+
+			object = nih_new (NULL, NihDBusObject);
+			object->path = "/com/netsplit/Nih";
+			object->conn = client_conn;
+			object->data = NULL;
+			object->interfaces = NULL;
+			object->registered = TRUE;
+		}
+
+		my_method_handler_called = 0;
+
+		result = MyMethod_handle (object, message);
+
+		if (test_alloc_failed
+		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
+
+			nih_free (object);
+			nih_free (message);
+			dbus_message_unref (method_call);
+
+			continue;
+		}
+
+		TEST_TRUE (my_method_handler_called);
+
+		TEST_DBUS_MESSAGE (server_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_iter_init (reply, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_ARRAY);
+
+		TEST_EQ (dbus_message_iter_get_element_type (&iter),
+			 DBUS_TYPE_STRING);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+
+		dbus_message_iter_get_basic (&subiter, &str);
+		TEST_EQ_STR (str, "this");
+
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+
+		dbus_message_iter_get_basic (&subiter, &str);
+		TEST_EQ_STR (str, "is");
+
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+
+		dbus_message_iter_get_basic (&subiter, &str);
+		TEST_EQ_STR (str, "a");
+
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+
+		dbus_message_iter_get_basic (&subiter, &str);
+		TEST_EQ_STR (str, "test");
+
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_iter_next (&iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_INVALID);
+
+		nih_free (object);
+		nih_free (message);
+		dbus_message_unref (method_call);
+		dbus_message_unref (reply);
+	}
+
+
+	/* Check that when the handler function raises a D-Bus error, we
+	 * receive the error reply as an equivalent D-Bus error reply.
+	 */
+	TEST_FEATURE ("with D-Bus error from handler (generated code)");
+	TEST_ALLOC_FAIL {
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (client_conn),
+			"/com/netsplit/Nih",
+			"com.netsplit.Nih",
+			"MyMethod");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str = "this is a test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str);
+
+		flags = 1;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32,
+						&flags);
+
+		dbus_connection_send (server_conn, method_call, &serial);
+		dbus_connection_flush (server_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_MESSAGE (client_conn, method_call);
+		assert (dbus_message_get_serial (method_call) == serial);
+
+		TEST_ALLOC_SAFE {
+			message = nih_new (NULL, NihDBusMessage);
+			message->conn = client_conn;
+			message->message = method_call;
+
+			object = nih_new (NULL, NihDBusObject);
+			object->path = "/com/netsplit/Nih";
+			object->conn = client_conn;
+			object->data = NULL;
+			object->interfaces = NULL;
+			object->registered = TRUE;
+		}
+
+		my_method_handler_called = 0;
+
+		result = MyMethod_handle (object, message);
+
+		if (test_alloc_failed
+		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
+
+			nih_free (object);
+			nih_free (message);
+			dbus_message_unref (method_call);
+
+			continue;
+		}
+
+		TEST_TRUE (my_method_handler_called);
+
+		TEST_DBUS_MESSAGE (server_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_ERROR);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		TEST_EQ_STR (dbus_message_get_error_name (reply),
+			     "com.netsplit.Nih.MyMethod.Fail");
+
+		nih_free (object);
+		nih_free (message);
+		dbus_message_unref (method_call);
+		dbus_message_unref (reply);
+	}
+
+
+	/* Check that when the handler function raises a non-D-Bus error,
+	 * we receive an error reply with the generic D-Bus failed error
+	 * but the same message.
+	 */
+	TEST_FEATURE ("with generic error from handler (generated code)");
+	TEST_ALLOC_FAIL {
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (client_conn),
+			"/com/netsplit/Nih",
+			"com.netsplit.Nih",
+			"MyMethod");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str = "this is a test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str);
+
+		flags = 2;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32,
+						&flags);
+
+		dbus_connection_send (server_conn, method_call, &serial);
+		dbus_connection_flush (server_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_MESSAGE (client_conn, method_call);
+		assert (dbus_message_get_serial (method_call) == serial);
+
+		TEST_ALLOC_SAFE {
+			message = nih_new (NULL, NihDBusMessage);
+			message->conn = client_conn;
+			message->message = method_call;
+
+			object = nih_new (NULL, NihDBusObject);
+			object->path = "/com/netsplit/Nih";
+			object->conn = client_conn;
+			object->data = NULL;
+			object->interfaces = NULL;
+			object->registered = TRUE;
+		}
+
+		my_method_handler_called = 0;
+
+		result = MyMethod_handle (object, message);
+
+		if (test_alloc_failed
+		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
+
+			nih_free (object);
+			nih_free (message);
+			dbus_message_unref (method_call);
+
+			continue;
+		}
+
+		TEST_TRUE (my_method_handler_called);
+
+		TEST_DBUS_MESSAGE (server_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_ERROR);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		TEST_EQ_STR (dbus_message_get_error_name (reply),
+			     DBUS_ERROR_FAILED);
+
+		dbus_error_init (&dbus_error);
+
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, strerror (EBADF));
+
+		dbus_error_free (&dbus_error);
+
+		nih_free (object);
+		nih_free (message);
+		dbus_message_unref (method_call);
+		dbus_message_unref (reply);
+	}
+
+
+	/* Check that an incorrect type in the method we send results in
+	 * an error reply being received and the function not being called.
+	 */
+	TEST_FEATURE ("with incorrect type in method (generated code)");
+	TEST_ALLOC_FAIL {
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (client_conn),
+			"/com/netsplit/Nih",
+			"com.netsplit.Nih",
+			"MyMethod");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		flags = 0;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32,
+						&flags);
+
+		dbus_connection_send (server_conn, method_call, &serial);
+		dbus_connection_flush (server_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_MESSAGE (client_conn, method_call);
+		assert (dbus_message_get_serial (method_call) == serial);
+
+		TEST_ALLOC_SAFE {
+			message = nih_new (NULL, NihDBusMessage);
+			message->conn = client_conn;
+			message->message = method_call;
+
+			object = nih_new (NULL, NihDBusObject);
+			object->path = "/com/netsplit/Nih";
+			object->conn = client_conn;
+			object->data = NULL;
+			object->interfaces = NULL;
+			object->registered = TRUE;
+		}
+
+		my_method_handler_called = 0;
+
+		result = MyMethod_handle (object, message);
+
+		if (test_alloc_failed
+		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
+
+			nih_free (object);
+			nih_free (message);
+			dbus_message_unref (method_call);
+
+			continue;
+		}
+
+		TEST_FALSE (my_method_handler_called);
+
+		TEST_DBUS_MESSAGE (server_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_ERROR);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		TEST_EQ_STR (dbus_message_get_error_name (reply),
+			     DBUS_ERROR_INVALID_ARGS);
+
+		nih_free (object);
+		nih_free (message);
+		dbus_message_unref (method_call);
+		dbus_message_unref (reply);
+	}
+
+
+	/* Check that a missing argument in the method we send results in
+	 * an error reply being received and the function not being called.
+	 */
+	TEST_FEATURE ("with missing argument in method (generated code)");
+	TEST_ALLOC_FAIL {
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (client_conn),
+			"/com/netsplit/Nih",
+			"com.netsplit.Nih",
+			"MyMethod");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str = "this is a test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str);
+
+		dbus_connection_send (server_conn, method_call, &serial);
+		dbus_connection_flush (server_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_MESSAGE (client_conn, method_call);
+		assert (dbus_message_get_serial (method_call) == serial);
+
+		TEST_ALLOC_SAFE {
+			message = nih_new (NULL, NihDBusMessage);
+			message->conn = client_conn;
+			message->message = method_call;
+
+			object = nih_new (NULL, NihDBusObject);
+			object->path = "/com/netsplit/Nih";
+			object->conn = client_conn;
+			object->data = NULL;
+			object->interfaces = NULL;
+			object->registered = TRUE;
+		}
+
+		my_method_handler_called = 0;
+
+		result = MyMethod_handle (object, message);
+
+		if (test_alloc_failed
+		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
+
+			nih_free (object);
+			nih_free (message);
+			dbus_message_unref (method_call);
+
+			continue;
+		}
+
+		TEST_FALSE (my_method_handler_called);
+
+		TEST_DBUS_MESSAGE (server_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_ERROR);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		TEST_EQ_STR (dbus_message_get_error_name (reply),
+			     DBUS_ERROR_INVALID_ARGS);
+
+		nih_free (object);
+		nih_free (message);
+		dbus_message_unref (method_call);
+		dbus_message_unref (reply);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+
+
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -1047,6 +1727,8 @@ main (int   argc,
 	test_end_tag ();
 	test_annotation ();
 	test_lookup_argument ();
+
+	test_object_function ();
 
 	return 0;
 }

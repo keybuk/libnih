@@ -1,3 +1,29 @@
+2009-04-17  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/method.c (method_object_function): Generate code for
+	a function that handles an incoming method call, and calls a handler
+	function for it.
+	* nih-dbus-tool/method.h: Add prototype.
+	* nih-dbus-tool/tests/test_method.c (test_object_function): Tests
+	cases for the function and the function code it generates.
+	* nih-dbus-tool/tests/method_factory.c: Call method_object_function()
+	to generate a function, and place it in a C file for testing.
+	* nih-dbus-tool/tests/method_code.h: Prototype for generated function.
+	* nih-dbus-tool/Makefile.am (check_PROGRAMS): Build the method_factory
+	program when running tests
+	(nih_dbus_tool_SOURCES, TESTS): Marshalling/demarshalling code now
+	has to come before parsing and method code since we use it.
+	(method_factory_SOURCES, method_factory_LDFLAGS)
+	(method_factory_LDADD, tests/method_code.c): Run the method_factory
+	tool to generate tests/method_code.c
+	(test_method_SOURCES, test_method_LDADD): Link to the output of
+	the method_factory tool
+	(CLEANFILES): Clean up
+	(test_node_LDADD, test_interface_LDADD, test_signal_LDADD)
+	(test_property_LDADD, test_argument_LDADD)
+	(test_annotation_LDADD, test_parse_LDADD): Add marshal/demarshal
+	object files
+
 2009-04-16  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/tests/marshal_factory.c (marshal_function): Remove

@@ -20,6 +20,10 @@ endif
 nih_dbus_tool_SOURCES = \
 	main.c \
 	symbol.c symbol.h \
+	indent.c indent.h \
+	type.c type.h \
+	marshal.c marshal.h \
+	demarshal.c demarshal.h \
 	node.c node.h \
 	interface.c interface.h \
 	method.c method.h \
@@ -28,10 +32,6 @@ nih_dbus_tool_SOURCES = \
 	argument.c argument.h \
 	annotation.c annotation.h \
 	parse.c parse.h \
-	indent.c indent.h \
-	type.c type.h \
-	marshal.c marshal.h \
-	demarshal.c demarshal.h \
 	errors.h
 
 nih_dbus_tool_LDADD = \
@@ -45,6 +45,10 @@ nih_dbus_tool_LDADD = \
 TESTS = \
 	test_main \
 	test_symbol \
+	test_indent \
+	test_type \
+	test_marshal \
+	test_demarshal \
 	test_node \
 	test_interface \
 	test_method \
@@ -53,17 +57,14 @@ TESTS = \
 	test_argument \
 	test_annotation \
 	test_parse \
-	test_indent \
-	test_type \
-	test_marshal \
-	test_demarshal \
 	test_com.netsplit.Nih.Test_object \
 	test_com.netsplit.Nih.Test_proxy
 
 check_PROGRAMS = \
 	$(TESTS) \
 	marshal_factory \
-	demarshal_factory
+	demarshal_factory \
+	method_factory
 
 test_main_SOURCES = tests/test_main.c main.c
 test_main_CFLAGS = $(AM_CFLAGS) -DTEST
@@ -75,78 +76,6 @@ test_symbol_LDFLAGS = -static
 test_symbol_LDADD = \
 	symbol.o \
 	../nih/libnih.la
-
-test_node_SOURCES = tests/test_node.c
-test_node_LDFLAGS = -static
-test_node_LDADD = \
-	parse.o annotation.o argument.o property.o signal.o method.o \
-	interface.o node.o symbol.o \
-	../nih/libnih.la \
-	$(EXPAT_LIBS) \
-	$(DBUS_LIBS)
-
-test_interface_SOURCES = tests/test_interface.c
-test_interface_LDFLAGS = -static
-test_interface_LDADD = \
-	parse.o annotation.o argument.o property.o signal.o method.o \
-	interface.o node.o symbol.o \
-	../nih/libnih.la \
-	$(EXPAT_LIBS) \
-	$(DBUS_LIBS)
-
-test_method_SOURCES = tests/test_method.c
-test_method_LDFLAGS = -static
-test_method_LDADD = \
-	parse.o annotation.o argument.o property.o signal.o method.o \
-	interface.o node.o symbol.o \
-	../nih/libnih.la \
-	$(EXPAT_LIBS) \
-	$(DBUS_LIBS)
-
-test_signal_SOURCES = tests/test_signal.c
-test_signal_LDFLAGS = -static
-test_signal_LDADD = \
-	parse.o annotation.o argument.o property.o signal.o method.o \
-	interface.o node.o symbol.o \
-	../nih/libnih.la \
-	$(EXPAT_LIBS) \
-	$(DBUS_LIBS)
-
-test_property_SOURCES = tests/test_property.c
-test_property_LDFLAGS = -static
-test_property_LDADD = \
-	parse.o annotation.o argument.o property.o signal.o method.o \
-	interface.o node.o symbol.o \
-	../nih/libnih.la \
-	$(EXPAT_LIBS) \
-	$(DBUS_LIBS)
-
-test_argument_SOURCES = tests/test_argument.c
-test_argument_LDFLAGS = -static
-test_argument_LDADD = \
-	parse.o annotation.o argument.o property.o signal.o method.o \
-	interface.o node.o symbol.o \
-	../nih/libnih.la \
-	$(EXPAT_LIBS) \
-	$(DBUS_LIBS)
-
-test_annotation_SOURCES = tests/test_annotation.c
-test_annotation_LDFLAGS = -static
-test_annotation_LDADD = \
-	parse.o annotation.o argument.o property.o signal.o method.o \
-	interface.o node.o symbol.o \
-	../nih/libnih.la \
-	$(EXPAT_LIBS) \
-	$(DBUS_LIBS)
-
-test_parse_SOURCES = tests/test_parse.c
-test_parse_LDFLAGS = -static
-test_parse_LDADD = \
-	parse.o annotation.o argument.o property.o signal.o method.o \
-	interface.o node.o symbol.o \
-	../nih/libnih.la \
-	$(EXPAT_LIBS) \
-	$(DBUS_LIBS)
 
 test_indent_SOURCES = tests/test_indent.c
 test_indent_LDFLAGS = -static
@@ -178,6 +107,90 @@ test_demarshal_LDADD = \
 	demarshal.o type.o indent.o \
 	../nih/libnih.la \
 	$(DBUS_LIBS)
+
+test_node_SOURCES = tests/test_node.c
+test_node_LDFLAGS = -static
+test_node_LDADD = \
+	demarshal.o marshal.o type.o indent.o \
+	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
+
+test_interface_SOURCES = tests/test_interface.c
+test_interface_LDFLAGS = -static
+test_interface_LDADD = \
+	demarshal.o marshal.o type.o indent.o \
+	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
+
+test_method_SOURCES = \
+	tests/test_method.c \
+	tests/method_code.c tests/method_code.h
+test_method_LDFLAGS = -static
+test_method_LDADD = \
+	demarshal.o marshal.o type.o indent.o \
+	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	../nih-dbus/libnih-dbus.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
+
+test_signal_SOURCES = tests/test_signal.c
+test_signal_LDFLAGS = -static
+test_signal_LDADD = \
+	demarshal.o marshal.o type.o indent.o \
+	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
+
+test_property_SOURCES = tests/test_property.c
+test_property_LDFLAGS = -static
+test_property_LDADD = \
+	demarshal.o marshal.o type.o indent.o \
+	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
+
+test_argument_SOURCES = tests/test_argument.c
+test_argument_LDFLAGS = -static
+test_argument_LDADD = \
+	demarshal.o marshal.o type.o indent.o \
+	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
+
+test_annotation_SOURCES = tests/test_annotation.c
+test_annotation_LDFLAGS = -static
+test_annotation_LDADD = \
+	demarshal.o marshal.o type.o indent.o \
+	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
+
+test_parse_SOURCES = tests/test_parse.c
+test_parse_LDFLAGS = -static
+test_parse_LDADD = \
+	demarshal.o marshal.o type.o indent.o \
+	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
+
 
 test_com_netsplit_Nih_Test_object_SOURCES = \
 	tests/test_com.netsplit.Nih.Test_object.c \
@@ -257,7 +270,26 @@ tests/demarshal_code.c: $(builddir)/demarshal_factory
 	$(builddir)/demarshal_factory > $@.tmp
 	mv $@.tmp $@
 
-CLEANFILES = tests/marshal_code.c tests/demarshal_code.c
+
+method_factory_SOURCES = tests/method_factory.c
+method_factory_LDFLAGS = -static
+method_factory_LDADD = \
+	demarshal.o marshal.o type.o indent.o \
+	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
+
+tests/method_code.c: $(builddir)/method_factory
+	$(builddir)/method_factory > $@.tmp
+	mv $@.tmp $@
+
+
+CLEANFILES = \
+	tests/marshal_code.c \
+	tests/demarshal_code.c \
+	tests/method_code.c
 
 
 tests: $(BUILT_SOURCES) $(check_PROGRAMS)

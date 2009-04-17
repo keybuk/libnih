@@ -1,5 +1,8 @@
 2009-04-17  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_method.c (test_object_function): Add
+	test cases for the no reply expected flag on an incoming message.
+
 	* nih-dbus-tool/method.c (method_reply_function): Generate code for
 	a function that sends a reply to an asynchronous method call.
 	* nih-dbus-tool/method.h: Add prototype.

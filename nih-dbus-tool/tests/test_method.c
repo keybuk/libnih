@@ -1131,12 +1131,14 @@ test_object_function (void)
 	int32_t           flags;
 	double            double_arg;
 	DBusMessage *     method_call;
+	DBusMessage *     next_call;
 	DBusMessageIter   iter;
 	DBusMessageIter   subiter;
 	DBusMessage *     reply;
 	NihDBusMessage *  message;
 	NihDBusObject *   object;
 	dbus_uint32_t     serial;
+	dbus_uint32_t     next_serial;
 	DBusHandlerResult result;
 	DBusError         dbus_error;
 
@@ -1458,6 +1460,86 @@ test_object_function (void)
 
 		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
 			 DBUS_TYPE_INVALID);
+
+		nih_free (object);
+		nih_free (message);
+		dbus_message_unref (reply);
+		dbus_message_unref (method_call);
+	}
+
+
+	/* Check that when no reply is expected, none is sent but the
+	 * function returns success.
+	 */
+	TEST_FEATURE ("with no reply expected (generated code)");
+	TEST_ALLOC_FAIL {
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (client_conn),
+			"/com/netsplit/Nih",
+			"com.netsplit.Nih",
+			"MyMethod");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str = "this is a test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str);
+
+		flags = 0;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32,
+						&flags);
+
+		dbus_message_set_no_reply (method_call, TRUE);
+
+		dbus_connection_send (server_conn, method_call, &serial);
+		dbus_connection_flush (server_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_MESSAGE (client_conn, method_call);
+		assert (dbus_message_get_serial (method_call) == serial);
+
+		TEST_ALLOC_SAFE {
+			message = nih_new (NULL, NihDBusMessage);
+			message->conn = client_conn;
+			message->message = method_call;
+
+			object = nih_new (NULL, NihDBusObject);
+			object->path = "/com/netsplit/Nih";
+			object->conn = client_conn;
+			object->data = NULL;
+			object->interfaces = NULL;
+			object->registered = TRUE;
+		}
+
+		my_method_handler_called = 0;
+
+		result = MyMethod_handle (object, message);
+
+		if (test_alloc_failed
+		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
+			nih_free (object);
+			nih_free (message);
+			dbus_message_unref (method_call);
+			continue;
+		}
+
+		TEST_TRUE (my_method_handler_called);
+		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
+
+		next_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			"com.netsplit.Nih",
+			"NextMethod");
+
+		dbus_connection_send (server_conn, next_call, &next_serial);
+		dbus_connection_flush (server_conn);
+		dbus_message_unref (next_call);
+
+		TEST_DBUS_MESSAGE (server_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_CALL);
+		TEST_EQ (dbus_message_get_serial (reply), next_serial);
 
 		nih_free (object);
 		nih_free (message);
@@ -2000,6 +2082,70 @@ test_object_function (void)
 		flags = 0;
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32,
 						&flags);
+
+		dbus_connection_send (server_conn, method_call, &serial);
+		dbus_connection_flush (server_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_MESSAGE (client_conn, method_call);
+		assert (dbus_message_get_serial (method_call) == serial);
+
+		TEST_ALLOC_SAFE {
+			message = nih_new (NULL, NihDBusMessage);
+			message->conn = client_conn;
+			message->message = method_call;
+
+			object = nih_new (NULL, NihDBusObject);
+			object->path = "/com/netsplit/Nih";
+			object->conn = client_conn;
+			object->data = NULL;
+			object->interfaces = NULL;
+			object->registered = TRUE;
+		}
+
+		my_async_method_handler_called = 0;
+
+		result = MyAsyncMethod_handle (object, message);
+
+		if (test_alloc_failed
+		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
+			nih_free (object);
+			nih_free (message);
+			dbus_message_unref (method_call);
+			continue;
+		}
+
+		TEST_TRUE (my_async_method_handler_called);
+		TEST_EQ (result, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+
+		nih_free (object);
+		nih_free (message);
+		dbus_message_unref (method_call);
+	}
+
+
+	/* Check that when no reply is expected, the asynchronous call
+	 * is still left pending since the reply function will ignore it.
+	 */
+	TEST_FEATURE ("with no reply expected to async (generated code)");
+	TEST_ALLOC_FAIL {
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (client_conn),
+			"/com/netsplit/Nih",
+			"com.netsplit.Nih",
+			"MyAsyncMethod");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str = "this is a test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str);
+
+		flags = 0;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32,
+						&flags);
+
+		dbus_message_set_no_reply (method_call, TRUE);
 
 		dbus_connection_send (server_conn, method_call, &serial);
 		dbus_connection_flush (server_conn);
@@ -2738,7 +2884,6 @@ test_reply_function (void)
 		nih_free (object);
 		nih_free (message);
 		dbus_message_unref (reply);
-		dbus_message_unref (next_call);
 		dbus_message_unref (method_call);
 	}
 

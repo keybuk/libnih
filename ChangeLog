@@ -1,5 +1,14 @@
 2009-04-17  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_object_function): When the method
+	is marked async, ignore the output arguments and don't try and send
+	any reply - instead returning the magic "not yet handled" code.
+	* nih-dbus-tool/tests/method_factory.c: Generate an async version
+	of the same function for testing.
+	* nih-dbus-tool/tests/method_code.h: Add prototype
+	* nih-dbus-tool/tests/test_method.c (test_object_function): Test
+	code generation and the generated code for an asynchronous method.
+
 	* nih-dbus-tool/method.c (method_object_function): Generate code for
 	a function that handles an incoming method call, and calls a handler
 	function for it.

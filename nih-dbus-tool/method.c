@@ -497,14 +497,15 @@ method_object_function (const void *parent,
 	/* Begin the post-handler marshalling block with the creation of
 	 * the return message and re-using the iterator to marshal it.
 	 */
-	if (! nih_strcat_sprintf (&marshal_block, NULL,
-				  "/* Construct the reply message. */\n"
-				  "reply = dbus_message_new_method_return (message->message);\n"
-				  "if (! reply)\n"
-				  "\tcontinue;\n"
-				  "\n"
-				  "dbus_message_iter_init_append (reply, &iter);\n"))
-		return NULL;
+	if (! method->async)
+		if (! nih_strcat_sprintf (&marshal_block, NULL,
+					  "/* Construct the reply message. */\n"
+					  "reply = dbus_message_new_method_return (message->message);\n"
+					  "if (! reply)\n"
+					  "\tcontinue;\n"
+					  "\n"
+					  "dbus_message_iter_init_append (reply, &iter);\n"))
+			return NULL;
 
 	/* Iterate over the method arguments, for each input argument we
 	 * append the code to the pre-handler demarshalling code and for
@@ -590,6 +591,10 @@ method_object_function (const void *parent,
 
 			break;
 		case NIH_DBUS_ARG_OUT:
+			/* Asynchronous methods don't have output arguments */
+			if (method->async)
+				continue;
+
 			/* In case of out of memory, we can't just return
 			 * beacuse handler side-effects have already happened.
 			 * Discard the message and loop again to try and
@@ -674,18 +679,23 @@ method_object_function (const void *parent,
 				  "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
 				  "\t}\n"
 				  "}\n"
-				  "\n"
-				  "/* If the sender doesn't care about a reply, don't bother wasting\n"
-				  " * effort constructing and sending one.\n"
-				  " */\n"
-				  "if (dbus_message_get_no_reply (message->message))\n"
-				  "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
 				  "\n"))
 		return NULL;
 
+	if (! method->async)
+		if (! nih_strcat_sprintf (&call_block, NULL,
+					  "/* If the sender doesn't care about a reply, don't bother wasting\n"
+					  " * effort constructing and sending one.\n"
+					  " */\n"
+					  "if (dbus_message_get_no_reply (message->message))\n"
+					  "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+					  "\n"))
+			return NULL;
+
 	/* Indent the marshalling block, it goes inside a while loop */
-	if (! indent (&marshal_block, NULL, 1))
-		return NULL;
+	if (! method->async)
+		if (! indent (&marshal_block, NULL, 1))
+			return NULL;
 
 	/* Lay out the function body, indenting it all before placing it
 	 * in the function code.
@@ -707,22 +717,31 @@ method_object_function (const void *parent,
 				  "nih_assert (message != NULL);\n"
 				  "\n"
 				  "%s"
-				  "%s"
-				  "do {\n"
-				  "%s"
-				  "} while (! reply);\n"
-				  "\n"
-				  "/* Send the reply, appending it to the outgoing queue. */\n"
-				  "NIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
-				  "\n"
-				  "dbus_message_unref (reply);\n"
-				  "\n"
-				  "return DBUS_HANDLER_RESULT_HANDLED;\n",
+				  "%s",
 				  vars_block,
 				  demarshal_block,
-				  call_block,
-				  marshal_block))
+				  call_block))
 		return NULL;
+
+	if (! method->async) {
+		if (! nih_strcat_sprintf (&body, NULL,
+					  "do {\n"
+					  "%s"
+					  "} while (! reply);\n"
+					  "\n"
+					  "/* Send the reply, appending it to the outgoing queue. */\n"
+					  "NIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
+					  "\n"
+					  "dbus_message_unref (reply);\n"
+					  "\n"
+					  "return DBUS_HANDLER_RESULT_HANDLED;\n",
+					  marshal_block))
+			return NULL;
+	} else {
+		if (! nih_strcat_sprintf (&body, NULL,
+					  "return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"))
+			return NULL;
+	}
 
 	if (! indent (&body, NULL, 1))
 		return NULL;

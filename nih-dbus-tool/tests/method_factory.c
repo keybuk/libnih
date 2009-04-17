@@ -62,7 +62,6 @@ main (int   argc,
 	printf ("extern int my_method_handler (void *data, "
 		"NihDBusMessage *message, const char *str, "
 		"int32_t flags, char ***output);\n"
-		"\n"
 		"\n");
 
 	method = method_new (NULL, "MyMethod");
@@ -83,6 +82,21 @@ main (int   argc,
 	code = method_object_function (NULL, method,
 				       "MyMethod_handle",
 				       "my_method_handler");
+
+	printf ("%s", code);
+	printf ("\n"
+		"\n");
+
+	method->async = TRUE;
+
+	printf ("extern int my_async_method_handler (void *data, "
+		"NihDBusMessage *message, const char *str, "
+		"int32_t flags);\n"
+		"\n");
+
+	code = method_object_function (NULL, method,
+				       "MyAsyncMethod_handle",
+				       "my_async_method_handler");
 
 	printf ("%s", code);
 

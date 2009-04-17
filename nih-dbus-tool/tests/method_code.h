@@ -30,8 +30,11 @@
 
 NIH_BEGIN_EXTERN
 
-DBusHandlerResult MyMethod_handle (NihDBusObject *object,
-				   NihDBusMessage *message);
+DBusHandlerResult MyMethod_handle      (NihDBusObject *object,
+					NihDBusMessage *message);
+
+DBusHandlerResult MyAsyncMethod_handle (NihDBusObject *object,
+					NihDBusMessage *message);
 
 NIH_END_EXTERN
 

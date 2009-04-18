@@ -64,7 +64,8 @@ check_PROGRAMS = \
 	$(TESTS) \
 	marshal_factory \
 	demarshal_factory \
-	method_factory
+	method_factory \
+	signal_factory
 
 test_main_SOURCES = tests/test_main.c main.c
 test_main_CFLAGS = $(AM_CFLAGS) -DTEST
@@ -141,7 +142,9 @@ test_method_LDADD = \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
 
-test_signal_SOURCES = tests/test_signal.c
+test_signal_SOURCES = \
+	tests/test_signal.c \
+	tests/signal_code.c tests/signal_code.h
 test_signal_LDFLAGS = -static
 test_signal_LDADD = \
 	demarshal.o marshal.o type.o indent.o \
@@ -286,10 +289,26 @@ tests/method_code.c: $(builddir)/method_factory
 	mv $@.tmp $@
 
 
+signal_factory_SOURCES = tests/signal_factory.c
+signal_factory_LDFLAGS = -static
+signal_factory_LDADD = \
+	demarshal.o marshal.o type.o indent.o \
+	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
+
+tests/signal_code.c: $(builddir)/signal_factory
+	$(builddir)/signal_factory > $@.tmp
+	mv $@.tmp $@
+
+
 CLEANFILES = \
 	tests/marshal_code.c \
 	tests/demarshal_code.c \
-	tests/method_code.c
+	tests/method_code.c \
+	tests/signal_code.c
 
 
 tests: $(BUILT_SOURCES) $(check_PROGRAMS)

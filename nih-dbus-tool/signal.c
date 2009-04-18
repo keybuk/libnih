@@ -33,6 +33,9 @@
 #include <nih/error.h>
 
 #include "symbol.h"
+#include "indent.h"
+#include "type.h"
+#include "marshal.h"
 #include "interface.h"
 #include "signal.h"
 #include "argument.h"
@@ -384,4 +387,200 @@ signal_lookup_argument (Signal *    signal,
 	}
 
 	return NULL;
+}
+
+
+/**
+ * signal_emit_function:
+ * @parent: parent object for new string.
+ * @interface_name: name of interface,
+ * @signal: signal to generate function for,
+ * @name: name of function to generate.
+ *
+ * Generates C code for a function @name to emit a signal @signal by
+ * marshalling the arguments.  The interface name of the signal must be
+ * supplied in @interface_name.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the return string will also be
+ * freed.
+ *
+ * Returns: newly allocated string or NULL if insufficient memory.
+ **/
+char *
+signal_emit_function (const void *parent,
+		      const char *interface_name,
+		      Signal *    signal,
+		      const char *name)
+{
+	NihList            locals;
+	nih_local TypeVar *signal_var = NULL;
+	nih_local TypeVar *iter_var = NULL;
+	nih_local char *   marshal_block = NULL;
+	nih_local char *   args = NULL;
+	nih_local char *   assert_block = NULL;
+	nih_local char *   vars_block = NULL;
+	nih_local char *   body = NULL;
+	char *             code = NULL;
+
+	nih_assert (interface_name != NULL);
+	nih_assert (signal != NULL);
+	nih_assert (name != NULL);
+
+	nih_list_init (&locals);
+
+	/* The function requires a message pointer, which we allocate,
+	 * and an iterator for it to append the arguments.  Rather than
+	 * deal with these by hand, it's far easier to put them on the
+	 * locals list and deal with them along with the rest.
+	 */
+	signal_var = type_var_new (NULL, "DBusMessage *", "signal");
+	if (! signal_var)
+		return NULL;
+
+	nih_list_add (&locals, &signal_var->entry);
+
+	iter_var = type_var_new (NULL, "DBusMessageIter", "iter");
+	if (! iter_var)
+		return NULL;
+
+	nih_list_add (&locals, &iter_var->entry);
+
+
+	/* Create the signal and set up the iterator to append to it. */
+	if (! nih_strcat_sprintf (&marshal_block, NULL,
+				  "/* Construct the message. */\n"
+				  "signal = dbus_message_new_signal (origin_path, \"%s\", \"%s\");\n"
+				  "if (! signal)\n"
+				  "\treturn -1;\n"
+				  "\n"
+				  "dbus_message_iter_init_append (signal, &iter);\n"
+				  "\n",
+				  interface_name, signal->name))
+		return NULL;
+
+	/* Iterate over the signal's output arguments, for each one we
+	 * append the code to the marshalling code and at the same time
+	 * build up our own expected arguments themselves.
+	 */
+	NIH_LIST_FOREACH (&signal->arguments, iter) {
+		Argument *        argument = (Argument *)iter;
+		NihList           arg_vars;
+		NihList           arg_locals;
+		DBusSignatureIter iter;
+		nih_local char *  oom_error_code = NULL;
+		nih_local char *  type_error_code = NULL;
+		nih_local char *  block = NULL;
+
+		if (argument->direction != NIH_DBUS_ARG_OUT)
+			continue;
+
+		nih_list_init (&arg_vars);
+		nih_list_init (&arg_locals);
+
+		dbus_signature_iter_init (&iter, argument->type);
+
+		/* In case of out of memory, simply return; the caller
+		 * can try again.
+		 */
+		oom_error_code = nih_strdup (NULL,
+					     "dbus_message_unref (signal);\n"
+					     "return -1;\n");
+		if (! oom_error_code)
+			return NULL;
+
+		block = marshal (NULL, &iter, "iter", argument->symbol,
+				 oom_error_code,
+				 &arg_vars, &arg_locals);
+		if (! block)
+			return NULL;
+
+		if (! nih_strcat_sprintf (&marshal_block, NULL,
+					  "%s"
+					  "\n",
+					  block))
+			return NULL;
+
+		/* We take a parameter of the expected type and name of
+		 * the marshal input variable; if it's a pointer, we
+		 * assert that it's not NULL and make sure it's const.
+		 */
+		NIH_LIST_FOREACH_SAFE (&arg_vars, iter) {
+			TypeVar *var = (TypeVar *)iter;
+
+			if (! type_to_const (&var->type, var))
+				return NULL;
+
+			if (! nih_strcat_sprintf (&args, NULL,
+						  ", %s %s",
+						  var->type, var->name))
+				return NULL;
+
+			if (strchr (var->type, '*'))
+				if (! nih_strcat_sprintf (&assert_block, NULL,
+							  "nih_assert (%s != NULL);\n",
+							  var->name))
+					return NULL;
+		}
+
+		NIH_LIST_FOREACH_SAFE (&arg_locals, iter) {
+			TypeVar *var = (TypeVar *)iter;
+
+			nih_list_add (&locals, &var->entry);
+			nih_ref (var, marshal_block);
+		}
+	}
+
+	/* Lay out the function body, indenting it all before placing it
+	 * in the function code.
+	 */
+	/* FIXME have a function to do this! */
+	NIH_LIST_FOREACH (&locals, iter) {
+		TypeVar *var = (TypeVar *)iter;
+
+		if (! nih_strcat_sprintf (&vars_block, NULL, "%s %s;\n",
+					  var->type,
+					  var->name))
+			return NULL;
+	}
+
+	if (! nih_strcat_sprintf (&body, NULL,
+				  "%s"
+				  "\n"
+				  "nih_assert (connection != NULL);\n"
+				  "nih_assert (origin_path != NULL);\n"
+				  "%s"
+				  "\n"
+				  "%s"
+				  "/* Send the signal, appending it to the outgoing queue. */\n"
+				  "if (! dbus_connection_send (connection, signal, NULL)) {\n"
+				  "\tdbus_message_unref (signal);\n"
+				  "\treturn -1;\n"
+				  "}\n"
+				  "\n"
+				  "dbus_message_unref (signal);\n"
+				  "\n"
+				  "return 0;\n",
+				  vars_block,
+				  assert_block,
+				  marshal_block))
+		return NULL;
+
+	if (! indent (&body, NULL, 1))
+		return NULL;
+
+	/* FIXME have a function to do this */
+	code = nih_sprintf (parent,
+			    "int\n"
+			    "%s (DBusConnection *connection, const char *origin_path%s)\n"
+			    "{\n"
+			    "%s"
+			    "}\n",
+			    name, args,
+			    body);
+	if (! code)
+		return NULL;
+
+	return code;
 }

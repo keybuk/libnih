@@ -46,9 +46,11 @@ nih-dbus-tool/test_*
 nih-dbus-tool/demarshal_factory
 nih-dbus-tool/marshal_factory
 nih-dbus-tool/method_factory
+nih-dbus-tool/signal_factory
 nih-dbus-tool/tests/demarshal_code.c
 nih-dbus-tool/tests/marshal_code.c
 nih-dbus-tool/tests/method_code.c
+nih-dbus-tool/tests/signal_code.c
 nih-dbus-tool/tests/com.netsplit.Nih.Test_object.c
 nih-dbus-tool/tests/com.netsplit.Nih.Test_object.h
 nih-dbus-tool/tests/com.netsplit.Nih.Test_proxy.c

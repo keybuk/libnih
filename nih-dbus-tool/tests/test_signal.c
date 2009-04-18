@@ -20,6 +20,9 @@
  */
 
 #include <nih/test.h>
+#include <nih-dbus/test_dbus.h>
+
+#include <dbus/dbus.h>
 
 #include <expat.h>
 
@@ -33,11 +36,15 @@
 #include <nih/main.h>
 #include <nih/error.h>
 
+#include <nih-dbus/dbus_error.h>
+#include <nih-dbus/dbus_message.h>
+
 #include "node.h"
 #include "signal.h"
 #include "argument.h"
 #include "parse.h"
 #include "errors.h"
+#include "tests/signal_code.h"
 
 
 void
@@ -850,6 +857,137 @@ test_lookup_argument (void)
 }
 
 
+void
+test_emit_function (void)
+{
+	pid_t             dbus_pid;
+	DBusConnection *  server_conn;
+	DBusConnection *  client_conn;
+	Signal *          signal = NULL;
+	Argument *        argument = NULL;
+	char *            str;
+	DBusMessageIter   iter;
+	DBusMessage *     sig;
+	DBusError         dbus_error;
+	int               ret;
+
+	TEST_FUNCTION ("signal_emit_function");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (server_conn);
+	TEST_DBUS_OPEN (client_conn);
+
+
+	/* Check that we can generate a function that marhals its arguments
+	 * into a D-Bus message and sends it as a signal.
+	 */
+	TEST_FEATURE ("with signal");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			signal = signal_new (NULL, "MySignal");
+			signal->symbol = nih_strdup (signal, "my_signal");
+
+			argument = argument_new (signal, "Msg",
+						 "s", NIH_DBUS_ARG_OUT);
+			argument->symbol = nih_strdup (argument, "msg");
+			nih_list_add (&signal->arguments, &argument->entry);
+		}
+
+		str = signal_emit_function (NULL, "com.netsplit.Nih.Test",
+					    signal, "my_emit_signal");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (signal);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "my_emit_signal (DBusConnection *connection, const char *origin_path, const char * msg)\n"
+				   "{\n"
+				   "\tDBusMessage * signal;\n"
+				   "\tDBusMessageIter iter;\n"
+				   "\n"
+				   "\tnih_assert (connection != NULL);\n"
+				   "\tnih_assert (origin_path != NULL);\n"
+				   "\tnih_assert (msg != NULL);\n"
+				   "\n"
+				   "\t/* Construct the message. */\n"
+				   "\tsignal = dbus_message_new_signal (origin_path, \"com.netsplit.Nih.Test\", \"MySignal\");\n"
+				   "\tif (! signal)\n"
+				   "\t\treturn -1;\n"
+				   "\n"
+				   "\tdbus_message_iter_init_append (signal, &iter);\n"
+				   "\n"
+				   "\t/* Marshal a char * onto the message */\n"
+				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &msg)) {\n"
+				   "\t\tdbus_message_unref (signal);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Send the signal, appending it to the outgoing queue. */\n"
+				   "\tif (! dbus_connection_send (connection, signal, NULL)) {\n"
+				   "\t\tdbus_message_unref (signal);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_unref (signal);\n"
+				   "\n"
+				   "\treturn 0;\n"
+				   "}\n"));
+
+		nih_free (str);
+		nih_free (signal);
+	}
+
+
+	/* Check that we can use the generated code to emit a signal and
+	 * that we can receive it.
+	 */
+	TEST_FEATURE ("with signal (generated code)");
+	TEST_ALLOC_FAIL {
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (server_conn, "type='signal'", &dbus_error);
+
+		ret = my_emit_signal (client_conn, "/com/netsplit/Nih/Test",
+				      "this is a test");
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		TEST_DBUS_MESSAGE (server_conn, sig);
+		TEST_EQ (dbus_message_get_type (sig),
+			 DBUS_MESSAGE_TYPE_SIGNAL);
+
+		dbus_message_iter_init (sig, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_STRING);
+
+		dbus_message_iter_get_basic (&iter, &str);
+		TEST_EQ_STR (str, "this is a test");
+
+		dbus_message_iter_next (&iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_unref (sig);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -863,6 +1001,8 @@ main (int   argc,
 	test_end_tag ();
 	test_annotation ();
 	test_lookup_argument ();
+
+	test_emit_function ();
 
 	return 0;
 }

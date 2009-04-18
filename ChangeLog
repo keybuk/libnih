@@ -1,5 +1,22 @@
 2009-04-18  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/signal.c (signal_emit_function): Generate code for
+	a function that emits a signal.
+	* nih-dbus-tool/signal.h: Add prototype.
+	* nih-dbus-tool/tests/signal_factory.c: Call signal_emit_function()
+	to generate a signal emission function and place it in a C file
+	for testing.
+	* nih-dbus-tool/tests/signal_code.h: Expected prototype for generated
+	function.
+	* nih-dbus-tool/tests/test_signal.c (test_emit_function): Test the
+	generator function and generated function.
+	* nih-dbus-tool/Makefile.am (check_PROGRAMS): Run the program to
+	generate the C code.
+	(signal_factory_SOURCES, signal_factory_LDFLAGS)
+	(signal_factory_LDADD, tests/signal_code.c): Details for generator
+	(CLEANFILES): Clean up after.
+	(test_signal_SOURCES): Link to the generated code.
+
 	* nih-dbus-tool/method.c (method_object_function)
 	(method_reply_function): Add missing asserts.
 

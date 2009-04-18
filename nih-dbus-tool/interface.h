@@ -73,7 +73,7 @@ int        interface_end_tag         (XML_Parser xmlp, const char *tag)
 	__attribute__ ((warn_unused_result));
 
 int        interface_annotation      (Interface *interface,
-				       const char *name, const char *value)
+				      const char *name, const char *value)
 	__attribute__ ((warn_unused_result));
 
 Method *   interface_lookup_method   (Interface *interface,

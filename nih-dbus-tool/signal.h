@@ -71,6 +71,11 @@ int       signal_annotation      (Signal *signal,
 
 Argument *signal_lookup_argument (Signal *signal, const char *symbol);
 
+char *    signal_emit_function   (const void *parent,
+				  const char *interface_name, Signal *signal,
+				  const char *name)
+	__attribute__ ((malloc, warn_unused_result));
+
 NIH_END_EXTERN
 
 #endif /* NIH_DBUS_TOOL_SIGNAL_H */

@@ -1,3 +1,8 @@
+2009-04-18  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/method.c (method_object_function)
+	(method_reply_function): Add missing asserts.
+
 2009-04-17  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/tests/test_method.c: Oops, commented out the test.

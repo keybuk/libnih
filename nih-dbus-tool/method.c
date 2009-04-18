@@ -458,6 +458,8 @@ method_object_function (const void *parent,
 	char *             code = NULL;
 
 	nih_assert (method != NULL);
+	nih_assert (name != NULL);
+	nih_assert (handler_name != NULL);
 
 	nih_list_init (&locals);
 
@@ -816,6 +818,7 @@ method_reply_function (const void *parent,
 	char *             code = NULL;
 
 	nih_assert (method != NULL);
+	nih_assert (name != NULL);
 
 	nih_list_init (&locals);
 

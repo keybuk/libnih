@@ -1,3 +1,14 @@
+2009-04-20  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus/dbus_object.c (nih_dbus_object_message): We don't need
+	any special handling for async functions now we have nih_local, the
+	function simply needs to reference the message.  Drop the requirement
+	that it returns DBUS_HANDLER_RESULT_NOT_YET_HANDLED.
+	* nih-dbus-tool/method.c (method_object_function): Always return
+	DBUS_HANDLER_RESULT_HANDLED, even for async methods.
+	* nih-dbus-tool/tests/test_method.c (test_object_function): Replace
+	tests for not yet handled with ones for the ordinary handled result.
+
 2009-04-18  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/signal.c (signal_emit_function): Generate code for

@@ -242,13 +242,6 @@ nih_dbus_object_message (DBusConnection *conn,
 
 				result = method->marshaller (object, msg);
 
-				/* Async function, the handler must take
-				 * a reference to the message if it needs it,
-				 * and must reply to it.
-				 */
-				if (result == DBUS_HANDLER_RESULT_NOT_YET_HANDLED)
-					result = DBUS_HANDLER_RESULT_HANDLED;
-
 				return result;
 			}
 		}

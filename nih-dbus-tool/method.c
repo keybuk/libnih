@@ -758,15 +758,14 @@ method_object_function (const void *parent,
 					  "NIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
 					  "\n"
 					  "dbus_message_unref (reply);\n"
-					  "\n"
-					  "return DBUS_HANDLER_RESULT_HANDLED;\n",
+					  "\n",
 					  marshal_block))
 			return NULL;
-	} else {
-		if (! nih_strcat_sprintf (&body, NULL,
-					  "return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"))
-			return NULL;
 	}
+
+	if (! nih_strcat_sprintf (&body, NULL,
+				  "return DBUS_HANDLER_RESULT_HANDLED;\n"))
+		return NULL;
 
 	if (! indent (&body, NULL, 1))
 		return NULL;

@@ -1909,8 +1909,8 @@ test_object_function (void)
 
 	/* Check that we can generate an asynchronous method call that
 	 * demarshals a D-Bus message, calls a handler function with the
-	 * demarshalled arguments and then returns the magic "not yet
-	 * handled" code.  Errors should still be handled.
+	 * demarshalled arguments and then returns.  Errors should still
+	 * be handled.
 	 */
 	TEST_FEATURE ("with asynchronous method");
 	TEST_ALLOC_FAIL {
@@ -2053,7 +2053,7 @@ test_object_function (void)
 				   "\t\t}\n"
 				   "\t}\n"
 				   "\n"
-				   "\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
 				   "}\n"));
 
 		nih_free (str);
@@ -2062,8 +2062,7 @@ test_object_function (void)
 
 
 	/* Check that we can use the generated asynchronous method code
-	 * to convert a message we send to a function call which returns
-	 * "not yet handled".
+	 * to convert a message we send to a function call which returns.
 	 */
 	TEST_FEATURE ("with asynchronous method return (generated code)");
 	TEST_ALLOC_FAIL {
@@ -2116,7 +2115,7 @@ test_object_function (void)
 		}
 
 		TEST_TRUE (my_async_method_handler_called);
-		TEST_EQ (result, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
 		nih_free (object);
 		nih_free (message);
@@ -2180,7 +2179,7 @@ test_object_function (void)
 		}
 
 		TEST_TRUE (my_async_method_handler_called);
-		TEST_EQ (result, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
 		nih_free (object);
 		nih_free (message);

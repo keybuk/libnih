@@ -240,7 +240,9 @@ nih_dbus_object_message (DBusConnection *conn,
 				if (! msg)
 					return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
+				nih_error_push_context ();
 				result = method->marshaller (object, msg);
+				nih_error_pop_context ();
 
 				return result;
 			}

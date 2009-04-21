@@ -30,6 +30,7 @@
 #include <nih/alloc.h>
 #include <nih/string.h>
 #include <nih/logging.h>
+#include <nih/error.h>
 
 #include "dbus_object.h"
 

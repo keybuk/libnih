@@ -1,3 +1,7 @@
+2009-04-21  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus/dbus_object.c: Add missing include for previous commit.
+
 2009-04-20  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus/dbus_object.c (nih_dbus_object_message): Call the

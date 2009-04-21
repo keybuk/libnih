@@ -35,6 +35,10 @@
 #include <nih-dbus/dbus_object.h>
 
 #include "symbol.h"
+#include "indent.h"
+#include "type.h"
+#include "marshal.h"
+#include "demarshal.h"
 #include "property.h"
 #include "interface.h"
 #include "property.h"
@@ -407,4 +411,426 @@ property_annotation (Property *  property,
 	}
 
 	return 0;
+}
+
+
+/**
+ * property_object_get_function:
+ * @parent: parent object for new string,
+ * @property: property to generate function for,
+ * @name: name of function to generate,
+ * @handler_name: name of handler function to call.
+ *
+ * Generates C code for a function called @name that will append a variant
+ * containing the value of property @property to a D-Bus message iterator.
+ * The value of the property is obtained by calling a function named
+ * @handler_name.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the return string will also be
+ * freed.
+ *
+ * Returns: newly allocated string or NULL if insufficient memory.
+ **/
+char *
+property_object_get_function (const void *parent,
+			      Property *  property,
+			      const char *name,
+			      const char *handler_name)
+{
+	DBusSignatureIter  iter;
+	NihList            inputs;
+	NihList            locals;
+	nih_local TypeVar *iter_var = NULL;
+	nih_local char *   code_block = NULL;
+	nih_local char *   oom_error_code = NULL;
+	nih_local char *   block = NULL;
+	nih_local char *   vars_block = NULL;
+	nih_local char *   body = NULL;
+	char *             code;
+
+	nih_assert (property != NULL);
+	nih_assert (name != NULL);
+	nih_assert (handler_name != NULL);
+
+	dbus_signature_iter_init (&iter, property->type);
+
+	nih_list_init (&inputs);
+	nih_list_init (&locals);
+
+	/* The function requires a local iterator for the variant.  Rather
+	 * than deal with it by hand, it's far easier to put it on the
+	 * locals list and deal with it along with the rest.
+	 */
+	iter_var = type_var_new (NULL, "DBusMessageIter", "variter");
+	if (! iter_var)
+		return NULL;
+
+	nih_list_add (&locals, &iter_var->entry);
+
+	/* In case of out of memory, simply return and let the caller
+	 * decide what to do.
+	 */
+	oom_error_code = nih_strdup (NULL,
+				     "return -1;\n");
+	if (! oom_error_code)
+		return NULL;
+
+	block = marshal (NULL, &iter, "variter", "value",
+			 oom_error_code,
+			 &inputs, &locals);
+	if (! block)
+		return NULL;
+
+	/* Begin the handler calling block */
+	if (! nih_strcat_sprintf (&code_block, NULL,
+				  "/* Call the handler function */\n"
+				  "if (%s (object->data, message",
+				  handler_name))
+		return NULL;
+
+	/* Each of the inputs to the marshalling code becomes a local
+	 * variable to our function that we pass the address of to the
+	 * implementation function.
+	 */
+	NIH_LIST_FOREACH_SAFE (&inputs, iter) {
+		TypeVar *var = (TypeVar *)iter;
+
+		if (! nih_strcat_sprintf (&code_block, NULL,
+					  ", &%s",
+					  var->name))
+			return NULL;
+
+		nih_list_add (&locals, &var->entry);
+	}
+
+	/* Finish up the calling block, in case of error we again just
+	 * return and let our caller deal with it.
+	 */
+	if (! nih_strcat_sprintf (&code_block, NULL, ") < 0)\n"
+				  "\treturn -1;\n"
+				  "\n"))
+		return NULL;
+
+	/* Surround the marshalling code by appending a variant onto the
+	 * passed-in message iterator, and closing it once complete.
+	 */
+	if (! nih_strcat_sprintf (&code_block, NULL,
+				  "/* Append a variant onto the message to contain the property value. */\n"
+				  "if (! dbus_message_iter_open_container (iter, DBUS_TYPE_VARIANT, \"%s\", &variter))\n"
+				  "\treturn -1;\n"
+				  "\n"
+				  "%s"
+				  "\n"
+				  "/* Finish the variant */\n"
+				  "if (! dbus_message_iter_close_container (iter, &variter))\n"
+				  "\treturn -1;\n",
+				  property->type,
+				  block))
+		return NULL;
+
+	/* Lay out the function body, indenting it all before placing it
+	 * in the function code.
+	 */
+	/* FIXME have a function to do this! */
+	NIH_LIST_FOREACH (&locals, iter) {
+		TypeVar *var = (TypeVar *)iter;
+
+		if (! nih_strcat_sprintf (&vars_block, NULL, "%s %s;\n",
+					  var->type,
+					  var->name))
+			return NULL;
+	}
+
+	if (! nih_strcat_sprintf (&body, NULL,
+				  "%s"
+				  "\n"
+				  "nih_assert (object != NULL);\n"
+				  "nih_assert (message != NULL);\n"
+				  "nih_assert (iter != NULL);\n"
+				  "\n"
+				  "%s"
+				  "\n"
+				  "return 0;\n",
+				  vars_block,
+				  code_block))
+		return NULL;
+
+	if (! indent (&body, NULL, 1))
+		return NULL;
+
+	/* FIXME have a function to do this */
+	code = nih_sprintf (parent,
+			    "int\n"
+			    "%s (NihDBusObject * object, NihDBusMessage *message, DBusMessageIter *iter)\n"
+			    "{\n"
+			    "%s"
+			    "}\n",
+			    name,
+			    body);
+	if (! code)
+		return NULL;
+
+	return code;
+}
+
+/**
+ * property_object_set_function:
+ * @parent: parent object for new string,
+ * @property: property to generate function for,
+ * @name: name of function to generate,
+ * @handler_name: name of handler function to call.
+ *
+ * Generates C code for a function called @name that will extract the new
+ * value of a property @property from a variant at the D-Bus message iterator
+ * passed.  The new value of the property is then passed to a function named
+ * @handler_name to set it.  An empty reply is sent on success.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the return string will also be
+ * freed.
+ *
+ * Returns: newly allocated string or NULL if insufficient memory.
+ **/
+char *
+property_object_set_function (const void *parent,
+			      Property *  property,
+			      const char *name,
+			      const char *handler_name)
+{
+	DBusSignatureIter  iter;
+	NihList            outputs;
+	NihList            locals;
+	nih_local TypeVar *iter_var = NULL;
+	nih_local TypeVar *reply_var = NULL;
+	nih_local char *   demarshal_block = NULL;
+	nih_local char *   oom_error_code = NULL;
+	nih_local char *   type_error_code = NULL;
+	nih_local char *   block = NULL;
+	nih_local char *   call_block = NULL;
+	nih_local char *   vars_block = NULL;
+	nih_local char *   body = NULL;
+	char *             code;
+
+	nih_assert (property != NULL);
+	nih_assert (name != NULL);
+	nih_assert (handler_name != NULL);
+
+	dbus_signature_iter_init (&iter, property->type);
+
+	nih_list_init (&outputs);
+	nih_list_init (&locals);
+
+ 	/* The function requires a local iterator for the variant and a
+	 * reply message pointer.  Rather than deal with these by hand,
+	 * it's far easier to put them on the locals list and deal with
+	 * them along with the rest.
+	 */
+	iter_var = type_var_new (NULL, "DBusMessageIter", "variter");
+	if (! iter_var)
+		return NULL;
+
+	nih_list_add (&locals, &iter_var->entry);
+
+	reply_var = type_var_new (NULL, "DBusMessage *", "reply");
+	if (! reply_var)
+		return NULL;
+
+	nih_list_add (&locals, &reply_var->entry);
+
+	/* Make sure that the iterator points to a variant, then open the
+	 * variant.
+	 */
+	if (! nih_strcat_sprintf (&demarshal_block, NULL,
+				  "/* Recurse into the variant */\n"
+				  "if (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_VARIANT) {\n"
+				  "\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
+				  "\t                                _(\"Invalid arguments to %s property\"));\n"
+				  "\tif (! reply)\n"
+				  "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				  "\n"
+				  "\tif (! dbus_connection_send (message->conn, reply, NULL)) {\n"
+				  "\t\tdbus_message_unref (reply);\n"
+				  "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				  "\t}\n"
+				  "\n"
+				  "\tdbus_message_unref (reply);\n"
+				  "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				  "}\n"
+				  "\n"
+				  "dbus_message_iter_recurse (iter, &variter);\n"
+				  "\n",
+				  property->name))
+		return NULL;
+
+	/* In case of out of memory, return and let D-Bus decide what to do.
+	 * In case of type error we return the error to the D-Bus caller.
+	 */
+	oom_error_code = nih_strdup (NULL,
+				     "return DBUS_HANDLER_RESULT_NEED_MEMORY;\n");
+	if (! oom_error_code)
+		return NULL;
+
+	type_error_code = nih_sprintf (NULL,
+				       "reply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
+				       "                                _(\"Invalid arguments to %s property\"));\n"
+				       "if (! reply)\n"
+				       "\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				       "\n"
+				       "if (! dbus_connection_send (message->conn, reply, NULL)) {\n"
+				       "\tdbus_message_unref (reply);\n"
+				       "\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				       "}\n"
+				       "\n"
+				       "dbus_message_unref (reply);\n"
+				       "return DBUS_HANDLER_RESULT_HANDLED;\n",
+				       property->name);
+	if (! type_error_code)
+		return NULL;
+
+	block = demarshal (NULL, &iter, "message", "variter", "value",
+			   oom_error_code,
+			   type_error_code,
+			   &outputs, &locals);
+	if (! block)
+		return NULL;
+
+	/* Complete the demarshalling block, checking for any unexpected
+	 * arguments which we also want to error on and begin the handler
+	 * calling block.
+	 */
+	if (! nih_strcat_sprintf (&call_block, NULL,
+				  "dbus_message_iter_next (iter);\n"
+				  "\n"
+				  "if (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_INVALID) {\n"
+				  "\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
+				  "\t                                _(\"Invalid arguments to %s method\"));\n"
+				  "\tif (! reply)\n"
+				  "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				  "\n"
+				  "\tif (! dbus_connection_send (message->conn, reply, NULL)) {\n"
+				  "\t\tdbus_message_unref (reply);\n"
+				  "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				  "\t}\n"
+				  "\n"
+				  "\tdbus_message_unref (reply);\n"
+				  "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				  "}\n"
+				  "\n"
+				  "/* Call the handler function */\n"
+				  "if (%s (object->data, message",
+				  property->name,
+				  handler_name))
+		return NULL;
+
+	/* Each of the outputs from the demarshalling code becomes a local
+	 * variable to our function that we pass to the implementation
+	 * function.
+	 */
+	NIH_LIST_FOREACH_SAFE (&outputs, iter) {
+		TypeVar *var = (TypeVar *)iter;
+
+		if (! nih_strcat_sprintf (&call_block, NULL,
+					  ", %s",
+					  var->name))
+			return NULL;
+
+		nih_list_add (&locals, &var->entry);
+	}
+
+	/* Finish up the calling block, in case of out of memory error we
+	 * return and let D-Bus deal with it, other errors generate an
+	 * error reply.
+	 */
+	if (! nih_strcat_sprintf (&call_block, NULL, ") < 0) {\n"
+				  "\tNihError *err;\n"
+				  "\n"
+				  "\terr = nih_error_get ();\n"
+				  "\tif (err->number == ENOMEM) {\n"
+				  "\t\tnih_free (err);\n"
+				  "\n"
+				  "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				  "\t} else if (err->number == NIH_DBUS_ERROR) {\n"
+				  "\t\tNihDBusError *dbus_err = (NihDBusError *)err;\n"
+				  "\n"
+				  "\t\treply = NIH_MUST (dbus_message_new_error (message->message, dbus_err->name, err->message));\n"
+				  "\t\tnih_free (err);\n"
+				  "\n"
+				  "\t\tNIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
+				  "\n"
+				  "\t\tdbus_message_unref (reply);\n"
+				  "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				  "\t} else {\n"
+				  "\t\treply = NIH_MUST (dbus_message_new_error (message->message, DBUS_ERROR_FAILED, err->message));\n"
+				  "\t\tnih_free (err);\n"
+				  "\n"
+				  "\t\tNIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
+				  "\n"
+				  "\t\tdbus_message_unref (reply);\n"
+				  "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				  "\t}\n"
+				  "}\n"))
+		return NULL;
+
+	/* Lay out the function body, indenting it all before placing it
+	 * in the function code.
+	 */
+	/* FIXME have a function to do this! */
+	NIH_LIST_FOREACH (&locals, iter) {
+		TypeVar *var = (TypeVar *)iter;
+
+		if (! nih_strcat_sprintf (&vars_block, NULL, "%s %s;\n",
+					  var->type,
+					  var->name))
+			return NULL;
+	}
+
+	if (! nih_strcat_sprintf (&body, NULL,
+				  "%s"
+				  "\n"
+				  "nih_assert (object != NULL);\n"
+				  "nih_assert (message != NULL);\n"
+				  "nih_assert (iter != NULL);\n"
+				  "\n"
+				  "%s"
+				  "%s"
+				  "\n"
+				  "%s"
+				  "\n"
+				  "/* If the sender doesn't care about a reply, don't bother wasting\n"
+				  " * effort constructing and sending one.\n"
+				  " */\n"
+				  "if (dbus_message_get_no_reply (message->message))\n"
+				  "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				  "\n"
+				  "/* Send the reply */\n"
+				  "reply = NIH_MUST (dbus_message_new_method_return (message->message));\n"
+				  "NIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
+				  "\n"
+				  "dbus_message_unref (reply);\n"
+				  "return DBUS_HANDLER_RESULT_HANDLED;\n",
+				  vars_block,
+				  demarshal_block,
+				  block,
+				  call_block))
+		return NULL;
+
+	if (! indent (&body, NULL, 1))
+		return NULL;
+
+	/* FIXME have a function to do this */
+	code = nih_sprintf (parent,
+			    "DBusHandlerResult\n"
+			    "%s (NihDBusObject * object, NihDBusMessage *message, DBusMessageIter *iter)\n"
+			    "{\n"
+			    "%s"
+			    "}\n",
+			    name,
+			    body);
+	if (! code)
+		return NULL;
+
+	return code;
 }

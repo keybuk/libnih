@@ -57,21 +57,30 @@ typedef struct property {
 
 NIH_BEGIN_EXTERN
 
-int       property_name_valid (const char *name);
+int       property_name_valid          (const char *name);
 
-Property *property_new        (const void *parent, const char *name,
-			       const char *type, NihDBusAccess access)
+Property *property_new                 (const void *parent, const char *name,
+					const char *type, NihDBusAccess access)
 	__attribute__ ((malloc, warn_unused_result));
 
-int       property_start_tag  (XML_Parser xmlp, const char *tag,
-			       char * const *attr)
+int       property_start_tag           (XML_Parser xmlp, const char *tag,
+					char * const *attr)
 	__attribute__ ((warn_unused_result));
-int       property_end_tag    (XML_Parser xmlp, const char *tag)
+int       property_end_tag             (XML_Parser xmlp, const char *tag)
 	__attribute__ ((warn_unused_result));
 
-int       property_annotation (Property *property,
-			       const char *name, const char *value)
+int       property_annotation          (Property *property,
+					const char *name, const char *value)
 	__attribute__ ((warn_unused_result));
+
+char *    property_object_get_function (const void *parent, Property *property,
+					const char *name,
+					const char *handler_name)
+	__attribute__ ((malloc, warn_unused_result));
+char *    property_object_set_function (const void *parent, Property *property,
+					const char *name,
+					const char *handler_name)
+	__attribute__ ((malloc, warn_unused_result));
 
 NIH_END_EXTERN
 

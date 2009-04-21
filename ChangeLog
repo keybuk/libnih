@@ -1,5 +1,25 @@
 2009-04-21  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/property.c (property_object_get_function)
+	(property_object_set_function): Generate code for functions to get
+	and set, respectively, properties using a handler function.
+	* nih-dbus-tool/property.h: Add prototypes.
+	* nih-dbus-tool/tests/property_factory.c: Call the two functions
+	to generate their resulting property get and set functions and
+	place them in a C file for testing.
+	* nih-dbus-tool/tests/property_code.h: Expected prototypes for
+	generated functions.
+	* nih-dbus-tool/tests/test_property.c (test_object_get_function)
+	(test_object_set_function): Tests for the code, and for the
+	resulting generated code.
+	* nih-dbus-tool/Makefile.am (check_PROGRAMS): Run the program
+	to generate the C code.
+	(property_factory_SOURCES)
+	(property_factory_LDFLAGS, property_factory_LDADD)
+	(tests/property_code.c): Details for code generator.
+	(CLEANFILES): Clean up after.
+	(test_property_SOURCES): Link to the generated code.
+
 	* nih-dbus/dbus_object.c: Add missing include for previous commit.
 
 2009-04-20  Scott James Remnant  <scott@netsplit.com>

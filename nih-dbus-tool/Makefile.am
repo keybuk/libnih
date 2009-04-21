@@ -69,7 +69,8 @@ check_PROGRAMS = \
 	marshal_factory \
 	demarshal_factory \
 	method_factory \
-	signal_factory
+	signal_factory \
+	property_factory
 
 test_main_SOURCES = tests/test_main.c main.c
 test_main_CFLAGS = $(AM_CFLAGS) -DTEST
@@ -155,16 +156,20 @@ test_signal_LDADD = \
 	parse.o annotation.o argument.o property.o signal.o method.o \
 	interface.o node.o symbol.o \
 	../nih/libnih.la \
+	../nih-dbus/libnih-dbus.la \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
 
-test_property_SOURCES = tests/test_property.c
+test_property_SOURCES = \
+	tests/test_property.c \
+	tests/property_code.c tests/property_code.h
 test_property_LDFLAGS = -static
 test_property_LDADD = \
 	demarshal.o marshal.o type.o indent.o \
 	parse.o annotation.o argument.o property.o signal.o method.o \
 	interface.o node.o symbol.o \
 	../nih/libnih.la \
+	../nih-dbus/libnih-dbus.la \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
 
@@ -308,11 +313,27 @@ tests/signal_code.c: $(builddir)/signal_factory
 	mv $@.tmp $@
 
 
+property_factory_SOURCES = tests/property_factory.c
+property_factory_LDFLAGS = -static
+property_factory_LDADD = \
+	demarshal.o marshal.o type.o indent.o \
+	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
+
+tests/property_code.c: $(builddir)/property_factory
+	$(builddir)/property_factory > $@.tmp
+	mv $@.tmp $@
+
+
 CLEANFILES = \
 	tests/marshal_code.c \
 	tests/demarshal_code.c \
 	tests/method_code.c \
-	tests/signal_code.c
+	tests/signal_code.c \
+	tests/property_code.c
 
 
 tests: $(BUILT_SOURCES) $(check_PROGRAMS)

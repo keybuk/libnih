@@ -64,9 +64,9 @@ static int nih_dbus_message_destroy (NihDBusMessage *msg);
  * Returns: new NihDBusMessage structure, or NULL if insufficient memory.
  **/
 NihDBusMessage *
-nih_dbus_message_new (const void     *parent,
+nih_dbus_message_new (const void *    parent,
 		      DBusConnection *conn,
-		      DBusMessage    *message)
+		      DBusMessage *   message)
 {
 	NihDBusMessage *msg;
 
@@ -121,13 +121,13 @@ nih_dbus_message_destroy (NihDBusMessage *msg)
  **/
 int
 nih_dbus_message_error (NihDBusMessage *msg,
-			const char     *name,
-			const char     *format,
+			const char *    name,
+			const char *    format,
 			...)
 {
-	DBusMessage    *message;
+	DBusMessage *   message;
 	va_list         args;
-	nih_local char *str;
+	nih_local char *str = NULL;
 
 	nih_assert (msg != NULL);
 	nih_assert (name != NULL);

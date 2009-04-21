@@ -36,8 +36,8 @@
  * actually this structure and can be cast to get the additional fields.
  **/
 typedef struct nih_dbus_error {
-	NihError  error;
-	char     *name;
+	NihError error;
+	char *   name;
 } NihDBusError;
 
 

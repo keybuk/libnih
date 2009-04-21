@@ -59,8 +59,9 @@ nih_dbus_path (const void *parent,
 	       const char *root,
 	       ...)
 {
-	const char *arg, *ptr;
-	char       *path;
+	const char *arg;
+	const char *ptr;
+	char *      path;
 	va_list     args;
 	size_t      len;
 

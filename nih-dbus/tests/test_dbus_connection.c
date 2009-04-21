@@ -47,9 +47,9 @@ static DBusConnection *last_connection = NULL;
 static int drop_connection = FALSE;
 
 static void
-my_new_connection (DBusServer     *server,
+my_new_connection (DBusServer *    server,
 		   DBusConnection *connection,
-		   void           *data)
+		   void *          data)
 {
 	connected = TRUE;
 
@@ -75,18 +75,16 @@ my_disconnect_handler (DBusConnection *connection)
 void
 test_connect (void)
 {
-	DBusServer      *server;
-	DBusConnection  *conn, *server_conn, *last_conn;
-	NihIoWatch      *io_watch;
+	DBusServer *     server;
+	DBusConnection * conn;
+	DBusConnection * server_conn;
+	DBusConnection * last_conn;
+	NihIoWatch *     io_watch;
 	NihMainLoopFunc *loop_func;
-	NihError        *err;
+	NihError *       err;
 	int              fd;
 
 	TEST_FUNCTION ("nih_dbus_connect");
-	nih_timer_init ();
-	nih_io_init ();
-	nih_main_loop_init ();
-
 	server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
 				  NULL, NULL);
 	assert (server != NULL);
@@ -296,13 +294,17 @@ test_connect (void)
 void
 test_bus (void)
 {
-	DBusServer      *server;
-	DBusConnection  *conn, *last_conn;
-	NihIoWatch      *io_watch;
+	DBusServer *     server;
+	DBusConnection * conn;
+	DBusConnection * last_conn;
+	NihIoWatch *     io_watch;
 	NihMainLoopFunc *loop_func;
-	NihError        *err;
-	pid_t            pid1, pid2;
-	int              fd, wait_fd, status;
+	NihError *       err;
+	pid_t            pid1;
+	pid_t            pid2;
+	int              fd;
+	int              wait_fd;
+	int              status;
 
 	TEST_FUNCTION ("nih_dbus_bus");
 
@@ -512,10 +514,11 @@ system_bus:
 void
 test_setup (void)
 {
-	DBusConnection  *conn;
-	NihIoWatch      *io_watch;
+	DBusConnection * conn;
+	NihIoWatch *     io_watch;
 	NihMainLoopFunc *loop_func;
-	int              ret, fd;
+	int              ret;
+	int              fd;
 
 	TEST_FUNCTION ("nih_dbus_setup");
 
@@ -595,9 +598,10 @@ my_connect_handler (DBusServer     *server,
 void
 test_server (void)
 {
-	DBusServer     *server;
-	DBusConnection *conn, *server_conn;
-	NihIoWatch     *io_watch;
+	DBusServer *    server;
+	DBusConnection *conn;
+	DBusConnection *server_conn;
+	NihIoWatch *    io_watch;
 
 	TEST_FUNCTION ("nih_dbus_server");
 
@@ -689,6 +693,10 @@ int
 main (int   argc,
       char *argv[])
 {
+	nih_timer_init ();
+	nih_io_init ();
+	nih_main_loop_init ();
+
 	test_connect ();
 	test_bus ();
 	test_setup ();

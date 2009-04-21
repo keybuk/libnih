@@ -33,10 +33,8 @@
 void
 test_error_raise (void)
 {
-	NihError     *error;
+	NihError *    error;
 	NihDBusError *err;
-
-	nih_error_init ();
 
 	/* Make sure that an NIH_DBUS_ERROR is raised with the name and
 	 * message we give.
@@ -62,7 +60,7 @@ test_error_raise (void)
 void
 test_error_raise_printf (void)
 {
-	NihError     *error;
+	NihError *    error;
 	NihDBusError *err;
 
 	/* Make sure that an NIH_DBUS_ERROR is raised with the name and
@@ -92,6 +90,8 @@ int
 main (int   argc,
       char *argv[])
 {
+	nih_error_init ();
+
 	test_error_raise ();
 	test_error_raise_printf ();
 

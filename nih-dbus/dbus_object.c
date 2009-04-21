@@ -89,11 +89,11 @@ static const DBusObjectPathVTable nih_dbus_object_vtable = {
  * insufficient memory.
  **/
 NihDBusObject *
-nih_dbus_object_new (const void              *parent,
-		     DBusConnection          *conn,
-		     const char              *path,
+nih_dbus_object_new (const void *             parent,
+		     DBusConnection *         conn,
+		     const char *             path,
 		     const NihDBusInterface **interfaces,
-		     void                    *data)
+		     void *                   data)
 {
 	NihDBusObject *object;
 
@@ -162,7 +162,7 @@ nih_dbus_object_destroy (NihDBusObject *object)
  **/
 static void
 nih_dbus_object_unregister (DBusConnection *conn,
-			    NihDBusObject  *object)
+			    NihDBusObject * object)
 {
 	nih_assert (conn != NULL);
 	nih_assert (object != NULL);
@@ -190,8 +190,8 @@ nih_dbus_object_unregister (DBusConnection *conn,
  **/
 static DBusHandlerResult
 nih_dbus_object_message (DBusConnection *conn,
-			 DBusMessage    *message,
-			 NihDBusObject  *object)
+			 DBusMessage *   message,
+			 NihDBusObject * object)
 {
 	const NihDBusInterface **interface;
 
@@ -267,13 +267,14 @@ nih_dbus_object_message (DBusConnection *conn,
  **/
 static DBusHandlerResult
 nih_dbus_object_introspect (DBusConnection *conn,
-			    DBusMessage    *message,
-			    NihDBusObject  *object)
+			    DBusMessage *   message,
+			    NihDBusObject * object)
 {
 	const NihDBusInterface **interface;
-	nih_local char          *xml = NULL;
-	char                   **children = NULL, **child;
-	DBusMessage             *reply = NULL;
+	nih_local char *         xml = NULL;
+	char **                  children = NULL;
+	char **                  child;
+	DBusMessage *            reply = NULL;
 	int                      have_props = FALSE;
 
 	nih_assert (conn != NULL);
@@ -303,8 +304,8 @@ nih_dbus_object_introspect (DBusConnection *conn,
 	/* Add each interface definition */
 	for (interface = object->interfaces; interface && *interface;
 	     interface++) {
-		const NihDBusMethod   *method;
-		const NihDBusSignal   *signal;
+		const NihDBusMethod *  method;
+		const NihDBusSignal *  signal;
 		const NihDBusProperty *property;
 
 		if (! nih_strcat_sprintf (&xml, NULL,

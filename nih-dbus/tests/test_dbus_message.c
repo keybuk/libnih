@@ -48,7 +48,7 @@ test_message_new (void)
 	NihDBusMessage *msg;
 	pid_t           dbus_pid;
 	DBusConnection *conn;
-	DBusMessage    *message;
+	DBusMessage *   message;
 
 	/* Check that we can create a new DBus message structure, and that
 	 * it references the connection and message.
@@ -84,7 +84,7 @@ test_message_new (void)
 
 static void
 my_return_error_cb (NihDBusMessage *message,
-		    NihTimer       *timer)
+		    NihTimer *      timer)
 {
 	int ret;
 
@@ -103,7 +103,7 @@ my_return_error_cb (NihDBusMessage *message,
 }
 
 static DBusHandlerResult
-my_return_error (NihDBusObject  *object,
+my_return_error (NihDBusObject * object,
 		 NihDBusMessage *message)
 {
 	NIH_MUST (nih_timer_add_timeout (NULL, 1,
@@ -122,7 +122,7 @@ my_return_error (NihDBusObject  *object,
 static DBusConnection *server_conn = NULL;
 
 static int
-my_error_connect (DBusServer     *server,
+my_error_connect (DBusServer *    server,
 		  DBusConnection *conn)
 {
 	NihDBusObject *object;
@@ -154,10 +154,12 @@ void
 test_message_error (void)
 {
 	DBusConnection *conn;
-	DBusMessage    *message, *reply;
+	DBusMessage *   message;
+	DBusMessage *   reply;
 	DBusError       error;
 	pid_t           server_pid;
-	int             wait_fd = -1, status;
+	int             wait_fd = -1;
+	int             status;
 
 	/* Check that an error returned outside the handler with the
 	 * nih_dbus_message_error() function is returned to the sender

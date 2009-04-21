@@ -34,7 +34,7 @@ void
 test_proxy_new (void)
 {
 	DBusConnection *conn;
-	NihDBusProxy   *proxy;
+	NihDBusProxy *  proxy;
 
 	TEST_FUNCTION ("nih_dbus_proxy_new");
 

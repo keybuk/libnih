@@ -43,9 +43,9 @@
  **/
 typedef struct nih_dbus_interface NihDBusInterface;
 typedef struct nih_dbus_object {
-	char                    *path;
-	DBusConnection          *conn;
-	void                    *data;
+	char *                   path;
+	DBusConnection *         conn;
+	void *                   data;
 	const NihDBusInterface **interfaces;
 	int                      registered;
 } NihDBusObject;
@@ -65,7 +65,7 @@ typedef struct nih_dbus_object {
  * call C functions of appropriate names with ordinary arguments that match
  * the expected type of the message.
  **/
-typedef DBusHandlerResult (*NihDBusMarshaller) (NihDBusObject  *object,
+typedef DBusHandlerResult (*NihDBusMarshaller) (NihDBusObject *object,
 						NihDBusMessage *message);
 
 
@@ -93,9 +93,9 @@ typedef enum nih_dbus_arg_dir {
  * it also defines.
  **/
 typedef struct nih_dbus_arg {
-	const char       *name;
-	const char       *type;
-	NihDBusArgDir     dir;
+	const char *  name;
+	const char *  type;
+	NihDBusArgDir dir;
 } NihDBusArg;
 
 
@@ -118,9 +118,9 @@ typedef struct nih_dbus_arg {
  * @args is used to provide introspection of the method.
  **/
 typedef struct nih_dbus_method {
-	const char        *name;
-	NihDBusMarshaller  marshaller;
-	const NihDBusArg  *args;
+	const char *      name;
+	NihDBusMarshaller marshaller;
+	const NihDBusArg *args;
 } NihDBusMethod;
 
 /**
@@ -139,7 +139,7 @@ typedef struct nih_dbus_method {
  * nih-dbus-tool that accepts C arguments matching @args.
  **/
 typedef struct nih_dbus_signal {
-	const char       *name;
+	const char *      name;
 	const NihDBusArg *args;
 } NihDBusSignal;
 
@@ -170,9 +170,9 @@ typedef enum nih_dbus_access {
  * @access is used to provide introspection of the property.
  **/
 typedef struct nih_dbus_property {
-	const char        *name;
-	const char        *type;
-	NihDBusAccess      access;
+	const char *  name;
+	const char *  type;
+	NihDBusAccess access;
 } NihDBusProperty;
 
 
@@ -190,9 +190,9 @@ typedef struct nih_dbus_property {
  * to interfaces it defines.
  **/
 struct nih_dbus_interface {
-	const char            *name;
-	const NihDBusMethod   *methods;
-	const NihDBusSignal   *signals;
+	const char *           name;
+	const NihDBusMethod *  methods;
+	const NihDBusSignal *  signals;
 	const NihDBusProperty *properties;
 };
 

@@ -39,7 +39,7 @@
  **/
 typedef struct nih_dbus_message {
 	DBusConnection *conn;
-	DBusMessage    *message;
+	DBusMessage *   message;
 } NihDBusMessage;
 
 

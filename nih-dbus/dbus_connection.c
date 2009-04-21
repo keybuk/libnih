@@ -113,8 +113,8 @@ static dbus_int32_t disconnect_handler_slot = -1;
  * Returns: new D-Bus connection object or NULL on raised error.
  **/
 DBusConnection *
-nih_dbus_connect (const char               *address,
-		  NihDBusDisconnectHandler  disconnect_handler)
+nih_dbus_connect (const char *             address,
+		  NihDBusDisconnectHandler disconnect_handler)
 {
 	DBusConnection *conn;
 	DBusError       error;
@@ -207,8 +207,8 @@ nih_dbus_bus (DBusBusType              bus,
  * Returns: zero on success, negative value on insufficient memory.
  **/
 int
-nih_dbus_setup (DBusConnection           *conn,
-		NihDBusDisconnectHandler  disconnect_handler)
+nih_dbus_setup (DBusConnection *         conn,
+		NihDBusDisconnectHandler disconnect_handler)
 {
 	NihMainLoopFunc *loop;
 
@@ -302,9 +302,9 @@ shared:
  * Returns: new D-Bus server object or NULL on raised error.
  **/
 DBusServer *
-nih_dbus_server (const char               *address,
-		 NihDBusConnectHandler     connect_handler,
-		 NihDBusDisconnectHandler  disconnect_handler)
+nih_dbus_server (const char *             address,
+		 NihDBusConnectHandler    connect_handler,
+		 NihDBusDisconnectHandler disconnect_handler)
 {
 	DBusServer *server;
 	DBusError   error;
@@ -383,11 +383,12 @@ error:
  **/
 static dbus_bool_t
 nih_dbus_add_watch (DBusWatch *watch,
-		    void      *data)
+		    void *     data)
 {
-	NihIoWatch  *io_watch;
-	int          fd, flags;
-	NihIoEvents  events = NIH_IO_EXCEPT;
+	NihIoWatch *io_watch;
+	int         fd;
+	int         flags;
+	NihIoEvents events = NIH_IO_EXCEPT;
 
 	nih_assert (watch != NULL);
 	nih_assert (dbus_watch_get_data (watch) == NULL);
@@ -425,7 +426,7 @@ nih_dbus_add_watch (DBusWatch *watch,
  **/
 static void
 nih_dbus_remove_watch (DBusWatch *watch,
-		       void      *data)
+		       void *     data)
 {
 	NihIoWatch *io_watch;
 
@@ -453,7 +454,7 @@ nih_dbus_remove_watch (DBusWatch *watch,
  **/
 static void
 nih_dbus_watch_toggled (DBusWatch *watch,
-			void      *data)
+			void *     data)
 {
 	NihIoWatch *io_watch;
 
@@ -479,9 +480,9 @@ nih_dbus_watch_toggled (DBusWatch *watch,
  * onto the underlying @watch.
  **/
 static void
-nih_dbus_watcher (DBusWatch   *watch,
-		  NihIoWatch  *io_watch,
-		  NihIoEvents  events)
+nih_dbus_watcher (DBusWatch * watch,
+		  NihIoWatch *io_watch,
+		  NihIoEvents events)
 {
 	int flags = 0;
 
@@ -515,7 +516,7 @@ nih_dbus_watcher (DBusWatch   *watch,
  **/
 static dbus_bool_t
 nih_dbus_add_timeout (DBusTimeout *timeout,
-		      void        *data)
+		      void *       data)
 {
 	NihTimer *timer;
 	int       interval;
@@ -548,7 +549,7 @@ nih_dbus_add_timeout (DBusTimeout *timeout,
  **/
 static void
 nih_dbus_remove_timeout (DBusTimeout *timeout,
-			 void        *data)
+			 void *       data)
 {
 	NihTimer *timer;
 
@@ -576,7 +577,7 @@ nih_dbus_remove_timeout (DBusTimeout *timeout,
  **/
 static void
 nih_dbus_timeout_toggled (DBusTimeout *timeout,
-			  void        *data)
+			  void *       data)
 {
 	NihTimer *timer;
 	int       interval;
@@ -609,7 +610,7 @@ nih_dbus_timeout_toggled (DBusTimeout *timeout,
  **/
 static void
 nih_dbus_timer (DBusTimeout *timeout,
-		NihTimer    *timer)
+		NihTimer *   timer)
 {
 	nih_assert (timeout != NULL);
 	nih_assert (timer != NULL);
@@ -640,7 +641,7 @@ nih_dbus_wakeup_main (void *data)
  * handled automatically.
  **/
 static void
-nih_dbus_callback (DBusConnection  *conn,
+nih_dbus_callback (DBusConnection * conn,
 		   NihMainLoopFunc *loop)
 {
 	nih_assert (conn != NULL);
@@ -666,9 +667,9 @@ nih_dbus_callback (DBusConnection  *conn,
  * Returns: result of handling the message.
  **/
 static DBusHandlerResult
-nih_dbus_connection_disconnected (DBusConnection           *conn,
-				  DBusMessage              *message,
-				  NihDBusDisconnectHandler  handler)
+nih_dbus_connection_disconnected (DBusConnection *         conn,
+				  DBusMessage *            message,
+				  NihDBusDisconnectHandler handler)
 {
 	nih_assert (conn != NULL);
 	nih_assert (message != NULL);
@@ -704,9 +705,9 @@ nih_dbus_connection_disconnected (DBusConnection           *conn,
  * our main loop.
  **/
 static void
-nih_dbus_new_connection (DBusServer     *server,
+nih_dbus_new_connection (DBusServer *    server,
 			 DBusConnection *conn,
-			 void           *data)
+			 void *          data)
 {
 	NihDBusConnectHandler    connect_handler;
 	NihDBusDisconnectHandler disconnect_handler;

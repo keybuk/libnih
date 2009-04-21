@@ -37,8 +37,8 @@
  * associated connection.
  **/
 typedef struct nih_dbus_proxy {
-	char           *name;
-	char           *path;
+	char *          name;
+	char *          path;
 	DBusConnection *conn;
 } NihDBusProxy;
 

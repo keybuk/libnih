@@ -57,10 +57,10 @@
  * insufficient memory.
  **/
 NihDBusProxy *
-nih_dbus_proxy_new (const void     *parent,
+nih_dbus_proxy_new (const void *    parent,
 		    DBusConnection *conn,
-		    const char     *name,
-		    const char     *path)
+		    const char *    name,
+		    const char *    path)
 {
 	NihDBusProxy *proxy;
 

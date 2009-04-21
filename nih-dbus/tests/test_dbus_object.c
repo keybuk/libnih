@@ -33,13 +33,13 @@
 #include <nih-dbus/dbus_object.h>
 
 
-static int foo_called = FALSE;
-static NihDBusObject *last_object = NULL;
+static int             foo_called = FALSE;
+static NihDBusObject * last_object = NULL;
 static NihDBusMessage *last_message = NULL;
 static DBusConnection *last_message_conn = NULL;
 
 static DBusHandlerResult
-foo_marshal (NihDBusObject  *object,
+foo_marshal (NihDBusObject * object,
 	     NihDBusMessage *message)
 {
 	foo_called = TRUE;
@@ -57,7 +57,7 @@ foo_marshal (NihDBusObject  *object,
 static int bar_called = FALSE;
 
 static DBusHandlerResult
-bar_marshal (NihDBusObject  *object,
+bar_marshal (NihDBusObject * object,
 	     NihDBusMessage *message)
 {
 	bar_called = TRUE;
@@ -151,7 +151,7 @@ void
 test_object_new (void)
 {
 	DBusConnection *conn;
-	NihDBusObject  *object;
+	NihDBusObject * object;
 
 	/* Check that we can register a new object, having the filled in
 	 * structure returned for us with the object registered against
@@ -201,8 +201,8 @@ void
 test_object_destroy (void)
 {
 	DBusConnection *conn;
-	NihDBusObject  *object;
-	void           *data;
+	NihDBusObject * object;
+	void *          data;
 
 	/* Check that a registered D-Bus object is unregistered from the
 	 * bus when it is destroyed.
@@ -235,7 +235,7 @@ void
 test_object_unregister (void)
 {
 	DBusConnection *conn;
-	NihDBusObject  *object;
+	NihDBusObject * object;
 
 	/* Check that when a D-Bus connection is destroyed, any registered
 	 * D-Bus objects go as well.
@@ -260,11 +260,11 @@ test_object_unregister (void)
 }
 
 
-static int connected = FALSE;
+static int             connected = FALSE;
 static DBusConnection *last_connection = NULL;
 
 static int
-my_connect_handler (DBusServer     *server,
+my_connect_handler (DBusServer *    server,
 		    DBusConnection *connection)
 {
 	connected = TRUE;
@@ -278,7 +278,7 @@ my_connect_handler (DBusServer     *server,
 
 static void
 pending_call_complete (DBusPendingCall *pending,
-		       void            *data)
+		       void *           data)
 {
 	nih_main_loop_exit (0);
 }
@@ -286,12 +286,15 @@ pending_call_complete (DBusPendingCall *pending,
 void
 test_object_message (void)
 {
-	DBusServer      *server;
-	DBusConnection  *conn, *server_conn;
-	NihDBusObject   *object, *child1, *child2;
-	DBusMessage     *message;
+	DBusServer *     server;
+	DBusConnection * conn;
+	DBusConnection * server_conn;
+	NihDBusObject *  object;
+	NihDBusObject *  child1;
+	NihDBusObject *  child2;
+	DBusMessage *    message;
 	DBusPendingCall *pending;
-	const char      *xml;
+	const char *     xml;
 
 	TEST_FUNCTION ("nih_dbus_object_message");
 	server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",

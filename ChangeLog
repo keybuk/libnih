@@ -1,5 +1,8 @@
 2009-04-21  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/tests/test_dbus_message.c (my_return_error): Return
+	DBUS_HANDLED_RESULT_HANDLED otherwise the message will be ignored.
+
 	* nih-dbus-tool/property.c (property_object_get_function)
 	(property_object_set_function): Generate code for functions to get
 	and set, respectively, properties using a handler function.

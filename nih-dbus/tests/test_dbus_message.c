@@ -116,7 +116,7 @@ my_return_error (NihDBusObject  *object,
 	TEST_FREE_TAG (message);
 
 	/* async */
-	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	return DBUS_HANDLER_RESULT_HANDLED;
 }
 
 static DBusConnection *server_conn = NULL;

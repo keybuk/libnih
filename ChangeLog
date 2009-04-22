@@ -1,5 +1,11 @@
 2009-04-23  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/Makefile.am (libnih_dbus_la_CFLAGS, AM_CFLAGS): Replace
+	the former with the latter.
+	(test_dbus_error_CFLAGS, test_dbus_connection_LDFLAGS)
+	(test_dbus_message_CFLAGS, test_dbus_object_CFLAGS)
+	(test_dbus_proxy_CFLAGS, test_dbus_util_CFLAGS): Remove.
+
 	* nih-dbus/tests/test_dbus_connection.c: Wrap every test in
 	NIH_ALLOC_FAIL, to properly make sure that we handle failure
 	cases properly.

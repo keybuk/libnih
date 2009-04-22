@@ -361,6 +361,7 @@ nih_dbus_server (const char *             address,
 	return server;
 
 error:
+	dbus_server_disconnect (server);
 	dbus_server_unref (server);
 
 	nih_return_no_memory_error (NULL);

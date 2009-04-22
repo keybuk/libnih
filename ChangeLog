@@ -1,3 +1,11 @@
+2009-04-23  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus/tests/test_dbus_connection.c: Wrap every test in
+	NIH_ALLOC_FAIL, to properly make sure that we handle failure
+	cases properly.
+	* nih-dbus/dbus_connection.c (nih_dbus_server): Disconnect the
+	server before unreferencing it.
+
 2009-04-22  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/nih_dbus_tool.py (Method.marshalFunction): Also fix

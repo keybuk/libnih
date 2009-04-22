@@ -33,6 +33,8 @@
 #include <nih/macros.h>
 #include <nih/alloc.h>
 #include <nih/timer.h>
+#include <nih/signal.h>
+#include <nih/child.h>
 #include <nih/io.h>
 #include <nih/main.h>
 #include <nih/error.h>
@@ -42,55 +44,58 @@
 #include <nih-dbus/dbus_connection.h>
 
 
-static int connected = FALSE;
-static DBusConnection *last_connection = NULL;
-static int drop_connection = FALSE;
+static DBusConnection *client_connection = NULL;
 
 static void
 my_new_connection (DBusServer *    server,
 		   DBusConnection *connection,
 		   void *          data)
 {
-	connected = TRUE;
+	dbus_connection_ref (connection);
 
-	if (! drop_connection) {
-		dbus_connection_ref (connection);
-		last_connection = connection;
+	if (client_connection) {
+		dbus_connection_close (client_connection);
+		dbus_connection_unref (client_connection);
 	}
 
-	nih_main_loop_exit (0);
+	client_connection = connection;
 }
 
-static int disconnected = FALSE;
+
+static int             disconnected = FALSE;
+static DBusConnection *last_disconnection = NULL;
 
 static void
 my_disconnect_handler (DBusConnection *connection)
 {
 	disconnected = TRUE;
-	last_connection = connection;
+	last_disconnection = connection;
 
 	nih_main_loop_exit (0);
+}
+
+static void
+my_new_connection_drop (DBusServer *    server,
+			DBusConnection *connection,
+			void *          data)
+{
 }
 
 void
 test_connect (void)
 {
+	pid_t            dbus_pid;
+	int              wait_fd;
 	DBusServer *     server;
 	DBusConnection * conn;
-	DBusConnection * server_conn;
 	DBusConnection * last_conn;
 	NihIoWatch *     io_watch;
 	NihMainLoopFunc *loop_func;
 	NihError *       err;
 	int              fd;
+	int              status;
 
 	TEST_FUNCTION ("nih_dbus_connect");
-	server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
-				  NULL, NULL);
-	assert (server != NULL);
-
-	dbus_server_set_new_connection_function (server, my_new_connection,
-						 NULL, NULL);
 
 
 	/* Check that we can create a new connection to a listening dbus
@@ -98,41 +103,86 @@ test_connect (void)
 	 * and the server should receive the connection.
 	 */
 	TEST_FEATURE ("with listening server");
-	conn = nih_dbus_connect ("unix:abstract=/com/netsplit/nih/test_dbus",
-				 my_disconnect_handler);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			TEST_CHILD_WAIT (dbus_pid, wait_fd) {
+				nih_signal_set_handler (SIGTERM, nih_signal_handler);
+				assert (nih_signal_add_handler (NULL, SIGTERM,
+								nih_main_term_signal, NULL));
 
- 	TEST_NE_P (conn, NULL);
+				server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
+							  NULL, NULL);
+				assert (server != NULL);
 
-	connected = FALSE;
-	last_connection = NULL;
-	drop_connection = FALSE;
+				dbus_server_set_new_connection_function (server, my_new_connection,
+									 NULL, NULL);
 
-	nih_main_loop ();
+				client_connection = NULL;
 
-	TEST_TRUE (dbus_connection_get_is_connected (conn));
+				TEST_CHILD_RELEASE (wait_fd);
 
-	TEST_TRUE (connected);
-	TEST_NE_P (last_connection, NULL);
-	server_conn = last_connection;
+				nih_main_loop ();
 
-	TEST_LIST_NOT_EMPTY (nih_io_watches);
+				if (client_connection) {
+					dbus_connection_close (client_connection);
+					dbus_connection_unref (client_connection);
+				}
 
-	/* Step over the server io_watch to find the connection one */
-	io_watch = (NihIoWatch *)nih_io_watches->next;
-	TEST_NE_P (io_watch->entry.next, nih_io_watches);
-	io_watch = (NihIoWatch *)io_watch->entry.next;
-	TEST_EQ_P (io_watch->entry.next, nih_io_watches);
+				dbus_server_disconnect (server);
+				dbus_server_unref (server);
 
-	dbus_connection_get_unix_fd (conn, &fd);
-	TEST_EQ (io_watch->fd, fd);
-	TEST_NE_P (io_watch->data, NULL);
+				dbus_shutdown ();
+				exit (0);
+			}
+		}
 
-	/* Should be a single main loop function. */
-	TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
-	loop_func = (NihMainLoopFunc *)nih_main_loop_functions->next;
-	TEST_EQ_P (loop_func->entry.next, nih_main_loop_functions);
+		conn = nih_dbus_connect ("unix:abstract=/com/netsplit/nih/test_dbus",
+					 NULL);
 
-	TEST_EQ_P (loop_func->data, conn);
+		if (test_alloc_failed) {
+			TEST_EQ_P (conn, NULL);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			kill (dbus_pid, SIGTERM);
+
+			waitpid (dbus_pid, &status, 0);
+			TEST_TRUE (WIFEXITED (status));
+			TEST_EQ (WEXITSTATUS (status), 0);
+
+			dbus_shutdown ();
+			continue;
+		}
+
+		TEST_NE_P (conn, NULL);
+		TEST_TRUE (dbus_connection_get_is_connected (conn));
+
+		/* Should be a single I/O watch */
+		TEST_LIST_NOT_EMPTY (nih_io_watches);
+		io_watch = (NihIoWatch *)nih_io_watches->next;
+		dbus_connection_get_unix_fd (conn, &fd);
+		TEST_EQ (io_watch->fd, fd);
+		TEST_NE_P (io_watch->data, NULL);
+		TEST_EQ_P (io_watch->entry.next, nih_io_watches);
+
+		/* Should be a single main loop function. */
+		TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
+		loop_func = (NihMainLoopFunc *)nih_main_loop_functions->next;
+		TEST_EQ_P (loop_func->data, conn);
+		TEST_EQ_P (loop_func->entry.next, nih_main_loop_functions);
+
+		dbus_connection_unref (conn);
+
+		kill (dbus_pid, SIGTERM);
+
+		waitpid (dbus_pid, &status, 0);
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		dbus_shutdown ();
+	}
 
 
 	/* Check that if the server disconnects, our disconnect handler is
@@ -140,20 +190,73 @@ test_connect (void)
 	 * the loop function.
 	 */
 	TEST_FEATURE ("with disconnection from server");
-	disconnected = FALSE;
-	last_connection = NULL;
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			TEST_CHILD_WAIT (dbus_pid, wait_fd) {
+				nih_signal_set_handler (SIGTERM, nih_signal_handler);
+				assert (nih_signal_add_handler (NULL, SIGTERM,
+								nih_main_term_signal, NULL));
 
-	TEST_FREE_TAG (loop_func);
+				server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
+							  NULL, NULL);
+				assert (server != NULL);
 
-	dbus_connection_close (server_conn);
-	dbus_connection_unref (server_conn);
+				dbus_server_set_new_connection_function (server, my_new_connection,
+									 NULL, NULL);
 
-	nih_main_loop ();
+				client_connection = NULL;
 
-	TEST_TRUE (disconnected);
-	TEST_EQ_P (last_connection, conn);
+				TEST_CHILD_RELEASE (wait_fd);
 
-	TEST_FREE (loop_func);
+				nih_main_loop ();
+
+				if (client_connection) {
+					dbus_connection_close (client_connection);
+					dbus_connection_unref (client_connection);
+				}
+
+				dbus_server_disconnect (server);
+				dbus_server_unref (server);
+
+				dbus_shutdown ();
+				exit (0);
+			}
+
+			conn = nih_dbus_connect ("unix:abstract=/com/netsplit/nih/test_dbus",
+						 my_disconnect_handler);
+
+			assert (conn != NULL);
+			assert (dbus_connection_get_is_connected (conn));
+
+			assert (! NIH_LIST_EMPTY (nih_io_watches));
+			io_watch = (NihIoWatch *)nih_io_watches->next;
+			dbus_connection_get_unix_fd (conn, &fd);
+			assert (io_watch->fd == fd);
+
+			assert (! NIH_LIST_EMPTY (nih_main_loop_functions));
+			loop_func = (NihMainLoopFunc *)nih_main_loop_functions->next;
+			assert (loop_func->data == conn);
+		}
+
+		disconnected = FALSE;
+		last_disconnection = NULL;
+
+		TEST_FREE_TAG (io_watch);
+		TEST_FREE_TAG (loop_func);
+
+		kill (dbus_pid, SIGTERM);
+
+		waitpid (dbus_pid, &status, 0);
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		nih_main_loop ();
+
+		TEST_TRUE (disconnected);
+		TEST_EQ_P (last_disconnection, conn);
+
+		dbus_shutdown ();
+	}
 
 
 	/* Check that by using a GUID we can reuse connections to the same
@@ -161,83 +264,105 @@ test_connect (void)
 	 * connection as the first.
 	 */
 	TEST_FEATURE ("with multiple shared connections");
-	conn = nih_dbus_connect ("unix:abstract=/com/netsplit/nih/test_dbus,guid=deadbeef",
-				 my_disconnect_handler);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			TEST_CHILD_WAIT (dbus_pid, wait_fd) {
+				nih_signal_set_handler (SIGTERM, nih_signal_handler);
+				assert (nih_signal_add_handler (NULL, SIGTERM,
+								nih_main_term_signal, NULL));
 
-	TEST_NE_P (conn, NULL);
+				server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
+							  NULL, NULL);
+				assert (server != NULL);
 
-	connected = FALSE;
-	last_connection = NULL;
-	drop_connection = FALSE;
+				dbus_server_set_new_connection_function (server, my_new_connection,
+									 NULL, NULL);
 
-	nih_main_loop ();
+				client_connection = NULL;
 
-	TEST_TRUE (dbus_connection_get_is_connected (conn));
+				TEST_CHILD_RELEASE (wait_fd);
 
-	TEST_TRUE (connected);
-	TEST_NE_P (last_connection, NULL);
-	server_conn = last_connection;
+				nih_main_loop ();
 
-	TEST_LIST_NOT_EMPTY (nih_io_watches);
+				if (client_connection) {
+					dbus_connection_close (client_connection);
+					dbus_connection_unref (client_connection);
+				}
 
-	/* Step over the server io_watch to find the connection one */
-	io_watch = (NihIoWatch *)nih_io_watches->next;
-	TEST_NE_P (io_watch->entry.next, nih_io_watches);
-	io_watch = (NihIoWatch *)io_watch->entry.next;
-	TEST_EQ_P (io_watch->entry.next, nih_io_watches);
+				dbus_server_disconnect (server);
+				dbus_server_unref (server);
 
-	dbus_connection_get_unix_fd (conn, &fd);
-	TEST_EQ (io_watch->fd, fd);
-	TEST_NE_P (io_watch->data, NULL);
+				dbus_shutdown ();
+				exit (0);
+			}
 
-	/* Should be a single main loop function. */
-	TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
-	loop_func = (NihMainLoopFunc *)nih_main_loop_functions->next;
-	TEST_EQ_P (loop_func->entry.next, nih_main_loop_functions);
+			conn = nih_dbus_connect ("unix:abstract=/com/netsplit/nih/test_dbus,guid=deadbeef",
+						 my_disconnect_handler);
 
-	TEST_EQ_P (loop_func->data, conn);
+			assert (conn != NULL);
+			assert (dbus_connection_get_is_connected (conn));
 
-	last_conn = conn;
+			assert (! NIH_LIST_EMPTY (nih_io_watches));
+			io_watch = (NihIoWatch *)nih_io_watches->next;
+			dbus_connection_get_unix_fd (conn, &fd);
+			assert (io_watch->fd == fd);
 
-	TEST_FREE_TAG (loop_func);
+			assert (! NIH_LIST_EMPTY (nih_main_loop_functions));
+			loop_func = (NihMainLoopFunc *)nih_main_loop_functions->next;
+			assert (loop_func->data == conn);
+		}
 
-	conn = nih_dbus_connect ("unix:abstract=/com/netsplit/nih/test_dbus,guid=deadbeef",
-				 my_disconnect_handler);
+		TEST_FREE_TAG (io_watch);
+		TEST_FREE_TAG (loop_func);
 
-	TEST_EQ_P (conn, last_conn);
+		last_conn = conn;
 
-	TEST_LIST_NOT_EMPTY (nih_io_watches);
+		/* Make another connection */
+		conn = nih_dbus_connect ("unix:abstract=/com/netsplit/nih/test_dbus,guid=deadbeef",
+					 my_disconnect_handler);
 
-	/* Still should be just one IoWatch after the server one */
-	io_watch = (NihIoWatch *)nih_io_watches->next;
-	TEST_NE_P (io_watch->entry.next, nih_io_watches);
-	io_watch = (NihIoWatch *)io_watch->entry.next;
-	TEST_EQ_P (io_watch->entry.next, nih_io_watches);
+		if (test_alloc_failed
+		    && (conn == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+		} else {
+			TEST_EQ_P (conn, last_conn);
+		}
 
-	dbus_connection_get_unix_fd (conn, &fd);
-	TEST_EQ (io_watch->fd, fd);
-	TEST_NE_P (io_watch->data, NULL);
+		/* Still should be a single I/O watch */
+		TEST_NOT_FREE (io_watch);
+		TEST_LIST_NOT_EMPTY (nih_io_watches);
+		TEST_EQ_P ((NihIoWatch *)nih_io_watches->next, io_watch);
+		TEST_EQ_P (io_watch->entry.next, nih_io_watches);
 
-	/* Should not be a new main loop function. */
-	TEST_NOT_FREE (loop_func);
-	TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
-	TEST_EQ_P (nih_main_loop_functions->next, &loop_func->entry);
-	TEST_EQ_P (loop_func->entry.next, nih_main_loop_functions);
-	TEST_EQ_P (loop_func->data, conn);
+		/* Still should be a single main loop function */
+		TEST_NOT_FREE (loop_func);
+		TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
+		TEST_EQ_P ((NihMainLoopFunc *)nih_main_loop_functions->next,
+			   loop_func);
+		TEST_EQ_P (loop_func->entry.next, nih_main_loop_functions);
 
-	/* Disconnection should free both references */
-	disconnected = FALSE;
-	last_connection = NULL;
+		/* Disconnection should free both references */
+		disconnected = FALSE;
+		last_disconnection = NULL;
 
-	dbus_connection_close (server_conn);
-	dbus_connection_unref (server_conn);
+		kill (dbus_pid, SIGTERM);
 
-	nih_main_loop ();
+		waitpid (dbus_pid, &status, 0);
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
 
-	TEST_TRUE (disconnected);
-	TEST_EQ_P (last_connection, conn);
+		nih_main_loop ();
 
-	TEST_FREE (loop_func);
+		TEST_TRUE (disconnected);
+		TEST_EQ_P (last_disconnection, last_conn);
+
+		TEST_FREE (io_watch);
+		TEST_FREE (loop_func);
+
+		dbus_shutdown ();
+	}
 
 
 	/* Check that we can create a new connection to a listening dbus
@@ -245,51 +370,91 @@ test_connect (void)
 	 * immediately drops it, should get disconnected.
 	 */
 	TEST_FEATURE ("with server that drops our connection");
-	conn = nih_dbus_connect ("unix:abstract=/com/netsplit/nih/test_dbus",
-				 my_disconnect_handler);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			TEST_CHILD_WAIT (dbus_pid, wait_fd) {
+				nih_signal_set_handler (SIGTERM, nih_signal_handler);
+				assert (nih_signal_add_handler (NULL, SIGTERM,
+								nih_main_term_signal, NULL));
 
-	TEST_NE_P (conn, NULL);
+				server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
+							  NULL, NULL);
+				assert (server != NULL);
 
-	connected = FALSE;
-	last_connection = NULL;
-	drop_connection = TRUE;
+				dbus_server_set_new_connection_function (server, my_new_connection_drop,
+									 NULL, NULL);
 
-	disconnected = FALSE;
-	last_connection = NULL;
+				TEST_CHILD_RELEASE (wait_fd);
 
-	nih_main_loop ();
+				nih_main_loop ();
 
-	TEST_TRUE (connected);
-	TEST_NE_P (last_connection, NULL);
-	server_conn = last_connection;
+				dbus_server_disconnect (server);
+				dbus_server_unref (server);
 
-	if (! disconnected)
+				dbus_shutdown ();
+				exit (0);
+			}
+
+			conn = nih_dbus_connect ("unix:abstract=/com/netsplit/nih/test_dbus",
+						 my_disconnect_handler);
+
+			assert (conn != NULL);
+			assert (dbus_connection_get_is_connected (conn));
+
+			assert (! NIH_LIST_EMPTY (nih_io_watches));
+			io_watch = (NihIoWatch *)nih_io_watches->next;
+			dbus_connection_get_unix_fd (conn, &fd);
+			assert (io_watch->fd == fd);
+
+			assert (! NIH_LIST_EMPTY (nih_main_loop_functions));
+			loop_func = (NihMainLoopFunc *)nih_main_loop_functions->next;
+			assert (loop_func->data == conn);
+		}
+
+		TEST_FREE_TAG (io_watch);
+		TEST_FREE_TAG (loop_func);
+
+		disconnected = FALSE;
+		last_disconnection = NULL;
+
 		nih_main_loop ();
 
-	TEST_TRUE (disconnected);
-	TEST_EQ_P (last_connection, conn);
+		TEST_TRUE (disconnected);
+		TEST_EQ_P (last_disconnection, conn);
+
+		TEST_FREE (io_watch);
+		TEST_FREE (loop_func);
+
+		kill (dbus_pid, SIGTERM);
+
+		waitpid (dbus_pid, &status, 0);
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		dbus_shutdown ();
+	}
 
 
 	/* Check that if we create a new connection to a non-listening
 	 * address, no object is returned.
 	 */
 	TEST_FEATURE ("with non-listening server");
-	conn = nih_dbus_connect ("unix:abstract=/com/netsplit/nih/test_foo",
-				 NULL);
+	TEST_ALLOC_FAIL {
+		conn = nih_dbus_connect ("unix:abstract=/com/netsplit/nih/test_dbus",
+					 NULL);
 
-	TEST_EQ_P (conn, NULL);
+		TEST_EQ_P (conn, NULL);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, NIH_DBUS_ERROR);
-	TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
-	TEST_EQ_STR (((NihDBusError *)err)->name, DBUS_ERROR_NO_SERVER);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+		TEST_EQ_STR (((NihDBusError *)err)->name, DBUS_ERROR_NO_SERVER);
+		nih_free (err);
 
-	dbus_server_disconnect (server);
-	dbus_server_unref (server);
-
-	dbus_shutdown ();
+		dbus_shutdown ();
+	}
 }
+
 
 void
 test_bus (void)
@@ -308,44 +473,64 @@ test_bus (void)
 
 	TEST_FUNCTION ("nih_dbus_bus");
 
+	conn = dbus_bus_get_private (DBUS_BUS_SESSION, NULL);
+	if (! conn) {
+		printf ("SKIP: session bus not available\n");
+		goto system_bus;
+	}
+	dbus_connection_close (conn);
+	dbus_connection_unref (conn);
+	dbus_shutdown ();
+
 
 	/* Check that we can create a connection to the D-Bus session bus,
 	 * the returned object should be hooked up to the main loop.
 	 */
 	TEST_FEATURE ("with session bus");
-	conn = nih_dbus_bus (DBUS_BUS_SESSION, my_disconnect_handler);
-	if (! conn) {
-		NihError *err;
+	TEST_ALLOC_FAIL {
+		conn = nih_dbus_bus (DBUS_BUS_SESSION, my_disconnect_handler);
 
-		err = nih_error_get ();
-		nih_free (err);
+		if (test_alloc_failed) {
+			TEST_EQ_P (conn, NULL);
 
-		printf ("SKIP: session bus not available\n");
-		goto system_bus;
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			dbus_shutdown ();
+			continue;
+		}
+
+		TEST_NE_P (conn, NULL);
+		TEST_TRUE (dbus_connection_get_is_connected (conn));
+
+		/* Should be a single I/O watch */
+		TEST_LIST_NOT_EMPTY (nih_io_watches);
+		io_watch = (NihIoWatch *)nih_io_watches->next;
+		dbus_connection_get_unix_fd (conn, &fd);
+		TEST_EQ (io_watch->fd, fd);
+		TEST_NE_P (io_watch->data, NULL);
+		TEST_EQ_P (io_watch->entry.next, nih_io_watches);
+
+		/* Should be a single main loop function. */
+		TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
+		loop_func = (NihMainLoopFunc *)nih_main_loop_functions->next;
+		TEST_EQ_P (loop_func->data, conn);
+		TEST_EQ_P (loop_func->entry.next, nih_main_loop_functions);
+
+		dbus_connection_unref (conn);
+		dbus_shutdown ();
 	}
 
-	TEST_NE_P (conn, NULL);
 
-	TEST_TRUE (dbus_connection_get_is_connected (conn));
-
-	TEST_LIST_NOT_EMPTY (nih_io_watches);
-
-	io_watch = (NihIoWatch *)nih_io_watches->next;
-	TEST_EQ_P (io_watch->entry.next, nih_io_watches);
-
-	dbus_connection_get_unix_fd (conn, &fd);
-	TEST_EQ (io_watch->fd, fd);
-	TEST_NE_P (io_watch->data, NULL);
-
-	/* Should be a single main loop function. */
-	TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
-	loop_func = (NihMainLoopFunc *)nih_main_loop_functions->next;
-	TEST_EQ_P (loop_func->entry.next, nih_main_loop_functions);
-
-	TEST_EQ_P (loop_func->data, conn);
-
-	dbus_connection_unref (conn);
 system_bus:
+	conn = dbus_bus_get_private (DBUS_BUS_SYSTEM, NULL);
+	if (! conn) {
+		printf ("SKIP: system bus not available\n");
+		return;
+	}
+	dbus_connection_close (conn);
+	dbus_connection_unref (conn);
 	dbus_shutdown ();
 
 
@@ -353,81 +538,95 @@ system_bus:
 	 * the returned object should be hooked up to the main loop.
 	 */
 	TEST_FEATURE ("with system bus");
-	conn = nih_dbus_bus (DBUS_BUS_SYSTEM, my_disconnect_handler);
+	TEST_ALLOC_FAIL {
+		conn = nih_dbus_bus (DBUS_BUS_SYSTEM, my_disconnect_handler);
 
-	TEST_NE_P (conn, NULL);
+		if (test_alloc_failed) {
+			TEST_EQ_P (conn, NULL);
 
-	TEST_TRUE (dbus_connection_get_is_connected (conn));
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
 
-	TEST_LIST_NOT_EMPTY (nih_io_watches);
+			dbus_shutdown ();
+			continue;
+		}
 
-	io_watch = (NihIoWatch *)nih_io_watches->next;
-	TEST_EQ_P (io_watch->entry.next, nih_io_watches);
+		TEST_NE_P (conn, NULL);
+		TEST_TRUE (dbus_connection_get_is_connected (conn));
 
-	dbus_connection_get_unix_fd (conn, &fd);
-	TEST_EQ (io_watch->fd, fd);
-	TEST_NE_P (io_watch->data, NULL);
+		/* Should be a single I/O watch */
+		TEST_LIST_NOT_EMPTY (nih_io_watches);
+		io_watch = (NihIoWatch *)nih_io_watches->next;
+		dbus_connection_get_unix_fd (conn, &fd);
+		TEST_EQ (io_watch->fd, fd);
+		TEST_NE_P (io_watch->data, NULL);
+		TEST_EQ_P (io_watch->entry.next, nih_io_watches);
 
-	/* Should be a single main loop function. */
-	TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
-	loop_func = (NihMainLoopFunc *)nih_main_loop_functions->next;
-	TEST_EQ_P (loop_func->entry.next, nih_main_loop_functions);
+		/* Should be a single main loop function. */
+		TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
+		loop_func = (NihMainLoopFunc *)nih_main_loop_functions->next;
+		TEST_EQ_P (loop_func->data, conn);
+		TEST_EQ_P (loop_func->entry.next, nih_main_loop_functions);
 
-	TEST_EQ_P (loop_func->data, conn);
-
-	dbus_connection_unref (conn);
-	dbus_shutdown ();
+		dbus_connection_unref (conn);
+		dbus_shutdown ();
+	}
 
 
 	/* Check that we can share connections to a bus. */
 	TEST_FEATURE ("with shared bus connection");
-	conn = nih_dbus_bus (DBUS_BUS_SYSTEM, my_disconnect_handler);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			conn = nih_dbus_bus (DBUS_BUS_SYSTEM, my_disconnect_handler);
 
-	TEST_NE_P (conn, NULL);
+			assert (conn != NULL);
+			assert (dbus_connection_get_is_connected (conn));
 
-	TEST_TRUE (dbus_connection_get_is_connected (conn));
+			assert (! NIH_LIST_EMPTY (nih_io_watches));
+			io_watch = (NihIoWatch *)nih_io_watches->next;
+			dbus_connection_get_unix_fd (conn, &fd);
+			assert (io_watch->fd == fd);
 
-	TEST_LIST_NOT_EMPTY (nih_io_watches);
+			assert (! NIH_LIST_EMPTY (nih_main_loop_functions));
+			loop_func = (NihMainLoopFunc *)nih_main_loop_functions->next;
+			assert (loop_func->data == conn);
+		}
 
-	io_watch = (NihIoWatch *)nih_io_watches->next;
-	TEST_EQ_P (io_watch->entry.next, nih_io_watches);
+		TEST_FREE_TAG (io_watch);
+		TEST_FREE_TAG (loop_func);
 
-	dbus_connection_get_unix_fd (conn, &fd);
-	TEST_EQ (io_watch->fd, fd);
-	TEST_NE_P (io_watch->data, NULL);
+		last_conn = conn;
 
-	/* Should be a single main loop function. */
-	TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
-	loop_func = (NihMainLoopFunc *)nih_main_loop_functions->next;
-	TEST_EQ_P (loop_func->entry.next, nih_main_loop_functions);
-	TEST_EQ_P (loop_func->data, conn);
+		/* Make another connection */
+		conn = nih_dbus_bus (DBUS_BUS_SYSTEM, my_disconnect_handler);
 
-	last_conn = conn;
-	TEST_FREE_TAG (loop_func);
+		if (test_alloc_failed
+		    && (conn == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+		} else {
+			TEST_EQ_P (conn, last_conn);
+		}
 
-	conn = nih_dbus_bus (DBUS_BUS_SYSTEM, my_disconnect_handler);
+		/* Still should be a single I/O watch */
+		TEST_NOT_FREE (io_watch);
+		TEST_LIST_NOT_EMPTY (nih_io_watches);
+		TEST_EQ_P ((NihIoWatch *)nih_io_watches->next, io_watch);
+		TEST_EQ_P (io_watch->entry.next, nih_io_watches);
 
-	TEST_EQ_P (conn, last_conn);
+		/* Still should be a single main loop function */
+		TEST_NOT_FREE (loop_func);
+		TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
+		TEST_EQ_P ((NihMainLoopFunc *)nih_main_loop_functions->next,
+			   loop_func);
+		TEST_EQ_P (loop_func->entry.next, nih_main_loop_functions);
 
-	TEST_LIST_NOT_EMPTY (nih_io_watches);
-
-	io_watch = (NihIoWatch *)nih_io_watches->next;
-	TEST_EQ_P (io_watch->entry.next, nih_io_watches);
-
-	dbus_connection_get_unix_fd (conn, &fd);
-	TEST_EQ (io_watch->fd, fd);
-	TEST_NE_P (io_watch->data, NULL);
-
-	/* Should be the same main loop function. */
-	TEST_NOT_FREE (loop_func);
-	TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
-	TEST_EQ_P (nih_main_loop_functions->next, &loop_func->entry);
-	TEST_EQ_P (loop_func->entry.next, nih_main_loop_functions);
-	TEST_EQ_P (loop_func->data, conn);
-
-	dbus_connection_unref (conn);
-	dbus_connection_unref (last_conn);
-	dbus_shutdown ();
+		dbus_connection_unref (conn);
+		dbus_connection_unref (last_conn);
+		dbus_shutdown ();
+	}
 
 
 	/* Check that if the bus disconnects before registration, NULL
@@ -437,17 +636,16 @@ system_bus:
 	TEST_FEATURE ("with disconnection before registration");
 	TEST_CHILD (pid1) {
 		TEST_CHILD_WAIT (pid2, wait_fd) {
+			nih_signal_set_handler (SIGTERM, nih_signal_handler);
+			assert (nih_signal_add_handler (NULL, SIGTERM,
+							nih_main_term_signal, NULL));
+
 			server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
 						  NULL, NULL);
 			assert (server != NULL);
 
-			dbus_server_set_new_connection_function (server,
-								 my_new_connection,
+			dbus_server_set_new_connection_function (server, my_new_connection_drop,
 								 NULL, NULL);
-
-			connected = FALSE;
-			last_connection = NULL;
-			drop_connection = TRUE;
 
 			TEST_CHILD_RELEASE (wait_fd);
 
@@ -457,7 +655,6 @@ system_bus:
 			dbus_server_unref (server);
 
 			dbus_shutdown ();
-
 			exit (0);
 		}
 
@@ -478,7 +675,11 @@ system_bus:
 
 		unsetenv ("DBUS_SYSTEM_BUS_ADDRESS");
 
-		waitpid (pid2, NULL, 0);
+		kill (pid2, SIGTERM);
+
+		waitpid (pid2, &status, 0);
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
 
 		exit (123);
 	}
@@ -514,72 +715,165 @@ system_bus:
 void
 test_setup (void)
 {
+	pid_t            dbus_pid;
+	int              wait_fd;
+	DBusServer *     server;
 	DBusConnection * conn;
 	NihIoWatch *     io_watch;
 	NihMainLoopFunc *loop_func;
 	int              ret;
 	int              fd;
+	int              status;
 
 	TEST_FUNCTION ("nih_dbus_setup");
+	TEST_CHILD_WAIT (dbus_pid, wait_fd) {
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
+					  NULL, NULL);
+		assert (server != NULL);
+
+		dbus_server_set_new_connection_function (server, my_new_connection,
+							 NULL, NULL);
+
+		client_connection = NULL;
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		if (client_connection) {
+			dbus_connection_close (client_connection);
+			dbus_connection_unref (client_connection);
+		}
+
+		dbus_server_disconnect (server);
+		dbus_server_unref (server);
+
+		dbus_shutdown ();
+		exit (0);
+	}
+
 
 	/* Check that we can setup a new connection for use with the
 	 * nih main loop.
 	 */
 	TEST_FEATURE ("with new connection");
-	conn = dbus_bus_get (DBUS_BUS_SYSTEM, NULL);
-	dbus_connection_set_exit_on_disconnect (conn, FALSE);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			conn = dbus_connection_open_private ("unix:abstract=/com/netsplit/nih/test_dbus",
+							     NULL);
+			assert (conn != NULL);
+			assert (dbus_connection_get_is_connected (conn));
+		}
 
-	ret = nih_dbus_setup (conn, NULL);
+		dbus_connection_set_exit_on_disconnect (conn, FALSE);
 
-	TEST_EQ (ret, 0);
+		ret = nih_dbus_setup (conn, NULL);
 
-	TEST_LIST_NOT_EMPTY (nih_io_watches);
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
 
-	io_watch = (NihIoWatch *)nih_io_watches->next;
-	TEST_EQ_P (io_watch->entry.next, nih_io_watches);
+			dbus_connection_close (conn);
+			dbus_connection_unref (conn);
 
-	dbus_connection_get_unix_fd (conn, &fd);
-	TEST_EQ (io_watch->fd, fd);
-	TEST_NE_P (io_watch->data, NULL);
+			dbus_shutdown ();
+			continue;
+		}
 
-	/* Should be a single main loop function. */
-	TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
-	loop_func = (NihMainLoopFunc *)nih_main_loop_functions->next;
-	TEST_EQ_P (loop_func->entry.next, nih_main_loop_functions);
+		TEST_EQ (ret, 0);
 
-	TEST_EQ_P (loop_func->data, conn);
+		/* Should be a single I/O watch */
+		TEST_LIST_NOT_EMPTY (nih_io_watches);
+		io_watch = (NihIoWatch *)nih_io_watches->next;
+		dbus_connection_get_unix_fd (conn, &fd);
+		TEST_EQ (io_watch->fd, fd);
+		TEST_NE_P (io_watch->data, NULL);
+		TEST_EQ_P (io_watch->entry.next, nih_io_watches);
+
+		/* Should be a single main loop function. */
+		TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
+		loop_func = (NihMainLoopFunc *)nih_main_loop_functions->next;
+		TEST_EQ_P (loop_func->data, conn);
+		TEST_EQ_P (loop_func->entry.next, nih_main_loop_functions);
+
+		dbus_connection_close (conn);
+		dbus_connection_unref (conn);
+
+		dbus_shutdown ();
+	}
 
 
 	/* Check that if we try and set the same connection up again,
 	 * nothing changes.
 	 */
 	TEST_FEATURE ("with existing connection");
-	TEST_FREE_TAG (loop_func);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			conn = dbus_connection_open_private ("unix:abstract=/com/netsplit/nih/test_dbus",
+							     NULL);
+			assert (conn != NULL);
+			assert (dbus_connection_get_is_connected (conn));
 
-	ret = nih_dbus_setup (conn, NULL);
+			dbus_connection_set_exit_on_disconnect (conn, FALSE);
 
-	TEST_EQ (ret, 0);
+			ret = nih_dbus_setup (conn, NULL);
+			assert (ret == 0);
 
-	TEST_LIST_NOT_EMPTY (nih_io_watches);
+			assert (! NIH_LIST_EMPTY (nih_io_watches));
+			io_watch = (NihIoWatch *)nih_io_watches->next;
+			dbus_connection_get_unix_fd (conn, &fd);
+			assert (io_watch->fd == fd);
 
-	io_watch = (NihIoWatch *)nih_io_watches->next;
-	TEST_EQ_P (io_watch->entry.next, nih_io_watches);
+			assert (! NIH_LIST_EMPTY (nih_main_loop_functions));
+			loop_func = (NihMainLoopFunc *)nih_main_loop_functions->next;
+			assert (loop_func->data == conn);
+		}
 
-	dbus_connection_get_unix_fd (conn, &fd);
-	TEST_EQ (io_watch->fd, fd);
-	TEST_NE_P (io_watch->data, NULL);
+		TEST_FREE_TAG (io_watch);
+		TEST_FREE_TAG (loop_func);
 
-	/* Should be the same main loop function. */
-	TEST_NOT_FREE (loop_func);
-	TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
-	TEST_EQ_P (nih_main_loop_functions->next, &loop_func->entry);
-	TEST_EQ_P (loop_func->entry.next, nih_main_loop_functions);
-	TEST_EQ_P (loop_func->data, conn);
+		ret = nih_dbus_setup (conn, NULL);
 
-	dbus_connection_unref (conn);
-	dbus_shutdown ();
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+		} else {
+			TEST_EQ (ret, 0);
+		}
+
+		/* Still should be a single I/O watch */
+		TEST_NOT_FREE (io_watch);
+		TEST_LIST_NOT_EMPTY (nih_io_watches);
+		TEST_EQ_P ((NihIoWatch *)nih_io_watches->next, io_watch);
+		TEST_EQ_P (io_watch->entry.next, nih_io_watches);
+
+		/* Still should be a single main loop function */
+		TEST_NOT_FREE (loop_func);
+		TEST_LIST_NOT_EMPTY (nih_main_loop_functions);
+		TEST_EQ_P ((NihMainLoopFunc *)nih_main_loop_functions->next,
+			   loop_func);
+		TEST_EQ_P (loop_func->entry.next, nih_main_loop_functions);
+
+		dbus_connection_close (conn);
+		dbus_connection_unref (conn);
+
+		dbus_shutdown ();
+	}
+
+
+	kill (dbus_pid, SIGTERM);
+
+	waitpid (dbus_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
 }
 
+
+static int             connected = FALSE;
+static int             drop_connection = FALSE;
+static DBusConnection *last_connection = NULL;
 
 static int
 my_connect_handler (DBusServer     *server,
@@ -602,6 +896,7 @@ test_server (void)
 	DBusConnection *conn;
 	DBusConnection *server_conn;
 	NihIoWatch *    io_watch;
+	NihError *      err;
 
 	TEST_FUNCTION ("nih_dbus_server");
 
@@ -609,15 +904,32 @@ test_server (void)
 	 * it is hooked up to the main loop with an IoWatch.
 	 */
 	TEST_FEATURE ("with new server");
-	server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
-				  my_connect_handler,
-				  my_disconnect_handler);
+	TEST_ALLOC_FAIL {
+		server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
+					  NULL, NULL);
 
-	TEST_NE_P (server, NULL);
+		if (test_alloc_failed) {
+			TEST_EQ_P (server, NULL);
 
-	TEST_LIST_NOT_EMPTY (nih_io_watches);
-	io_watch = (NihIoWatch *)nih_io_watches->next;
-	TEST_EQ_P (io_watch->entry.next, nih_io_watches);
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			dbus_shutdown ();
+			continue;
+		}
+
+		TEST_NE_P (server, NULL);
+
+		TEST_LIST_NOT_EMPTY (nih_io_watches);
+		io_watch = (NihIoWatch *)nih_io_watches->next;
+		TEST_EQ_P (io_watch->entry.next, nih_io_watches);
+
+		dbus_server_disconnect (server);
+		dbus_server_unref (server);
+
+		dbus_shutdown ();
+	}
 
 
 	/* Check that a connection to that server results in the connect
@@ -625,67 +937,127 @@ test_server (void)
 	 * connection remains open.
 	 */
 	TEST_FEATURE ("with connection to server");
-	conn = dbus_connection_open_private ("unix:abstract=/com/netsplit/nih/test_dbus", NULL);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
+						  my_connect_handler,
+						  NULL);
+			assert (server != NULL);
+		}
 
- 	TEST_NE_P (conn, NULL);
+		conn = dbus_connection_open_private ("unix:abstract=/com/netsplit/nih/test_dbus", NULL);
 
-	connected = FALSE;
-	last_connection = NULL;
-	drop_connection = FALSE;
+		TEST_NE_P (conn, NULL);
 
-	nih_main_loop ();
+		connected = FALSE;
+		last_connection = NULL;
+		drop_connection = FALSE;
 
-	TEST_TRUE (dbus_connection_get_is_connected (conn));
+		nih_main_loop ();
 
-	TEST_TRUE (connected);
-	TEST_NE_P (last_connection, NULL);
-	server_conn = last_connection;
+		TEST_TRUE (dbus_connection_get_is_connected (conn));
+
+		TEST_TRUE (connected);
+		TEST_NE_P (last_connection, NULL);
+		server_conn = last_connection;
+
+		dbus_connection_close (conn);
+		dbus_connection_unref (conn);
+
+		dbus_connection_close (server_conn);
+		dbus_connection_unref (server_conn);
+
+		dbus_server_disconnect (server);
+		dbus_server_unref (server);
+
+		dbus_shutdown ();
+	}
 
 
 	/* Check that if the client disconnects, the server connection
 	 * disconnect handler is called and unreferenced.
 	 */
 	TEST_FEATURE ("with disconnect by client");
-	disconnected = FALSE;
-	last_connection = NULL;
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
+						  my_connect_handler,
+						  my_disconnect_handler);
+			assert (server != NULL);
 
-	dbus_connection_close (conn);
-	dbus_connection_unref (conn);
+			conn = dbus_connection_open_private ("unix:abstract=/com/netsplit/nih/test_dbus", NULL);
+			assert (conn != NULL);
 
-	nih_main_loop ();
+			connected = FALSE;
+			last_connection = NULL;
 
-	TEST_TRUE (disconnected);
-	TEST_EQ_P (last_connection, server_conn);
+			nih_main_loop ();
+
+			assert (connected);
+			server_conn = last_connection;
+		}
+
+		disconnected = FALSE;
+		last_disconnection = NULL;
+
+		dbus_connection_close (conn);
+		dbus_connection_unref (conn);
+
+		nih_main_loop ();
+
+		TEST_TRUE (disconnected);
+		TEST_EQ_P (last_disconnection, server_conn);
+
+		dbus_server_disconnect (server);
+		dbus_server_unref (server);
+
+		dbus_shutdown ();
+	}
 
 
 	/* Check that if the connect handler returns FALSE, the connection
 	 * is abandoned and the client disconnected.
 	 */
 	TEST_FEATURE ("with decline by connect handler");
-	conn = dbus_connection_open_private ("unix:abstract=/com/netsplit/nih/test_dbus", NULL);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
+						  my_connect_handler,
+						  my_disconnect_handler);
+			assert (server != NULL);
+		}
 
- 	TEST_NE_P (conn, NULL);
+		conn = dbus_connection_open_private ("unix:abstract=/com/netsplit/nih/test_dbus", NULL);
 
-	connected = FALSE;
-	last_connection = NULL;
-	drop_connection = TRUE;
+		TEST_NE_P (conn, NULL);
 
-	nih_main_loop ();
+		connected = FALSE;
+		last_connection = NULL;
+		drop_connection = TRUE;
 
-	TEST_TRUE (connected);
+		disconnected = FALSE;
+		last_disconnection = NULL;
 
-	while (dbus_connection_read_write_dispatch (conn, -1))
-		;
+		nih_main_loop ();
 
-	TEST_FALSE (dbus_connection_get_is_connected (conn));
+		TEST_TRUE (connected);
 
-	dbus_connection_unref (conn);
+		while (dbus_connection_read_write_dispatch (conn, -1))
+			;
 
+		TEST_FALSE (dbus_connection_get_is_connected (conn));
 
-	dbus_server_disconnect (server);
-	dbus_server_unref (server);
+		/* Disconnect handler should not be called */
+		TEST_FALSE (disconnected);
+		TEST_EQ_P (last_disconnection, NULL);
 
-	dbus_shutdown ();
+		dbus_connection_unref (conn);
+
+		dbus_server_disconnect (server);
+		dbus_server_unref (server);
+
+		dbus_shutdown ();
+	}
 }
 
 
@@ -694,8 +1066,11 @@ main (int   argc,
       char *argv[])
 {
 	nih_timer_init ();
+	nih_signal_init ();
+	nih_child_init ();
 	nih_io_init ();
 	nih_main_loop_init ();
+	nih_error_init ();
 
 	test_connect ();
 	test_bus ();

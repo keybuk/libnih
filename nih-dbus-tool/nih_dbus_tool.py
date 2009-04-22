@@ -1093,7 +1093,7 @@ if (%s (%s) < 0) {
 
         if self.style == "async":
             code += "\n"
-            code += indent("return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n", 1)
+            code += indent("return DBUS_HANDLER_RESULT_HANDLED;\n", 1)
         else:
             # Be well-behaved and make the function return immediately
             # if no reply is expected

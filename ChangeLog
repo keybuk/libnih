@@ -1,5 +1,8 @@
 2009-04-22  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/nih_dbus_tool.py (Method.marshalFunction): Also fix
+	async method handler return to match.
+
 	* nih-dbus-tool/tests/test_main.c,
 	* nih-dbus-tool/tests/test_node.c,
 	* nih-dbus-tool/tests/test_interface.c,

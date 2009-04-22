@@ -304,19 +304,23 @@ test_start_tag (void)
 	 * error being raised.
 	 */
 	TEST_FEATURE ("with invalid name");
-	attr[0] = "name";
-	attr[1] = "Test Node";
-	attr[2] = NULL;
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			attr[0] = "name";
+			attr[1] = "Test Node";
+			attr[2] = NULL;
+		}
 
-	ret = node_start_tag (xmlp, "node", attr);
+		ret = node_start_tag (xmlp, "node", attr);
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (parse_stack_top (&context.stack), NULL);
+		TEST_EQ_P (parse_stack_top (&context.stack), NULL);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, NODE_INVALID_PATH);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, NODE_INVALID_PATH);
+		nih_free (err);
+	}
 
 
 	/* Check that an unknown node attribute results in a warning
@@ -324,37 +328,53 @@ test_start_tag (void)
 	 * and the normal processing finished.
 	 */
 	TEST_FEATURE ("with unknown attribute");
-	attr[0] = "name";
-	attr[1] = "/com/netsplit/Nih/Test";
-	attr[2] = "frodo";
-	attr[3] = "baggins";
-	attr[4] = NULL;
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			attr[0] = "name";
+			attr[1] = "/com/netsplit/Nih/Test";
+			attr[2] = "frodo";
+			attr[3] = "baggins";
+			attr[4] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = node_start_tag (xmlp, "node", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = node_start_tag (xmlp, "node", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), NULL);
+
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_NE_P (entry, NULL);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_NODE);
+
+		node = entry->node;
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_ALLOC_PARENT (node, entry);
+		TEST_EQ_STR (node->path, "/com/netsplit/Nih/Test");
+		TEST_ALLOC_PARENT (node->path, node);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown <node> attribute: "
+				       "frodo\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_NE_P (entry, NULL);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_NODE);
-
-	node = entry->node;
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_ALLOC_PARENT (node, entry);
-	TEST_EQ_STR (node->path, "/com/netsplit/Nih/Test");
-	TEST_ALLOC_PARENT (node->path, node);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown <node> attribute: "
-			       "frodo\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
 
 
 	/* Check that a node on top of a stack entry results in a warning
@@ -362,34 +382,52 @@ test_start_tag (void)
 	 * pushed onto the stack.
 	 */
 	TEST_FEATURE ("with non-node on stack");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_INTERFACE,
-				   interface_new (NULL, "com.netsplit.Nih.Test"));
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_INTERFACE,
+						   interface_new (NULL, "com.netsplit.Nih.Test"));
 
-	attr[0] = "name";
-	attr[1] = "/com/netsplit/Nih/Test";
-	attr[2] = NULL;
+			attr[0] = "name";
+			attr[1] = "/com/netsplit/Nih/Test";
+			attr[2] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = node_start_tag (xmlp, "node", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = node_start_tag (xmlp, "node", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), parent);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_NE_P (entry, parent);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_IGNORED);
+		TEST_EQ_P (entry->data, NULL);
+
+		TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <node> tag\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
+
+		nih_free (parent);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_NE_P (entry, parent);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_IGNORED);
-	TEST_EQ_P (entry->data, NULL);
-
-	TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <node> tag\n");
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
-
-	nih_free (parent);
 
 
 	XML_ParserFree (xmlp);

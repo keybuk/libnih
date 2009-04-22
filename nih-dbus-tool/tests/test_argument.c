@@ -566,172 +566,196 @@ test_start_tag (void)
 	 * error being raised.
 	 */
 	TEST_FEATURE ("with invalid argument name");
-	method = method_new (NULL, "TestMethod");
-	parent = parse_stack_push (NULL, &context.stack, PARSE_METHOD, method);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			method = method_new (NULL, "TestMethod");
+			parent = parse_stack_push (NULL, &context.stack, PARSE_METHOD, method);
 
-	attr[0] = "name";
-	attr[1] = "test arg";
-	attr[2] = "type";
-	attr[3] = "s";
-	attr[4] = NULL;
+			attr[0] = "name";
+			attr[1] = "test arg";
+			attr[2] = "type";
+			attr[3] = "s";
+			attr[4] = NULL;
+		}
 
-	ret = argument_start_tag (xmlp, "arg", attr);
+		ret = argument_start_tag (xmlp, "arg", attr);
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (parse_stack_top (&context.stack), parent);
+		TEST_EQ_P (parse_stack_top (&context.stack), parent);
 
-	TEST_LIST_EMPTY (&method->arguments);
+		TEST_LIST_EMPTY (&method->arguments);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, ARGUMENT_INVALID_NAME);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, ARGUMENT_INVALID_NAME);
+		nih_free (err);
 
-	nih_free (parent);
+		nih_free (parent);
+	}
 
 
 	/* Check that an argument with a missing type attribute results
 	 * in an error being raised.
 	 */
 	TEST_FEATURE ("with missing argument type");
-	method = method_new (NULL, "TestMethod");
-	parent = parse_stack_push (NULL, &context.stack, PARSE_METHOD, method);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			method = method_new (NULL, "TestMethod");
+			parent = parse_stack_push (NULL, &context.stack, PARSE_METHOD, method);
 
-	attr[0] = "name";
-	attr[1] = "test_arg";
-	attr[2] = NULL;
+			attr[0] = "name";
+			attr[1] = "test_arg";
+			attr[2] = NULL;
+		}
 
-	ret = argument_start_tag (xmlp, "arg", attr);
+		ret = argument_start_tag (xmlp, "arg", attr);
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (parse_stack_top (&context.stack), parent);
+		TEST_EQ_P (parse_stack_top (&context.stack), parent);
 
-	TEST_LIST_EMPTY (&method->arguments);
+		TEST_LIST_EMPTY (&method->arguments);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, ARGUMENT_MISSING_TYPE);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, ARGUMENT_MISSING_TYPE);
+		nih_free (err);
 
-	nih_free (parent);
+		nih_free (parent);
+	}
 
 
 	/* Check that an argument with an invalid type results in an
 	 * error being raised.
 	 */
 	TEST_FEATURE ("with invalid argument type");
-	method = method_new (NULL, "TestMethod");
-	parent = parse_stack_push (NULL, &context.stack, PARSE_METHOD, method);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			method = method_new (NULL, "TestMethod");
+			parent = parse_stack_push (NULL, &context.stack, PARSE_METHOD, method);
 
-	attr[0] = "name";
-	attr[1] = "test_arg";
-	attr[2] = "type";
-	attr[3] = "!";
-	attr[4] = NULL;
+			attr[0] = "name";
+			attr[1] = "test_arg";
+			attr[2] = "type";
+			attr[3] = "!";
+			attr[4] = NULL;
+		}
 
-	ret = argument_start_tag (xmlp, "arg", attr);
+		ret = argument_start_tag (xmlp, "arg", attr);
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (parse_stack_top (&context.stack), parent);
+		TEST_EQ_P (parse_stack_top (&context.stack), parent);
 
-	TEST_LIST_EMPTY (&method->arguments);
+		TEST_LIST_EMPTY (&method->arguments);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, ARGUMENT_INVALID_TYPE);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, ARGUMENT_INVALID_TYPE);
+		nih_free (err);
 
-	nih_free (parent);
+		nih_free (parent);
+	}
 
 
 	/* Check that a method argument with an invalid direction results
 	 * in an error being raised.
 	 */
 	TEST_FEATURE ("with invalid method argument direction");
-	method = method_new (NULL, "TestMethod");
-	parent = parse_stack_push (NULL, &context.stack, PARSE_METHOD, method);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			method = method_new (NULL, "TestMethod");
+			parent = parse_stack_push (NULL, &context.stack, PARSE_METHOD, method);
 
-	attr[0] = "name";
-	attr[1] = "test_arg";
-	attr[2] = "type";
-	attr[3] = "s";
-	attr[4] = "direction";
-	attr[5] = "widdershins";
-	attr[6] = NULL;
+			attr[0] = "name";
+			attr[1] = "test_arg";
+			attr[2] = "type";
+			attr[3] = "s";
+			attr[4] = "direction";
+			attr[5] = "widdershins";
+			attr[6] = NULL;
+		}
 
-	ret = argument_start_tag (xmlp, "arg", attr);
+		ret = argument_start_tag (xmlp, "arg", attr);
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (parse_stack_top (&context.stack), parent);
+		TEST_EQ_P (parse_stack_top (&context.stack), parent);
 
-	TEST_LIST_EMPTY (&method->arguments);
+		TEST_LIST_EMPTY (&method->arguments);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, ARGUMENT_ILLEGAL_METHOD_DIRECTION);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, ARGUMENT_ILLEGAL_METHOD_DIRECTION);
+		nih_free (err);
 
-	nih_free (parent);
+		nih_free (parent);
+	}
 
 
 	/* Check that a signal argument with an invalid direction results
 	 * in an error being raised.
 	 */
 	TEST_FEATURE ("with invalid signal argument direction");
-	signal = signal_new (NULL, "TestSignal");
-	parent = parse_stack_push (NULL, &context.stack, PARSE_SIGNAL, signal);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			signal = signal_new (NULL, "TestSignal");
+			parent = parse_stack_push (NULL, &context.stack, PARSE_SIGNAL, signal);
 
-	attr[0] = "name";
-	attr[1] = "test_arg";
-	attr[2] = "type";
-	attr[3] = "s";
-	attr[4] = "direction";
-	attr[5] = "widdershins";
-	attr[6] = NULL;
+			attr[0] = "name";
+			attr[1] = "test_arg";
+			attr[2] = "type";
+			attr[3] = "s";
+			attr[4] = "direction";
+			attr[5] = "widdershins";
+			attr[6] = NULL;
+		}
 
-	ret = argument_start_tag (xmlp, "arg", attr);
+		ret = argument_start_tag (xmlp, "arg", attr);
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (parse_stack_top (&context.stack), parent);
+		TEST_EQ_P (parse_stack_top (&context.stack), parent);
 
-	TEST_LIST_EMPTY (&signal->arguments);
+		TEST_LIST_EMPTY (&signal->arguments);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, ARGUMENT_ILLEGAL_SIGNAL_DIRECTION);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, ARGUMENT_ILLEGAL_SIGNAL_DIRECTION);
+		nih_free (err);
 
-	nih_free (parent);
+		nih_free (parent);
+	}
 
 
 	/* Check that "in" is an invalid direction for a signal argument
 	 * and results in an error being raised.
 	 */
 	TEST_FEATURE ("with input signal argument");
-	signal = signal_new (NULL, "TestSignal");
-	parent = parse_stack_push (NULL, &context.stack, PARSE_SIGNAL, signal);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			signal = signal_new (NULL, "TestSignal");
+			parent = parse_stack_push (NULL, &context.stack, PARSE_SIGNAL, signal);
 
-	attr[0] = "name";
-	attr[1] = "test_arg";
-	attr[2] = "type";
-	attr[3] = "s";
-	attr[4] = "direction";
-	attr[5] = "in";
-	attr[6] = NULL;
+			attr[0] = "name";
+			attr[1] = "test_arg";
+			attr[2] = "type";
+			attr[3] = "s";
+			attr[4] = "direction";
+			attr[5] = "in";
+			attr[6] = NULL;
+		}
 
-	ret = argument_start_tag (xmlp, "arg", attr);
+		ret = argument_start_tag (xmlp, "arg", attr);
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (parse_stack_top (&context.stack), parent);
+		TEST_EQ_P (parse_stack_top (&context.stack), parent);
 
-	TEST_LIST_EMPTY (&signal->arguments);
+		TEST_LIST_EMPTY (&signal->arguments);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, ARGUMENT_ILLEGAL_SIGNAL_DIRECTION);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, ARGUMENT_ILLEGAL_SIGNAL_DIRECTION);
+		nih_free (err);
 
-	nih_free (parent);
+		nih_free (parent);
+	}
 
 
 	/* Check that an unknown argument attribute results in a warning
@@ -739,49 +763,67 @@ test_start_tag (void)
 	 * and the normal processing finished.
 	 */
 	TEST_FEATURE ("with unknown attribute");
-	method = method_new (NULL, "TestMethod");
-	parent = parse_stack_push (NULL, &context.stack, PARSE_METHOD, method);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			method = method_new (NULL, "TestMethod");
+			parent = parse_stack_push (NULL, &context.stack, PARSE_METHOD, method);
 
-	attr[0] = "name";
-	attr[1] = "test_arg";
-	attr[2] = "type";
-	attr[3] = "s";
-	attr[4] = "frodo";
-	attr[5] = "baggins";
-	attr[6] = NULL;
+			attr[0] = "name";
+			attr[1] = "test_arg";
+			attr[2] = "type";
+			attr[3] = "s";
+			attr[4] = "frodo";
+			attr[5] = "baggins";
+			attr[6] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = argument_start_tag (xmlp, "arg", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = argument_start_tag (xmlp, "arg", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), parent);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_NE_P (entry, parent);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_ARGUMENT);
+
+		argument = entry->argument;
+		TEST_ALLOC_SIZE (argument, sizeof (Argument));
+		TEST_ALLOC_PARENT (argument, entry);
+		TEST_EQ_STR (argument->name, "test_arg");
+		TEST_ALLOC_PARENT (argument->name, argument);
+		TEST_EQ_STR (argument->type, "s");
+		TEST_ALLOC_PARENT (argument->type, argument);
+		TEST_EQ_P (argument->symbol, NULL);
+
+		TEST_EQ (argument->direction, NIH_DBUS_ARG_IN);
+
+		TEST_LIST_EMPTY (&method->arguments);
+
+		TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown <arg> attribute: "
+				       "frodo\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
+		nih_free (parent);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_NE_P (entry, parent);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_ARGUMENT);
-
-	argument = entry->argument;
-	TEST_ALLOC_SIZE (argument, sizeof (Argument));
-	TEST_ALLOC_PARENT (argument, entry);
-	TEST_EQ_STR (argument->name, "test_arg");
-	TEST_ALLOC_PARENT (argument->name, argument);
-	TEST_EQ_STR (argument->type, "s");
-	TEST_ALLOC_PARENT (argument->type, argument);
-	TEST_EQ_P (argument->symbol, NULL);
-
-	TEST_EQ (argument->direction, NIH_DBUS_ARG_IN);
-
-	TEST_LIST_EMPTY (&method->arguments);
-
-	TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown <arg> attribute: "
-			       "frodo\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
-	nih_free (parent);
 
 
 	/* Check that an argument on an empty stack (ie. a top-level
@@ -790,29 +832,45 @@ test_start_tag (void)
 	 * stack.
 	 */
 	TEST_FEATURE ("with empty stack");
-	attr[0] = "name";
-	attr[1] = "test_arg";
-	attr[2] = "type";
-	attr[3] = "s";
-	attr[4] = NULL;
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			attr[0] = "name";
+			attr[1] = "test_arg";
+			attr[2] = "type";
+			attr[3] = "s";
+			attr[4] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = argument_start_tag (xmlp, "arg", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = argument_start_tag (xmlp, "arg", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), NULL);
+
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_IGNORED);
+		TEST_EQ_P (entry->data, NULL);
+
+		TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <arg> tag\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_IGNORED);
-	TEST_EQ_P (entry->data, NULL);
-
-	TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <arg> tag\n");
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
 
 
 	/* Check that an argument on top of a stack entry that's not a
@@ -821,34 +879,52 @@ test_start_tag (void)
 	 * stack.
 	 */
 	TEST_FEATURE ("with non-method/signal on stack");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_NODE, node_new (NULL, NULL));
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_NODE, node_new (NULL, NULL));
 
-	attr[0] = "name";
-	attr[1] = "test_arg";
-	attr[2] = "type";
-	attr[3] = "s";
-	attr[4] = NULL;
+			attr[0] = "name";
+			attr[1] = "test_arg";
+			attr[2] = "type";
+			attr[3] = "s";
+			attr[4] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = argument_start_tag (xmlp, "arg", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = argument_start_tag (xmlp, "arg", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), parent);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_NE_P (entry, parent);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_IGNORED);
+		TEST_EQ_P (entry->data, NULL);
+
+		TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <arg> tag\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
+		nih_free (parent);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_NE_P (entry, parent);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_IGNORED);
-	TEST_EQ_P (entry->data, NULL);
-
-	TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <arg> tag\n");
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
-	nih_free (parent);
 
 
 	XML_ParserFree (xmlp);
@@ -1329,29 +1405,36 @@ test_end_tag (void)
 	 * only for bindings anyway so they should never clash!
 	 */
 	TEST_FEATURE ("with conflicting symbol for method argument");
-	method = method_new (NULL, "TestMethod");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_METHOD, method);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			method = method_new (NULL, "TestMethod");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_METHOD, method);
 
-	other1 = argument_new (method, "TestArg", "i", NIH_DBUS_ARG_IN);
-	other1->symbol = nih_strdup (other1, "test_arg");
-	nih_list_add (&method->arguments, &other1->entry);
+			other1 = argument_new (method, "TestArg",
+					       "i", NIH_DBUS_ARG_IN);
+			other1->symbol = nih_strdup (other1, "test_arg");
+			nih_list_add (&method->arguments, &other1->entry);
 
-	argument = argument_new (NULL, "test_arg", "s",
-				 NIH_DBUS_ARG_IN);
-	entry = parse_stack_push (NULL, &context.stack,
-				  PARSE_ARGUMENT, argument);
+			argument = argument_new (NULL, "test_arg", "s",
+						 NIH_DBUS_ARG_IN);
+			entry = parse_stack_push (NULL, &context.stack,
+						  PARSE_ARGUMENT, argument);
+		}
 
-	ret = argument_end_tag (xmlp, "arg");
+		ret = argument_end_tag (xmlp, "arg");
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, ARGUMENT_DUPLICATE_SYMBOL);
-	nih_free (err);
+		err = nih_error_get ();
+		if ((! test_alloc_failed)
+		    || (err->number != ENOMEM))
+			TEST_EQ (err->number, ARGUMENT_DUPLICATE_SYMBOL);
+		nih_free (err);
 
-	nih_free (entry);
-	nih_free (parent);
+		nih_free (entry);
+		nih_free (parent);
+	}
 
 
 	/* Check that we won't allow a duplicate symbol for a signal
@@ -1361,29 +1444,35 @@ test_end_tag (void)
 	 * only for bindings anyway so they should never clash!
 	 */
 	TEST_FEATURE ("with conflicting symbol for signal argument");
-	signal = signal_new (NULL, "TestSignal");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_SIGNAL, signal);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			signal = signal_new (NULL, "TestSignal");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_SIGNAL, signal);
 
-	other1 = argument_new (signal, "TestArg", "i", NIH_DBUS_ARG_IN);
-	other1->symbol = nih_strdup (other1, "test_arg");
-	nih_list_add (&signal->arguments, &other1->entry);
+			other1 = argument_new (signal, "TestArg", "i", NIH_DBUS_ARG_IN);
+			other1->symbol = nih_strdup (other1, "test_arg");
+			nih_list_add (&signal->arguments, &other1->entry);
 
-	argument = argument_new (NULL, "test_arg", "s",
-				 NIH_DBUS_ARG_IN);
-	entry = parse_stack_push (NULL, &context.stack,
-				  PARSE_ARGUMENT, argument);
+			argument = argument_new (NULL, "test_arg", "s",
+						 NIH_DBUS_ARG_IN);
+			entry = parse_stack_push (NULL, &context.stack,
+						  PARSE_ARGUMENT, argument);
+		}
 
-	ret = argument_end_tag (xmlp, "arg");
+		ret = argument_end_tag (xmlp, "arg");
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, ARGUMENT_DUPLICATE_SYMBOL);
-	nih_free (err);
+		err = nih_error_get ();
+		if ((! test_alloc_failed)
+		    || (err->number != ENOMEM))
+			TEST_EQ (err->number, ARGUMENT_DUPLICATE_SYMBOL);
+		nih_free (err);
 
-	nih_free (entry);
-	nih_free (parent);
+		nih_free (entry);
+		nih_free (parent);
+	}
 
 
 	XML_ParserFree (xmlp);
@@ -1480,59 +1569,74 @@ test_annotation (void)
 	 * error being raised.
 	 */
 	TEST_FEATURE ("with invalid symbol in annotation");
-	argument = argument_new (NULL, "TestArg", "s", NIH_DBUS_ARG_IN);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			argument = argument_new (NULL, "TestArg",
+						 "s", NIH_DBUS_ARG_IN);
+		}
 
-	ret = argument_annotation (argument,
-				   "com.netsplit.Nih.Symbol",
-				   "foo bar");
+		ret = argument_annotation (argument,
+					   "com.netsplit.Nih.Symbol",
+					   "foo bar");
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (argument->symbol, NULL);
+		TEST_EQ_P (argument->symbol, NULL);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, ARGUMENT_INVALID_SYMBOL);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, ARGUMENT_INVALID_SYMBOL);
+		nih_free (err);
 
-	nih_free (argument);
+		nih_free (argument);
+	}
 
 
 	/* Check that an unknown annotation results in an error being
 	 * raised.
 	 */
 	TEST_FEATURE ("with unknown annotation");
-	argument = argument_new (NULL, "TestArg", "s", NIH_DBUS_ARG_IN);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			argument = argument_new (NULL, "TestArg",
+						 "s", NIH_DBUS_ARG_IN);
+		}
 
-	ret = argument_annotation (argument,
-				   "com.netsplit.Nih.Unknown",
-				   "true");
+		ret = argument_annotation (argument,
+					   "com.netsplit.Nih.Unknown",
+					   "true");
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, ARGUMENT_UNKNOWN_ANNOTATION);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, ARGUMENT_UNKNOWN_ANNOTATION);
+		nih_free (err);
 
-	nih_free (argument);
+		nih_free (argument);
+	}
 
 
 	/* Check that the deprecated annotation is unknown for an
 	 * argument.
 	 */
 	TEST_FEATURE ("with deprecated annotation");
-	argument = argument_new (NULL, "TestArg", "s", NIH_DBUS_ARG_IN);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			argument = argument_new (NULL, "TestArg",
+						 "s", NIH_DBUS_ARG_IN);
+		}
 
-	ret = argument_annotation (argument,
-				   "org.freedesktop.DBus.Deprecated",
-				   "true");
+		ret = argument_annotation (argument,
+					   "org.freedesktop.DBus.Deprecated",
+					   "true");
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, ARGUMENT_UNKNOWN_ANNOTATION);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, ARGUMENT_UNKNOWN_ANNOTATION);
+		nih_free (err);
 
-	nih_free (argument);
+		nih_free (argument);
+	}
 }
 
 

@@ -976,40 +976,61 @@ test_start_tag (void)
 	 * stack.
 	 */
 	TEST_FEATURE ("with unknown tag");
-	interface = interface_new (NULL, "com.netsplit.Nih.Test");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_INTERFACE, interface);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_INTERFACE, interface);
 
-	assert (XML_ParserReset (xmlp, "UTF-8"));
-	XML_SetUserData (xmlp, &context);
+			assert (XML_ParserReset (xmlp, "UTF-8"));
+			XML_SetUserData (xmlp, &context);
 
-	XML_Parse (xmlp, "", 0, 0);
+			XML_Parse (xmlp, "", 0, 0);
 
-	attr[0] = "name";
-	attr[1] = "TestWidget";
-	attr[2] = NULL;
+			attr[0] = "name";
+			attr[1] = "TestWidget";
+			attr[2] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		parse_start_tag (xmlp, "widget", attr);
+		TEST_DIVERT_STDERR (output) {
+			parse_start_tag (xmlp, "widget", attr);
+		}
+		rewind (output);
+
+		XML_GetParsingStatus (xmlp, &status);
+
+		if (test_alloc_failed
+		    && (status.parsing == XML_FINISHED)) {
+			TEST_EQ (status.parsing, XML_FINISHED);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), parent);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (status.parsing, XML_PARSING);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_NE_P (entry, NULL);
+		TEST_NE_P (entry, parent);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_IGNORED);
+		TEST_EQ_P (entry->data, NULL);
+
+		TEST_FILE_EQ (output, "test:foo:1:0: Ignored unknown tag: widget\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
+		nih_free (parent);
 	}
-	rewind (output);
-
-	XML_GetParsingStatus (xmlp, &status);
-	TEST_EQ (status.parsing, XML_PARSING);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_NE_P (entry, NULL);
-	TEST_NE_P (entry, parent);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_IGNORED);
-	TEST_EQ_P (entry->data, NULL);
-
-	TEST_FILE_EQ (output, "test:foo:1:0: Ignored unknown tag: widget\n");
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
-	nih_free (parent);
 
 
 	XML_ParserFree (xmlp);
@@ -5968,412 +5989,468 @@ test_parse_xml (void)
 	 * otherwise returns a node.
 	 */
 	TEST_FEATURE ("with unknown node attribute");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node name=\"/com/netsplit/Nih/Test\" \n");
-	fprintf (fp, "      frodo=\"baggins\"/>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node name=\"/com/netsplit/Nih/Test\" \n");
+		fprintf (fp, "      frodo=\"baggins\"/>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_STR (node->path, "/com/netsplit/Nih/Test");
+		TEST_ALLOC_PARENT (node->path, node);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:1:0: "
+				       "Ignored unknown <node> attribute: frodo\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_STR (node->path, "/com/netsplit/Nih/Test");
-	TEST_ALLOC_PARENT (node->path, node);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:1:0: "
-			       "Ignored unknown <node> attribute: frodo\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an unknown attribute to the interface tag generates
 	 * a warning but is otherwise ignored.
 	 */
 	TEST_FEATURE ("with unknown interface attribute");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\"\n");
-	fprintf (fp, "             frodo=\"baggins\"/>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\"\n");
+		fprintf (fp, "             frodo=\"baggins\"/>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->signals);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:2:2: "
+				       "Ignored unknown <interface> attribute: frodo\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_EMPTY (&interface->methods);
-	TEST_LIST_EMPTY (&interface->signals);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:2:2: "
-			       "Ignored unknown <interface> attribute: frodo\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an unknown attribute to the method tag generates
 	 * a warning but is otherwise ignored.
 	 */
 	TEST_FEATURE ("with unknown method attribute");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method name=\"Wibble\" frodo=\"baggins\"/>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method name=\"Wibble\" frodo=\"baggins\"/>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_NOT_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->signals);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		method = (Method *)interface->methods.next;
+		TEST_ALLOC_SIZE (method, sizeof (Method));
+		TEST_ALLOC_PARENT (method, interface);
+		TEST_EQ_STR (method->name, "Wibble");
+		TEST_ALLOC_PARENT (method->name, method);
+		TEST_EQ_STR (method->symbol, "wibble");
+		TEST_ALLOC_PARENT (method->symbol, method);
+		TEST_FALSE (method->deprecated);
+		TEST_FALSE (method->no_reply);
+		TEST_FALSE (method->async);
+		TEST_LIST_EMPTY (&method->arguments);
+
+		nih_list_remove (&method->entry);
+		TEST_LIST_EMPTY (&interface->methods);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:3:4: "
+				       "Ignored unknown <method> attribute: frodo\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_NOT_EMPTY (&interface->methods);
-	TEST_LIST_EMPTY (&interface->signals);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	method = (Method *)interface->methods.next;
-	TEST_ALLOC_SIZE (method, sizeof (Method));
-	TEST_ALLOC_PARENT (method, interface);
-	TEST_EQ_STR (method->name, "Wibble");
-	TEST_ALLOC_PARENT (method->name, method);
-	TEST_EQ_STR (method->symbol, "wibble");
-	TEST_ALLOC_PARENT (method->symbol, method);
-	TEST_FALSE (method->deprecated);
-	TEST_FALSE (method->no_reply);
-	TEST_FALSE (method->async);
-	TEST_LIST_EMPTY (&method->arguments);
-
-	nih_list_remove (&method->entry);
-	TEST_LIST_EMPTY (&interface->methods);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:3:4: "
-			       "Ignored unknown <method> attribute: frodo\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an unknown attribute to the signal tag generates
 	 * a warning but is otherwise ignored.
 	 */
 	TEST_FEATURE ("with unknown signal attribute");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <signal name=\"Wibble\" frodo=\"baggins\"/>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <signal name=\"Wibble\" frodo=\"baggins\"/>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_EMPTY (&interface->methods);
+		TEST_LIST_NOT_EMPTY (&interface->signals);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		signal = (Signal *)interface->signals.next;
+		TEST_ALLOC_SIZE (signal, sizeof (Signal));
+		TEST_ALLOC_PARENT (signal, interface);
+		TEST_EQ_STR (signal->name, "Wibble");
+		TEST_ALLOC_PARENT (signal->name, signal);
+		TEST_EQ_STR (signal->symbol, "wibble");
+		TEST_ALLOC_PARENT (signal->symbol, signal);
+		TEST_FALSE (signal->deprecated);
+		TEST_LIST_EMPTY (&signal->arguments);
+
+		nih_list_remove (&signal->entry);
+		TEST_LIST_EMPTY (&interface->signals);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:3:4: "
+				       "Ignored unknown <signal> attribute: frodo\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_EMPTY (&interface->methods);
-	TEST_LIST_NOT_EMPTY (&interface->signals);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	signal = (Signal *)interface->signals.next;
-	TEST_ALLOC_SIZE (signal, sizeof (Signal));
-	TEST_ALLOC_PARENT (signal, interface);
-	TEST_EQ_STR (signal->name, "Wibble");
-	TEST_ALLOC_PARENT (signal->name, signal);
-	TEST_EQ_STR (signal->symbol, "wibble");
-	TEST_ALLOC_PARENT (signal->symbol, signal);
-	TEST_FALSE (signal->deprecated);
-	TEST_LIST_EMPTY (&signal->arguments);
-
-	nih_list_remove (&signal->entry);
-	TEST_LIST_EMPTY (&interface->signals);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:3:4: "
-			       "Ignored unknown <signal> attribute: frodo\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an unknown attribute to the property tag generates
 	 * a warning but is otherwise ignored.
 	 */
 	TEST_FEATURE ("with unknown property attribute");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <property name=\"size\" type=\"i\"\n");
-	fprintf (fp, "              access=\"read\" frodo=\"baggins\"/>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <property name=\"size\" type=\"i\"\n");
+		fprintf (fp, "              access=\"read\" frodo=\"baggins\"/>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->signals);
+		TEST_LIST_NOT_EMPTY (&interface->properties);
+
+		property = (Property *)interface->properties.next;
+		TEST_ALLOC_SIZE (property, sizeof (Property));
+		TEST_ALLOC_PARENT (property, interface);
+		TEST_EQ_STR (property->name, "size");
+		TEST_ALLOC_PARENT (property->name, property);
+		TEST_EQ_STR (property->symbol, "size");
+		TEST_ALLOC_PARENT (property->symbol, property);
+		TEST_FALSE (property->deprecated);
+		TEST_EQ_STR (property->type, "i");
+		TEST_ALLOC_PARENT (property->type, property);
+		TEST_EQ (property->access, NIH_DBUS_READ);
+
+		nih_list_remove (&property->entry);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:3:4: "
+				       "Ignored unknown <property> attribute: frodo\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_EMPTY (&interface->methods);
-	TEST_LIST_EMPTY (&interface->signals);
-	TEST_LIST_NOT_EMPTY (&interface->properties);
-
-	property = (Property *)interface->properties.next;
-	TEST_ALLOC_SIZE (property, sizeof (Property));
-	TEST_ALLOC_PARENT (property, interface);
-	TEST_EQ_STR (property->name, "size");
-	TEST_ALLOC_PARENT (property->name, property);
-	TEST_EQ_STR (property->symbol, "size");
-	TEST_ALLOC_PARENT (property->symbol, property);
-	TEST_FALSE (property->deprecated);
-	TEST_EQ_STR (property->type, "i");
-	TEST_ALLOC_PARENT (property->type, property);
-	TEST_EQ (property->access, NIH_DBUS_READ);
-
-	nih_list_remove (&property->entry);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:3:4: "
-			       "Ignored unknown <property> attribute: frodo\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an unknown attribute to the argument tag generates
 	 * a warning but is otherwise ignored.
 	 */
 	TEST_FEATURE ("with unknown argument attribute");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method name=\"Wibble\">\n");
-	fprintf (fp, "      <arg name=\"str\" type=\"s\"\n");
-	fprintf (fp, "           frodo=\"baggins\"/>\n");
-	fprintf (fp, "    </method>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method name=\"Wibble\">\n");
+		fprintf (fp, "      <arg name=\"str\" type=\"s\"\n");
+		fprintf (fp, "           frodo=\"baggins\"/>\n");
+		fprintf (fp, "    </method>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_NOT_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->signals);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		method = (Method *)interface->methods.next;
+		TEST_ALLOC_SIZE (method, sizeof (Method));
+		TEST_ALLOC_PARENT (method, interface);
+		TEST_EQ_STR (method->name, "Wibble");
+		TEST_ALLOC_PARENT (method->name, method);
+		TEST_EQ_STR (method->symbol, "wibble");
+		TEST_ALLOC_PARENT (method->symbol, method);
+		TEST_FALSE (method->deprecated);
+		TEST_FALSE (method->no_reply);
+		TEST_FALSE (method->async);
+		TEST_LIST_NOT_EMPTY (&method->arguments);
+
+		argument = (Argument *)method->arguments.next;
+		TEST_ALLOC_SIZE (argument, sizeof (Argument));
+		TEST_ALLOC_PARENT (argument, method);
+		TEST_EQ_STR (argument->name, "str");
+		TEST_ALLOC_PARENT (argument->name, argument);
+		TEST_EQ_STR (argument->symbol, "str");
+		TEST_ALLOC_PARENT (argument->symbol, argument);
+		TEST_EQ_STR (argument->type, "s");
+		TEST_ALLOC_PARENT (argument->type, argument);
+		TEST_EQ (argument->direction, NIH_DBUS_ARG_IN);
+
+		nih_list_remove (&argument->entry);
+		TEST_LIST_EMPTY (&method->arguments);
+
+		nih_list_remove (&method->entry);
+		TEST_LIST_EMPTY (&interface->methods);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:4:6: "
+				       "Ignored unknown <arg> attribute: frodo\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_NOT_EMPTY (&interface->methods);
-	TEST_LIST_EMPTY (&interface->signals);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	method = (Method *)interface->methods.next;
-	TEST_ALLOC_SIZE (method, sizeof (Method));
-	TEST_ALLOC_PARENT (method, interface);
-	TEST_EQ_STR (method->name, "Wibble");
-	TEST_ALLOC_PARENT (method->name, method);
-	TEST_EQ_STR (method->symbol, "wibble");
-	TEST_ALLOC_PARENT (method->symbol, method);
-	TEST_FALSE (method->deprecated);
-	TEST_FALSE (method->no_reply);
-	TEST_FALSE (method->async);
-	TEST_LIST_NOT_EMPTY (&method->arguments);
-
-	argument = (Argument *)method->arguments.next;
-	TEST_ALLOC_SIZE (argument, sizeof (Argument));
-	TEST_ALLOC_PARENT (argument, method);
-	TEST_EQ_STR (argument->name, "str");
-	TEST_ALLOC_PARENT (argument->name, argument);
-	TEST_EQ_STR (argument->symbol, "str");
-	TEST_ALLOC_PARENT (argument->symbol, argument);
-	TEST_EQ_STR (argument->type, "s");
-	TEST_ALLOC_PARENT (argument->type, argument);
-	TEST_EQ (argument->direction, NIH_DBUS_ARG_IN);
-
-	nih_list_remove (&argument->entry);
-	TEST_LIST_EMPTY (&method->arguments);
-
-	nih_list_remove (&method->entry);
-	TEST_LIST_EMPTY (&interface->methods);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:4:6: "
-			       "Ignored unknown <arg> attribute: frodo\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an unknown attribute to the annotation tag generates
 	 * a warning but is otherwise ignored.
 	 */
-	TEST_FEATURE ("with unknown aannotation attribute");
-	TEST_FILE_RESET (fp);
+	TEST_FEATURE ("with unknown annotation attribute");
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method name=\"Wibble\">\n");
-	fprintf (fp, "      <annotation name=\"org.freedesktop.DBus.Deprecated\"\n");
-	fprintf (fp, "                  value=\"true\" frodo=\"baggins\"/>\n");
-	fprintf (fp, "    </method>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method name=\"Wibble\">\n");
+		fprintf (fp, "      <annotation name=\"org.freedesktop.DBus.Deprecated\"\n");
+		fprintf (fp, "                  value=\"true\" frodo=\"baggins\"/>\n");
+		fprintf (fp, "    </method>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_NOT_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->signals);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		method = (Method *)interface->methods.next;
+		TEST_ALLOC_SIZE (method, sizeof (Method));
+		TEST_ALLOC_PARENT (method, interface);
+		TEST_EQ_STR (method->name, "Wibble");
+		TEST_ALLOC_PARENT (method->name, method);
+		TEST_EQ_STR (method->symbol, "wibble");
+		TEST_ALLOC_PARENT (method->symbol, method);
+		TEST_TRUE (method->deprecated);
+		TEST_FALSE (method->no_reply);
+		TEST_FALSE (method->async);
+		TEST_LIST_EMPTY (&method->arguments);
+
+		nih_list_remove (&method->entry);
+		TEST_LIST_EMPTY (&interface->methods);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:4:6: "
+				       "Ignored unknown <annotation> attribute: frodo\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_NOT_EMPTY (&interface->methods);
-	TEST_LIST_EMPTY (&interface->signals);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	method = (Method *)interface->methods.next;
-	TEST_ALLOC_SIZE (method, sizeof (Method));
-	TEST_ALLOC_PARENT (method, interface);
-	TEST_EQ_STR (method->name, "Wibble");
-	TEST_ALLOC_PARENT (method->name, method);
-	TEST_EQ_STR (method->symbol, "wibble");
-	TEST_ALLOC_PARENT (method->symbol, method);
-	TEST_TRUE (method->deprecated);
-	TEST_FALSE (method->no_reply);
-	TEST_FALSE (method->async);
-	TEST_LIST_EMPTY (&method->arguments);
-
-	nih_list_remove (&method->entry);
-	TEST_LIST_EMPTY (&interface->methods);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:4:6: "
-			       "Ignored unknown <annotation> attribute: frodo\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that a node tag not inside another node tag or at the
@@ -6381,1174 +6458,1343 @@ test_parse_xml (void)
 	 * otherwise returned.
 	 */
 	TEST_FEATURE ("with node tag outside of top-level or node");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <node name=\"child\"/>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <node name=\"child\"/>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->signals);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:3:4: Ignored unexpected <node> tag\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_EMPTY (&interface->methods);
-	TEST_LIST_EMPTY (&interface->signals);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:3:4: Ignored unexpected <node> tag\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an interface tag outside of a node tag is ignored
 	 * generating a warning but that a Node is otherwise returned.
 	 */
 	TEST_FEATURE ("with interface tag outside of node");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <interface name=\"com.netsplit.Nih.Inner\"/>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <interface name=\"com.netsplit.Nih.Inner\"/>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->signals);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:3:4: Ignored unexpected <interface> tag\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_EMPTY (&interface->methods);
-	TEST_LIST_EMPTY (&interface->signals);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:3:4: Ignored unexpected <interface> tag\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that a method tag outside of an interface tag is ignored
 	 * generating a warning but that a Node is otherwise returned.
 	 */
 	TEST_FEATURE ("with method tag outside of interface");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <method name=\"Wibble\"/>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <method name=\"Wibble\"/>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:2:2: Ignored unexpected <method> tag\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:2:2: Ignored unexpected <method> tag\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that a signal tag outside of an interface tag is ignored
 	 * generating a warning but that a Node is otherwise returned.
 	 */
 	TEST_FEATURE ("with signal tag outside of interface");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <signal name=\"Wibble\"/>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <signal name=\"Wibble\"/>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:2:2: Ignored unexpected <signal> tag\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:2:2: Ignored unexpected <signal> tag\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that a property tag outside of an interface tag is ignored
 	 * generating a warning but that a Node is otherwise returned.
 	 */
 	TEST_FEATURE ("with property tag outside of interface");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <property name=\"size\" type=\"i\" access=\"read\"/>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <property name=\"size\" type=\"i\" access=\"read\"/>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:2:2: Ignored unexpected <property> tag\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:2:2: Ignored unexpected <property> tag\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an argument tag outside of a method or signal tag is
 	 * ignored generating a warning but that a Node is otherwise returned.
 	 */
 	TEST_FEATURE ("with argument tag outside of method or signal");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <arg name=\"foo\" type=\"s\"/>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <arg name=\"foo\" type=\"s\"/>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:2:2: Ignored unexpected <arg> tag\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:2:2: Ignored unexpected <arg> tag\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Make sure that properties don't have arguments.
 	 */
 	TEST_FEATURE ("with argument tag for property");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <property name=\"size\" type=\"i\" access=\"read\">\n");
-	fprintf (fp, "      <arg name=\"foo\" type=\"s\"/>\n");
-	fprintf (fp, "    </property>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <property name=\"size\" type=\"i\" access=\"read\">\n");
+		fprintf (fp, "      <arg name=\"foo\" type=\"s\"/>\n");
+		fprintf (fp, "    </property>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->signals);
+		TEST_LIST_NOT_EMPTY (&interface->properties);
+
+		property = (Property *)interface->properties.next;
+		TEST_ALLOC_SIZE (property, sizeof (Property));
+		TEST_ALLOC_PARENT (property, interface);
+		TEST_EQ_STR (property->name, "size");
+		TEST_ALLOC_PARENT (property->name, property);
+		TEST_EQ_STR (property->symbol, "size");
+		TEST_ALLOC_PARENT (property->symbol, property);
+		TEST_EQ_STR (property->type, "i");
+		TEST_ALLOC_PARENT (property->type, property);
+		TEST_FALSE (property->deprecated);
+		TEST_EQ (property->access, NIH_DBUS_READ);
+
+		nih_list_remove (&property->entry);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:4:6: Ignored unexpected <arg> tag\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_EMPTY (&interface->methods);
-	TEST_LIST_EMPTY (&interface->signals);
-	TEST_LIST_NOT_EMPTY (&interface->properties);
-
-	property = (Property *)interface->properties.next;
-	TEST_ALLOC_SIZE (property, sizeof (Property));
-	TEST_ALLOC_PARENT (property, interface);
-	TEST_EQ_STR (property->name, "size");
-	TEST_ALLOC_PARENT (property->name, property);
-	TEST_EQ_STR (property->symbol, "size");
-	TEST_ALLOC_PARENT (property->symbol, property);
-	TEST_EQ_STR (property->type, "i");
-	TEST_ALLOC_PARENT (property->type, property);
-	TEST_FALSE (property->deprecated);
-	TEST_EQ (property->access, NIH_DBUS_READ);
-
-	nih_list_remove (&property->entry);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:4:6: Ignored unexpected <arg> tag\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an annotation tag is ignored with a warning if it
 	 * is given for a node.
 	 */
 	TEST_FEATURE ("with annotation for node");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <annotation name=\"com.netsplit.Nih.Test\"\n");
-	fprintf (fp, "              value=\"foo\"/>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <annotation name=\"com.netsplit.Nih.Test\"\n");
+		fprintf (fp, "              value=\"foo\"/>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:2:2: Ignored unexpected <annotation> tag\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:2:2: Ignored unexpected <annotation> tag\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an unknown annotation for an interface generates a
 	 * warning but is otherwise ignored.
 	 */
 	TEST_FEATURE ("with unknown annotation for interface");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <annotation name=\"com.netsplit.Apple.Jack\"\n");
-	fprintf (fp, "                value=\"true\"/>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <annotation name=\"com.netsplit.Apple.Jack\"\n");
+		fprintf (fp, "                value=\"true\"/>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->signals);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:3:4: Ignored unknown interface annotation: "
+				       "com.netsplit.Apple.Jack\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_EMPTY (&interface->methods);
-	TEST_LIST_EMPTY (&interface->signals);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:3:4: Ignored unknown interface annotation: "
-			       "com.netsplit.Apple.Jack\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an unknown annotation for a method generates a
 	 * warning but is otherwise ignored.
 	 */
 	TEST_FEATURE ("with unknown annotation for method");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method name=\"Wibble\">\n");
-	fprintf (fp, "      <annotation name=\"com.netsplit.Apple.Jack\"\n");
-	fprintf (fp, "                  value=\"true\"/>\n");
-	fprintf (fp, "    </method>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method name=\"Wibble\">\n");
+		fprintf (fp, "      <annotation name=\"com.netsplit.Apple.Jack\"\n");
+		fprintf (fp, "                  value=\"true\"/>\n");
+		fprintf (fp, "    </method>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_NOT_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->signals);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		method = (Method *)interface->methods.next;
+		TEST_ALLOC_SIZE (method, sizeof (Method));
+		TEST_ALLOC_PARENT (method, interface);
+		TEST_EQ_STR (method->name, "Wibble");
+		TEST_ALLOC_PARENT (method->name, method);
+		TEST_EQ_STR (method->symbol, "wibble");
+		TEST_ALLOC_PARENT (method->symbol, method);
+		TEST_FALSE (method->deprecated);
+		TEST_FALSE (method->no_reply);
+		TEST_FALSE (method->async);
+		TEST_LIST_EMPTY (&method->arguments);
+
+		nih_list_remove (&method->entry);
+		TEST_LIST_EMPTY (&interface->methods);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:4:6: Ignored unknown method annotation: "
+				       "com.netsplit.Apple.Jack\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_NOT_EMPTY (&interface->methods);
-	TEST_LIST_EMPTY (&interface->signals);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	method = (Method *)interface->methods.next;
-	TEST_ALLOC_SIZE (method, sizeof (Method));
-	TEST_ALLOC_PARENT (method, interface);
-	TEST_EQ_STR (method->name, "Wibble");
-	TEST_ALLOC_PARENT (method->name, method);
-	TEST_EQ_STR (method->symbol, "wibble");
-	TEST_ALLOC_PARENT (method->symbol, method);
-	TEST_FALSE (method->deprecated);
-	TEST_FALSE (method->no_reply);
-	TEST_FALSE (method->async);
-	TEST_LIST_EMPTY (&method->arguments);
-
-	nih_list_remove (&method->entry);
-	TEST_LIST_EMPTY (&interface->methods);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:4:6: Ignored unknown method annotation: "
-			       "com.netsplit.Apple.Jack\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an unknown annotation for a signal generates a
 	 * warning but is otherwise ignored.
 	 */
 	TEST_FEATURE ("with unknown annotation for signal");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <signal name=\"Wibble\">\n");
-	fprintf (fp, "      <annotation name=\"com.netsplit.Apple.Jack\"\n");
-	fprintf (fp, "                  value=\"true\"/>\n");
-	fprintf (fp, "    </signal>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <signal name=\"Wibble\">\n");
+		fprintf (fp, "      <annotation name=\"com.netsplit.Apple.Jack\"\n");
+		fprintf (fp, "                  value=\"true\"/>\n");
+		fprintf (fp, "    </signal>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_EMPTY (&interface->methods);
+		TEST_LIST_NOT_EMPTY (&interface->signals);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		signal = (Signal *)interface->signals.next;
+		TEST_ALLOC_SIZE (signal, sizeof (Signal));
+		TEST_ALLOC_PARENT (signal, interface);
+		TEST_EQ_STR (signal->name, "Wibble");
+		TEST_ALLOC_PARENT (signal->name, signal);
+		TEST_EQ_STR (signal->symbol, "wibble");
+		TEST_ALLOC_PARENT (signal->symbol, signal);
+		TEST_FALSE (signal->deprecated);
+		TEST_LIST_EMPTY (&signal->arguments);
+
+		nih_list_remove (&signal->entry);
+		TEST_LIST_EMPTY (&interface->signals);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:4:6: Ignored unknown signal annotation: "
+				       "com.netsplit.Apple.Jack\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_EMPTY (&interface->methods);
-	TEST_LIST_NOT_EMPTY (&interface->signals);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	signal = (Signal *)interface->signals.next;
-	TEST_ALLOC_SIZE (signal, sizeof (Signal));
-	TEST_ALLOC_PARENT (signal, interface);
-	TEST_EQ_STR (signal->name, "Wibble");
-	TEST_ALLOC_PARENT (signal->name, signal);
-	TEST_EQ_STR (signal->symbol, "wibble");
-	TEST_ALLOC_PARENT (signal->symbol, signal);
-	TEST_FALSE (signal->deprecated);
-	TEST_LIST_EMPTY (&signal->arguments);
-
-	nih_list_remove (&signal->entry);
-	TEST_LIST_EMPTY (&interface->signals);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:4:6: Ignored unknown signal annotation: "
-			       "com.netsplit.Apple.Jack\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that the method no reply annotation for a signal generates a
 	 * warning but is otherwise ignored.
 	 */
 	TEST_FEATURE ("with no reply annotation for signal");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <signal name=\"Wibble\">\n");
-	fprintf (fp, "      <annotation name=\"org.freedesktop.DBus.Method.NoReply\"\n");
-	fprintf (fp, "                  value=\"true\"/>\n");
-	fprintf (fp, "    </signal>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <signal name=\"Wibble\">\n");
+		fprintf (fp, "      <annotation name=\"org.freedesktop.DBus.Method.NoReply\"\n");
+		fprintf (fp, "                  value=\"true\"/>\n");
+		fprintf (fp, "    </signal>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_EMPTY (&interface->methods);
+		TEST_LIST_NOT_EMPTY (&interface->signals);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		signal = (Signal *)interface->signals.next;
+		TEST_ALLOC_SIZE (signal, sizeof (Signal));
+		TEST_ALLOC_PARENT (signal, interface);
+		TEST_EQ_STR (signal->name, "Wibble");
+		TEST_ALLOC_PARENT (signal->name, signal);
+		TEST_EQ_STR (signal->symbol, "wibble");
+		TEST_ALLOC_PARENT (signal->symbol, signal);
+		TEST_FALSE (signal->deprecated);
+		TEST_LIST_EMPTY (&signal->arguments);
+
+		nih_list_remove (&signal->entry);
+		TEST_LIST_EMPTY (&interface->signals);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:4:6: Ignored unknown signal annotation: "
+				       "org.freedesktop.DBus.Method.NoReply\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_EMPTY (&interface->methods);
-	TEST_LIST_NOT_EMPTY (&interface->signals);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	signal = (Signal *)interface->signals.next;
-	TEST_ALLOC_SIZE (signal, sizeof (Signal));
-	TEST_ALLOC_PARENT (signal, interface);
-	TEST_EQ_STR (signal->name, "Wibble");
-	TEST_ALLOC_PARENT (signal->name, signal);
-	TEST_EQ_STR (signal->symbol, "wibble");
-	TEST_ALLOC_PARENT (signal->symbol, signal);
-	TEST_FALSE (signal->deprecated);
-	TEST_LIST_EMPTY (&signal->arguments);
-
-	nih_list_remove (&signal->entry);
-	TEST_LIST_EMPTY (&interface->signals);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:4:6: Ignored unknown signal annotation: "
-			       "org.freedesktop.DBus.Method.NoReply\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that the method async annotation for a signal generates a
 	 * warning but is otherwise ignored.
 	 */
 	TEST_FEATURE ("with async annotation for signal");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <signal name=\"Wibble\">\n");
-	fprintf (fp, "      <annotation name=\"com.netsplit.Nih.Method.Async\"\n");
-	fprintf (fp, "                  value=\"true\"/>\n");
-	fprintf (fp, "    </signal>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <signal name=\"Wibble\">\n");
+		fprintf (fp, "      <annotation name=\"com.netsplit.Nih.Method.Async\"\n");
+		fprintf (fp, "                  value=\"true\"/>\n");
+		fprintf (fp, "    </signal>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_EMPTY (&interface->methods);
+		TEST_LIST_NOT_EMPTY (&interface->signals);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		signal = (Signal *)interface->signals.next;
+		TEST_ALLOC_SIZE (signal, sizeof (Signal));
+		TEST_ALLOC_PARENT (signal, interface);
+		TEST_EQ_STR (signal->name, "Wibble");
+		TEST_ALLOC_PARENT (signal->name, signal);
+		TEST_EQ_STR (signal->symbol, "wibble");
+		TEST_ALLOC_PARENT (signal->symbol, signal);
+		TEST_FALSE (signal->deprecated);
+		TEST_LIST_EMPTY (&signal->arguments);
+
+		nih_list_remove (&signal->entry);
+		TEST_LIST_EMPTY (&interface->signals);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:4:6: Ignored unknown signal annotation: "
+				       "com.netsplit.Nih.Method.Async\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_EMPTY (&interface->methods);
-	TEST_LIST_NOT_EMPTY (&interface->signals);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	signal = (Signal *)interface->signals.next;
-	TEST_ALLOC_SIZE (signal, sizeof (Signal));
-	TEST_ALLOC_PARENT (signal, interface);
-	TEST_EQ_STR (signal->name, "Wibble");
-	TEST_ALLOC_PARENT (signal->name, signal);
-	TEST_EQ_STR (signal->symbol, "wibble");
-	TEST_ALLOC_PARENT (signal->symbol, signal);
-	TEST_FALSE (signal->deprecated);
-	TEST_LIST_EMPTY (&signal->arguments);
-
-	nih_list_remove (&signal->entry);
-	TEST_LIST_EMPTY (&interface->signals);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:4:6: Ignored unknown signal annotation: "
-			       "com.netsplit.Nih.Method.Async\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an unknown annotation for a property generates a
 	 * warning but is otherwise ignored.
 	 */
 	TEST_FEATURE ("with unknown annotation for property");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <property name=\"size\" type=\"i\"\n");
-	fprintf (fp, "              access=\"read\">\n");
-	fprintf (fp, "      <annotation name=\"com.netsplit.Apple.Jack\"\n");
-	fprintf (fp, "                  value=\"true\"/>\n");
-	fprintf (fp, "    </property>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <property name=\"size\" type=\"i\"\n");
+		fprintf (fp, "              access=\"read\">\n");
+		fprintf (fp, "      <annotation name=\"com.netsplit.Apple.Jack\"\n");
+		fprintf (fp, "                  value=\"true\"/>\n");
+		fprintf (fp, "    </property>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->signals);
+		TEST_LIST_NOT_EMPTY (&interface->properties);
+
+		property = (Property *)interface->properties.next;
+		TEST_ALLOC_SIZE (property, sizeof (Property));
+		TEST_ALLOC_PARENT (property, interface);
+		TEST_EQ_STR (property->name, "size");
+		TEST_ALLOC_PARENT (property->name, property);
+		TEST_EQ_STR (property->symbol, "size");
+		TEST_ALLOC_PARENT (property->symbol, property);
+		TEST_EQ_STR (property->type, "i");
+		TEST_ALLOC_PARENT (property->type, property);
+		TEST_FALSE (property->deprecated);
+		TEST_EQ (property->access, NIH_DBUS_READ);
+
+		nih_list_remove (&property->entry);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:5:6: Ignored unknown property annotation: "
+				       "com.netsplit.Apple.Jack\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_EMPTY (&interface->methods);
-	TEST_LIST_EMPTY (&interface->signals);
-	TEST_LIST_NOT_EMPTY (&interface->properties);
-
-	property = (Property *)interface->properties.next;
-	TEST_ALLOC_SIZE (property, sizeof (Property));
-	TEST_ALLOC_PARENT (property, interface);
-	TEST_EQ_STR (property->name, "size");
-	TEST_ALLOC_PARENT (property->name, property);
-	TEST_EQ_STR (property->symbol, "size");
-	TEST_ALLOC_PARENT (property->symbol, property);
-	TEST_EQ_STR (property->type, "i");
-	TEST_ALLOC_PARENT (property->type, property);
-	TEST_FALSE (property->deprecated);
-	TEST_EQ (property->access, NIH_DBUS_READ);
-
-	nih_list_remove (&property->entry);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:5:6: Ignored unknown property annotation: "
-			       "com.netsplit.Apple.Jack\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that a method no reply annotation for a property generates a
 	 * warning but is otherwise ignored.
 	 */
 	TEST_FEATURE ("with no reply annotation for property");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <property name=\"size\" type=\"i\"\n");
-	fprintf (fp, "              access=\"read\">\n");
-	fprintf (fp, "      <annotation name=\"org.freedesktop.DBus.Method.NoReply\"\n");
-	fprintf (fp, "                  value=\"true\"/>\n");
-	fprintf (fp, "    </property>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <property name=\"size\" type=\"i\"\n");
+		fprintf (fp, "              access=\"read\">\n");
+		fprintf (fp, "      <annotation name=\"org.freedesktop.DBus.Method.NoReply\"\n");
+		fprintf (fp, "                  value=\"true\"/>\n");
+		fprintf (fp, "    </property>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->signals);
+		TEST_LIST_NOT_EMPTY (&interface->properties);
+
+		property = (Property *)interface->properties.next;
+		TEST_ALLOC_SIZE (property, sizeof (Property));
+		TEST_ALLOC_PARENT (property, interface);
+		TEST_EQ_STR (property->name, "size");
+		TEST_ALLOC_PARENT (property->name, property);
+		TEST_EQ_STR (property->symbol, "size");
+		TEST_ALLOC_PARENT (property->symbol, property);
+		TEST_EQ_STR (property->type, "i");
+		TEST_ALLOC_PARENT (property->type, property);
+		TEST_FALSE (property->deprecated);
+		TEST_EQ (property->access, NIH_DBUS_READ);
+
+		nih_list_remove (&property->entry);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:5:6: Ignored unknown property annotation: "
+				       "org.freedesktop.DBus.Method.NoReply\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_EMPTY (&interface->methods);
-	TEST_LIST_EMPTY (&interface->signals);
-	TEST_LIST_NOT_EMPTY (&interface->properties);
-
-	property = (Property *)interface->properties.next;
-	TEST_ALLOC_SIZE (property, sizeof (Property));
-	TEST_ALLOC_PARENT (property, interface);
-	TEST_EQ_STR (property->name, "size");
-	TEST_ALLOC_PARENT (property->name, property);
-	TEST_EQ_STR (property->symbol, "size");
-	TEST_ALLOC_PARENT (property->symbol, property);
-	TEST_EQ_STR (property->type, "i");
-	TEST_ALLOC_PARENT (property->type, property);
-	TEST_FALSE (property->deprecated);
-	TEST_EQ (property->access, NIH_DBUS_READ);
-
-	nih_list_remove (&property->entry);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:5:6: Ignored unknown property annotation: "
-			       "org.freedesktop.DBus.Method.NoReply\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that a method async annotation for a property generates a
 	 * warning but is otherwise ignored.
 	 */
 	TEST_FEATURE ("with async annotation for property");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <property name=\"size\" type=\"i\"\n");
-	fprintf (fp, "              access=\"read\">\n");
-	fprintf (fp, "      <annotation name=\"com.netsplit.Nih.Method.Async\"\n");
-	fprintf (fp, "                  value=\"true\"/>\n");
-	fprintf (fp, "    </property>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <property name=\"size\" type=\"i\"\n");
+		fprintf (fp, "              access=\"read\">\n");
+		fprintf (fp, "      <annotation name=\"com.netsplit.Nih.Method.Async\"\n");
+		fprintf (fp, "                  value=\"true\"/>\n");
+		fprintf (fp, "    </property>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->signals);
+		TEST_LIST_NOT_EMPTY (&interface->properties);
+
+		property = (Property *)interface->properties.next;
+		TEST_ALLOC_SIZE (property, sizeof (Property));
+		TEST_ALLOC_PARENT (property, interface);
+		TEST_EQ_STR (property->name, "size");
+		TEST_ALLOC_PARENT (property->name, property);
+		TEST_EQ_STR (property->symbol, "size");
+		TEST_ALLOC_PARENT (property->symbol, property);
+		TEST_EQ_STR (property->type, "i");
+		TEST_ALLOC_PARENT (property->type, property);
+		TEST_FALSE (property->deprecated);
+		TEST_EQ (property->access, NIH_DBUS_READ);
+
+		nih_list_remove (&property->entry);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:5:6: Ignored unknown property annotation: "
+				       "com.netsplit.Nih.Method.Async\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_EMPTY (&interface->methods);
-	TEST_LIST_EMPTY (&interface->signals);
-	TEST_LIST_NOT_EMPTY (&interface->properties);
-
-	property = (Property *)interface->properties.next;
-	TEST_ALLOC_SIZE (property, sizeof (Property));
-	TEST_ALLOC_PARENT (property, interface);
-	TEST_EQ_STR (property->name, "size");
-	TEST_ALLOC_PARENT (property->name, property);
-	TEST_EQ_STR (property->symbol, "size");
-	TEST_ALLOC_PARENT (property->symbol, property);
-	TEST_EQ_STR (property->type, "i");
-	TEST_ALLOC_PARENT (property->type, property);
-	TEST_FALSE (property->deprecated);
-	TEST_EQ (property->access, NIH_DBUS_READ);
-
-	nih_list_remove (&property->entry);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:5:6: Ignored unknown property annotation: "
-			       "com.netsplit.Nih.Method.Async\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an unknown annotation for an argument generates a
 	 * warning but is otherwise ignored.
 	 */
 	TEST_FEATURE ("with unknown annotation for argument");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method name=\"Wibble\">\n");
-	fprintf (fp, "      <arg name=\"str\" type=\"s\">\n");
-	fprintf (fp, "        <annotation name=\"com.netsplit.Apple.Jack\"\n");
-	fprintf (fp, "                    value=\"true\"/>\n");
-	fprintf (fp, "      </arg>\n");
-	fprintf (fp, "    </method>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method name=\"Wibble\">\n");
+		fprintf (fp, "      <arg name=\"str\" type=\"s\">\n");
+		fprintf (fp, "        <annotation name=\"com.netsplit.Apple.Jack\"\n");
+		fprintf (fp, "                    value=\"true\"/>\n");
+		fprintf (fp, "      </arg>\n");
+		fprintf (fp, "    </method>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_NOT_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->signals);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		method = (Method *)interface->methods.next;
+		TEST_ALLOC_SIZE (method, sizeof (Method));
+		TEST_ALLOC_PARENT (method, interface);
+		TEST_EQ_STR (method->name, "Wibble");
+		TEST_ALLOC_PARENT (method->name, method);
+		TEST_EQ_STR (method->symbol, "wibble");
+		TEST_ALLOC_PARENT (method->symbol, method);
+		TEST_FALSE (method->deprecated);
+		TEST_FALSE (method->no_reply);
+		TEST_FALSE (method->async);
+		TEST_LIST_NOT_EMPTY (&method->arguments);
+
+		argument = (Argument *)method->arguments.next;
+		TEST_ALLOC_SIZE (argument, sizeof (Argument));
+		TEST_ALLOC_PARENT (argument, method);
+		TEST_EQ_STR (argument->name, "str");
+		TEST_ALLOC_PARENT (argument->name, argument);
+		TEST_EQ_STR (argument->symbol, "str");
+		TEST_ALLOC_PARENT (argument->symbol, argument);
+		TEST_EQ_STR (argument->type, "s");
+		TEST_ALLOC_PARENT (argument->type, argument);
+		TEST_EQ (argument->direction, NIH_DBUS_ARG_IN);
+
+		nih_list_remove (&argument->entry);
+		TEST_LIST_EMPTY (&method->arguments);
+
+		nih_list_remove (&method->entry);
+		TEST_LIST_EMPTY (&interface->methods);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:5:8: Ignored unknown argument annotation: "
+				       "com.netsplit.Apple.Jack\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_NOT_EMPTY (&interface->methods);
-	TEST_LIST_EMPTY (&interface->signals);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	method = (Method *)interface->methods.next;
-	TEST_ALLOC_SIZE (method, sizeof (Method));
-	TEST_ALLOC_PARENT (method, interface);
-	TEST_EQ_STR (method->name, "Wibble");
-	TEST_ALLOC_PARENT (method->name, method);
-	TEST_EQ_STR (method->symbol, "wibble");
-	TEST_ALLOC_PARENT (method->symbol, method);
-	TEST_FALSE (method->deprecated);
-	TEST_FALSE (method->no_reply);
-	TEST_FALSE (method->async);
-	TEST_LIST_NOT_EMPTY (&method->arguments);
-
-	argument = (Argument *)method->arguments.next;
-	TEST_ALLOC_SIZE (argument, sizeof (Argument));
-	TEST_ALLOC_PARENT (argument, method);
-	TEST_EQ_STR (argument->name, "str");
-	TEST_ALLOC_PARENT (argument->name, argument);
-	TEST_EQ_STR (argument->symbol, "str");
-	TEST_ALLOC_PARENT (argument->symbol, argument);
-	TEST_EQ_STR (argument->type, "s");
-	TEST_ALLOC_PARENT (argument->type, argument);
-	TEST_EQ (argument->direction, NIH_DBUS_ARG_IN);
-
-	nih_list_remove (&argument->entry);
-	TEST_LIST_EMPTY (&method->arguments);
-
-	nih_list_remove (&method->entry);
-	TEST_LIST_EMPTY (&interface->methods);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:5:8: Ignored unknown argument annotation: "
-			       "com.netsplit.Apple.Jack\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that a deprecated annotation for an argument generates a
 	 * warning but is otherwise ignored.
 	 */
 	TEST_FEATURE ("with deprecated annotation for argument");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method name=\"Wibble\">\n");
-	fprintf (fp, "      <arg name=\"str\" type=\"s\">\n");
-	fprintf (fp, "        <annotation name=\"org.freedesktop.DBus.Deprecated\"\n");
-	fprintf (fp, "                    value=\"true\"/>\n");
-	fprintf (fp, "      </arg>\n");
-	fprintf (fp, "    </method>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method name=\"Wibble\">\n");
+		fprintf (fp, "      <arg name=\"str\" type=\"s\">\n");
+		fprintf (fp, "        <annotation name=\"org.freedesktop.DBus.Deprecated\"\n");
+		fprintf (fp, "                    value=\"true\"/>\n");
+		fprintf (fp, "      </arg>\n");
+		fprintf (fp, "    </method>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_NOT_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->signals);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		method = (Method *)interface->methods.next;
+		TEST_ALLOC_SIZE (method, sizeof (Method));
+		TEST_ALLOC_PARENT (method, interface);
+		TEST_EQ_STR (method->name, "Wibble");
+		TEST_ALLOC_PARENT (method->name, method);
+		TEST_EQ_STR (method->symbol, "wibble");
+		TEST_ALLOC_PARENT (method->symbol, method);
+		TEST_FALSE (method->deprecated);
+		TEST_FALSE (method->no_reply);
+		TEST_FALSE (method->async);
+		TEST_LIST_NOT_EMPTY (&method->arguments);
+
+		argument = (Argument *)method->arguments.next;
+		TEST_ALLOC_SIZE (argument, sizeof (Argument));
+		TEST_ALLOC_PARENT (argument, method);
+		TEST_EQ_STR (argument->name, "str");
+		TEST_ALLOC_PARENT (argument->name, argument);
+		TEST_EQ_STR (argument->symbol, "str");
+		TEST_ALLOC_PARENT (argument->symbol, argument);
+		TEST_EQ_STR (argument->type, "s");
+		TEST_ALLOC_PARENT (argument->type, argument);
+		TEST_EQ (argument->direction, NIH_DBUS_ARG_IN);
+
+		nih_list_remove (&argument->entry);
+		TEST_LIST_EMPTY (&method->arguments);
+
+		nih_list_remove (&method->entry);
+		TEST_LIST_EMPTY (&interface->methods);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:5:8: Ignored unknown argument annotation: "
+				       "org.freedesktop.DBus.Deprecated\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
 
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_NOT_EMPTY (&interface->methods);
-	TEST_LIST_EMPTY (&interface->signals);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	method = (Method *)interface->methods.next;
-	TEST_ALLOC_SIZE (method, sizeof (Method));
-	TEST_ALLOC_PARENT (method, interface);
-	TEST_EQ_STR (method->name, "Wibble");
-	TEST_ALLOC_PARENT (method->name, method);
-	TEST_EQ_STR (method->symbol, "wibble");
-	TEST_ALLOC_PARENT (method->symbol, method);
-	TEST_FALSE (method->deprecated);
-	TEST_FALSE (method->no_reply);
-	TEST_FALSE (method->async);
-	TEST_LIST_NOT_EMPTY (&method->arguments);
-
-	argument = (Argument *)method->arguments.next;
-	TEST_ALLOC_SIZE (argument, sizeof (Argument));
-	TEST_ALLOC_PARENT (argument, method);
-	TEST_EQ_STR (argument->name, "str");
-	TEST_ALLOC_PARENT (argument->name, argument);
-	TEST_EQ_STR (argument->symbol, "str");
-	TEST_ALLOC_PARENT (argument->symbol, argument);
-	TEST_EQ_STR (argument->type, "s");
-	TEST_ALLOC_PARENT (argument->type, argument);
-	TEST_EQ (argument->direction, NIH_DBUS_ARG_IN);
-
-	nih_list_remove (&argument->entry);
-	TEST_LIST_EMPTY (&method->arguments);
-
-	nih_list_remove (&method->entry);
-	TEST_LIST_EMPTY (&interface->methods);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:5:8: Ignored unknown argument annotation: "
-			       "org.freedesktop.DBus.Deprecated\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that a method no reply annotation for an argument generates a
 	 * warning but is otherwise ignored.
 	 */
 	TEST_FEATURE ("with no reply annotation for argument");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method name=\"Wibble\">\n");
-	fprintf (fp, "      <arg name=\"str\" type=\"s\">\n");
-	fprintf (fp, "        <annotation name=\"org.freedesktop.DBus.Method.NoReply\"\n");
-	fprintf (fp, "                    value=\"true\"/>\n");
-	fprintf (fp, "      </arg>\n");
-	fprintf (fp, "    </method>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method name=\"Wibble\">\n");
+		fprintf (fp, "      <arg name=\"str\" type=\"s\">\n");
+		fprintf (fp, "        <annotation name=\"org.freedesktop.DBus.Method.NoReply\"\n");
+		fprintf (fp, "                    value=\"true\"/>\n");
+		fprintf (fp, "      </arg>\n");
+		fprintf (fp, "    </method>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_NOT_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->signals);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		method = (Method *)interface->methods.next;
+		TEST_ALLOC_SIZE (method, sizeof (Method));
+		TEST_ALLOC_PARENT (method, interface);
+		TEST_EQ_STR (method->name, "Wibble");
+		TEST_ALLOC_PARENT (method->name, method);
+		TEST_EQ_STR (method->symbol, "wibble");
+		TEST_ALLOC_PARENT (method->symbol, method);
+		TEST_FALSE (method->deprecated);
+		TEST_FALSE (method->no_reply);
+		TEST_FALSE (method->async);
+		TEST_LIST_NOT_EMPTY (&method->arguments);
+
+		argument = (Argument *)method->arguments.next;
+		TEST_ALLOC_SIZE (argument, sizeof (Argument));
+		TEST_ALLOC_PARENT (argument, method);
+		TEST_EQ_STR (argument->name, "str");
+		TEST_ALLOC_PARENT (argument->name, argument);
+		TEST_EQ_STR (argument->symbol, "str");
+		TEST_ALLOC_PARENT (argument->symbol, argument);
+		TEST_EQ_STR (argument->type, "s");
+		TEST_ALLOC_PARENT (argument->type, argument);
+		TEST_EQ (argument->direction, NIH_DBUS_ARG_IN);
+
+		nih_list_remove (&argument->entry);
+		TEST_LIST_EMPTY (&method->arguments);
+
+		nih_list_remove (&method->entry);
+		TEST_LIST_EMPTY (&interface->methods);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:5:8: Ignored unknown argument annotation: "
+				       "org.freedesktop.DBus.Method.NoReply\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_NOT_EMPTY (&interface->methods);
-	TEST_LIST_EMPTY (&interface->signals);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	method = (Method *)interface->methods.next;
-	TEST_ALLOC_SIZE (method, sizeof (Method));
-	TEST_ALLOC_PARENT (method, interface);
-	TEST_EQ_STR (method->name, "Wibble");
-	TEST_ALLOC_PARENT (method->name, method);
-	TEST_EQ_STR (method->symbol, "wibble");
-	TEST_ALLOC_PARENT (method->symbol, method);
-	TEST_FALSE (method->deprecated);
-	TEST_FALSE (method->no_reply);
-	TEST_FALSE (method->async);
-	TEST_LIST_NOT_EMPTY (&method->arguments);
-
-	argument = (Argument *)method->arguments.next;
-	TEST_ALLOC_SIZE (argument, sizeof (Argument));
-	TEST_ALLOC_PARENT (argument, method);
-	TEST_EQ_STR (argument->name, "str");
-	TEST_ALLOC_PARENT (argument->name, argument);
-	TEST_EQ_STR (argument->symbol, "str");
-	TEST_ALLOC_PARENT (argument->symbol, argument);
-	TEST_EQ_STR (argument->type, "s");
-	TEST_ALLOC_PARENT (argument->type, argument);
-	TEST_EQ (argument->direction, NIH_DBUS_ARG_IN);
-
-	nih_list_remove (&argument->entry);
-	TEST_LIST_EMPTY (&method->arguments);
-
-	nih_list_remove (&method->entry);
-	TEST_LIST_EMPTY (&interface->methods);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:5:8: Ignored unknown argument annotation: "
-			       "org.freedesktop.DBus.Method.NoReply\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an async method annotation for an argument generates a
 	 * warning but is otherwise ignored.
 	 */
 	TEST_FEATURE ("with async annotation for argument");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method name=\"Wibble\">\n");
-	fprintf (fp, "      <arg name=\"str\" type=\"s\">\n");
-	fprintf (fp, "        <annotation name=\"com.netsplit.Nih.Method.Async\"\n");
-	fprintf (fp, "                    value=\"true\"/>\n");
-	fprintf (fp, "      </arg>\n");
-	fprintf (fp, "    </method>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method name=\"Wibble\">\n");
+		fprintf (fp, "      <arg name=\"str\" type=\"s\">\n");
+		fprintf (fp, "        <annotation name=\"com.netsplit.Nih.Method.Async\"\n");
+		fprintf (fp, "                    value=\"true\"/>\n");
+		fprintf (fp, "      </arg>\n");
+		fprintf (fp, "    </method>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_NOT_EMPTY (&node->interfaces);
+
+		interface = (Interface *)node->interfaces.next;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, node);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_STR (interface->symbol, "test");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+		TEST_FALSE (interface->deprecated);
+		TEST_LIST_NOT_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->signals);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		method = (Method *)interface->methods.next;
+		TEST_ALLOC_SIZE (method, sizeof (Method));
+		TEST_ALLOC_PARENT (method, interface);
+		TEST_EQ_STR (method->name, "Wibble");
+		TEST_ALLOC_PARENT (method->name, method);
+		TEST_EQ_STR (method->symbol, "wibble");
+		TEST_ALLOC_PARENT (method->symbol, method);
+		TEST_FALSE (method->deprecated);
+		TEST_FALSE (method->no_reply);
+		TEST_FALSE (method->async);
+		TEST_LIST_NOT_EMPTY (&method->arguments);
+
+		argument = (Argument *)method->arguments.next;
+		TEST_ALLOC_SIZE (argument, sizeof (Argument));
+		TEST_ALLOC_PARENT (argument, method);
+		TEST_EQ_STR (argument->name, "str");
+		TEST_ALLOC_PARENT (argument->name, argument);
+		TEST_EQ_STR (argument->symbol, "str");
+		TEST_ALLOC_PARENT (argument->symbol, argument);
+		TEST_EQ_STR (argument->type, "s");
+		TEST_ALLOC_PARENT (argument->type, argument);
+		TEST_EQ (argument->direction, NIH_DBUS_ARG_IN);
+
+		nih_list_remove (&argument->entry);
+		TEST_LIST_EMPTY (&method->arguments);
+
+		nih_list_remove (&method->entry);
+		TEST_LIST_EMPTY (&interface->methods);
+
+		nih_list_remove (&interface->entry);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:5:8: Ignored unknown argument annotation: "
+				       "com.netsplit.Nih.Method.Async\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_NOT_EMPTY (&node->interfaces);
-
-	interface = (Interface *)node->interfaces.next;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, node);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_STR (interface->symbol, "test");
-	TEST_ALLOC_PARENT (interface->symbol, interface);
-	TEST_FALSE (interface->deprecated);
-	TEST_LIST_NOT_EMPTY (&interface->methods);
-	TEST_LIST_EMPTY (&interface->signals);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	method = (Method *)interface->methods.next;
-	TEST_ALLOC_SIZE (method, sizeof (Method));
-	TEST_ALLOC_PARENT (method, interface);
-	TEST_EQ_STR (method->name, "Wibble");
-	TEST_ALLOC_PARENT (method->name, method);
-	TEST_EQ_STR (method->symbol, "wibble");
-	TEST_ALLOC_PARENT (method->symbol, method);
-	TEST_FALSE (method->deprecated);
-	TEST_FALSE (method->no_reply);
-	TEST_FALSE (method->async);
-	TEST_LIST_NOT_EMPTY (&method->arguments);
-
-	argument = (Argument *)method->arguments.next;
-	TEST_ALLOC_SIZE (argument, sizeof (Argument));
-	TEST_ALLOC_PARENT (argument, method);
-	TEST_EQ_STR (argument->name, "str");
-	TEST_ALLOC_PARENT (argument->name, argument);
-	TEST_EQ_STR (argument->symbol, "str");
-	TEST_ALLOC_PARENT (argument->symbol, argument);
-	TEST_EQ_STR (argument->type, "s");
-	TEST_ALLOC_PARENT (argument->type, argument);
-	TEST_EQ (argument->direction, NIH_DBUS_ARG_IN);
-
-	nih_list_remove (&argument->entry);
-	TEST_LIST_EMPTY (&method->arguments);
-
-	nih_list_remove (&method->entry);
-	TEST_LIST_EMPTY (&interface->methods);
-
-	nih_list_remove (&interface->entry);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:5:8: Ignored unknown argument annotation: "
-			       "com.netsplit.Nih.Method.Async\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an unknown tag within the parsing stack is ignored
 	 * generating a warning but that a Node is otherwise returned.
 	 */
 	TEST_FEATURE ("with unknown tag");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <flirble/>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <flirble/>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:2:2: Ignored unknown tag: flirble\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:2:2: Ignored unknown tag: flirble\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that the contents of an unknown tag are ignored, even if
@@ -7556,986 +7802,1258 @@ test_parse_xml (void)
 	 * specifications can add them in a way we ignore.
 	 */
 	TEST_FEATURE ("with unknown tag and contents");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <flirble>\n");
-	fprintf (fp, "    <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "      <method name=\"Wibble\">\n");
-	fprintf (fp, "        <arg name=\"str\" type=\"s\"\n");
-	fprintf (fp, "             direction=\"in\"/>\n");
-	fprintf (fp, "        <arg name=\"len\" type=\"i\"\n");
-	fprintf (fp, "             direction=\"in\"/>\n");
-	fprintf (fp, "        <arg name=\"result\" type=\"s\"\n");
-	fprintf (fp, "             direction=\"out\"/>\n");
-	fprintf (fp, "      </method>\n");
-	fprintf (fp, "      <method name=\"Wobble\">\n");
-	fprintf (fp, "        <arg name=\"bounce\" type=\"i\"\n");
-	fprintf (fp, "             direction=\"out\"/>\n");
-	fprintf (fp, "      </method>\n");
-	fprintf (fp, "      <method name=\"Flounce\"/>\n");
-	fprintf (fp, "      <signal name=\"Honk\">\n");
-	fprintf (fp, "        <arg name=\"str\" type=\"s\"/>\n");
-	fprintf (fp, "        <arg name=\"len\" type=\"i\"/>\n");
-	fprintf (fp, "        <arg name=\"result\" type=\"s\"/>\n");
-	fprintf (fp, "      </signal>\n");
-	fprintf (fp, "      <signal name=\"Bonk\">\n");
-	fprintf (fp, "        <arg name=\"bounce\" type=\"i\"/>\n");
-	fprintf (fp, "      </signal>\n");
-	fprintf (fp, "      <signal name=\"Flonk\"/>\n");
-	fprintf (fp, "      <property name=\"size\" type=\"i\"\n");
-	fprintf (fp, "                access=\"read\"/>\n");
-	fprintf (fp, "      <property name=\"secret\" type=\"s\"\n");
-	fprintf (fp, "                access=\"write\"/>\n");
-	fprintf (fp, "      <property name=\"nickname\" type=\"s\"\n");
-	fprintf (fp, "                access=\"readwrite\"/>\n");
-	fprintf (fp, "    </interface>\n");
-	fprintf (fp, "  </flirble>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <flirble>\n");
+		fprintf (fp, "    <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "      <method name=\"Wibble\">\n");
+		fprintf (fp, "        <arg name=\"str\" type=\"s\"\n");
+		fprintf (fp, "             direction=\"in\"/>\n");
+		fprintf (fp, "        <arg name=\"len\" type=\"i\"\n");
+		fprintf (fp, "             direction=\"in\"/>\n");
+		fprintf (fp, "        <arg name=\"result\" type=\"s\"\n");
+		fprintf (fp, "             direction=\"out\"/>\n");
+		fprintf (fp, "      </method>\n");
+		fprintf (fp, "      <method name=\"Wobble\">\n");
+		fprintf (fp, "        <arg name=\"bounce\" type=\"i\"\n");
+		fprintf (fp, "             direction=\"out\"/>\n");
+		fprintf (fp, "      </method>\n");
+		fprintf (fp, "      <method name=\"Flounce\"/>\n");
+		fprintf (fp, "      <signal name=\"Honk\">\n");
+		fprintf (fp, "        <arg name=\"str\" type=\"s\"/>\n");
+		fprintf (fp, "        <arg name=\"len\" type=\"i\"/>\n");
+		fprintf (fp, "        <arg name=\"result\" type=\"s\"/>\n");
+		fprintf (fp, "      </signal>\n");
+		fprintf (fp, "      <signal name=\"Bonk\">\n");
+		fprintf (fp, "        <arg name=\"bounce\" type=\"i\"/>\n");
+		fprintf (fp, "      </signal>\n");
+		fprintf (fp, "      <signal name=\"Flonk\"/>\n");
+		fprintf (fp, "      <property name=\"size\" type=\"i\"\n");
+		fprintf (fp, "                access=\"read\"/>\n");
+		fprintf (fp, "      <property name=\"secret\" type=\"s\"\n");
+		fprintf (fp, "                access=\"write\"/>\n");
+		fprintf (fp, "      <property name=\"nickname\" type=\"s\"\n");
+		fprintf (fp, "                access=\"readwrite\"/>\n");
+		fprintf (fp, "    </interface>\n");
+		fprintf (fp, "  </flirble>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_NE_P (node, NULL);
+
+		TEST_ALLOC_SIZE (node, sizeof (Node));
+		TEST_EQ_P (node->path, NULL);
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		nih_free (node);
+
+		TEST_FILE_EQ (output, ("test:foo:2:2: Ignored unknown tag: flirble\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_NE_P (node, NULL);
-
-	TEST_ALLOC_SIZE (node, sizeof (Node));
-	TEST_EQ_P (node->path, NULL);
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	nih_free (node);
-
-	TEST_FILE_EQ (output, ("test:foo:2:2: Ignored unknown tag: flirble\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an unknown tag may not be the root */
 	TEST_FEATURE ("with unknown root tag");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<flirble/>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<flirble/>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown tag: flirble\n"));
+		TEST_FILE_EQ (output, ("test:foo: No node present\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown tag: flirble\n"));
-	TEST_FILE_EQ (output, ("test:foo: No node present\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an invalid node name is rejected at the point of
 	 * parsing.
 	 */
 	TEST_FEATURE ("with invalid node name");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node name=\"com/netsplit/Nih/Test\"/>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node name=\"com/netsplit/Nih/Test\"/>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:2:0: "
+				       "Invalid object path in <node> name attribute\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:2:0: "
-			       "Invalid object path in <node> name attribute\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an interface may not be missing its name.
 	 */
 	TEST_FEATURE ("with missing interface name");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface/>");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface/>");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:2:14: "
+				       "<interface> missing required name attribute\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:2:14: "
-			       "<interface> missing required name attribute\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an invalid interface name is rejected at the point
 	 * of parsing.
 	 */
 	TEST_FEATURE ("with invalid interface name");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\".com.netsplit.Nih.Test\"/>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\".com.netsplit.Nih.Test\"/>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:2:44: "
+				       "Invalid interface name in <interface> name attribute\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:2:44: "
-			       "Invalid interface name in <interface> name attribute\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that a method may not be missing its name.
 	 */
 	TEST_FEATURE ("with missing method name");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method/>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method/>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:3:13: "
+				       "<method> missing required name attribute\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:3:13: "
-			       "<method> missing required name attribute\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an invalid method name is rejected at the point
 	 * of parsing.
 	 */
 	TEST_FEATURE ("with invalid method name");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method name=\"foo bar\"/>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method name=\"foo bar\"/>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:3:28: "
+				       "Invalid method name in <method> name attribute\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:3:28: "
-			       "Invalid method name in <method> name attribute\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that a signal may not be missing its name.
 	 */
 	TEST_FEATURE ("with missing signal name");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <signal/>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <signal/>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:3:13: "
+				       "<signal> missing required name attribute\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:3:13: "
-			       "<signal> missing required name attribute\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an invalid signal name is rejected at the point
 	 * of parsing.
 	 */
 	TEST_FEATURE ("with invalid signal name");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <signal name=\"foo bar\"/>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <signal name=\"foo bar\"/>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:3:28: "
+				       "Invalid signal name in <signal> name attribute\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:3:28: "
-			       "Invalid signal name in <signal> name attribute\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that a property may not be missing its name.
 	 */
 	TEST_FEATURE ("with missing property name");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <property type=\"s\"\n");
-	fprintf (fp, "              access=\"read\"/>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <property type=\"s\"\n");
+		fprintf (fp, "              access=\"read\"/>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:4:29: "
+				       "<property> missing required name attribute\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:4:29: "
-			       "<property> missing required name attribute\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an invalid property name is rejected at the point
 	 * of parsing.
 	 */
 	TEST_FEATURE ("with invalid property name");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <property name=\"foo bar\" type=\"s\"\n");
-	fprintf (fp, "              access=\"read\"/>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <property name=\"foo bar\" type=\"s\"\n");
+		fprintf (fp, "              access=\"read\"/>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:4:29: "
+				       "Invalid property name in <property> name attribute\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:4:29: "
-			       "Invalid property name in <property> name attribute\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that a property may not be missing its type.
 	 */
 	TEST_FEATURE ("with missing property type");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <property name=\"nick\"\n");
-	fprintf (fp, "              access=\"read\"/>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <property name=\"nick\"\n");
+		fprintf (fp, "              access=\"read\"/>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:4:29: "
+				       "<property> missing required type attribute\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:4:29: "
-			       "<property> missing required type attribute\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an invalid property type is rejected at the point
 	 * of parsing.
 	 */
 	TEST_FEATURE ("with invalid property type");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <property name=\"nick\" type=\"si\"\n");
-	fprintf (fp, "              access=\"read\"/>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <property name=\"nick\" type=\"si\"\n");
+		fprintf (fp, "              access=\"read\"/>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:4:29: "
+				       "Invalid D-Bus type in <property> type attribute: "
+				       "Exactly one complete type required in signature\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:4:29: "
-			       "Invalid D-Bus type in <property> type attribute: "
-			       "Exactly one complete type required in signature\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that a property may not be missing its access (there is no
 	 * default according to the specification).
 	 */
 	TEST_FEATURE ("with missing property access");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <property name=\"nick\" type=\"s\"/>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <property name=\"nick\" type=\"s\"/>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:3:36: "
+				       "<property> missing required access attribute\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:3:36: "
-			       "<property> missing required access attribute\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an invalid property access is rejected at the point
 	 * of parsing.
 	 */
 	TEST_FEATURE ("with invalid property access");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <property name=\"nick\" type=\"s\"\n");
-	fprintf (fp, "              access=\"sneak\"/>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <property name=\"nick\" type=\"s\"\n");
+		fprintf (fp, "              access=\"sneak\"/>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:4:30: "
+				       "Illegal value for <property> access attribute, "
+				       "expected 'read', 'write' or 'readwrite'\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:4:30: "
-			       "Illegal value for <property> access attribute, "
-			       "expected 'read', 'write' or 'readwrite'\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an invalid argument name is rejected at the point
 	 * of parsing.
 	 */
 	TEST_FEATURE ("with invalid argument name");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method name=\"Wibble\">\n");
-	fprintf (fp, "      <arg name=\"foo bar\" type=\"s\"/>\n");
-	fprintf (fp, "    </method>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method name=\"Wibble\">\n");
+		fprintf (fp, "      <arg name=\"foo bar\" type=\"s\"/>\n");
+		fprintf (fp, "    </method>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:4:36: "
+				       "Invalid argument name in <arg> name attribute\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:4:36: "
-			       "Invalid argument name in <arg> name attribute\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an argument may not be missing its type.
 	 */
 	TEST_FEATURE ("with missing argument type");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method name=\"Wibble\">\n");
-	fprintf (fp, "      <arg name=\"foo\"/>\n");
-	fprintf (fp, "    </method>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method name=\"Wibble\">\n");
+		fprintf (fp, "      <arg name=\"foo\"/>\n");
+		fprintf (fp, "    </method>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:4:23: "
+				       "<arg> missing required type attribute\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:4:23: "
-			       "<arg> missing required type attribute\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an invalid argument type is rejected at the point
 	 * of parsing.
 	 */
 	TEST_FEATURE ("with invalid argument type");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method name=\"Wibble\">\n");
-	fprintf (fp, "      <arg name=\"foo\" type=\"!\"/>\n");
-	fprintf (fp, "    </method>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method name=\"Wibble\">\n");
+		fprintf (fp, "      <arg name=\"foo\" type=\"!\"/>\n");
+		fprintf (fp, "    </method>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:4:32: "
+				       "Invalid D-Bus type in <arg> type attribute: "
+				       "Corrupt type signature\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:4:32: "
-			       "Invalid D-Bus type in <arg> type attribute: "
-			       "Corrupt type signature\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an invalid argument direction is rejected at the point
 	 * of parsing.
 	 */
 	TEST_FEATURE ("with invalid argument direction");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method name=\"Wibble\">\n");
-	fprintf (fp, "      <arg name=\"foo\" type=\"s\"\n");
-	fprintf (fp, "           direction=\"widdershins\"/>\n");
-	fprintf (fp, "    </method>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method name=\"Wibble\">\n");
+		fprintf (fp, "      <arg name=\"foo\" type=\"s\"\n");
+		fprintf (fp, "           direction=\"widdershins\"/>\n");
+		fprintf (fp, "    </method>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:5:36: "
+				       "Illegal value for <arg> direction attribute, "
+				       "expected 'in' or 'out'\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:5:36: "
-			       "Illegal value for <arg> direction attribute, "
-			       "expected 'in' or 'out'\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that "in" is an invalid argument direction for signals,
 	 * and is rejected at the point of parsing.
 	 */
 	TEST_FEATURE ("with invalid argument direction for signal");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <signal name=\"Wibble\">\n");
-	fprintf (fp, "      <arg name=\"foo\" type=\"s\"\n");
-	fprintf (fp, "           direction=\"in\"/>\n");
-	fprintf (fp, "    </signal>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <signal name=\"Wibble\">\n");
+		fprintf (fp, "      <arg name=\"foo\" type=\"s\"\n");
+		fprintf (fp, "           direction=\"in\"/>\n");
+		fprintf (fp, "    </signal>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:5:27: "
+				       "Illegal value for <arg> direction attribute, "
+				       "expected 'out'\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:5:27: "
-			       "Illegal value for <arg> direction attribute, "
-			       "expected 'out'\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an annotation may not be missing its name.
 	 */
 	TEST_FEATURE ("with missing annotation name");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method name=\"Wibble\">\n");
-	fprintf (fp, "      <annotation value=\"true\"/>\n");
-	fprintf (fp, "    </method>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method name=\"Wibble\">\n");
+		fprintf (fp, "      <annotation value=\"true\"/>\n");
+		fprintf (fp, "    </method>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:4:32: "
+				       "<annotation> missing required name attribute\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:4:32: "
-			       "<annotation> missing required name attribute\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an annotation may not be missing its value.
 	 */
 	TEST_FEATURE ("with missing annotation value");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method name=\"Wibble\">\n");
-	fprintf (fp, "      <annotation name=\"org.freedesktop.DBus.Deprecated\"/>\n");
-	fprintf (fp, "    </method>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method name=\"Wibble\">\n");
+		fprintf (fp, "      <annotation name=\"org.freedesktop.DBus.Deprecated\"/>\n");
+		fprintf (fp, "    </method>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:4:58: "
+				       "<annotation> missing required value attribute\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:4:58: "
-			       "<annotation> missing required value attribute\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an illegal value for the deprecated annotation on an
 	 * interface results in an error.
 	 */
 	TEST_FEATURE ("with illegal value for deprecated interface");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <annotation name=\"org.freedesktop.DBus.Deprecated\"\n");
-	fprintf (fp, "                value=\"frodo\"/>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <annotation name=\"org.freedesktop.DBus.Deprecated\"\n");
+		fprintf (fp, "                value=\"frodo\"/>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:4:31: Illegal value for org.freedesktop.DBus.Deprecated interface annotation, "
+				       "expected 'true' or 'false'\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:4:31: Illegal value for org.freedesktop.DBus.Deprecated interface annotation, "
-			       "expected 'true' or 'false'\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an invalid C symbol part for the annotation on an
 	 * interface results in an error.
 	 */
 	TEST_FEATURE ("with invalid symbol for interface");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <annotation name=\"com.netsplit.Nih.Symbol\"\n");
-	fprintf (fp, "                value=\"foo bar\"/>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <annotation name=\"com.netsplit.Nih.Symbol\"\n");
+		fprintf (fp, "                value=\"foo bar\"/>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, "test:foo:4:33: Invalid C symbol for interface\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, "test:foo:4:33: Invalid C symbol for interface\n");
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an illegal value for the deprecated annotation on a
 	 * method results in an error.
 	 */
 	TEST_FEATURE ("with illegal value for deprecated method");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method name=\"Wibble\">\n");
-	fprintf (fp, "      <annotation name=\"org.freedesktop.DBus.Deprecated\"\n");
-	fprintf (fp, "                  value=\"frodo\"/>\n");
-	fprintf (fp, "    </method>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method name=\"Wibble\">\n");
+		fprintf (fp, "      <annotation name=\"org.freedesktop.DBus.Deprecated\"\n");
+		fprintf (fp, "                  value=\"frodo\"/>\n");
+		fprintf (fp, "    </method>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:5:33: Illegal value for org.freedesktop.DBus.Deprecated method annotation, "
+				       "expected 'true' or 'false'\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:5:33: Illegal value for org.freedesktop.DBus.Deprecated method annotation, "
-			       "expected 'true' or 'false'\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an invalid C symbol part for the annotation on a
 	 * method results in an error.
 	 */
 	TEST_FEATURE ("with invalid symbol for method");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method name=\"Wibble\">\n");
-	fprintf (fp, "      <annotation name=\"com.netsplit.Nih.Symbol\"\n");
-	fprintf (fp, "                  value=\"foo bar\"/>\n");
-	fprintf (fp, "    </method>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method name=\"Wibble\">\n");
+		fprintf (fp, "      <annotation name=\"com.netsplit.Nih.Symbol\"\n");
+		fprintf (fp, "                  value=\"foo bar\"/>\n");
+		fprintf (fp, "    </method>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, "test:foo:5:35: Invalid C symbol for method\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, "test:foo:5:35: Invalid C symbol for method\n");
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an illegal value for the no reply annotation on a
 	 * method results in an error.
 	 */
 	TEST_FEATURE ("with illegal value for no reply method");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method name=\"Wibble\">\n");
-	fprintf (fp, "      <annotation name=\"org.freedesktop.DBus.Method.NoReply\"\n");
-	fprintf (fp, "                  value=\"frodo\"/>\n");
-	fprintf (fp, "    </method>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method name=\"Wibble\">\n");
+		fprintf (fp, "      <annotation name=\"org.freedesktop.DBus.Method.NoReply\"\n");
+		fprintf (fp, "                  value=\"frodo\"/>\n");
+		fprintf (fp, "    </method>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:5:33: Illegal value for org.freedesktop.DBus.Method.NoReply method annotation, "
+				       "expected 'true' or 'false'\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:5:33: Illegal value for org.freedesktop.DBus.Method.NoReply method annotation, "
-			       "expected 'true' or 'false'\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an illegal value for the async annotation on a
 	 * method results in an error.
 	 */
 	TEST_FEATURE ("with illegal value for async method");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method name=\"Wibble\">\n");
-	fprintf (fp, "      <annotation name=\"com.netsplit.Nih.Method.Async\"\n");
-	fprintf (fp, "                  value=\"frodo\"/>\n");
-	fprintf (fp, "    </method>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method name=\"Wibble\">\n");
+		fprintf (fp, "      <annotation name=\"com.netsplit.Nih.Method.Async\"\n");
+		fprintf (fp, "                  value=\"frodo\"/>\n");
+		fprintf (fp, "    </method>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:5:33: Illegal value for com.netsplit.Nih.Method.Async method annotation, "
+				       "expected 'true' or 'false'\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:5:33: Illegal value for com.netsplit.Nih.Method.Async method annotation, "
-			       "expected 'true' or 'false'\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an illegal value for the deprecated annotation on a
 	 * signal results in an error.
 	 */
 	TEST_FEATURE ("with illegal value for deprecated signal");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <signal name=\"Wibble\">\n");
-	fprintf (fp, "      <annotation name=\"org.freedesktop.DBus.Deprecated\"\n");
-	fprintf (fp, "                  value=\"frodo\"/>\n");
-	fprintf (fp, "    </signal>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <signal name=\"Wibble\">\n");
+		fprintf (fp, "      <annotation name=\"org.freedesktop.DBus.Deprecated\"\n");
+		fprintf (fp, "                  value=\"frodo\"/>\n");
+		fprintf (fp, "    </signal>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:5:33: Illegal value for org.freedesktop.DBus.Deprecated signal annotation, "
+				       "expected 'true' or 'false'\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:5:33: Illegal value for org.freedesktop.DBus.Deprecated signal annotation, "
-			       "expected 'true' or 'false'\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an invalid C symbol part for the annotation on a
 	 * signal results in an error.
 	 */
 	TEST_FEATURE ("with invalid symbol for signal");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <signal name=\"Wibble\">\n");
-	fprintf (fp, "      <annotation name=\"com.netsplit.Nih.Symbol\"\n");
-	fprintf (fp, "                  value=\"foo bar\"/>\n");
-	fprintf (fp, "    </signal>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <signal name=\"Wibble\">\n");
+		fprintf (fp, "      <annotation name=\"com.netsplit.Nih.Symbol\"\n");
+		fprintf (fp, "                  value=\"foo bar\"/>\n");
+		fprintf (fp, "    </signal>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, "test:foo:5:35: Invalid C symbol for signal\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, "test:foo:5:35: Invalid C symbol for signal\n");
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an illegal value for the deprecated annotation on a
 	 * property results in an error.
 	 */
 	TEST_FEATURE ("with illegal value for deprecated property");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <property name=\"size\" type=\"i\"\n");
-	fprintf (fp, "              access=\"read\">\n");
-	fprintf (fp, "      <annotation name=\"org.freedesktop.DBus.Deprecated\"\n");
-	fprintf (fp, "                  value=\"frodo\"/>\n");
-	fprintf (fp, "    </method>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <property name=\"size\" type=\"i\"\n");
+		fprintf (fp, "              access=\"read\">\n");
+		fprintf (fp, "      <annotation name=\"org.freedesktop.DBus.Deprecated\"\n");
+		fprintf (fp, "                  value=\"frodo\"/>\n");
+		fprintf (fp, "    </method>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:6:33: Illegal value for org.freedesktop.DBus.Deprecated property annotation, "
+				       "expected 'true' or 'false'\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:6:33: Illegal value for org.freedesktop.DBus.Deprecated property annotation, "
-			       "expected 'true' or 'false'\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an invalid C symbol part for the annotation on a
 	 * property results in an error.
 	 */
 	TEST_FEATURE ("with invalid symbol for property");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <property name=\"size\" type=\"i\"\n");
-	fprintf (fp, "              access=\"read\">\n");
-	fprintf (fp, "      <annotation name=\"com.netsplit.Nih.Symbol\"\n");
-	fprintf (fp, "                  value=\"foo bar\"/>\n");
-	fprintf (fp, "    </property>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <property name=\"size\" type=\"i\"\n");
+		fprintf (fp, "              access=\"read\">\n");
+		fprintf (fp, "      <annotation name=\"com.netsplit.Nih.Symbol\"\n");
+		fprintf (fp, "                  value=\"foo bar\"/>\n");
+		fprintf (fp, "    </property>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, "test:foo:6:35: Invalid C symbol for property\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, "test:foo:6:35: Invalid C symbol for property\n");
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that an invalid C symbol part for the annotation on an
 	 * argument results in an error.
 	 */
 	TEST_FEATURE ("with invalid symbol for argument");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <method name=\"Wibble\">\n");
-	fprintf (fp, "      <arg name=\"str\" type=\"s\">\n");
-	fprintf (fp, "        <annotation name=\"com.netsplit.Nih.Symbol\"\n");
-	fprintf (fp, "                    value=\"foo bar\"/>\n");
-	fprintf (fp, "      </arg>\n");
-	fprintf (fp, "    </method>\n");
-	fprintf (fp, "  </interface>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <method name=\"Wibble\">\n");
+		fprintf (fp, "      <arg name=\"str\" type=\"s\">\n");
+		fprintf (fp, "        <annotation name=\"com.netsplit.Nih.Symbol\"\n");
+		fprintf (fp, "                    value=\"foo bar\"/>\n");
+		fprintf (fp, "      </arg>\n");
+		fprintf (fp, "    </method>\n");
+		fprintf (fp, "  </interface>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, "test:foo:6:37: Invalid C symbol for argument\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, "test:foo:6:37: Invalid C symbol for argument\n");
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	/* Check that ordinary XML parsing errors are picked up by the
 	 * parser and treated as errors.
 	 */
 	TEST_FEATURE ("with XML error");
-	TEST_FILE_RESET (fp);
+	TEST_ALLOC_FAIL {
+		TEST_FILE_RESET (fp);
 
-	fprintf (fp, "<node>\n");
-	fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
-	fprintf (fp, "    <signal name=\"Wibble\">\n");
-	fprintf (fp, "      <arg name=\"foo\" type=\"s\"/>\n");
-	fprintf (fp, "    </signal>\n");
-	fprintf (fp, "  </elephant>\n");
-	fprintf (fp, "</node>\n");
-	fflush (fp);
-	rewind (fp);
+		fprintf (fp, "<node>\n");
+		fprintf (fp, "  <interface name=\"com.netsplit.Nih.Test\">\n");
+		fprintf (fp, "    <signal name=\"Wibble\">\n");
+		fprintf (fp, "      <arg name=\"foo\" type=\"s\"/>\n");
+		fprintf (fp, "    </signal>\n");
+		fprintf (fp, "  </elephant>\n");
+		fprintf (fp, "</node>\n");
+		fflush (fp);
+		rewind (fp);
 
-	TEST_DIVERT_STDERR (output) {
-		node = parse_xml (NULL, fileno (fp), "foo");
+		TEST_DIVERT_STDERR (output) {
+			node = parse_xml (NULL, fileno (fp), "foo");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (node == NULL)) {
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ_P (node, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:6:4: XML parse error: "
+				       "mismatched tag\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_EQ_P (node, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:6:4: XML parse error: "
-			       "mismatched tag\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	fclose (fp);

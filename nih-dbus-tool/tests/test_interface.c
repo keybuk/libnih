@@ -255,52 +255,60 @@ test_start_tag (void)
 	 * in an error being raised.
 	 */
 	TEST_FEATURE ("with missing name");
-	node = node_new (NULL, "/com/netsplit/Nih/Test");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_NODE, node);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			node = node_new (NULL, "/com/netsplit/Nih/Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_NODE, node);
 
-	attr[0] = NULL;
+			attr[0] = NULL;
+		}
 
-	ret = interface_start_tag (xmlp, "interface", attr);
+		ret = interface_start_tag (xmlp, "interface", attr);
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (parse_stack_top (&context.stack), parent);
+		TEST_EQ_P (parse_stack_top (&context.stack), parent);
 
-	TEST_LIST_EMPTY (&node->interfaces);
+		TEST_LIST_EMPTY (&node->interfaces);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, INTERFACE_MISSING_NAME);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, INTERFACE_MISSING_NAME);
+		nih_free (err);
 
-	nih_free (parent);
+		nih_free (parent);
+	}
 
 
 	/* Check that a interface with an invalid name results in an
 	 * error being raised.
 	 */
 	TEST_FEATURE ("with invalid name");
-	node = node_new (NULL, "/com/netsplit/Nih/Test");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_NODE, node);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			node = node_new (NULL, "/com/netsplit/Nih/Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_NODE, node);
 
-	attr[0] = "name";
-	attr[1] = "Test Interface";
-	attr[2] = NULL;
+			attr[0] = "name";
+			attr[1] = "Test Interface";
+			attr[2] = NULL;
+		}
 
-	ret = interface_start_tag (xmlp, "interface", attr);
+		ret = interface_start_tag (xmlp, "interface", attr);
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (parse_stack_top (&context.stack), parent);
+		TEST_EQ_P (parse_stack_top (&context.stack), parent);
 
-	TEST_LIST_EMPTY (&node->interfaces);
+		TEST_LIST_EMPTY (&node->interfaces);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, INTERFACE_INVALID_NAME);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, INTERFACE_INVALID_NAME);
+		nih_free (err);
 
-	nih_free (parent);
+		nih_free (parent);
+	}
 
 
 	/* Check that an unknown interface attribute results in a warning
@@ -308,47 +316,65 @@ test_start_tag (void)
 	 * and the normal processing finished.
 	 */
 	TEST_FEATURE ("with unknown attribute");
-	node = node_new (NULL, "/com/netsplit/Nih/Test");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_NODE, node);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			node = node_new (NULL, "/com/netsplit/Nih/Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_NODE, node);
 
-	attr[0] = "name";
-	attr[1] = "com.netsplit.Nih.Test";
-	attr[2] = "frodo";
-	attr[3] = "baggins";
-	attr[4] = NULL;
+			attr[0] = "name";
+			attr[1] = "com.netsplit.Nih.Test";
+			attr[2] = "frodo";
+			attr[3] = "baggins";
+			attr[4] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = interface_start_tag (xmlp, "interface", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = interface_start_tag (xmlp, "interface", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), parent);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_NE_P (entry, parent);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_INTERFACE);
+
+		interface = entry->interface;
+		TEST_ALLOC_SIZE (interface, sizeof (Interface));
+		TEST_ALLOC_PARENT (interface, entry);
+		TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
+		TEST_ALLOC_PARENT (interface->name, interface);
+		TEST_EQ_P (interface->symbol, NULL);
+		TEST_LIST_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->signals);
+		TEST_LIST_EMPTY (&interface->properties);
+
+		TEST_LIST_EMPTY (&node->interfaces);
+
+		TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown <interface> attribute: "
+				       "frodo\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
+		nih_free (parent);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_NE_P (entry, parent);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_INTERFACE);
-
-	interface = entry->interface;
-	TEST_ALLOC_SIZE (interface, sizeof (Interface));
-	TEST_ALLOC_PARENT (interface, entry);
-	TEST_EQ_STR (interface->name, "com.netsplit.Nih.Test");
-	TEST_ALLOC_PARENT (interface->name, interface);
-	TEST_EQ_P (interface->symbol, NULL);
-	TEST_LIST_EMPTY (&interface->methods);
-	TEST_LIST_EMPTY (&interface->signals);
-	TEST_LIST_EMPTY (&interface->properties);
-
-	TEST_LIST_EMPTY (&node->interfaces);
-
-	TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown <interface> attribute: "
-			       "frodo\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
-	nih_free (parent);
 
 
 	/* Check that a interface on an empty stack (ie. a top-level
@@ -357,27 +383,43 @@ test_start_tag (void)
 	 * stack.
 	 */
 	TEST_FEATURE ("with empty stack");
-	attr[0] = "name";
-	attr[1] = "com.netsplit.Nih.Test";
-	attr[2] = NULL;
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			attr[0] = "name";
+			attr[1] = "com.netsplit.Nih.Test";
+			attr[2] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = interface_start_tag (xmlp, "interface", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = interface_start_tag (xmlp, "interface", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), NULL);
+
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_IGNORED);
+		TEST_EQ_P (entry->data, NULL);
+
+		TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <interface> tag\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_IGNORED);
-	TEST_EQ_P (entry->data, NULL);
-
-	TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <interface> tag\n");
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
 
 
 	/* Check that a interface on top of a stack entry that's not an
@@ -386,32 +428,50 @@ test_start_tag (void)
 	 * stack.
 	 */
 	TEST_FEATURE ("with non-node on stack");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_METHOD, method_new (NULL, "Test"));
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_METHOD, method_new (NULL, "Test"));
 
-	attr[0] = "name";
-	attr[1] = "com.netsplit.Nih.Test";
-	attr[2] = NULL;
+			attr[0] = "name";
+			attr[1] = "com.netsplit.Nih.Test";
+			attr[2] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = interface_start_tag (xmlp, "interface", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = interface_start_tag (xmlp, "interface", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), parent);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_NE_P (entry, parent);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_IGNORED);
+		TEST_EQ_P (entry->data, NULL);
+
+		TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <interface> tag\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
+		nih_free (parent);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_NE_P (entry, parent);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_IGNORED);
-	TEST_EQ_P (entry->data, NULL);
-
-	TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <interface> tag\n");
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
-	nih_free (parent);
 
 
 	XML_ParserFree (xmlp);
@@ -552,28 +612,34 @@ test_end_tag (void)
 	 * become unpredictable (introspection data isn't ordered).
 	 */
 	TEST_FEATURE ("with conflicting symbol");
-	node = node_new (NULL, "/com/netsplit/Nih/Test");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_NODE, node);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			node = node_new (NULL, "/com/netsplit/Nih/Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_NODE, node);
 
-	other = interface_new (node, "com.netsplit.Foo.Test");
-	other->symbol = nih_strdup (other, "test");
-	nih_list_add (&node->interfaces, &other->entry);
+			other = interface_new (node, "com.netsplit.Foo.Test");
+			other->symbol = nih_strdup (other, "test");
+			nih_list_add (&node->interfaces, &other->entry);
 
-	interface = interface_new (NULL, "com.netsplit.Nih.Test");
-	entry = parse_stack_push (NULL, &context.stack,
-				  PARSE_INTERFACE, interface);
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			entry = parse_stack_push (NULL, &context.stack,
+						  PARSE_INTERFACE, interface);
+		}
 
-	ret = interface_end_tag (xmlp, "interface");
+		ret = interface_end_tag (xmlp, "interface");
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, INTERFACE_DUPLICATE_SYMBOL);
-	nih_free (err);
+		err = nih_error_get ();
+		if ((! test_alloc_failed)
+		    || (err->number != ENOMEM))
+			TEST_EQ (err->number, INTERFACE_DUPLICATE_SYMBOL);
+		nih_free (err);
 
-	nih_free (entry);
-	nih_free (parent);
+		nih_free (entry);
+		nih_free (parent);
+	}
 
 
 	XML_ParserFree (xmlp);
@@ -738,61 +804,73 @@ test_annotation (void)
 	 * in an error being raised.
 	 */
 	TEST_FEATURE ("with invalid value for deprecated annotation");
-	interface = interface_new (NULL, "com.netsplit.Nih.Test");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+		}
 
-	ret = interface_annotation (interface,
-				    "org.freedesktop.DBus.Deprecated",
-				    "foo");
+		ret = interface_annotation (interface,
+					    "org.freedesktop.DBus.Deprecated",
+					    "foo");
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (interface->symbol, NULL);
+		TEST_EQ_P (interface->symbol, NULL);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, INTERFACE_ILLEGAL_DEPRECATED);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, INTERFACE_ILLEGAL_DEPRECATED);
+		nih_free (err);
 
-	nih_free (interface);
+		nih_free (interface);
+	}
 
 
 	/* Check that an invalid symbol in an annotation results in an
 	 * error being raised.
 	 */
 	TEST_FEATURE ("with invalid symbol in annotation");
-	interface = interface_new (NULL, "com.netsplit.Nih.Test");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+		}
 
-	ret = interface_annotation (interface,
-				    "com.netsplit.Nih.Symbol",
-				    "foo bar");
+		ret = interface_annotation (interface,
+					    "com.netsplit.Nih.Symbol",
+					    "foo bar");
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (interface->symbol, NULL);
+		TEST_EQ_P (interface->symbol, NULL);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, INTERFACE_INVALID_SYMBOL);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, INTERFACE_INVALID_SYMBOL);
+		nih_free (err);
 
-	nih_free (interface);
+		nih_free (interface);
+	}
 
 
 	/* Check that an unknown annotation results in an error being
 	 * raised.
 	 */
 	TEST_FEATURE ("with unknown annotation");
-	interface = interface_new (NULL, "com.netsplit.Nih.Test");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+		}
 
-	ret = interface_annotation (interface,
-				    "com.netsplit.Nih.Unknown",
-				    "true");
+		ret = interface_annotation (interface,
+					    "com.netsplit.Nih.Unknown",
+					    "true");
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, INTERFACE_UNKNOWN_ANNOTATION);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, INTERFACE_UNKNOWN_ANNOTATION);
+		nih_free (err);
 
-	nih_free (interface);
+		nih_free (interface);
+	}
 }
 
 

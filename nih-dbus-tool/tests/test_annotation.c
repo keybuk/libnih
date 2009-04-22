@@ -331,54 +331,62 @@ test_start_tag (void)
 	 * in an error being raised.
 	 */
 	TEST_FEATURE ("with missing name");
-	interface = interface_new (NULL, "com.netsplit.Nih.Test");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_INTERFACE, interface);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_INTERFACE, interface);
 
-	attr[0] = "value";
-	attr[1] = "true";
-	attr[2] = NULL;
+			attr[0] = "value";
+			attr[1] = "true";
+			attr[2] = NULL;
+		}
 
-	ret = annotation_start_tag (xmlp, "annotation", attr);
+		ret = annotation_start_tag (xmlp, "annotation", attr);
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (parse_stack_top (&context.stack), parent);
+		TEST_EQ_P (parse_stack_top (&context.stack), parent);
 
-	TEST_LIST_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->methods);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, ANNOTATION_MISSING_NAME);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, ANNOTATION_MISSING_NAME);
+		nih_free (err);
 
-	nih_free (parent);
+		nih_free (parent);
+	}
 
 
 	/* Check that an annotation with a missing value attribute results
 	 * in an error being raised.
 	 */
 	TEST_FEATURE ("with missing value");
-	interface = interface_new (NULL, "com.netsplit.Nih.Test");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_INTERFACE, interface);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_INTERFACE, interface);
 
-	attr[0] = "name";
-	attr[1] = "org.freedesktop.DBus.Deprecated";
-	attr[2] = NULL;
+			attr[0] = "name";
+			attr[1] = "org.freedesktop.DBus.Deprecated";
+			attr[2] = NULL;
+		}
 
-	ret = annotation_start_tag (xmlp, "annotation", attr);
+		ret = annotation_start_tag (xmlp, "annotation", attr);
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (parse_stack_top (&context.stack), parent);
+		TEST_EQ_P (parse_stack_top (&context.stack), parent);
 
-	TEST_LIST_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->methods);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, ANNOTATION_MISSING_VALUE);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, ANNOTATION_MISSING_VALUE);
+		nih_free (err);
 
-	nih_free (parent);
+		nih_free (parent);
+	}
 
 
 	/* Check that an unknown annotation attribute results in a warning
@@ -386,40 +394,58 @@ test_start_tag (void)
 	 * and the normal processing finished.
 	 */
 	TEST_FEATURE ("with unknown attribute");
-	interface = interface_new (NULL, "com.netsplit.Nih.Test");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_INTERFACE, interface);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_INTERFACE, interface);
 
-	attr[0] = "name";
-	attr[1] = "org.freedesktop.DBus.Deprecated";
-	attr[2] = "value";
-	attr[3] = "true";
-	attr[4] = "frodo";
-	attr[5] = "baggins";
-	attr[6] = NULL;
+			attr[0] = "name";
+			attr[1] = "org.freedesktop.DBus.Deprecated";
+			attr[2] = "value";
+			attr[3] = "true";
+			attr[4] = "frodo";
+			attr[5] = "baggins";
+			attr[6] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = annotation_start_tag (xmlp, "annotation", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = annotation_start_tag (xmlp, "annotation", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), parent);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_NE_P (entry, parent);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_ANNOTATION);
+		TEST_EQ_P (entry->data, NULL);
+
+		TEST_TRUE (interface->deprecated);
+
+		TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown <annotation> attribute: "
+				       "frodo\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
+		nih_free (parent);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_NE_P (entry, parent);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_ANNOTATION);
-	TEST_EQ_P (entry->data, NULL);
-
-	TEST_TRUE (interface->deprecated);
-
-	TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown <annotation> attribute: "
-			       "frodo\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
-	nih_free (parent);
 
 
 	/* Check that an annotation on an empty stack (ie. a top-level
@@ -428,29 +454,45 @@ test_start_tag (void)
 	 * stack.
 	 */
 	TEST_FEATURE ("with empty stack");
-	attr[0] = "name";
-	attr[1] = "org.freedesktop.DBus.Deprecated";
-	attr[2] = "value";
-	attr[3] = "true";
-	attr[4] = NULL;
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			attr[0] = "name";
+			attr[1] = "org.freedesktop.DBus.Deprecated";
+			attr[2] = "value";
+			attr[3] = "true";
+			attr[4] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = annotation_start_tag (xmlp, "annotation", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = annotation_start_tag (xmlp, "annotation", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), NULL);
+
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_IGNORED);
+		TEST_EQ_P (entry->data, NULL);
+
+		TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <annotation> tag\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_IGNORED);
-	TEST_EQ_P (entry->data, NULL);
-
-	TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <annotation> tag\n");
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
 
 
 	/* Check that an annotation on top of a stack entry that's not an
@@ -459,34 +501,52 @@ test_start_tag (void)
 	 * being pushed onto the stack.
 	 */
 	TEST_FEATURE ("with non-annotated element on stack");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_NODE, node_new (NULL, NULL));
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_NODE, node_new (NULL, NULL));
 
-	attr[0] = "name";
-	attr[1] = "org.freedesktop.DBus.Deprecated";
-	attr[2] = "value";
-	attr[3] = "true";
-	attr[4] = NULL;
+			attr[0] = "name";
+			attr[1] = "org.freedesktop.DBus.Deprecated";
+			attr[2] = "value";
+			attr[3] = "true";
+			attr[4] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = annotation_start_tag (xmlp, "annotation", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = annotation_start_tag (xmlp, "annotation", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), parent);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_NE_P (entry, parent);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_IGNORED);
+		TEST_EQ_P (entry->data, NULL);
+
+		TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <annotation> tag\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
+		nih_free (parent);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_NE_P (entry, parent);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_IGNORED);
-	TEST_EQ_P (entry->data, NULL);
-
-	TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <annotation> tag\n");
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
-	nih_free (parent);
 
 
 	/* Check that an unknown interface annotation error is converted
@@ -494,36 +554,54 @@ test_start_tag (void)
 	 * an ignored element being pushed onto the stack.
 	 */
 	TEST_FEATURE ("with unknown interface annotation");
-	interface = interface_new (NULL, "com.netsplit.Nih.Test");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_INTERFACE, interface);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_INTERFACE, interface);
 
-	attr[0] = "name";
-	attr[1] = "com.netsplit.Nih.Unknown";
-	attr[2] = "value";
-	attr[3] = "true";
-	attr[4] = NULL;
+			attr[0] = "name";
+			attr[1] = "com.netsplit.Nih.Unknown";
+			attr[2] = "value";
+			attr[3] = "true";
+			attr[4] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = annotation_start_tag (xmlp, "annotation", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = annotation_start_tag (xmlp, "annotation", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), parent);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_NE_P (entry, parent);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_IGNORED);
+		TEST_EQ_P (entry->data, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown interface annotation: "
+				       "com.netsplit.Nih.Unknown\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
+		nih_free (parent);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_NE_P (entry, parent);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_IGNORED);
-	TEST_EQ_P (entry->data, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown interface annotation: "
-			       "com.netsplit.Nih.Unknown\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
-	nih_free (parent);
 
 
 	/* Check that an unknown method annotation error is converted
@@ -531,36 +609,54 @@ test_start_tag (void)
 	 * an ignored element being pushed onto the stack.
 	 */
 	TEST_FEATURE ("with unknown method annotation");
-	method = method_new (NULL, "TestMethod");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_METHOD, method);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			method = method_new (NULL, "TestMethod");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_METHOD, method);
 
-	attr[0] = "name";
-	attr[1] = "com.netsplit.Nih.Unknown";
-	attr[2] = "value";
-	attr[3] = "true";
-	attr[4] = NULL;
+			attr[0] = "name";
+			attr[1] = "com.netsplit.Nih.Unknown";
+			attr[2] = "value";
+			attr[3] = "true";
+			attr[4] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = annotation_start_tag (xmlp, "annotation", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = annotation_start_tag (xmlp, "annotation", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), parent);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_NE_P (entry, parent);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_IGNORED);
+		TEST_EQ_P (entry->data, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown method annotation: "
+				       "com.netsplit.Nih.Unknown\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
+		nih_free (parent);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_NE_P (entry, parent);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_IGNORED);
-	TEST_EQ_P (entry->data, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown method annotation: "
-			       "com.netsplit.Nih.Unknown\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
-	nih_free (parent);
 
 
 	/* Check that an unknown signal annotation error is converted
@@ -568,36 +664,54 @@ test_start_tag (void)
 	 * an ignored element being pushed onto the stack.
 	 */
 	TEST_FEATURE ("with unknown signal annotation");
-	signal = signal_new (NULL, "TestSignal");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_SIGNAL, signal);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			signal = signal_new (NULL, "TestSignal");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_SIGNAL, signal);
 
-	attr[0] = "name";
-	attr[1] = "com.netsplit.Nih.Unknown";
-	attr[2] = "value";
-	attr[3] = "true";
-	attr[4] = NULL;
+			attr[0] = "name";
+			attr[1] = "com.netsplit.Nih.Unknown";
+			attr[2] = "value";
+			attr[3] = "true";
+			attr[4] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = annotation_start_tag (xmlp, "annotation", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = annotation_start_tag (xmlp, "annotation", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), parent);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_NE_P (entry, parent);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_IGNORED);
+		TEST_EQ_P (entry->data, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown signal annotation: "
+				       "com.netsplit.Nih.Unknown\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
+		nih_free (parent);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_NE_P (entry, parent);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_IGNORED);
-	TEST_EQ_P (entry->data, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown signal annotation: "
-			       "com.netsplit.Nih.Unknown\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
-	nih_free (parent);
 
 
 	/* Check that an unknown property annotation error is converted
@@ -605,36 +719,54 @@ test_start_tag (void)
 	 * an ignored element being pushed onto the stack.
 	 */
 	TEST_FEATURE ("with unknown property annotation");
-	property = property_new (NULL, "TestProperty", "s", NIH_DBUS_READ);
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_PROPERTY, property);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			property = property_new (NULL, "TestProperty", "s", NIH_DBUS_READ);
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_PROPERTY, property);
 
-	attr[0] = "name";
-	attr[1] = "com.netsplit.Nih.Unknown";
-	attr[2] = "value";
-	attr[3] = "true";
-	attr[4] = NULL;
+			attr[0] = "name";
+			attr[1] = "com.netsplit.Nih.Unknown";
+			attr[2] = "value";
+			attr[3] = "true";
+			attr[4] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = annotation_start_tag (xmlp, "annotation", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = annotation_start_tag (xmlp, "annotation", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), parent);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_NE_P (entry, parent);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_IGNORED);
+		TEST_EQ_P (entry->data, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown property annotation: "
+				       "com.netsplit.Nih.Unknown\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
+		nih_free (parent);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_NE_P (entry, parent);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_IGNORED);
-	TEST_EQ_P (entry->data, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown property annotation: "
-			       "com.netsplit.Nih.Unknown\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
-	nih_free (parent);
 
 
 	/* Check that an unknown argument annotation error is converted
@@ -642,36 +774,54 @@ test_start_tag (void)
 	 * an ignored element being pushed onto the stack.
 	 */
 	TEST_FEATURE ("with unknown argument annotation");
-	argument = argument_new (NULL, "test_arg", "s", NIH_DBUS_ARG_IN);
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_ARGUMENT, argument);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			argument = argument_new (NULL, "test_arg", "s", NIH_DBUS_ARG_IN);
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_ARGUMENT, argument);
 
-	attr[0] = "name";
-	attr[1] = "com.netsplit.Nih.Unknown";
-	attr[2] = "value";
-	attr[3] = "true";
-	attr[4] = NULL;
+			attr[0] = "name";
+			attr[1] = "com.netsplit.Nih.Unknown";
+			attr[2] = "value";
+			attr[3] = "true";
+			attr[4] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = annotation_start_tag (xmlp, "annotation", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = annotation_start_tag (xmlp, "annotation", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), parent);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_NE_P (entry, parent);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_IGNORED);
+		TEST_EQ_P (entry->data, NULL);
+
+		TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown argument annotation: "
+				       "com.netsplit.Nih.Unknown\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
+		nih_free (parent);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_NE_P (entry, parent);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_IGNORED);
-	TEST_EQ_P (entry->data, NULL);
-
-	TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown argument annotation: "
-			       "com.netsplit.Nih.Unknown\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
-	nih_free (parent);
 
 
 	XML_ParserFree (xmlp);
@@ -720,7 +870,7 @@ test_end_tag (void)
 
 			TEST_NOT_FREE (entry);
 
-			err = nih_error_get ();
+ 			err = nih_error_get ();
 			TEST_EQ (err->number, ENOMEM);
 			nih_free (err);
 

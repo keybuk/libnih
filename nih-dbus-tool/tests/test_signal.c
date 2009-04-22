@@ -246,52 +246,60 @@ test_start_tag (void)
 	 * in an error being raised.
 	 */
 	TEST_FEATURE ("with missing name");
-	interface = interface_new (NULL, "com.netsplit.Nih.Test");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_INTERFACE, interface);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_INTERFACE, interface);
 
-	attr[0] = NULL;
+			attr[0] = NULL;
+		}
 
-	ret = signal_start_tag (xmlp, "signal", attr);
+		ret = signal_start_tag (xmlp, "signal", attr);
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (parse_stack_top (&context.stack), parent);
+		TEST_EQ_P (parse_stack_top (&context.stack), parent);
 
-	TEST_LIST_EMPTY (&interface->signals);
+		TEST_LIST_EMPTY (&interface->signals);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, SIGNAL_MISSING_NAME);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, SIGNAL_MISSING_NAME);
+		nih_free (err);
 
-	nih_free (parent);
+		nih_free (parent);
+	}
 
 
 	/* Check that a signal with an invalid name results in an
 	 * error being raised.
 	 */
 	TEST_FEATURE ("with invalid name");
-	interface = interface_new (NULL, "com.netsplit.Nih.Test");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_INTERFACE, interface);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_INTERFACE, interface);
 
-	attr[0] = "name";
-	attr[1] = "Test Signal";
-	attr[2] = NULL;
+			attr[0] = "name";
+			attr[1] = "Test Signal";
+			attr[2] = NULL;
+		}
 
-	ret = signal_start_tag (xmlp, "signal", attr);
+		ret = signal_start_tag (xmlp, "signal", attr);
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (parse_stack_top (&context.stack), parent);
+		TEST_EQ_P (parse_stack_top (&context.stack), parent);
 
-	TEST_LIST_EMPTY (&interface->signals);
+		TEST_LIST_EMPTY (&interface->signals);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, SIGNAL_INVALID_NAME);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, SIGNAL_INVALID_NAME);
+		nih_free (err);
 
-	nih_free (parent);
+		nih_free (parent);
+	}
 
 
 	/* Check that an unknown signal attribute results in a warning
@@ -299,45 +307,63 @@ test_start_tag (void)
 	 * and the normal processing finished.
 	 */
 	TEST_FEATURE ("with unknown attribute");
-	interface = interface_new (NULL, "com.netsplit.Nih.Test");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_INTERFACE, interface);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_INTERFACE, interface);
 
-	attr[0] = "name";
-	attr[1] = "TestSignal";
-	attr[2] = "frodo";
-	attr[3] = "baggins";
-	attr[4] = NULL;
+			attr[0] = "name";
+			attr[1] = "TestSignal";
+			attr[2] = "frodo";
+			attr[3] = "baggins";
+			attr[4] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = signal_start_tag (xmlp, "signal", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = signal_start_tag (xmlp, "signal", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), parent);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_NE_P (entry, parent);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_SIGNAL);
+
+		signal = entry->signal;
+		TEST_ALLOC_SIZE (signal, sizeof (Signal));
+		TEST_ALLOC_PARENT (signal, entry);
+		TEST_EQ_STR (signal->name, "TestSignal");
+		TEST_ALLOC_PARENT (signal->name, signal);
+		TEST_EQ_P (signal->symbol, NULL);
+		TEST_LIST_EMPTY (&signal->arguments);
+
+		TEST_LIST_EMPTY (&interface->signals);
+
+		TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown <signal> attribute: "
+				       "frodo\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
+		nih_free (parent);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_NE_P (entry, parent);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_SIGNAL);
-
-	signal = entry->signal;
-	TEST_ALLOC_SIZE (signal, sizeof (Signal));
-	TEST_ALLOC_PARENT (signal, entry);
-	TEST_EQ_STR (signal->name, "TestSignal");
-	TEST_ALLOC_PARENT (signal->name, signal);
-	TEST_EQ_P (signal->symbol, NULL);
-	TEST_LIST_EMPTY (&signal->arguments);
-
-	TEST_LIST_EMPTY (&interface->signals);
-
-	TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown <signal> attribute: "
-			       "frodo\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
-	nih_free (parent);
 
 
 	/* Check that a signal on an empty stack (ie. a top-level
@@ -346,27 +372,43 @@ test_start_tag (void)
 	 * stack.
 	 */
 	TEST_FEATURE ("with empty stack");
-	attr[0] = "name";
-	attr[1] = "TestSignal";
-	attr[2] = NULL;
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			attr[0] = "name";
+			attr[1] = "TestSignal";
+			attr[2] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = signal_start_tag (xmlp, "signal", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = signal_start_tag (xmlp, "signal", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), NULL);
+
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_IGNORED);
+		TEST_EQ_P (entry->data, NULL);
+
+		TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <signal> tag\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_IGNORED);
-	TEST_EQ_P (entry->data, NULL);
-
-	TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <signal> tag\n");
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
 
 
 	/* Check that a signal on top of a stack entry that's not an
@@ -375,32 +417,50 @@ test_start_tag (void)
 	 * stack.
 	 */
 	TEST_FEATURE ("with non-interface on stack");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_NODE, node_new (NULL, NULL));
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_NODE, node_new (NULL, NULL));
 
-	attr[0] = "name";
-	attr[1] = "TestSignal";
-	attr[2] = NULL;
+			attr[0] = "name";
+			attr[1] = "TestSignal";
+			attr[2] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = signal_start_tag (xmlp, "signal", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = signal_start_tag (xmlp, "signal", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), parent);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_NE_P (entry, parent);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_IGNORED);
+		TEST_EQ_P (entry->data, NULL);
+
+		TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <signal> tag\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
+		nih_free (parent);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_NE_P (entry, parent);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_IGNORED);
-	TEST_EQ_P (entry->data, NULL);
-
-	TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <signal> tag\n");
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
-	nih_free (parent);
 
 
 	XML_ParserFree (xmlp);
@@ -539,28 +599,34 @@ test_end_tag (void)
 	 * become unpredicatable (introspection data isn't ordered).
 	 */
 	TEST_FEATURE ("with conflicting symbol");
-	interface = interface_new (NULL, "com.netsplit.Nih.Test");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_INTERFACE, interface);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_INTERFACE, interface);
 
-	other = signal_new (interface, "Test");
-	other->symbol = nih_strdup (other, "test_signal");
-	nih_list_add (&interface->signals, &other->entry);
+			other = signal_new (interface, "Test");
+			other->symbol = nih_strdup (other, "test_signal");
+			nih_list_add (&interface->signals, &other->entry);
 
-	signal = signal_new (NULL, "TestSignal");
-	entry = parse_stack_push (NULL, &context.stack,
-				  PARSE_SIGNAL, signal);
+			signal = signal_new (NULL, "TestSignal");
+			entry = parse_stack_push (NULL, &context.stack,
+						  PARSE_SIGNAL, signal);
+		}
 
-	ret = signal_end_tag (xmlp, "signal");
+		ret = signal_end_tag (xmlp, "signal");
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, SIGNAL_DUPLICATE_SYMBOL);
-	nih_free (err);
+		err = nih_error_get ();
+		if ((! test_alloc_failed)
+		    || (err->number != ENOMEM))
+			TEST_EQ (err->number, SIGNAL_DUPLICATE_SYMBOL);
+		nih_free (err);
 
-	nih_free (entry);
-	nih_free (parent);
+		nih_free (entry);
+		nih_free (parent);
+	}
 
 
 	XML_ParserFree (xmlp);
@@ -724,60 +790,72 @@ test_annotation (void)
 	 * in an error being raised.
 	 */
 	TEST_FEATURE ("with invalid value for deprecated annotation");
-	signal = signal_new (NULL, "TestSignal");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			signal = signal_new (NULL, "TestSignal");
+		}
 
-	ret = signal_annotation (signal,
-				 "org.freedesktop.DBus.Deprecated",
-				 "foo");
+		ret = signal_annotation (signal,
+					 "org.freedesktop.DBus.Deprecated",
+					 "foo");
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (signal->symbol, NULL);
+		TEST_EQ_P (signal->symbol, NULL);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, SIGNAL_ILLEGAL_DEPRECATED);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, SIGNAL_ILLEGAL_DEPRECATED);
+		nih_free (err);
 
-	nih_free (signal);
+		nih_free (signal);
+	}
 
 
 	/* Check that an invalid symbol in an annotation results in an
 	 * error being raised.
 	 */
 	TEST_FEATURE ("with invalid symbol in annotation");
-	signal = signal_new (NULL, "TestSignal");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			signal = signal_new (NULL, "TestSignal");
+		}
 
-	ret = signal_annotation (signal,
-				 "com.netsplit.Nih.Symbol",
-				 "foo bar");
-	TEST_LT (ret, 0);
+		ret = signal_annotation (signal,
+					 "com.netsplit.Nih.Symbol",
+					 "foo bar");
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (signal->symbol, NULL);
+		TEST_EQ_P (signal->symbol, NULL);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, SIGNAL_INVALID_SYMBOL);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, SIGNAL_INVALID_SYMBOL);
+		nih_free (err);
 
-	nih_free (signal);
+		nih_free (signal);
+	}
 
 
 	/* Check that an unknown annotation results in an error being
 	 * raised.
 	 */
 	TEST_FEATURE ("with unknown annotation");
-	signal = signal_new (NULL, "TestSignal");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			signal = signal_new (NULL, "TestSignal");
+		}
 
-	ret = signal_annotation (signal,
-				 "com.netsplit.Nih.Unknown",
-				 "true");
+		ret = signal_annotation (signal,
+					 "com.netsplit.Nih.Unknown",
+					 "true");
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, SIGNAL_UNKNOWN_ANNOTATION);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, SIGNAL_UNKNOWN_ANNOTATION);
+		nih_free (err);
 
-	nih_free (signal);
+		nih_free (signal);
+	}
 }
 
 

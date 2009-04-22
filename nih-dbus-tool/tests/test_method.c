@@ -249,52 +249,60 @@ test_start_tag (void)
 	 * in an error being raised.
 	 */
 	TEST_FEATURE ("with missing name");
-	interface = interface_new (NULL, "com.netsplit.Nih.Test");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_INTERFACE, interface);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_INTERFACE, interface);
 
-	attr[0] = NULL;
+			attr[0] = NULL;
+		}
 
-	ret = method_start_tag (xmlp, "method", attr);
+		ret = method_start_tag (xmlp, "method", attr);
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (parse_stack_top (&context.stack), parent);
+		TEST_EQ_P (parse_stack_top (&context.stack), parent);
 
-	TEST_LIST_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->methods);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, METHOD_MISSING_NAME);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, METHOD_MISSING_NAME);
+		nih_free (err);
 
-	nih_free (parent);
+		nih_free (parent);
+	}
 
 
 	/* Check that a method with an invalid name results in an
 	 * error being raised.
 	 */
 	TEST_FEATURE ("with invalid name");
-	interface = interface_new (NULL, "com.netsplit.Nih.Test");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_INTERFACE, interface);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_INTERFACE, interface);
 
-	attr[0] = "name";
-	attr[1] = "Test Method";
-	attr[2] = NULL;
+			attr[0] = "name";
+			attr[1] = "Test Method";
+			attr[2] = NULL;
+		}
 
-	ret = method_start_tag (xmlp, "method", attr);
+		ret = method_start_tag (xmlp, "method", attr);
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (parse_stack_top (&context.stack), parent);
+		TEST_EQ_P (parse_stack_top (&context.stack), parent);
 
-	TEST_LIST_EMPTY (&interface->methods);
+		TEST_LIST_EMPTY (&interface->methods);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, METHOD_INVALID_NAME);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, METHOD_INVALID_NAME);
+		nih_free (err);
 
-	nih_free (parent);
+		nih_free (parent);
+	}
 
 
 	/* Check that an unknown method attribute results in a warning
@@ -302,45 +310,63 @@ test_start_tag (void)
 	 * and the normal processing finished.
 	 */
 	TEST_FEATURE ("with unknown attribute");
-	interface = interface_new (NULL, "com.netsplit.Nih.Test");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_INTERFACE, interface);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_INTERFACE, interface);
 
-	attr[0] = "name";
-	attr[1] = "TestMethod";
-	attr[2] = "frodo";
-	attr[3] = "baggins";
-	attr[4] = NULL;
+			attr[0] = "name";
+			attr[1] = "TestMethod";
+			attr[2] = "frodo";
+			attr[3] = "baggins";
+			attr[4] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = method_start_tag (xmlp, "method", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = method_start_tag (xmlp, "method", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), parent);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_NE_P (entry, parent);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_METHOD);
+
+		method = entry->method;
+		TEST_ALLOC_SIZE (method, sizeof (Method));
+		TEST_ALLOC_PARENT (method, entry);
+		TEST_EQ_STR (method->name, "TestMethod");
+		TEST_ALLOC_PARENT (method->name, method);
+		TEST_EQ_P (method->symbol, NULL);
+		TEST_LIST_EMPTY (&method->arguments);
+
+		TEST_LIST_EMPTY (&interface->methods);
+
+		TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown <method> attribute: "
+				       "frodo\n"));
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
+		nih_free (parent);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_NE_P (entry, parent);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_METHOD);
-
-	method = entry->method;
-	TEST_ALLOC_SIZE (method, sizeof (Method));
-	TEST_ALLOC_PARENT (method, entry);
-	TEST_EQ_STR (method->name, "TestMethod");
-	TEST_ALLOC_PARENT (method->name, method);
-	TEST_EQ_P (method->symbol, NULL);
-	TEST_LIST_EMPTY (&method->arguments);
-
-	TEST_LIST_EMPTY (&interface->methods);
-
-	TEST_FILE_EQ (output, ("test:foo:1:0: Ignored unknown <method> attribute: "
-			       "frodo\n"));
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
-	nih_free (parent);
 
 
 	/* Check that a method on an empty stack (ie. a top-level
@@ -349,27 +375,43 @@ test_start_tag (void)
 	 * stack.
 	 */
 	TEST_FEATURE ("with empty stack");
-	attr[0] = "name";
-	attr[1] = "TestMethod";
-	attr[2] = NULL;
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			attr[0] = "name";
+			attr[1] = "TestMethod";
+			attr[2] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = method_start_tag (xmlp, "method", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = method_start_tag (xmlp, "method", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), NULL);
+
+			TEST_FILE_RESET (output);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_IGNORED);
+		TEST_EQ_P (entry->data, NULL);
+
+		TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <method> tag\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_IGNORED);
-	TEST_EQ_P (entry->data, NULL);
-
-	TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <method> tag\n");
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
 
 
 	/* Check that a method on top of a stack entry that's not an
@@ -378,32 +420,50 @@ test_start_tag (void)
 	 * stack.
 	 */
 	TEST_FEATURE ("with non-interface on stack");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_NODE, node_new (NULL, NULL));
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_NODE, node_new (NULL, NULL));
 
-	attr[0] = "name";
-	attr[1] = "TestMethod";
-	attr[2] = NULL;
+			attr[0] = "name";
+			attr[1] = "TestMethod";
+			attr[2] = NULL;
+		}
 
-	TEST_DIVERT_STDERR (output) {
-		ret = method_start_tag (xmlp, "method", attr);
+		TEST_DIVERT_STDERR (output) {
+			ret = method_start_tag (xmlp, "method", attr);
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_EQ_P (parse_stack_top (&context.stack), parent);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		entry = parse_stack_top (&context.stack);
+		TEST_NE_P (entry, parent);
+		TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
+		TEST_EQ (entry->type, PARSE_IGNORED);
+		TEST_EQ_P (entry->data, NULL);
+
+		TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <method> tag\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (entry);
+		nih_free (parent);
 	}
-	rewind (output);
-
-	TEST_EQ (ret, 0);
-
-	entry = parse_stack_top (&context.stack);
-	TEST_NE_P (entry, parent);
-	TEST_ALLOC_SIZE (entry, sizeof (ParseStack));
-	TEST_EQ (entry->type, PARSE_IGNORED);
-	TEST_EQ_P (entry->data, NULL);
-
-	TEST_FILE_EQ (output, "test:foo:1:0: Ignored unexpected <method> tag\n");
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
-
-	nih_free (entry);
-	nih_free (parent);
 
 
 	XML_ParserFree (xmlp);
@@ -542,28 +602,34 @@ test_end_tag (void)
 	 * become unpredicatable (introspection data isn't ordered).
 	 */
 	TEST_FEATURE ("with conflicting symbol");
-	interface = interface_new (NULL, "com.netsplit.Nih.Test");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_INTERFACE, interface);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_INTERFACE, interface);
 
-	other = method_new (interface, "Test");
-	other->symbol = nih_strdup (other, "test_method");
-	nih_list_add (&interface->methods, &other->entry);
+			other = method_new (interface, "Test");
+			other->symbol = nih_strdup (other, "test_method");
+			nih_list_add (&interface->methods, &other->entry);
 
-	method = method_new (NULL, "TestMethod");
-	entry = parse_stack_push (NULL, &context.stack,
-				  PARSE_METHOD, method);
+			method = method_new (NULL, "TestMethod");
+			entry = parse_stack_push (NULL, &context.stack,
+						  PARSE_METHOD, method);
+		}
 
-	ret = method_end_tag (xmlp, "method");
+		ret = method_end_tag (xmlp, "method");
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, METHOD_DUPLICATE_SYMBOL);
-	nih_free (err);
+		err = nih_error_get ();
+		if ((! test_alloc_failed)
+		    || (err->number != ENOMEM))
+			TEST_EQ (err->number, METHOD_DUPLICATE_SYMBOL);
+		nih_free (err);
 
-	nih_free (entry);
-	nih_free (parent);
+		nih_free (entry);
+		nih_free (parent);
+	}
 
 
 	XML_ParserFree (xmlp);
@@ -867,103 +933,123 @@ test_annotation (void)
 	 * in an error being raised.
 	 */
 	TEST_FEATURE ("with invalid value for deprecated annotation");
-	method = method_new (NULL, "TestMethod");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			method = method_new (NULL, "TestMethod");
+		}
 
-	ret = method_annotation (method,
-				 "org.freedesktop.DBus.Deprecated",
-				 "foo");
+		ret = method_annotation (method,
+					 "org.freedesktop.DBus.Deprecated",
+					 "foo");
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (method->symbol, NULL);
+		TEST_EQ_P (method->symbol, NULL);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, METHOD_ILLEGAL_DEPRECATED);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, METHOD_ILLEGAL_DEPRECATED);
+		nih_free (err);
 
-	nih_free (method);
+		nih_free (method);
+	}
 
 
 	/* Check that an invalid value for the no reply annotation results
 	 * in an error being raised.
 	 */
 	TEST_FEATURE ("with invalid value for no reply annotation");
-	method = method_new (NULL, "TestMethod");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			method = method_new (NULL, "TestMethod");
 
-	ret = method_annotation (method,
-				 "org.freedesktop.DBus.Method.NoReply",
-				 "foo");
+			ret = method_annotation (method,
+						 "org.freedesktop.DBus.Method.NoReply",
+						 "foo");
+		}
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (method->symbol, NULL);
+		TEST_EQ_P (method->symbol, NULL);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, METHOD_ILLEGAL_NO_REPLY);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, METHOD_ILLEGAL_NO_REPLY);
+		nih_free (err);
 
-	nih_free (method);
+		nih_free (method);
+	}
 
 
 	/* Check that an invalid symbol in an annotation results in an
 	 * error being raised.
 	 */
 	TEST_FEATURE ("with invalid symbol in annotation");
-	method = method_new (NULL, "TestMethod");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			method = method_new (NULL, "TestMethod");
+		}
 
-	ret = method_annotation (method,
-				 "com.netsplit.Nih.Symbol",
-				 "foo bar");
+		ret = method_annotation (method,
+					 "com.netsplit.Nih.Symbol",
+					 "foo bar");
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (method->symbol, NULL);
+		TEST_EQ_P (method->symbol, NULL);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, METHOD_INVALID_SYMBOL);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, METHOD_INVALID_SYMBOL);
+		nih_free (err);
 
-	nih_free (method);
+		nih_free (method);
+	}
 
 
 	/* Check that an invalid value for the async annotation results
 	 * in an error being raised.
 	 */
 	TEST_FEATURE ("with invalid value for async annotation");
-	method = method_new (NULL, "TestMethod");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			method = method_new (NULL, "TestMethod");
+		}
 
-	ret = method_annotation (method,
-				 "com.netsplit.Nih.Method.Async",
-				 "foo");
+		ret = method_annotation (method,
+					 "com.netsplit.Nih.Method.Async",
+					 "foo");
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (method->symbol, NULL);
+		TEST_EQ_P (method->symbol, NULL);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, METHOD_ILLEGAL_ASYNC);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, METHOD_ILLEGAL_ASYNC);
+		nih_free (err);
 
-	nih_free (method);
+		nih_free (method);
+	}
 
 
 	/* Check that an unknown annotation results in an error being
 	 * raised.
 	 */
 	TEST_FEATURE ("with unknown annotation");
-	method = method_new (NULL, "TestMethod");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			method = method_new (NULL, "TestMethod");
+		}
 
-	ret = method_annotation (method,
-				 "com.netsplit.Nih.Unknown",
-				 "true");
+		ret = method_annotation (method,
+					 "com.netsplit.Nih.Unknown",
+					 "true");
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, METHOD_UNKNOWN_ANNOTATION);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, METHOD_UNKNOWN_ANNOTATION);
+		nih_free (err);
 
-	nih_free (method);
+		nih_free (method);
+	}
 }
 
 

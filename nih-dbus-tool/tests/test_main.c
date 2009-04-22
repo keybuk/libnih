@@ -82,19 +82,21 @@ test_mode_option (void)
 	 * how to get help.
 	 */
 	TEST_FEATURE ("with unknown argument");
-	value = (OutputMode)-1;
+	TEST_ALLOC_FAIL {
+		value = (OutputMode)-1;
 
-	TEST_DIVERT_STDERR (output) {
-		ret = mode_option (&opt, "frodo");
+		TEST_DIVERT_STDERR (output) {
+			ret = mode_option (&opt, "frodo");
+		}
+		rewind (output);
+
+		TEST_LT (ret, 0);
+
+		TEST_FILE_EQ (output, "test: illegal output mode: frodo\n");
+		TEST_FILE_EQ (output, "Try `test --help' for more information.\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
 	}
-	rewind (output);
-
-	TEST_LT (ret, 0);
-
-	TEST_FILE_EQ (output, "test: illegal output mode: frodo\n");
-	TEST_FILE_EQ (output, "Try `test --help' for more information.\n");
-	TEST_FILE_END (output);
-	TEST_FILE_RESET (output);
 
 
 	fclose (output);

@@ -382,29 +382,33 @@ test_start_tag (void)
 	 * in an error being raised.
 	 */
 	TEST_FEATURE ("with missing name");
-	interface = interface_new (NULL, "com.netsplit.Nih.Test");
-	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_INTERFACE, interface);
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_INTERFACE, interface);
 
-	attr[0] = "type";
-	attr[1] = "s";
-	attr[2] = "access";
-	attr[3] = "read";
-	attr[4] = NULL;
+			attr[0] = "type";
+			attr[1] = "s";
+			attr[2] = "access";
+			attr[3] = "read";
+			attr[4] = NULL;
+		}
 
-	ret = property_start_tag (xmlp, "property", attr);
+		ret = property_start_tag (xmlp, "property", attr);
 
-	TEST_LT (ret, 0);
+		TEST_LT (ret, 0);
 
-	TEST_EQ_P (parse_stack_top (&context.stack), parent);
+		TEST_EQ_P (parse_stack_top (&context.stack), parent);
 
-	TEST_LIST_EMPTY (&interface->properties);
+		TEST_LIST_EMPTY (&interface->properties);
 
-	err = nih_error_get ();
-	TEST_EQ (err->number, PROPERTY_MISSING_NAME);
-	nih_free (err);
+		err = nih_error_get ();
+		TEST_EQ (err->number, PROPERTY_MISSING_NAME);
+		nih_free (err);
 
-	nih_free (parent);
+		nih_free (parent);
+	}
 
 
 	/* Check that a property with an invalid name results in an

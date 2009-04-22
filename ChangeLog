@@ -1,3 +1,18 @@
+2009-04-22  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/tests/test_main.c,
+	* nih-dbus-tool/tests/test_node.c,
+	* nih-dbus-tool/tests/test_interface.c,
+	* nih-dbus-tool/tests/test_method.c,
+	* nih-dbus-tool/tests/test_signal.c,
+	* nih-dbus-tool/tests/test_property.c,
+	* nih-dbus-tool/tests/test_argument.c,
+	* nih-dbus-tool/tests/test_annotation.c,
+	* nih-dbus-tool/tests/test_parse.c: All tests cases should use
+	TEST_ALLOC_FAIL, even the ones testing for errors.  To get around
+	situations where some allocations may be repeated, but others will
+	fail, check the return value to see which happened.
+
 2009-04-21  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus/tests/test_dbus_message.c (my_return_error): Return

@@ -1,5 +1,9 @@
 2009-04-23  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/Makefile.am (.PHONY): Mark tests phony.
+	* nih-dbus/Makefile.am (.PHONY): Mark tests phony.
+	* nih-dbus-tool/Makefile.am (.PHONY): Mark tests phony.
+
 	* nih-dbus/Makefile.am (libnih_dbus_la_CFLAGS, AM_CFLAGS): Replace
 	the former with the latter.
 	(test_dbus_error_CFLAGS, test_dbus_connection_LDFLAGS)

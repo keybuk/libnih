@@ -336,6 +336,7 @@ CLEANFILES = \
 	tests/property_code.c
 
 
+.PHONY: tests
 tests: $(BUILT_SOURCES) $(check_PROGRAMS)
 
 clean-local:

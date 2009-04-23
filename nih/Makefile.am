@@ -174,6 +174,7 @@ test_error_LDFLAGS = -static
 test_error_LDADD = libnih.la
 
 
+.PHONY: tests
 tests: $(BUILT_SOURCES) $(check_PROGRAMS)
 
 clean-local:

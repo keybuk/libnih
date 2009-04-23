@@ -89,6 +89,7 @@ test_dbus_util_LDFLAGS = -static
 test_dbus_util_LDADD = ../nih/libnih.la libnih-dbus.la $(DBUS_LIBS)
 
 
+.PHONY: tests
 tests: $(BUILT_SOURCES) $(check_PROGRAMS)
 
 clean-local:

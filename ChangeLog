@@ -1,5 +1,10 @@
 2009-04-23  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_logging.c (my_logger): Safely strdup the message.
+	(test_set_logger, test_set_priority, test_log_message): Make sure
+	all calls are wrapped with TEST_ALLOC_FAIL
+	(test_logger_printf): Call TEST_ALLOC_FAIL for everything.
+
 	* nih/Makefile.am (.PHONY): Mark tests phony.
 	* nih-dbus/Makefile.am (.PHONY): Mark tests phony.
 	* nih-dbus-tool/Makefile.am (.PHONY): Mark tests phony.

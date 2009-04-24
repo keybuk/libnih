@@ -1,5 +1,8 @@
 2009-04-23  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/tests/test_dbus_connection.c (test_server): Add tests
+	for address in use,
+
 	* nih/tests/test_logging.c (my_logger): Safely strdup the message.
 	(test_set_logger, test_set_priority, test_log_message): Make sure
 	all calls are wrapped with TEST_ALLOC_FAIL

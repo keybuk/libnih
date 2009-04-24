@@ -892,6 +892,7 @@ my_connect_handler (DBusServer     *server,
 void
 test_server (void)
 {
+	DBusServer *    other_server;
 	DBusServer *    server;
 	DBusConnection *conn;
 	DBusConnection *server_conn;
@@ -1055,6 +1056,35 @@ test_server (void)
 
 		dbus_server_disconnect (server);
 		dbus_server_unref (server);
+
+		dbus_shutdown ();
+	}
+
+
+	/* Check that creating a server on an address which is already in
+	 * use returns no object and the error.
+	 */
+	TEST_FEATURE ("with address in use");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			other_server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
+							NULL, NULL);
+			assert (other_server != NULL);
+		}
+
+		server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
+					  NULL, NULL);
+
+		TEST_EQ_P (server, NULL);
+
+		err = nih_error_get ();
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+		TEST_EQ_STR (((NihDBusError *)err)->name, DBUS_ERROR_ADDRESS_IN_USE);
+		nih_free (err);
+
+		dbus_server_disconnect (other_server);
+		dbus_server_unref (other_server);
 
 		dbus_shutdown ();
 	}

@@ -1,3 +1,10 @@
+2009-04-24  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus/tests/test_dbus_connection.c (test_connect): Add tests
+	for a method call being made and its reply received through the
+	main loop, and for a method call timing out within the main loop.
+	This exercises the watch and timeout functions.
+
 2009-04-23  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus/tests/test_dbus_connection.c (test_server): Add tests

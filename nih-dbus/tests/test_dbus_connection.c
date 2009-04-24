@@ -81,6 +81,43 @@ my_new_connection_drop (DBusServer *    server,
 {
 }
 
+static DBusHandlerResult
+my_message_handle_function (DBusConnection *connection,
+			    DBusMessage *   message,
+			    void *          data)
+{
+	DBusMessage *reply;
+
+	reply = dbus_message_new_method_return (message);
+	dbus_connection_send (connection, reply, NULL);
+
+	return DBUS_HANDLER_RESULT_HANDLED;
+}
+
+static int
+my_method_connect_handler (DBusServer *    server,
+			   DBusConnection *connection)
+{
+	if (client_connection) {
+		dbus_connection_close (client_connection);
+		dbus_connection_unref (client_connection);
+	}
+
+	client_connection = connection;
+
+	dbus_connection_add_filter (client_connection, my_message_handle_function,
+				    NULL, NULL);
+
+	return TRUE;
+}
+
+static void
+my_notify_function (DBusPendingCall *pending_call,
+		    void *           data)
+{
+	nih_main_loop_exit (0);
+}
+
 void
 test_connect (void)
 {
@@ -94,6 +131,10 @@ test_connect (void)
 	NihError *       err;
 	int              fd;
 	int              status;
+	DBusMessage *    method_call = NULL;
+	DBusPendingCall *pending_call = NULL;
+	DBusMessage *    reply;
+	int              ret;
 
 	TEST_FUNCTION ("nih_dbus_connect");
 
@@ -450,6 +491,236 @@ test_connect (void)
 		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
 		TEST_EQ_STR (((NihDBusError *)err)->name, DBUS_ERROR_NO_SERVER);
 		nih_free (err);
+
+		dbus_shutdown ();
+	}
+
+
+	/* Check that we can make a method call on the connection to the
+	 * server and that we can receive its reply, all from the main
+	 * loop.
+	 */
+	TEST_FEATURE ("with method call and reply");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			TEST_CHILD_WAIT (dbus_pid, wait_fd) {
+				nih_signal_set_handler (SIGTERM, nih_signal_handler);
+				assert (nih_signal_add_handler (NULL, SIGTERM,
+								nih_main_term_signal, NULL));
+
+				server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
+							  my_method_connect_handler, NULL);
+				assert (server != NULL);
+
+				client_connection = NULL;
+
+				TEST_CHILD_RELEASE (wait_fd);
+
+				nih_main_loop ();
+
+				if (client_connection) {
+					dbus_connection_close (client_connection);
+					dbus_connection_unref (client_connection);
+				}
+
+				dbus_server_disconnect (server);
+				dbus_server_unref (server);
+
+				dbus_shutdown ();
+				exit (0);
+			}
+		}
+
+		conn = nih_dbus_connect ("unix:abstract=/com/netsplit/nih/test_dbus",
+					 NULL);
+
+		if (test_alloc_failed
+		    && (conn == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			kill (dbus_pid, SIGTERM);
+
+			waitpid (dbus_pid, &status, 0);
+			TEST_TRUE (WIFEXITED (status));
+			TEST_EQ (WEXITSTATUS (status), 0);
+
+			dbus_shutdown ();
+			continue;
+		}
+
+		TEST_NE_P (conn, NULL);
+		TEST_TRUE (dbus_connection_get_is_connected (conn));
+
+		method_call = dbus_message_new_method_call (
+			"com.netsplit.Nih.Test",
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"TestMethod");
+
+		ret = dbus_connection_send_with_reply (conn, method_call,
+						       &pending_call,
+						       1000);
+
+		if (test_alloc_failed
+		    && (ret == FALSE)) {
+			kill (dbus_pid, SIGTERM);
+
+			waitpid (dbus_pid, &status, 0);
+			TEST_TRUE (WIFEXITED (status));
+			TEST_EQ (WEXITSTATUS (status), 0);
+
+			dbus_connection_unref (conn);
+
+			dbus_shutdown ();
+			continue;
+		}
+
+
+		dbus_message_unref (method_call);
+
+		dbus_pending_call_set_notify (pending_call, my_notify_function,
+					      NULL, NULL);
+
+		nih_main_loop ();
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		reply = dbus_pending_call_steal_reply (pending_call);
+		TEST_NE_P (reply, NULL);
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+
+		dbus_message_unref (reply);
+
+		dbus_connection_unref (conn);
+
+		kill (dbus_pid, SIGTERM);
+
+		waitpid (dbus_pid, &status, 0);
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		dbus_shutdown ();
+	}
+
+
+	/* Check that we can make a method call on the connection to the
+	 * server and that it can timeout, all from the main loop.
+	 */
+	TEST_FEATURE ("with method call and timeout");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			TEST_CHILD_WAIT (dbus_pid, wait_fd) {
+				nih_signal_set_handler (SIGTERM, nih_signal_handler);
+				assert (nih_signal_add_handler (NULL, SIGTERM,
+								nih_main_term_signal, NULL));
+
+				server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
+							  NULL, NULL);
+				assert (server != NULL);
+
+				dbus_server_set_new_connection_function (server, my_new_connection,
+									 NULL, NULL);
+
+				client_connection = NULL;
+
+				TEST_CHILD_RELEASE (wait_fd);
+
+				nih_main_loop ();
+
+				if (client_connection) {
+					dbus_connection_close (client_connection);
+					dbus_connection_unref (client_connection);
+				}
+
+				dbus_server_disconnect (server);
+				dbus_server_unref (server);
+
+				dbus_shutdown ();
+				exit (0);
+			}
+		}
+
+		conn = nih_dbus_connect ("unix:abstract=/com/netsplit/nih/test_dbus",
+					 NULL);
+
+		if (test_alloc_failed
+		    && (conn == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			kill (dbus_pid, SIGTERM);
+
+			waitpid (dbus_pid, &status, 0);
+			TEST_TRUE (WIFEXITED (status));
+			TEST_EQ (WEXITSTATUS (status), 0);
+
+			dbus_shutdown ();
+			continue;
+		}
+
+		TEST_NE_P (conn, NULL);
+		TEST_TRUE (dbus_connection_get_is_connected (conn));
+
+		method_call = dbus_message_new_method_call (
+			"com.netsplit.Nih.Test",
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"TestMethod");
+
+		ret = dbus_connection_send_with_reply (conn, method_call,
+						       &pending_call,
+						       100);
+
+		if (test_alloc_failed
+		    && (ret == FALSE)) {
+			kill (dbus_pid, SIGTERM);
+
+			waitpid (dbus_pid, &status, 0);
+			TEST_TRUE (WIFEXITED (status));
+			TEST_EQ (WEXITSTATUS (status), 0);
+
+			dbus_connection_unref (conn);
+
+			dbus_shutdown ();
+			continue;
+		}
+
+
+		dbus_message_unref (method_call);
+
+		dbus_pending_call_set_notify (pending_call, my_notify_function,
+					      NULL, NULL);
+
+		nih_main_loop ();
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		reply = dbus_pending_call_steal_reply (pending_call);
+		TEST_NE_P (reply, NULL);
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_ERROR);
+		TEST_EQ_STR (dbus_message_get_error_name (reply),
+			     DBUS_ERROR_NO_REPLY);
+
+		dbus_message_unref (reply);
+
+		dbus_connection_unref (conn);
+
+		kill (dbus_pid, SIGTERM);
+
+		waitpid (dbus_pid, &status, 0);
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
 
 		dbus_shutdown ();
 	}

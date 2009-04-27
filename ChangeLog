@@ -1,5 +1,8 @@
 2009-04-27  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_connection.h (NihDBusConnectHandler): Add missing
+	Returns to documentation string.
+
 	* nih-dbus/dbus_error.h: Add documentation string.
 
 	* nih-dbus/dbus_connection.c (nih_dbus_connect, nih_dbus_bus):

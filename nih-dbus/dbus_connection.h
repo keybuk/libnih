@@ -43,6 +43,8 @@ typedef void (*NihDBusDisconnectHandler) (DBusConnection *conn);
  * A D-Bus connection handler is a function called when the D-Bus @server
  * receives a new connection @conn.  The function must return TRUE for the
  * connection to be accepted, otherwise it will be dropped.
+ *
+ * Returns: TRUE if connection accepted, FALSE otherwise.
  **/
 typedef int (*NihDBusConnectHandler) (DBusServer *server,
 				      DBusConnection *conn);

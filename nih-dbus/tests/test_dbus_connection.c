@@ -91,6 +91,8 @@ my_message_handle_function (DBusConnection *connection,
 	reply = dbus_message_new_method_return (message);
 	dbus_connection_send (connection, reply, NULL);
 
+	dbus_message_unref (reply);
+
 	return DBUS_HANDLER_RESULT_HANDLED;
 }
 
@@ -558,20 +560,24 @@ test_connect (void)
 			"/com/netsplit/Nih/Test",
 			"com.netsplit.Nih.Test",
 			"TestMethod");
+		pending_call = NULL;
 
 		ret = dbus_connection_send_with_reply (conn, method_call,
 						       &pending_call,
-						       1000);
+						       30000);
 
 		if (test_alloc_failed
 		    && (ret == FALSE)) {
+			dbus_message_unref (method_call);
+			assert (! pending_call);
+
+			dbus_connection_unref (conn);
+
 			kill (dbus_pid, SIGTERM);
 
 			waitpid (dbus_pid, &status, 0);
 			TEST_TRUE (WIFEXITED (status));
 			TEST_EQ (WEXITSTATUS (status), 0);
-
-			dbus_connection_unref (conn);
 
 			dbus_shutdown ();
 			continue;
@@ -579,6 +585,7 @@ test_connect (void)
 
 
 		dbus_message_unref (method_call);
+		assert (pending_call != NULL);
 
 		dbus_pending_call_set_notify (pending_call, my_notify_function,
 					      NULL, NULL);
@@ -673,6 +680,7 @@ test_connect (void)
 			"/com/netsplit/Nih/Test",
 			"com.netsplit.Nih.Test",
 			"TestMethod");
+		pending_call = NULL;
 
 		ret = dbus_connection_send_with_reply (conn, method_call,
 						       &pending_call,
@@ -680,13 +688,16 @@ test_connect (void)
 
 		if (test_alloc_failed
 		    && (ret == FALSE)) {
+			dbus_message_unref (method_call);
+			assert (! pending_call);
+
+			dbus_connection_unref (conn);
+
 			kill (dbus_pid, SIGTERM);
 
 			waitpid (dbus_pid, &status, 0);
 			TEST_TRUE (WIFEXITED (status));
 			TEST_EQ (WEXITSTATUS (status), 0);
-
-			dbus_connection_unref (conn);
 
 			dbus_shutdown ();
 			continue;
@@ -694,6 +705,7 @@ test_connect (void)
 
 
 		dbus_message_unref (method_call);
+		assert (pending_call != NULL);
 
 		dbus_pending_call_set_notify (pending_call, my_notify_function,
 					      NULL, NULL);

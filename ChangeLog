@@ -1,5 +1,9 @@
 2009-04-27  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/tests/test_dbus_connection.c: Various cleanup fixes,
+	making sure we unref everything that we use.  Increase timeout
+	for method calls since things get slower when under valgrind.
+
 	* nih-dbus/dbus_connection.c (nih_dbus_connection_disconnected):
 	Push an error context while calling the handler.
 	(nih_dbus_new_connection): Push an error context while calling

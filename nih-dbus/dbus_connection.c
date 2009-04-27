@@ -212,6 +212,10 @@ nih_dbus_bus (DBusBusType              bus,
  * automatically unreference the connection after calling the given
  * @disconnect_handler.
  *
+ * It's safe to call this function multiple times for a single @conn,
+ * for example for setting an additional @disconnect_handler for a shared
+ * connection.
+ *
  * Returns: zero on success, negative value on insufficient memory.
  **/
 int
@@ -230,48 +234,49 @@ nih_dbus_setup (DBusConnection *         conn,
  	if (! dbus_connection_allocate_data_slot (&main_loop_slot))
 		return -1;
 
-	if (dbus_connection_get_data (conn, main_loop_slot))
-		goto shared;
+	if (! dbus_connection_get_data (conn, main_loop_slot)) {
+		/* Allow the connection to watch its file descriptors */
+		if (! dbus_connection_set_watch_functions (conn,
+							   nih_dbus_add_watch,
+							   nih_dbus_remove_watch,
+							   nih_dbus_watch_toggled,
+							   NULL, NULL))
+			goto error;
 
+		/* Allow the connection to set up timers */
+		if (! dbus_connection_set_timeout_functions (conn,
+							     nih_dbus_add_timeout,
+							     nih_dbus_remove_timeout,
+							     nih_dbus_timeout_toggled,
+							     NULL, NULL))
+			goto error;
 
-	/* Add the main loop function and store it in the data slot,
-	 * this means it will be automatically freed.
-	 */
-	loop = nih_main_loop_add_func (NULL, (NihMainLoopCb)nih_dbus_callback,
-				       conn);
-	if (! loop)
-		return -1;
+		/* Allow the connection to wake up the main loop */
+		dbus_connection_set_wakeup_main_function (conn,
+							  nih_dbus_wakeup_main,
+							  NULL, NULL);
 
-	if (! dbus_connection_set_data (conn, main_loop_slot, loop,
-					(DBusFreeFunction)nih_discard)) {
-		nih_free (loop);
-		return -1;
+		/* Add the main loop function and store it in the data slot,
+		 * this means it will be automatically freed.  Until this
+		 * succeeds, all of the above functions will be reset each
+		 * time.
+		 */
+		loop = nih_main_loop_add_func (NULL, (NihMainLoopCb)nih_dbus_callback,
+					       conn);
+		if (! loop)
+			goto error;
+
+		if (! dbus_connection_set_data (conn, main_loop_slot, loop,
+						(DBusFreeFunction)nih_discard)) {
+			nih_free (loop);
+			goto error;
+		}
 	}
 
-	/* Allow the connection to watch its file descriptors */
-	if (! dbus_connection_set_watch_functions (conn,
-						   nih_dbus_add_watch,
-						   nih_dbus_remove_watch,
-						   nih_dbus_watch_toggled,
-						   NULL, NULL))
-		return -1;
-
-	/* Allow the connection to set up timers */
-	if (! dbus_connection_set_timeout_functions (conn,
-						     nih_dbus_add_timeout,
-						     nih_dbus_remove_timeout,
-						     nih_dbus_timeout_toggled,
-						     NULL, NULL))
-		return -1;
-
-	/* Allow the connection to wake up the main loop */
-	dbus_connection_set_wakeup_main_function (conn,
-						  nih_dbus_wakeup_main,
-						  NULL, NULL);
-
-shared:
 	/* Add the filter for the disconnect handler (which may be NULL,
-	 * but even then we have to unreference it).
+	 * but even then we have to unreference it).  If this fails, and
+	 * we call again, we'll act as though it's a shared connection
+	 * which has the right effect.
 	 */
 	if (! dbus_connection_add_filter (
 		    conn, (DBusHandleMessageFunction)nih_dbus_connection_disconnected,
@@ -279,6 +284,22 @@ shared:
 		return -1;
 
 	return 0;
+
+error:
+	/* Unwind setup of a non-shared connection so that next time we call,
+	 * we're not in a strange half-done state.
+	 */
+	dbus_connection_set_watch_functions (conn,
+					     NULL, NULL, NULL,
+					     NULL, NULL);
+	dbus_connection_set_timeout_functions (conn,
+					       NULL, NULL, NULL,
+					       NULL, NULL);
+	dbus_connection_set_wakeup_main_function (conn,
+						  NULL,
+						  NULL, NULL);
+
+	return -1;
 }
 
 
@@ -470,11 +491,20 @@ nih_dbus_watch_toggled (DBusWatch *watch,
 			void *     data)
 {
 	NihIoWatch *io_watch;
+	int         flags;
+	NihIoEvents events = NIH_IO_EXCEPT;
 
 	nih_assert (watch != NULL);
 
 	io_watch = dbus_watch_get_data (watch);
 	nih_assert (io_watch != NULL);
+
+	/* D-Bus may toggle the watch in an attempt to change the flags */
+	flags = dbus_watch_get_flags (watch);
+	if (flags & DBUS_WATCH_READABLE)
+		events |= NIH_IO_READ;
+	if (flags & DBUS_WATCH_WRITABLE)
+		events |= NIH_IO_WRITE;
 
 	if (dbus_watch_get_enabled (watch)) {
 		nih_list_add (nih_io_watches, &io_watch->entry);
@@ -600,17 +630,17 @@ nih_dbus_timeout_toggled (DBusTimeout *timeout,
 	timer = dbus_timeout_get_data (timeout);
 	nih_assert (timer != NULL);
 
-	if (dbus_timeout_get_enabled (timeout)) {
-		nih_list_add (nih_timers, &timer->entry);
-	} else {
-		nih_list_remove (&timer->entry);
-	}
-
 	/* D-Bus may toggle the timer in an attempt to change the timeout */
 	interval = dbus_timeout_get_interval (timeout);
 
 	timer->period = (interval - 1) / 1000 + 1;
 	timer->due = time (NULL) + timer->period;
+
+	if (dbus_timeout_get_enabled (timeout)) {
+		nih_list_add (nih_timers, &timer->entry);
+	} else {
+		nih_list_remove (&timer->entry);
+	}
 }
 
 /**

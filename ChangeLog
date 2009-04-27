@@ -1,5 +1,13 @@
 2009-04-27  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_connection.c (nih_dbus_setup): We actually want
+	to attempt to setup the watch, timeout and wake-up functions each
+	time through nih_dbus_setup() so it can be called in a loop in
+	cases of out-of-memory so do this first before setting the main
+	loop function, and unwind in case of error.
+	(nih_dbus_watch_toggled): D-Bus could try and change the flags
+	with a toggle?
+
 	* nih-dbus/dbus_connection.h (NihDBusConnectHandler): Add missing
 	Returns to documentation string.
 

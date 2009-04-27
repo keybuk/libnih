@@ -683,8 +683,10 @@ nih_dbus_connection_disconnected (DBusConnection *         conn,
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
 	/* Ok, it's really the disconnected signal, call the handler. */
+	nih_error_push_context ();
 	if (handler)
 		handler (conn);
+	nih_error_pop_context ();
 
 	dbus_connection_unref (conn);
 
@@ -720,8 +722,16 @@ nih_dbus_new_connection (DBusServer *    server,
 	 * connection.
 	 */
 	connect_handler = dbus_server_get_data (server, connect_handler_slot);
-	if (connect_handler && (! connect_handler (server, conn)))
-		return;
+	if (connect_handler) {
+		int ret;
+
+		nih_error_push_context ();
+		ret = connect_handler (server, conn);
+		nih_error_pop_context ();
+
+		if (! ret)
+			return;
+	}
 
 	/* We're keeping the connection, reference it and hook it up to the
 	 * main loop.

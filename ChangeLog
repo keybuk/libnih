@@ -1,5 +1,10 @@
 2009-04-27  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_connection.c (nih_dbus_connection_disconnected):
+	Push an error context while calling the handler.
+	(nih_dbus_new_connection): Push an error context while calling
+	the handler.
+
 	* nih/timer.c (nih_timer_poll): The timer callback can free the
 	timer, so we need to adjust the due time before we call it.  In
 	the case of timeouts, we hold a reference while calling and

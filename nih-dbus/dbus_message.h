@@ -20,6 +20,21 @@
 #ifndef NIH_DBUS_MESSAGE_H
 #define NIH_DBUS_MESSAGE_H
 
+/**
+ * The NihDBusMessage structure references both an incoming D-Bus message
+ * and the connection it was received on, and may be created with the
+ * nih_dbus_message_new() function.
+ *
+ * This allows both a single pointer to be passed around to deal with a
+ * message, and also provides an nih_alloc() context for attaching allocated
+ * data that can be discarded when the message has been processed (often
+ * strings used to generate the reply, for example).
+ *
+ * A typical function that uses this structure is nih_dbus_message_error()
+ * which generates and sends a reply to the incoming message that is an
+ * error return with the given name and format.
+ **/
+
 #include <nih/macros.h>
 
 #include <dbus/dbus.h>

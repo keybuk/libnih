@@ -1,5 +1,7 @@
 2009-04-27  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_connection.h: Note on allocation.
+
 	* nih-dbus/dbus_message.h: Add documentation string.
 
 	* nih-dbus/tests/test_dbus_message.c (test_message_new): Add missing

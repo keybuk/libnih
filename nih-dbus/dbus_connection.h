@@ -56,6 +56,12 @@
  * filters to the connection and returns TRUE to hook it up to the main
  * loop with the given disconnct handler.  If the function returns FALSE,
  * it is generally dropped.
+ *
+ * = Allocation =
+ *
+ * Note that the structures returned by nih_dbus_connect(), nih_dbus_bus()
+ * and nih_dbus_server() are NOT allocated with nih_alloc() but instead
+ * by the D-Bus library.
  **/
 
 #include <nih/macros.h>

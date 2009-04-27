@@ -20,6 +20,44 @@
 #ifndef NIH_DBUS_CONNECTION_H
 #define NIH_DBUS_CONNECTION_H
 
+/**
+ * This module provides the necessary glue to hook D-Bus connections and
+ * servers up to the libnih main loop.
+ *
+ * Connections obtained from the libdbus library can be hooked up using
+ * the nih_dbus_setup() function.  Once called, data on the underlying
+ * socket will be sent and received through NihIo and timeouts will be
+ * maintained using NihTimer objects.  Each time through the main loop
+ * any unhandled messages will be dispatched.
+ *
+ * The lifetime of connections is also partially managed by the library.
+ * Disconnection from the D-Bus server will result in a disconnect handler
+ * function being called, and the connection automatically unreferenced
+ * and discarded.  A typically well-behaved application might set a timer
+ * to attempt to reconnect to the bus.
+ *
+ * Convenient functions exist to setup connections to servers at specific
+ * addresses and to well known bus daemons: nih_dbus_connect() and
+ * nih_dbus_bus().  These are equivalent to calling dbus_connection_open()
+ * or dbus_bus_get() followed by nih_dbus_setup().
+ *
+ * Mostly equivalent, anyway.  nih_dbus_bus() explicitly sets the bus
+ * connection to NOT result in the application exiting on disconnection,
+ * and instead you should cope in your disconnect handler.
+ *
+ * = Servers =
+ *
+ * This module may also be used to create D-Bus servers, which is
+ * practically impossible to do without main loop integration.
+ * nih_dbus_server() creates a server listening on the given address.
+ *
+ * A connection handler function is called when a new connection is made
+ * to the server.  This function generally registers objects or adds
+ * filters to the connection and returns TRUE to hook it up to the main
+ * loop with the given disconnct handler.  If the function returns FALSE,
+ * it is generally dropped.
+ **/
+
 #include <nih/macros.h>
 
 #include <dbus/dbus.h>

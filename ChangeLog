@@ -1,5 +1,12 @@
 2009-04-27  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_connection.c (nih_dbus_connect, nih_dbus_bus)
+	(nih_dbus_server): Return ENOMEM raised on insufficient memory
+	rather than the D-Bus equivalent; we don't just convert these
+	everywhere because sometimes we want to know that it's the
+	remote side that's out of memory and we don't want to use ENOMEM
+	for that.
+
 	* nih-dbus/tests/test_dbus_connection.c: Various cleanup fixes,
 	making sure we unref everything that we use.  Increase timeout
 	for method calls since things get slower when under valgrind.

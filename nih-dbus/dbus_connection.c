@@ -125,7 +125,11 @@ nih_dbus_connect (const char *             address,
 
 	conn = dbus_connection_open (address, &error);
 	if (! conn) {
-		nih_dbus_error_raise (error.name, error.message);
+		if (! strcmp (error.name, DBUS_ERROR_NO_MEMORY)) {
+			nih_error_raise (ENOMEM, strerror (ENOMEM));
+		} else {
+			nih_dbus_error_raise (error.name, error.message);
+		}
 		dbus_error_free (&error);
 
 		return NULL;
@@ -174,7 +178,11 @@ nih_dbus_bus (DBusBusType              bus,
 
 	conn = dbus_bus_get (bus, &error);
 	if (! conn) {
-		nih_dbus_error_raise (error.name, error.message);
+		if (! strcmp (error.name, DBUS_ERROR_NO_MEMORY)) {
+			nih_error_raise (ENOMEM, strerror (ENOMEM));
+		} else {
+			nih_dbus_error_raise (error.name, error.message);
+		}
 		dbus_error_free (&error);
 
 		return NULL;
@@ -315,7 +323,11 @@ nih_dbus_server (const char *             address,
 
 	server = dbus_server_listen (address, &error);
 	if (! server) {
-		nih_dbus_error_raise (error.name, error.message);
+		if (! strcmp (error.name, DBUS_ERROR_NO_MEMORY)) {
+			nih_error_raise (ENOMEM, strerror (ENOMEM));
+		} else {
+			nih_dbus_error_raise (error.name, error.message);
+		}
 		dbus_error_free (&error);
 
 		return NULL;

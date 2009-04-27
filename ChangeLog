@@ -1,5 +1,7 @@
 2009-04-27  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_error.h: Add documentation string.
+
 	* nih-dbus/dbus_connection.c (nih_dbus_connect, nih_dbus_bus):
 	Clarify that it's ok to unreference a connection obtained with
 	these functions - indeed we do so everywhere in the test suite.

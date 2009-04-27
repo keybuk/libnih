@@ -107,8 +107,8 @@ static dbus_int32_t disconnect_handler_slot = -1;
  * D-Bus data slots and free functions to attach other data to this.
  *
  * The connection object is shared and will persist as long as the
- * server maintains the connection, you should not attempt to close or
- * unreference the connection yourself.
+ * server maintains the connection.  You may prematurely terminate the
+ * connection with dbus_connection_unref().
  *
  * Returns: new D-Bus connection object or NULL on raised error.
  **/
@@ -162,8 +162,8 @@ nih_dbus_connect (const char *             address,
  * D-Bus data slots and free functions to attach other data to this.
  *
  * The connection object is shared and will persist as long as the
- * server maintains the connection, you should not attempt to close or
- * unreference the connection yourself.
+ * server maintains the connection.  You may prematurely terminate the
+ * connection with dbus_connection_unref().
  *
  * Returns: new D-Bus connection object or NULL on raised error.
  **/

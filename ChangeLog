@@ -1,3 +1,11 @@
+2009-04-27  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/timer.c (nih_timer_poll): The timer callback can free the
+	timer, so we need to adjust the due time before we call it.  In
+	the case of timeouts, we hold a reference while calling and
+	always free after returning.  Also push an error context during
+	it so we don't leak errors.
+
 2009-04-24  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus/tests/test_dbus_connection.c (test_connect): Add tests

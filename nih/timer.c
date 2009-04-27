@@ -31,6 +31,7 @@
 #include <nih/alloc.h>
 #include <nih/list.h>
 #include <nih/logging.h>
+#include <nih/error.h>
 
 #include "timer.h"
 
@@ -284,15 +285,15 @@ nih_timer_poll (void)
 	now = time (NULL);
 	NIH_LIST_FOREACH_SAFE (nih_timers, iter) {
 		NihTimer *timer = (NihTimer *)iter;
+		int       free_when_done = FALSE;
 
 		if (timer->due > now)
 			continue;
 
-		timer->callback (timer->data, timer);
-
 		switch (timer->type) {
 		case NIH_TIMER_TIMEOUT:
-			nih_free (timer);
+			nih_ref (timer, nih_timers);
+			free_when_done = TRUE;
 			break;
 		case NIH_TIMER_PERIODIC:
 			timer->due = now + timer->period;
@@ -302,5 +303,12 @@ nih_timer_poll (void)
 			timer->due = 0;
 			break;
 		}
+
+		nih_error_push_context ();
+		timer->callback (timer->data, timer);
+		nih_error_pop_context ();
+
+		if (free_when_done)
+			nih_free (timer);
 	}
 }

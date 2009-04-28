@@ -269,12 +269,9 @@ test_object_message (void)
 	DBusConnection * server_conn;
 	DBusConnection * client_conn;
 	NihDBusObject *  object;
-	NihDBusObject *  child1;
-	NihDBusObject *  child2;
 	DBusMessage *    message;
 	dbus_uint32_t    serial;
 	DBusMessage *    reply;
-	const char *     xml;
 
 	TEST_FUNCTION ("nih_dbus_object_message");
 	TEST_DBUS (dbus_pid);
@@ -542,11 +539,39 @@ test_object_message (void)
 	nih_free (object);
 
 
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_object_introspect (void)
+{
+	pid_t            dbus_pid;
+	DBusConnection * server_conn;
+	DBusConnection * client_conn;
+	NihDBusObject *  object;
+	NihDBusObject *  child1;
+	NihDBusObject *  child2;
+	DBusMessage *    message;
+	dbus_uint32_t    serial;
+	DBusMessage *    reply;
+	const char *     xml;
+
+	TEST_FUNCTION ("nih_dbus_object_introspect");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (server_conn);
+	TEST_DBUS_OPEN (client_conn);
+
+
 	/* Check that the Introspect message is handled internally with
 	 * an accurate portrayal of the interfaces and their properties
 	 * returned.
 	 */
-	TEST_FEATURE ("with introspect method");
+	TEST_FEATURE ("with fully-fledged object");
 	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
 				      both_interfaces, &server_conn);
 
@@ -695,10 +720,108 @@ test_object_message (void)
 	nih_free (object);
 
 
+	/* Check that the Introspect message does not include the
+	 * Properties interfaces in the output if none of the interfaces
+	 * implement properties.
+	 */
+	TEST_FEATURE ("with no properties");
+	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
+				      one_interface, &server_conn);
+
+	TEST_ALLOC_FAIL {
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_INTROSPECTABLE,
+			"Introspect");
+		assert (message != NULL);
+
+		TEST_ALLOC_SAFE {
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
+		}
+
+		dbus_message_unref (message);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		TEST_TRUE (dbus_message_has_signature (reply, "s"));
+
+		TEST_TRUE (dbus_message_get_args (reply, NULL,
+						  DBUS_TYPE_STRING, &xml,
+						  DBUS_TYPE_INVALID));
+
+		TEST_EQ_STRN (xml, DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE);
+		xml += strlen (DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE);
+
+		TEST_EQ_STRN (xml, "<node name=\"/com/netsplit/Nih\">\n");
+		xml = strchr (xml, '\n') + 1;
+
+		TEST_EQ_STRN (xml, "  <interface name=\""
+			      DBUS_INTERFACE_INTROSPECTABLE "\">\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "    <method name=\"Introspect\">\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "      <arg name=\"data\" type=\"s\" direction=\"out\"/>\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "    </method>\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "  </interface>\n");
+		xml = strchr (xml, '\n') + 1;
+
+		TEST_EQ_STRN (xml, "  <interface name=\"Nih.TestA\">\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "    <method name=\"Foo\">\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "      <arg name=\"str\" type=\"s\" direction=\"in\"/>\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "      <arg name=\"len\" type=\"u\" direction=\"in\"/>\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "      <arg name=\"count\" type=\"u\" direction=\"out\"/>\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "    </method>\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "    <method name=\"Bar\">\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "      <arg name=\"wibble\" type=\"d\" direction=\"in\"/>\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "    </method>\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "    <signal name=\"Alert\">\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "      <arg name=\"msg\" type=\"s\"/>\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "    </signal>\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "    <signal name=\"Panic\">\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "      <arg name=\"msg\" type=\"s\"/>\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "    </signal>\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "  </interface>\n");
+		xml = strchr (xml, '\n') + 1;
+
+		TEST_EQ_STRN (xml, "</node>\n");
+		xml = strchr (xml, '\n') + 1;
+
+		TEST_EQ_STR (xml, "");
+
+		dbus_message_unref (reply);
+	}
+
+	nih_free (object);
+
+
 	/* Check that the Introspect message works when there are no
 	 * interfaces.
 	 */
-	TEST_FEATURE ("with introspect method and no interfaces");
+	TEST_FEATURE ("with no interfaces");
 	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
 				      no_interfaces, &server_conn);
 
@@ -761,7 +884,7 @@ test_object_message (void)
 	/* Check that the Introspect message contains node entries for
 	 * children, but doesn't bother to flesh them out.
 	 */
-	TEST_FEATURE ("with introspect method and children");
+	TEST_FEATURE ("with children nodes");
 	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
 				      no_interfaces, &server_conn);
 	child1 = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih/Frodo",
@@ -850,6 +973,7 @@ main (int   argc,
 	test_object_destroy ();
 	test_object_unregister ();
 	test_object_message ();
+	test_object_introspect ();
 
 	return 0;
 }

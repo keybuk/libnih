@@ -1,5 +1,10 @@
 2009-04-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/tests/test_dbus_object.c (test_object_introspect): Add
+	a missing test case for too many arguments to the Introspect call.
+	* nih-dbus/dbus_object.c (nih_dbus_object_introspect): Which reveals
+	we didn't catch this.
+
 	* nih-dbus/tests/test_dbus_object.c (test_object_property_get)
 	(test_object_property_get_all, test_object_property_set): Add
 	missing test cases for argument errors.

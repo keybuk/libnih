@@ -725,6 +725,7 @@ test_object_introspect (void)
 	dbus_uint32_t    serial;
 	DBusMessage *    reply;
 	const char *     xml;
+	DBusMessageIter  iter;
 
 	TEST_FUNCTION ("nih_dbus_object_introspect");
 	TEST_DBUS (dbus_pid);
@@ -1126,6 +1127,47 @@ test_object_introspect (void)
 
 	nih_free (child2);
 	nih_free (child1);
+	nih_free (object);
+
+
+	/* Check that we receive an Invalid Args error when we pass too
+	 * many arguments.
+	 */
+	TEST_FEATURE ("with too many arguments");
+	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
+				      all_interfaces, &server_conn);
+
+	TEST_ALLOC_FAIL {
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_INTROSPECTABLE,
+			"Introspect");
+		assert (message != NULL);
+
+		dbus_message_iter_init_append (message, &iter);
+
+		xml = "<node/>\n";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&xml));
+
+		TEST_ALLOC_SAFE {
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
+		}
+
+		dbus_message_unref (message);
+
+		TEST_DBUS_DISPATCH (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+	}
+
 	nih_free (object);
 
 

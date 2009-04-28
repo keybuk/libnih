@@ -293,6 +293,23 @@ nih_dbus_object_introspect (DBusConnection *conn,
 	nih_assert (object != NULL);
 	nih_assert (object->conn == conn);
 
+	/* Make sure the message signature was what we expected */
+	if (! dbus_message_has_signature (message, "")) {
+		reply = dbus_message_new_error (message, DBUS_ERROR_INVALID_ARGS,
+						_("Invalid arguments to Introspect method"));
+		if (! reply)
+			return DBUS_HANDLER_RESULT_NEED_MEMORY;
+
+		if (! dbus_connection_send (conn, reply, NULL)) {
+			dbus_message_unref (reply);
+			return DBUS_HANDLER_RESULT_NEED_MEMORY;
+		}
+
+		dbus_message_unref (reply);
+
+		return DBUS_HANDLER_RESULT_HANDLED;
+	}
+
 	xml = nih_strdup (NULL, DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE);
 	if (! xml)
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;

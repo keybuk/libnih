@@ -1,5 +1,9 @@
 2009-04-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/tests/test_dbus_object.c (test_object_property_get)
+	(test_object_property_get_all, test_object_property_set): Add
+	missing test cases for argument errors.
+
 	* nih-dbus/dbus_object.c (nih_dbus_object_property_get_all): Add
 	function to retrieve all properties at once.
 	(nih_dbus_object_message): Call out to it.

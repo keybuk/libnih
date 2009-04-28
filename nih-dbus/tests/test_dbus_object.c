@@ -1531,6 +1531,172 @@ test_object_property_get (void)
 	nih_free (object);
 
 
+	/* Check that we receive an Invalid Args error when we forget to
+	 * pass the property name.
+	 */
+	TEST_FEATURE ("with missing property name");
+	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
+				      all_interfaces, &server_conn);
+
+	TEST_ALLOC_FAIL {
+		colour_get_called = FALSE;
+		size_get_called = FALSE;
+		other_get_called = FALSE;
+		last_object = NULL;
+		last_message = NULL;
+		last_message_conn = NULL;
+
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+		assert (message != NULL);
+
+		dbus_message_iter_init_append (message, &iter);
+
+		interface_name = "Nih.TestB";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&interface_name));
+
+		TEST_ALLOC_SAFE {
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
+		}
+
+		dbus_message_unref (message);
+
+		TEST_DBUS_DISPATCH (server_conn);
+
+		TEST_FALSE (colour_get_called);
+		TEST_FALSE (size_get_called);
+		TEST_FALSE (other_get_called);
+		TEST_EQ_P (last_object, NULL);
+		TEST_EQ_P (last_message_conn, NULL);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+	}
+
+	nih_free (object);
+
+
+	/* Check that we receive an Invalid Args error when we forget to
+	 * pass any arguments.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
+				      all_interfaces, &server_conn);
+
+	TEST_ALLOC_FAIL {
+		colour_get_called = FALSE;
+		size_get_called = FALSE;
+		other_get_called = FALSE;
+		last_object = NULL;
+		last_message = NULL;
+		last_message_conn = NULL;
+
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+		assert (message != NULL);
+
+		dbus_message_iter_init_append (message, &iter);
+
+		TEST_ALLOC_SAFE {
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
+		}
+
+		dbus_message_unref (message);
+
+		TEST_DBUS_DISPATCH (server_conn);
+
+		TEST_FALSE (colour_get_called);
+		TEST_FALSE (size_get_called);
+		TEST_FALSE (other_get_called);
+		TEST_EQ_P (last_object, NULL);
+		TEST_EQ_P (last_message_conn, NULL);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+	}
+
+	nih_free (object);
+
+
+	/* Check that we receive an Invalid Args error when we pass too
+	 * many arguments.
+	 */
+	TEST_FEATURE ("with too many arguments");
+	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
+				      all_interfaces, &server_conn);
+
+	TEST_ALLOC_FAIL {
+		colour_get_called = FALSE;
+		size_get_called = FALSE;
+		other_get_called = FALSE;
+		last_object = NULL;
+		last_message = NULL;
+		last_message_conn = NULL;
+
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+		assert (message != NULL);
+
+		dbus_message_iter_init_append (message, &iter);
+
+		interface_name = "Nih.TestB";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&interface_name));
+
+		property_name = "Colour";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&property_name));
+
+		str_value = "pink";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&str_value));
+
+		TEST_ALLOC_SAFE {
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
+		}
+
+		dbus_message_unref (message);
+
+		TEST_DBUS_DISPATCH (server_conn);
+
+		TEST_FALSE (colour_get_called);
+		TEST_FALSE (size_get_called);
+		TEST_FALSE (other_get_called);
+		TEST_EQ_P (last_object, NULL);
+		TEST_EQ_P (last_message_conn, NULL);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+	}
+
+	nih_free (object);
+
+
 	TEST_DBUS_CLOSE (client_conn);
 	TEST_DBUS_CLOSE (server_conn);
 	TEST_DBUS_END (dbus_pid);
@@ -2036,6 +2202,114 @@ test_object_property_get_all (void)
 	nih_free (object);
 
 
+	/* Check that we receive an Invalid Args error when we forget to
+	 * pass any arguments.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
+				      all_interfaces, &server_conn);
+
+	TEST_ALLOC_FAIL {
+		colour_get_called = FALSE;
+		size_get_called = FALSE;
+		other_get_called = FALSE;
+		last_object = NULL;
+		last_message = NULL;
+		last_message_conn = NULL;
+
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_PROPERTIES,
+			"GetAll");
+		assert (message != NULL);
+
+		dbus_message_iter_init_append (message, &iter);
+
+		TEST_ALLOC_SAFE {
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
+		}
+
+		dbus_message_unref (message);
+
+		TEST_DBUS_DISPATCH (server_conn);
+
+		TEST_FALSE (colour_get_called);
+		TEST_FALSE (size_get_called);
+		TEST_FALSE (other_get_called);
+		TEST_EQ_P (last_object, NULL);
+		TEST_EQ_P (last_message_conn, NULL);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+	}
+
+	nih_free (object);
+
+
+	/* Check that we receive an Invalid Args error when we pass too
+	 * many arguments.
+	 */
+	TEST_FEATURE ("with too many arguments");
+	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
+				      all_interfaces, &server_conn);
+
+	TEST_ALLOC_FAIL {
+		colour_get_called = FALSE;
+		size_get_called = FALSE;
+		other_get_called = FALSE;
+		last_object = NULL;
+		last_message = NULL;
+		last_message_conn = NULL;
+
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_PROPERTIES,
+			"GetAll");
+		assert (message != NULL);
+
+		dbus_message_iter_init_append (message, &iter);
+
+		interface_name = "Nih.TestB";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&interface_name));
+
+		property_name = "Colour";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&property_name));
+
+		TEST_ALLOC_SAFE {
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
+		}
+
+		dbus_message_unref (message);
+
+		TEST_DBUS_DISPATCH (server_conn);
+
+		TEST_FALSE (colour_get_called);
+		TEST_FALSE (size_get_called);
+		TEST_FALSE (other_get_called);
+		TEST_EQ_P (last_object, NULL);
+		TEST_EQ_P (last_message_conn, NULL);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+	}
+
+	nih_free (object);
+
+
 	TEST_DBUS_CLOSE (client_conn);
 	TEST_DBUS_CLOSE (server_conn);
 	TEST_DBUS_END (dbus_pid);
@@ -2059,6 +2333,7 @@ test_object_property_set (void)
 	dbus_uint32_t    serial;
 	DBusMessage *    reply;
 	const char *     str_value;
+	dbus_uint32_t    uint32_value;
 
 	TEST_FUNCTION ("nih_dbus_object_property_set");
 	TEST_DBUS (dbus_pid);
@@ -2448,6 +2723,232 @@ test_object_property_set (void)
 	nih_free (object);
 
 
+	/* Check that we receive an Invalid Args error when we forget to
+	 * pass the property value.
+	 */
+	TEST_FEATURE ("with missing property value");
+	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
+				      all_interfaces, &server_conn);
+
+	TEST_ALLOC_FAIL {
+		colour_set_called = FALSE;
+		poke_set_called = FALSE;
+		last_object = NULL;
+		last_message = NULL;
+		last_message_conn = NULL;
+
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+		assert (message != NULL);
+
+		dbus_message_iter_init_append (message, &iter);
+
+		interface_name = "Nih.TestB";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&interface_name));
+
+		property_name = "Colour";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&property_name));
+
+		TEST_ALLOC_SAFE {
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
+		}
+
+		dbus_message_unref (message);
+
+		TEST_DBUS_DISPATCH (server_conn);
+
+		TEST_FALSE (colour_set_called);
+		TEST_FALSE (poke_set_called);
+		TEST_EQ_P (last_object, NULL);
+		TEST_EQ_P (last_message_conn, NULL);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+	}
+
+	nih_free (object);
+
+
+	/* Check that we receive an Invalid Args error when we forget to
+	 * pass the property name or value.
+	 */
+	TEST_FEATURE ("with missing property name and value");
+	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
+				      all_interfaces, &server_conn);
+
+	TEST_ALLOC_FAIL {
+		colour_set_called = FALSE;
+		poke_set_called = FALSE;
+		last_object = NULL;
+		last_message = NULL;
+		last_message_conn = NULL;
+
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+		assert (message != NULL);
+
+		dbus_message_iter_init_append (message, &iter);
+
+		interface_name = "Nih.TestB";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&interface_name));
+
+		TEST_ALLOC_SAFE {
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
+		}
+
+		dbus_message_unref (message);
+
+		TEST_DBUS_DISPATCH (server_conn);
+
+		TEST_FALSE (colour_set_called);
+		TEST_FALSE (poke_set_called);
+		TEST_EQ_P (last_object, NULL);
+		TEST_EQ_P (last_message_conn, NULL);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+	}
+
+	nih_free (object);
+
+
+	/* Check that we receive an Invalid Args error when we forget to
+	 * pass any arguments.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
+				      all_interfaces, &server_conn);
+
+	TEST_ALLOC_FAIL {
+		colour_set_called = FALSE;
+		poke_set_called = FALSE;
+		last_object = NULL;
+		last_message = NULL;
+		last_message_conn = NULL;
+
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+		assert (message != NULL);
+
+		dbus_message_iter_init_append (message, &iter);
+
+		TEST_ALLOC_SAFE {
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
+		}
+
+		dbus_message_unref (message);
+
+		TEST_DBUS_DISPATCH (server_conn);
+
+		TEST_FALSE (colour_set_called);
+		TEST_FALSE (poke_set_called);
+		TEST_EQ_P (last_object, NULL);
+		TEST_EQ_P (last_message_conn, NULL);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+	}
+
+	nih_free (object);
+
+
+	/* Check that we receive an Invalid Args error when we pass too
+	 * many arguments.
+	 */
+	TEST_FEATURE ("with too many arguments");
+	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
+				      all_interfaces, &server_conn);
+
+	TEST_ALLOC_FAIL {
+		colour_set_called = FALSE;
+		poke_set_called = FALSE;
+		last_object = NULL;
+		last_message = NULL;
+		last_message_conn = NULL;
+
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+		assert (message != NULL);
+
+		dbus_message_iter_init_append (message, &iter);
+
+		interface_name = "Nih.TestB";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&interface_name));
+
+		property_name = "Colour";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&property_name));
+
+		assert (dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+							  DBUS_TYPE_STRING_AS_STRING,
+							  &subiter));
+
+		str_value = "red";
+		assert (dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+							&str_value));
+
+		assert (dbus_message_iter_close_container (&iter, &subiter));
+
+		uint32_value = 32;
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_UINT32,
+							&uint32_value));
+
+		TEST_ALLOC_SAFE {
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
+		}
+
+		dbus_message_unref (message);
+
+		TEST_DBUS_DISPATCH (server_conn);
+
+		TEST_FALSE (colour_set_called);
+		TEST_FALSE (poke_set_called);
+		TEST_EQ_P (last_object, NULL);
+		TEST_EQ_P (last_message_conn, NULL);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+	}
+
+	nih_free (object);
+
+
 	TEST_DBUS_CLOSE (client_conn);
 	TEST_DBUS_CLOSE (server_conn);
 	TEST_DBUS_END (dbus_pid);
@@ -2462,14 +2963,14 @@ main (int   argc,
 {
 	nih_error_init ();
 
-	//test_object_new ();
-	//test_object_destroy ();
-	//test_object_unregister ();
-	//test_object_message ();
-	//test_object_introspect ();
-	//test_object_property_get ();
+	test_object_new ();
+	test_object_destroy ();
+	test_object_unregister ();
+	test_object_message ();
+	test_object_introspect ();
+	test_object_property_get ();
 	test_object_property_get_all ();
-	//test_object_property_set ();
+	test_object_property_set ();
 
 	return 0;
 }

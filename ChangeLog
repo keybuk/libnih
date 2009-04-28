@@ -1,5 +1,12 @@
 2009-04-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/Makefile.am (libnih_dbus_la_LIBS): Include libnih.la
+	as it's a dependency.
+	(test_dbus_error_LDADD, test_dbus_connection_LDADD)
+	(test_dbus_message_LDADD, test_dbus_object_LDADD)
+	(test_dbus_proxy_LDADD, test_dbus_util_LDADD): Specify libnih-dbus.la
+	first since it's what we're testing, and deps go the other way
+
 	* nih-dbus/tests/test_dbus_object.c (test_object_introspect): Add
 	a missing test case for too many arguments to the Introspect call.
 	* nih-dbus/dbus_object.c (nih_dbus_object_introspect): Which reveals

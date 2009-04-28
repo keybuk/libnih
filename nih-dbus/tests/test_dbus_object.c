@@ -52,6 +52,7 @@ foo_handler (NihDBusObject * object,
 	return DBUS_HANDLER_RESULT_HANDLED;
 }
 
+static int bar_decline = FALSE;
 static int bar_called = FALSE;
 
 static DBusHandlerResult
@@ -62,6 +63,9 @@ bar_handler (NihDBusObject * object,
 	last_object = object;
 	last_message = message;
 	last_message_conn = message->conn;
+
+	if (bar_decline)
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
 	TEST_FREE_TAG (message);
 
@@ -102,6 +106,8 @@ colour_get (NihDBusObject *  object,
 	return 0;
 }
 
+static int colour_set_decline = FALSE;
+
 static DBusHandlerResult
 colour_set (NihDBusObject *  object,
 	    NihDBusMessage * message,
@@ -114,6 +120,9 @@ colour_set (NihDBusObject *  object,
 	last_object = object;
 	last_message = message;
 	last_message_conn = message->conn;
+
+	if (colour_set_decline)
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
 	TEST_FREE_TAG (message);
 
@@ -490,6 +499,7 @@ test_object_message (void)
 				      all_interfaces, &server_conn);
 
 	TEST_ALLOC_FAIL {
+		bar_decline = FALSE;
 		foo_called = FALSE;
 		bar_called = FALSE;
 		last_object = NULL;
@@ -515,6 +525,48 @@ test_object_message (void)
 		TEST_EQ_P (last_object, object);
 		TEST_FREE (last_message);
 		TEST_EQ_P (last_message_conn, server_conn);
+	}
+
+	nih_free (object);
+
+
+	/* Check that if the first of two handlers for a method without
+	 * a specified interface declines to handle, we move onto the
+	 * second one.
+	 */
+	TEST_FEATURE ("with first handler declining and second available");
+	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
+				      all_interfaces, &server_conn);
+
+	TEST_ALLOC_FAIL {
+		bar_decline = TRUE;
+		foo_called = FALSE;
+		bar_called = FALSE;
+		last_object = NULL;
+		last_message = NULL;
+		last_message_conn = NULL;
+
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			NULL,
+			"Bar");
+		assert (message != NULL);
+
+		assert (dbus_connection_send (client_conn, message, NULL));
+		dbus_connection_flush (client_conn);
+
+		dbus_message_unref (message);
+
+		TEST_DBUS_DISPATCH (server_conn);
+
+		TEST_TRUE (bar_called);
+		TEST_TRUE (foo_called);
+		TEST_EQ_P (last_object, object);
+		TEST_FREE (last_message);
+		TEST_EQ_P (last_message_conn, server_conn);
+
+		bar_decline = FALSE;
 	}
 
 	nih_free (object);
@@ -2496,6 +2548,77 @@ test_object_property_set (void)
 		TEST_EQ_P (last_object, object);
 		TEST_FREE (last_message);
 		TEST_EQ_P (last_message_conn, server_conn);
+	}
+
+	nih_free (object);
+
+
+	/* Check that if the handler of the first of two properties
+	 * with the same name declines, the second is not used and instead
+	 * the sender receives an error.
+	 */
+	TEST_FEATURE ("with first setter declining");
+	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
+				      all_interfaces, &server_conn);
+
+	TEST_ALLOC_FAIL {
+		colour_set_decline = TRUE;
+		colour_set_called = FALSE;
+		poke_set_called = FALSE;
+		last_object = NULL;
+		last_message = NULL;
+		last_message_conn = NULL;
+
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+		assert (message != NULL);
+
+		dbus_message_iter_init_append (message, &iter);
+
+		interface_name = "";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&interface_name));
+
+		property_name = "Colour";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&property_name));
+
+		assert (dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+							  DBUS_TYPE_STRING_AS_STRING,
+							  &subiter));
+
+		str_value = "red";
+		assert (dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+							&str_value));
+
+		assert (dbus_message_iter_close_container (&iter, &subiter));
+
+		TEST_ALLOC_SAFE {
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
+		}
+
+		dbus_message_unref (message);
+
+		TEST_DBUS_DISPATCH (server_conn);
+
+		TEST_TRUE (colour_set_called);
+		TEST_FALSE (poke_set_called);
+		TEST_EQ_P (last_object, object);
+		TEST_FREE (last_message);
+		TEST_EQ_P (last_message_conn, server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_UNKNOWN_METHOD));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		colour_set_decline = FALSE;
 	}
 
 	nih_free (object);

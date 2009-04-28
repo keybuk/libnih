@@ -1,5 +1,12 @@
 2009-04-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/tests/test_dbus_object.c (test_object_message): Add a
+	test where the first handler declines
+	(test_object_property_set): Make sure that the Set handler cannot
+	decline, as we can't do the same for the Get handler.
+	* nih-dbus/dbus_object.c (nih_dbus_object_message): Move onto the
+	next handler if the handler declines.
+
 	* nih-dbus-tool/Makefile.am (nih_dbus_tool_LDADD)
 	(test_method_LDADD, test_signal_LDADD)
 	(test_com_netsplit_Nih_Test_object_LDADD)

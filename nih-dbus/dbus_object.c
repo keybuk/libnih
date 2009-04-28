@@ -256,7 +256,8 @@ nih_dbus_object_message (DBusConnection *conn,
 				result = method->handler (object, msg);
 				nih_error_pop_context ();
 
-				return result;
+				if (result != DBUS_HANDLER_RESULT_NOT_YET_HANDLED)
+					return result;
 			}
 		}
 	}

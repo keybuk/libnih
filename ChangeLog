@@ -1,3 +1,8 @@
+2009-04-28  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus/tests/test_dbus_connection.c (test_connect): Add tests
+	for a fake disconnected signal (as much as we can test anyway).
+
 2009-04-27  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus/dbus_connection.h: Note on allocation.

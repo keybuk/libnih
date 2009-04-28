@@ -81,6 +81,48 @@ my_new_connection_drop (DBusServer *    server,
 {
 }
 
+static int my_message_received = FALSE;
+
+static DBusHandlerResult
+my_message_received_function (DBusConnection *connection,
+			      DBusMessage *   message,
+			      void *          data)
+{
+	my_message_received++;
+
+	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}
+
+static void
+my_new_connection_fake (DBusServer *    server,
+			DBusConnection *connection,
+			void *          data)
+{
+	DBusMessage *signal;
+
+	my_new_connection (server, connection, data);
+
+	signal = dbus_message_new_signal (DBUS_PATH_LOCAL "x",
+					  DBUS_INTERFACE_LOCAL "x",
+					  "Disconnected");
+	dbus_connection_send (client_connection, signal, NULL);
+	dbus_connection_flush (client_connection);
+
+	dbus_message_unref (signal);
+}
+
+static DBusHandlerResult
+my_message_received_break_function (DBusConnection *connection,
+				    DBusMessage *   message,
+				    void *          data)
+{
+	my_message_received++;
+
+	nih_main_loop_exit (0);
+
+	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}
+
 static DBusHandlerResult
 my_message_handle_function (DBusConnection *connection,
 			    DBusMessage *   message,
@@ -230,7 +272,8 @@ test_connect (void)
 
 	/* Check that if the server disconnects, our disconnect handler is
 	 * called and the connection is automatically unreferenced, freeing
-	 * the loop function.
+	 * the loop function.  Any other filter function we've placed on
+	 * the connection should also be run.
 	 */
 	TEST_FEATURE ("with disconnection from server");
 	TEST_ALLOC_FAIL {
@@ -284,6 +327,10 @@ test_connect (void)
 		disconnected = FALSE;
 		last_disconnection = NULL;
 
+		my_message_received = FALSE;
+		dbus_connection_add_filter (conn, my_message_received_function,
+					    NULL, NULL);
+
 		TEST_FREE_TAG (io_watch);
 		TEST_FREE_TAG (loop_func);
 
@@ -297,6 +344,94 @@ test_connect (void)
 
 		TEST_TRUE (disconnected);
 		TEST_EQ_P (last_disconnection, conn);
+		TEST_TRUE (my_message_received);
+
+		TEST_FREE (io_watch);
+		TEST_FREE (loop_func);
+
+		dbus_shutdown ();
+	}
+
+
+	/* Check that a fake Disconnected signal does not trigger automatic
+	 * disconnection but does call our other filter function.  We can
+	 * only test a wrong path and interface because otherwise D-Bus
+	 * disconnects us for sending naughty data.
+	 */
+	TEST_FEATURE ("with disconnection signal from wrong path");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			TEST_CHILD_WAIT (dbus_pid, wait_fd) {
+				nih_signal_set_handler (SIGTERM, nih_signal_handler);
+				assert (nih_signal_add_handler (NULL, SIGTERM,
+								nih_main_term_signal, NULL));
+
+				server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
+							  NULL, NULL);
+				assert (server != NULL);
+
+				dbus_server_set_new_connection_function (server, my_new_connection_fake,
+									 NULL, NULL);
+
+				client_connection = NULL;
+
+				TEST_CHILD_RELEASE (wait_fd);
+
+				nih_main_loop ();
+
+				if (client_connection) {
+					dbus_connection_close (client_connection);
+					dbus_connection_unref (client_connection);
+				}
+
+				dbus_server_disconnect (server);
+				dbus_server_unref (server);
+
+				dbus_shutdown ();
+				exit (0);
+			}
+
+			conn = nih_dbus_connect ("unix:abstract=/com/netsplit/nih/test_dbus",
+						 my_disconnect_handler);
+
+			assert (conn != NULL);
+			assert (dbus_connection_get_is_connected (conn));
+
+			assert (! NIH_LIST_EMPTY (nih_io_watches));
+			io_watch = (NihIoWatch *)nih_io_watches->next;
+			dbus_connection_get_unix_fd (conn, &fd);
+			assert (io_watch->fd == fd);
+
+			assert (! NIH_LIST_EMPTY (nih_main_loop_functions));
+			loop_func = (NihMainLoopFunc *)nih_main_loop_functions->next;
+			assert (loop_func->data == conn);
+		}
+
+		disconnected = FALSE;
+		last_disconnection = NULL;
+
+		my_message_received = FALSE;
+		dbus_connection_add_filter (conn, my_message_received_break_function,
+					    NULL, NULL);
+
+		TEST_FREE_TAG (io_watch);
+		TEST_FREE_TAG (loop_func);
+
+		nih_main_loop ();
+
+		TEST_FALSE (disconnected);
+		TEST_TRUE (my_message_received);
+
+		TEST_NOT_FREE (io_watch);
+		TEST_NOT_FREE (loop_func);
+
+		dbus_connection_unref (conn);
+
+		kill (dbus_pid, SIGTERM);
+
+		waitpid (dbus_pid, &status, 0);
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
 
 		dbus_shutdown ();
 	}

@@ -1,5 +1,18 @@
 2009-04-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/marshal.c (marshal_array, marshal_struct): We
+	have to close a container in out-of-memory situations, unrefing
+	the message isn't sufficient.
+	* nih-dbus-tool/tests/test_marshal.c (test_marshal): Make sure
+	all those containers are closed.
+	* nih-dbus-tool/tests/test_method.c (test_object_function)
+	(test_reply_function): Make sure containers called from method
+	functions are closed on error too
+	* nih-dbus-tool/property.c (property_object_get_function): Close
+	containers in case of out-of-memory error.
+	* nih-dbus-tool/tests/test_property.c (test_object_get_function): 
+	Make sure the close container code is added.
+
 	* nih-dbus/tests/test_dbus_object.c (test_object_message): Add a
 	test where the first handler declines
 	(test_object_property_set): Make sure that the Set handler cannot

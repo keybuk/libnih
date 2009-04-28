@@ -1159,6 +1159,7 @@ test_object_get_function (void)
 				   "\n"
 				   "\t/* Marshal a char * onto the message */\n"
 				   "\tif (! dbus_message_iter_append_basic (&variter, DBUS_TYPE_STRING, &value)) {\n"
+				   "\t\tdbus_message_iter_close_container (iter, &variter);\n"
 				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"

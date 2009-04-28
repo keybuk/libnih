@@ -282,6 +282,8 @@ marshal_array (const void *       parent,
 	nih_local char *   element_name = NULL;
 	nih_local char *   len_name = NULL;
 	nih_local char *   oom_error_block = NULL;
+	nih_local char *   child_oom_error_code = NULL;
+	nih_local char *   child_oom_error_block = NULL;
 	DBusSignatureIter  subiter;
 	int                element_type;
 	char *             signature;
@@ -323,6 +325,18 @@ marshal_array (const void *       parent,
 	if (! oom_error_block)
 		return NULL;
 	if (! indent (&oom_error_block, NULL, 1))
+		return NULL;
+
+	child_oom_error_code = nih_sprintf (NULL, ("dbus_message_iter_close_container (&%s, &%s);\n"
+						   "%s"),
+					    iter_name, array_iter_name, oom_error_code);
+	if (! child_oom_error_code)
+		return NULL;
+
+	child_oom_error_block = nih_strdup (NULL, child_oom_error_code);
+	if (! child_oom_error_block)
+		return NULL;
+	if (! indent (&child_oom_error_block, NULL, 1))
 		return NULL;
 
 	/* Open the array container, we need to give D-Bus the container
@@ -381,7 +395,7 @@ marshal_array (const void *       parent,
 	nih_list_init (&element_locals);
 	element_block = marshal (NULL, &subiter,
 				 array_iter_name, element_name,
-				 oom_error_code,
+				 child_oom_error_code,
 				 &element_inputs,
 				 &element_locals);
 	if (! element_block) {
@@ -571,6 +585,8 @@ marshal_struct (const void *       parent,
 	const char *      dbus_const;
 	nih_local char *  struct_iter_name = NULL;
 	nih_local char *  oom_error_block = NULL;
+	nih_local char *  child_oom_error_code = NULL;
+	nih_local char *  child_oom_error_block = NULL;
 	nih_local char *  c_type = NULL;
 	DBusSignatureIter subiter;
 	char *            code = NULL;
@@ -596,6 +612,18 @@ marshal_struct (const void *       parent,
 	if (! oom_error_block)
 		return NULL;
 	if (! indent (&oom_error_block, NULL, 1))
+		return NULL;
+
+	child_oom_error_code = nih_sprintf (NULL, ("dbus_message_iter_close_container (&%s, &%s);\n"
+						   "%s"),
+					    iter_name, struct_iter_name, oom_error_code);
+	if (! child_oom_error_code)
+		return NULL;
+
+	child_oom_error_block = nih_strdup (NULL, child_oom_error_code);
+	if (! child_oom_error_block)
+		return NULL;
+	if (! indent (&child_oom_error_block, NULL, 1))
 		return NULL;
 
 	c_type = type_of (NULL, iter);
@@ -653,7 +681,7 @@ marshal_struct (const void *       parent,
 		nih_list_init (&item_locals);
 		item_code = marshal (NULL, &subiter,
 				     struct_iter_name, item_name,
-				     oom_error_code,
+				     child_oom_error_code,
 				     &item_inputs,
 				     &item_locals);
 		if (! item_code) {

@@ -473,6 +473,7 @@ property_object_get_function (const void *parent,
 	 * decide what to do.
 	 */
 	oom_error_code = nih_strdup (NULL,
+				     "dbus_message_iter_close_container (iter, &variter);\n"
 				     "return -1;\n");
 	if (! oom_error_code)
 		return NULL;

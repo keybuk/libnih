@@ -114,6 +114,20 @@
 		dbus_connection_read_write (_conn, -1);
 
 /**
+ * TEST_DBUS_DISPATCH:
+ * @_conn: connection.
+ *
+ * Reads and writes from the connection @_conn and dispatches whatever
+ * messages were received or sent in that pulse.
+ **/
+#define TEST_DBUS_DISPATCH(_conn)					\
+	do {								\
+		dbus_connection_read_write (_conn, -1);			\
+		while (dbus_connection_dispatch (_conn) != DBUS_DISPATCH_COMPLETE) \
+			;						\
+	} while (0)
+
+/**
  * TEST_DBUS_CLOSE:
  * @_conn: connection to close.
  *

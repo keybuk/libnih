@@ -1,5 +1,9 @@
 2009-04-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/test_dbus.h (TEST_DBUS_DISPATCH): Equivalent to
+	TEST_DBUS_MESSAGE but dispatches the message internally rather
+	than stealing it.
+
 	* nih-dbus/tests/test_dbus_connection.c (test_connect): Add tests
 	for a fake disconnected signal (as much as we can test anyway).
 

@@ -165,8 +165,8 @@ typedef struct nih_dbus_arg {
 /**
  * NihDBusMethod:
  * @name: name of the method,
- * @handler: handler function,
- * @args: NULL-terminated array of arguments.
+ * @args: NULL-terminated array of arguments,
+ * @handler: handler function.
  *
  * This structure defines a method associated with a D-Bus interface.
  *
@@ -182,8 +182,8 @@ typedef struct nih_dbus_arg {
  **/
 typedef struct nih_dbus_method {
 	const char *         name;
-	NihDBusMethodHandler handler;
 	const NihDBusArg *   args;
+	NihDBusMethodHandler handler;
 } NihDBusMethod;
 
 

@@ -1982,8 +1982,8 @@ const NihDBusMethod %s_methods[] = {
                 func = "NULL"
 
             array.append(( "\"%s\"" % method.name,
-                           func,
-                           "%s_args" % "_".join([ self.c_name, method.c_name ])))
+                           "%s_args" % "_".join([ self.c_name, method.c_name ]),
+                           func ))
 
         for line in lineup_array(array):
             code += indent("%s,\n" % line, 1)

@@ -236,8 +236,8 @@ static const NihDBusArg signal_args[] = {
 };
 
 static const NihDBusMethod interface_a_methods[] = {
-	{ "Foo", foo_handler, foo_args },
-	{ "Bar", bar_handler, bar_args },
+	{ "Foo", foo_args, foo_handler },
+	{ "Bar", bar_args, bar_handler },
 	{ NULL }
 };
 
@@ -248,8 +248,8 @@ static const NihDBusSignal interface_a_signals[] = {
 };
 
 static const NihDBusMethod interface_b_methods[] = {
-	{ "Bar", foo_handler, bar_args },
-	{ "Baz", foo_handler, baz_args },
+	{ "Bar", bar_args, foo_handler },
+	{ "Baz", baz_args, foo_handler },
 	{ NULL }
 };
 

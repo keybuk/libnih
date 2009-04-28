@@ -1,5 +1,17 @@
 2009-04-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_object.h (NihDBusPropertyGetter)
+	(NihDBusPropertySetter): Add function typedefs for property get
+	and set functions.
+	(NihDBusProperty): Add getter and setter members.
+	* nih-dbus/dbus_object.c (nih_dbus_object_property_get)
+	(nih_dbus_object_property_set): Functions to handle calling the
+	getter and setter functions for a single property Get or Set method.
+	(nih_dbus_object_message): Call out to the new functions.
+	* nih-dbus/tests/test_dbus_object.c (test_object_property_get)
+	(test_object_property_set): Test the new single property get/set
+	functions.
+
 	* nih-dbus/dbus_object.h (NihDBusMarshaller): Rename to
 	NihDBusMethodHandler, since this prototype only applies to methods
 	and not to properties.

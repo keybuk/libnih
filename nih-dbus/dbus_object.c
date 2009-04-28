@@ -36,15 +36,21 @@
 
 
 /* Prototypes for static functions */
-static int               nih_dbus_object_destroy    (NihDBusObject *object);
-static void              nih_dbus_object_unregister (DBusConnection *conn,
-						     NihDBusObject *object);
-static DBusHandlerResult nih_dbus_object_message    (DBusConnection *conn,
-						     DBusMessage *message,
-						     NihDBusObject *object);
-static DBusHandlerResult nih_dbus_object_introspect (DBusConnection *conn,
-						     DBusMessage *message,
-						     NihDBusObject *object);
+static int               nih_dbus_object_destroy      (NihDBusObject *object);
+static void              nih_dbus_object_unregister   (DBusConnection *conn,
+						       NihDBusObject *object);
+static DBusHandlerResult nih_dbus_object_message      (DBusConnection *conn,
+						       DBusMessage *message,
+						       NihDBusObject *object);
+static DBusHandlerResult nih_dbus_object_introspect   (DBusConnection *conn,
+						       DBusMessage *message,
+						       NihDBusObject *object);
+static DBusHandlerResult nih_dbus_object_property_get (DBusConnection *conn,
+						       DBusMessage *message,
+						       NihDBusObject *object);
+static DBusHandlerResult nih_dbus_object_property_set (DBusConnection *conn,
+						       DBusMessage *message,
+						       NihDBusObject *object);
 
 
 /**
@@ -205,14 +211,14 @@ nih_dbus_object_message (DBusConnection *conn,
 		    message, DBUS_INTERFACE_INTROSPECTABLE, "Introspect"))
 		return nih_dbus_object_introspect (conn, message, object);
 
-	/* FIXME handle properties */
+	/* Handle properties semi-internally */
 	if (dbus_message_is_method_call (
 		    message, DBUS_INTERFACE_PROPERTIES, "Get"))
-		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+		return nih_dbus_object_property_get (conn, message, object);
 
 	if (dbus_message_is_method_call (
 		    message, DBUS_INTERFACE_PROPERTIES, "Set"))
-		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+		return nih_dbus_object_property_set (conn, message, object);
 
 	if (dbus_message_is_method_call (
 		    message, DBUS_INTERFACE_PROPERTIES, "GetAll"))
@@ -441,4 +447,202 @@ nih_dbus_object_introspect (DBusConnection *conn,
 	dbus_message_unref (reply);
 
 	return DBUS_HANDLER_RESULT_HANDLED;
+}
+
+/**
+ * nih_dbus_object_property_get:
+ * @conn: D-Bus connection,
+ * @message: D-Bus message received,
+ * @object: Object that received the message.
+ *
+ * Called because the D-Bus properties Get method has been invoked on
+ * @object  We locate the property in the @object's interfaces array and
+ * call the getter function to append a variant onto the reply we
+ * generate.
+ *
+ * Returns: result of handling the message.
+ **/
+static DBusHandlerResult
+nih_dbus_object_property_get (DBusConnection *conn,
+			      DBusMessage *   message,
+			      NihDBusObject * object)
+{
+	DBusMessage *            reply;
+	DBusMessageIter          iter;
+	const char *             interface_name;
+	const char *             property_name;
+	const NihDBusInterface **interface;
+
+	nih_assert (conn != NULL);
+	nih_assert (message != NULL);
+	nih_assert (object != NULL);
+	nih_assert (object->conn == conn);
+
+	/* Retrieve the requested interface and property names from the
+	 * method call, first making sure the message signature was what
+	 * we expected.
+	 */
+	if (! dbus_message_has_signature (message,
+					  (DBUS_TYPE_STRING_AS_STRING
+					   DBUS_TYPE_STRING_AS_STRING))) {
+		reply = dbus_message_new_error (message, DBUS_ERROR_INVALID_ARGS,
+						_("Invalid arguments to Get method"));
+		if (! reply)
+			return DBUS_HANDLER_RESULT_NEED_MEMORY;
+
+		if (! dbus_connection_send (conn, reply, NULL)) {
+			dbus_message_unref (reply);
+			return DBUS_HANDLER_RESULT_NEED_MEMORY;
+		}
+
+		dbus_message_unref (reply);
+
+		return DBUS_HANDLER_RESULT_HANDLED;
+	}
+
+	dbus_message_iter_init (message, &iter);
+	dbus_message_iter_get_basic (&iter, &interface_name);
+	dbus_message_iter_next (&iter);
+	dbus_message_iter_get_basic (&iter, &property_name);
+	dbus_message_iter_next (&iter);
+
+
+	/* Locate a getter function in the defined interfaces. */
+	for (interface = object->interfaces; interface && *interface;
+	     interface++) {
+		const NihDBusProperty *property;
+
+		for (property = (*interface)->properties;
+		     property && property->name;
+		     property++) {
+			if (property->getter
+			    && ((strlen (interface_name) == 0)
+				|| (! strcmp ((*interface)->name, interface_name)))
+			    && (! strcmp (property->name, property_name))) {
+				nih_local NihDBusMessage *msg = NULL;
+				int                       ret;
+
+				msg = nih_dbus_message_new (NULL,
+							    conn, message);
+				if (! msg)
+					return DBUS_HANDLER_RESULT_NEED_MEMORY;
+
+				reply = dbus_message_new_method_return (message);
+				if (! reply)
+					return DBUS_HANDLER_RESULT_NEED_MEMORY;
+
+				dbus_message_iter_init_append (reply, &iter);
+
+				nih_error_push_context ();
+				ret = property->getter (object, msg, &iter);
+				nih_error_pop_context ();
+
+				if (ret < 0) {
+					dbus_message_unref (reply);
+					return DBUS_HANDLER_RESULT_NEED_MEMORY;
+				}
+
+				if (! dbus_connection_send (conn, reply, NULL)) {
+					dbus_message_unref (reply);
+					return DBUS_HANDLER_RESULT_NEED_MEMORY;
+				}
+
+				dbus_message_unref (reply);
+
+				return DBUS_HANDLER_RESULT_HANDLED;
+			}
+		}
+	}
+
+	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}
+
+/**
+ * nih_dbus_object_property_set:
+ * @conn: D-Bus connection,
+ * @message: D-Bus message received,
+ * @object: Object that received the message.
+ *
+ * Called because the D-Bus properties Set method has been invoked on
+ * @object  We locate the property in the @object's interfaces array and
+ * call the setter function to retrieve the variant and generate a reply.
+ *
+ * Returns: result of handling the message.
+ **/
+static DBusHandlerResult
+nih_dbus_object_property_set (DBusConnection *conn,
+			      DBusMessage *   message,
+			      NihDBusObject * object)
+{
+	DBusMessage *            reply;
+	DBusMessageIter          iter;
+	const char *             interface_name;
+	const char *             property_name;
+	const NihDBusInterface **interface;
+
+	nih_assert (conn != NULL);
+	nih_assert (message != NULL);
+	nih_assert (object != NULL);
+	nih_assert (object->conn == conn);
+
+	/* Retrieve the requested interface and property names from the
+	 * method call, first making sure the message signature was what
+	 * we expected.
+	 */
+	if (! dbus_message_has_signature (message,
+					  (DBUS_TYPE_STRING_AS_STRING
+					   DBUS_TYPE_STRING_AS_STRING
+					   DBUS_TYPE_VARIANT_AS_STRING))) {
+		reply = dbus_message_new_error (message, DBUS_ERROR_INVALID_ARGS,
+						_("Invalid arguments to Set method"));
+		if (! reply)
+			return DBUS_HANDLER_RESULT_NEED_MEMORY;
+
+		if (! dbus_connection_send (conn, reply, NULL)) {
+			dbus_message_unref (reply);
+			return DBUS_HANDLER_RESULT_NEED_MEMORY;
+		}
+
+		dbus_message_unref (reply);
+
+		return DBUS_HANDLER_RESULT_HANDLED;
+	}
+
+	dbus_message_iter_init (message, &iter);
+	dbus_message_iter_get_basic (&iter, &interface_name);
+	dbus_message_iter_next (&iter);
+	dbus_message_iter_get_basic (&iter, &property_name);
+	dbus_message_iter_next (&iter);
+
+
+	/* Locate a setter function in the defined interfaces. */
+	for (interface = object->interfaces; interface && *interface;
+	     interface++) {
+		const NihDBusProperty *property;
+
+		for (property = (*interface)->properties;
+		     property && property->name;
+		     property++) {
+			if (property->setter
+			    && ((strlen (interface_name) == 0)
+				|| (! strcmp ((*interface)->name, interface_name)))
+			    && (! strcmp (property->name, property_name))) {
+				nih_local NihDBusMessage *msg = NULL;
+				DBusHandlerResult         result;
+
+				msg = nih_dbus_message_new (NULL,
+							    conn, message);
+				if (! msg)
+					return DBUS_HANDLER_RESULT_NEED_MEMORY;
+
+				nih_error_push_context ();
+				result = property->setter (object, msg, &iter);
+				nih_error_pop_context ();
+
+				return result;
+			}
+		}
+	}
+
+	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }

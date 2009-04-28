@@ -39,8 +39,8 @@ nih_dbus_tool_SOURCES = \
 	errors.h
 
 nih_dbus_tool_LDADD = \
-	../nih/libnih.la \
 	../nih-dbus/libnih-dbus.la \
+	../nih/libnih.la \
 	$(LTLIBINTL) \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
@@ -142,8 +142,8 @@ test_method_LDADD = \
 	demarshal.o marshal.o type.o indent.o \
 	parse.o annotation.o argument.o property.o signal.o method.o \
 	interface.o node.o symbol.o \
-	../nih/libnih.la \
 	../nih-dbus/libnih-dbus.la \
+	../nih/libnih.la \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
 
@@ -155,8 +155,8 @@ test_signal_LDADD = \
 	demarshal.o marshal.o type.o indent.o \
 	parse.o annotation.o argument.o property.o signal.o method.o \
 	interface.o node.o symbol.o \
-	../nih/libnih.la \
 	../nih-dbus/libnih-dbus.la \
+	../nih/libnih.la \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
 
@@ -168,8 +168,8 @@ test_property_LDADD = \
 	demarshal.o marshal.o type.o indent.o \
 	parse.o annotation.o argument.o property.o signal.o method.o \
 	interface.o node.o symbol.o \
-	../nih/libnih.la \
 	../nih-dbus/libnih-dbus.la \
+	../nih/libnih.la \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
 
@@ -209,7 +209,7 @@ test_com_netsplit_Nih_Test_object_SOURCES = \
 	$(com_netsplit_Nih_Test_object_OUTPUTS) \
 	tests/com.netsplit.Nih.Test_impl.c tests/com.netsplit.Nih.Test_impl.h
 test_com_netsplit_Nih_Test_object_LDFLAGS = -static
-test_com_netsplit_Nih_Test_object_LDADD = ../nih/libnih.la ../nih-dbus/libnih-dbus.la $(DBUS_LIBS)
+test_com_netsplit_Nih_Test_object_LDADD = ../nih-dbus/libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS)
 
 test_com_netsplit_Nih_Test_proxy_SOURCES = \
 	tests/test_com.netsplit.Nih.Test_proxy.c \
@@ -217,7 +217,7 @@ test_com_netsplit_Nih_Test_proxy_SOURCES = \
 	$(com_netsplit_Nih_Test_proxy_OUTPUTS) \
 	tests/com.netsplit.Nih.Test_impl.c tests/com.netsplit.Nih.Test_impl.h
 test_com_netsplit_Nih_Test_proxy_LDFLAGS = -static
-test_com_netsplit_Nih_Test_proxy_LDADD = ../nih/libnih.la ../nih-dbus/libnih-dbus.la $(DBUS_LIBS)
+test_com_netsplit_Nih_Test_proxy_LDADD = ../nih-dbus/libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS)
 
 
 com_netsplit_Nih_Test_object_OUTPUTS = \

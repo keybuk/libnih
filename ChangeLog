@@ -1,5 +1,11 @@
 2009-04-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/Makefile.am (nih_dbus_tool_LDADD)
+	(test_method_LDADD, test_signal_LDADD)
+	(test_com_netsplit_Nih_Test_object_LDADD)
+	(test_com_netsplit_Nih_Test_proxy_LDADD): Always put libnih.la
+	after libnih-dbus.la
+
 	* nih-dbus/dbus_object.h (NihDBusMethod): Move the method handler
 	to be the last member.
 	* nih-dbus/tests/test_dbus_object.c: Update.

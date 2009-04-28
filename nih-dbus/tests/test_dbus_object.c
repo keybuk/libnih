@@ -26,7 +26,7 @@
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
-#include <nih/main.h>
+#include <nih/error.h>
 
 #include <nih-dbus/dbus_message.h>
 #include <nih-dbus/dbus_connection.h>
@@ -49,8 +49,6 @@ foo_marshal (NihDBusObject * object,
 
 	TEST_FREE_TAG (message);
 
-	nih_main_loop_exit (0);
-
 	return DBUS_HANDLER_RESULT_HANDLED;
 }
 
@@ -66,8 +64,6 @@ bar_marshal (NihDBusObject * object,
 	last_message_conn = message->conn;
 
 	TEST_FREE_TAG (message);
-
-	nih_main_loop_exit (0);
 
 	return DBUS_HANDLER_RESULT_HANDLED;
 }
@@ -150,6 +146,7 @@ static const NihDBusInterface *both_interfaces[] = {
 void
 test_object_new (void)
 {
+	pid_t           dbus_pid;
 	DBusConnection *conn;
 	NihDBusObject * object;
 
@@ -158,10 +155,8 @@ test_object_new (void)
 	 * the connection at the right path.
 	 */
 	TEST_FUNCTION ("nih_dbus_object_new");
-	conn = dbus_bus_get (DBUS_BUS_SYSTEM, NULL);
-	assert (conn != NULL);
-
-	dbus_connection_set_exit_on_disconnect (conn, FALSE);
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (conn);
 
 	TEST_ALLOC_FAIL {
 		void *data;
@@ -192,7 +187,8 @@ test_object_new (void)
 		nih_free (object);
 	}
 
-	dbus_connection_unref (conn);
+	TEST_DBUS_CLOSE (conn);
+	TEST_DBUS_END (dbus_pid);
 
 	dbus_shutdown ();
 }
@@ -200,6 +196,7 @@ test_object_new (void)
 void
 test_object_destroy (void)
 {
+	pid_t           dbus_pid;
 	DBusConnection *conn;
 	NihDBusObject * object;
 	void *          data;
@@ -208,8 +205,8 @@ test_object_destroy (void)
 	 * bus when it is destroyed.
 	 */
 	TEST_FUNCTION ("nih_dbus_object_destroy");
-	conn = dbus_bus_get (DBUS_BUS_SYSTEM, NULL);
-	assert (conn != NULL);
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (conn);
 
 	dbus_connection_set_exit_on_disconnect (conn, FALSE);
 
@@ -226,7 +223,8 @@ test_object_destroy (void)
 			   conn, "/com/netsplit/Nih", &data));
 	TEST_EQ_P (data, NULL);
 
-	dbus_connection_unref (conn);
+	TEST_DBUS_CLOSE (conn);
+	TEST_DBUS_END (dbus_pid);
 
 	dbus_shutdown ();
 }
@@ -234,6 +232,7 @@ test_object_destroy (void)
 void
 test_object_unregister (void)
 {
+	pid_t           dbus_pid;
 	DBusConnection *conn;
 	NihDBusObject * object;
 
@@ -241,8 +240,8 @@ test_object_unregister (void)
 	 * D-Bus objects go as well.
 	 */
 	TEST_FUNCTION ("nih_dbus_object_unregister");
-	conn = dbus_bus_get (DBUS_BUS_SYSTEM, NULL);
-	assert (conn != NULL);
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (conn);
 
 	dbus_connection_set_exit_on_disconnect (conn, FALSE);
 
@@ -252,67 +251,35 @@ test_object_unregister (void)
 
 	TEST_FREE_TAG (object);
 
-	dbus_connection_unref (conn);
-
-	dbus_shutdown ();
+	TEST_DBUS_CLOSE (conn);
 
 	TEST_FREE (object);
+
+
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
 }
 
-
-static int             connected = FALSE;
-static DBusConnection *last_connection = NULL;
-
-static int
-my_connect_handler (DBusServer *    server,
-		    DBusConnection *connection)
-{
-	connected = TRUE;
-
-	last_connection = connection;
-
-	nih_main_loop_exit (0);
-
-	return TRUE;
-}
-
-static void
-pending_call_complete (DBusPendingCall *pending,
-		       void *           data)
-{
-	nih_main_loop_exit (0);
-}
 
 void
 test_object_message (void)
 {
-	DBusServer *     server;
-	DBusConnection * conn;
+	pid_t            dbus_pid;
 	DBusConnection * server_conn;
+	DBusConnection * client_conn;
 	NihDBusObject *  object;
 	NihDBusObject *  child1;
 	NihDBusObject *  child2;
 	DBusMessage *    message;
-	DBusPendingCall *pending;
+	dbus_uint32_t    serial;
+	DBusMessage *    reply;
 	const char *     xml;
 
 	TEST_FUNCTION ("nih_dbus_object_message");
-	server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
-				  &my_connect_handler, NULL);
-
-	connected = FALSE;
-	last_connection = NULL;
-
-	conn = nih_dbus_connect ("unix:abstract=/com/netsplit/nih/test_dbus",
-				 NULL);
-	assert (conn != NULL);
-
-	nih_main_loop ();
-
-	assert (connected);
-	assert (last_connection != NULL);
-
-	server_conn = last_connection;
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (server_conn);
+	TEST_DBUS_OPEN (client_conn);
 
 
 	/* Check that the handler for a known method is called with the
@@ -331,14 +298,18 @@ test_object_message (void)
 		last_message_conn = NULL;
 
 		message = dbus_message_new_method_call (
-			NULL, "/com/netsplit/Nih", "Nih.TestA", "Foo");
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			"Nih.TestA",
+			"Foo");
 		assert (message != NULL);
 
-		assert (dbus_connection_send (conn, message, NULL));
+		assert (dbus_connection_send (client_conn, message, NULL));
+		dbus_connection_flush (client_conn);
 
 		dbus_message_unref (message);
 
-		nih_main_loop ();
+		TEST_DBUS_DISPATCH (server_conn);
 
 		TEST_TRUE (foo_called);
 		TEST_EQ_P (last_object, object);
@@ -364,14 +335,18 @@ test_object_message (void)
 		last_message_conn = NULL;
 
 		message = dbus_message_new_method_call (
-			NULL, "/com/netsplit/Nih", NULL, "Bar");
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			NULL,
+			"Bar");
 		assert (message != NULL);
 
-		assert (dbus_connection_send (conn, message, NULL));
+		assert (dbus_connection_send (client_conn, message, NULL));
+		dbus_connection_flush (client_conn);
 
 		dbus_message_unref (message);
 
-		nih_main_loop ();
+		TEST_DBUS_DISPATCH (server_conn);
 
 		TEST_FALSE (foo_called);
 		TEST_TRUE (bar_called);
@@ -397,35 +372,33 @@ test_object_message (void)
 		last_message = NULL;
 		last_message_conn = NULL;
 
-		message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-							"Nih.TestB", "Wibble");
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			"Nih.TestB",
+			"Wibble");
 		assert (message != NULL);
 
 		TEST_ALLOC_SAFE {
-			assert (dbus_connection_send_with_reply (
-					conn, message,
-					&pending, -1));
-			assert (dbus_pending_call_set_notify (
-					pending, pending_call_complete,
-					NULL, NULL));
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
 		}
 
 		dbus_message_unref (message);
 
-		nih_main_loop ();
+		TEST_DBUS_DISPATCH (server_conn);
+		TEST_DBUS_MESSAGE (client_conn, reply);
 
 		TEST_FALSE (foo_called);
 		TEST_FALSE (bar_called);
+		TEST_EQ_P (last_object, NULL);
+		TEST_EQ_P (last_message, NULL);
+		TEST_EQ_P (last_message_conn, NULL);
 
-		TEST_TRUE (dbus_pending_call_get_completed (pending));
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_UNKNOWN_METHOD));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-		message = dbus_pending_call_steal_reply (pending);
-		TEST_NE_P (message, NULL);
-
-		TEST_TRUE (dbus_message_is_error (message, DBUS_ERROR_UNKNOWN_METHOD));
-
-		dbus_message_unref (message);
-		dbus_pending_call_unref (pending);
+		dbus_message_unref (reply);
 	}
 
 	nih_free (object);
@@ -445,35 +418,33 @@ test_object_message (void)
 		last_message = NULL;
 		last_message_conn = NULL;
 
-		message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-							"Nih.TestC", "Wibble");
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			"Nih.TestC",
+			"Wibble");
 		assert (message != NULL);
 
 		TEST_ALLOC_SAFE {
-			assert (dbus_connection_send_with_reply (
-					conn, message,
-					&pending, -1));
-			assert (dbus_pending_call_set_notify (
-					pending, pending_call_complete,
-					NULL, NULL));
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
 		}
 
 		dbus_message_unref (message);
 
-		nih_main_loop ();
+		TEST_DBUS_DISPATCH (server_conn);
+		TEST_DBUS_MESSAGE (client_conn, reply);
 
 		TEST_FALSE (foo_called);
 		TEST_FALSE (bar_called);
+		TEST_EQ_P (last_object, NULL);
+		TEST_EQ_P (last_message, NULL);
+		TEST_EQ_P (last_message_conn, NULL);
 
-		TEST_TRUE (dbus_pending_call_get_completed (pending));
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_UNKNOWN_METHOD));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-		message = dbus_pending_call_steal_reply (pending);
-		TEST_NE_P (message, NULL);
-
-		TEST_TRUE (dbus_message_is_error (message, DBUS_ERROR_UNKNOWN_METHOD));
-
-		dbus_message_unref (message);
-		dbus_pending_call_unref (pending);
+		dbus_message_unref (reply);
 	}
 
 	nih_free (object);
@@ -493,35 +464,33 @@ test_object_message (void)
 		last_message = NULL;
 		last_message_conn = NULL;
 
-		message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-							NULL, "Wibble");
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			NULL,
+			"Wibble");
 		assert (message != NULL);
 
 		TEST_ALLOC_SAFE {
-			assert (dbus_connection_send_with_reply (
-					conn, message,
-					&pending, -1));
-			assert (dbus_pending_call_set_notify (
-					pending, pending_call_complete,
-					NULL, NULL));
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
 		}
 
 		dbus_message_unref (message);
 
-		nih_main_loop ();
+		TEST_DBUS_DISPATCH (server_conn);
+		TEST_DBUS_MESSAGE (client_conn, reply);
 
 		TEST_FALSE (foo_called);
 		TEST_FALSE (bar_called);
+		TEST_EQ_P (last_object, NULL);
+		TEST_EQ_P (last_message, NULL);
+		TEST_EQ_P (last_message_conn, NULL);
 
-		TEST_TRUE (dbus_pending_call_get_completed (pending));
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_UNKNOWN_METHOD));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-		message = dbus_pending_call_steal_reply (pending);
-		TEST_NE_P (message, NULL);
-
-		TEST_TRUE (dbus_message_is_error (message, DBUS_ERROR_UNKNOWN_METHOD));
-
-		dbus_message_unref (message);
-		dbus_pending_call_unref (pending);
+		dbus_message_unref (reply);
 	}
 
 	nih_free (object);
@@ -541,35 +510,33 @@ test_object_message (void)
 		last_message = NULL;
 		last_message_conn = NULL;
 
-		message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-							"Nih.TestA", "Foo");
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			"Nih.TestA",
+			"Foo");
 		assert (message != NULL);
 
 		TEST_ALLOC_SAFE {
-			assert (dbus_connection_send_with_reply (
-					conn, message,
-					&pending, -1));
-			assert (dbus_pending_call_set_notify (
-					pending, pending_call_complete,
-					NULL, NULL));
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
 		}
 
 		dbus_message_unref (message);
 
-		nih_main_loop ();
+		TEST_DBUS_DISPATCH (server_conn);
+		TEST_DBUS_MESSAGE (client_conn, reply);
 
 		TEST_FALSE (foo_called);
 		TEST_FALSE (bar_called);
+		TEST_EQ_P (last_object, NULL);
+		TEST_EQ_P (last_message, NULL);
+		TEST_EQ_P (last_message_conn, NULL);
 
-		TEST_TRUE (dbus_pending_call_get_completed (pending));
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_UNKNOWN_METHOD));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-		message = dbus_pending_call_steal_reply (pending);
-		TEST_NE_P (message, NULL);
-
-		TEST_TRUE (dbus_message_is_error (message, DBUS_ERROR_UNKNOWN_METHOD));
-
-		dbus_message_unref (message);
-		dbus_pending_call_unref (pending);
+		dbus_message_unref (reply);
 	}
 
 	nih_free (object);
@@ -585,31 +552,29 @@ test_object_message (void)
 
 	TEST_ALLOC_FAIL {
 		message = dbus_message_new_method_call (
-			NULL, "/com/netsplit/Nih",
-			DBUS_INTERFACE_INTROSPECTABLE, "Introspect");
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_INTROSPECTABLE,
+			"Introspect");
 		assert (message != NULL);
 
 		TEST_ALLOC_SAFE {
-			assert (dbus_connection_send_with_reply (
-					conn, message,
-					&pending, -1));
-			assert (dbus_pending_call_set_notify (
-					pending, pending_call_complete,
-					NULL, NULL));
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
 		}
 
 		dbus_message_unref (message);
 
-		nih_main_loop ();
+		TEST_DBUS_DISPATCH (server_conn);
+		TEST_DBUS_MESSAGE (client_conn, reply);
 
-		TEST_TRUE (dbus_pending_call_get_completed (pending));
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-		message = dbus_pending_call_steal_reply (pending);
-		TEST_NE_P (message, NULL);
+		TEST_TRUE (dbus_message_has_signature (reply, "s"));
 
-		TEST_TRUE (dbus_message_has_signature (message, "s"));
-
-		TEST_TRUE (dbus_message_get_args (message, NULL,
+		TEST_TRUE (dbus_message_get_args (reply, NULL,
 						  DBUS_TYPE_STRING, &xml,
 						  DBUS_TYPE_INVALID));
 
@@ -724,9 +689,7 @@ test_object_message (void)
 
 		TEST_EQ_STR (xml, "");
 
-		dbus_message_unref (message);
-		dbus_pending_call_cancel (pending);
-		dbus_pending_call_unref (pending);
+		dbus_message_unref (reply);
 	}
 
 	nih_free (object);
@@ -741,31 +704,29 @@ test_object_message (void)
 
 	TEST_ALLOC_FAIL {
 		message = dbus_message_new_method_call (
-			NULL, "/com/netsplit/Nih",
-			DBUS_INTERFACE_INTROSPECTABLE, "Introspect");
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_INTROSPECTABLE,
+			"Introspect");
 		assert (message != NULL);
 
 		TEST_ALLOC_SAFE {
-			assert (dbus_connection_send_with_reply (
-					conn, message,
-					&pending, -1));
-			assert (dbus_pending_call_set_notify (
-					pending, pending_call_complete,
-					NULL, NULL));
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
 		}
 
 		dbus_message_unref (message);
 
-		nih_main_loop ();
+		TEST_DBUS_DISPATCH (server_conn);
+		TEST_DBUS_MESSAGE (client_conn, reply);
 
-		TEST_TRUE (dbus_pending_call_get_completed (pending));
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-		message = dbus_pending_call_steal_reply (pending);
-		TEST_NE_P (message, NULL);
+		TEST_TRUE (dbus_message_has_signature (reply, "s"));
 
-		TEST_TRUE (dbus_message_has_signature (message, "s"));
-
-		TEST_TRUE (dbus_message_get_args (message, NULL,
+		TEST_TRUE (dbus_message_get_args (reply, NULL,
 						  DBUS_TYPE_STRING, &xml,
 						  DBUS_TYPE_INVALID));
 
@@ -791,9 +752,7 @@ test_object_message (void)
 
 		TEST_EQ_STR (xml, "");
 
-		dbus_message_unref (message);
-		dbus_pending_call_cancel (pending);
-		dbus_pending_call_unref (pending);
+		dbus_message_unref (reply);
 	}
 
 	nih_free (object);
@@ -812,31 +771,29 @@ test_object_message (void)
 
 	TEST_ALLOC_FAIL {
 		message = dbus_message_new_method_call (
-			NULL, "/com/netsplit/Nih",
-			DBUS_INTERFACE_INTROSPECTABLE, "Introspect");
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_INTROSPECTABLE,
+			"Introspect");
 		assert (message != NULL);
 
 		TEST_ALLOC_SAFE {
-			assert (dbus_connection_send_with_reply (
-					conn, message,
-					&pending, -1));
-			assert (dbus_pending_call_set_notify (
-					pending, pending_call_complete,
-					NULL, NULL));
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
 		}
 
 		dbus_message_unref (message);
 
-		nih_main_loop ();
+		TEST_DBUS_DISPATCH (server_conn);
+		TEST_DBUS_MESSAGE (client_conn, reply);
 
-		TEST_TRUE (dbus_pending_call_get_completed (pending));
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-		message = dbus_pending_call_steal_reply (pending);
-		TEST_NE_P (message, NULL);
+		TEST_TRUE (dbus_message_has_signature (reply, "s"));
 
-		TEST_TRUE (dbus_message_has_signature (message, "s"));
-
-		TEST_TRUE (dbus_message_get_args (message, NULL,
+		TEST_TRUE (dbus_message_get_args (reply, NULL,
 						  DBUS_TYPE_STRING, &xml,
 						  DBUS_TYPE_INVALID));
 
@@ -867,9 +824,7 @@ test_object_message (void)
 
 		TEST_EQ_STR (xml, "");
 
-		dbus_message_unref (message);
-		dbus_pending_call_cancel (pending);
-		dbus_pending_call_unref (pending);
+		dbus_message_unref (reply);
 	}
 
 	nih_free (child2);
@@ -877,13 +832,9 @@ test_object_message (void)
 	nih_free (object);
 
 
-	dbus_connection_close (server_conn);
-	dbus_connection_unref (server_conn);
-
-	dbus_connection_unref (conn);
-
-	dbus_server_disconnect (server);
-	dbus_server_unref (server);
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
 
 	dbus_shutdown ();
 }
@@ -893,6 +844,8 @@ int
 main (int   argc,
       char *argv[])
 {
+	nih_error_init ();
+
 	test_object_new ();
 	test_object_destroy ();
 	test_object_unregister ();

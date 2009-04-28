@@ -1,5 +1,15 @@
 2009-04-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_object.h (NihDBusMarshaller): Rename to
+	NihDBusMethodHandler, since this prototype only applies to methods
+	and not to properties.
+	(nih_dbus_method): Change type and name of marshaller member to
+	handler.
+	* nih-dbus/dbus_object.c (nih_dbus_object_message): Update name
+	of function pointer member we use.
+	* nih-dbus/tests/test_dbus_object.c: Avoid using the word "marshal"
+	and use "handler" instead.
+
 	* nih-dbus/dbus_object.c (nih_dbus_object_introspect): Put the
 	Introspect interface last, since it's the least important one;
 	we always want the object's own interfaces first, followed by

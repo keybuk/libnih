@@ -69,7 +69,7 @@ static const DBusObjectPathVTable nih_dbus_object_vtable = {
  *
  * Creates a new D-Bus object with the attached list of @interfaces which
  * specify the methods, signals and properties that object will export
- * and the C functions that will marshal them.
+ * and the C functions that will handle them.
  *
  * @interfaces should be a NULL-terminated array of pointers to
  * NihDBusInterface structures.  Normally this is constructed using pointers
@@ -184,7 +184,7 @@ nih_dbus_object_unregister (DBusConnection *conn,
  * Called by D-Bus when a @message is received for a registered @object.  We
  * handle messages related to introspection and properties ourselves,
  * otherwise the method invoked is located in the @object's interfaces array
- * and the marshaller function called to handle it.
+ * and the handler function called to handle it.
  *
  * Returns: result of handling the message.
  **/
@@ -219,7 +219,7 @@ nih_dbus_object_message (DBusConnection *conn,
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
 
-	/* No built-in handling, locate a marshaller function in the defined
+	/* No built-in handling, locate a handler function in the defined
 	 * interfaces that can handle it.
 	 */
 	for (interface = object->interfaces; interface && *interface;
@@ -228,7 +228,7 @@ nih_dbus_object_message (DBusConnection *conn,
 
 		for (method = (*interface)->methods; method && method->name;
 		     method++) {
-			nih_assert (method->marshaller != NULL);
+			nih_assert (method->handler != NULL);
 
 			if (dbus_message_is_method_call (message,
 							 (*interface)->name,
@@ -242,7 +242,7 @@ nih_dbus_object_message (DBusConnection *conn,
 					return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
 				nih_error_push_context ();
-				result = method->marshaller (object, msg);
+				result = method->handler (object, msg);
 				nih_error_pop_context ();
 
 				return result;

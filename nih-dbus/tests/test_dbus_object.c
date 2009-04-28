@@ -39,7 +39,7 @@ static NihDBusMessage *last_message = NULL;
 static DBusConnection *last_message_conn = NULL;
 
 static DBusHandlerResult
-foo_marshal (NihDBusObject * object,
+foo_handler (NihDBusObject * object,
 	     NihDBusMessage *message)
 {
 	foo_called = TRUE;
@@ -55,7 +55,7 @@ foo_marshal (NihDBusObject * object,
 static int bar_called = FALSE;
 
 static DBusHandlerResult
-bar_marshal (NihDBusObject * object,
+bar_handler (NihDBusObject * object,
 	     NihDBusMessage *message)
 {
 	bar_called = TRUE;
@@ -90,8 +90,8 @@ static const NihDBusArg signal_args[] = {
 };
 
 static const NihDBusMethod interface_a_methods[] = {
-	{ "Foo", foo_marshal, foo_args },
-	{ "Bar", bar_marshal, bar_args },
+	{ "Foo", foo_handler, foo_args },
+	{ "Bar", bar_handler, bar_args },
 	{ NULL }
 };
 
@@ -102,8 +102,8 @@ static const NihDBusSignal interface_a_signals[] = {
 };
 
 static const NihDBusMethod interface_b_methods[] = {
-	{ "Bar", foo_marshal, bar_args },
-	{ "Baz", foo_marshal, baz_args },
+	{ "Bar", foo_handler, bar_args },
+	{ "Baz", foo_handler, baz_args },
 	{ NULL }
 };
 

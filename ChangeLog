@@ -1,5 +1,12 @@
 2009-04-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_object.c (nih_dbus_object_introspect): Put the
+	Introspect interface last, since it's the least important one;
+	we always want the object's own interfaces first, followed by
+	properties, followed by introspection, followed by children nodes.
+	* nih-dbus/tests/test_dbus_object.c (test_object_introspect):
+	Update tests to match.
+
 	* nih-dbus/tests/test_dbus_object.c (test_object_message): Split
 	out the introspection test cases into a new function.
 	(test_object_introspect): Add a test for having no properties.

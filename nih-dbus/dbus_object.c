@@ -291,16 +291,6 @@ nih_dbus_object_introspect (DBusConnection *conn,
 				  object->path))
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
-	/* Obviously we support introspection */
-	if (! nih_strcat_sprintf (&xml, NULL,
-				  "  <interface name=\"%s\">\n"
-				  "    <method name=\"Introspect\">\n"
-				  "      <arg name=\"data\" type=\"s\" direction=\"out\"/>\n"
-				  "    </method>\n"
-				  "  </interface>\n",
-				  DBUS_INTERFACE_INTROSPECTABLE))
-		return DBUS_HANDLER_RESULT_NEED_MEMORY;
-
 	/* Add each interface definition */
 	for (interface = object->interfaces; interface && *interface;
 	     interface++) {
@@ -400,6 +390,16 @@ nih_dbus_object_introspect (DBusConnection *conn,
 			    "  </interface>\n",
 			    DBUS_INTERFACE_PROPERTIES))
 			return DBUS_HANDLER_RESULT_NEED_MEMORY;
+
+	/* Obviously we support introspection */
+	if (! nih_strcat_sprintf (&xml, NULL,
+				  "  <interface name=\"%s\">\n"
+				  "    <method name=\"Introspect\">\n"
+				  "      <arg name=\"data\" type=\"s\" direction=\"out\"/>\n"
+				  "    </method>\n"
+				  "  </interface>\n",
+				  DBUS_INTERFACE_INTROSPECTABLE))
+		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
 	/* Add node items for children */
 	if (! dbus_connection_list_registered (conn, object->path, &children))

@@ -609,18 +609,6 @@ test_object_introspect (void)
 		TEST_EQ_STRN (xml, "<node name=\"/com/netsplit/Nih\">\n");
 		xml = strchr (xml, '\n') + 1;
 
-		TEST_EQ_STRN (xml, "  <interface name=\""
-			      DBUS_INTERFACE_INTROSPECTABLE "\">\n");
-		xml = strchr (xml, '\n') + 1;
-		TEST_EQ_STRN (xml, "    <method name=\"Introspect\">\n");
-		xml = strchr (xml, '\n') + 1;
-		TEST_EQ_STRN (xml, "      <arg name=\"data\" type=\"s\" direction=\"out\"/>\n");
-		xml = strchr (xml, '\n') + 1;
-		TEST_EQ_STRN (xml, "    </method>\n");
-		xml = strchr (xml, '\n') + 1;
-		TEST_EQ_STRN (xml, "  </interface>\n");
-		xml = strchr (xml, '\n') + 1;
-
 		TEST_EQ_STRN (xml, "  <interface name=\"Nih.TestA\">\n");
 		xml = strchr (xml, '\n') + 1;
 		TEST_EQ_STRN (xml, "    <method name=\"Foo\">\n");
@@ -709,6 +697,18 @@ test_object_introspect (void)
 		TEST_EQ_STRN (xml, "  </interface>\n");
 		xml = strchr (xml, '\n') + 1;
 
+		TEST_EQ_STRN (xml, "  <interface name=\""
+			      DBUS_INTERFACE_INTROSPECTABLE "\">\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "    <method name=\"Introspect\">\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "      <arg name=\"data\" type=\"s\" direction=\"out\"/>\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "    </method>\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "  </interface>\n");
+		xml = strchr (xml, '\n') + 1;
+
 		TEST_EQ_STRN (xml, "</node>\n");
 		xml = strchr (xml, '\n') + 1;
 
@@ -762,18 +762,6 @@ test_object_introspect (void)
 		TEST_EQ_STRN (xml, "<node name=\"/com/netsplit/Nih\">\n");
 		xml = strchr (xml, '\n') + 1;
 
-		TEST_EQ_STRN (xml, "  <interface name=\""
-			      DBUS_INTERFACE_INTROSPECTABLE "\">\n");
-		xml = strchr (xml, '\n') + 1;
-		TEST_EQ_STRN (xml, "    <method name=\"Introspect\">\n");
-		xml = strchr (xml, '\n') + 1;
-		TEST_EQ_STRN (xml, "      <arg name=\"data\" type=\"s\" direction=\"out\"/>\n");
-		xml = strchr (xml, '\n') + 1;
-		TEST_EQ_STRN (xml, "    </method>\n");
-		xml = strchr (xml, '\n') + 1;
-		TEST_EQ_STRN (xml, "  </interface>\n");
-		xml = strchr (xml, '\n') + 1;
-
 		TEST_EQ_STRN (xml, "  <interface name=\"Nih.TestA\">\n");
 		xml = strchr (xml, '\n') + 1;
 		TEST_EQ_STRN (xml, "    <method name=\"Foo\">\n");
@@ -803,6 +791,18 @@ test_object_introspect (void)
 		TEST_EQ_STRN (xml, "      <arg name=\"msg\" type=\"s\"/>\n");
 		xml = strchr (xml, '\n') + 1;
 		TEST_EQ_STRN (xml, "    </signal>\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "  </interface>\n");
+		xml = strchr (xml, '\n') + 1;
+
+		TEST_EQ_STRN (xml, "  <interface name=\""
+			      DBUS_INTERFACE_INTROSPECTABLE "\">\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "    <method name=\"Introspect\">\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "      <arg name=\"data\" type=\"s\" direction=\"out\"/>\n");
+		xml = strchr (xml, '\n') + 1;
+		TEST_EQ_STRN (xml, "    </method>\n");
 		xml = strchr (xml, '\n') + 1;
 		TEST_EQ_STRN (xml, "  </interface>\n");
 		xml = strchr (xml, '\n') + 1;

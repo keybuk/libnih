@@ -28,6 +28,8 @@
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
+#include <nih/list.h>
+#include <nih/hash.h>
 #include <nih/string.h>
 #include <nih/logging.h>
 #include <nih/error.h>
@@ -48,6 +50,9 @@ static DBusHandlerResult nih_dbus_object_introspect   (DBusConnection *conn,
 static DBusHandlerResult nih_dbus_object_property_get (DBusConnection *conn,
 						       DBusMessage *message,
 						       NihDBusObject *object);
+static DBusHandlerResult nih_dbus_object_property_get_all (DBusConnection *conn,
+							   DBusMessage *message,
+							   NihDBusObject *object);
 static DBusHandlerResult nih_dbus_object_property_set (DBusConnection *conn,
 						       DBusMessage *message,
 						       NihDBusObject *object);
@@ -222,7 +227,7 @@ nih_dbus_object_message (DBusConnection *conn,
 
 	if (dbus_message_is_method_call (
 		    message, DBUS_INTERFACE_PROPERTIES, "GetAll"))
-		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+		return nih_dbus_object_property_get_all (conn, message, object);
 
 
 	/* No built-in handling, locate a handler function in the defined
@@ -555,6 +560,176 @@ nih_dbus_object_property_get (DBusConnection *conn,
 	}
 
 	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}
+
+/**
+ * nih_dbus_object_property_get_all:
+ * @conn: D-Bus connection,
+ * @message: D-Bus message received,
+ * @object: Object that received the message.
+ *
+ * Called because the D-Bus properties Get method has been invoked on
+ * @object  We locate the property in the @object's interfaces array and
+ * call the getter function to append a variant onto the reply we
+ * generate.
+ *
+ * Returns: result of handling the message.
+ **/
+static DBusHandlerResult
+nih_dbus_object_property_get_all (DBusConnection *conn,
+				  DBusMessage *   message,
+				  NihDBusObject * object)
+{
+	DBusMessage *             reply;
+	DBusMessageIter           iter;
+	DBusMessageIter           arrayiter;
+	const char *              interface_name;
+	nih_local NihHash *       name_hash = NULL;
+	nih_local NihDBusMessage *msg = NULL;
+	const NihDBusInterface ** interface;
+
+	nih_assert (conn != NULL);
+	nih_assert (message != NULL);
+	nih_assert (object != NULL);
+	nih_assert (object->conn == conn);
+
+	/* Retrieve the requested interface name from the method call,
+	 * first making sure the message signature was what we expected.
+	 */
+	if (! dbus_message_has_signature (message, DBUS_TYPE_STRING_AS_STRING)) {
+		reply = dbus_message_new_error (message, DBUS_ERROR_INVALID_ARGS,
+						_("Invalid arguments to GetAll method"));
+		if (! reply)
+			return DBUS_HANDLER_RESULT_NEED_MEMORY;
+
+		if (! dbus_connection_send (conn, reply, NULL)) {
+			dbus_message_unref (reply);
+			return DBUS_HANDLER_RESULT_NEED_MEMORY;
+		}
+
+		dbus_message_unref (reply);
+
+		return DBUS_HANDLER_RESULT_HANDLED;
+	}
+
+	dbus_message_iter_init (message, &iter);
+	dbus_message_iter_get_basic (&iter, &interface_name);
+	dbus_message_iter_next (&iter);
+
+	/* D-Bus forbids us from returning multiple properties with the
+	 * same name in the dictionary, so we actually have to build
+	 * a dictionary of the properties we've visited.
+	 */
+	name_hash = nih_hash_string_new (NULL, 0);
+	if (! name_hash)
+		return DBUS_HANDLER_RESULT_NEED_MEMORY;
+
+	/* Use the same NihDBusMessage object for each of the getters we
+	 * call for efficiency
+	 */
+	msg = nih_dbus_message_new (NULL, conn, message);
+	if (! msg)
+		return DBUS_HANDLER_RESULT_NEED_MEMORY;
+
+	/* Begin constructing the reply immediately as well */
+	reply = dbus_message_new_method_return (message);
+	if (! reply)
+		return DBUS_HANDLER_RESULT_NEED_MEMORY;
+
+	dbus_message_iter_init_append (reply, &iter);
+
+	if (! dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						(DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
+						 DBUS_TYPE_STRING_AS_STRING
+						 DBUS_TYPE_VARIANT_AS_STRING
+						 DBUS_DICT_ENTRY_END_CHAR_AS_STRING),
+						&arrayiter)) {
+		dbus_message_unref (reply);
+		return DBUS_HANDLER_RESULT_NEED_MEMORY;
+	}
+
+	/* Call each of the getter functions for the matching interface,
+	 * or all of them if it's an empty string.
+	 */
+	for (interface = object->interfaces; interface && *interface;
+	     interface++) {
+		const NihDBusProperty *property;
+
+		if (strlen (interface_name)
+		    && strcmp ((*interface)->name, interface_name))
+			continue;
+
+		for (property = (*interface)->properties;
+		     property && property->name;
+		     property++) {
+			if (property->getter
+			    && (! nih_hash_lookup (name_hash, property->name))) {
+				NihListEntry *  entry;
+				DBusMessageIter dictiter;
+				int             ret;
+
+				entry = nih_list_entry_new (name_hash);
+				if (! entry) {
+					dbus_message_iter_close_container (&iter, &arrayiter);
+					dbus_message_unref (reply);
+					return DBUS_HANDLER_RESULT_NEED_MEMORY;
+				}
+
+				entry->str = (char *)property->name;
+				nih_hash_add (name_hash, &entry->entry);
+
+				if (! dbus_message_iter_open_container (
+					    &arrayiter, DBUS_TYPE_DICT_ENTRY,
+					    NULL, &dictiter)) {
+					dbus_message_iter_close_container (&iter, &arrayiter);
+					dbus_message_unref (reply);
+					return DBUS_HANDLER_RESULT_NEED_MEMORY;
+				}
+
+				if (! dbus_message_iter_append_basic (
+					    &dictiter, DBUS_TYPE_STRING,
+					    &(property->name))) {
+					dbus_message_iter_close_container (&arrayiter, &dictiter);
+					dbus_message_iter_close_container (&iter, &arrayiter);
+					dbus_message_unref (reply);
+					return DBUS_HANDLER_RESULT_NEED_MEMORY;
+				}
+
+				nih_error_push_context ();
+				ret = property->getter (object, msg, &dictiter);
+				nih_error_pop_context ();
+
+				if (ret < 0) {
+					dbus_message_iter_close_container (&arrayiter, &dictiter);
+					dbus_message_iter_close_container (&iter, &arrayiter);
+					dbus_message_unref (reply);
+					return DBUS_HANDLER_RESULT_NEED_MEMORY;
+				}
+
+				if (! dbus_message_iter_close_container (
+					    &arrayiter, &dictiter)) {
+					dbus_message_iter_close_container (&iter, &arrayiter);
+					dbus_message_unref (reply);
+					return DBUS_HANDLER_RESULT_NEED_MEMORY;
+				}
+			}
+		}
+	}
+
+	/* Close the array and send the reply */
+	if (! dbus_message_iter_close_container (&iter, &arrayiter)) {
+		dbus_message_unref (reply);
+		return DBUS_HANDLER_RESULT_NEED_MEMORY;
+	}
+
+	if (! dbus_connection_send (conn, reply, NULL)) {
+		dbus_message_unref (reply);
+		return DBUS_HANDLER_RESULT_NEED_MEMORY;
+	}
+
+	dbus_message_unref (reply);
+
+	return DBUS_HANDLER_RESULT_HANDLED;
 }
 
 /**

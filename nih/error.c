@@ -122,7 +122,7 @@ nih_error_raise (int         number,
 	error->number = number;
 	error->message = message;
 
-	nih_error_raise_again (error);
+	nih_error_raise_error (error);
 }
 
 /**
@@ -158,7 +158,7 @@ nih_error_raise_printf (int         number,
 	error->message = NIH_MUST (nih_vsprintf (error, format, args));
 	va_end (args);
 
-	nih_error_raise_again (error);
+	nih_error_raise_error (error);
 }
 
 /**
@@ -184,12 +184,12 @@ nih_error_raise_system (void)
 	error->number = saved_errno;
 	error->message = NIH_MUST (nih_strdup (error, strerror (saved_errno)));
 
-	nih_error_raise_again (error);
+	nih_error_raise_error (error);
 	errno = saved_errno;
 }
 
 /**
- * nih_error_raise_again:
+ * nih_error_raise_error:
  * @error: existing object to raise.
  *
  * Raises the existing error object in the current error context,
@@ -200,7 +200,7 @@ nih_error_raise_system (void)
  * or to raise a custom error object.
  **/
 void
-nih_error_raise_again (NihError *error)
+nih_error_raise_error (NihError *error)
 {
 	nih_assert (error != NULL);
 	nih_assert (error->number > 0);
@@ -242,7 +242,7 @@ nih_error_clear (void)
  * so that further errors may be raised.
  *
  * The object must be freed with nih_free() once you are finished with it,
- * if you want to raise it again, use nih_error_raise_again().
+ * if you want to raise it again, use nih_error_raise_error().
  *
  * Returns: error object from current context.
  **/

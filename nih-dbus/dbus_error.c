@@ -65,7 +65,7 @@ nih_dbus_error_raise (const char *name,
 	err->name = NIH_MUST (nih_strdup (err, name));
 	err->error.message = NIH_MUST (nih_strdup (err, message));
 
-	nih_error_raise_again (&err->error);
+	nih_error_raise_error (&err->error);
 }
 
 /**
@@ -106,5 +106,5 @@ nih_dbus_error_raise_printf (const char *name,
 	err->error.message = NIH_MUST (nih_vsprintf (err, format, args));
 	va_end (args);
 
-	nih_error_raise_again (&err->error);
+	nih_error_raise_error (&err->error);
 }

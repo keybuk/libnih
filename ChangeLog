@@ -1,3 +1,17 @@
+2009-05-06  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/error.c (nih_error_raise_again): Rename to nih_error_raise_error()
+	(nih_error_raise, nih_error_raise_printf)
+	(nih_error_raise_system): Update calling.
+	* nih/error.h (NIH_SHOULD): Update calling.
+	Update prototype.
+	* nih/tests/test_error.c (test_raise_again): Rename and change calls.
+	* nih/io.c (nih_io_watcher): Update call.
+	* nih/watch.c (nih_watch_add): Update call.
+	* nih/tests/test_file.c (my_error_handler): Update call.
+	* nih-dbus/dbus_error.c (nih_dbus_error_raise)
+	(nih_dbus_error_raise_printf): Update calls.
+
 2009-03-27  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/file.c (nih_file_read, nih_file_map): Cast to the bigger type.

@@ -124,13 +124,22 @@ test_raise_error (void)
 	 * get the exact pointer we raised.
 	 */
 	TEST_FEATURE ("with no current error");
-	error1 = nih_new (NULL, NihError);
-	error1->number = ENOENT;
-	error1->message = strerror (ENOENT);
-	nih_error_raise_error (error1);
-	error2 = nih_error_get ();
+	nih_error_push_context ();
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			error1 = nih_new (NULL, NihError);
+			error1->number = ENOENT;
+			error1->message = strerror (ENOENT);
+		}
 
-	TEST_EQ_P (error2, error1);
+		nih_error_raise_error (error1);
+		error2 = nih_error_get ();
+
+		TEST_EQ_P (error2, error1);
+
+		nih_free (error1);
+	}
+	nih_error_pop_context ();
 
 
 	/* Check that an error raised while there's already an unhandled
@@ -139,27 +148,39 @@ test_raise_error (void)
 	 * returned should be the new one.
 	 */
 	TEST_FEATURE ("with unhandled error");
-	TEST_FREE_TAG (error1);
-	nih_error_raise_error (error1);
+	nih_error_push_context ();
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			error1 = nih_new (NULL, NihError);
+			error1->number = ENOENT;
+			error1->message = strerror (ENOENT);
+		}
 
-	error2 = nih_new (NULL, NihError);
-	error2->number = ENODEV;
-	error2->message = strerror (ENODEV);
+		TEST_FREE_TAG (error1);
+		nih_error_raise_error (error1);
 
-	was_logged = 0;
-	nih_log_set_priority (NIH_LOG_MESSAGE);
-	nih_log_set_logger (logger_called);
+		TEST_ALLOC_SAFE {
+			error2 = nih_new (NULL, NihError);
+			error2->number = ENODEV;
+			error2->message = strerror (ENODEV);
+		}
 
-	nih_error_raise_error (error2);
-	error3 = nih_error_get ();
+		was_logged = 0;
+		nih_log_set_priority (NIH_LOG_MESSAGE);
+		nih_log_set_logger (logger_called);
 
-	TEST_EQ_P (error3, error2);
-	TEST_TRUE (was_logged);
-	TEST_FREE (error1);
+		nih_error_raise_error (error2);
+		error3 = nih_error_get ();
 
-	nih_free (error3);
+		TEST_EQ_P (error3, error2);
+		TEST_TRUE (was_logged);
+		TEST_FREE (error1);
 
-	nih_log_set_logger (nih_logger_printf);
+		nih_free (error2);
+
+		nih_log_set_logger (nih_logger_printf);
+	}
+	nih_error_pop_context ();
 }
 
 

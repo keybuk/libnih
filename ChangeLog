@@ -1,5 +1,8 @@
 2009-05-07  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_error.c (test_raise_error): Use TEST_ALLOC_FAIL
+	and a separate error context for each test.
+
 	* nih/error.c (nih_error_raise_again): Rename to nih_error_raise_error()
 	(nih_error_raise, nih_error_raise_printf)
 	(nih_error_raise_system): Update calling.

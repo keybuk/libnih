@@ -1,5 +1,8 @@
 2009-05-07  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/annotation.c (annotation_start_tag): Update
+	error call to nih_error_raise_error().
+
 	* nih/tests/test_error.c (test_raise_error): Use TEST_ALLOC_FAIL
 	and a separate error context for each test.
 

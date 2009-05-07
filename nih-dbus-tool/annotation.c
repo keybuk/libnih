@@ -188,7 +188,7 @@ annotation_start_tag (XML_Parser    xmlp,
 				  name);
 			break;
 		default:
-			nih_error_raise_again (err);
+			nih_error_raise_error (err);
 			return -1;
 		}
 		nih_free (err);

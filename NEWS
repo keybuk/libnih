@@ -21,6 +21,8 @@
 	* nih_option_parser() fixed to not eat an argument containing a
 	  lone dash.
 
+	* nih_error_raise_again() renamed to nih_error_raise_error().
+
 	* nih_option_help() produces slightly different output if the
 	  bug reporting address is a URL.
 

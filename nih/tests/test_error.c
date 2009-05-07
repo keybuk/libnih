@@ -2,7 +2,7 @@
  *
  * test_error.c - test suite for nih/error.c
  *
- * Copyright © 2007 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -114,11 +114,11 @@ logger_called (NihLogLevel  priority,
 }
 
 void
-test_raise_again (void)
+test_raise_error (void)
 {
 	NihError *error1, *error2, *error3;
 
-	TEST_FUNCTION ("nih_error_raise_again");
+	TEST_FUNCTION ("nih_error_raise_error");
 
 	/* Check that we can raise an arbitrary error object, and that we
 	 * get the exact pointer we raised.
@@ -127,7 +127,7 @@ test_raise_again (void)
 	error1 = nih_new (NULL, NihError);
 	error1->number = ENOENT;
 	error1->message = strerror (ENOENT);
-	nih_error_raise_again (error1);
+	nih_error_raise_error (error1);
 	error2 = nih_error_get ();
 
 	TEST_EQ_P (error2, error1);
@@ -140,7 +140,7 @@ test_raise_again (void)
 	 */
 	TEST_FEATURE ("with unhandled error");
 	TEST_FREE_TAG (error1);
-	nih_error_raise_again (error1);
+	nih_error_raise_error (error1);
 
 	error2 = nih_new (NULL, NihError);
 	error2->number = ENODEV;
@@ -150,7 +150,7 @@ test_raise_again (void)
 	nih_log_set_priority (NIH_LOG_MESSAGE);
 	nih_log_set_logger (logger_called);
 
-	nih_error_raise_again (error2);
+	nih_error_raise_error (error2);
 	error3 = nih_error_get ();
 
 	TEST_EQ_P (error3, error2);
@@ -307,7 +307,7 @@ test_pop_context (void)
 	error = nih_error_get ();
 
 	TEST_FREE_TAG (error);
-	nih_error_raise_again (error);
+	nih_error_raise_error (error);
 
 	was_logged = 0;
 	nih_log_set_priority (NIH_LOG_MESSAGE);
@@ -340,7 +340,7 @@ main (int   argc,
 	test_raise ();
 	test_raise_printf ();
 	test_raise_system ();
-	test_raise_again ();
+	test_raise_error ();
 	test_return_error ();
 	test_return_system_error ();
 	test_return_no_memory_error ();

@@ -701,7 +701,7 @@ my_error_handler (void        *data,
 	last_error_path = strdup (path);
 
  	if (data == (void *)-2) {
-		nih_error_raise_again (err);
+		nih_error_raise_error (err);
 		return -1;
 	}
 

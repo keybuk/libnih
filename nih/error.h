@@ -34,7 +34,7 @@
  *
  * System errors can be raised with nih_error_raise_system(), and both
  * caught errors and self-allocated errors can be raised with
- * nih_error_raise_again().
+ * nih_error_raise_error().
  *
  * You then report the error condition through your return value, or some
  * other stack-based method.
@@ -153,7 +153,7 @@ typedef struct nih_error_info {
 			if (_nih_should_err->number == ENOMEM) {	\
 				nih_free (_nih_should_err);		\
 			} else {					\
-				nih_error_raise_again (_nih_should_err); \
+				nih_error_raise_error (_nih_should_err); \
 				break;					\
 			}						\
 		}							\
@@ -169,7 +169,7 @@ void      nih_error_raise        (int number, const char *message);
 void      nih_error_raise_printf (int number, const char *format, ...)
 	__attribute__ ((format (printf, 2, 3)));
 void      nih_error_raise_system (void);
-void      nih_error_raise_again  (NihError *error);
+void      nih_error_raise_error  (NihError *error);
 
 NihError *nih_error_get          (void)
 	__attribute__ ((warn_unused_result));

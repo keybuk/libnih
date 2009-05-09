@@ -28,6 +28,12 @@
 	  it and it's now a bug to call nih_error_raise_error() to raise
 	  it again.
 
+	* Unhandled errors now result in an assertion error, rather than a
+	  log message being emitted.  This assertion will include the
+	  filename, line number and function name where the error was
+	  originally raised.  The assertion may be generated on exit from
+	  the program.
+
 	* nih_option_help() produces slightly different output if the
 	  bug reporting address is a URL.
 

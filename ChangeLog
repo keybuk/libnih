@@ -1,5 +1,11 @@
 2009-05-09  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/error.c (nih_error_clear): Make an unhandled error an
+	assertion failure
+	* nih/tests/test_error.c (test_pop_context): Make sure the
+	unhandled error is asserted
+	(test_raise_error): Make sure a double-raise is asserted.
+
 	* nih/error.c (nih_error_clear): Allow the function to be called
 	when there is no current error in the context
 	(nih_error_init): Register as an atexit() function so that unhandled

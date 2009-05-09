@@ -280,27 +280,26 @@ _nih_error_raise_error (const char *filename,
 /**
  * nih_error_clear:
  *
- * Clear the error from the current context, emitting a log message so that
- * it isn't lost.  In an ideal world, this would be an assertion, except
- * it would assert in the wrong place (a new error, not at the unhandled one).
+ * Ensure that the current context has no raised error, if it does then
+ * there's a programming error so we abort after logging where the error
+ * was originally raised.
  **/
 static void
 nih_error_clear (void)
 {
 	nih_assert (context_stack != NULL);
 
-	if (! CURRENT_CONTEXT->error)
+	if (! NIH_UNLIKELY (CURRENT_CONTEXT->error))
 		return;
 
-	nih_error ("%s:%d: Unhandled error from %s: %s",
+	nih_fatal ("%s:%d: Unhandled error from %s: %s",
 		   CURRENT_CONTEXT->error->filename,
 		   CURRENT_CONTEXT->error->line,
 		   CURRENT_CONTEXT->error->function,
 		   CURRENT_CONTEXT->error->message);
-
-	nih_free (CURRENT_CONTEXT->error);
-	nih_assert (CURRENT_CONTEXT->error == NULL);
+	abort ();
 }
+
 
 /**
  * nih_error_get:

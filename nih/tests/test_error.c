@@ -21,11 +21,16 @@
 
 #include <nih/test.h>
 
+#include <sys/wait.h>
+
 #include <errno.h>
+#include <stdio.h>
+#include <signal.h>
 #include <string.h>
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
+#include <nih/main.h>
 #include <nih/error.h>
 #include <nih/logging.h>
 
@@ -102,23 +107,18 @@ test_raise_system (void)
 }
 
 
-static int was_logged;
-
-static int
-logger_called (NihLogLevel  priority,
-	       const char  *message)
-{
-	was_logged++;
-
-	return 0;
-}
-
 void
 test_raise_error (void)
 {
-	NihError *error1, *error2, *error3;
+	NihError *error1;
+	NihError *error2;
+	pid_t     pid;
+	int       status;
+	FILE *    output;
 
 	TEST_FUNCTION ("nih_error_raise_error");
+	output = tmpfile ();
+
 
 	/* Check that we can raise an arbitrary error object, and that we
 	 * get the exact pointer we raised.
@@ -143,9 +143,7 @@ test_raise_error (void)
 
 
 	/* Check that an error raised while there's already an unhandled
-	 * error causes an error message to be logged through the usual
-	 * mechanism and the unhandled error to be destroyed.  The error
-	 * returned should be the new one.
+	 * error causes an assertion.
 	 */
 	TEST_FEATURE ("with unhandled error");
 	nih_error_push_context ();
@@ -165,22 +163,32 @@ test_raise_error (void)
 			error2->message = strerror (ENODEV);
 		}
 
-		was_logged = 0;
-		nih_log_set_priority (NIH_LOG_MESSAGE);
-		nih_log_set_logger (logger_called);
+		TEST_DIVERT_STDERR (output) {
+			TEST_CHILD (pid) {
+				nih_error_raise_error (error2);
+				exit (0);
+			}
+		}
 
-		nih_error_raise_error (error2);
-		error3 = nih_error_get ();
+		waitpid (pid, &status, 0);
+		TEST_TRUE (WIFSIGNALED (status));
+		TEST_EQ (WTERMSIG (status), SIGABRT);
 
-		TEST_EQ_P (error3, error2);
-		TEST_TRUE (was_logged);
-		TEST_FREE (error1);
+		rewind (output);
 
-		nih_free (error2);
+		TEST_FILE_MATCH (output, ("test:tests/test_error.c:[0-9]*: "
+					  "Unhandled error from test_raise_error: "
+					  "No such file or directory\n"));
+		TEST_FILE_END (output);
 
-		nih_log_set_logger (nih_logger_printf);
+		TEST_FILE_RESET (output);
+
+		nih_free (error1);
 	}
 	nih_error_pop_context ();
+
+
+	fclose (output);
 }
 
 
@@ -313,43 +321,71 @@ void
 test_pop_context (void)
 {
 	NihError *error;
+	FILE *    output;
+	pid_t     pid;
+	int       status;
 
 	TEST_FUNCTION ("nih_error_pop_context");
-	nih_error_raise (0x20003, "Error in default context");
+	output = tmpfile ();
+
 
 	/* Check that we can pop the error context; when doing so, if an
-	 * unhandled error exists, an error is logged through the usual
-	 * mechanism and the error destroyed.
+	 * unhandled error exists then an assertion is raised.
 	 */
 	TEST_FEATURE ("with unhandled error in context");
-	nih_error_push_context ();
+	TEST_ALLOC_FAIL {
+		TEST_DIVERT_STDERR (output) {
+			TEST_CHILD (pid) {
+				nih_error_push_context ();
 
-	nih_error_raise (0x20004, "Error in new context");
-	error = nih_error_get ();
+				nih_error_raise (0x20004, "Error in new context");
+				error = nih_error_get ();
 
-	TEST_FREE_TAG (error);
+				nih_error_pop_context ();
+				exit (0);
+			}
+		}
 
-	was_logged = 0;
-	nih_log_set_priority (NIH_LOG_MESSAGE);
-	nih_log_set_logger (logger_called);
+		waitpid (pid, &status, 0);
+		TEST_TRUE (WIFSIGNALED (status));
+		TEST_EQ (WTERMSIG (status), SIGABRT);
 
-	nih_error_pop_context ();
+		rewind (output);
 
-	TEST_TRUE (was_logged);
-	TEST_FREE (error);
+		TEST_FILE_MATCH (output, ("test:tests/test_error.c:[0-9]*: "
+					  "Unhandled error from test_pop_context: "
+					  "Error in new context\n"));
+		TEST_FILE_END (output);
 
-	nih_log_set_logger (nih_logger_printf);
+		TEST_FILE_RESET (output);
+	}
 
 
 	/* Check that once popped, any unhandled error in lower contexts
 	 * is available again.
 	 */
-	TEST_FEATURE ("with unhandler error beneath context");
-	error = nih_error_get ();
+	TEST_FEATURE ("with unhandled error beneath context");
+	TEST_ALLOC_FAIL {
+		nih_error_raise (0x20003, "Error in default context");
+		nih_error_push_context ();
 
-	TEST_EQ (error->number, 0x20003);
+		nih_error_raise (0x20004, "Error in new context");
 
-	nih_free (error);
+		error = nih_error_get ();
+		TEST_EQ (error->number, 0x20004);
+
+		nih_free (error);
+
+		nih_error_pop_context ();
+
+		error = nih_error_get ();
+		TEST_EQ (error->number, 0x20003);
+
+		nih_free (error);
+	}
+
+
+	fclose (output);
 }
 
 
@@ -357,6 +393,9 @@ int
 main (int   argc,
       char *argv[])
 {
+	program_name = "test";
+	nih_error_init ();
+
 	test_raise ();
 	test_raise_printf ();
 	test_raise_system ();

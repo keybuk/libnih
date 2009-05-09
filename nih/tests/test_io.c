@@ -946,6 +946,7 @@ test_message_recv (void)
 	/* Check that we get an error if the socket is closed.
 	 */
 	TEST_FEATURE ("with closed socket");
+	nih_error_push_context ();
 	TEST_ALLOC_FAIL {
 		len = 0;
 		msg = nih_io_message_recv (NULL, fds[1], &len);
@@ -960,6 +961,7 @@ test_message_recv (void)
 		}
 		nih_free (err);
 	}
+	nih_error_pop_context ();
 }
 
 void
@@ -1111,6 +1113,7 @@ test_message_send (void)
 
 	/* Check that we get an error if the socket is closed. */
 	TEST_FEATURE ("with closed socket");
+	nih_error_push_context ();
 	msg = nih_io_message_new (NULL);
 	assert0 (nih_io_buffer_push (msg->data, "test", 4));
 
@@ -1129,6 +1132,7 @@ test_message_send (void)
 	}
 
 	nih_free (msg);
+	nih_error_pop_context ();
 }
 
 
@@ -1287,6 +1291,7 @@ test_reopen (void)
 	 * is closed.
 	 */
 	TEST_FEATURE ("with closed file");
+	nih_error_push_context ();
 	assert0 (pipe (fds));
 	close (fds[0]);
 	close (fds[1]);
@@ -1300,6 +1305,7 @@ test_reopen (void)
 	err = nih_error_get ();
 	TEST_EQ (err->number, EBADF);
 	nih_free (err);
+	nih_error_pop_context ();
 }
 
 
@@ -1439,6 +1445,7 @@ test_destroy (void)
 	 * handler, and just closes the fd and frees the structure.
 	 */
 	TEST_FEATURE ("with open file descriptor");
+	nih_error_push_context ();
 	assert0 (pipe (fds));
 	error_called = 0;
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
@@ -1451,6 +1458,7 @@ test_destroy (void)
 	TEST_EQ (errno, EBADF);
 
 	close (fds[1]);
+	nih_error_pop_context ();
 
 
 	/* Check that closing a file descriptor that's already closed
@@ -1459,6 +1467,7 @@ test_destroy (void)
 	 * freed.
 	 */
 	TEST_FEATURE ("with closed file descriptor");
+	nih_error_push_context ();
 	assert0 (pipe (fds));
 	error_called = 0;
 	last_data = NULL;
@@ -1476,6 +1485,7 @@ test_destroy (void)
 	nih_free (last_error);
 
 	close (fds[1]);
+	nih_error_pop_context ();
 }
 
 void
@@ -1587,6 +1597,7 @@ test_watcher (void)
 	 * has been closed; along with the close function.
 	 */
 	TEST_FEATURE ("with remote end closed");
+	nih_error_push_context ();
 	assert0 (pipe (fds));
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 			    my_reader, my_close_handler, my_error_handler,
@@ -1616,12 +1627,14 @@ test_watcher (void)
 	TEST_EQ (io->recv_buf->len, 33);
 	TEST_EQ_MEM (io->recv_buf->buf, "this is a test of the callback code",
 		     33);
+	nih_error_pop_context ();
 
 
 	/* Check that the reader function and error handler are called if
 	 * the local end gets closed.  The error should be EBADF.
 	 */
 	TEST_FEATURE ("with local end closed");
+	nih_error_push_context ();
 	read_called = 0;
 	error_called = 0;
 	last_data = NULL;
@@ -1643,13 +1656,25 @@ test_watcher (void)
 		     33);
 
 	nih_free (last_error);
+
+	error_called = 0;
+	last_error = NULL;
+
 	nih_free (io);
+
+	TEST_TRUE (error_called);
+	TEST_EQ (last_error->number, EBADF);
+
+	nih_free (last_error);
+
+	nih_error_pop_context ();
 
 
 	/* Check that if the remote end closes and there's no close handler,
 	 * the file descriptor is closed and the structure freed.
 	 */
 	TEST_FEATURE ("with no close handler");
+	nih_error_push_context ();
 	assert0 (pipe (fds));
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 			    my_reader, NULL, NULL, &io);
@@ -1665,12 +1690,14 @@ test_watcher (void)
 	TEST_FREE (io);
 	TEST_LT (fcntl (fds[0], F_GETFD), 0);
 	TEST_EQ (errno, EBADF);
+	nih_error_pop_context ();
 
 
 	/* Check that if the local end closes and there's no error handler
 	 * that the structure is freed.
 	 */
 	TEST_FEATURE ("with no error handler");
+	nih_error_push_context ();
 	assert0 (pipe (fds));
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_STREAM,
 			    my_reader, NULL, NULL, &io);
@@ -1687,6 +1714,7 @@ test_watcher (void)
 	nih_log_set_priority (NIH_LOG_MESSAGE);
 
 	TEST_FREE (io);
+	nih_error_pop_context ();
 
 
 	/* Check that data in the send buffer is written to the file
@@ -1752,6 +1780,7 @@ test_watcher (void)
 	 * for a read again.
 	 */
 	TEST_FEATURE ("with closed file");
+	nih_error_push_context ();
 	error_called = 0;
 	last_data = NULL;
 	last_error = NULL;
@@ -1772,7 +1801,17 @@ test_watcher (void)
 
 	nih_free (last_error);
 
+	error_called = 0;
+	last_error = NULL;
+
 	nih_free (io);
+
+	TEST_TRUE (error_called);
+	TEST_EQ (last_error->number, EBADF);
+
+	nih_free (last_error);
+
+	nih_error_pop_context ();
 
 
 	/* Check that a message to be read on a socket watched by NihIo ends
@@ -1950,6 +1989,7 @@ test_watcher (void)
 	 * be called with the oldest message currently in the queue.
 	 */
 	TEST_FEATURE ("with local end closed");
+	nih_error_push_context ();
 	socketpair (PF_UNIX, SOCK_DGRAM, 0, fds);
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
 			    my_reader, my_close_handler, my_error_handler,
@@ -1989,13 +2029,24 @@ test_watcher (void)
 
 	nih_free (last_error);
 
+	error_called = 0;
+	last_error = NULL;
+
 	nih_free (io);
+
+	TEST_TRUE (error_called);
+	TEST_EQ (last_error->number, EBADF);
+
+	nih_free (last_error);
+
+	nih_error_pop_context ();
 
 
 	/* Check that if the local end of a socket is closed, and there's
 	 * no error handler, the structure freed.
 	 */
 	TEST_FEATURE ("with no error handler");
+	nih_error_push_context ();
 	socketpair (PF_UNIX, SOCK_DGRAM, 0, fds);
 	io = nih_io_reopen (NULL, fds[0], NIH_IO_MESSAGE,
 			    my_reader, NULL, NULL, &io);
@@ -2012,6 +2063,7 @@ test_watcher (void)
  	nih_log_set_priority (NIH_LOG_MESSAGE);
 
 	TEST_FREE (io);
+	nih_error_pop_context ();
 
 
 	/* Check that a message in the send queue is written to the socket
@@ -2130,6 +2182,7 @@ test_watcher (void)
 	 * wait for a read again.
 	 */
 	TEST_FEATURE ("with closed socket");
+	nih_error_push_context ();
 	error_called = 0;
 	last_data = NULL;
 	last_error = NULL;
@@ -2158,7 +2211,17 @@ test_watcher (void)
 
 	nih_free (last_error);
 
+	error_called = 0;
+	last_error = NULL;
+
 	nih_free (io);
+
+	TEST_TRUE (error_called);
+	TEST_EQ (last_error->number, EBADF);
+
+	nih_free (last_error);
+
+	nih_error_pop_context ();
 }
 
 

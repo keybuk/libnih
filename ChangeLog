@@ -1,5 +1,13 @@
 2009-05-09  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_io.c (test_watcher): In various tests, we close
+	the file descriptor when reading or writing and check for an error
+	being raised - but had forgotten that we'd get the error again
+	when the structure is closed as it tries to close the descriptor
+	(test_message_recv, test_message_send, test_reopen)
+	(test_destroy): Add a few contexts around critical bits to make
+	sure we're not leaking any other errors.
+
 	* nih/error.c (nih_error_clear): Make an unhandled error an
 	assertion failure
 	* nih/tests/test_error.c (test_pop_context): Make sure the

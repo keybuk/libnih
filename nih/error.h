@@ -52,6 +52,15 @@
  * can be popped again with nih_error_pop_context() provided that any raised
  * error has been dealt with.  The previously hidden raised errors are now
  * visible again.
+ *
+ * To raise an error from one context, into another, you can't simply call
+ * nih_error_get() before nih_error_pop_context() since the latter will
+ * assert because of the unfreed error.  Instead nih_error_steal() may be
+ * used which returns the error as nih_error_get() does but also removes
+ * it from the context.
+ *
+ * nih_error_steal() may also be used to stash errors before trying an
+ * alternate code path.
  **/
 
 #include <nih/macros.h>
@@ -255,6 +264,8 @@ void      _nih_error_raise_error  (const char *filename, int line,
 				   NihError *error);
 
 NihError *nih_error_get           (void)
+	__attribute__ ((warn_unused_result));
+NihError *nih_error_steal         (void)
 	__attribute__ ((warn_unused_result));
 
 void      nih_error_push_context  (void);

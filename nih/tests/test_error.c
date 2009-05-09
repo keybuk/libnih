@@ -293,6 +293,80 @@ test_return_no_memory_error (void)
 
 
 void
+test_steal (void)
+{
+	NihError *error1;
+	NihError *error2;
+
+	TEST_FUNCTION ("nih_error_steal");
+
+
+	/* Check that after raising an error, we can steal it, and raise
+	 * another error in its place without freeing the original error.
+	 */
+	TEST_FEATURE ("with same context");
+	nih_error_push_context ();
+	TEST_ALLOC_FAIL {
+		nih_error_raise (0x20001, "Test error");
+		error1 = nih_error_steal ();
+
+		TEST_EQ (error1->number, 0x20001);
+		TEST_EQ_STR (error1->message, "Test error");
+
+		TEST_FREE_TAG (error1);
+
+		nih_error_raise (0x20002, "Different error");
+		error2 = nih_error_get ();
+
+		TEST_NE_P (error2, error1);
+		TEST_NOT_FREE (error1);
+
+		TEST_EQ (error2->number, 0x20002);
+		TEST_EQ_STR (error2->message, "Different error");
+
+		nih_free (error2);
+		nih_free (error1);
+	}
+	nih_error_pop_context ();
+
+
+	/* Check that nih_error_steal() can be used to raise an error from
+	 * one context into another.
+	 */
+	TEST_FEATURE ("with different contexts");
+	nih_error_push_context ();
+	TEST_ALLOC_FAIL {
+		nih_error_push_context ();
+		nih_error_raise (0x20001, "Test error");
+		error1 = nih_error_steal ();
+
+		TEST_EQ (error1->number, 0x20001);
+		TEST_EQ_STR (error1->message, "Test error");
+
+		TEST_FREE_TAG (error1);
+
+		nih_error_pop_context ();
+
+		TEST_NOT_FREE (error1);
+
+		nih_error_raise_error (error1);
+
+		error2 = nih_error_get ();
+
+		TEST_EQ_P (error2, error1);
+		TEST_NOT_FREE (error1);
+
+		TEST_EQ (error2->number, 0x20001);
+		TEST_EQ_STR (error2->message, "Test error");
+
+		nih_free (error1);
+	}
+	nih_error_pop_context ();
+
+}
+
+
+void
 test_push_context (void)
 {
 	NihError *error;
@@ -403,6 +477,7 @@ main (int   argc,
 	test_return_error ();
 	test_return_system_error ();
 	test_return_no_memory_error ();
+	test_steal ();
 	test_push_context ();
 	test_pop_context ();
 

@@ -1,5 +1,12 @@
 2009-05-09  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/error.c (nih_error_steal): Add a new function to get an
+	error and remove it from the context, needed for stashing errors
+	while trying something else - or raising an error outside of a
+	context.
+	* nih/error.h: Add prototype.
+	* nih/tests/test_error.c (test_steal): Add test cases.
+
 	* nih/error.h: Update documentation.
 
 	* TODO: Update.

@@ -324,6 +324,31 @@ nih_error_get (void)
 	return error;
 }
 
+/**
+ * nih_error_steal:
+ *
+ * Returns the last unhandled error from the current context, and removes
+ * it from the error context.  To re-raise, it must be given to
+ * nih_error_raise_error().
+ *
+ * Returns: error object from current context.
+ **/
+NihError *
+nih_error_steal (void)
+{
+	NihError *error;
+
+	nih_assert (context_stack != NULL);
+	nih_assert (CURRENT_CONTEXT->error != NULL);
+
+	error = CURRENT_CONTEXT->error;
+	CURRENT_CONTEXT->error = NULL;
+
+	nih_alloc_set_destructor (error, NULL);
+
+	return error;
+}
+
 
 /**
  * nih_error_destroy:

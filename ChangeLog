@@ -1,5 +1,15 @@
 2009-05-09  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/error.c (_nih_error_raise_error): Don't allow the same
+	error to be raised twice anymore.
+	* nih/tests/test_error.c (test_pop_context): No need to raise the
+	error twice.
+	* nih/io.c (nih_io_watcher): Don't double-raise the error.
+	* nih/watch.c (nih_watch_add): Again, don't double-raise the error
+	* nih/tests/test_file.c (my_error_handler): No need to double-raise
+	* nih-dbus-tool/annotation.c (annotation_start_tag): Don't need
+	to double-raise either
+
 	* nih/error.h (NIH_SHOULD): We don't need to raise the error again,
 	simply don't free it.
 	* nih/error.c (_nih_error_raise_error): Don't accept a NULL

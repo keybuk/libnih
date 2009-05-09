@@ -263,7 +263,7 @@ _nih_error_raise_error (const char *filename,
 
 	nih_error_init ();
 
-	if (CURRENT_CONTEXT->error && (CURRENT_CONTEXT->error != error))
+	if (CURRENT_CONTEXT->error)
 		nih_error_clear ();
 
 	error->filename = filename;

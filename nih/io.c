@@ -985,7 +985,6 @@ nih_io_watcher (NihIo       *io,
 				if (caught_free)
 					return;
 
-				nih_error_raise_error (err);
 				nih_io_error (io);
 				if (caught_free)
 					return;
@@ -1024,7 +1023,6 @@ nih_io_watcher (NihIo       *io,
 				nih_free (err);
 				break;
 			default:
-				nih_error_raise_error (err);
 				nih_io_error (io);
 				if (caught_free)
 					return;

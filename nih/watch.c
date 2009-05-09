@@ -307,7 +307,6 @@ nih_watch_add (NihWatch   *watch,
 
 		err = nih_error_get ();
 		if (err->number != ENOTDIR) {
-			nih_error_raise_error (err);
 			nih_free (handle);
 			return -1;
 		} else

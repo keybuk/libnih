@@ -328,7 +328,6 @@ test_pop_context (void)
 	error = nih_error_get ();
 
 	TEST_FREE_TAG (error);
-	nih_error_raise_error (error);
 
 	was_logged = 0;
 	nih_log_set_priority (NIH_LOG_MESSAGE);

@@ -23,6 +23,11 @@
 
 	* nih_error_raise_again() renamed to nih_error_raise_error().
 
+	* Errors are no longer removed from the context when you call
+	  nih_error_get(), this means that to clear the error you must free
+	  it and it's now a bug to call nih_error_raise_error() to raise
+	  it again.
+
 	* nih_option_help() produces slightly different output if the
 	  bug reporting address is a URL.
 

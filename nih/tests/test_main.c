@@ -25,6 +25,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -218,8 +219,14 @@ test_daemonise (void)
 	assert0 (pipe (fds));
 	TEST_CHILD (pid) {
 		char buf[80];
+		int  fd;
 
 		program_name = "test";
+		fd = open ("/dev/null", O_WRONLY);
+		assert (fd >= 0);
+		assert (dup2 (fd, STDERR_FILENO) >= 0);
+		assert0 (close (fd));
+
 		if (nih_main_daemonise () < 0)
 			exit (50);
 

@@ -1,5 +1,10 @@
 2009-05-09  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/main.c (nih_main_daemonise): Don't just ignore the raised
+	error when we fail to write the pid file, at least warn about it.
+	* nih/tests/test_main.c (test_daemonise): Hide the output from
+	nih_main_daemonise() which will usually bitch about permissions
+
 	* nih/tests/test_io.c (test_watcher): In various tests, we close
 	the file descriptor when reading or writing and check for an error
 	being raised - but had forgotten that we'd get the error again

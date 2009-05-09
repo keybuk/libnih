@@ -306,8 +306,14 @@ nih_main_daemonise (void)
 	if (pid < 0) {
 		nih_return_system_error (-1);
 	} else if (pid > 0) {
-		if (nih_main_write_pidfile (pid) < 0)
-			;
+		if (nih_main_write_pidfile (pid) < 0) {
+			NihError *err;
+
+			err = nih_error_get ();
+			nih_warn ("%s: %s", _("Unable to write pid file"),
+				  err->message);
+			nih_free (err);
+		}
 
 		exit (0);
 	}

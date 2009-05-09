@@ -1,5 +1,22 @@
 2009-05-09  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/error.h (NihError): Add filename, line and function members
+	set when the error is raised.
+	(NIH_SHOULD): Re-raise using _nih_error_raise_error() directly
+	passing NULL for the filename and such so it's not overwritten (this
+	is a temporary hack)
+	(nih_error_raise, nih_error_raise_printf)
+	(nih_error_raise_system, nih_error_raise_error): Macros to wrap the
+	underlying functions passing the filename, line and function name
+	in which they were expanded.
+	* nih/error.c (nih_error_raise, nih_error_raise_printf)
+	(nih_error_raise_system, nih_error_raise_error): Rename to have
+	an initial underscore, accepting filename, line and function
+	arguments from the wrapping macros.
+	(_nih_error_raise_error): Set the filename, line and function
+	members of the raised error (we just overwrite these).
+	(nih_error_clear): Report where the unhandled error came from.
+
 	* nih/error.c (nih_error_destroy): Add destructor functions for error
 	messages, this clears the error from the current error context.
 	(nih_error_raise_error): Set the destructor.

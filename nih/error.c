@@ -96,7 +96,10 @@ nih_error_init (void)
 
 
 /**
- * nih_error_raise:
+ * _nih_error_raise:
+ * @filename: filename where the error was raised,
+ * @line: line number of @filename where the error was raised,
+ * @function: function name the error was raised within,
  * @number: numeric identifier,
  * @message: human-readable message.
  *
@@ -106,13 +109,23 @@ nih_error_init (void)
  *
  * @message should be a static string, as it will not be freed when the
  * error object is.
+ *
+ * This function should never be called directly, instead use the
+ * nih_error_raise() macro to pass the correct arguments for @filename,
+ * @line and @function.
  **/
 void
-nih_error_raise (int         number,
-		 const char *message)
+_nih_error_raise (const char *filename,
+		  int         line,
+		  const char *function,
+		  int         number,
+		  const char *message)
 {
 	NihError *error;
 
+	nih_assert (filename != NULL);
+	nih_assert (line > 0);
+	nih_assert (function != NULL);
 	nih_assert (number > 0);
 	nih_assert (message != NULL);
 
@@ -123,11 +136,14 @@ nih_error_raise (int         number,
 	error->number = number;
 	error->message = message;
 
-	nih_error_raise_error (error);
+	_nih_error_raise_error (filename, line, function, error);
 }
 
 /**
- * nih_error_raise_printf:
+ * _nih_error_raise_printf:
+ * @filename: filename where the error was raised,
+ * @line: line number of @filename where the error was raised,
+ * @function: function name the error was raised within,
  * @number: numeric identifier,
  * @format: format string for human-readable message.
  *
@@ -137,15 +153,25 @@ nih_error_raise (int         number,
  *
  * The human-readable message for the error is parsed according to @format,
  * and allocated as a child of the error object so that it is freed.
+ *
+ * This function should never be called directly, instead use the
+ * nih_error_raise_printf() macro to pass the correct arguments for @filename,
+ * @line and @function.
  **/
 void
-nih_error_raise_printf (int         number,
-			const char *format,
-			...)
+_nih_error_raise_printf (const char *filename,
+			 int         line,
+			 const char *function,
+			 int         number,
+			 const char *format,
+			 ...)
 {
 	NihError *error;
 	va_list   args;
 
+	nih_assert (filename != NULL);
+	nih_assert (line > 0);
+	nih_assert (function != NULL);
 	nih_assert (number > 0);
 	nih_assert (format != NULL);
 
@@ -159,22 +185,34 @@ nih_error_raise_printf (int         number,
 	error->message = NIH_MUST (nih_vsprintf (error, format, args));
 	va_end (args);
 
-	nih_error_raise_error (error);
+	_nih_error_raise_error (filename, line, function, error);
 }
 
 /**
- * nih_error_raise_system:
+ * _nih_error_raise_system:
+ * @filename: filename where the error was raised,
+ * @line: line number of @filename where the error was raised,
+ * @function: function name the error was raised within.
  *
  * Raises an error with details taken from the current value of errno,
  * if an unhandled error already exists then an error message is emmitted
  * through the logging system; you should try to avoid this.
+ *
+ * This function should never be called directly, instead use the
+ * nih_error_raise_system() macro to pass the correct arguments for @filename,
+ * @line and @function.
  **/
 void
-nih_error_raise_system (void)
+_nih_error_raise_system (const char *filename,
+			 int         line,
+			 const char *function)
 {
 	NihError *error;
 	int       saved_errno;
 
+	nih_assert (filename != NULL);
+	nih_assert (line > 0);
+	nih_assert (function != NULL);
 	nih_assert (errno > 0);
 	saved_errno = errno;
 
@@ -185,12 +223,15 @@ nih_error_raise_system (void)
 	error->number = saved_errno;
 	error->message = NIH_MUST (nih_strdup (error, strerror (saved_errno)));
 
-	nih_error_raise_error (error);
+	_nih_error_raise_error (filename, line, function, error);
 	errno = saved_errno;
 }
 
 /**
- * nih_error_raise_error:
+ * _nih_error_raise_error:
+ * @filename: filename where the error was raised,
+ * @line: line number of @filename where the error was raised,
+ * @function: function name the error was raised within,
  * @error: existing object to raise.
  *
  * Raises the existing error object in the current error context,
@@ -202,9 +243,16 @@ nih_error_raise_system (void)
  *
  * The destructor of @error will be overwritten so that the context can
  * be cleared when the error is freed.
+ *
+ * This function should never be called directly, instead use the
+ * nih_error_raise_error() macro to pass the correct arguments for @filename,
+ * @line and @function.
  **/
 void
-nih_error_raise_error (NihError *error)
+_nih_error_raise_error (const char *filename,
+			int         line,
+			const char *function,
+			NihError *  error)
 {
 	nih_assert (error != NULL);
 	nih_assert (error->number > 0);
@@ -214,6 +262,16 @@ nih_error_raise_error (NihError *error)
 
 	if (CURRENT_CONTEXT->error && (CURRENT_CONTEXT->error != error))
 		nih_error_clear ();
+
+	if (filename) {
+		nih_assert (filename != NULL);
+		nih_assert (line > 0);
+		nih_assert (function != NULL);
+
+		error->filename = filename;
+		error->line = line;
+		error->function = function;
+	}
 
 	CURRENT_CONTEXT->error = error;
 
@@ -234,7 +292,10 @@ nih_error_clear (void)
 	nih_assert (context_stack != NULL);
 	nih_assert (CURRENT_CONTEXT->error != NULL);
 
-	nih_error ("%s: %s", _("Unhandled Error"),
+	nih_error ("%s:%d: Unhandled error from %s: %s",
+		   CURRENT_CONTEXT->error->filename,
+		   CURRENT_CONTEXT->error->line,
+		   CURRENT_CONTEXT->error->function,
 		   CURRENT_CONTEXT->error->message);
 
 	nih_free (CURRENT_CONTEXT->error);

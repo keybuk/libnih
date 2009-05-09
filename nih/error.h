@@ -27,7 +27,7 @@
  *
  * Errors are raised as NihError structures, kept globally.  Only one error
  * may be active at any one time, raising an error when another is already
- * raised will emit a warning log message.
+ * raised will result in an assertion.
  *
  * Errors are raised with the nih_error_raise() or nih_error_raise_printf()
  * functions, passing the error number and a human-readable messages.
@@ -41,15 +41,17 @@
  *
  * A higher function that wishes to handle the error calls nih_error_get()
  * to retrieve it, it's an error to do so if you do not know that an error
- * is pending.  This returns the error structure and removes it from the
- * global.
+ * is pending.  This returns the currently raised error structure.
+ *
+ * To clear the error, it should be freed with nih_free().  To return the
+ * error from your own function, simply don't free it.
  *
  * Errors may be partitioned using contexts, a new context is pushed with
  * nih_error_push_context(); any errors raised are now stored in this
  * context and any previous raised errors are hidden from view.  The context
- * can be popped again with nih_error_pop_context() any raised errors are
- * lost (with a warning log message) and the previously hidden raised errors
- * are now visible again.
+ * can be popped again with nih_error_pop_context() provided that any raised
+ * error has been dealt with.  The previously hidden raised errors are now
+ * visible again.
  **/
 
 #include <nih/macros.h>

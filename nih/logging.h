@@ -63,8 +63,8 @@ typedef enum {
  * should not discard any messages and instead nih_log_set_priority() used
  * to decide the treshold of logged messages.
  *
- * The logger may return non-zero to indicate that it was not able to
- * output the message.
+ * Returns: zero on success, negative value if the logger was not able
+ * to output the message.
  **/
 typedef int (*NihLogger) (NihLogLevel priority, const char *message);
 

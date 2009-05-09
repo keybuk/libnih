@@ -118,8 +118,8 @@ nih_log_set_priority (NihLogLevel new_priority)
  * to being below the minimum priority and negative value if the logger failed.
  **/
 int
-nih_log_message (NihLogLevel  priority,
-		 const char  *format,
+nih_log_message (NihLogLevel priority,
+		 const char *format,
 		 ...)
 {
 	nih_local char *message = NULL;
@@ -155,8 +155,8 @@ nih_log_message (NihLogLevel  priority,
  * Returns: zero on completion, negative value on error.
  **/
 int
-nih_logger_printf (NihLogLevel  priority,
-		   const char  *message)
+nih_logger_printf (NihLogLevel priority,
+		   const char *message)
 {
 	nih_assert (message != NULL);
 
@@ -200,8 +200,8 @@ nih_logger_printf (NihLogLevel  priority,
  * Returns: zero on completion, negative value on error.
  **/
 int
-nih_logger_syslog (NihLogLevel  priority,
-		   const char  *message)
+nih_logger_syslog (NihLogLevel priority,
+		   const char *message)
 {
 	int level;
 

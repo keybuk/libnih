@@ -228,8 +228,6 @@ typedef struct nih_error {
 			if (_nih_should_err->number == ENOMEM) {	\
 				nih_free (_nih_should_err);		\
 			} else {					\
-				_nih_error_raise_error (NULL, 0, NULL, \
-							_nih_should_err); \
 				break;					\
 			}						\
 		}							\

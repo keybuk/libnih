@@ -254,6 +254,9 @@ _nih_error_raise_error (const char *filename,
 			const char *function,
 			NihError *  error)
 {
+	nih_assert (filename != NULL);
+	nih_assert (line > 0);
+	nih_assert (function != NULL);
 	nih_assert (error != NULL);
 	nih_assert (error->number > 0);
 	nih_assert (error->message != NULL);
@@ -263,15 +266,9 @@ _nih_error_raise_error (const char *filename,
 	if (CURRENT_CONTEXT->error && (CURRENT_CONTEXT->error != error))
 		nih_error_clear ();
 
-	if (filename) {
-		nih_assert (filename != NULL);
-		nih_assert (line > 0);
-		nih_assert (function != NULL);
-
-		error->filename = filename;
-		error->line = line;
-		error->function = function;
-	}
+	error->filename = filename;
+	error->line = line;
+	error->function = function;
 
 	CURRENT_CONTEXT->error = error;
 

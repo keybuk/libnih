@@ -1,5 +1,10 @@
 2009-05-09  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/error.h (NIH_SHOULD): We don't need to raise the error again,
+	simply don't free it.
+	* nih/error.c (_nih_error_raise_error): Don't accept a NULL
+	filename anymore.
+
 	* nih/error.c (_nih_error_raise, _nih_error_raise_printf)
 	(_nih_error_raise_system): Don't make the error a child of the
 	context.

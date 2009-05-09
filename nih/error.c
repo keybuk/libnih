@@ -131,7 +131,7 @@ _nih_error_raise (const char *filename,
 
 	nih_error_init ();
 
-	error = NIH_MUST (nih_new (CURRENT_CONTEXT, NihError));
+	error = NIH_MUST (nih_new (NULL, NihError));
 
 	error->number = number;
 	error->message = message;
@@ -177,7 +177,7 @@ _nih_error_raise_printf (const char *filename,
 
 	nih_error_init ();
 
-	error = NIH_MUST (nih_new (CURRENT_CONTEXT, NihError));
+	error = NIH_MUST (nih_new (NULL, NihError));
 
 	error->number = number;
 
@@ -218,7 +218,7 @@ _nih_error_raise_system (const char *filename,
 
 	nih_error_init ();
 
-	error = NIH_MUST (nih_new (CURRENT_CONTEXT, NihError));
+	error = NIH_MUST (nih_new (NULL, NihError));
 
 	error->number = saved_errno;
 	error->message = NIH_MUST (nih_strdup (error, strerror (saved_errno)));

@@ -116,9 +116,9 @@ static inline NihAllocRef *nih_alloc_ref_lookup     (NihAllocCtx *parent,
 
 
 /* Point to the functions we actually call for allocation. */
-void *(*__nih_malloc)(size_t size) = malloc;
-void *(*__nih_realloc)(void *ptr, size_t size) = realloc;
-void (*__nih_free)(void *ptr) = free;
+void *(*__nih_malloc)  (size_t size)            = malloc;
+void *(*__nih_realloc) (void *ptr, size_t size) = realloc;
+void  (*__nih_free)    (void *ptr)              = free;
 
 
 /**
@@ -180,13 +180,13 @@ nih_alloc (const void *parent,
  * Returns: reallocated object or NULL if insufficient memory.
  **/
 void *
-nih_realloc (void       *ptr,
+nih_realloc (void *      ptr,
 	     const void *parent,
 	     size_t      size)
 {
 	NihAllocCtx *ctx;
-	NihList     *first_parent = NULL;
-	NihList     *first_child = NULL;
+	NihList *    first_parent = NULL;
+	NihList *    first_child = NULL;
 
 	if (! ptr)
 		return nih_alloc (parent, size);
@@ -500,8 +500,8 @@ nih_alloc_context_free (NihAllocCtx *ctx)
  * debugging purposes.
  **/
 void
-nih_alloc_real_set_destructor (const void    *ptr,
-			       NihDestructor  destructor)
+nih_alloc_real_set_destructor (const void *  ptr,
+			       NihDestructor destructor)
 {
 	NihAllocCtx *ctx;
 
@@ -591,7 +591,7 @@ nih_alloc_ref_new (NihAllocCtx *parent,
  * discard it.
  **/
 void
-nih_unref (void       *ptr,
+nih_unref (void *      ptr,
 	   const void *parent)
 {
 	NihAllocCtx *ctx;

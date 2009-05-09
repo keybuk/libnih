@@ -39,7 +39,8 @@ malloc_null (size_t size)
 void
 test_new (void)
 {
-	void *ptr1, *ptr2;
+	void *ptr1;
+	void *ptr2;
 
 	TEST_FUNCTION ("nih_new");
 
@@ -75,7 +76,8 @@ test_new (void)
 void
 test_alloc (void)
 {
-	void *ptr1, *ptr2;
+	void *ptr1;
+	void *ptr2;
 
 	TEST_FUNCTION ("nih_alloc");
 
@@ -112,8 +114,8 @@ test_alloc (void)
 
 
 static void *
-realloc_null (void   *ptr,
-	      size_t  size)
+realloc_null (void * ptr,
+	      size_t size)
 {
 	return NULL;
 }
@@ -121,7 +123,9 @@ realloc_null (void   *ptr,
 void
 test_realloc (void)
 {
-	void *ptr1, *ptr2, *ptr3;
+	void *ptr1;
+	void *ptr2;
+	void *ptr3;
 
 	TEST_FUNCTION ("nih_realloc");
 
@@ -232,12 +236,12 @@ typedef struct child {
 
 typedef struct parent {
 	NihList *list;
-	Child   *child;
+	Child *  child;
 } Parent;
 
 
 static void *list_head_ptr = NULL;
-static int list_head_free = FALSE;
+static int   list_head_free = FALSE;
 
 static void *
 my_list_head_malloc (size_t size)
@@ -266,7 +270,8 @@ child_destructor_test (Child *child)
 void
 test_free (void)
 {
-	void   *ptr1, *ptr2;
+	void *  ptr1;
+	void *  ptr2;
 	Parent *parent;
 	int     ret;
 
@@ -387,7 +392,8 @@ test_free (void)
 void
 test_discard (void)
 {
-	void *ptr1, *ptr2;
+	void *ptr1;
+	void *ptr2;
 	int   ret;
 
 	TEST_FUNCTION ("nih_discard");
@@ -457,7 +463,9 @@ test_discard (void)
 void
 test_ref (void)
 {
-	void *ptr1, *ptr2, *ptr3;
+	void *ptr1;
+	void *ptr2;
+	void *ptr3;
 
 	TEST_FUNCTION ("nih_ref");
 
@@ -504,7 +512,9 @@ test_ref (void)
 void
 test_unref (void)
 {
-	void *ptr1, *ptr2, *ptr3;
+	void *ptr1;
+	void *ptr2;
+	void *ptr3;
 
 	TEST_FUNCTION ("nih_unref");
 
@@ -560,7 +570,9 @@ test_unref (void)
 void
 test_parent (void)
 {
-	void *ptr1, *ptr2, *ptr3;
+	void *ptr1;
+	void *ptr2;
+	void *ptr3;
 
 	TEST_FUNCTION ("nih_alloc_parent");
 
@@ -631,7 +643,8 @@ test_parent (void)
 void
 test_local (void)
 {
-	void *parent, *_ptr;
+	void *parent;
+	void *_ptr;
 
 	TEST_GROUP ("nih_local");
 

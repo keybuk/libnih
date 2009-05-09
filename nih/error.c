@@ -38,7 +38,8 @@
 
 
 /* Prototypes for static functions */
-static void nih_error_clear (void);
+static void nih_error_clear   (void);
+static int  nih_error_destroy (NihError *error);
 
 
 /**
@@ -198,6 +199,9 @@ nih_error_raise_system (void)
  *
  * This is normally used to raise a taken error that has not been handled,
  * or to raise a custom error object.
+ *
+ * The destructor of @error will be overwritten so that the context can
+ * be cleared when the error is freed.
  **/
 void
 nih_error_raise_error (NihError *error)
@@ -208,10 +212,12 @@ nih_error_raise_error (NihError *error)
 
 	nih_error_init ();
 
-	if (CURRENT_CONTEXT->error)
+	if (CURRENT_CONTEXT->error && (CURRENT_CONTEXT->error != error))
 		nih_error_clear ();
 
 	CURRENT_CONTEXT->error = error;
+
+	nih_alloc_set_destructor (error, nih_error_destroy);
 }
 
 
@@ -232,17 +238,16 @@ nih_error_clear (void)
 		   CURRENT_CONTEXT->error->message);
 
 	nih_free (CURRENT_CONTEXT->error);
-	CURRENT_CONTEXT->error = NULL;
+	nih_assert (CURRENT_CONTEXT->error == NULL);
 }
 
 /**
  * nih_error_get:
  *
- * Returns the last unhandled error from the current context, clearing it
- * so that further errors may be raised.
+ * Returns the last unhandled error from the current context.
  *
  * The object must be freed with nih_free() once you are finished with it,
- * if you want to raise it again, use nih_error_raise_error().
+ * otherwise the error will still considered to be raised.
  *
  * Returns: error object from current context.
  **/
@@ -255,10 +260,34 @@ nih_error_get (void)
 	nih_assert (CURRENT_CONTEXT->error != NULL);
 
 	error = CURRENT_CONTEXT->error;
-	CURRENT_CONTEXT->error = NULL;
 
 	return error;
 }
+
+
+/**
+ * nih_error_destroy:
+ * @error: error being freed.
+ *
+ * This is the destructor function for errors, attached when the error
+ * is connected to the context.  It ensures that the error is removed from
+ * the context when it is freed.
+ *
+ * Returns: always zero.
+ **/
+static int
+nih_error_destroy (NihError *error)
+{
+	nih_assert (error != NULL);
+	nih_assert (context_stack != NULL);
+	nih_assert (CURRENT_CONTEXT->error != NULL);
+	nih_assert (CURRENT_CONTEXT->error == error);
+
+	CURRENT_CONTEXT->error = NULL;
+
+	return 0;
+}
+
 
 
 /**

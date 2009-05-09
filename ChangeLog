@@ -1,3 +1,14 @@
+2009-05-09  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/error.c (nih_error_destroy): Add destructor functions for error
+	messages, this clears the error from the current error context.
+	(nih_error_raise_error): Set the destructor.
+	(nih_error_clear): Assert that the destructor frees the error, don't
+	do it ourselves.
+	(nih_error_get): Do not clear the error from the context.
+	(nih_error_raise_error): Check for the error being double-raised
+	which is currently permitted.
+
 2009-05-07  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/annotation.c (annotation_start_tag): Update

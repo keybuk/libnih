@@ -1,5 +1,12 @@
 2009-05-09  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/error.c (nih_error_clear): Allow the function to be called
+	when there is no current error in the context
+	(nih_error_init): Register as an atexit() function so that unhandled
+	errors are caught when the process exits.
+	(_nih_error_raise_error, nih_error_pop_context): Don't double check,
+	just call the function to clear the context.
+
 	* nih/error.c (_nih_error_raise_error): Don't allow the same
 	error to be raised twice anymore.
 	* nih/tests/test_error.c (test_pop_context): No need to raise the

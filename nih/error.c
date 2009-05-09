@@ -26,6 +26,7 @@
 
 #include <errno.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <nih/macros.h>
@@ -91,6 +92,8 @@ nih_error_init (void)
 		context_stack = NIH_MUST (nih_list_new (NULL));
 
 		nih_error_push_context ();
+
+		nih_assert (atexit (nih_error_clear) == 0);
 	}
 }
 
@@ -262,9 +265,7 @@ _nih_error_raise_error (const char *filename,
 	nih_assert (error->message != NULL);
 
 	nih_error_init ();
-
-	if (CURRENT_CONTEXT->error)
-		nih_error_clear ();
+	nih_error_clear ();
 
 	error->filename = filename;
 	error->line = line;
@@ -287,7 +288,9 @@ static void
 nih_error_clear (void)
 {
 	nih_assert (context_stack != NULL);
-	nih_assert (CURRENT_CONTEXT->error != NULL);
+
+	if (! CURRENT_CONTEXT->error)
+		return;
 
 	nih_error ("%s:%d: Unhandled error from %s: %s",
 		   CURRENT_CONTEXT->error->filename,
@@ -387,8 +390,7 @@ nih_error_pop_context (void)
 	nih_assert (CURRENT_CONTEXT != DEFAULT_CONTEXT);
 
 	context = CURRENT_CONTEXT;
-	if (context->error)
-		nih_error_clear ();
+	nih_error_clear ();
 
 	nih_list_remove (&context->entry);
 	nih_free (context);

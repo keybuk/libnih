@@ -42,6 +42,30 @@ typedef struct type_var {
 	char *  name;
 } TypeVar;
 
+/**
+ * TypeFunc:
+ * @entry: list entry,
+ * @type: C function return type,
+ * @name: function name,
+ * @args: function arguments,
+ * @attribs: attributes.
+ *
+ * This structure represents a C function definition or prototype,
+ * containing its return type, name, arguments and any function attributes
+ * for compiler hints.  They are returned by the various function
+ * generators via the prototypes or externs lists.
+ *
+ * @args is a list of TypeVar entries, @attribs is a list of NihListEntry
+ * entries with strings as the data pointer.
+ **/
+typedef struct type_func {
+	NihList entry;
+	char *  type;
+	char *  name;
+	NihList args;
+	NihList attribs;
+} TypeFunc;
+
 
 NIH_BEGIN_EXTERN
 
@@ -51,6 +75,9 @@ const char *type_basic_type   (int dbus_type);
 char *      type_of           (const void * parent, DBusSignatureIter *iter);
 
 TypeVar *   type_var_new      (const void *parent, const char *type,
+			       const char *name)
+	__attribute__ ((malloc, warn_unused_result));
+TypeFunc *  type_func_new     (const void *parent, const char *type,
 			       const char *name)
 	__attribute__ ((malloc, warn_unused_result));
 

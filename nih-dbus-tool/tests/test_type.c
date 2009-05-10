@@ -512,6 +512,39 @@ test_var_new (void)
 
 
 void
+test_func_new (void)
+{
+	TypeFunc *func;
+
+	TEST_FUNCTION ("type_func_new");
+
+
+	/* Check to make sure that a TypeFunc structure is allocated
+	 * correctly and returned.
+	 */
+	TEST_ALLOC_FAIL {
+		func = type_func_new (NULL, "char *", "foo");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (func, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_LIST_EMPTY (&func->entry);
+		TEST_EQ_STR (func->type, "char *");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "foo");
+		TEST_ALLOC_PARENT (func->name, func);
+		TEST_LIST_EMPTY (&func->args);
+		TEST_LIST_EMPTY (&func->attribs);
+
+		nih_free (func);
+	}
+}
+
+
+void
 test_to_const (void)
 {
 	char *str = NULL;
@@ -1006,6 +1039,7 @@ main (int   argc,
 	test_of ();
 
 	test_var_new ();
+	test_func_new ();
 
 	test_to_const ();
 	test_to_pointer ();

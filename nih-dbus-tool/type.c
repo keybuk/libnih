@@ -226,6 +226,60 @@ type_var_new (const void *parent,
 	return var;
 }
 
+/**
+ * type_func_new:
+ * @parent: parent object for new structure,
+ * @type: C return type,
+ * @name: function name.
+ *
+ * Allocates and returns a new TypeFunc structure with the
+ * C return type @type and function name @name, the structure is not placed
+ * into any linked list but will be removed from its containing list when
+ * freed.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned structure.  When all parents
+ * of the returned structure are entry, the returned structure will also be
+ * freed.
+ *
+ * Returns: the new TypeFunc structure or NULL if insufficient memory.
+ **/
+TypeFunc *
+type_func_new (const void *parent,
+	       const char *type,
+	       const char *name)
+{
+	TypeFunc *func;
+
+	nih_assert (type != NULL);
+	nih_assert (name != NULL);
+
+	func = nih_new (parent, TypeFunc);
+	if (! func)
+		return NULL;
+
+	nih_list_init (&func->entry);
+
+	func->type = nih_strdup (func, type);
+	if (! func->type) {
+		nih_free (func);
+		return NULL;
+	}
+
+	func->name = nih_strdup (func, name);
+	if (! func->name) {
+		nih_free (func);
+		return NULL;
+	}
+
+	nih_list_init (&func->args);
+	nih_list_init (&func->attribs);
+
+	nih_alloc_set_destructor (func, nih_list_destroy);
+
+	return func;
+}
+
 
 /**
  * type_to_const:

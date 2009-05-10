@@ -1,3 +1,12 @@
+2009-05-10  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/type.h (TypeFunc): Structure to represent a function
+	definition.
+	* nih-dbus-tool/type.c (type_func_new): Function to create a new
+	TypeFunc structure.
+	* nih-dbus-tool/tests/test_type.c (test_func_new): Test for the
+	function.
+
 2009-05-09  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/error.c (nih_error_steal): Add a new function to get an

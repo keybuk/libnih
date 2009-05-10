@@ -70,7 +70,7 @@
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned entry.  When all parents
- * of the returned node are entry, the returned entry will also be
+ * of the returned node are freed, the returned entry will also be
  * freed.
  *
  * Returns: new entry or NULL if the allocation failed.
@@ -311,7 +311,7 @@ exit:
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned node.  When all parents
- * of the returned node are entry, the returned node will also be
+ * of the returned node are freed, the returned node will also be
  * freed.
  *
  * Returns: newly allocated Node on success, NULL on error.

@@ -96,7 +96,7 @@ type_const (int dbus_type)
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
- * of the returned string are entry, the returned string will also be
+ * of the returned string are freed, the returned string will also be
  * freed.
  *
  * Returns: newly allocated string or NULL if allocation failed.
@@ -188,7 +188,7 @@ type_of (const void *       parent,
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned structure.  When all parents
- * of the returned structure are entry, the returned structure will also be
+ * of the returned structure are freed, the returned structure will also be
  * freed.
  *
  * Returns: the new TypeVar structure or NULL if insufficient memory.
@@ -347,7 +347,7 @@ type_var_layout (const void *parent,
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned structure.  When all parents
- * of the returned structure are entry, the returned structure will also be
+ * of the returned structure are freed, the returned structure will also be
  * freed.
  *
  * Returns: the new TypeFunc structure or NULL if insufficient memory.

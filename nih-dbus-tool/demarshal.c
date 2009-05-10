@@ -103,7 +103,7 @@ static char *demarshal_struct (const void *parent,
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
- * of the returned string are entry, the returned string will also be
+ * of the returned string are freed, the returned string will also be
  * freed.
  *
  * Demarshalling may require that memory is allocated, the parent object
@@ -192,7 +192,7 @@ demarshal (const void *       parent,
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
- * of the returned string are entry, the returned string will also be
+ * of the returned string are freed, the returned string will also be
  * freed.
  *
  * Demarshalling may require that memory is allocated, the parent object
@@ -371,7 +371,7 @@ demarshal_basic (const void *       parent,
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
- * of the returned string are entry, the returned string will also be
+ * of the returned string are freed, the returned string will also be
  * freed.
  *
  * Demarshalling may require that memory is allocated, the parent object
@@ -804,7 +804,7 @@ demarshal_array (const void *       parent,
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
- * of the returned string are entry, the returned string will also be
+ * of the returned string are freed, the returned string will also be
  * freed.
  *
  * Demarshalling may require that memory is allocated, the parent object

@@ -88,7 +88,7 @@ symbol_valid (const char *symbol)
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
- * of the returned string are entry, the returned string will also be
+ * of the returned string are freed, the returned string will also be
  * freed.
  *
  * Returns: newly allocated string or NULL if allocation fails.

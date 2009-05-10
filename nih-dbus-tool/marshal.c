@@ -91,7 +91,7 @@ static char *marshal_struct (const void *parent,
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
- * of the returned string are entry, the returned string will also be
+ * of the returned string are freed, the returned string will also be
  * freed.
  *
  * Returns: newly allocated string or NULL if insufficient memory.
@@ -167,7 +167,7 @@ marshal (const void *       parent,
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
- * of the returned string are entry, the returned string will also be
+ * of the returned string are freed, the returned string will also be
  * freed.
  *
  * Returns: newly allocated string or NULL if insufficient memory.
@@ -263,7 +263,7 @@ marshal_basic (const void *       parent,
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
- * of the returned string are entry, the returned string will also be
+ * of the returned string are freed, the returned string will also be
  * freed.
  *
  * Returns: newly allocated string or NULL if insufficient memory.
@@ -567,7 +567,7 @@ marshal_array (const void *       parent,
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
- * of the returned string are entry, the returned string will also be
+ * of the returned string are freed, the returned string will also be
  * freed.
  *
  * Returns: newly allocated string or NULL if insufficient memory.

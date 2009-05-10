@@ -1,5 +1,12 @@
 2009-05-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_marshal.c (test_marshal): Make sure
+	the input and local variable parents are correct, and make sure the
+	lists are empty in case of memory error.
+	* nih-dbus-tool/tests/test_demarshal.c (test_demarshal): Make sure
+	the output and local variable parents are correct, and make sure the
+	lists are empty in case of memory error.
+
 	* nih-dbus-tool/method.c (method_reply_function): Accept list
 	arguments for prototypes and externs, filling in the prototypes
 	one.

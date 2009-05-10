@@ -86,6 +86,8 @@ test_marshal (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&inputs);
+			TEST_LIST_EMPTY (&locals);
 			continue;
 		}
 
@@ -98,6 +100,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "uint8_t");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
@@ -174,6 +177,8 @@ test_marshal (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&inputs);
+			TEST_LIST_EMPTY (&locals);
 			continue;
 		}
 
@@ -186,6 +191,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "int");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
@@ -262,6 +268,8 @@ test_marshal (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&inputs);
+			TEST_LIST_EMPTY (&locals);
 			continue;
 		}
 
@@ -274,6 +282,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "int16_t");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
@@ -350,6 +359,8 @@ test_marshal (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&inputs);
+			TEST_LIST_EMPTY (&locals);
 			continue;
 		}
 
@@ -362,6 +373,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "uint16_t");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
@@ -438,6 +450,8 @@ test_marshal (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&inputs);
+			TEST_LIST_EMPTY (&locals);
 			continue;
 		}
 
@@ -450,6 +464,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "int32_t");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
@@ -526,6 +541,8 @@ test_marshal (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&inputs);
+			TEST_LIST_EMPTY (&locals);
 			continue;
 		}
 
@@ -538,6 +555,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "uint32_t");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
@@ -614,6 +632,8 @@ test_marshal (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&inputs);
+			TEST_LIST_EMPTY (&locals);
 			continue;
 		}
 
@@ -626,6 +646,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "int64_t");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
@@ -702,6 +723,8 @@ test_marshal (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&inputs);
+			TEST_LIST_EMPTY (&locals);
 			continue;
 		}
 
@@ -714,6 +737,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "uint64_t");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
@@ -790,6 +814,8 @@ test_marshal (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&inputs);
+			TEST_LIST_EMPTY (&locals);
 			continue;
 		}
 
@@ -802,6 +828,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "double");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
@@ -878,6 +905,8 @@ test_marshal (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&inputs);
+			TEST_LIST_EMPTY (&locals);
 			continue;
 		}
 
@@ -890,6 +919,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "char *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
@@ -966,6 +996,8 @@ test_marshal (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&inputs);
+			TEST_LIST_EMPTY (&locals);
 			continue;
 		}
 
@@ -978,6 +1010,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "char *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
@@ -1054,6 +1087,8 @@ test_marshal (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&inputs);
+			TEST_LIST_EMPTY (&locals);
 			continue;
 		}
 
@@ -1066,6 +1101,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "char *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
@@ -1144,6 +1180,8 @@ test_marshal (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&inputs);
+			TEST_LIST_EMPTY (&locals);
 			continue;
 		}
 
@@ -1172,6 +1210,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "int16_t *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
@@ -1182,6 +1221,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "size_t");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_len");
@@ -1194,6 +1234,7 @@ test_marshal (void)
 
 		var = (TypeVar *)locals.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "DBusMessageIter");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_iter");
@@ -1342,6 +1383,8 @@ test_marshal (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&inputs);
+			TEST_LIST_EMPTY (&locals);
 			continue;
 		}
 
@@ -1393,6 +1436,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "int16_t **");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
@@ -1403,6 +1447,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "size_t *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_len");
@@ -1415,6 +1460,7 @@ test_marshal (void)
 
 		var = (TypeVar *)locals.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "DBusMessageIter");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_iter");
@@ -1618,6 +1664,8 @@ test_marshal (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&inputs);
+			TEST_LIST_EMPTY (&locals);
 			continue;
 		}
 
@@ -1646,6 +1694,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "char **");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
@@ -1658,6 +1707,7 @@ test_marshal (void)
 
 		var = (TypeVar *)locals.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "DBusMessageIter");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_iter");
@@ -1775,6 +1825,8 @@ test_marshal (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&inputs);
+			TEST_LIST_EMPTY (&locals);
 			continue;
 		}
 
@@ -1822,6 +1874,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "char ***");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
@@ -1834,6 +1887,7 @@ test_marshal (void)
 
 		var = (TypeVar *)locals.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "DBusMessageIter");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_iter");
@@ -2002,6 +2056,8 @@ test_marshal (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&inputs);
+			TEST_LIST_EMPTY (&locals);
 			continue;
 		}
 
@@ -2087,6 +2143,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "struct dbus_struct_suasan *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
@@ -2099,6 +2156,7 @@ test_marshal (void)
 
 		var = (TypeVar *)locals.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "DBusMessageIter");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_iter");
@@ -2109,6 +2167,7 @@ test_marshal (void)
 
 		var = (TypeVar *)locals.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "const char *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_item0");
@@ -2119,6 +2178,7 @@ test_marshal (void)
 
 		var = (TypeVar *)locals.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "uint32_t");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_item1");
@@ -2129,6 +2189,7 @@ test_marshal (void)
 
 		var = (TypeVar *)locals.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "DBusMessageIter");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_item2_iter");
@@ -2139,6 +2200,7 @@ test_marshal (void)
 
 		var = (TypeVar *)locals.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "char * const *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_item2");
@@ -2149,6 +2211,7 @@ test_marshal (void)
 
 		var = (TypeVar *)locals.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "DBusMessageIter");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_item3_iter");
@@ -2159,6 +2222,7 @@ test_marshal (void)
 
 		var = (TypeVar *)locals.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "const int16_t *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_item3");
@@ -2169,6 +2233,7 @@ test_marshal (void)
 
 		var = (TypeVar *)locals.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "size_t");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_item3_len");
@@ -2390,6 +2455,8 @@ test_marshal (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&inputs);
+			TEST_LIST_EMPTY (&locals);
 			continue;
 		}
 
@@ -2444,6 +2511,7 @@ test_marshal (void)
 
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "struct dbus_struct_su **");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
@@ -2456,6 +2524,7 @@ test_marshal (void)
 
 		var = (TypeVar *)locals.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
 		TEST_EQ_STR (var->type, "DBusMessageIter");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value_iter");

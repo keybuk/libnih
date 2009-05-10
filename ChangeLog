@@ -1,5 +1,11 @@
 2009-05-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/type.c (type_var_to_string, type_var_layout):
+	Functions to convert TypeVar entries into strings.
+	* nih-dbus-tool/type.h: Prototypes.
+	* nih-dbus-tool/tests/test_type.c (test_var_to_string)
+	(test_var_layout): Test cases.
+
 	* nih-dbus-tool/tests/test_marshal.c (test_marshal): Make sure
 	the input and local variable parents are correct, and make sure the
 	lists are empty in case of memory error.

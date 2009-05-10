@@ -227,6 +227,114 @@ type_var_new (const void *parent,
 }
 
 /**
+ * type_var_to_string:
+ * @parent: parent object for new string,
+ * @var: variable to convert.
+ *
+ * Returns a string for the given variable @var, consisting of the type
+ * and variable name separated by a space if appropriate.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the returned string will also be
+ * freed.
+ *
+ * Returns: the newly allocated string or NULL if insufficient memory.
+ **/
+char *
+type_var_to_string (const void *parent,
+		    TypeVar *   var)
+{
+	char *str;
+
+	nih_assert (var != NULL);
+
+	if (strchr (var->type, '*')) {
+		str = nih_sprintf (parent, "%s%s", var->type, var->name);
+	} else {
+		str = nih_sprintf (parent, "%s %s", var->type, var->name);
+	}
+
+	return str;
+}
+
+/**
+ * type_var_layout:
+ * @parent: parent object for new string,
+ * @vars: list of variables to convert.
+ *
+ * Returns a string for the list of variables @vars, each of which should
+ * be a TypeVar structure.  Each variable is declared on a new line,
+ * with the names lined up to the longest type length.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the returned string will also be
+ * freed.
+ *
+ * Returns: the newly allocated string or NULL if insufficient memory.
+ **/
+char *
+type_var_layout (const void *parent,
+		 NihList *   vars)
+{
+	size_t max;
+	size_t len;
+	char * str;
+
+	nih_assert (vars != NULL);
+
+	/* Work out how much space to have for the types */
+	max = 0;
+	NIH_LIST_FOREACH (vars, iter) {
+		TypeVar *var = (TypeVar *)iter;
+		size_t   this_len;
+
+		this_len = strlen (var->type);
+		if (! strchr (var->type, '*'))
+			this_len++;
+
+		if (this_len > max)
+			max = this_len;
+	}
+
+	/* Allocate a string with each of the variables on each line. */
+	len = 0;
+	str = nih_strdup (parent, "");
+	if (! str)
+		return NULL;
+
+	NIH_LIST_FOREACH (vars, iter) {
+		TypeVar *var = (TypeVar *)iter;
+		char *   new_str;
+
+		new_str = nih_realloc (str, parent,
+				       len + max + strlen (var->name) + 3);
+		if (! new_str) {
+			nih_free (str);
+			return NULL;
+		}
+
+		str = new_str;
+
+		memset (str + len, ' ', max);
+		memcpy (str + len, var->type, strlen (var->type));
+		len += max;
+
+		memcpy (str + len, var->name, strlen (var->name));
+		len += strlen (var->name);
+
+		memcpy (str + len, ";\n", 2);
+		len += 2;
+
+		str[len] = '\0';
+	}
+
+	return str;
+}
+
+
+/**
  * type_func_new:
  * @parent: parent object for new structure,
  * @type: C return type,

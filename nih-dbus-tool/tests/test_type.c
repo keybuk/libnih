@@ -510,6 +510,223 @@ test_var_new (void)
 	}
 }
 
+void
+test_var_to_string (void)
+{
+	TypeVar *var = NULL;
+	char *   str;
+
+	TEST_FUNCTION ("type_var_to_string");
+
+
+	/* Check to make sure that a non-pointer variable is returned with
+	 * the type and name separated by a space.
+	 */
+	TEST_FEATURE ("with non-pointer");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			var = type_var_new (NULL, "int", "foo");
+		}
+
+		str = type_var_to_string (NULL, var);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (var);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "int foo");
+
+		nih_free (str);
+		nih_free (var);
+	}
+
+
+	/* Check to make sure that a pointer variable is returned with
+	 * the type and name separated by no spaces.
+	 */
+	TEST_FEATURE ("with pointer");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			var = type_var_new (NULL, "char *", "foo");
+		}
+
+		str = type_var_to_string (NULL, var);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (var);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "char *foo");
+
+		nih_free (str);
+		nih_free (var);
+	}
+}
+
+void
+test_var_layout (void)
+{
+	NihList  vars;
+	TypeVar *var1 = NULL;
+	TypeVar *var2 = NULL;
+	TypeVar *var3 = NULL;
+	char *   str;
+
+	TEST_FUNCTION ("test_var_layout");
+
+
+	/* Check that we can lay out a couple of different non-pointer
+	 * variables with them lined up with the longest type name
+	 * separated by a space and the other names lined up.
+	 */
+	TEST_FEATURE ("with set of non-pointers");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&vars);
+
+		TEST_ALLOC_SAFE {
+			var1 = type_var_new (NULL, "int", "foo");
+			nih_list_add (&vars, &var1->entry);
+
+			var2 = type_var_new (NULL, "struct bar", "bar");
+			nih_list_add (&vars, &var2->entry);
+
+			var3 = type_var_new (NULL, "uint32_t", "baz");
+			nih_list_add (&vars, &var3->entry);
+		}
+
+		str = type_var_layout (NULL, &vars);
+
+ 		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (var1);
+			nih_free (var2);
+			nih_free (var3);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int        foo;\n"
+				   "struct bar bar;\n"
+				   "uint32_t   baz;\n"));
+
+		nih_free (var1);
+		nih_free (var2);
+		nih_free (var3);
+
+		nih_free (str);
+	}
+
+
+	/* Check that we can lay out a couple of different pointer
+	 * variables with them lined up with the longest type name
+	 * followed by the name with the others lined up under it.
+	 */
+	TEST_FEATURE ("with set of pointers");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&vars);
+
+		TEST_ALLOC_SAFE {
+			var1 = type_var_new (NULL, "int *", "foo");
+			nih_list_add (&vars, &var1->entry);
+
+			var2 = type_var_new (NULL, "struct bar *", "bar");
+			nih_list_add (&vars, &var2->entry);
+
+			var3 = type_var_new (NULL, "uint32_t *", "baz");
+			nih_list_add (&vars, &var3->entry);
+		}
+
+		str = type_var_layout (NULL, &vars);
+
+ 		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (var1);
+			nih_free (var2);
+			nih_free (var3);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int *       foo;\n"
+				   "struct bar *bar;\n"
+				   "uint32_t *  baz;\n"));
+
+		nih_free (var1);
+		nih_free (var2);
+		nih_free (var3);
+
+		nih_free (str);
+	}
+
+
+	/* Check that we can lay out a mix of pointer and non-pointer
+	 * variables with them lined up with the longest type name
+	 * followed by the name with the others lined up under it.
+	 */
+	TEST_FEATURE ("with mixed set");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&vars);
+
+		TEST_ALLOC_SAFE {
+			var1 = type_var_new (NULL, "int *", "foo");
+			nih_list_add (&vars, &var1->entry);
+
+			var2 = type_var_new (NULL, "struct bar", "bar");
+			nih_list_add (&vars, &var2->entry);
+
+			var3 = type_var_new (NULL, "uint32_t *", "baz");
+			nih_list_add (&vars, &var3->entry);
+		}
+
+		str = type_var_layout (NULL, &vars);
+
+ 		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (var1);
+			nih_free (var2);
+			nih_free (var3);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int *      foo;\n"
+				   "struct bar bar;\n"
+				   "uint32_t * baz;\n"));
+
+		nih_free (var1);
+		nih_free (var2);
+		nih_free (var3);
+
+		nih_free (str);
+	}
+
+
+	/* Check that we can accept an empty set, and have the empty
+	 * string returned.
+	 */
+	TEST_FEATURE ("with empty list");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&vars);
+
+		str = type_var_layout (NULL, &vars);
+
+ 		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "");
+
+		nih_free (str);
+	}
+}
+
 
 void
 test_func_new (void)
@@ -1039,6 +1256,9 @@ main (int   argc,
 	test_of ();
 
 	test_var_new ();
+	test_var_to_string ();
+	test_var_layout ();
+
 	test_func_new ();
 
 	test_to_const ();

@@ -1,5 +1,14 @@
 2009-05-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_object_function): Accept list
+	arguments for prototypes and externs.
+	* nih-dbus-tool/method.h: Add prototype.
+	* nih-dbus-tool/tests/method_factory.c: Pass in the prototypes
+	and extern lists, but don't actually use them just yet.x
+	* nih-dbus-tool/tests/test_method.c (test_object_function): Add
+	tests for returned prototype, and add a test for not having a
+	deprecated attribute
+
 	* nih-dbus-tool/type.h (TypeFunc): Structure to represent a function
 	definition.
 	* nih-dbus-tool/type.c (type_func_new): Function to create a new

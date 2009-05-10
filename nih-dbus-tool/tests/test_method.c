@@ -40,6 +40,7 @@
 #include <nih-dbus/dbus_error.h>
 #include <nih-dbus/dbus_message.h>
 
+#include "type.h"
 #include "node.h"
 #include "method.h"
 #include "argument.h"
@@ -1209,11 +1210,16 @@ test_object_function (void)
 	pid_t             dbus_pid;
 	DBusConnection *  server_conn;
 	DBusConnection *  client_conn;
+	NihList           prototypes;
+	NihList           externs;
 	Method *          method = NULL;
 	Argument *        argument1 = NULL;
 	Argument *        argument2 = NULL;
 	Argument *        argument3 = NULL;
 	char *            str;
+	TypeFunc *        func;
+	TypeVar *         arg;
+	NihListEntry *    attrib;
 	int32_t           flags;
 	double            double_arg;
 	DBusMessage *     method_call;
@@ -1241,6 +1247,9 @@ test_object_function (void)
 	 */
 	TEST_FEATURE ("with standard method");
 	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&externs);
+
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "MyMethod");
 			method->symbol = nih_strdup (method, "my_method");
@@ -1263,10 +1272,14 @@ test_object_function (void)
 
 		str = method_object_function (NULL, method,
 					      "MyMethod_handle",
-					      "my_method_handler");
+					      "my_method_handler",
+					      &prototypes, &externs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&externs);
 
 			nih_free (method);
 			continue;
@@ -1430,6 +1443,127 @@ test_object_function (void)
 				   "\n"
 				   "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
 				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "DBusHandlerResult");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "MyMethod_handle");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusObject *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "object");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_NOT_EMPTY (&externs);
+
+		func = (TypeFunc *)externs.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_method_handler");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "void *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "data");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const char *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "str");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "int32_t");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "flags");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "char ***");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "output");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&externs);
 
 		nih_free (str);
 		nih_free (method);
@@ -2001,6 +2135,9 @@ test_object_function (void)
 	 */
 	TEST_FEATURE ("with asynchronous method");
 	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&externs);
+
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "MyAsyncMethod");
 			method->symbol = nih_strdup (method, "my_async_method");
@@ -2024,10 +2161,14 @@ test_object_function (void)
 
 		str = method_object_function (NULL, method,
 					      "MyAsyncMethod_handle",
-					      "my_async_method_handler");
+					      "my_async_method_handler",
+					      &prototypes, &externs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&externs);
 
 			nih_free (method);
 			continue;
@@ -2142,6 +2283,116 @@ test_object_function (void)
 				   "\n"
 				   "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
 				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "DBusHandlerResult");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "MyAsyncMethod_handle");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusObject *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "object");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_NOT_EMPTY (&externs);
+
+		func = (TypeFunc *)externs.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_async_method_handler");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "void *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "data");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const char *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "str");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "int32_t");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "flags");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&externs);
 
 		nih_free (str);
 		nih_free (method);
@@ -2634,6 +2885,255 @@ test_object_function (void)
 		nih_free (message);
 		dbus_message_unref (reply);
 		dbus_message_unref (method_call);
+	}
+
+
+	/* Check that a method call function for a deprecated method is
+	 * identical to the standard one, and does not have the deprecated
+	 * attribute since it would always result in a compiler warning/error
+	 * and we generally always want to implement it.
+	 */
+	TEST_FEATURE ("with deprecated method");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&externs);
+
+		TEST_ALLOC_SAFE {
+			method = method_new (NULL, "MyMethod");
+			method->symbol = nih_strdup (method, "my_method");
+			method->deprecated = TRUE;
+
+			argument1 = argument_new (method, "Str",
+						  "s", NIH_DBUS_ARG_IN);
+			argument1->symbol = nih_strdup (argument1, "str");
+			nih_list_add (&method->arguments, &argument1->entry);
+		}
+
+		str = method_object_function (NULL, method,
+					      "MyMethod_handle",
+					      "my_method_handler",
+					      &prototypes, &externs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&externs);
+
+			nih_free (method);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("DBusHandlerResult\n"
+				   "MyMethod_handle (NihDBusObject * object, NihDBusMessage *message)\n"
+				   "{\n"
+				   "\tDBusMessageIter iter;\n"
+				   "\tDBusMessage * reply;\n"
+				   "\tchar * str;\n"
+				   "\tconst char * str_dbus;\n"
+				   "\n"
+				   "\tnih_assert (object != NULL);\n"
+				   "\tnih_assert (message != NULL);\n"
+				   "\n"
+				   "\t/* Iterate the arguments to the message and demarshal into arguments\n"
+				   "\t * for our own function call.\n"
+				   "\t */\n"
+				   "\tdbus_message_iter_init (message->message, &iter);\n"
+				   "\n"
+				   "\t/* Demarshal a char * from the message */\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING) {\n"
+				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
+				   "\t\t                                _(\"Invalid arguments to MyMethod method\"));\n"
+				   "\t\tif (! reply)\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\n"
+				   "\t\tif (! dbus_connection_send (message->conn, reply, NULL)) {\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_get_basic (&iter, &str_dbus);\n"
+				   "\n"
+				   "\tstr = nih_strdup (message, str_dbus);\n"
+				   "\tif (! str) {\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_next (&iter);\n"
+				   "\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
+				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
+				   "\t\t                                _(\"Invalid arguments to MyMethod method\"));\n"
+				   "\t\tif (! reply)\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\n"
+				   "\t\tif (! dbus_connection_send (message->conn, reply, NULL)) {\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Call the handler function */\n"
+				   "\tif (my_method_handler (object->data, message, str) < 0) {\n"
+				   "\t\tNihError *err;\n"
+				   "\n"
+				   "\t\terr = nih_error_get ();\n"
+				   "\t\tif (err->number == ENOMEM) {\n"
+				   "\t\t\tnih_free (err);\n"
+				   "\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\t\t} else if (err->number == NIH_DBUS_ERROR) {\n"
+				   "\t\t\tNihDBusError *dbus_err = (NihDBusError *)err;\n"
+				   "\n"
+				   "\t\t\treply = NIH_MUST (dbus_message_new_error (message->message, dbus_err->name, err->message));\n"
+				   "\t\t\tnih_free (err);\n"
+				   "\n"
+				   "\t\t\tNIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
+				   "\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "\t\t} else {\n"
+				   "\t\t\treply = NIH_MUST (dbus_message_new_error (message->message, DBUS_ERROR_FAILED, err->message));\n"
+				   "\t\t\tnih_free (err);\n"
+				   "\n"
+				   "\t\t\tNIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
+				   "\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "\t\t}\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* If the sender doesn't care about a reply, don't bother wasting\n"
+				   "\t * effort constructing and sending one.\n"
+				   "\t */\n"
+				   "\tif (dbus_message_get_no_reply (message->message))\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "\n"
+				   "\tdo {\n"
+				   "\t\t/* Construct the reply message. */\n"
+				   "\t\treply = dbus_message_new_method_return (message->message);\n"
+				   "\t\tif (! reply)\n"
+				   "\t\t\tcontinue;\n"
+				   "\n"
+				   "\t\tdbus_message_iter_init_append (reply, &iter);\n"
+				   "\t} while (! reply);\n"
+				   "\n"
+				   "\t/* Send the reply, appending it to the outgoing queue. */\n"
+				   "\tNIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
+				   "\n"
+				   "\tdbus_message_unref (reply);\n"
+				   "\n"
+				   "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "DBusHandlerResult");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "MyMethod_handle");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusObject *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "object");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_NOT_EMPTY (&externs);
+
+		func = (TypeFunc *)externs.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_method_handler");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "void *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "data");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const char *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "str");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&externs);
+
+		nih_free (str);
+		nih_free (method);
 	}
 
 

@@ -38,9 +38,14 @@ int
 main (int   argc,
       char *argv[])
 {
+	NihList           prototypes;
+	NihList           externs;
 	nih_local Method *method = NULL;
 	Argument *        arg;
 	nih_local char *  code = NULL;
+
+	nih_list_init (&prototypes);
+	nih_list_init (&externs);
 
 	printf ("#include <dbus/dbus.h>\n"
 		"\n"
@@ -81,7 +86,8 @@ main (int   argc,
 
 	code = method_object_function (NULL, method,
 				       "MyMethod_handle",
-				       "my_method_handler");
+				       "my_method_handler",
+				       &prototypes, &externs);
 
 	printf ("%s", code);
 	printf ("\n"
@@ -96,7 +102,8 @@ main (int   argc,
 
 	code = method_object_function (NULL, method,
 				       "MyAsyncMethod_handle",
-				       "my_async_method_handler");
+				       "my_async_method_handler",
+				       &prototypes, &externs);
 
 	printf ("%s", code);
 	printf ("\n");

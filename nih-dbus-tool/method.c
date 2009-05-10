@@ -427,12 +427,19 @@ method_lookup_argument (Method *    method,
  * @parent: parent object for new string.
  * @method: method to generate function for,
  * @name: name of function to generate,
- * @handler_name: name of handler function to call.
+ * @handler_name: name of handler function to call,
+ * @prototypes: list to append function prototypes to,
+ * @externs: list to append definitions of extern function prototypes to.
  *
  * Generates C code for a function @name to handle the method @method,
  * demarshalling the incoming arguments, calling a function named
  * @handler_name and marshalling the output arguments into a reply or
  * responding with an error.
+ *
+ * The prototype of the function is given as a TypeFunc object appended to
+ * the @prototypes list, with the name as @name itself.  Should the C code
+ * call other functions that need to be defined, similar TypeFunc objects
+ * will be appended to the @externs list.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -445,23 +452,53 @@ char *
 method_object_function (const void *parent,
 			Method *    method,
 			const char *name,
-			const char *handler_name)
+			const char *handler_name,
+			NihList *   prototypes,
+			NihList *   externs)
 {
-	NihList            locals;
-	nih_local TypeVar *iter_var = NULL;
-	nih_local TypeVar *reply_var = NULL;
-	nih_local char *   demarshal_block = NULL;
-	nih_local char *   call_block = NULL;
-	nih_local char *   marshal_block = NULL;
-	nih_local char *   vars_block = NULL;
-	nih_local char *   body = NULL;
-	char *             code = NULL;
+	NihList             locals;
+	nih_local TypeFunc *func = NULL;
+	TypeVar *           arg;
+	nih_local TypeVar * iter_var = NULL;
+	nih_local TypeVar * reply_var = NULL;
+	nih_local char *    demarshal_block = NULL;
+	nih_local char *    call_block = NULL;
+	nih_local TypeFunc *handler_func = NULL;
+	NihListEntry *      attrib;
+	nih_local char *    marshal_block = NULL;
+	nih_local char *    vars_block = NULL;
+	nih_local char *    body = NULL;
+	char *              code = NULL;
 
 	nih_assert (method != NULL);
 	nih_assert (name != NULL);
 	nih_assert (handler_name != NULL);
+	nih_assert (prototypes != NULL);
+	nih_assert (externs != NULL);
 
 	nih_list_init (&locals);
+
+	/* The function returns a DBusHandlerResult since it's a handling
+	 * function, and accepts arguments for the object and message.
+	 * We don't have any attributes, not even "deprecated" for a
+	 * deprecated method since we always want to implement it without
+	 * error.
+	 */
+	func = type_func_new (NULL, "DBusHandlerResult", name);
+	if (! func)
+		return NULL;
+
+	arg = type_var_new (func, "NihDBusObject *", "object");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&func->args, &arg->entry);
+
+	arg = type_var_new (func, "NihDBusMessage *", "message");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&func->args, &arg->entry);
 
 	/* The function requires a local iterator for the message, and a
 	 * reply message pointer.  Rather than deal with these by hand,
@@ -490,12 +527,40 @@ method_object_function (const void *parent,
 				  "\n"))
 		return NULL;
 
-	/* Begin the handler calling block */
+	/* Begin the handler calling block.  The handler function always
+	 * has a warn_unusued_result attribute, just for completeness.
+	 */
 	if (! nih_strcat_sprintf (&call_block, NULL,
 				  "/* Call the handler function */\n"
 				  "if (%s (object->data, message",
 				  handler_name))
 		return NULL;
+
+	handler_func = type_func_new (NULL, "int", handler_name);
+	if (! handler_func)
+		return NULL;
+
+	attrib = nih_list_entry_new (handler_func);
+	if (! attrib)
+		return NULL;
+
+	attrib->str = nih_strdup (attrib, "warn_unused_result");
+	if (! attrib->str)
+		return NULL;
+
+	nih_list_add (&handler_func->attribs, &attrib->entry);
+
+	arg = type_var_new (handler_func, "void *", "data");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&handler_func->args, &arg->entry);
+
+	arg = type_var_new (handler_func, "NihDBusMessage *", "message");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&handler_func->args, &arg->entry);
 
 	/* Begin the post-handler marshalling block with the creation of
 	 * the return message and re-using the iterator to marshal it.
@@ -583,6 +648,18 @@ method_object_function (const void *parent,
 
 				nih_list_add (&locals, &var->entry);
 				nih_ref (var, call_block);
+
+				/* Handler argument is const */
+				arg = type_var_new (handler_func, var->type,
+						    var->name);
+				if (! arg)
+					return NULL;
+
+				if (! type_to_const (&arg->type, arg))
+					return NULL;
+
+				nih_list_add (&handler_func->args,
+					      &arg->entry);
 			}
 
 			NIH_LIST_FOREACH_SAFE (&arg_locals, iter) {
@@ -633,6 +710,18 @@ method_object_function (const void *parent,
 
 				nih_list_add (&locals, &var->entry);
 				nih_ref (var, call_block);
+
+				/* Handler argument is a pointer */
+				arg = type_var_new (handler_func, var->type,
+						    var->name);
+				if (! arg)
+					return NULL;
+
+				if (! type_to_pointer (&arg->type, arg))
+					return NULL;
+
+				nih_list_add (&handler_func->args,
+					      &arg->entry);
 			}
 
 			NIH_LIST_FOREACH_SAFE (&arg_locals, iter) {
@@ -781,6 +870,13 @@ method_object_function (const void *parent,
 			    body);
 	if (! code)
 		return NULL;
+
+	/* Append the functions to the prototypes and externs lists */
+	nih_list_add (prototypes, &func->entry);
+	nih_ref (func, code);
+
+	nih_list_add (externs, &handler_func->entry);
+	nih_ref (handler_func, code);
 
 	return code;
 }

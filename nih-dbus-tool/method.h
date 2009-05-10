@@ -76,7 +76,8 @@ int       method_annotation      (Method *method,
 Argument *method_lookup_argument (Method *method, const char *symbol);
 
 char *    method_object_function (const void *parent, Method *method,
-				  const char *name, const char *handler_name)
+				  const char *name, const char *handler_name,
+				  NihList *prototypes, NihList *externs)
 	__attribute__ ((malloc, warn_unused_result));
 
 char *    method_reply_function  (const void *parent, Method *method,

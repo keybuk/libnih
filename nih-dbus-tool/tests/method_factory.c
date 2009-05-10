@@ -109,7 +109,8 @@ main (int   argc,
 	printf ("\n");
 
 	code = method_reply_function (NULL, method,
-				      "my_async_method_reply");
+				      "my_async_method_reply",
+				      &prototypes, &externs);
 
 	printf ("%s", code);
 

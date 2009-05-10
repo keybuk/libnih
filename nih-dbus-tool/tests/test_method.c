@@ -3151,6 +3151,8 @@ test_reply_function (void)
 	pid_t             dbus_pid;
 	DBusConnection *  server_conn;
 	DBusConnection *  client_conn;
+	NihList           prototypes;
+	NihList           externs;
 	Method *          method = NULL;
 	Argument *        argument1 = NULL;
 	Argument *        argument2 = NULL;
@@ -3158,6 +3160,9 @@ test_reply_function (void)
 	char *            str;
 	int32_t           flags;
 	char **           output;
+	TypeFunc *        func;
+	TypeVar *         arg;
+	NihListEntry *    attrib;
 	DBusMessage *     method_call;
 	DBusMessage *     next_call;
 	DBusMessageIter   iter;
@@ -3181,6 +3186,9 @@ test_reply_function (void)
 	 */
 	TEST_FEATURE ("with reply");
 	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&externs);
+
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "MyAsyncMethod");
 			method->symbol = nih_strdup (method, "my_async_method");
@@ -3202,10 +3210,14 @@ test_reply_function (void)
 		}
 
 		str = method_reply_function (NULL, method,
-					     "my_async_method_reply");
+					     "my_async_method_reply",
+					     &prototypes, &externs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&externs);
 
 			nih_free (method);
 			continue;
@@ -3268,6 +3280,57 @@ test_reply_function (void)
 				   "\n"
 				   "\treturn 0;\n"
 				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_async_method_reply");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "char * const *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "output");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_EMPTY (&externs);
 
 		nih_free (str);
 		nih_free (method);
@@ -3472,6 +3535,164 @@ test_reply_function (void)
 		nih_free (message);
 		dbus_message_unref (reply);
 		dbus_message_unref (method_call);
+	}
+
+
+	/* Check that the code for a deprecated method is the same as
+	 * a non-deprecated one, since we don't want to penalise implementing
+	 * the object - just using it remotely.
+	 */
+	TEST_FEATURE ("with deprecated method");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&externs);
+
+		TEST_ALLOC_SAFE {
+			method = method_new (NULL, "MyAsyncMethod");
+			method->symbol = nih_strdup (method, "my_async_method");
+			method->deprecated = TRUE;
+
+			argument1 = argument_new (method, "Str",
+						  "s", NIH_DBUS_ARG_IN);
+			argument1->symbol = nih_strdup (argument1, "str");
+			nih_list_add (&method->arguments, &argument1->entry);
+
+			argument2 = argument_new (method, "Flags",
+						  "i", NIH_DBUS_ARG_IN);
+			argument2->symbol = nih_strdup (argument2, "flags");
+			nih_list_add (&method->arguments, &argument2->entry);
+
+			argument3 = argument_new (method, "Output",
+						  "as", NIH_DBUS_ARG_OUT);
+			argument3->symbol = nih_strdup (argument3, "output");
+			nih_list_add (&method->arguments, &argument3->entry);
+		}
+
+		str = method_reply_function (NULL, method,
+					     "my_async_method_reply",
+					     &prototypes, &externs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&externs);
+
+			nih_free (method);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "my_async_method_reply (NihDBusMessage *message, char * const * output)\n"
+				   "{\n"
+				   "\tDBusMessage * reply;\n"
+				   "\tDBusMessageIter iter;\n"
+				   "\tDBusMessageIter output_iter;\n"
+				   "\n"
+				   "\tnih_assert (message != NULL);\n"
+				   "\tnih_assert (output != NULL);\n"
+				   "\n"
+				   "\t/* If the sender doesn't care about a reply, don't bother wasting\n"
+				   "\t * effort constructing and sending one.\n"
+				   "\t */\n"
+				   "\tif (dbus_message_get_no_reply (message->message))\n"
+				   "\t\treturn 0;\n"
+				   "\n"
+				   "\t/* Construct the reply message. */\n"
+				   "\treply = dbus_message_new_method_return (message->message);\n"
+				   "\tif (! reply)\n"
+				   "\t\treturn -1;\n"
+				   "\n"
+				   "\tdbus_message_iter_init_append (reply, &iter);\n"
+				   "\n"
+				   "\t/* Marshal an array onto the message */\n"
+				   "\tif (! dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, \"s\", &output_iter)) {\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tfor (size_t output_i = 0; output[output_i]; output_i++) {\n"
+				   "\t\tconst char * output_element;\n"
+				   "\n"
+				   "\t\toutput_element = output[output_i];\n"
+				   "\n"
+				   "\t\t/* Marshal a char * onto the message */\n"
+				   "\t\tif (! dbus_message_iter_append_basic (&output_iter, DBUS_TYPE_STRING, &output_element)) {\n"
+				   "\t\t\tdbus_message_iter_close_container (&iter, &output_iter);\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treturn -1;\n"
+				   "\t\t}\n"
+				   "\t}\n"
+				   "\n"
+				   "\tif (! dbus_message_iter_close_container (&iter, &output_iter)) {\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Send the reply, appending it to the outgoing queue. */\n"
+				   "\tif (! dbus_connection_send (message->conn, reply, NULL)) {\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_unref (reply);\n"
+				   "\n"
+				   "\treturn 0;\n"
+				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_async_method_reply");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "char * const *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "output");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_EMPTY (&externs);
+
+		nih_free (str);
+		nih_free (method);
 	}
 
 

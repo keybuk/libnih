@@ -885,10 +885,17 @@ method_object_function (const void *parent,
  * method_reply_function:
  * @parent: parent object for new string.
  * @method: method to generate function for,
- * @name: name of function to generate.
+ * @name: name of function to generate,
+ * @prototypes: list to append function prototypes to,
+ * @externs: list to append definitions of extern function prototypes to.
  *
  * Generates C code for a function @name to send a reply for the method
  * @method by marshalling the arguments.
+ *
+ * The prototype of the function is given as a TypeFunc object appended to
+ * the @prototypes list, with the name as @name itself.  Should the C code
+ * call other functions that need to be defined, similar TypeFunc objects
+ * will be appended to the @externs list.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -900,22 +907,54 @@ method_object_function (const void *parent,
 char *
 method_reply_function (const void *parent,
 		       Method *    method,
-		       const char *name)
+		       const char *name,
+		       NihList *   prototypes,
+		       NihList *   externs)
 {
-	NihList            locals;
-	nih_local TypeVar *reply_var = NULL;
-	nih_local TypeVar *iter_var = NULL;
-	nih_local char *   marshal_block = NULL;
-	nih_local char *   args = NULL;
-	nih_local char *   assert_block = NULL;
-	nih_local char *   vars_block = NULL;
-	nih_local char *   body = NULL;
-	char *             code = NULL;
+	NihList             locals;
+	nih_local TypeFunc *func = NULL;
+	TypeVar *           arg;
+	NihListEntry *      attrib;
+	nih_local TypeVar * reply_var = NULL;
+	nih_local TypeVar * iter_var = NULL;
+	nih_local char *    marshal_block = NULL;
+	nih_local char *    args = NULL;
+	nih_local char *    assert_block = NULL;
+	nih_local char *    vars_block = NULL;
+	nih_local char *    body = NULL;
+	char *              code = NULL;
 
 	nih_assert (method != NULL);
 	nih_assert (name != NULL);
+	nih_assert (prototypes != NULL);
+	nih_assert (externs != NULL);
 
 	nih_list_init (&locals);
+
+	/* The function returns an integer, and accepts an argument for
+	 * the original message.  The integer indicates whether an error
+	 * occurred, so we want if the result isn't used; but like the
+	 * method handler, we don't care about marshalling.
+	 */
+	func = type_func_new (NULL, "int", name);
+	if (! func)
+		return NULL;
+
+	arg = type_var_new (func, "NihDBusMessage *", "message");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&func->args, &arg->entry);
+
+	attrib = nih_list_entry_new (func);
+	if (! attrib)
+		return NULL;
+
+	attrib->str = nih_strdup (attrib, "warn_unused_result");
+	if (! attrib->str)
+		return NULL;
+
+	nih_list_add (&func->attribs, &attrib->entry);
 
 	/* The function requires a reply message pointer, which we allocate,
 	 * and an iterator for it to append the arguments.  Rather than
@@ -1014,6 +1053,9 @@ method_reply_function (const void *parent,
 							  "nih_assert (%s != NULL);\n",
 							  var->name))
 					return NULL;
+
+			nih_list_add (&func->args, &var->entry);
+			nih_ref (var, func);
 		}
 
 		NIH_LIST_FOREACH_SAFE (&arg_locals, iter) {
@@ -1072,6 +1114,10 @@ method_reply_function (const void *parent,
 			    body);
 	if (! code)
 		return NULL;
+
+	/* Append the functions to the prototypes and externs lists */
+	nih_list_add (prototypes, &func->entry);
+	nih_ref (func, code);
 
 	return code;
 }

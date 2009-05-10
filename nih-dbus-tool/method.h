@@ -81,7 +81,8 @@ char *    method_object_function (const void *parent, Method *method,
 	__attribute__ ((malloc, warn_unused_result));
 
 char *    method_reply_function  (const void *parent, Method *method,
-				  const char *name)
+				  const char *name,
+				  NihList *prototypes, NihList *externs)
 	__attribute__ ((malloc, warn_unused_result));
 
 NIH_END_EXTERN

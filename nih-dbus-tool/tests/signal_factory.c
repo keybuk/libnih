@@ -38,9 +38,14 @@ int
 main (int   argc,
       char *argv[])
 {
+	NihList           prototypes;
+	NihList           externs;
 	nih_local Signal *signal = NULL;
 	Argument *        arg;
 	nih_local char *  code = NULL;
+
+	nih_list_init (&prototypes);
+	nih_list_init (&externs);
 
 	printf ("#include <dbus/dbus.h>\n"
 		"\n"
@@ -67,7 +72,8 @@ main (int   argc,
 	nih_list_add (&signal->arguments, &arg->entry);
 
 	code = signal_emit_function (NULL, "com.netsplit.Nih.Test", signal,
-				     "my_emit_signal");
+				     "my_emit_signal",
+				     &prototypes, &externs);
 
 	printf ("%s", code);
 

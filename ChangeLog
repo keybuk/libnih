@@ -1,5 +1,15 @@
 2009-05-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/signal.c (signal_reply_function): Accept list
+	arguments for prototypes and externs, filling in the prototypes
+	one.
+	* nih-dbus-tool/signal.h: Adjust prototype.
+	* nih-dbus-tool/tests/signal_factory.c: Pass in the prototypes
+	and extern lists, but don't actually use them just yet.
+	* nih-dbus-tool/tests/test_signal.c (test_reply_function): Add
+	tests for returned prototype, including a test for not having a
+	deprecated attribute.
+
 	* nih-dbus-tool/demarshal.c (demarshal_array),
 	* nih-dbus-tool/marshal.c (marshal_array),
 	* nih-dbus-tool/method.c (method_object_function)

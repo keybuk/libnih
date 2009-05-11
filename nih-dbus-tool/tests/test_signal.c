@@ -39,6 +39,7 @@
 #include <nih-dbus/dbus_error.h>
 #include <nih-dbus/dbus_message.h>
 
+#include "type.h"
 #include "node.h"
 #include "signal.h"
 #include "argument.h"
@@ -941,9 +942,14 @@ test_emit_function (void)
 	pid_t             dbus_pid;
 	DBusConnection *  server_conn;
 	DBusConnection *  client_conn;
+	NihList           prototypes;
+	NihList           externs;
 	Signal *          signal = NULL;
 	Argument *        argument = NULL;
 	char *            str;
+	TypeFunc *        func;
+	TypeVar *         arg;
+	NihListEntry *    attrib;
 	DBusMessageIter   iter;
 	DBusMessage *     sig;
 	DBusError         dbus_error;
@@ -960,6 +966,9 @@ test_emit_function (void)
 	 */
 	TEST_FEATURE ("with signal");
 	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&externs);
+
 		TEST_ALLOC_SAFE {
 			signal = signal_new (NULL, "MySignal");
 			signal->symbol = nih_strdup (signal, "my_signal");
@@ -971,10 +980,14 @@ test_emit_function (void)
 		}
 
 		str = signal_emit_function (NULL, "com.netsplit.Nih.Test",
-					    signal, "my_emit_signal");
+					    signal, "my_emit_signal",
+					    &prototypes, &externs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&externs);
 
 			nih_free (signal);
 			continue;
@@ -1013,6 +1026,68 @@ test_emit_function (void)
 				   "\n"
 				   "\treturn 0;\n"
 				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_emit_signal");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "DBusConnection *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "connection");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const char *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "origin_path");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const char *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "msg");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_EMPTY (&externs);
 
 		nih_free (str);
 		nih_free (signal);

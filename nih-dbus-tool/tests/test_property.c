@@ -40,6 +40,7 @@
 #include <nih-dbus/dbus_error.h>
 #include <nih-dbus/dbus_message.h>
 
+#include "type.h"
 #include "node.h"
 #include "property.h"
 #include "parse.h"
@@ -1097,10 +1098,15 @@ test_object_get_function (void)
 	pid_t             dbus_pid;
 	DBusConnection *  server_conn;
 	DBusConnection *  client_conn;
+	NihList           prototypes;
+	NihList           externs;
 	Property *        property = NULL;
 	char *            iface;
 	char *            name;
 	char *            str;
+	TypeFunc *        func;
+	TypeVar *         arg;
+	NihListEntry *    attrib;
 	DBusMessage *     method_call;
 	DBusMessageIter   iter;
 	DBusMessageIter   subiter;
@@ -1122,6 +1128,9 @@ test_object_get_function (void)
 	 */
 	TEST_FEATURE ("with property");
 	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&externs);
+
 		TEST_ALLOC_SAFE {
 			property = property_new (NULL, "my_property",
 						 "s", NIH_DBUS_READWRITE);
@@ -1130,10 +1139,14 @@ test_object_get_function (void)
 
 		str = property_object_get_function (NULL, property,
 						    "MyProperty_get",
-						    "my_property_get");
+						    "my_property_get",
+						    &prototypes, &externs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&externs);
 
 			nih_free (property);
 			continue;
@@ -1169,6 +1182,115 @@ test_object_get_function (void)
 				   "\n"
 				   "\treturn 0;\n"
 				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "MyProperty_get");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusObject *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "object");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "DBusMessageIter *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "iter");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_NOT_EMPTY (&externs);
+
+		func = (TypeFunc *)externs.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_property_get");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "void *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "data");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "char **");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "value");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&externs);
 
 		nih_free (str);
 		nih_free (property);
@@ -1321,10 +1443,15 @@ test_object_set_function (void)
 	pid_t             dbus_pid;
 	DBusConnection *  server_conn;
 	DBusConnection *  client_conn;
+	NihList           prototypes;
+	NihList           externs;
 	Property *        property = NULL;
 	char *            iface;
 	char *            name;
 	char *            str;
+	TypeFunc *        func;
+	TypeVar *         arg;
+	NihListEntry *    attrib;
 	double            double_arg;
 	DBusMessage *     method_call;
 	DBusMessage *     next_call;
@@ -1351,6 +1478,9 @@ test_object_set_function (void)
 	 */
 	TEST_FEATURE ("with property");
 	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&externs);
+
 		TEST_ALLOC_SAFE {
 			property = property_new (NULL, "my_property",
 						 "s", NIH_DBUS_READWRITE);
@@ -1359,10 +1489,14 @@ test_object_set_function (void)
 
 		str = property_object_set_function (NULL, property,
 						    "MyProperty_set",
-						    "my_property_set");
+						    "my_property_set",
+						    &prototypes, &externs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&externs);
 
 			nih_free (property);
 			continue;
@@ -1483,6 +1617,115 @@ test_object_set_function (void)
 				   "\tdbus_message_unref (reply);\n"
 				   "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
 				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "DBusHandlerResult");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "MyProperty_set");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusObject *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "object");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "DBusMessageIter *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "iter");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_NOT_EMPTY (&externs);
+
+		func = (TypeFunc *)externs.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_property_set");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "void *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "data");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const char *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "value");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&externs);
 
 		nih_free (str);
 		nih_free (property);

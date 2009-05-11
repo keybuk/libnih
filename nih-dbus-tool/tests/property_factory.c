@@ -37,8 +37,13 @@ int
 main (int   argc,
       char *argv[])
 {
+	NihList             prototypes;
+	NihList             externs;
 	nih_local Property *property = NULL;
 	nih_local char *    code = NULL;
+
+	nih_list_init (&prototypes);
+	nih_list_init (&externs);
 
 	printf ("#include <dbus/dbus.h>\n"
 		"\n"
@@ -66,7 +71,8 @@ main (int   argc,
 
 	code = property_object_get_function (NULL, property,
 					     "MyProperty_get",
-					     "my_property_get");
+					     "my_property_get",
+					     &prototypes, &externs);
 
 	printf ("%s", code);
 	printf ("\n"
@@ -78,7 +84,8 @@ main (int   argc,
 
 	code = property_object_set_function (NULL, property,
 					     "MyProperty_set",
-					     "my_property_set");
+					     "my_property_set",
+					     &prototypes, &externs);
 
 	printf ("%s", code);
 

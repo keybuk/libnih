@@ -419,12 +419,19 @@ property_annotation (Property *  property,
  * @parent: parent object for new string,
  * @property: property to generate function for,
  * @name: name of function to generate,
- * @handler_name: name of handler function to call.
+ * @handler_name: name of handler function to call,
+ * @prototypes: list to append function prototypes to,
+ * @externs: list to append definitions of extern function prototypes to.
  *
  * Generates C code for a function called @name that will append a variant
  * containing the value of property @property to a D-Bus message iterator.
  * The value of the property is obtained by calling a function named
  * @handler_name.
+ *
+ * The prototype of the function is given as a TypeFunc object appended to
+ * the @prototypes list, with the name as @name itself.  Should the C code
+ * call other functions that need to be defined, similar TypeFunc objects
+ * will be appended to the @externs list.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -437,27 +444,60 @@ char *
 property_object_get_function (const void *parent,
 			      Property *  property,
 			      const char *name,
-			      const char *handler_name)
+			      const char *handler_name,
+			      NihList *   prototypes,
+			      NihList *   externs)
 {
-	DBusSignatureIter  iter;
-	NihList            inputs;
-	NihList            locals;
-	nih_local TypeVar *iter_var = NULL;
-	nih_local char *   code_block = NULL;
-	nih_local char *   oom_error_code = NULL;
-	nih_local char *   block = NULL;
-	nih_local char *   vars_block = NULL;
-	nih_local char *   body = NULL;
-	char *             code;
+	DBusSignatureIter   iter;
+	NihList             inputs;
+	NihList             locals;
+	nih_local TypeFunc *func = NULL;
+	TypeVar *           arg;
+	nih_local TypeVar * iter_var = NULL;
+	nih_local char *    code_block = NULL;
+	nih_local char *    oom_error_code = NULL;
+	nih_local char *    block = NULL;
+	nih_local TypeFunc *handler_func = NULL;
+	NihListEntry *      attrib;
+	nih_local char *    vars_block = NULL;
+	nih_local char *    body = NULL;
+	char *              code;
 
 	nih_assert (property != NULL);
 	nih_assert (name != NULL);
 	nih_assert (handler_name != NULL);
+	nih_assert (prototypes != NULL);
+	nih_assert (externs != NULL);
 
 	dbus_signature_iter_init (&iter, property->type);
 
 	nih_list_init (&inputs);
 	nih_list_init (&locals);
+
+	/* The function returns an integer, and accepts an arguments for
+	 * the D-Bus object, message and a message iterator.
+	 */
+	func = type_func_new (NULL, "int", name);
+	if (! func)
+		return NULL;
+
+	arg = type_var_new (func, "NihDBusObject *", "object");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&func->args, &arg->entry);
+
+	arg = type_var_new (func, "NihDBusMessage *", "message");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&func->args, &arg->entry);
+
+	arg = type_var_new (func, "DBusMessageIter *", "iter");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&func->args, &arg->entry);
 
 	/* The function requires a local iterator for the variant.  Rather
 	 * than deal with it by hand, it's far easier to put it on the
@@ -491,6 +531,32 @@ property_object_get_function (const void *parent,
 				  handler_name))
 		return NULL;
 
+	handler_func = type_func_new (NULL, "int", handler_name);
+	if (! handler_func)
+		return NULL;
+
+	attrib = nih_list_entry_new (handler_func);
+	if (! attrib)
+		return NULL;
+
+	attrib->str = nih_strdup (attrib, "warn_unused_result");
+	if (! attrib->str)
+		return NULL;
+
+	nih_list_add (&handler_func->attribs, &attrib->entry);
+
+	arg = type_var_new (handler_func, "void *", "data");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&handler_func->args, &arg->entry);
+
+	arg = type_var_new (handler_func, "NihDBusMessage *", "message");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&handler_func->args, &arg->entry);
+
 	/* Each of the inputs to the marshalling code becomes a local
 	 * variable to our function that we pass the address of to the
 	 * implementation function.
@@ -504,6 +570,16 @@ property_object_get_function (const void *parent,
 			return NULL;
 
 		nih_list_add (&locals, &var->entry);
+
+		/* Handler argument is pointer */
+		arg = type_var_new (handler_func, var->type, var->name);
+		if (! arg)
+			return NULL;
+
+		if (! type_to_pointer (&arg->type, arg))
+			return NULL;
+
+		nih_list_add (&handler_func->args, &arg->entry);
 	}
 
 	/* Finish up the calling block, in case of error we again just
@@ -567,6 +643,13 @@ property_object_get_function (const void *parent,
 	if (! code)
 		return NULL;
 
+	/* Append the functions to the prototypes and externs lists */
+	nih_list_add (prototypes, &func->entry);
+	nih_ref (func, code);
+
+	nih_list_add (externs, &handler_func->entry);
+	nih_ref (handler_func, code);
+
 	return code;
 }
 
@@ -575,12 +658,19 @@ property_object_get_function (const void *parent,
  * @parent: parent object for new string,
  * @property: property to generate function for,
  * @name: name of function to generate,
- * @handler_name: name of handler function to call.
+ * @handler_name: name of handler function to call,
+ * @prototypes: list to append function prototypes to,
+ * @externs: list to append definitions of extern function prototypes to.
  *
  * Generates C code for a function called @name that will extract the new
  * value of a property @property from a variant at the D-Bus message iterator
  * passed.  The new value of the property is then passed to a function named
  * @handler_name to set it.  An empty reply is sent on success.
+ *
+ * The prototype of the function is given as a TypeFunc object appended to
+ * the @prototypes list, with the name as @name itself.  Should the C code
+ * call other functions that need to be defined, similar TypeFunc objects
+ * will be appended to the @externs list.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -593,32 +683,65 @@ char *
 property_object_set_function (const void *parent,
 			      Property *  property,
 			      const char *name,
-			      const char *handler_name)
+			      const char *handler_name,
+			      NihList *   prototypes,
+			      NihList *   externs)
 {
-	DBusSignatureIter  iter;
-	NihList            outputs;
-	NihList            locals;
-	nih_local TypeVar *iter_var = NULL;
-	nih_local TypeVar *reply_var = NULL;
-	nih_local char *   demarshal_block = NULL;
-	nih_local char *   oom_error_code = NULL;
-	nih_local char *   type_error_code = NULL;
-	nih_local char *   block = NULL;
-	nih_local char *   call_block = NULL;
-	nih_local char *   vars_block = NULL;
-	nih_local char *   body = NULL;
-	char *             code;
+	DBusSignatureIter   iter;
+	NihList             outputs;
+	NihList             locals;
+	nih_local TypeFunc *func = NULL;
+	TypeVar *           arg;
+	nih_local TypeVar * iter_var = NULL;
+	nih_local TypeVar * reply_var = NULL;
+	nih_local char *    demarshal_block = NULL;
+	nih_local char *    oom_error_code = NULL;
+	nih_local char *    type_error_code = NULL;
+	nih_local char *    block = NULL;
+	nih_local char *    call_block = NULL;
+	nih_local TypeFunc *handler_func = NULL;
+	NihListEntry *      attrib;
+	nih_local char *    vars_block = NULL;
+	nih_local char *    body = NULL;
+	char *              code;
 
 	nih_assert (property != NULL);
 	nih_assert (name != NULL);
 	nih_assert (handler_name != NULL);
+	nih_assert (prototypes != NULL);
+	nih_assert (externs != NULL);
 
 	dbus_signature_iter_init (&iter, property->type);
 
 	nih_list_init (&outputs);
 	nih_list_init (&locals);
 
- 	/* The function requires a local iterator for the variant and a
+	/* The function returns a D-Bus handler result, and accepts an
+	 * arguments for the D-Bus object, message and a message iterator.
+	 */
+	func = type_func_new (NULL, "DBusHandlerResult", name);
+	if (! func)
+		return NULL;
+
+	arg = type_var_new (func, "NihDBusObject *", "object");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&func->args, &arg->entry);
+
+	arg = type_var_new (func, "NihDBusMessage *", "message");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&func->args, &arg->entry);
+
+	arg = type_var_new (func, "DBusMessageIter *", "iter");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&func->args, &arg->entry);
+
+	/* The function requires a local iterator for the variant and a
 	 * reply message pointer.  Rather than deal with these by hand,
 	 * it's far easier to put them on the locals list and deal with
 	 * them along with the rest.
@@ -720,6 +843,32 @@ property_object_set_function (const void *parent,
 				  handler_name))
 		return NULL;
 
+	handler_func = type_func_new (NULL, "int", handler_name);
+	if (! handler_func)
+		return NULL;
+
+	attrib = nih_list_entry_new (handler_func);
+	if (! attrib)
+		return NULL;
+
+	attrib->str = nih_strdup (attrib, "warn_unused_result");
+	if (! attrib->str)
+		return NULL;
+
+	nih_list_add (&handler_func->attribs, &attrib->entry);
+
+	arg = type_var_new (handler_func, "void *", "data");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&handler_func->args, &arg->entry);
+
+	arg = type_var_new (handler_func, "NihDBusMessage *", "message");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&handler_func->args, &arg->entry);
+
 	/* Each of the outputs from the demarshalling code becomes a local
 	 * variable to our function that we pass to the implementation
 	 * function.
@@ -733,6 +882,16 @@ property_object_set_function (const void *parent,
 			return NULL;
 
 		nih_list_add (&locals, &var->entry);
+
+		/* Handler argument is const */
+		arg = type_var_new (handler_func, var->type, var->name);
+		if (! arg)
+			return NULL;
+
+		if (! type_to_const (&arg->type, arg))
+			return NULL;
+
+		nih_list_add (&handler_func->args, &arg->entry);
 	}
 
 	/* Finish up the calling block, in case of out of memory error we
@@ -820,6 +979,13 @@ property_object_set_function (const void *parent,
 			    body);
 	if (! code)
 		return NULL;
+
+	/* Append the functions to the prototypes and externs lists */
+	nih_list_add (prototypes, &func->entry);
+	nih_ref (func, code);
+
+	nih_list_add (externs, &handler_func->entry);
+	nih_ref (handler_func, code);
 
 	return code;
 }

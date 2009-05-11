@@ -69,26 +69,30 @@ typedef struct type_func {
 
 NIH_BEGIN_EXTERN
 
-const char *type_const         (int dbus_type);
-const char *type_basic_type    (int dbus_type);
+const char *type_const          (int dbus_type);
+const char *type_basic_type     (int dbus_type);
 
-char *      type_of            (const void * parent, DBusSignatureIter *iter);
+char *      type_of             (const void * parent, DBusSignatureIter *iter);
 
-TypeVar *   type_var_new       (const void *parent, const char *type,
-				const char *name)
+TypeVar *   type_var_new        (const void *parent, const char *type,
+				 const char *name)
 	__attribute__ ((malloc, warn_unused_result));
-char *      type_var_to_string (const void *parent, TypeVar *var)
+char *      type_var_to_string  (const void *parent, TypeVar *var)
 	__attribute__ ((malloc, warn_unused_result));
-char *      type_var_layout    (const void *parent, NihList *vars)
-	__attribute__ ((malloc, warn_unused_result));
-
-TypeFunc *  type_func_new     (const void *parent, const char *type,
-			       const char *name)
+char *      type_var_layout     (const void *parent, NihList *vars)
 	__attribute__ ((malloc, warn_unused_result));
 
-char *      type_to_const     (char **type, const void *parent)
+TypeFunc *  type_func_new       (const void *parent, const char *type,
+				 const char *name)
 	__attribute__ ((malloc, warn_unused_result));
-char *      type_to_pointer   (char **type, const void *parent)
+char *      type_func_to_string (const void *parent, TypeFunc *func)
+	__attribute__ ((malloc, warn_unused_result));
+char *      type_func_layout    (const void *parent, NihList *funcs)
+	__attribute__ ((malloc, warn_unused_result));
+
+char *      type_to_const       (char **type, const void *parent)
+	__attribute__ ((malloc, warn_unused_result));
+char *      type_to_pointer     (char **type, const void *parent)
 	__attribute__ ((malloc, warn_unused_result));
 
 NIH_END_EXTERN

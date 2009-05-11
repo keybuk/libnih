@@ -1,3 +1,11 @@
+2009-05-11  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/type.c (type_func_to_string, type_func_layout):
+	Functions to convert TypeFunc entries into strings.
+	* nih-dbus-tool/type.h: Add prototypes.
+	* nih-dbus-tool/tests/test_type.c (test_func_to_string)
+	(test_func_layout): Test cases for the functions.
+
 2009-05-10  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/type.c (type_var_to_string, type_var_layout):

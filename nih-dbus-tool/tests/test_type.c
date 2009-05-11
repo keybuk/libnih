@@ -760,6 +760,546 @@ test_func_new (void)
 	}
 }
 
+void
+test_func_to_string (void)
+{
+	TypeFunc *    func = NULL;
+	TypeVar *     arg = NULL;
+	NihListEntry *attrib = NULL;
+	char *        str;
+
+	TEST_FUNCTION ("type_func_to_string");
+
+
+	/* Make sure that a function declaration with a set of non-pointer
+	 * arguments is formatted correctly.
+	 */
+	TEST_FEATURE ("with non-pointer arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			func = type_func_new (NULL, "int", "function_name");
+
+			arg = type_var_new (func, "int", "foo");
+			nih_list_add (&func->args, &arg->entry);;
+
+			arg = type_var_new (func, "struct bar", "bar");
+			nih_list_add (&func->args, &arg->entry);
+
+			arg = type_var_new (func, "uint32_t", "baz");
+			nih_list_add (&func->args, &arg->entry);
+		}
+
+		str = type_func_to_string (NULL, func);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (func);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "function_name (int        foo,\n"
+				   "               struct bar bar,\n"
+				   "               uint32_t   baz)\n"));
+
+		nih_free (str);
+		nih_free (func);
+	}
+
+
+	/* Make sure that a function declaration with a set of pointer
+	 * arguments is formatted correctly.
+	 */
+	TEST_FEATURE ("with pointer arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			func = type_func_new (NULL, "int", "function_name");
+
+			arg = type_var_new (func, "int *", "foo");
+			nih_list_add (&func->args, &arg->entry);;
+
+			arg = type_var_new (func, "struct bar *", "bar");
+			nih_list_add (&func->args, &arg->entry);
+
+			arg = type_var_new (func, "uint32_t *", "baz");
+			nih_list_add (&func->args, &arg->entry);
+		}
+
+		str = type_func_to_string (NULL, func);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (func);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "function_name (int *       foo,\n"
+				   "               struct bar *bar,\n"
+				   "               uint32_t *  baz)\n"));
+
+		nih_free (str);
+		nih_free (func);
+	}
+
+
+	/* Make sure that a function declaration with a mixed set of
+	 * non-pointer and pointer arguments is formatted correctly.
+	 */
+	TEST_FEATURE ("with mixed arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			func = type_func_new (NULL, "int", "function_name");
+
+			arg = type_var_new (func, "int", "foo");
+			nih_list_add (&func->args, &arg->entry);;
+
+			arg = type_var_new (func, "struct bar *", "bar");
+			nih_list_add (&func->args, &arg->entry);
+
+			arg = type_var_new (func, "uint32_t *", "baz");
+			nih_list_add (&func->args, &arg->entry);
+		}
+
+		str = type_func_to_string (NULL, func);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (func);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "function_name (int         foo,\n"
+				   "               struct bar *bar,\n"
+				   "               uint32_t *  baz)\n"));
+
+		nih_free (str);
+		nih_free (func);
+	}
+
+
+	/* Check that a function declaration with a single non-pointer
+	 * argument is formatted correctly.
+	 */
+	TEST_FEATURE ("with single non-pointer argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			func = type_func_new (NULL, "int", "function_name");
+
+			arg = type_var_new (func, "int", "foo");
+			nih_list_add (&func->args, &arg->entry);;
+		}
+
+		str = type_func_to_string (NULL, func);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (func);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "function_name (int foo)\n"));
+
+		nih_free (str);
+		nih_free (func);
+	}
+
+
+	/* Check that a function declaration with a single pointer
+	 * argument is formatted correctly.
+	 */
+	TEST_FEATURE ("with single pointer argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			func = type_func_new (NULL, "int", "function_name");
+
+			arg = type_var_new (func, "int *", "foo");
+			nih_list_add (&func->args, &arg->entry);;
+		}
+
+		str = type_func_to_string (NULL, func);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (func);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "function_name (int *foo)\n"));
+
+		nih_free (str);
+		nih_free (func);
+	}
+
+
+	/* Check that a function declaration with no arguments is
+	 * formatted correctly.
+	 */
+	TEST_FEATURE ("with no arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			func = type_func_new (NULL, "int", "function_name");
+		}
+
+		str = type_func_to_string (NULL, func);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (func);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "function_name (void)\n"));
+
+		nih_free (str);
+		nih_free (func);
+	}
+
+
+	/* Check that function attributes have no bearing on the declaration
+	 * since they only appear in the prototype.
+	 */
+	TEST_FEATURE ("with attributes");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			func = type_func_new (NULL, "void", "function_name");
+
+			attrib = nih_list_entry_new (func);
+			attrib->str = nih_strdup (attrib, "warn_unused_result");
+			nih_list_add (&func->attribs, &attrib->entry);
+		}
+
+		str = type_func_to_string (NULL, func);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (func);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("void\n"
+				   "function_name (void)\n"));
+
+		nih_free (str);
+		nih_free (func);
+	}
+}
+
+void
+test_func_layout (void)
+{
+	NihList       funcs;
+	TypeFunc *    func1 = NULL;
+	TypeFunc *    func2 = NULL;
+	TypeFunc *    func3 = NULL;
+	TypeVar *     arg = NULL;
+	NihListEntry *attrib = NULL;
+	char *        str;
+
+	TEST_FUNCTION ("type_func_layout");
+
+
+	/* Check that functions with non-pointer return types are lined
+	 * up properly both by name and type.
+	 */
+	TEST_FEATURE ("with non-pointer return types");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&funcs);
+
+		TEST_ALLOC_SAFE {
+			func1 = type_func_new (NULL, "int",
+					       "first_function_name");
+			nih_list_add (&funcs, &func1->entry);
+
+			arg = type_var_new (func1, "int", "foo");
+			nih_list_add (&func1->args, &arg->entry);
+
+			arg = type_var_new (func1, "char *", "bar");
+			nih_list_add (&func1->args, &arg->entry);
+
+
+			func2 = type_func_new (NULL, "double",
+					       "second_function_name");
+			nih_list_add (&funcs, &func2->entry);
+
+			arg = type_var_new (func2, "int", "foo");
+			nih_list_add (&func2->args, &arg->entry);
+
+			arg = type_var_new (func2, "char *", "bar");
+			nih_list_add (&func2->args, &arg->entry);
+
+
+			func3 = type_func_new (NULL, "uint32_t",
+					       "third_function_name");
+			nih_list_add (&funcs, &func3->entry);
+
+			arg = type_var_new (func3, "int", "foo");
+			nih_list_add (&func3->args, &arg->entry);
+
+			arg = type_var_new (func3, "char *", "bar");
+			nih_list_add (&func3->args, &arg->entry);
+		}
+
+		str = type_func_layout (NULL, &funcs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (func1);
+			nih_free (func2);
+			nih_free (func3);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int      first_function_name  (int foo, char *bar);\n"
+				   "double   second_function_name (int foo, char *bar);\n"
+				   "uint32_t third_function_name  (int foo, char *bar);\n"));
+
+		nih_free (str);
+		nih_free (func1);
+		nih_free (func2);
+		nih_free (func3);
+	}
+
+
+	/* Check that functions with pointer return types are lined
+	 * up properly both by name and type.
+	 */
+	TEST_FEATURE ("with pointer return types");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&funcs);
+
+		TEST_ALLOC_SAFE {
+			func1 = type_func_new (NULL, "int *",
+					       "first_function_name");
+			nih_list_add (&funcs, &func1->entry);
+
+			arg = type_var_new (func1, "int", "foo");
+			nih_list_add (&func1->args, &arg->entry);
+
+			arg = type_var_new (func1, "char *", "bar");
+			nih_list_add (&func1->args, &arg->entry);
+
+
+			func2 = type_func_new (NULL, "struct foo *",
+					       "second_function_name");
+			nih_list_add (&funcs, &func2->entry);
+
+			arg = type_var_new (func2, "int", "foo");
+			nih_list_add (&func2->args, &arg->entry);
+
+			arg = type_var_new (func2, "char *", "bar");
+			nih_list_add (&func2->args, &arg->entry);
+
+
+			func3 = type_func_new (NULL, "uint32_t *",
+					       "third_function_name");
+			nih_list_add (&funcs, &func3->entry);
+
+			arg = type_var_new (func3, "int", "foo");
+			nih_list_add (&func3->args, &arg->entry);
+
+			arg = type_var_new (func3, "char *", "bar");
+			nih_list_add (&func3->args, &arg->entry);
+		}
+
+		str = type_func_layout (NULL, &funcs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (func1);
+			nih_free (func2);
+			nih_free (func3);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int *       first_function_name  (int foo, char *bar);\n"
+				   "struct foo *second_function_name (int foo, char *bar);\n"
+				   "uint32_t *  third_function_name  (int foo, char *bar);\n"));
+
+		nih_free (str);
+		nih_free (func1);
+		nih_free (func2);
+		nih_free (func3);
+	}
+
+
+	/* Check that functions with a mix of pointer and non-pointer
+	 * return types are lined up properly both by name and type.
+	 */
+	TEST_FEATURE ("with mixed return types");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&funcs);
+
+		TEST_ALLOC_SAFE {
+			func1 = type_func_new (NULL, "int *",
+					       "first_function_name");
+			nih_list_add (&funcs, &func1->entry);
+
+			arg = type_var_new (func1, "int", "foo");
+			nih_list_add (&func1->args, &arg->entry);
+
+			arg = type_var_new (func1, "char *", "bar");
+			nih_list_add (&func1->args, &arg->entry);
+
+
+			func2 = type_func_new (NULL, "struct foo *",
+					       "second_function_name");
+			nih_list_add (&funcs, &func2->entry);
+
+			arg = type_var_new (func2, "int", "foo");
+			nih_list_add (&func2->args, &arg->entry);
+
+			arg = type_var_new (func2, "char *", "bar");
+			nih_list_add (&func2->args, &arg->entry);
+
+
+			func3 = type_func_new (NULL, "uint32_t",
+					       "third_function_name");
+			nih_list_add (&funcs, &func3->entry);
+
+			arg = type_var_new (func3, "int", "foo");
+			nih_list_add (&func3->args, &arg->entry);
+
+			arg = type_var_new (func3, "char *", "bar");
+			nih_list_add (&func3->args, &arg->entry);
+		}
+
+		str = type_func_layout (NULL, &funcs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (func1);
+			nih_free (func2);
+			nih_free (func3);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int *       first_function_name  (int foo, char *bar);\n"
+				   "struct foo *second_function_name (int foo, char *bar);\n"
+				   "uint32_t    third_function_name  (int foo, char *bar);\n"));
+
+		nih_free (str);
+		nih_free (func1);
+		nih_free (func2);
+		nih_free (func3);
+	}
+
+
+	/* Check that functions with attributes have them lined up
+	 * beneath the function declaration indented by a tab.
+	 */
+	TEST_FEATURE ("with function attributes");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&funcs);
+
+		TEST_ALLOC_SAFE {
+			func1 = type_func_new (NULL, "int *",
+					       "first_function_name");
+			nih_list_add (&funcs, &func1->entry);
+
+			arg = type_var_new (func1, "int", "foo");
+			nih_list_add (&func1->args, &arg->entry);
+
+			arg = type_var_new (func1, "char *", "bar");
+			nih_list_add (&func1->args, &arg->entry);
+
+			attrib = nih_list_entry_new (func1);
+			attrib->str = nih_strdup (attrib, "warn_unused_result");
+			nih_list_add (&func1->attribs, &attrib->entry);
+
+
+			func2 = type_func_new (NULL, "struct foo *",
+					       "second_function_name");
+			nih_list_add (&funcs, &func2->entry);
+
+			arg = type_var_new (func2, "int", "foo");
+			nih_list_add (&func2->args, &arg->entry);
+
+			arg = type_var_new (func2, "char *", "bar");
+			nih_list_add (&func2->args, &arg->entry);
+
+			attrib = nih_list_entry_new (func2);
+			attrib->str = nih_strdup (attrib, "warn_unused_result");
+			nih_list_add (&func2->attribs, &attrib->entry);
+
+			attrib = nih_list_entry_new (func2);
+			attrib->str = nih_strdup (attrib, "malloc");
+			nih_list_add (&func2->attribs, &attrib->entry);
+
+
+			func3 = type_func_new (NULL, "uint32_t",
+					       "third_function_name");
+			nih_list_add (&funcs, &func3->entry);
+
+			arg = type_var_new (func3, "int", "foo");
+			nih_list_add (&func3->args, &arg->entry);
+
+			arg = type_var_new (func3, "char *", "bar");
+			nih_list_add (&func3->args, &arg->entry);
+
+			attrib = nih_list_entry_new (func3);
+			attrib->str = nih_strdup (attrib, "deprecated");
+			nih_list_add (&func3->attribs, &attrib->entry);
+		}
+
+		str = type_func_layout (NULL, &funcs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (func1);
+			nih_free (func2);
+			nih_free (func3);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int *       first_function_name  (int foo, char *bar)\n"
+				   "\t__attribute__ ((warn_unused_result));\n"
+				   "struct foo *second_function_name (int foo, char *bar)\n"
+				   "\t__attribute__ ((warn_unused_result, malloc));\n"
+				   "uint32_t    third_function_name  (int foo, char *bar)\n"
+				   "\t__attribute__ ((deprecated));\n"));
+
+		nih_free (str);
+		nih_free (func1);
+		nih_free (func2);
+		nih_free (func3);
+	}
+
+
+	/* Check that an empty list of functions return an empty string.
+	 */
+	TEST_FEATURE ("with empty function list");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&funcs);
+
+		str = type_func_layout (NULL, &funcs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "");
+
+		nih_free (str);
+	}
+}
+
 
 void
 test_to_const (void)
@@ -1260,6 +1800,8 @@ main (int   argc,
 	test_var_layout ();
 
 	test_func_new ();
+	test_func_to_string ();
+	test_func_layout ();
 
 	test_to_const ();
 	test_to_pointer ();

@@ -388,6 +388,266 @@ type_func_new (const void *parent,
 	return func;
 }
 
+/**
+ * type_func_to_string:
+ * @parent: parent object for new string,
+ * @func: function to convert.
+ *
+ * Returns a string for the given function @func for use as the function
+ * declaration header.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the returned string will also be
+ * freed.
+ *
+ * Returns: the newly allocated string or NULL if insufficient memory.
+ **/
+char *
+type_func_to_string (const void *parent,
+		     TypeFunc *  func)
+{
+	char * str;
+	size_t max;
+	size_t len;
+
+	nih_assert (func != NULL);
+
+	/* Type goes on a separate line to the name */
+	str = nih_sprintf (parent, "%s\n%s (", func->type, func->name);
+	if (! str)
+		return NULL;
+
+	/* If no arguments, should be just void */
+	if (NIH_LIST_EMPTY (&func->args)) {
+		if (! nih_strcat (&str, parent, "void)\n")) {
+			nih_free (str);
+			return NULL;
+		}
+
+		return str;
+	}
+
+	/* Figure out the longest type name */
+	max = 0;
+	NIH_LIST_FOREACH (&func->args, iter) {
+		TypeVar *arg = (TypeVar *)iter;
+		size_t   this_len;
+
+		this_len = strlen (arg->type);
+		if (! strchr (arg->type, '*'))
+			this_len++;
+
+		if (this_len > max)
+			max = this_len;
+	}
+
+	/* Append each argument with all the types and names lined up */
+	len = strlen (str);
+	NIH_LIST_FOREACH (&func->args, iter) {
+		TypeVar *arg = (TypeVar *)iter;
+		char *   new_str;
+
+		/* Each additional argument goes onto a new line, indented
+		 * by the length of the function name plus the usual
+		 * punctuation
+		 */
+		if (iter != func->args.next) {
+			new_str = nih_realloc (str, parent,
+					       len + strlen (func->name) + 5);
+			if (! new_str) {
+				nih_free (str);
+				return NULL;
+			}
+
+			str = new_str;
+
+			memcpy (str + len, ",\n", 2);
+			len += 2;
+
+			memset (str + len, ' ', strlen (func->name) + 2);
+			len += strlen (func->name) + 2;
+
+			str[len] = '\0';
+		}
+
+		/* Append the argument so that the names line up */
+		new_str = nih_realloc (str, parent,
+				       len + max + strlen (arg->name) + 1);
+		if (! new_str) {
+			nih_free (str);
+			return NULL;
+		}
+
+		str = new_str;
+
+		memset (str + len, ' ', max);
+		memcpy (str + len, arg->type, strlen (arg->type));
+		len += max;
+
+		memcpy (str + len, arg->name, strlen (arg->name));
+		len += strlen (arg->name);
+
+		str[len] = '\0';
+	}
+
+	if (! nih_strcat (&str, parent, ")\n")) {
+		nih_free (str);
+		return NULL;
+	}
+
+	return str;
+}
+
+/**
+ * type_func_layout:
+ * @parent: parent object for new string,
+ * @funcs: list of functions to convert.
+ *
+ * Returns a string for the list of functions @funcs, each of which should
+ * be a TypeFunc structure.  Each function is declared on a new line,
+ * with the names lined up to the longest type length and the arguments
+ * list lined up to the longest name length.  Attributes follow on the next
+ * line.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the returned string will also be
+ * freed.
+ *
+ * Returns: the newly allocated string or NULL if insufficient memory.
+ **/
+char *
+type_func_layout (const void *parent,
+		  NihList *   funcs)
+{
+	size_t type_max;
+	size_t name_max;
+	char * str;
+
+	nih_assert (funcs != NULL);
+
+	/* Work out how much space to have for the types and the names */
+	type_max = 0;
+	name_max = 0;
+	NIH_LIST_FOREACH (funcs, iter) {
+		TypeFunc *func = (TypeFunc *)iter;
+		size_t    this_type_len;
+		size_t    this_name_len;
+
+		this_type_len = strlen (func->type);
+		if (! strchr (func->type, '*'))
+			this_type_len++;
+
+		this_name_len = strlen (func->name);
+
+		if (this_type_len > type_max)
+			type_max = this_type_len;
+		if (this_name_len > name_max)
+			name_max = this_name_len;
+	}
+
+	/* Allocate a string with each of the functions on each line. */
+	str = nih_strdup (parent, "");
+	if (! str)
+		return NULL;
+
+	NIH_LIST_FOREACH (funcs, iter) {
+		TypeFunc *func = (TypeFunc *)iter;
+		char *    new_str;
+		size_t    len;
+
+		len = strlen (str);
+
+		new_str = nih_realloc (str, parent,
+				       len + type_max + name_max + 3);
+		if (! new_str) {
+			nih_free (str);
+			return NULL;
+		}
+
+		str = new_str;
+
+		memset (str + len, ' ', type_max);
+		memcpy (str + len, func->type, strlen (func->type));
+		len += type_max;
+
+		memset (str + len, ' ', name_max + 1);
+		memcpy (str + len, func->name, strlen (func->name));
+		len += name_max + 1;
+
+		str[len] = '(';
+		len++;
+
+		str[len] = '\0';
+
+		/* Append the arguments */
+		NIH_LIST_FOREACH (&func->args, iter) {
+			TypeVar *arg = (TypeVar *)iter;
+
+			if (iter != func->args.next) {
+				if (! nih_strcat (&str, parent, ", ")) {
+					nih_free (str);
+					return NULL;
+				}
+			}
+
+			if (strchr (arg->type, '*')) {
+				if (! nih_strcat_sprintf (&str, parent, "%s%s",
+							  arg->type, arg->name)) {
+					nih_free (str);
+					return NULL;
+				}
+			} else {
+				if (! nih_strcat_sprintf (&str, parent, "%s %s",
+							  arg->type, arg->name)) {
+					nih_free (str);
+					return NULL;
+				}
+			}
+		}
+
+		/* If there are no attributes, that's it */
+		if (NIH_LIST_EMPTY (&func->attribs)) {
+			if (! nih_strcat (&str, parent, ");\n")) {
+				nih_free (str);
+				return NULL;
+			}
+
+			continue;
+		}
+
+		/* Append the attributes indented on the next line */
+		if (! nih_strcat (&str, parent, ")\n\t__attribute__ ((")) {
+			nih_free (str);
+			return NULL;
+		}
+
+		NIH_LIST_FOREACH (&func->attribs, iter) {
+			NihListEntry *attrib = (NihListEntry *)iter;
+
+			if (iter != func->attribs.next) {
+				if (! nih_strcat (&str, parent, ", ")) {
+					nih_free (str);
+					return NULL;
+				}
+			}
+
+			if (! nih_strcat (&str, parent, attrib->str)) {
+				nih_free (str);
+				return NULL;
+			}
+		}
+
+		if (! nih_strcat (&str, parent, "));\n")) {
+			nih_free (str);
+			return NULL;
+		}
+	}
+
+	return str;
+}
+
 
 /**
  * type_to_const:

@@ -463,16 +463,10 @@ marshal_array (const void *       parent,
 		nih_list_add (&element_locals, &input_var->entry);
 	}
 
-	/* FIXME have a function to do this! */
-	NIH_LIST_FOREACH (&element_locals, iter) {
-		TypeVar *local_var = (TypeVar *)iter;
-
-		if (! nih_strcat_sprintf (&vars_block, NULL, "%s %s;\n",
-					  local_var->type,
-					  local_var->name)) {
-			nih_free (code);
-			return NULL;
-		}
+	vars_block = type_var_layout (NULL, &element_locals);
+	if (! vars_block) {
+		nih_free (code);
+		return NULL;
 	}
 
 	/* Lay all that out in an indented block inside the for loop.

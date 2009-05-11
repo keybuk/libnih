@@ -1,5 +1,20 @@
 2009-05-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/demarshal.c (demarshal_array),
+	* nih-dbus-tool/marshal.c (marshal_array),
+	* nih-dbus-tool/method.c (method_object_function)
+	(method_reply_function),
+	* nih-dbus-tool/signal.c (signal_emit_function),
+	* nih-dbus-tool/property.c (property_object_get_function)
+	(property_object_set_function): Line-up variable blocks.
+	* nih-dbus-tool/tests/test_demarshal.c (test_demarshal),
+	* nih-dbus-tool/tests/test_marshal.c (test_marshal),
+	* nih-dbus-tool/tests/test_method.c (test_object_function)
+	(test_reply_function): 
+	* nih-dbus-tool/tests/test_signal.c (test_emit_function): 
+	* nih-dbus-tool/tests/test_property.c (test_object_get_function): 
+	Adjust string output checks for the slight difference in indentation
+
 	* nih-dbus-tool/type.c (type_func_to_string, type_func_layout):
 	Functions to convert TypeFunc entries into strings.
 	* nih-dbus-tool/type.h: Add prototypes.

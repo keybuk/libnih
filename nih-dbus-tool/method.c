@@ -814,15 +814,9 @@ method_object_function (const void *parent,
 	/* Lay out the function body, indenting it all before placing it
 	 * in the function code.
 	 */
-	/* FIXME have a function to do this! */
-	NIH_LIST_FOREACH (&locals, iter) {
-		TypeVar *var = (TypeVar *)iter;
-
-		if (! nih_strcat_sprintf (&vars_block, NULL, "%s %s;\n",
-					  var->type,
-					  var->name))
-			return NULL;
-	}
+	vars_block = type_var_layout (NULL, &locals);
+	if (! vars_block)
+		return NULL;
 
 	if (! nih_strcat_sprintf (&body, NULL,
 				  "%s"
@@ -1069,15 +1063,9 @@ method_reply_function (const void *parent,
 	/* Lay out the function body, indenting it all before placing it
 	 * in the function code.
 	 */
-	/* FIXME have a function to do this! */
-	NIH_LIST_FOREACH (&locals, iter) {
-		TypeVar *var = (TypeVar *)iter;
-
-		if (! nih_strcat_sprintf (&vars_block, NULL, "%s %s;\n",
-					  var->type,
-					  var->name))
-			return NULL;
-	}
+	vars_block = type_var_layout (NULL, &locals);
+	if (! vars_block)
+		return NULL;
 
 	if (! nih_strcat_sprintf (&body, NULL,
 				  "%s"

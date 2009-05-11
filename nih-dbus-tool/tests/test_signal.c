@@ -983,7 +983,7 @@ test_emit_function (void)
 		TEST_EQ_STR (str, ("int\n"
 				   "my_emit_signal (DBusConnection *connection, const char *origin_path, const char * msg)\n"
 				   "{\n"
-				   "\tDBusMessage * signal;\n"
+				   "\tDBusMessage *   signal;\n"
 				   "\tDBusMessageIter iter;\n"
 				   "\n"
 				   "\tnih_assert (connection != NULL);\n"

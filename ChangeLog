@@ -1,3 +1,18 @@
+2009-05-12  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/method.c (method_object_function)
+	(method_reply_function): Replace the hand-coded function layout code
+	with a call to type_func_to_string()
+	* nih-dbus-tool/tests/test_method.c (test_object_function)
+	(test_reply_function): Adjust tests to account for the indentation
+	differences.
+	* nih-dbus-tool/signal.c (signal_emit_function): Replace code
+	* nih-dbus-tool/tests/test_signal.c (test_emit_function): Adjust tests
+	* nih-dbus-tool/property.c (property_object_get_function)
+	(property_object_set_function): Replace code
+	* nih-dbus-tool/tests/test_property.c (test_object_get_function)
+	(test_object_set_function): Adjust tests
+
 2009-05-11  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/property.c (property_get_function, property_set_function):

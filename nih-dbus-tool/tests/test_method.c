@@ -1286,7 +1286,8 @@ test_object_function (void)
 		}
 
 		TEST_EQ_STR (str, ("DBusHandlerResult\n"
-				   "MyMethod_handle (NihDBusObject * object, NihDBusMessage *message)\n"
+				   "MyMethod_handle (NihDBusObject * object,\n"
+				   "                 NihDBusMessage *message)\n"
 				   "{\n"
 				   "\tDBusMessageIter iter;\n"
 				   "\tDBusMessage *   reply;\n"
@@ -2175,7 +2176,8 @@ test_object_function (void)
 		}
 
 		TEST_EQ_STR (str, ("DBusHandlerResult\n"
-				   "MyAsyncMethod_handle (NihDBusObject * object, NihDBusMessage *message)\n"
+				   "MyAsyncMethod_handle (NihDBusObject * object,\n"
+				   "                      NihDBusMessage *message)\n"
 				   "{\n"
 				   "\tDBusMessageIter iter;\n"
 				   "\tDBusMessage *   reply;\n"
@@ -2925,7 +2927,8 @@ test_object_function (void)
 		}
 
 		TEST_EQ_STR (str, ("DBusHandlerResult\n"
-				   "MyMethod_handle (NihDBusObject * object, NihDBusMessage *message)\n"
+				   "MyMethod_handle (NihDBusObject * object,\n"
+				   "                 NihDBusMessage *message)\n"
 				   "{\n"
 				   "\tDBusMessageIter iter;\n"
 				   "\tDBusMessage *   reply;\n"
@@ -3224,7 +3227,8 @@ test_reply_function (void)
 		}
 
 		TEST_EQ_STR (str, ("int\n"
-				   "my_async_method_reply (NihDBusMessage *message, char * const * output)\n"
+				   "my_async_method_reply (NihDBusMessage *message,\n"
+				   "                       char * const *  output)\n"
 				   "{\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tDBusMessageIter iter;\n"
@@ -3583,7 +3587,8 @@ test_reply_function (void)
 		}
 
 		TEST_EQ_STR (str, ("int\n"
-				   "my_async_method_reply (NihDBusMessage *message, char * const * output)\n"
+				   "my_async_method_reply (NihDBusMessage *message,\n"
+				   "                       char * const *  output)\n"
 				   "{\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tDBusMessageIter iter;\n"

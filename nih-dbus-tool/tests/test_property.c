@@ -1153,7 +1153,9 @@ test_object_get_function (void)
 		}
 
 		TEST_EQ_STR (str, ("int\n"
-				   "MyProperty_get (NihDBusObject * object, NihDBusMessage *message, DBusMessageIter *iter)\n"
+				   "MyProperty_get (NihDBusObject *  object,\n"
+				   "                NihDBusMessage * message,\n"
+				   "                DBusMessageIter *iter)\n"
 				   "{\n"
 				   "\tDBusMessageIter variter;\n"
 				   "\tchar *          value;\n"
@@ -1503,7 +1505,9 @@ test_object_set_function (void)
 		}
 
 		TEST_EQ_STR (str, ("DBusHandlerResult\n"
-				   "MyProperty_set (NihDBusObject * object, NihDBusMessage *message, DBusMessageIter *iter)\n"
+				   "MyProperty_set (NihDBusObject *  object,\n"
+				   "                NihDBusMessage * message,\n"
+				   "                DBusMessageIter *iter)\n"
 				   "{\n"
 				   "\tDBusMessageIter variter;\n"
 				   "\tDBusMessage *   reply;\n"

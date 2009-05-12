@@ -631,17 +631,19 @@ property_object_get_function (const void *parent,
 	if (! indent (&body, NULL, 1))
 		return NULL;
 
-	/* FIXME have a function to do this */
-	code = nih_sprintf (parent,
-			    "int\n"
-			    "%s (NihDBusObject * object, NihDBusMessage *message, DBusMessageIter *iter)\n"
-			    "{\n"
-			    "%s"
-			    "}\n",
-			    name,
-			    body);
+	/* Function header */
+	code = type_func_to_string (parent, func);
 	if (! code)
 		return NULL;
+
+	if (! nih_strcat_sprintf (&code, parent,
+				  "{\n"
+				  "%s"
+				  "}\n",
+				  body)) {
+		nih_free (code);
+		return NULL;
+	}
 
 	/* Append the functions to the prototypes and externs lists */
 	nih_list_add (prototypes, &func->entry);
@@ -968,17 +970,19 @@ property_object_set_function (const void *parent,
 	if (! indent (&body, NULL, 1))
 		return NULL;
 
-	/* FIXME have a function to do this */
-	code = nih_sprintf (parent,
-			    "DBusHandlerResult\n"
-			    "%s (NihDBusObject * object, NihDBusMessage *message, DBusMessageIter *iter)\n"
-			    "{\n"
-			    "%s"
-			    "}\n",
-			    name,
-			    body);
+	/* Function header */
+	code = type_func_to_string (parent, func);
 	if (! code)
 		return NULL;
+
+	if (! nih_strcat_sprintf (&code, parent,
+				  "{\n"
+				  "%s"
+				  "}\n",
+				  body)) {
+		nih_free (code);
+		return NULL;
+	}
 
 	/* Append the functions to the prototypes and externs lists */
 	nih_list_add (prototypes, &func->entry);

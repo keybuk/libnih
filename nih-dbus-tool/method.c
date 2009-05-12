@@ -853,17 +853,19 @@ method_object_function (const void *parent,
 	if (! indent (&body, NULL, 1))
 		return NULL;
 
-	/* FIXME have a function to do this */
-	code = nih_sprintf (parent,
-			    "DBusHandlerResult\n"
-			    "%s (NihDBusObject * object, NihDBusMessage *message)\n"
-			    "{\n"
-			    "%s"
-			    "}\n",
-			    name,
-			    body);
+	/* Function header */
+	code = type_func_to_string (parent, func);
 	if (! code)
 		return NULL;
+
+	if (! nih_strcat_sprintf (&code, parent,
+				  "{\n"
+				  "%s"
+				  "}\n",
+				  body)) {
+		nih_free (code);
+		return NULL;
+	}
 
 	/* Append the functions to the prototypes and externs lists */
 	nih_list_add (prototypes, &func->entry);
@@ -912,7 +914,6 @@ method_reply_function (const void *parent,
 	nih_local TypeVar * reply_var = NULL;
 	nih_local TypeVar * iter_var = NULL;
 	nih_local char *    marshal_block = NULL;
-	nih_local char *    args = NULL;
 	nih_local char *    assert_block = NULL;
 	nih_local char *    vars_block = NULL;
 	nih_local char *    body = NULL;
@@ -1037,11 +1038,6 @@ method_reply_function (const void *parent,
 			if (! type_to_const (&var->type, var))
 				return NULL;
 
-			if (! nih_strcat_sprintf (&args, NULL,
-						  ", %s %s",
-						  var->type, var->name))
-				return NULL;
-
 			if (strchr (var->type, '*'))
 				if (! nih_strcat_sprintf (&assert_block, NULL,
 							  "nih_assert (%s != NULL);\n",
@@ -1091,17 +1087,19 @@ method_reply_function (const void *parent,
 	if (! indent (&body, NULL, 1))
 		return NULL;
 
-	/* FIXME have a function to do this */
-	code = nih_sprintf (parent,
-			    "int\n"
-			    "%s (NihDBusMessage *message%s)\n"
-			    "{\n"
-			    "%s"
-			    "}\n",
-			    name, args,
-			    body);
+	/* Function header */
+	code = type_func_to_string (parent, func);
 	if (! code)
 		return NULL;
+
+	if (! nih_strcat_sprintf (&code, parent,
+				  "{\n"
+				  "%s"
+				  "}\n",
+				  body)) {
+		nih_free (code);
+		return NULL;
+	}
 
 	/* Append the functions to the prototypes and externs lists */
 	nih_list_add (prototypes, &func->entry);

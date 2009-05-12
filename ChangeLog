@@ -1,5 +1,8 @@
 2009-05-12  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_parse.c (test_parse_xml): Update due to
+	change in error from D-Bus 1.2.14
+
 	* nih-dbus-tool/method.c (method_object_function)
 	(method_reply_function): Replace the hand-coded function layout code
 	with a call to type_func_to_string()

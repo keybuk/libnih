@@ -8450,7 +8450,7 @@ test_parse_xml (void)
 
 		TEST_FILE_EQ (output, ("test:foo:4:32: "
 				       "Invalid D-Bus type in <arg> type attribute: "
-				       "Corrupt type signature\n"));
+				       "Unknown typecode\n"));
 		TEST_FILE_END (output);
 		TEST_FILE_RESET (output);
 	}

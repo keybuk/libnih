@@ -30,6 +30,7 @@
 #include <nih/alloc.h>
 #include <nih/string.h>
 
+#include "type.h"
 #include "property.h"
 
 
@@ -41,9 +42,7 @@ main (int   argc,
 	NihList             externs;
 	nih_local Property *property = NULL;
 	nih_local char *    code = NULL;
-
-	nih_list_init (&prototypes);
-	nih_list_init (&externs);
+	nih_local char *    block = NULL;
 
 	printf ("#include <dbus/dbus.h>\n"
 		"\n"
@@ -62,31 +61,49 @@ main (int   argc,
 		"\n"
 		"\n");
 
-	printf ("extern int my_property_get (void *data, "
-		"NihDBusMessage *message, char **str);\n"
-		"\n");
-
 	property = property_new (NULL, "my_property", "s", NIH_DBUS_READWRITE);
 	property->symbol = nih_strdup (property, "my_property");
+
+
+	nih_list_init (&prototypes);
+	nih_list_init (&externs);
 
 	code = property_object_get_function (NULL, property,
 					     "MyProperty_get",
 					     "my_property_get",
 					     &prototypes, &externs);
 
+	NIH_LIST_FOREACH (&externs, iter) {
+		TypeFunc *func = (TypeFunc *)iter;
+
+		NIH_MUST (type_to_extern (&func->type, func));
+	}
+
+	block = type_func_layout (NULL, &externs);
+
+	printf ("%s\n", block);
 	printf ("%s", code);
 	printf ("\n"
 		"\n");
 
-	printf ("extern int my_property_set (void *data, "
-		"NihDBusMessage *message, const char *str);\n"
-		"\n");
+
+	nih_list_init (&prototypes);
+	nih_list_init (&externs);
 
 	code = property_object_set_function (NULL, property,
 					     "MyProperty_set",
 					     "my_property_set",
 					     &prototypes, &externs);
 
+	NIH_LIST_FOREACH (&externs, iter) {
+		TypeFunc *func = (TypeFunc *)iter;
+
+		NIH_MUST (type_to_extern (&func->type, func));
+	}
+
+	block = type_func_layout (NULL, &externs);
+
+	printf ("%s\n", block);
 	printf ("%s", code);
 
 	return 0;

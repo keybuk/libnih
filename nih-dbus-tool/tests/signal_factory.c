@@ -30,6 +30,7 @@
 #include <nih/alloc.h>
 #include <nih/string.h>
 
+#include "type.h"
 #include "signal.h"
 #include "argument.h"
 
@@ -43,9 +44,7 @@ main (int   argc,
 	nih_local Signal *signal = NULL;
 	Argument *        arg;
 	nih_local char *  code = NULL;
-
-	nih_list_init (&prototypes);
-	nih_list_init (&externs);
+	nih_local char *  block = NULL;
 
 	printf ("#include <dbus/dbus.h>\n"
 		"\n"
@@ -61,7 +60,6 @@ main (int   argc,
 		"#include <nih-dbus/dbus_object.h>\n"
 		"\n"
 		"#include \"signal_code.h\"\n"
-		"\n"
 		"\n");
 
 	signal = signal_new (NULL, "MySignal");
@@ -71,10 +69,23 @@ main (int   argc,
 	arg->symbol = nih_strdup (arg, "msg");
 	nih_list_add (&signal->arguments, &arg->entry);
 
+
+	nih_list_init (&prototypes);
+	nih_list_init (&externs);
+
 	code = signal_emit_function (NULL, "com.netsplit.Nih.Test", signal,
 				     "my_emit_signal",
 				     &prototypes, &externs);
 
+	NIH_LIST_FOREACH (&externs, iter) {
+		TypeFunc *func = (TypeFunc *)iter;
+
+		NIH_MUST (type_to_extern (&func->type, func));
+	}
+
+	block = type_func_layout (NULL, &externs);
+
+	printf ("%s\n", block);
 	printf ("%s", code);
 
 	return 0;

@@ -1,5 +1,10 @@
 2009-05-12  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/method_factory.c,
+	* nih-dbus-tool/tests/signal_factory.c,
+	* nih-dbus-tool/tests/property_factory.c: Use the returned externs
+	list for the prototypes, rather than hard-coding them.
+
 	* nih-dbus-tool/type.c (type_to_static, type_to_extern): Methods
 	to prepend "static" and "extern" onto a type.
 	* nih-dbus-tool/type.h: Prototypes.

@@ -30,6 +30,7 @@
 #include <nih/alloc.h>
 #include <nih/string.h>
 
+#include "type.h"
 #include "method.h"
 #include "argument.h"
 
@@ -43,9 +44,7 @@ main (int   argc,
 	nih_local Method *method = NULL;
 	Argument *        arg;
 	nih_local char *  code = NULL;
-
-	nih_list_init (&prototypes);
-	nih_list_init (&externs);
+	nih_local char *  block = NULL;
 
 	printf ("#include <dbus/dbus.h>\n"
 		"\n"
@@ -64,11 +63,6 @@ main (int   argc,
 		"\n"
 		"\n");
 
-	printf ("extern int my_method_handler (void *data, "
-		"NihDBusMessage *message, const char *str, "
-		"int32_t flags, char ***output);\n"
-		"\n");
-
 	method = method_new (NULL, "MyMethod");
 	method->symbol = nih_strdup (method, "my_method");
 
@@ -84,34 +78,68 @@ main (int   argc,
 	arg->symbol = nih_strdup (arg, "output");
 	nih_list_add (&method->arguments, &arg->entry);
 
+
+	nih_list_init (&prototypes);
+	nih_list_init (&externs);
+
 	code = method_object_function (NULL, method,
 				       "MyMethod_handle",
 				       "my_method_handler",
 				       &prototypes, &externs);
 
+	NIH_LIST_FOREACH (&externs, iter) {
+		TypeFunc *func = (TypeFunc *)iter;
+
+		NIH_MUST (type_to_extern (&func->type, func));
+	}
+
+	block = type_func_layout (NULL, &externs);
+
+	printf ("%s\n", block);
 	printf ("%s", code);
 	printf ("\n"
 		"\n");
 
-	method->async = TRUE;
 
-	printf ("extern int my_async_method_handler (void *data, "
-		"NihDBusMessage *message, const char *str, "
-		"int32_t flags);\n"
-		"\n");
+	nih_list_init (&prototypes);
+	nih_list_init (&externs);
+
+	method->async = TRUE;
 
 	code = method_object_function (NULL, method,
 				       "MyAsyncMethod_handle",
 				       "my_async_method_handler",
 				       &prototypes, &externs);
 
+	NIH_LIST_FOREACH (&externs, iter) {
+		TypeFunc *func = (TypeFunc *)iter;
+
+		NIH_MUST (type_to_extern (&func->type, func));
+	}
+
+	block = type_func_layout (NULL, &externs);
+
+	printf ("%s\n", block);
 	printf ("%s", code);
 	printf ("\n");
+
+
+	nih_list_init (&prototypes);
+	nih_list_init (&externs);
 
 	code = method_reply_function (NULL, method,
 				      "my_async_method_reply",
 				      &prototypes, &externs);
 
+	NIH_LIST_FOREACH (&externs, iter) {
+		TypeFunc *func = (TypeFunc *)iter;
+
+		NIH_MUST (type_to_extern (&func->type, func));
+	}
+
+	block = type_func_layout (NULL, &externs);
+
+	printf ("%s\n", block);
 	printf ("%s", code);
 
 	return 0;

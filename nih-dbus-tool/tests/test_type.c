@@ -1786,6 +1786,132 @@ test_to_pointer (void)
 	}
 }
 
+void
+test_to_static (void)
+{
+	char *str = NULL;
+	char *ret;
+
+	TEST_FUNCTION ("type_to_static");
+
+
+	/* Check to make sure that a non-static declaration is returned
+	 * with "static" prepended onto it.
+	 */
+	TEST_FEATURE ("with non-static type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			str = nih_strdup (NULL, "int");
+		}
+
+		ret = type_to_static (&str, NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+
+			TEST_EQ_STR (str, "int");
+
+			nih_free (str);
+			continue;
+		}
+
+		TEST_EQ_P (ret, str);
+		TEST_EQ_STR (str, "static int");
+
+		nih_free (str);
+	}
+
+
+	/* Check to make sure that a static declaration is returned
+	 * unmodified.
+	 */
+	TEST_FEATURE ("with static type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			str = nih_strdup (NULL, "static int");
+		}
+
+		ret = type_to_static (&str, NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+
+			TEST_EQ_STR (str, "static int");
+
+			nih_free (str);
+			continue;
+		}
+
+		TEST_EQ_P (ret, str);
+		TEST_EQ_STR (str, "static int");
+
+		nih_free (str);
+	}
+}
+
+void
+test_to_extern (void)
+{
+	char *str = NULL;
+	char *ret;
+
+	TEST_FUNCTION ("type_to_extern");
+
+
+	/* Check to make sure that a non-extern declaration is returned
+	 * with "extern" prepended onto it.
+	 */
+	TEST_FEATURE ("with non-extern type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			str = nih_strdup (NULL, "int");
+		}
+
+		ret = type_to_extern (&str, NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+
+			TEST_EQ_STR (str, "int");
+
+			nih_free (str);
+			continue;
+		}
+
+		TEST_EQ_P (ret, str);
+		TEST_EQ_STR (str, "extern int");
+
+		nih_free (str);
+	}
+
+
+	/* Check to make sure that an extern declaration is returned
+	 * unmodified.
+	 */
+	TEST_FEATURE ("with extern type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			str = nih_strdup (NULL, "extern int");
+		}
+
+		ret = type_to_extern (&str, NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+
+			TEST_EQ_STR (str, "extern int");
+
+			nih_free (str);
+			continue;
+		}
+
+		TEST_EQ_P (ret, str);
+		TEST_EQ_STR (str, "extern int");
+
+		nih_free (str);
+	}
+}
+
 
 int
 main (int   argc,
@@ -1805,6 +1931,8 @@ main (int   argc,
 
 	test_to_const ();
 	test_to_pointer ();
+	test_to_static ();
+	test_to_extern ();
 
 	return 0;
 }

@@ -817,3 +817,87 @@ type_to_pointer (char **     type,
 
 	return *type;
 }
+
+/**
+ * type_to_static:
+ * @type: C type,
+ * @parent: parent object for original string.
+ *
+ * Converts the C type @type into a static form.
+ *
+ * This has no effect if the type is already static.
+ *
+ * @type is modified directly, the returned string is simply a pointer to
+ * it, thus @parent is actually ignored though it usual to pass the parent
+ * of @type for style reasons.
+ *
+ * Returns: modified @type or NULL if insufficient memory.
+ **/
+char *
+type_to_static (char **     type,
+		const void *parent)
+{
+	char * ret;
+	size_t len;
+
+	nih_assert (type != NULL);
+	nih_assert (*type != NULL);
+
+	len = strlen (*type);
+	nih_assert (len > 0);
+
+	if (strncmp (*type, "static ", 7)) {
+		ret = nih_realloc (*type, parent, len + 8);
+		if (! ret)
+			return NULL;
+
+		*type = ret;
+
+		memmove (*type + 7, *type, len + 1);
+		memcpy (*type, "static ", 7);
+	}
+
+	return *type;
+}
+
+/**
+ * type_to_extern:
+ * @type: C type,
+ * @parent: parent object for original string.
+ *
+ * Converts the C type @type into an extern form.
+ *
+ * This has no effect if the type is already extern.
+ *
+ * @type is modified directly, the returned string is simply a pointer to
+ * it, thus @parent is actually ignored though it usual to pass the parent
+ * of @type for style reasons.
+ *
+ * Returns: modified @type or NULL if insufficient memory.
+ **/
+char *
+type_to_extern (char **     type,
+		const void *parent)
+{
+	char * ret;
+	size_t len;
+
+	nih_assert (type != NULL);
+	nih_assert (*type != NULL);
+
+	len = strlen (*type);
+	nih_assert (len > 0);
+
+	if (strncmp (*type, "extern ", 7)) {
+		ret = nih_realloc (*type, parent, len + 8);
+		if (! ret)
+			return NULL;
+
+		*type = ret;
+
+		memmove (*type + 7, *type, len + 1);
+		memcpy (*type, "extern ", 7);
+	}
+
+	return *type;
+}

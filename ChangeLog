@@ -1,5 +1,11 @@
 2009-05-12  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/type.c (type_to_static, type_to_extern): Methods
+	to prepend "static" and "extern" onto a type.
+	* nih-dbus-tool/type.h: Prototypes.
+	* nih-dbus-tool/tests/test_type.c (test_to_static)
+	(test_to_extern): Test the methods.
+
 	* nih-dbus-tool/tests/test_parse.c (test_parse_xml): Update due to
 	change in error from D-Bus 1.2.14
 

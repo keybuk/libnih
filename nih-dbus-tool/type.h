@@ -94,6 +94,10 @@ char *      type_to_const       (char **type, const void *parent)
 	__attribute__ ((malloc, warn_unused_result));
 char *      type_to_pointer     (char **type, const void *parent)
 	__attribute__ ((malloc, warn_unused_result));
+char *      type_to_static      (char **type, const void *parent)
+	__attribute__ ((malloc, warn_unused_result));
+char *      type_to_extern      (char **type, const void *parent)
+	__attribute__ ((malloc, warn_unused_result));
 
 NIH_END_EXTERN
 

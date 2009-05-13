@@ -1,5 +1,10 @@
 2009-05-13  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_proxy_sync_function): Unreference
+	the D-Bus method call we're building, not the message we'll return.
+	* nih-dbus-tool/tests/test_method.c (test_proxy_sync_function):
+	Adjust output functions to account for the change.
+
 	* nih-dbus-tool/method.c (method_object_function): We can't just
 	use a do { .. } while (0) loop and continue in the case of ENOMEM
 	because that won't work for arrays.  Instead use a local label to

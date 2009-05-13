@@ -1329,7 +1329,7 @@ method_proxy_sync_function (const void *parent,
 			 * can try again.
 			 */
 			oom_error_code = nih_strdup (NULL,
-						     "nih_free (msg);\n"
+						     "dbus_message_unref (message);\n"
 						     "nih_return_no_memory_error (NULL);\n");
 			if (! oom_error_code)
 				return NULL;

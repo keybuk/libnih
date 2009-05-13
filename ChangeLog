@@ -1,5 +1,11 @@
 2009-05-13  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_proxy_sync_function): Rename the
+	message local to method_call and the msg local to message to match
+	other functions.
+	* nih-dbus-tool/tests/test_method.c (test_proxy_sync_function): 
+	Update tests to match
+
 	* nih-dbus-tool/method.c (method_proxy_sync_function): Unreference
 	the D-Bus method call we're building, not the message we'll return.
 	* nih-dbus-tool/tests/test_method.c (test_proxy_sync_function):

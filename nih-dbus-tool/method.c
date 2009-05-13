@@ -1243,7 +1243,7 @@ method_proxy_sync_function (const void *parent,
 	 * it's far easier to put them on the locals list and deal with them
 	 * along with the rest.
 	 */
-	message_var = type_var_new (NULL, "DBusMessage *", "message");
+	message_var = type_var_new (NULL, "DBusMessage *", "method_call");
 	if (! message_var)
 		return NULL;
 
@@ -1267,7 +1267,7 @@ method_proxy_sync_function (const void *parent,
 
 	nih_list_add (&locals, &reply_var->entry);
 
-	parent_var = type_var_new (NULL, "NihDBusMessage *", "msg");
+	parent_var = type_var_new (NULL, "NihDBusMessage *", "message");
 	if (! parent_var)
 		return NULL;
 
@@ -1279,11 +1279,11 @@ method_proxy_sync_function (const void *parent,
 	 */
 	if (! nih_strcat_sprintf (&marshal_block, NULL,
 				  "/* Construct the method call message. */\n"
-				  "message = dbus_message_new_method_call (proxy->name, proxy->path, \"%s\", \"%s\");\n"
-				  "if (! message)\n"
+				  "method_call = dbus_message_new_method_call (proxy->name, proxy->path, \"%s\", \"%s\");\n"
+				  "if (! method_call)\n"
 				  "\tnih_return_no_memory_error (NULL);\n"
 				  "\n"
-				  "dbus_message_iter_init_append (message, &iter);\n"
+				  "dbus_message_iter_init_append (method_call, &iter);\n"
 				  "\n",
 				  interface_name, method->name))
 		return NULL;
@@ -1291,15 +1291,15 @@ method_proxy_sync_function (const void *parent,
 	/* FIXME autostart? */
 
 	if (! nih_strcat_sprintf (&demarshal_block, NULL,
-				  "dbus_message_unref (message);\n"
+				  "dbus_message_unref (method_call);\n"
 				  "\n"
 				  "/* Create a message context for the reply, then iterate\n"
 				  " * its arguments.  This contexts holds a reference, so\n"
 				  " * we can drop the one we've already received.\n"
 				  " */\n"
-				  "msg = NIH_MUST (nih_dbus_message_new (proxy, proxy->conn, reply));\n"
+				  "message = NIH_MUST (nih_dbus_message_new (proxy, proxy->conn, reply));\n"
 				  "dbus_message_unref (reply);\n"
-				  "dbus_message_iter_init (msg->message, &iter);\n"
+				  "dbus_message_iter_init (message->message, &iter);\n"
 				  "\n"))
 		return NULL;
 
@@ -1329,7 +1329,7 @@ method_proxy_sync_function (const void *parent,
 			 * can try again.
 			 */
 			oom_error_code = nih_strdup (NULL,
-						     "dbus_message_unref (message);\n"
+						     "dbus_message_unref (method_call);\n"
 						     "nih_return_no_memory_error (NULL);\n");
 			if (! oom_error_code)
 				return NULL;
@@ -1398,13 +1398,13 @@ method_proxy_sync_function (const void *parent,
 				return NULL;
 
 			type_error_code = nih_strdup (NULL,
-						      "nih_free (msg);\n"
+						      "nih_free (message);\n"
 						      "nih_return_error (NULL, NIH_DBUS_INVALID_ARGS,\n"
 						      "                  _(NIH_DBUS_INVALID_ARGS_STR));\n");
 			if (! type_error_code)
 				return NULL;
 
-			block = demarshal (NULL, &iter, "msg", "iter",
+			block = demarshal (NULL, &iter, "message", "iter",
 					   local_name,
 					   oom_error_code,
 					   type_error_code,
@@ -1502,9 +1502,9 @@ method_proxy_sync_function (const void *parent,
 				  "/* Send the message, and wait for the reply. */\n"
 				  "dbus_error_init (&error);\n"
 				  "\n"
-				  "reply = dbus_connection_send_with_reply_and_block (proxy->conn, message, -1, &error);\n"
+				  "reply = dbus_connection_send_with_reply_and_block (proxy->conn, method_call, -1, &error);\n"
 				  "if (! reply) {\n"
-				  "\tdbus_message_unref (message);\n"
+				  "\tdbus_message_unref (method_call);\n"
 				  "\n"
 				  "\tif (dbus_error_has_name (&error, DBUS_ERROR_NO_MEMORY)) {\n"
 				  "\t\tnih_error_raise_no_memory ();\n"
@@ -1523,7 +1523,7 @@ method_proxy_sync_function (const void *parent,
 	 */
 	if (! nih_strcat_sprintf (&demarshal_block, NULL,
 				  "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
-				  "\tnih_free (msg);\n"
+				  "\tnih_free (message);\n"
 				  "\tnih_return_error (NULL, NIH_DBUS_INVALID_ARGS,\n"
 				  "\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
 				  "}\n"))
@@ -1544,7 +1544,7 @@ method_proxy_sync_function (const void *parent,
 				  "%s"
 				  "%s"
 				  "\n"
-				  "return msg;\n",
+				  "return message;\n",
 				  vars_block,
 				  assert_block,
 				  marshal_block,

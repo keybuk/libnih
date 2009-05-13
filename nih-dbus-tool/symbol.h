@@ -28,7 +28,7 @@ NIH_BEGIN_EXTERN
 int   symbol_valid     (const char *symbol);
 
 char *symbol_from_name (const void *parent, const char *name)
-	__attribute__ ((malloc, warn_unused_result));
+	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN
 

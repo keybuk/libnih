@@ -64,7 +64,7 @@ NIH_BEGIN_EXTERN
 int        interface_name_valid      (const char *name);
 
 Interface *interface_new             (const void *parent, const char *name)
-	__attribute__ ((malloc, warn_unused_result));
+	__attribute__ ((warn_unused_result, malloc));
 
 int        interface_start_tag       (XML_Parser xmlp, const char *tag,
 				       char * const *attr)

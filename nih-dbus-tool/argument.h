@@ -61,7 +61,7 @@ int       argument_name_valid (const char *name);
 
 Argument *argument_new        (const void *parent, const char *name,
 			       const char *type, NihDBusArgDir direction)
-	__attribute__ ((malloc, warn_unused_result));
+	__attribute__ ((warn_unused_result, malloc));
 
 int       argument_start_tag  (XML_Parser xmlp, const char *tag,
 			       char * const *attr)

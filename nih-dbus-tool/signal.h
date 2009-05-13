@@ -57,7 +57,7 @@ NIH_BEGIN_EXTERN
 int       signal_name_valid      (const char *name);
 
 Signal *  signal_new             (const void *parent, const char *name)
-	__attribute__ ((malloc, warn_unused_result));
+	__attribute__ ((warn_unused_result, malloc));
 
 int       signal_start_tag       (XML_Parser xmlp, const char *tag,
 				  char * const *attr)
@@ -75,7 +75,7 @@ char *    signal_emit_function   (const void *parent,
 				  const char *interface_name, Signal *signal,
 				  const char *name,
 				  NihList *prototypes, NihList *externs)
-	__attribute__ ((malloc, warn_unused_result));
+	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN
 

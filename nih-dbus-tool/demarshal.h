@@ -34,7 +34,7 @@ char *demarshal (const void *parent, DBusSignatureIter *iter,
 		 const char *oom_error_code,
 		 const char *type_error_code,
 		 NihList *outputs, NihList *locals)
-	__attribute__ ((malloc, warn_unused_result));
+	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN
 

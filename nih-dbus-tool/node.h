@@ -47,7 +47,7 @@ NIH_BEGIN_EXTERN
 int        node_path_valid       (const char *name);
 
 Node *     node_new              (const void *parent, const char *path)
-	__attribute__ ((malloc, warn_unused_result));
+	__attribute__ ((warn_unused_result, malloc));
 
 int        node_start_tag        (XML_Parser xmlp, const char *tag,
 				  char * const *attr)

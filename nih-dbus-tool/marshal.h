@@ -32,7 +32,7 @@ char *marshal (const void *parent, DBusSignatureIter *iter,
 	       const char *iter_name, const char *name,
 	       const char *oom_error_code,
 	       NihList *inputs, NihList *locals)
-	__attribute__ ((malloc, warn_unused_result));
+	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN
 

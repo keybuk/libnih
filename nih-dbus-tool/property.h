@@ -61,7 +61,7 @@ int       property_name_valid          (const char *name);
 
 Property *property_new                 (const void *parent, const char *name,
 					const char *type, NihDBusAccess access)
-	__attribute__ ((malloc, warn_unused_result));
+	__attribute__ ((warn_unused_result, malloc));
 
 int       property_start_tag           (XML_Parser xmlp, const char *tag,
 					char * const *attr)
@@ -77,12 +77,12 @@ char *    property_object_get_function (const void *parent, Property *property,
 					const char *name,
 					const char *handler_name,
 					NihList *prototypes, NihList *externs)
-	__attribute__ ((malloc, warn_unused_result));
+	__attribute__ ((warn_unused_result, malloc));
 char *    property_object_set_function (const void *parent, Property *property,
 					const char *name,
 					const char *handler_name,
 					NihList *prototypes, NihList *externs)
-	__attribute__ ((malloc, warn_unused_result));
+	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN
 

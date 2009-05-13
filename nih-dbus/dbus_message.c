@@ -73,7 +73,7 @@ nih_dbus_message_new (const void *    parent,
 	nih_assert (conn != NULL);
 	nih_assert (message != NULL);
 
-	msg = nih_new (NULL, NihDBusMessage);
+	msg = nih_new (parent, NihDBusMessage);
 	if (! msg)
 		return NULL;
 

@@ -1096,6 +1096,117 @@ test_emit_function (void)
 	}
 
 
+	/* Check that a signal with no arguments can still have
+	 * a correctly generated function.
+	 */
+	TEST_FEATURE ("with no arguments");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&externs);
+
+		TEST_ALLOC_SAFE {
+			signal = signal_new (NULL, "MySignal");
+			signal->symbol = nih_strdup (signal, "my_signal");
+		}
+
+		str = signal_emit_function (NULL, "com.netsplit.Nih.Test",
+					    signal, "my_emit_signal",
+					    &prototypes, &externs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&externs);
+
+			nih_free (signal);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "my_emit_signal (DBusConnection *connection,\n"
+				   "                const char *    origin_path)\n"
+				   "{\n"
+				   "\tDBusMessage *   signal;\n"
+				   "\tDBusMessageIter iter;\n"
+				   "\n"
+				   "\tnih_assert (connection != NULL);\n"
+				   "\tnih_assert (origin_path != NULL);\n"
+				   "\n"
+				   "\t/* Construct the message. */\n"
+				   "\tsignal = dbus_message_new_signal (origin_path, \"com.netsplit.Nih.Test\", \"MySignal\");\n"
+				   "\tif (! signal)\n"
+				   "\t\treturn -1;\n"
+				   "\n"
+				   "\tdbus_message_iter_init_append (signal, &iter);\n"
+				   "\n"
+				   "\t/* Send the signal, appending it to the outgoing queue. */\n"
+				   "\tif (! dbus_connection_send (connection, signal, NULL)) {\n"
+				   "\t\tdbus_message_unref (signal);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_unref (signal);\n"
+				   "\n"
+				   "\treturn 0;\n"
+				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_emit_signal");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "DBusConnection *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "connection");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const char *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "origin_path");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_EMPTY (&externs);
+
+		nih_free (str);
+		nih_free (signal);
+	}
+
+
 	/* Check that we can use the generated code to emit a signal and
 	 * that we can receive it.
 	 */
@@ -1132,6 +1243,143 @@ test_emit_function (void)
 			 DBUS_TYPE_INVALID);
 
 		dbus_message_unref (sig);
+	}
+
+
+	/* Check that a deprecated signal does not have the attribute
+	 * added, since we want to be able to emit it without a gcc
+	 * warning.
+	 */
+	TEST_FEATURE ("with deprecated signal");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&externs);
+
+		TEST_ALLOC_SAFE {
+			signal = signal_new (NULL, "MySignal");
+			signal->symbol = nih_strdup (signal, "my_signal");
+			signal->deprecated = TRUE;
+
+			argument = argument_new (signal, "Msg",
+						 "s", NIH_DBUS_ARG_OUT);
+			argument->symbol = nih_strdup (argument, "msg");
+			nih_list_add (&signal->arguments, &argument->entry);
+		}
+
+		str = signal_emit_function (NULL, "com.netsplit.Nih.Test",
+					    signal, "my_emit_signal",
+					    &prototypes, &externs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&externs);
+
+			nih_free (signal);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "my_emit_signal (DBusConnection *connection,\n"
+				   "                const char *    origin_path,\n"
+				   "                const char *    msg)\n"
+				   "{\n"
+				   "\tDBusMessage *   signal;\n"
+				   "\tDBusMessageIter iter;\n"
+				   "\n"
+				   "\tnih_assert (connection != NULL);\n"
+				   "\tnih_assert (origin_path != NULL);\n"
+				   "\tnih_assert (msg != NULL);\n"
+				   "\n"
+				   "\t/* Construct the message. */\n"
+				   "\tsignal = dbus_message_new_signal (origin_path, \"com.netsplit.Nih.Test\", \"MySignal\");\n"
+				   "\tif (! signal)\n"
+				   "\t\treturn -1;\n"
+				   "\n"
+				   "\tdbus_message_iter_init_append (signal, &iter);\n"
+				   "\n"
+				   "\t/* Marshal a char * onto the message */\n"
+				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &msg)) {\n"
+				   "\t\tdbus_message_unref (signal);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Send the signal, appending it to the outgoing queue. */\n"
+				   "\tif (! dbus_connection_send (connection, signal, NULL)) {\n"
+				   "\t\tdbus_message_unref (signal);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_unref (signal);\n"
+				   "\n"
+				   "\treturn 0;\n"
+				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_emit_signal");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "DBusConnection *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "connection");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const char *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "origin_path");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const char *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "msg");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_EMPTY (&externs);
+
+		nih_free (str);
+		nih_free (signal);
 	}
 
 

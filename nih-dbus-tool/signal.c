@@ -427,10 +427,10 @@ signal_emit_function (const void *parent,
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
 	NihListEntry *      attrib;
+	nih_local char *    assert_block = NULL;
 	nih_local TypeVar * signal_var = NULL;
 	nih_local TypeVar * iter_var = NULL;
 	nih_local char *    marshal_block = NULL;
-	nih_local char *    assert_block = NULL;
 	nih_local char *    vars_block = NULL;
 	nih_local char *    body = NULL;
 	char *              code = NULL;
@@ -451,18 +451,6 @@ signal_emit_function (const void *parent,
 	if (! func)
 		return NULL;
 
-	arg = type_var_new (func, "DBusConnection *", "connection");
-	if (! arg)
-		return NULL;
-
-	nih_list_add (&func->args, &arg->entry);
-
-	arg = type_var_new (func, "const char *", "origin_path");
-	if (! arg)
-		return NULL;
-
-	nih_list_add (&func->args, &arg->entry);
-
 	attrib = nih_list_entry_new (func);
 	if (! attrib)
 		return NULL;
@@ -472,6 +460,26 @@ signal_emit_function (const void *parent,
 		return NULL;
 
 	nih_list_add (&func->attribs, &attrib->entry);
+
+	arg = type_var_new (func, "DBusConnection *", "connection");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&func->args, &arg->entry);
+
+	if (! nih_strcat (&assert_block, NULL,
+			  "nih_assert (connection != NULL);\n"))
+		return NULL;
+
+	arg = type_var_new (func, "const char *", "origin_path");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&func->args, &arg->entry);
+
+	if (! nih_strcat (&assert_block, NULL,
+			  "nih_assert (origin_path != NULL);\n"))
+		return NULL;
 
 	/* The function requires a message pointer, which we allocate,
 	 * and an iterator for it to append the arguments.  Rather than
@@ -583,8 +591,6 @@ signal_emit_function (const void *parent,
 	if (! nih_strcat_sprintf (&body, NULL,
 				  "%s"
 				  "\n"
-				  "nih_assert (connection != NULL);\n"
-				  "nih_assert (origin_path != NULL);\n"
 				  "%s"
 				  "\n"
 				  "%s"

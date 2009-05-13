@@ -459,6 +459,7 @@ method_object_function (const void *parent,
 	NihList             locals;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
+	nih_local char *    assert_block = NULL;
 	nih_local TypeVar * iter_var = NULL;
 	nih_local TypeVar * reply_var = NULL;
 	nih_local char *    demarshal_block = NULL;
@@ -494,11 +495,19 @@ method_object_function (const void *parent,
 
 	nih_list_add (&func->args, &arg->entry);
 
+	if (! nih_strcat (&assert_block, NULL,
+			  "nih_assert (object != NULL);\n"))
+		return NULL;
+
 	arg = type_var_new (func, "NihDBusMessage *", "message");
 	if (! arg)
 		return NULL;
 
 	nih_list_add (&func->args, &arg->entry);
+
+	if (! nih_strcat (&assert_block, NULL,
+			  "nih_assert (message != NULL);\n"))
+		return NULL;
 
 	/* The function requires a local iterator for the message, and a
 	 * reply message pointer.  Rather than deal with these by hand,
@@ -821,12 +830,12 @@ method_object_function (const void *parent,
 	if (! nih_strcat_sprintf (&body, NULL,
 				  "%s"
 				  "\n"
-				  "nih_assert (object != NULL);\n"
-				  "nih_assert (message != NULL);\n"
+				  "%s"
 				  "\n"
 				  "%s"
 				  "%s",
 				  vars_block,
+				  assert_block,
 				  demarshal_block,
 				  call_block))
 		return NULL;
@@ -911,10 +920,10 @@ method_reply_function (const void *parent,
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
 	NihListEntry *      attrib;
+	nih_local char *    assert_block = NULL;
 	nih_local TypeVar * reply_var = NULL;
 	nih_local TypeVar * iter_var = NULL;
 	nih_local char *    marshal_block = NULL;
-	nih_local char *    assert_block = NULL;
 	nih_local char *    vars_block = NULL;
 	nih_local char *    body = NULL;
 	char *              code = NULL;
@@ -940,6 +949,10 @@ method_reply_function (const void *parent,
 		return NULL;
 
 	nih_list_add (&func->args, &arg->entry);
+
+	if (! nih_strcat (&assert_block, NULL,
+			  "nih_assert (message != NULL);\n"))
+		return NULL;
 
 	attrib = nih_list_entry_new (func);
 	if (! attrib)
@@ -1066,7 +1079,6 @@ method_reply_function (const void *parent,
 	if (! nih_strcat_sprintf (&body, NULL,
 				  "%s"
 				  "\n"
-				  "nih_assert (message != NULL);\n"
 				  "%s"
 				  "\n"
 				  "%s"
@@ -1146,6 +1158,7 @@ method_proxy_sync_function (const void *parent,
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
 	NihListEntry *      attrib;
+	nih_local char *    assert_block = NULL;
 	nih_local TypeVar * message_var = NULL;
 	nih_local TypeVar * iter_var = NULL;
 	nih_local TypeVar * error_var = NULL;
@@ -1153,7 +1166,6 @@ method_proxy_sync_function (const void *parent,
 	nih_local TypeVar * parent_var = NULL;
 	nih_local char *    marshal_block = NULL;
 	nih_local char *    demarshal_block = NULL;
-	nih_local char *    assert_block = NULL;
 	nih_local char *    vars_block = NULL;
 	nih_local char *    body = NULL;
 	char *              code = NULL;

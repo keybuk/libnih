@@ -1,5 +1,18 @@
 2009-05-13  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_method.c (test_object_function)
+	(test_reply_function): Add tests for argument-less methods.
+	* nih-dbus-tool/tests/test_signal.c (test_emit_function): Add
+	test for argument-less signal, and missing test for deprecated
+	signals.
+	* nih-dbus-tool/tests/test_property.c (test_object_get_function)
+	(test_object_set_function): Add missing tests for deprecated
+	properties.
+	* nih-dbus-tool/method.c (method_object_function)
+	(method_reply_function): Build the assert block up as we go
+	* nih-dbus-tool/signal.c (signal_emit_function): Build up the
+	assert block as we go.
+
 	* nih-dbus-tool/method.c (method_proxy_sync_function): Generate a
 	function to make a synchronous method call to a remote D-Bus object.
 	* nih-dbus-tool/method.h: Prototype.

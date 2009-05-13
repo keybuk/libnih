@@ -1107,3 +1107,455 @@ method_reply_function (const void *parent,
 
 	return code;
 }
+
+
+/**
+ * method_proxy_sync_function:
+ * @parent: parent object for new string.
+ * @interface_name: name of interface,
+ * @method: method to generate function for,
+ * @name: name of function to generate,
+ * @prototypes: list to append function prototypes to,
+ * @externs: list to append definitions of extern function prototypes to.
+ *
+ * Generates C code for a function @name to make a synchronous method
+ * call for the method @method by marshalling the arguments.  The interface
+ * name of the method must be supplied in @interface_name.
+ *
+ * The prototype of the function is given as a TypeFunc object appended to
+ * the @prototypes list, with the name as @name itself.  Should the C code
+ * call other functions that need to be defined, similar TypeFunc objects
+ * will be appended to the @externs list.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the return string will also be
+ * freed.
+ *
+ * Returns: newly allocated string or NULL if insufficient memory.
+ **/
+char *
+method_proxy_sync_function (const void *parent,
+			    const char *interface_name,
+			    Method *    method,
+			    const char *name,
+			    NihList *   prototypes,
+			    NihList *   externs)
+{
+	NihList             locals;
+	nih_local TypeFunc *func = NULL;
+	TypeVar *           arg;
+	NihListEntry *      attrib;
+	nih_local TypeVar * message_var = NULL;
+	nih_local TypeVar * iter_var = NULL;
+	nih_local TypeVar * error_var = NULL;
+	nih_local TypeVar * reply_var = NULL;
+	nih_local TypeVar * parent_var = NULL;
+	nih_local char *    marshal_block = NULL;
+	nih_local char *    demarshal_block = NULL;
+	nih_local char *    assert_block = NULL;
+	nih_local char *    vars_block = NULL;
+	nih_local char *    body = NULL;
+	char *              code = NULL;
+
+	nih_assert (interface_name != NULL);
+	nih_assert (method != NULL);
+	nih_assert (name != NULL);
+	nih_assert (prototypes != NULL);
+	nih_assert (externs != NULL);
+
+	nih_list_init (&locals);
+
+	/* The function returns a message context, and takes the proxy object
+	 * as the argument along with the input and output arguments of
+	 * the method call.  The integer indicates whether an error
+	 * occurred, so we want warning if the result isn't used.  Since
+	 * this is used by the client, we also add a deprecated attribute
+	 * if the method is deprecated.
+	 */
+	func = type_func_new (NULL, "NihDBusMessage *", name);
+	if (! func)
+		return NULL;
+
+	attrib = nih_list_entry_new (func);
+	if (! attrib)
+		return NULL;
+
+	attrib->str = nih_strdup (attrib, "warn_unused_result");
+	if (! attrib->str)
+		return NULL;
+
+	nih_list_add (&func->attribs, &attrib->entry);
+
+	attrib = nih_list_entry_new (func);
+	if (! attrib)
+		return NULL;
+
+	attrib->str = nih_strdup (attrib, "malloc");
+	if (! attrib->str)
+		return NULL;
+
+	nih_list_add (&func->attribs, &attrib->entry);
+
+	if (method->deprecated) {
+		attrib = nih_list_entry_new (func);
+		if (! attrib)
+			return NULL;
+
+		attrib->str = nih_strdup (attrib, "deprecated");
+		if (! attrib->str)
+			return NULL;
+
+		nih_list_add (&func->attribs, &attrib->entry);
+	}
+
+	arg = type_var_new (func, "NihDBusProxy *", "proxy");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&func->args, &arg->entry);
+
+	assert_block = nih_strcat (&assert_block, NULL,
+				   "nih_assert (proxy != NULL);\n");
+	if (! assert_block)
+		return NULL;
+
+
+	/* The function requires a message pointer, which we allocate,
+	 * and an iterator for it to append the arguments.  We also need
+	 * a reply message pointer as well, an encapsulating (parent)
+	 * object and an error object.  Rather than deal with these by hand,
+	 * it's far easier to put them on the locals list and deal with them
+	 * along with the rest.
+	 */
+	message_var = type_var_new (NULL, "DBusMessage *", "message");
+	if (! message_var)
+		return NULL;
+
+	nih_list_add (&locals, &message_var->entry);
+
+	iter_var = type_var_new (NULL, "DBusMessageIter", "iter");
+	if (! iter_var)
+		return NULL;
+
+	nih_list_add (&locals, &iter_var->entry);
+
+	error_var = type_var_new (NULL, "DBusError", "error");
+	if (! error_var)
+		return NULL;
+
+	nih_list_add (&locals, &error_var->entry);
+
+	reply_var = type_var_new (NULL, "DBusMessage *", "reply");
+	if (! reply_var)
+		return NULL;
+
+	nih_list_add (&locals, &reply_var->entry);
+
+	parent_var = type_var_new (NULL, "NihDBusMessage *", "msg");
+	if (! parent_var)
+		return NULL;
+
+	nih_list_add (&locals, &parent_var->entry);
+
+
+	/* Create the message and set up the iterator to append to it.
+	 * When demarshalling we set up the iterator to go over the reply.
+	 */
+	if (! nih_strcat_sprintf (&marshal_block, NULL,
+				  "/* Construct the method call message. */\n"
+				  "message = dbus_message_new_method_call (proxy->name, proxy->path, \"%s\", \"%s\");\n"
+				  "if (! message)\n"
+				  "\tnih_return_no_memory_error (NULL);\n"
+				  "\n"
+				  "dbus_message_iter_init_append (message, &iter);\n"
+				  "\n",
+				  interface_name, method->name))
+		return NULL;
+
+	/* FIXME autostart? */
+
+	if (! nih_strcat_sprintf (&demarshal_block, NULL,
+				  "dbus_message_unref (message);\n"
+				  "\n"
+				  "/* Create a message context for the reply, then iterate\n"
+				  " * its arguments.  This contexts holds a reference, so\n"
+				  " * we can drop the one we've already received.\n"
+				  " */\n"
+				  "msg = NIH_MUST (nih_dbus_message_new (proxy, proxy->conn, reply));\n"
+				  "dbus_message_unref (reply);\n"
+				  "dbus_message_iter_init (msg->message, &iter);\n"
+				  "\n"))
+		return NULL;
+
+	/* Iterate over the method arguments, for each input argument we
+	 * append the code to the pre-call marshalling code and for
+	 * each output argument we append the code to the post-call
+	 * demarshalling code.
+	 */
+	NIH_LIST_FOREACH (&method->arguments, iter) {
+		Argument *        argument = (Argument *)iter;
+		NihList           arg_vars;
+		NihList           arg_locals;
+		DBusSignatureIter iter;
+		nih_local char *  local_name = NULL;
+		nih_local char *  oom_error_code = NULL;
+		nih_local char *  type_error_code = NULL;
+		nih_local char *  block = NULL;
+
+		nih_list_init (&arg_vars);
+		nih_list_init (&arg_locals);
+
+		dbus_signature_iter_init (&iter, argument->type);
+
+		switch (argument->direction) {
+		case NIH_DBUS_ARG_IN:
+			/* In case of out of memory, simply return; the caller
+			 * can try again.
+			 */
+			oom_error_code = nih_strdup (NULL,
+						     "nih_free (msg);\n"
+						     "nih_return_no_memory_error (NULL);\n");
+			if (! oom_error_code)
+				return NULL;
+
+			block = marshal (NULL, &iter, "iter", argument->symbol,
+					 oom_error_code,
+					 &arg_vars, &arg_locals);
+			if (! block)
+				return NULL;
+
+			if (! nih_strcat_sprintf (&marshal_block, NULL,
+						  "%s"
+						  "\n",
+						  block))
+				return NULL;
+
+			/* We take a parameter of the expected type and name of
+			 * the marshal input variable; if it's a pointer, we
+			 * assert that it's not NULL and make sure it's const.
+			 */
+			NIH_LIST_FOREACH_SAFE (&arg_vars, iter) {
+				TypeVar *var = (TypeVar *)iter;
+
+				if (! type_to_const (&var->type, var))
+					return NULL;
+
+				if (strchr (var->type, '*'))
+					if (! nih_strcat_sprintf (&assert_block, NULL,
+								  "nih_assert (%s != NULL);\n",
+								  var->name))
+						return NULL;
+
+				nih_list_add (&func->args, &var->entry);
+				nih_ref (var, func);
+			}
+
+			NIH_LIST_FOREACH_SAFE (&arg_locals, iter) {
+				TypeVar *var = (TypeVar *)iter;
+
+				nih_list_add (&locals, &var->entry);
+				nih_ref (var, marshal_block);
+			}
+
+			break;
+		case NIH_DBUS_ARG_OUT:
+			/* We can't write directly to the pointer argument
+			 * we were given, instead we use a local variable
+			 * and write out later.
+			 */
+			local_name = nih_sprintf (NULL, "%s_local",
+						  argument->symbol);
+			if (! local_name)
+				return NULL;
+
+			/* In case of out of memory, we can't just return
+			 * because we've already made the method call so
+			 * we loop over the code instead. But in case of
+			 * type error in the returned arguments, all we
+			 * can do is return an error.
+			 */
+			oom_error_code = nih_sprintf (NULL,
+						      "*%s = NULL;\n"
+						      "goto enomem;\n",
+						      argument->symbol);
+			if (! oom_error_code)
+				return NULL;
+
+			type_error_code = nih_strdup (NULL,
+						      "nih_free (msg);\n"
+						      "nih_return_error (NULL, NIH_DBUS_INVALID_ARGS,\n"
+						      "                  _(NIH_DBUS_INVALID_ARGS_STR));\n");
+			if (! type_error_code)
+				return NULL;
+
+			block = demarshal (NULL, &iter, "msg", "iter",
+					   local_name,
+					   oom_error_code,
+					   type_error_code,
+					   &arg_vars, &arg_locals);
+			if (! block)
+				return NULL;
+
+			if (! nih_strcat (&block, NULL, "\n"))
+				return NULL;
+
+			/* We take a parameter as a pointer to the expected
+			 * type and name of the demarshal output variable,
+			 * asserting that it's not NULL.  We actually
+			 * demarshal to a local variable though, to avoid
+			 * dealing with that extra level of pointers.
+,			 */
+			NIH_LIST_FOREACH_SAFE (&arg_vars, iter) {
+				TypeVar *       var = (TypeVar *)iter;
+				nih_local char *arg_type = NULL;
+				const char *    suffix;
+				nih_local char *arg_name = NULL;
+				TypeVar *       arg;
+
+				/* Output variable */
+				arg_type = nih_strdup (NULL, var->type);
+				if (! arg_type)
+					return NULL;
+
+				if (! type_to_pointer (&arg_type, NULL))
+					return NULL;
+
+				nih_assert (! strncmp (var->name, local_name,
+						       strlen (local_name)));
+				suffix = var->name + strlen (local_name);
+
+				arg_name = nih_sprintf (NULL, "%s%s",
+							argument->symbol,
+							suffix);
+				if (! arg_name)
+					return NULL;
+
+				arg = type_var_new (func, arg_type, arg_name);
+				if (! arg)
+					return NULL;
+
+				nih_list_add (&func->args, &arg->entry);
+
+				if (! nih_strcat_sprintf (&assert_block, NULL,
+							  "nih_assert (%s != NULL);\n",
+							  arg->name))
+					return NULL;
+
+				/* Copy from local variable to output */
+				if (! nih_strcat_sprintf (&block, NULL,
+							  "*%s = %s;\n",
+							  arg->name, var->name))
+					return NULL;
+
+				nih_list_add (&locals, &var->entry);
+				nih_ref (var, demarshal_block);
+			}
+
+			NIH_LIST_FOREACH_SAFE (&arg_locals, iter) {
+				TypeVar *var = (TypeVar *)iter;
+
+				nih_list_add (&locals, &var->entry);
+				nih_ref (var, demarshal_block);
+			}
+
+			if (! indent (&block, NULL, 1))
+				return NULL;
+
+			if (! nih_strcat_sprintf (&demarshal_block, NULL,
+						  "do {\n"
+						  "\t__label__ enomem;\n"
+						  "\n"
+						  "%s"
+						  "enomem: __attribute__ ((unused));\n"
+						  "} while (! *%s);\n"
+						  "\n",
+						  block,
+						  argument->symbol))
+				return NULL;
+
+			break;
+		default:
+			nih_assert_not_reached ();
+		}
+	}
+
+	/* Complete the marshalling block by sending the message and checking
+	 * for error replies.
+	 */
+	if (! nih_strcat_sprintf (&marshal_block, NULL,
+				  "/* Send the message, and wait for the reply. */\n"
+				  "dbus_error_init (&error);\n"
+				  "\n"
+				  "reply = dbus_connection_send_with_reply_and_block (proxy->conn, message, -1, &error);\n"
+				  "if (! reply) {\n"
+				  "\tdbus_message_unref (message);\n"
+				  "\n"
+				  "\tif (dbus_error_has_name (&error, DBUS_ERROR_NO_MEMORY)) {\n"
+				  "\t\tnih_error_raise_no_memory ();\n"
+				  "\t} else {\n"
+				  "\t\tnih_dbus_error_raise (error.name, error.message);\n"
+				  "\t}\n"
+				  "\n"
+				  "\tdbus_error_free (&error);\n"
+				  "\treturn NULL;\n"
+				  "}\n"
+				  "\n"))
+		return NULL;
+
+	/* Complete the demarshalling block, checking for any unexpected
+	 * reply arguments which we also want to error on.
+	 */
+	if (! nih_strcat_sprintf (&demarshal_block, NULL,
+				  "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
+				  "\tnih_free (msg);\n"
+				  "\tnih_return_error (NULL, NIH_DBUS_INVALID_ARGS,\n"
+				  "\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				  "}\n"))
+		return NULL;
+
+	/* Lay out the function body, indenting it all before placing it
+	 * in the function code.
+	 */
+	vars_block = type_var_layout (NULL, &locals);
+	if (! vars_block)
+		return NULL;
+
+	if (! nih_strcat_sprintf (&body, NULL,
+				  "%s"
+				  "\n"
+				  "%s"
+				  "\n"
+				  "%s"
+				  "%s"
+				  "\n"
+				  "return msg;\n",
+				  vars_block,
+				  assert_block,
+				  marshal_block,
+				  demarshal_block))
+		return NULL;
+
+	if (! indent (&body, NULL, 1))
+		return NULL;
+
+	/* Function header */
+	code = type_func_to_string (parent, func);
+	if (! code)
+		return NULL;
+
+	if (! nih_strcat_sprintf (&code, parent,
+				  "{\n"
+				  "%s"
+				  "}\n",
+				  body)) {
+		nih_free (code);
+		return NULL;
+	}
+
+	/* Append the function to the prototypes list */
+	nih_list_add (prototypes, &func->entry);
+	nih_ref (func, code);
+
+	return code;
+}

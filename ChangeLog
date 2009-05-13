@@ -1,5 +1,15 @@
 2009-05-13  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_proxy_sync_function): Generate a
+	function to make a synchronous method call to a remote D-Bus object.
+	* nih-dbus-tool/method.h: Prototype.
+	* nih-dbus-tool/tests/method_factory.c: Use the function to
+	generate a function for testing
+	* nih-dbus-tool/tests/method_code.h: Add expected prototype of
+	generated function.
+	* nih-dbus-tool/tests/test_method.c (test_proxy_sync_function): Test
+	the generator function and the generated function.
+
 	* nih-dbus/dbus_message.c (nih_dbus_message_new): Pass parent to
 	nih_new() not NULL.
 

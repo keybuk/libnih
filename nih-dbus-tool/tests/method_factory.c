@@ -58,6 +58,7 @@ main (int   argc,
 		"#include <nih-dbus/dbus_error.h>\n"
 		"#include <nih-dbus/dbus_message.h>\n"
 		"#include <nih-dbus/dbus_object.h>\n"
+		"#include <nih-dbus/dbus_proxy.h>\n"
 		"\n"
 		"#include \"method_code.h\"\n"
 		"\n"
@@ -141,6 +142,33 @@ main (int   argc,
 
 	printf ("%s\n", block);
 	printf ("%s", code);
+
+
+	nih_list_init (&prototypes);
+	nih_list_init (&externs);
+
+	method->async = FALSE;
+
+	arg = argument_new (method, "Length", "i", NIH_DBUS_ARG_OUT);
+	arg->symbol = nih_strdup (arg, "length");
+	nih_list_add (&method->arguments, &arg->entry);
+
+	code = method_proxy_sync_function (NULL, "com.netsplit.Nih.Test",
+					   method,
+					   "my_method_sync",
+					   &prototypes, &externs);
+
+	NIH_LIST_FOREACH (&externs, iter) {
+		TypeFunc *func = (TypeFunc *)iter;
+
+		NIH_MUST (type_to_extern (&func->type, func));
+	}
+
+	block = type_func_layout (NULL, &externs);
+
+	printf ("%s\n", block);
+	printf ("%s", code);
+	printf ("\n");
 
 	return 0;
 }

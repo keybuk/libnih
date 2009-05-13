@@ -40,6 +40,11 @@ int               my_async_method_reply (NihDBusMessage *message,
 					 char * const *output)
 	__attribute__ ((warn_unused_result));
 
+NihDBusMessage *  my_method_sync        (NihDBusProxy *proxy,
+					 const char *str, int32_t flags,
+					 char ***output, int32_t *length)
+	__attribute__ ((malloc, warn_unused_result));
+
 NIH_END_EXTERN
 
 #endif /* NIH_DBUS_TOOL_TESTS_METHOD_CODE_H */

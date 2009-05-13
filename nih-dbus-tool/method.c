@@ -579,7 +579,7 @@ method_object_function (const void *parent,
 					  "/* Construct the reply message. */\n"
 					  "reply = dbus_message_new_method_return (message->message);\n"
 					  "if (! reply)\n"
-					  "\tcontinue;\n"
+					  "\tgoto enomem;\n"
 					  "\n"
 					  "dbus_message_iter_init_append (reply, &iter);\n"))
 			return NULL;
@@ -692,7 +692,7 @@ method_object_function (const void *parent,
 			oom_error_code = nih_strdup (NULL,
 						     "dbus_message_unref (reply);\n"
 						     "reply = NULL;\n"
-						     "continue;\n");
+						     "goto enomem;\n");
 			if (! oom_error_code)
 				return NULL;
 
@@ -843,7 +843,10 @@ method_object_function (const void *parent,
 	if (! method->async) {
 		if (! nih_strcat_sprintf (&body, NULL,
 					  "do {\n"
+					  "\t__label__ enomem;\n"
+					  "\n"
 					  "%s"
+					  "enomem: __attribute__ ((unused));\n"
 					  "} while (! reply);\n"
 					  "\n"
 					  "/* Send the reply, appending it to the outgoing queue. */\n"

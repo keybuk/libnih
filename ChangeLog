@@ -1,5 +1,13 @@
 2009-05-13  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_object_function): We can't just
+	use a do { .. } while (0) loop and continue in the case of ENOMEM
+	because that won't work for arrays.  Instead use a local label to
+	goto the continuation of an outer loop like we do in
+	method_proxy_sync_function()
+	* nih-dbus-tool/tests/test_method.c (test_object_function): Adjust
+	output tests to account for the change.
+
 	* nih-dbus-tool/tests/test_method.c (test_object_function)
 	(test_reply_function): Add tests for argument-less methods.
 	* nih-dbus-tool/tests/test_signal.c (test_emit_function): Add

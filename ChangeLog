@@ -1,3 +1,10 @@
+2009-05-13  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/error.h (nih_error_raise_no_memory): Finally succum and
+	add this macro.
+	(nih_return_no_memory_error): Use that macro in this.
+	* nih/tests/test_error.c (test_raise_no_memory): Add test case.
+
 2009-05-12  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/tests/method_factory.c,

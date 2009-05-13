@@ -106,6 +106,26 @@ test_raise_system (void)
 	nih_error_pop_context ();
 }
 
+void
+test_raise_no_memory (void)
+{
+	NihError *error;
+
+	/* Check that we can raise a no memory error.
+	 */
+	TEST_FUNCTION ("nih_error_raise_no_memory");
+	nih_error_push_context ();
+	TEST_ALLOC_FAIL {
+		nih_error_raise_no_memory ();
+
+		TEST_EQ (error->number, ENOMEM);
+		TEST_EQ_STR (error->message, strerror (ENOMEM));
+
+		nih_free (error);
+	}
+	nih_error_pop_context ();
+}
+
 
 void
 test_raise_error (void)
@@ -473,6 +493,7 @@ main (int   argc,
 	test_raise ();
 	test_raise_printf ();
 	test_raise_system ();
+	test_raise_no_memory ();
 	test_raise_error ();
 	test_return_error ();
 	test_return_system_error ();

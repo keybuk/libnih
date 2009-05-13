@@ -141,6 +141,17 @@ typedef struct nih_error {
 	_nih_error_raise_system (__FILE__, __LINE__, __FUNCTION__)
 
 /**
+ * nih_error_raise_no_memory:
+ *
+ * Raises an ENOMEM system error, if an unhandled error already exists then
+ * an error message is emitted through the logging system; you should try
+ * to avoid this.
+ **/
+#define nih_error_raise_no_memory()				\
+	_nih_error_raise (__FILE__, __LINE__, __FUNCTION__,	\
+			  ENOMEM, strerror (ENOMEM))
+
+/**
  * nih_error_raise_error:
  * @error: existing object to raise.
  *
@@ -207,7 +218,7 @@ typedef struct nih_error {
  **/
 #define nih_return_no_memory_error(retval)				\
 	do {								\
-		nih_error_raise (ENOMEM, strerror (ENOMEM));		\
+		nih_error_raise_no_memory ();				\
 		return retval;						\
 	} while (0)
 

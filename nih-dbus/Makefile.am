@@ -20,6 +20,7 @@ libnih_dbus_la_SOURCES = \
 	dbus_connection.c \
 	dbus_message.c \
 	dbus_object.c \
+	dbus_pending_data.c \
 	dbus_proxy.c \
 	dbus_util.c
 
@@ -49,6 +50,7 @@ nihdbusinclude_HEADERS = \
 	dbus_connection.h \
 	dbus_message.h \
 	dbus_object.h \
+	dbus_pending_data.h \
 	dbus_proxy.h \
 	dbus_util.h \
 	test_dbus.h
@@ -60,6 +62,7 @@ TESTS = \
 	test_dbus_connection \
 	test_dbus_message \
 	test_dbus_object \
+	test_dbus_pending_data \
 	test_dbus_proxy \
 	test_dbus_util
 
@@ -80,6 +83,10 @@ test_dbus_message_LDADD = libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS)
 test_dbus_object_SOURCES = tests/test_dbus_object.c
 test_dbus_object_LDFLAGS = -static
 test_dbus_object_LDADD = libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS)
+
+test_dbus_pending_data_SOURCES = tests/test_dbus_pending_data.c
+test_dbus_pending_data_LDFLAGS = -static
+test_dbus_pending_data_LDADD = libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS)
 
 test_dbus_proxy_SOURCES = tests/test_dbus_proxy.c
 test_dbus_proxy_LDFLAGS = -static

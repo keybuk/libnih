@@ -1,5 +1,19 @@
 2009-05-14  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_pending_data.c (nih_dbus_pending_data_new): Allocate
+	a new NihDBusPendingData structure, referencing the D-Bus connection.
+	(nih_dbus_pending_data_destroy): Unreference the attached connection.
+	* nih-dbus/dbus_pending_data.h: Function typedefs, structure and
+	function prototype.
+	* nih-dbus/tests/test_dbus_pending_data.c: Test suite.	
+	* nih-dbus/libnih-dbus.h: Include the header
+	* nih-dbus/Makefile.am (libnih_dbus_la_SOURCES): Build and link
+	the new source file
+	(nihdbusinclude_HEADERS): Install the header
+	(TESTS): Run the test suite
+	(test_dbus_pending_data_SOURCES, test_dbus_pending_data_LDFLAGS)
+	(test_dbus_pending_data_LDADD): Test suite details.
+
 	* nih-dbus/dbus_object.c (nih_dbus_object_new): Add a comment to
 	explain why we don't reference the connection in NihDBusObject.
 	* nih-dbus/dbus_object.h (NihDBusObject): Document that no

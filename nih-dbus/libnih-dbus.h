@@ -24,6 +24,7 @@
 #include <nih-dbus/dbus_connection.h>
 #include <nih-dbus/dbus_message.h>
 #include <nih-dbus/dbus_object.h>
+#include <nih-dbus/dbus_pending_data.h>
 #include <nih-dbus/dbus_proxy.h>
 #include <nih-dbus/dbus_util.h>
 

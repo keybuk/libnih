@@ -41,6 +41,10 @@
  * @interfaces.
  *
  * Automatic introspection is provided based on @interfaces.
+ *
+ * No reference is held to @conn, therefore you may not assume that it is
+ * valid.  In general, the object will be automatically freed should @conn
+ * be cleaned up.
  **/
 typedef struct nih_dbus_interface NihDBusInterface;
 typedef struct nih_dbus_object {

@@ -1,3 +1,10 @@
+2009-05-14  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus/dbus_object.c (nih_dbus_object_new): Add a comment to
+	explain why we don't reference the connection in NihDBusObject.
+	* nih-dbus/dbus_object.h (NihDBusObject): Document that no
+	reference is held on @conn
+
 2009-05-13  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/method.c (method_proxy_sync_function): Rename the

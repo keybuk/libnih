@@ -122,7 +122,13 @@ nih_dbus_object_new (const void *             parent,
 		return NULL;
 	}
 
+	/* We don't reference the connection, it's only used to unregister
+	 * the object when freed directly; in addition, we get called if
+	 * the connection is freed and discard this object - and don't want
+	 * to block that happening.
+	 */
 	object->conn = conn;
+
 	object->data = data;
 	object->interfaces = interfaces;
 	object->registered = FALSE;

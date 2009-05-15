@@ -26,8 +26,10 @@
 
 #include <nih/macros.h>
 #include <nih/alloc.h>
+#include <nih/string.h>
 #include <nih/error.h>
 
+#include <nih-dbus/dbus_error.h>
 #include <nih-dbus/dbus_message.h>
 #include <nih-dbus/dbus_connection.h>
 #include <nih-dbus/dbus_object.h>
@@ -106,23 +108,19 @@ colour_get (NihDBusObject *  object,
 	return 0;
 }
 
-static int colour_set_decline = FALSE;
-
-static DBusHandlerResult
+static int
 colour_set (NihDBusObject *  object,
 	    NihDBusMessage * message,
 	    DBusMessageIter *iter)
 {
 	DBusMessageIter subiter;
 	const char *    value;
+	nih_local char *dup = NULL;
 
 	colour_set_called = TRUE;
 	last_object = object;
 	last_message = message;
 	last_message_conn = message->conn;
-
-	if (colour_set_decline)
-		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
 	TEST_FREE_TAG (message);
 
@@ -135,9 +133,27 @@ colour_set (NihDBusObject *  object,
 		 DBUS_TYPE_STRING);
 
 	dbus_message_iter_get_basic (&subiter, &value);
-	TEST_EQ_STR (value, "red");
 
-	return DBUS_HANDLER_RESULT_HANDLED;
+	if (! strcmp (value, "pig")) {
+		nih_dbus_error_raise ("com.netsplit.Nih.NotAColour",
+				      "pig is not a colour");
+		return -1;
+
+	} else if (! strlen (value)) {
+		nih_error_raise (EBADF, strerror (EBADF));
+		return -1;
+
+	} else {
+		TEST_EQ_STR (value, "red");
+
+		dup = nih_strdup (NULL, value);
+		if (! dup) {
+			nih_error_raise_no_memory ();
+			return -1;
+		}
+	}
+
+	return 0;
 }
 
 static int size_get_called = FALSE;
@@ -208,7 +224,7 @@ other_get (NihDBusObject *  object,
 
 static int poke_set_called = FALSE;
 
-static DBusHandlerResult
+static int
 poke_set (NihDBusObject *  object,
 	  NihDBusMessage * message,
 	  DBusMessageIter *iter)
@@ -220,7 +236,7 @@ poke_set (NihDBusObject *  object,
 
 	TEST_FREE_TAG (message);
 
-	return DBUS_HANDLER_RESULT_HANDLED;
+	return 0;
 }
 
 static const NihDBusArg foo_args[] = {
@@ -2428,6 +2444,7 @@ test_object_property_set (void)
 	DBusMessage *    reply;
 	const char *     str_value;
 	dbus_uint32_t    uint32_value;
+	DBusError        dbus_error;
 
 	TEST_FUNCTION ("nih_dbus_object_property_set");
 	TEST_DBUS (dbus_pid);
@@ -2476,7 +2493,7 @@ test_object_property_set (void)
 
 		assert (dbus_message_iter_close_container (&iter, &subiter));
 
-		assert (dbus_connection_send (client_conn, message, NULL));
+		assert (dbus_connection_send (client_conn, message, &serial));
 		dbus_connection_flush (client_conn);
 
 		dbus_message_unref (message);
@@ -2487,6 +2504,21 @@ test_object_property_set (void)
 		TEST_EQ_P (last_object, object);
 		TEST_FREE (last_message);
 		TEST_EQ_P (last_message_conn, server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		TEST_TRUE (dbus_message_has_signature (reply, ""));
+
+		dbus_message_iter_init (reply, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_unref (reply);
 	}
 
 	nih_free (object);
@@ -2548,77 +2580,21 @@ test_object_property_set (void)
 		TEST_EQ_P (last_object, object);
 		TEST_FREE (last_message);
 		TEST_EQ_P (last_message_conn, server_conn);
-	}
-
-	nih_free (object);
-
-
-	/* Check that if the handler of the first of two properties
-	 * with the same name declines, the second is not used and instead
-	 * the sender receives an error.
-	 */
-	TEST_FEATURE ("with first setter declining");
-	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
-				      all_interfaces, &server_conn);
-
-	TEST_ALLOC_FAIL {
-		colour_set_decline = TRUE;
-		colour_set_called = FALSE;
-		poke_set_called = FALSE;
-		last_object = NULL;
-		last_message = NULL;
-		last_message_conn = NULL;
-
-		message = dbus_message_new_method_call (
-			dbus_bus_get_unique_name (server_conn),
-			"/com/netsplit/Nih",
-			DBUS_INTERFACE_PROPERTIES,
-			"Set");
-		assert (message != NULL);
-
-		dbus_message_iter_init_append (message, &iter);
-
-		interface_name = "";
-		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
-							&interface_name));
-
-		property_name = "Colour";
-		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
-							&property_name));
-
-		assert (dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
-							  DBUS_TYPE_STRING_AS_STRING,
-							  &subiter));
-
-		str_value = "red";
-		assert (dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
-							&str_value));
-
-		assert (dbus_message_iter_close_container (&iter, &subiter));
-
-		TEST_ALLOC_SAFE {
-			assert (dbus_connection_send (client_conn, message, &serial));
-			dbus_connection_flush (client_conn);
-		}
-
-		dbus_message_unref (message);
-
-		TEST_DBUS_DISPATCH (server_conn);
-
-		TEST_TRUE (colour_set_called);
-		TEST_FALSE (poke_set_called);
-		TEST_EQ_P (last_object, object);
-		TEST_FREE (last_message);
-		TEST_EQ_P (last_message_conn, server_conn);
 
 		TEST_DBUS_MESSAGE (client_conn, reply);
 
-		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_UNKNOWN_METHOD));
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
 		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-		dbus_message_unref (reply);
+		TEST_TRUE (dbus_message_has_signature (reply, ""));
 
-		colour_set_decline = FALSE;
+		dbus_message_iter_init (reply, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_unref (reply);
 	}
 
 	nih_free (object);
@@ -2881,6 +2857,137 @@ test_object_property_set (void)
 
 		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_UNKNOWN_METHOD));
 		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+	}
+
+	nih_free (object);
+
+
+	/* Check that when the setter function returns a D-Bus error,
+	 * that is returned as a reply to the caller.
+	 */
+	TEST_FEATURE ("with D-Bus error from handler");
+	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
+				      prop_interface, &server_conn);
+
+	TEST_ALLOC_FAIL {
+		colour_set_called = FALSE;
+		last_object = NULL;
+		last_message = NULL;
+		last_message_conn = NULL;
+
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+		assert (message != NULL);
+
+		dbus_message_iter_init_append (message, &iter);
+
+		interface_name = "Nih.TestB";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&interface_name));
+
+		property_name = "Colour";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&property_name));
+
+		assert (dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+							  DBUS_TYPE_STRING_AS_STRING,
+							  &subiter));
+
+		str_value = "pig";
+		assert (dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+							&str_value));
+
+		assert (dbus_message_iter_close_container (&iter, &subiter));
+
+		assert (dbus_connection_send (client_conn, message, &serial));
+		dbus_connection_flush (client_conn);
+
+		dbus_message_unref (message);
+
+		TEST_DBUS_DISPATCH (server_conn);
+
+		TEST_TRUE (colour_set_called);
+		TEST_EQ_P (last_object, object);
+		TEST_FREE (last_message);
+		TEST_EQ_P (last_message_conn, server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.NotAColour"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+	}
+
+	nih_free (object);
+
+
+	/* Check that when the setter function returns a generic error,
+	 * the message is returned inside a D-Bus failed error.
+	 */
+	TEST_FEATURE ("with generic error from handler");
+	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
+				      prop_interface, &server_conn);
+
+	TEST_ALLOC_FAIL {
+		colour_set_called = FALSE;
+		last_object = NULL;
+		last_message = NULL;
+		last_message_conn = NULL;
+
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+		assert (message != NULL);
+
+		dbus_message_iter_init_append (message, &iter);
+
+		interface_name = "Nih.TestB";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&interface_name));
+
+		property_name = "Colour";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&property_name));
+
+		assert (dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+							  DBUS_TYPE_STRING_AS_STRING,
+							  &subiter));
+
+		str_value = "";
+		assert (dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+							&str_value));
+
+		assert (dbus_message_iter_close_container (&iter, &subiter));
+
+		assert (dbus_connection_send (client_conn, message, &serial));
+		dbus_connection_flush (client_conn);
+
+		dbus_message_unref (message);
+
+		TEST_DBUS_DISPATCH (server_conn);
+
+		TEST_TRUE (colour_set_called);
+		TEST_EQ_P (last_object, object);
+		TEST_FREE (last_message);
+		TEST_EQ_P (last_message_conn, server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, strerror (EBADF));
+		dbus_error_free (&dbus_error);
 
 		dbus_message_unref (reply);
 	}

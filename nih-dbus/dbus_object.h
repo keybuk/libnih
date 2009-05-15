@@ -119,21 +119,22 @@ typedef int (*NihDBusPropertyGetter) (NihDBusObject *object,
  * setter should obtain the new value from the variant pointed to by
  * @iter and return either an empty reply message or an error message.
  *
+ * Unlike method handlers, the Set method is implemented internally to
+ * libnih-dbus, with a reply being generated and sent as part of that
+ * handling.  It's only necessary to take the property value from the
+ * variant and set it.
+ *
  * While property setters can be written by hand, it's far more efficient
  * to have them generated automatically.  nih-dbus-tool will generate
  * property getters that call C functions of appropriate names with an
  * ordinary argument matching the expected type that the function
  * can obtain the property value from.
  *
- * Returns: DBUS_HANDLER_RESULT_HANDLED when the message has been handled
- * and a reply or error sent, DBUS_HANDLER_RESULT_NOT_YET_HANDLED if the
- * handler has declined to handle the message or
- * DBUS_HANDLER_RESULT_NEED_MEMORY if insufficient memory to handle the
- * message.
+ * Returns: zero on success, negative value on raised error.
  **/
-typedef DBusHandlerResult (*NihDBusPropertySetter) (NihDBusObject *object,
-						    NihDBusMessage *message,
-						    DBusMessageIter *iter);
+typedef int (*NihDBusPropertySetter) (NihDBusObject *object,
+				      NihDBusMessage *message,
+				      DBusMessageIter *iter);
 
 
 /**

@@ -1,5 +1,14 @@
 2009-05-15  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_object.h (NihDBusPropertySetter): Change prototype
+	to return an int, instead of a handler result.  This allows us to
+	introduce interesting new SetMany-like methods later.
+	* nih-dbus/dbus_object.c (nih_dbus_object_property_set): Expand
+	the function to do the reply handling here, this actually makes
+	things much better for the ENOMEM case.
+	* nih-dbus/tests/test_dbus_object.c (test_object_property_set): 
+	Adjust test cases to match
+	
 	* nih-dbus-tool/property.c (property_object_set_function): Rework
 	the prototype of property setter functions, we just want to return
 	int and have the nih-dbus core deal with sending the reply.

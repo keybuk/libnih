@@ -33,6 +33,10 @@
 #include <nih/string.h>
 #include <nih/logging.h>
 #include <nih/error.h>
+#include <nih/errors.h>
+
+#include <nih-dbus/dbus_message.h>
+#include <nih-dbus/dbus_error.h>
 
 #include "dbus_object.h"
 
@@ -827,7 +831,8 @@ nih_dbus_object_property_set (DBusConnection *conn,
 				|| (! strcmp ((*interface)->name, interface_name)))
 			    && (! strcmp (property->name, property_name))) {
 				nih_local NihDBusMessage *msg = NULL;
-				DBusHandlerResult         result;
+				DBusMessage *             reply;
+				int                       ret;
 
 				msg = nih_dbus_message_new (NULL,
 							    conn, message);
@@ -835,10 +840,43 @@ nih_dbus_object_property_set (DBusConnection *conn,
 					return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
 				nih_error_push_context ();
-				result = property->setter (object, msg, &iter);
-				nih_error_pop_context ();
+				ret = property->setter (object, msg, &iter);
+				if (ret < 0) {
+					NihError *err;
 
-				return result;
+					err = nih_error_get ();
+					if (err->number == ENOMEM) {
+						nih_free (err);
+						nih_error_pop_context ();
+
+						return DBUS_HANDLER_RESULT_NEED_MEMORY;
+					} else if (err->number == NIH_DBUS_ERROR) {
+						NihDBusError *dbus_err = (NihDBusError *)err;
+
+						reply = NIH_MUST (dbus_message_new_error (
+									  message,
+									  dbus_err->name,
+									  err->message));
+						nih_free (err);
+						nih_error_pop_context ();
+					} else {
+						reply = NIH_MUST (dbus_message_new_error (
+									  message,
+									  DBUS_ERROR_FAILED,
+									  err->message));
+						nih_free (err);
+						nih_error_pop_context ();
+					}
+				} else {
+					nih_error_pop_context ();
+
+					reply = NIH_MUST (dbus_message_new_method_return (message));
+				}
+
+				NIH_MUST (dbus_connection_send (conn, reply, NULL));
+				dbus_message_unref (reply);
+
+				return DBUS_HANDLER_RESULT_HANDLED;
 			}
 		}
 	}

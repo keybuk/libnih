@@ -126,22 +126,13 @@ main (int   argc,
 	printf ("%s", code);
 	printf ("\n");
 
+
 	nih_list_init (&prototypes);
-	nih_list_init (&externs);
 
 	code = method_reply_function (NULL, method,
 				      "my_async_method_reply",
-				      &prototypes, &externs);
+				      &prototypes);
 
-	NIH_LIST_FOREACH (&externs, iter) {
-		TypeFunc *func = (TypeFunc *)iter;
-
-		NIH_MUST (type_to_extern (&func->type, func));
-	}
-
-	block = type_func_layout (NULL, &externs);
-
-	printf ("%s\n", block);
 	printf ("%s", code);
 	printf ("\n"
 		"\n");
@@ -167,8 +158,7 @@ main (int   argc,
 	printf ("\n");
 
 	printf ("%s", code);
-	printf ("\n"
-		"\n");
+	printf ("\n");
 
 
 	nih_list_init (&prototypes);
@@ -181,26 +171,17 @@ main (int   argc,
 					     &prototypes, &typedefs);
 
 	printf ("%s", code);
-	printf ("\n");
+	printf ("\n"
+		"\n");
 
 
 	nih_list_init (&prototypes);
-	nih_list_init (&externs);
 
 	code = method_proxy_sync_function (NULL, "com.netsplit.Nih.Test",
 					   method,
 					   "my_method_sync",
-					   &prototypes, &externs);
+					   &prototypes);
 
-	NIH_LIST_FOREACH (&externs, iter) {
-		TypeFunc *func = (TypeFunc *)iter;
-
-		NIH_MUST (type_to_extern (&func->type, func));
-	}
-
-	block = type_func_layout (NULL, &externs);
-
-	printf ("%s\n", block);
 	printf ("%s", code);
 	printf ("\n");
 

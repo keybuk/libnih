@@ -83,7 +83,7 @@ char *    method_object_function       (const void *parent, Method *method,
 
 char *    method_reply_function        (const void *parent, Method *method,
 					const char *name,
-					NihList *prototypes, NihList *externs)
+					NihList *prototypes)
 	__attribute__ ((warn_unused_result, malloc));
 
 char *    method_proxy_function        (const void *parent,
@@ -103,7 +103,7 @@ char *    method_proxy_notify_function (const void *parent,
 char *    method_proxy_sync_function   (const void *parent,
 					const char *interface_name,
 					Method *method, const char *name,
-					NihList *prototypes, NihList *externs)
+					NihList *prototypes)
 	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN

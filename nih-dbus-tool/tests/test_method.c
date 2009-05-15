@@ -3943,7 +3943,6 @@ test_reply_function (void)
 	DBusConnection *  server_conn;
 	DBusConnection *  client_conn;
 	NihList           prototypes;
-	NihList           externs;
 	Method *          method = NULL;
 	Argument *        argument1 = NULL;
 	Argument *        argument2 = NULL;
@@ -3978,7 +3977,6 @@ test_reply_function (void)
 	TEST_FEATURE ("with reply");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
 
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "MyAsyncMethod");
@@ -4002,13 +4000,12 @@ test_reply_function (void)
 
 		str = method_reply_function (NULL, method,
 					     "my_async_method_reply",
-					     &prototypes, &externs);
+					     &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
 
 			nih_free (method);
 			continue;
@@ -4121,9 +4118,6 @@ test_reply_function (void)
 
 		TEST_LIST_EMPTY (&prototypes);
 
-
-		TEST_LIST_EMPTY (&externs);
-
 		nih_free (str);
 		nih_free (method);
 	}
@@ -4135,7 +4129,6 @@ test_reply_function (void)
 	TEST_FEATURE ("with no arguments");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
 
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "MyAsyncMethod");
@@ -4144,13 +4137,12 @@ test_reply_function (void)
 
 		str = method_reply_function (NULL, method,
 					     "my_async_method_reply",
-					     &prototypes, &externs);
+					     &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
 
 			nih_free (method);
 			continue;
@@ -4224,9 +4216,6 @@ test_reply_function (void)
 		nih_free (func);
 
 		TEST_LIST_EMPTY (&prototypes);
-
-
-		TEST_LIST_EMPTY (&externs);
 
 		nih_free (str);
 		nih_free (method);
@@ -4441,7 +4430,6 @@ test_reply_function (void)
 	TEST_FEATURE ("with deprecated method");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
 
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "MyAsyncMethod");
@@ -4466,13 +4454,12 @@ test_reply_function (void)
 
 		str = method_reply_function (NULL, method,
 					     "my_async_method_reply",
-					     &prototypes, &externs);
+					     &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
 
 			nih_free (method);
 			continue;
@@ -4584,9 +4571,6 @@ test_reply_function (void)
 		nih_free (func);
 
 		TEST_LIST_EMPTY (&prototypes);
-
-
-		TEST_LIST_EMPTY (&externs);
 
 		nih_free (str);
 		nih_free (method);
@@ -7575,7 +7559,6 @@ test_proxy_sync_function (void)
 	DBusConnection *  server_conn;
 	DBusConnection *  client_conn;
 	NihList           prototypes;
-	NihList           externs;
 	Method *          method = NULL;
 	Argument *        argument1 = NULL;
 	Argument *        argument2 = NULL;
@@ -7613,7 +7596,6 @@ test_proxy_sync_function (void)
 	TEST_FEATURE ("with method call");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
 
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "MyMethod");
@@ -7644,13 +7626,12 @@ test_proxy_sync_function (void)
 						  "com.netsplit.Nih.Test",
 						  method,
 						  "my_method_sync",
-						  &prototypes, &externs);
+						  &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
 
 			nih_free (method);
 			continue;
@@ -7918,9 +7899,6 @@ test_proxy_sync_function (void)
 
 		TEST_LIST_EMPTY (&prototypes);
 
-
-		TEST_LIST_EMPTY (&externs);
-
 		nih_free (str);
 		nih_free (method);
 	}
@@ -7932,7 +7910,6 @@ test_proxy_sync_function (void)
 	TEST_FEATURE ("with no input arguments");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
 
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "MyMethod");
@@ -7953,13 +7930,12 @@ test_proxy_sync_function (void)
 						  "com.netsplit.Nih.Test",
 						  method,
 						  "my_method_sync",
-						  &prototypes, &externs);
+						  &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
 
 			nih_free (method);
 			continue;
@@ -8190,9 +8166,6 @@ test_proxy_sync_function (void)
 
 		TEST_LIST_EMPTY (&prototypes);
 
-
-		TEST_LIST_EMPTY (&externs);
-
 		nih_free (str);
 		nih_free (method);
 	}
@@ -8204,7 +8177,6 @@ test_proxy_sync_function (void)
 	TEST_FEATURE ("with no output arguments");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
 
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "MyMethod");
@@ -8225,13 +8197,12 @@ test_proxy_sync_function (void)
 						  "com.netsplit.Nih.Test",
 						  method,
 						  "my_method_sync",
-						  &prototypes, &externs);
+						  &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
 
 			nih_free (method);
 			continue;
@@ -8374,9 +8345,6 @@ test_proxy_sync_function (void)
 
 		TEST_LIST_EMPTY (&prototypes);
 
-
-		TEST_LIST_EMPTY (&externs);
-
 		nih_free (str);
 		nih_free (method);
 	}
@@ -8388,7 +8356,6 @@ test_proxy_sync_function (void)
 	TEST_FEATURE ("with no arguments");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
 
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "MyMethod");
@@ -8399,13 +8366,12 @@ test_proxy_sync_function (void)
 						  "com.netsplit.Nih.Test",
 						  method,
 						  "my_method_sync",
-						  &prototypes, &externs);
+						  &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
 
 			nih_free (method);
 			continue;
@@ -8510,9 +8476,6 @@ test_proxy_sync_function (void)
 		nih_free (func);
 
 		TEST_LIST_EMPTY (&prototypes);
-
-
-		TEST_LIST_EMPTY (&externs);
 
 		nih_free (str);
 		nih_free (method);
@@ -9242,7 +9205,6 @@ test_proxy_sync_function (void)
 	TEST_FEATURE ("with deprecated method");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
 
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "MyMethod");
@@ -9259,13 +9221,12 @@ test_proxy_sync_function (void)
 						  "com.netsplit.Nih.Test",
 						  method,
 						  "my_method_sync",
-						  &prototypes, &externs);
+						  &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
 
 			nih_free (method);
 			continue;
@@ -9397,9 +9358,6 @@ test_proxy_sync_function (void)
 		nih_free (func);
 
 		TEST_LIST_EMPTY (&prototypes);
-
-
-		TEST_LIST_EMPTY (&externs);
 
 		nih_free (str);
 		nih_free (method);

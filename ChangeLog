@@ -1,5 +1,13 @@
 2009-05-15  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_reply_function)
+	(method_proxy_sync_function): Remove the unused externs parameters
+	* nih-dbus-tool/method.h: Update prototypes
+	* nih-dbus-tool/tests/method_factory.c: Don't pass when we don't
+	use them
+	* nih-dbus-tool/tests/test_method.c (test_reply_function)
+	(test_proxy_sync_function): Remove the empty list checks
+
 	* nih-dbus-tool/property.c (property_object_get_function)
 	(property_object_set_function): Rename externs to handlers
 	* nih-dbus-tool/property.h: Update prototypes

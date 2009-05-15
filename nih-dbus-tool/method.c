@@ -899,16 +899,13 @@ method_object_function (const void *parent,
  * @parent: parent object for new string.
  * @method: method to generate function for,
  * @name: name of function to generate,
- * @prototypes: list to append function prototypes to,
- * @externs: list to append definitions of extern function prototypes to.
+ * @prototypes: list to append function prototypes to.
  *
  * Generates C code for a function @name to send a reply for the method
  * @method by marshalling the arguments.
  *
  * The prototype of the function is given as a TypeFunc object appended to
- * the @prototypes list, with the name as @name itself.  Should the C code
- * call other functions that need to be defined, similar TypeFunc objects
- * will be appended to the @externs list.
+ * the @prototypes list, with the name as @name itself.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -921,8 +918,7 @@ char *
 method_reply_function (const void *parent,
 		       Method *    method,
 		       const char *name,
-		       NihList *   prototypes,
-		       NihList *   externs)
+		       NihList *   prototypes)
 {
 	NihList             locals;
 	nih_local TypeFunc *func = NULL;
@@ -939,7 +935,6 @@ method_reply_function (const void *parent,
 	nih_assert (method != NULL);
 	nih_assert (name != NULL);
 	nih_assert (prototypes != NULL);
-	nih_assert (externs != NULL);
 
 	nih_list_init (&locals);
 
@@ -1121,7 +1116,7 @@ method_reply_function (const void *parent,
 		return NULL;
 	}
 
-	/* Append the functions to the prototypes and externs lists */
+	/* Append the function to the prototypes list */
 	nih_list_add (prototypes, &func->entry);
 	nih_ref (func, code);
 
@@ -1860,17 +1855,14 @@ method_proxy_notify_function (const void *parent,
  * @interface_name: name of interface,
  * @method: method to generate function for,
  * @name: name of function to generate,
- * @prototypes: list to append function prototypes to,
- * @externs: list to append definitions of extern function prototypes to.
+ * @prototypes: list to append function prototypes to.
  *
  * Generates C code for a function @name to make a synchronous method
  * call for the method @method by marshalling the arguments.  The interface
  * name of the method must be supplied in @interface_name.
  *
  * The prototype of the function is given as a TypeFunc object appended to
- * the @prototypes list, with the name as @name itself.  Should the C code
- * call other functions that need to be defined, similar TypeFunc objects
- * will be appended to the @externs list.
+ * the @prototypes list, with the name as @name itself.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -1884,8 +1876,7 @@ method_proxy_sync_function (const void *parent,
 			    const char *interface_name,
 			    Method *    method,
 			    const char *name,
-			    NihList *   prototypes,
-			    NihList *   externs)
+			    NihList *   prototypes)
 {
 	NihList             locals;
 	nih_local TypeFunc *func = NULL;
@@ -1907,7 +1898,6 @@ method_proxy_sync_function (const void *parent,
 	nih_assert (method != NULL);
 	nih_assert (name != NULL);
 	nih_assert (prototypes != NULL);
-	nih_assert (externs != NULL);
 
 	nih_list_init (&locals);
 

@@ -1,5 +1,12 @@
 2009-05-15  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/property.c (property_object_get_function)
+	(property_object_set_function): Rename externs to handlers
+	* nih-dbus-tool/property.h: Update prototypes
+	* nih-dbus-tool/tests/property_factory.c: Update calls
+	* nih-dbus-tool/tests/test_property.c (test_object_get_function)
+	(test_object_set_function): Update variable names in tests.
+
 	* nih-dbus-tool/signal.c (signal_emit_function): Remove the externs
 	parameter, which is not used.
 	* nih-dbus-tool/signal.h: Update prototype

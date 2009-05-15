@@ -1100,7 +1100,7 @@ test_object_get_function (void)
 	DBusConnection *  server_conn;
 	DBusConnection *  client_conn;
 	NihList           prototypes;
-	NihList           externs;
+	NihList           handlers;
 	Property *        property = NULL;
 	char *            iface;
 	char *            name;
@@ -1130,7 +1130,7 @@ test_object_get_function (void)
 	TEST_FEATURE ("with property");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
+		nih_list_init (&handlers);
 
 		TEST_ALLOC_SAFE {
 			property = property_new (NULL, "my_property",
@@ -1141,13 +1141,13 @@ test_object_get_function (void)
 		str = property_object_get_function (NULL, property,
 						    "MyProperty_get",
 						    "my_property_get",
-						    &prototypes, &externs);
+						    &prototypes, &handlers);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
+			TEST_LIST_EMPTY (&handlers);
 
 			nih_free (property);
 			continue;
@@ -1236,9 +1236,9 @@ test_object_get_function (void)
 		TEST_LIST_EMPTY (&prototypes);
 
 
-		TEST_LIST_NOT_EMPTY (&externs);
+		TEST_LIST_NOT_EMPTY (&handlers);
 
-		func = (TypeFunc *)externs.next;
+		func = (TypeFunc *)handlers.next;
 		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
@@ -1293,7 +1293,7 @@ test_object_get_function (void)
 		TEST_LIST_EMPTY (&func->attribs);
 		nih_free (func);
 
-		TEST_LIST_EMPTY (&externs);
+		TEST_LIST_EMPTY (&handlers);
 
 		nih_free (str);
 		nih_free (property);
@@ -1400,7 +1400,7 @@ test_object_get_function (void)
 	TEST_FEATURE ("with deprecated property");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
+		nih_list_init (&handlers);
 
 		TEST_ALLOC_SAFE {
 			property = property_new (NULL, "my_property",
@@ -1412,13 +1412,13 @@ test_object_get_function (void)
 		str = property_object_get_function (NULL, property,
 						    "MyProperty_get",
 						    "my_property_get",
-						    &prototypes, &externs);
+						    &prototypes, &handlers);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
+			TEST_LIST_EMPTY (&handlers);
 
 			nih_free (property);
 			continue;
@@ -1507,9 +1507,9 @@ test_object_get_function (void)
 		TEST_LIST_EMPTY (&prototypes);
 
 
-		TEST_LIST_NOT_EMPTY (&externs);
+		TEST_LIST_NOT_EMPTY (&handlers);
 
-		func = (TypeFunc *)externs.next;
+		func = (TypeFunc *)handlers.next;
 		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
@@ -1564,7 +1564,7 @@ test_object_get_function (void)
 		TEST_LIST_EMPTY (&func->attribs);
 		nih_free (func);
 
-		TEST_LIST_EMPTY (&externs);
+		TEST_LIST_EMPTY (&handlers);
 
 		nih_free (str);
 		nih_free (property);
@@ -1625,7 +1625,7 @@ test_object_set_function (void)
 	DBusConnection *  server_conn;
 	DBusConnection *  client_conn;
 	NihList           prototypes;
-	NihList           externs;
+	NihList           handlers;
 	Property *        property = NULL;
 	char *            iface;
 	char *            name;
@@ -1658,7 +1658,7 @@ test_object_set_function (void)
 	TEST_FEATURE ("with property");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
+		nih_list_init (&handlers);
 
 		TEST_ALLOC_SAFE {
 			property = property_new (NULL, "my_property",
@@ -1669,13 +1669,13 @@ test_object_set_function (void)
 		str = property_object_set_function (NULL, property,
 						    "MyProperty_set",
 						    "my_property_set",
-						    &prototypes, &externs);
+						    &prototypes, &handlers);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
+			TEST_LIST_EMPTY (&handlers);
 
 			nih_free (property);
 			continue;
@@ -1785,9 +1785,9 @@ test_object_set_function (void)
 		TEST_LIST_EMPTY (&prototypes);
 
 
-		TEST_LIST_NOT_EMPTY (&externs);
+		TEST_LIST_NOT_EMPTY (&handlers);
 
-		func = (TypeFunc *)externs.next;
+		func = (TypeFunc *)handlers.next;
 		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
@@ -1842,7 +1842,7 @@ test_object_set_function (void)
 		TEST_LIST_EMPTY (&func->attribs);
 		nih_free (func);
 
-		TEST_LIST_EMPTY (&externs);
+		TEST_LIST_EMPTY (&handlers);
 
 		nih_free (str);
 		nih_free (property);
@@ -2473,7 +2473,7 @@ test_object_set_function (void)
 	TEST_FEATURE ("with deprecated property");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
+		nih_list_init (&handlers);
 
 		TEST_ALLOC_SAFE {
 			property = property_new (NULL, "my_property",
@@ -2485,13 +2485,13 @@ test_object_set_function (void)
 		str = property_object_set_function (NULL, property,
 						    "MyProperty_set",
 						    "my_property_set",
-						    &prototypes, &externs);
+						    &prototypes, &handlers);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
+			TEST_LIST_EMPTY (&handlers);
 
 			nih_free (property);
 			continue;
@@ -2601,9 +2601,9 @@ test_object_set_function (void)
 		TEST_LIST_EMPTY (&prototypes);
 
 
-		TEST_LIST_NOT_EMPTY (&externs);
+		TEST_LIST_NOT_EMPTY (&handlers);
 
-		func = (TypeFunc *)externs.next;
+		func = (TypeFunc *)handlers.next;
 		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
@@ -2658,7 +2658,7 @@ test_object_set_function (void)
 		TEST_LIST_EMPTY (&func->attribs);
 		nih_free (func);
 
-		TEST_LIST_EMPTY (&externs);
+		TEST_LIST_EMPTY (&handlers);
 
 		nih_free (str);
 		nih_free (property);

@@ -76,12 +76,12 @@ int       property_annotation          (Property *property,
 char *    property_object_get_function (const void *parent, Property *property,
 					const char *name,
 					const char *handler_name,
-					NihList *prototypes, NihList *externs)
+					NihList *prototypes, NihList *handlers)
 	__attribute__ ((warn_unused_result, malloc));
 char *    property_object_set_function (const void *parent, Property *property,
 					const char *name,
 					const char *handler_name,
-					NihList *prototypes, NihList *externs)
+					NihList *prototypes, NihList *handlers)
 	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN

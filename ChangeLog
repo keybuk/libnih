@@ -1,5 +1,24 @@
 2009-05-15  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/errors.h: Remove the D-Bus errors from this file
+	* nih-dbus/errors.h: Place them in a new file.
+	* nih-dbus/libnih-dbus.h: Include the new header
+	* nih-dbus/Makefile.am (nihdbusinclude_HEADERS): Install the new
+	header.
+	* nih-dbus/dbus_error.c,
+	* nih-dbus/dbus_object.c: 
+	* nih-dbus/tests/test_dbus_connection.c,
+	* nih-dbus/tests/test_dbus_error.c,
+	* nih-dbus-tool/tests/method_factory.c,
+	* nih-dbus-tool/tests/signal_factory.c,
+	* nih-dbus-tool/tests/property_factory.c,
+	* nih-dbus-tool/tests/test_method.c,
+	* nih-dbus-tool/tests/test_property.c,
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c: Update
+	headers included
+	* nih-dbus-tool/nih_dbus_tool.py (Output.sourceFile): Update generated
+	includes.
+
 	* nih-dbus/dbus_object.h (NihDBusPropertySetter): Change prototype
 	to return an int, instead of a handler result.  This allows us to
 	introduce interesting new SetMany-like methods later.

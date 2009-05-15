@@ -53,11 +53,11 @@ main (int   argc,
 		"#include <nih/string.h>\n"
 		"#include <nih/logging.h>\n"
 		"#include <nih/error.h>\n"
-		"#include <nih/errors.h>\n"
 		"\n"
 		"#include <nih-dbus/dbus_error.h>\n"
 		"#include <nih-dbus/dbus_message.h>\n"
 		"#include <nih-dbus/dbus_object.h>\n"
+		"#include <nih-dbus/errors.h>\n"
 		"\n"
 		"#include \"signal_code.h\"\n"
 		"\n");

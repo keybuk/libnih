@@ -17,16 +17,24 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
-#ifndef NIH_LIBNIH_DBUS_H
-#define NIH_LIBNIH_DBUS_H
+#ifndef NIH_DBUS_ERRORS_H
+#define NIH_DBUS_ERRORS_H
 
-#include <nih-dbus/dbus_error.h>
-#include <nih-dbus/dbus_connection.h>
-#include <nih-dbus/dbus_message.h>
-#include <nih-dbus/dbus_object.h>
-#include <nih-dbus/dbus_pending_data.h>
-#include <nih-dbus/dbus_proxy.h>
-#include <nih-dbus/dbus_util.h>
-#include <nih-dbus/errors.h>
+#include <nih/error.h>
+#include <nih/errors.h>
 
-#endif /* NIH_LIBNIH_DBUS_H */
+#include <errno.h>
+
+
+/* Allocated error numbers */
+enum {
+	NIH_DBUS_ERROR_START = NIH_ERROR_LIBNIH_DBUS_START,
+
+	NIH_DBUS_ERROR,
+	NIH_DBUS_INVALID_ARGS,
+};
+
+/* Error strings for defined messages */
+#define NIH_DBUS_INVALID_ARGS_STR	   N_("Invalid arguments received in reply")
+
+#endif /* NIH_DBUS_ERRORS_H */

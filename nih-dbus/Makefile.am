@@ -53,6 +53,7 @@ nihdbusinclude_HEADERS = \
 	dbus_pending_data.h \
 	dbus_proxy.h \
 	dbus_util.h \
+	errors.h \
 	test_dbus.h
 endif
 

@@ -39,6 +39,7 @@
 
 #include <nih-dbus/dbus_error.h>
 #include <nih-dbus/dbus_message.h>
+#include <nih-dbus/errors.h>
 
 #include "type.h"
 #include "node.h"

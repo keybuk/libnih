@@ -25,9 +25,9 @@
 #include <nih/macros.h>
 #include <nih/alloc.h>
 #include <nih/error.h>
-#include <nih/errors.h>
 
 #include <nih-dbus/dbus_error.h>
+#include <nih-dbus/errors.h>
 
 
 void

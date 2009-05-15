@@ -38,10 +38,10 @@
 #include <nih/io.h>
 #include <nih/main.h>
 #include <nih/error.h>
-#include <nih/errors.h>
 
 #include <nih-dbus/dbus_error.h>
 #include <nih-dbus/dbus_connection.h>
+#include <nih-dbus/errors.h>
 
 
 static DBusConnection *client_connection = NULL;

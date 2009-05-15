@@ -39,12 +39,12 @@
 #include <nih/string.h>
 #include <nih/main.h>
 #include <nih/error.h>
-#include <nih/errors.h>
 
 #include <nih-dbus/dbus_error.h>
 #include <nih-dbus/dbus_message.h>
 #include <nih-dbus/dbus_object.h>
 #include <nih-dbus/dbus_proxy.h>
+#include <nih-dbus/errors.h>
 
 #include "type.h"
 #include "node.h"

@@ -2131,12 +2131,12 @@ class Output(Group):
 #include <nih/string.h>
 #include <nih/logging.h>
 #include <nih/error.h>
-#include <nih/errors.h>
 
 #include <nih-dbus/dbus_error.h>
 #include <nih-dbus/dbus_message.h>
 #include <nih-dbus/dbus_object.h>
 #include <nih-dbus/dbus_proxy.h>
+#include <nih-dbus/errors.h>
 
 #include "%s.h"
 """ % (self.basename, )

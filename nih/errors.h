@@ -42,14 +42,14 @@ enum {
 
 	NIH_DIR_LOOP_DETECTED,
 
-	NIH_DBUS_ERROR,
-	NIH_DBUS_INVALID_ARGS,
-
 	/* 0x20000 thru 0x2FFFF reserved for applications */
 	NIH_ERROR_APPLICATION_START = 0x20000L,
 
-	/* 0x30000 upwards for other libraries */
-	NIH_ERROR_LIBRARY_START = 0x30000L
+	/* 0x30000 thru 0x3FFFF reserved for libnih-dbus */
+	NIH_ERROR_LIBNIH_DBUS_START = 0x30000L,
+
+	/* 0x80000 upwards for other libraries */
+	NIH_ERROR_LIBRARY_START = 0x80000L
 };
 
 /* Error strings for defined messages */
@@ -61,7 +61,5 @@ enum {
 #define NIH_CONFIG_UNKNOWN_STANZA_STR      N_("Unknown stanza")
 
 #define NIH_DIR_LOOP_DETECTED_STR          N_("Directory loop detected")
-
-#define NIH_DBUS_INVALID_ARGS_STR	   N_("Invalid arguments received in reply")
 
 #endif /* NIH_ERRORS_H */

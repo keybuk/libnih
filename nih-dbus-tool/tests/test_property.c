@@ -1634,16 +1634,14 @@ test_object_set_function (void)
 	NihListEntry *    attrib;
 	double            double_arg;
 	DBusMessage *     method_call;
-	DBusMessage *     next_call;
 	DBusMessageIter   iter;
 	DBusMessageIter   subiter;
-	DBusMessage *     reply;
 	NihDBusMessage *  message;
 	NihDBusObject *   object;
 	dbus_uint32_t     serial;
-	dbus_uint32_t     next_serial;
-	DBusHandlerResult result;
-	DBusError         dbus_error;
+	int               ret;
+	NihError *        err;
+	NihDBusError *    dbus_err;
 
 	TEST_FUNCTION ("property_object_set_function");
 	TEST_DBUS (dbus_pid);
@@ -1653,7 +1651,7 @@ test_object_set_function (void)
 
 	/* Check that we can generate a function that demarshals a value
 	 * from a variant in the passed message iterator, calls a handler
-	 * function to set that property and replies to indicate success
+	 * function to set that property and returns to indicate success
 	 * or error.
 	 */
 	TEST_FEATURE ("with property");
@@ -1682,13 +1680,12 @@ test_object_set_function (void)
 			continue;
 		}
 
-		TEST_EQ_STR (str, ("DBusHandlerResult\n"
+		TEST_EQ_STR (str, ("int\n"
 				   "MyProperty_set (NihDBusObject *  object,\n"
 				   "                NihDBusMessage * message,\n"
 				   "                DBusMessageIter *iter)\n"
 				   "{\n"
 				   "\tDBusMessageIter variter;\n"
-				   "\tDBusMessage *   reply;\n"
 				   "\tconst char *    value_dbus;\n"
 				   "\tchar *          value;\n"
 				   "\n"
@@ -1698,43 +1695,26 @@ test_object_set_function (void)
 				   "\n"
 				   "\t/* Recurse into the variant */\n"
 				   "\tif (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_VARIANT) {\n"
-				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to my_property property\"));\n"
-				   "\t\tif (! reply)\n"
-				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				   "\n"
-				   "\t\tif (! dbus_connection_send (message->conn, reply, NULL)) {\n"
-				   "\t\t\tdbus_message_unref (reply);\n"
-				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				   "\t\t}\n"
-				   "\n"
-				   "\t\tdbus_message_unref (reply);\n"
-				   "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
+				   "\t\t                             _(\"Invalid arguments to my_property property\"));\n"
+				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\tdbus_message_iter_recurse (iter, &variter);\n"
 				   "\n"
 				   "\t/* Demarshal a char * from the message */\n"
 				   "\tif (dbus_message_iter_get_arg_type (&variter) != DBUS_TYPE_STRING) {\n"
-				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to my_property property\"));\n"
-				   "\t\tif (! reply)\n"
-				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				   "\n"
-				   "\t\tif (! dbus_connection_send (message->conn, reply, NULL)) {\n"
-				   "\t\t\tdbus_message_unref (reply);\n"
-				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				   "\t\t}\n"
-				   "\n"
-				   "\t\tdbus_message_unref (reply);\n"
-				   "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
+				   "\t\t                             _(\"Invalid arguments to my_property property\"));\n"
+				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\tdbus_message_iter_get_basic (&variter, &value_dbus);\n"
 				   "\n"
 				   "\tvalue = nih_strdup (message, value_dbus);\n"
 				   "\tif (! value) {\n"
-				   "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\t\tnih_error_raise_no_memory ();\n"
+				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\tdbus_message_iter_next (&variter);\n"
@@ -1742,62 +1722,16 @@ test_object_set_function (void)
 				   "\tdbus_message_iter_next (iter);\n"
 				   "\n"
 				   "\tif (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_INVALID) {\n"
-				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to my_property method\"));\n"
-				   "\t\tif (! reply)\n"
-				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				   "\n"
-				   "\t\tif (! dbus_connection_send (message->conn, reply, NULL)) {\n"
-				   "\t\t\tdbus_message_unref (reply);\n"
-				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				   "\t\t}\n"
-				   "\n"
-				   "\t\tdbus_message_unref (reply);\n"
-				   "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
+				   "\t\t                             _(\"Invalid arguments to my_property property\"));\n"
+				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\t/* Call the handler function */\n"
-				   "\tif (my_property_set (object->data, message, value) < 0) {\n"
-				   "\t\tNihError *err;\n"
+				   "\tif (my_property_set (object->data, message, value) < 0)\n"
+				   "\t\treturn -1;\n"
 				   "\n"
-				   "\t\terr = nih_error_get ();\n"
-				   "\t\tif (err->number == ENOMEM) {\n"
-				   "\t\t\tnih_free (err);\n"
-				   "\n"
-				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				   "\t\t} else if (err->number == NIH_DBUS_ERROR) {\n"
-				   "\t\t\tNihDBusError *dbus_err = (NihDBusError *)err;\n"
-				   "\n"
-				   "\t\t\treply = NIH_MUST (dbus_message_new_error (message->message, dbus_err->name, err->message));\n"
-				   "\t\t\tnih_free (err);\n"
-				   "\n"
-				   "\t\t\tNIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
-				   "\n"
-				   "\t\t\tdbus_message_unref (reply);\n"
-				   "\t\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
-				   "\t\t} else {\n"
-				   "\t\t\treply = NIH_MUST (dbus_message_new_error (message->message, DBUS_ERROR_FAILED, err->message));\n"
-				   "\t\t\tnih_free (err);\n"
-				   "\n"
-				   "\t\t\tNIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
-				   "\n"
-				   "\t\t\tdbus_message_unref (reply);\n"
-				   "\t\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
-				   "\t\t}\n"
-				   "\t}\n"
-				   "\n"
-				   "\t/* If the sender doesn't care about a reply, don't bother wasting\n"
-				   "\t * effort constructing and sending one.\n"
-				   "\t */\n"
-				   "\tif (dbus_message_get_no_reply (message->message))\n"
-				   "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
-				   "\n"
-				   "\t/* Send the reply */\n"
-				   "\treply = NIH_MUST (dbus_message_new_method_return (message->message));\n"
-				   "\tNIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
-				   "\n"
-				   "\tdbus_message_unref (reply);\n"
-				   "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "\treturn 0;\n"
 				   "}\n"));
 
 		TEST_LIST_NOT_EMPTY (&prototypes);
@@ -1805,7 +1739,7 @@ test_object_set_function (void)
 		func = (TypeFunc *)prototypes.next;
 		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
 		TEST_ALLOC_PARENT (func, str);
-		TEST_EQ_STR (func->type, "DBusHandlerResult");
+		TEST_EQ_STR (func->type, "int");
 		TEST_ALLOC_PARENT (func->type, func);
 		TEST_EQ_STR (func->name, "MyProperty_set");
 		TEST_ALLOC_PARENT (func->name, func);
@@ -1916,8 +1850,7 @@ test_object_set_function (void)
 
 	/* Check that we can use the generated code to demarshal the
 	 * property value from inside the variant in the method call,
-	 * passing it to the handler function.  On return, a reply
-	 * should be send back to the caller.
+	 * passing it to the handler function.
 	 */
 	TEST_FEATURE ("with property (generated code)");
 	TEST_ALLOC_FAIL {
@@ -1977,10 +1910,15 @@ test_object_set_function (void)
 
 		my_property_set_called = 0;
 
-		result = MyProperty_set (object, message, &iter);
+		ret = MyProperty_set (object, message, &iter);
 
-		if (test_alloc_failed
-		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
 			nih_free (object);
 			nih_free (message);
 			dbus_message_unref (method_call);
@@ -1988,127 +1926,16 @@ test_object_set_function (void)
 		}
 
 		TEST_TRUE (my_property_set_called);
-		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
-
-		TEST_DBUS_MESSAGE (server_conn, reply);
-		TEST_EQ (dbus_message_get_type (reply),
-			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
-		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
-
-		dbus_message_iter_init (reply, &iter);
-
-		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
-			 DBUS_TYPE_INVALID);
+		TEST_EQ (ret, 0);
 
 		nih_free (object);
 		nih_free (message);
-		dbus_message_unref (reply);
 		dbus_message_unref (method_call);
 	}
 
 
-	/* Check that we can set a property and expect no reply, the
-	 * property should still be set but no reply should be generated
-	 * for it.
-	 */
-	TEST_FEATURE ("with no reply expected (generated code)");
-	TEST_ALLOC_FAIL {
-		method_call = dbus_message_new_method_call (
-			dbus_bus_get_unique_name (client_conn),
-			"/com/netsplit/Nih",
-			"org.freedesktop.DBus.Properties",
-			"Set");
-
-		dbus_message_iter_init_append (method_call, &iter);
-
-		iface = "com.netsplit.Nih.Test";
-		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
-						&iface);
-
-		name = "my_property";
-		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
-						&name);
-
-		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
-						  DBUS_TYPE_STRING_AS_STRING,
-						  &subiter);
-
-		str = "dog and doughnut";
-		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
-						&str);
-
-		dbus_message_iter_close_container (&iter, &subiter);
-
-		dbus_message_set_no_reply (method_call, TRUE);
-
-		dbus_connection_send (server_conn, method_call, &serial);
-		dbus_connection_flush (server_conn);
-		dbus_message_unref (method_call);
-
-		TEST_DBUS_MESSAGE (client_conn, method_call);
-		assert (dbus_message_get_serial (method_call) == serial);
-
-		TEST_ALLOC_SAFE {
-			message = nih_new (NULL, NihDBusMessage);
-			message->conn = client_conn;
-			message->message = method_call;
-
-			object = nih_new (NULL, NihDBusObject);
-			object->path = "/com/netsplit/Nih";
-			object->conn = client_conn;
-			object->data = NULL;
-			object->interfaces = NULL;
-			object->registered = TRUE;
-		}
-
-		dbus_message_iter_init (method_call, &iter);
-
-		assert (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_STRING);
-		dbus_message_iter_next (&iter);
-		assert (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_STRING);
-		dbus_message_iter_next (&iter);
-		assert (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_VARIANT);
-
-		my_property_set_called = 0;
-
-		result = MyProperty_set (object, message, &iter);
-
-		if (test_alloc_failed
-		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
-			nih_free (object);
-			nih_free (message);
-			dbus_message_unref (method_call);
-			continue;
-		}
-
-		TEST_TRUE (my_property_set_called);
-		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
-
-		next_call = dbus_message_new_method_call (
-			dbus_bus_get_unique_name (server_conn),
-			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"NextMethod");
-
-		dbus_connection_send (server_conn, next_call, &next_serial);
-		dbus_connection_flush (server_conn);
-		dbus_message_unref (next_call);
-
-		TEST_DBUS_MESSAGE (server_conn, reply);
-		TEST_EQ (dbus_message_get_type (reply),
-			 DBUS_MESSAGE_TYPE_METHOD_CALL);
-		TEST_EQ (dbus_message_get_serial (reply), next_serial);
-
-		nih_free (object);
-		nih_free (message);
-		dbus_message_unref (reply);
-		dbus_message_unref (method_call);
-	}
-
-
-	/* Check that a D-Bus error message with the matching name and
-	 * message is returned to the caller if the handler raises a
-	 * D-Bus error.
+	/* Check that if the handler raises a D-Bus error, it is returned
+	 * to the caller.
 	 */
 	TEST_FEATURE ("with D-Bus error from handler (generated code)");
 	TEST_ALLOC_FAIL {
@@ -2168,10 +1995,16 @@ test_object_set_function (void)
 
 		my_property_set_called = 0;
 
-		result = MyProperty_set (object, message, &iter);
+		ret = MyProperty_set (object, message, &iter);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
 
 		if (test_alloc_failed
-		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
 			nih_free (object);
 			nih_free (message);
 			dbus_message_unref (method_call);
@@ -2179,26 +2012,21 @@ test_object_set_function (void)
 		}
 
 		TEST_TRUE (my_property_set_called);
-		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
-		TEST_DBUS_MESSAGE (server_conn, reply);
-		TEST_EQ (dbus_message_get_type (reply),
-			 DBUS_MESSAGE_TYPE_ERROR);
-		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
-
-		TEST_EQ_STR (dbus_message_get_error_name (reply),
-			     "com.netsplit.Nih.MyProperty.Fail");
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.MyProperty.Fail");
+		nih_free (err);
 
 		nih_free (object);
 		nih_free (message);
-		dbus_message_unref (reply);
 		dbus_message_unref (method_call);
 	}
 
 
-	/* Check that a D-Bus failed message with the error message from
-	 * the NihError is returned to the caller if the handler raises a
-	 * non-D-Bus error.
+	/* Check that if the handler raises a generic error, it is returned
+	 * to the caller.
 	 */
 	TEST_FEATURE ("with generic error from handler (generated code)");
 	TEST_ALLOC_FAIL {
@@ -2258,10 +2086,16 @@ test_object_set_function (void)
 
 		my_property_set_called = 0;
 
-		result = MyProperty_set (object, message, &iter);
+		ret = MyProperty_set (object, message, &iter);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
 
 		if (test_alloc_failed
-		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
 			nih_free (object);
 			nih_free (message);
 			dbus_message_unref (method_call);
@@ -2269,32 +2103,19 @@ test_object_set_function (void)
 		}
 
 		TEST_TRUE (my_property_set_called);
-		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
-		TEST_DBUS_MESSAGE (server_conn, reply);
-		TEST_EQ (dbus_message_get_type (reply),
-			 DBUS_MESSAGE_TYPE_ERROR);
-		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
-
-		TEST_EQ_STR (dbus_message_get_error_name (reply),
-			     DBUS_ERROR_FAILED);
-
-		dbus_error_init (&dbus_error);
-
-		dbus_set_error_from_message (&dbus_error, reply);
-		TEST_EQ_STR (dbus_error.message, strerror (EBADF));
-
-		dbus_error_free (&dbus_error);
+		TEST_EQ (err->number, EBADF);
+		nih_free (err);
 
 		nih_free (object);
 		nih_free (message);
-		dbus_message_unref (reply);
 		dbus_message_unref (method_call);
 	}
 
 
 	/* Check that a missing argument to the property method call
-	 * results in an invalid args error message being returned.
+	 * results in an invalid args error message being returned
+	 * without the handler being called.
 	 */
 	TEST_FEATURE ("with missing argument to method (generated code)");
 	TEST_ALLOC_FAIL {
@@ -2343,10 +2164,16 @@ test_object_set_function (void)
 
 		my_property_set_called = 0;
 
-		result = MyProperty_set (object, message, &iter);
+		ret = MyProperty_set (object, message, &iter);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
 
 		if (test_alloc_failed
-		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
 			nih_free (object);
 			nih_free (message);
 			dbus_message_unref (method_call);
@@ -2354,25 +2181,22 @@ test_object_set_function (void)
 		}
 
 		TEST_FALSE (my_property_set_called);
-		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
-		TEST_DBUS_MESSAGE (server_conn, reply);
-		TEST_EQ (dbus_message_get_type (reply),
-			 DBUS_MESSAGE_TYPE_ERROR);
-		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
-
-		TEST_EQ_STR (dbus_message_get_error_name (reply),
-			     DBUS_ERROR_INVALID_ARGS);
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_INVALID_ARGS);
+		nih_free (err);
 
 		nih_free (object);
 		nih_free (message);
-		dbus_message_unref (reply);
 		dbus_message_unref (method_call);
 	}
 
 
 	/* Check that a non-variant type in the property method call
-	 * results in an invalid args error message being returned.
+	 * results in an invalid args error message being returned
+	 * without the handler being called.
 	 */
 	TEST_FEATURE ("with invalid argument in method (generated code)");
 	TEST_ALLOC_FAIL {
@@ -2425,10 +2249,16 @@ test_object_set_function (void)
 
 		my_property_set_called = 0;
 
-		result = MyProperty_set (object, message, &iter);
+		ret = MyProperty_set (object, message, &iter);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
 
 		if (test_alloc_failed
-		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
 			nih_free (object);
 			nih_free (message);
 			dbus_message_unref (method_call);
@@ -2436,25 +2266,22 @@ test_object_set_function (void)
 		}
 
 		TEST_FALSE (my_property_set_called);
-		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
-		TEST_DBUS_MESSAGE (server_conn, reply);
-		TEST_EQ (dbus_message_get_type (reply),
-			 DBUS_MESSAGE_TYPE_ERROR);
-		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
-
-		TEST_EQ_STR (dbus_message_get_error_name (reply),
-			     DBUS_ERROR_INVALID_ARGS);
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_INVALID_ARGS);
+		nih_free (err);
 
 		nih_free (object);
 		nih_free (message);
-		dbus_message_unref (reply);
 		dbus_message_unref (method_call);
 	}
 
 
 	/* Check that the wrong type in the variant in the property method call
-	 * results in an invalid args error message being returned.
+	 * results in an invalid args error message being returned without
+	 * the handler being called.
 	 */
 	TEST_FEATURE ("with invalid variant item in method (generated code)");
 	TEST_ALLOC_FAIL {
@@ -2513,10 +2340,16 @@ test_object_set_function (void)
 
 		my_property_set_called = 0;
 
-		result = MyProperty_set (object, message, &iter);
+		ret = MyProperty_set (object, message, &iter);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
 
 		if (test_alloc_failed
-		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
 			nih_free (object);
 			nih_free (message);
 			dbus_message_unref (method_call);
@@ -2524,25 +2357,22 @@ test_object_set_function (void)
 		}
 
 		TEST_FALSE (my_property_set_called);
-		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
-		TEST_DBUS_MESSAGE (server_conn, reply);
-		TEST_EQ (dbus_message_get_type (reply),
-			 DBUS_MESSAGE_TYPE_ERROR);
-		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
-
-		TEST_EQ_STR (dbus_message_get_error_name (reply),
-			     DBUS_ERROR_INVALID_ARGS);
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_INVALID_ARGS);
+		nih_free (err);
 
 		nih_free (object);
 		nih_free (message);
-		dbus_message_unref (reply);
 		dbus_message_unref (method_call);
 	}
 
 
 	/* Check that an extra argument to the property method call
-	 * results in an invalid args error message being returned.
+	 * results in an invalid args error message being returned
+	 * without the handler being called.
 	 */
 	TEST_FEATURE ("with extra argument to method (generated code)");
 	TEST_ALLOC_FAIL {
@@ -2605,10 +2435,16 @@ test_object_set_function (void)
 
 		my_property_set_called = 0;
 
-		result = MyProperty_set (object, message, &iter);
+		ret = MyProperty_set (object, message, &iter);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
 
 		if (test_alloc_failed
-		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
 			nih_free (object);
 			nih_free (message);
 			dbus_message_unref (method_call);
@@ -2616,19 +2452,15 @@ test_object_set_function (void)
 		}
 
 		TEST_FALSE (my_property_set_called);
-		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
-		TEST_DBUS_MESSAGE (server_conn, reply);
-		TEST_EQ (dbus_message_get_type (reply),
-			 DBUS_MESSAGE_TYPE_ERROR);
-		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
-
-		TEST_EQ_STR (dbus_message_get_error_name (reply),
-			     DBUS_ERROR_INVALID_ARGS);
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_INVALID_ARGS);
+		nih_free (err);
 
 		nih_free (object);
 		nih_free (message);
-		dbus_message_unref (reply);
 		dbus_message_unref (method_call);
 	}
 
@@ -2664,13 +2496,12 @@ test_object_set_function (void)
 			continue;
 		}
 
-		TEST_EQ_STR (str, ("DBusHandlerResult\n"
+		TEST_EQ_STR (str, ("int\n"
 				   "MyProperty_set (NihDBusObject *  object,\n"
 				   "                NihDBusMessage * message,\n"
 				   "                DBusMessageIter *iter)\n"
 				   "{\n"
 				   "\tDBusMessageIter variter;\n"
-				   "\tDBusMessage *   reply;\n"
 				   "\tconst char *    value_dbus;\n"
 				   "\tchar *          value;\n"
 				   "\n"
@@ -2680,43 +2511,26 @@ test_object_set_function (void)
 				   "\n"
 				   "\t/* Recurse into the variant */\n"
 				   "\tif (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_VARIANT) {\n"
-				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to my_property property\"));\n"
-				   "\t\tif (! reply)\n"
-				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				   "\n"
-				   "\t\tif (! dbus_connection_send (message->conn, reply, NULL)) {\n"
-				   "\t\t\tdbus_message_unref (reply);\n"
-				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				   "\t\t}\n"
-				   "\n"
-				   "\t\tdbus_message_unref (reply);\n"
-				   "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
+				   "\t\t                             _(\"Invalid arguments to my_property property\"));\n"
+				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\tdbus_message_iter_recurse (iter, &variter);\n"
 				   "\n"
 				   "\t/* Demarshal a char * from the message */\n"
 				   "\tif (dbus_message_iter_get_arg_type (&variter) != DBUS_TYPE_STRING) {\n"
-				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to my_property property\"));\n"
-				   "\t\tif (! reply)\n"
-				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				   "\n"
-				   "\t\tif (! dbus_connection_send (message->conn, reply, NULL)) {\n"
-				   "\t\t\tdbus_message_unref (reply);\n"
-				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				   "\t\t}\n"
-				   "\n"
-				   "\t\tdbus_message_unref (reply);\n"
-				   "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
+				   "\t\t                             _(\"Invalid arguments to my_property property\"));\n"
+				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\tdbus_message_iter_get_basic (&variter, &value_dbus);\n"
 				   "\n"
 				   "\tvalue = nih_strdup (message, value_dbus);\n"
 				   "\tif (! value) {\n"
-				   "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\t\tnih_error_raise_no_memory ();\n"
+				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\tdbus_message_iter_next (&variter);\n"
@@ -2724,62 +2538,16 @@ test_object_set_function (void)
 				   "\tdbus_message_iter_next (iter);\n"
 				   "\n"
 				   "\tif (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_INVALID) {\n"
-				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to my_property method\"));\n"
-				   "\t\tif (! reply)\n"
-				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				   "\n"
-				   "\t\tif (! dbus_connection_send (message->conn, reply, NULL)) {\n"
-				   "\t\t\tdbus_message_unref (reply);\n"
-				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				   "\t\t}\n"
-				   "\n"
-				   "\t\tdbus_message_unref (reply);\n"
-				   "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
+				   "\t\t                             _(\"Invalid arguments to my_property property\"));\n"
+				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\t/* Call the handler function */\n"
-				   "\tif (my_property_set (object->data, message, value) < 0) {\n"
-				   "\t\tNihError *err;\n"
+				   "\tif (my_property_set (object->data, message, value) < 0)\n"
+				   "\t\treturn -1;\n"
 				   "\n"
-				   "\t\terr = nih_error_get ();\n"
-				   "\t\tif (err->number == ENOMEM) {\n"
-				   "\t\t\tnih_free (err);\n"
-				   "\n"
-				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				   "\t\t} else if (err->number == NIH_DBUS_ERROR) {\n"
-				   "\t\t\tNihDBusError *dbus_err = (NihDBusError *)err;\n"
-				   "\n"
-				   "\t\t\treply = NIH_MUST (dbus_message_new_error (message->message, dbus_err->name, err->message));\n"
-				   "\t\t\tnih_free (err);\n"
-				   "\n"
-				   "\t\t\tNIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
-				   "\n"
-				   "\t\t\tdbus_message_unref (reply);\n"
-				   "\t\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
-				   "\t\t} else {\n"
-				   "\t\t\treply = NIH_MUST (dbus_message_new_error (message->message, DBUS_ERROR_FAILED, err->message));\n"
-				   "\t\t\tnih_free (err);\n"
-				   "\n"
-				   "\t\t\tNIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
-				   "\n"
-				   "\t\t\tdbus_message_unref (reply);\n"
-				   "\t\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
-				   "\t\t}\n"
-				   "\t}\n"
-				   "\n"
-				   "\t/* If the sender doesn't care about a reply, don't bother wasting\n"
-				   "\t * effort constructing and sending one.\n"
-				   "\t */\n"
-				   "\tif (dbus_message_get_no_reply (message->message))\n"
-				   "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
-				   "\n"
-				   "\t/* Send the reply */\n"
-				   "\treply = NIH_MUST (dbus_message_new_method_return (message->message));\n"
-				   "\tNIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
-				   "\n"
-				   "\tdbus_message_unref (reply);\n"
-				   "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				   "\treturn 0;\n"
 				   "}\n"));
 
 		TEST_LIST_NOT_EMPTY (&prototypes);
@@ -2787,7 +2555,7 @@ test_object_set_function (void)
 		func = (TypeFunc *)prototypes.next;
 		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
 		TEST_ALLOC_PARENT (func, str);
-		TEST_EQ_STR (func->type, "DBusHandlerResult");
+		TEST_EQ_STR (func->type, "int");
 		TEST_ALLOC_PARENT (func->type, func);
 		TEST_EQ_STR (func->name, "MyProperty_set");
 		TEST_ALLOC_PARENT (func->name, func);

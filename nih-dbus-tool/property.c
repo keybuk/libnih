@@ -667,7 +667,7 @@ property_object_get_function (const void *parent,
  * Generates C code for a function called @name that will extract the new
  * value of a property @property from a variant at the D-Bus message iterator
  * passed.  The new value of the property is then passed to a function named
- * @handler_name to set it.  An empty reply is sent on success.
+ * @handler_name to set it.
  *
  * The prototype of the function is given as a TypeFunc object appended to
  * the @prototypes list, with the name as @name itself.  Should the C code
@@ -718,10 +718,11 @@ property_object_set_function (const void *parent,
 	nih_list_init (&outputs);
 	nih_list_init (&locals);
 
-	/* The function returns a D-Bus handler result, and accepts an
-	 * arguments for the D-Bus object, message and a message iterator.
+	/* The function returns an integer, which means success when zero
+	 * or a raised error when non-zero and accepts arguments for the
+	 * D-Bus object, message and a message iterator.
 	 */
-	func = type_func_new (NULL, "DBusHandlerResult", name);
+	func = type_func_new (NULL, "int", name);
 	if (! func)
 		return NULL;
 
@@ -743,10 +744,9 @@ property_object_set_function (const void *parent,
 
 	nih_list_add (&func->args, &arg->entry);
 
-	/* The function requires a local iterator for the variant and a
-	 * reply message pointer.  Rather than deal with these by hand,
-	 * it's far easier to put them on the locals list and deal with
-	 * them along with the rest.
+	/* The function requires a local iterator for the variant.  Rather
+	 * than deal with this by hand, it's far easier to put it on the
+	 * locals list and deal with them along with the rest.
 	 */
 	iter_var = type_var_new (NULL, "DBusMessageIter", "variter");
 	if (! iter_var)
@@ -754,30 +754,15 @@ property_object_set_function (const void *parent,
 
 	nih_list_add (&locals, &iter_var->entry);
 
-	reply_var = type_var_new (NULL, "DBusMessage *", "reply");
-	if (! reply_var)
-		return NULL;
-
-	nih_list_add (&locals, &reply_var->entry);
-
 	/* Make sure that the iterator points to a variant, then open the
 	 * variant.
 	 */
 	if (! nih_strcat_sprintf (&demarshal_block, NULL,
 				  "/* Recurse into the variant */\n"
 				  "if (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_VARIANT) {\n"
-				  "\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				  "\t                                _(\"Invalid arguments to %s property\"));\n"
-				  "\tif (! reply)\n"
-				  "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				  "\n"
-				  "\tif (! dbus_connection_send (message->conn, reply, NULL)) {\n"
-				  "\t\tdbus_message_unref (reply);\n"
-				  "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				  "\t}\n"
-				  "\n"
-				  "\tdbus_message_unref (reply);\n"
-				  "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				  "\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
+				  "\t                             _(\"Invalid arguments to %s property\"));\n"
+				  "\treturn -1;\n"
 				  "}\n"
 				  "\n"
 				  "dbus_message_iter_recurse (iter, &variter);\n"
@@ -785,27 +770,19 @@ property_object_set_function (const void *parent,
 				  property->name))
 		return NULL;
 
-	/* In case of out of memory, return and let D-Bus decide what to do.
-	 * In case of type error we return the error to the D-Bus caller.
+	/* In case of out of memory, or type error, return a raised error
+	 * to the caller.
 	 */
 	oom_error_code = nih_strdup (NULL,
-				     "return DBUS_HANDLER_RESULT_NEED_MEMORY;\n");
+				     "nih_error_raise_no_memory ();\n"
+				     "return -1;\n");
 	if (! oom_error_code)
 		return NULL;
 
 	type_error_code = nih_sprintf (NULL,
-				       "reply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				       "                                _(\"Invalid arguments to %s property\"));\n"
-				       "if (! reply)\n"
-				       "\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				       "\n"
-				       "if (! dbus_connection_send (message->conn, reply, NULL)) {\n"
-				       "\tdbus_message_unref (reply);\n"
-				       "\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				       "}\n"
-				       "\n"
-				       "dbus_message_unref (reply);\n"
-				       "return DBUS_HANDLER_RESULT_HANDLED;\n",
+				       "nih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
+				       "                             _(\"Invalid arguments to %s property\"));\n"
+				       "return -1;\n",
 				       property->name);
 	if (! type_error_code)
 		return NULL;
@@ -825,18 +802,9 @@ property_object_set_function (const void *parent,
 				  "dbus_message_iter_next (iter);\n"
 				  "\n"
 				  "if (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_INVALID) {\n"
-				  "\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				  "\t                                _(\"Invalid arguments to %s method\"));\n"
-				  "\tif (! reply)\n"
-				  "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				  "\n"
-				  "\tif (! dbus_connection_send (message->conn, reply, NULL)) {\n"
-				  "\t\tdbus_message_unref (reply);\n"
-				  "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				  "\t}\n"
-				  "\n"
-				  "\tdbus_message_unref (reply);\n"
-				  "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
+				  "\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
+				  "\t                             _(\"Invalid arguments to %s property\"));\n"
+				  "\treturn -1;\n"
 				  "}\n"
 				  "\n"
 				  "/* Call the handler function */\n"
@@ -900,34 +868,8 @@ property_object_set_function (const void *parent,
 	 * return and let D-Bus deal with it, other errors generate an
 	 * error reply.
 	 */
-	if (! nih_strcat_sprintf (&call_block, NULL, ") < 0) {\n"
-				  "\tNihError *err;\n"
-				  "\n"
-				  "\terr = nih_error_get ();\n"
-				  "\tif (err->number == ENOMEM) {\n"
-				  "\t\tnih_free (err);\n"
-				  "\n"
-				  "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
-				  "\t} else if (err->number == NIH_DBUS_ERROR) {\n"
-				  "\t\tNihDBusError *dbus_err = (NihDBusError *)err;\n"
-				  "\n"
-				  "\t\treply = NIH_MUST (dbus_message_new_error (message->message, dbus_err->name, err->message));\n"
-				  "\t\tnih_free (err);\n"
-				  "\n"
-				  "\t\tNIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
-				  "\n"
-				  "\t\tdbus_message_unref (reply);\n"
-				  "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
-				  "\t} else {\n"
-				  "\t\treply = NIH_MUST (dbus_message_new_error (message->message, DBUS_ERROR_FAILED, err->message));\n"
-				  "\t\tnih_free (err);\n"
-				  "\n"
-				  "\t\tNIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
-				  "\n"
-				  "\t\tdbus_message_unref (reply);\n"
-				  "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
-				  "\t}\n"
-				  "}\n"))
+	if (! nih_strcat_sprintf (&call_block, NULL, ") < 0)\n"
+				  "\treturn -1;\n"))
 		return NULL;
 
 	/* Lay out the function body, indenting it all before placing it
@@ -949,18 +891,7 @@ property_object_set_function (const void *parent,
 				  "\n"
 				  "%s"
 				  "\n"
-				  "/* If the sender doesn't care about a reply, don't bother wasting\n"
-				  " * effort constructing and sending one.\n"
-				  " */\n"
-				  "if (dbus_message_get_no_reply (message->message))\n"
-				  "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
-				  "\n"
-				  "/* Send the reply */\n"
-				  "reply = NIH_MUST (dbus_message_new_method_return (message->message));\n"
-				  "NIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
-				  "\n"
-				  "dbus_message_unref (reply);\n"
-				  "return DBUS_HANDLER_RESULT_HANDLED;\n",
+				  "return 0;\n",
 				  vars_block,
 				  demarshal_block,
 				  block,

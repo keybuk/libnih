@@ -30,13 +30,13 @@
 
 NIH_BEGIN_EXTERN
 
-int               MyProperty_get (NihDBusObject *object,
-				  NihDBusMessage *message,
-				  DBusMessageIter *iter)
+int MyProperty_get (NihDBusObject *object,
+		    NihDBusMessage *message,
+		    DBusMessageIter *iter)
 	__attribute__ ((warn_unused_result));
-DBusHandlerResult MyProperty_set (NihDBusObject *object,
-				  NihDBusMessage *message,
-				  DBusMessageIter *iter)
+int MyProperty_set (NihDBusObject *object,
+		    NihDBusMessage *message,
+		    DBusMessageIter *iter)
 	__attribute__ ((warn_unused_result));
 
 NIH_END_EXTERN

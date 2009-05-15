@@ -117,6 +117,7 @@ test_raise_no_memory (void)
 	nih_error_push_context ();
 	TEST_ALLOC_FAIL {
 		nih_error_raise_no_memory ();
+		error = nih_error_get ();
 
 		TEST_EQ (error->number, ENOMEM);
 		TEST_EQ_STR (error->message, strerror (ENOMEM));
@@ -204,6 +205,7 @@ test_raise_error (void)
 		TEST_FILE_RESET (output);
 
 		nih_free (error1);
+		nih_free (error2);
 	}
 	nih_error_pop_context ();
 

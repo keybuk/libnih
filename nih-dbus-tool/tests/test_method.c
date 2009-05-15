@@ -7569,7 +7569,7 @@ test_proxy_sync_function (void)
 	NihError *        err;
 	NihDBusError *    dbus_err;
 
-	TEST_FUNCTION ("method_reply_function");
+	TEST_FUNCTION ("method_proxy_sync_function");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (server_conn);
 	TEST_DBUS_OPEN (client_conn);
@@ -8509,6 +8509,8 @@ test_proxy_sync_function (void)
 								"com.netsplit.Nih.Test",
 								"MyMethod"));
 
+			TEST_FALSE (dbus_message_get_no_reply (method_call));
+
 			dbus_message_iter_init (method_call, &iter);
 
 			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
@@ -8650,6 +8652,8 @@ test_proxy_sync_function (void)
 								"com.netsplit.Nih.Test",
 								"MyMethod"));
 
+			TEST_FALSE (dbus_message_get_no_reply (method_call));
+
 			dbus_message_iter_init (method_call, &iter);
 
 			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
@@ -8732,6 +8736,8 @@ test_proxy_sync_function (void)
 			TEST_TRUE (dbus_message_is_method_call (method_call,
 								"com.netsplit.Nih.Test",
 								"MyMethod"));
+
+			TEST_FALSE (dbus_message_get_no_reply (method_call));
 
 			dbus_message_iter_init (method_call, &iter);
 
@@ -8837,6 +8843,8 @@ test_proxy_sync_function (void)
 			TEST_TRUE (dbus_message_is_method_call (method_call,
 								"com.netsplit.Nih.Test",
 								"MyMethod"));
+
+			TEST_FALSE (dbus_message_get_no_reply (method_call));
 
 			dbus_message_iter_init (method_call, &iter);
 
@@ -8963,6 +8971,8 @@ test_proxy_sync_function (void)
 								"com.netsplit.Nih.Test",
 								"MyMethod"));
 
+			TEST_FALSE (dbus_message_get_no_reply (method_call));
+
 			dbus_message_iter_init (method_call, &iter);
 
 			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
@@ -9083,6 +9093,8 @@ test_proxy_sync_function (void)
 			TEST_TRUE (dbus_message_is_method_call (method_call,
 								"com.netsplit.Nih.Test",
 								"MyMethod"));
+
+			TEST_FALSE (dbus_message_get_no_reply (method_call));
 
 			dbus_message_iter_init (method_call, &iter);
 

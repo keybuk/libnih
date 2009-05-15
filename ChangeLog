@@ -1,5 +1,8 @@
 2009-05-15  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_method.c (test_proxy_sync_function): Make
+	sure the methods aren't marked to expect no reply (completeness)
+
 	* nih-dbus-tool/method.c (method_proxy_sync_function): Fix nih_strcat
 	call to not overwrite variable with return value
 

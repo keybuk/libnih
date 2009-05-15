@@ -78,7 +78,7 @@ Argument *method_lookup_argument (Method *method, const char *symbol);
 char *    method_object_function       (const void *parent, Method *method,
 					const char *name,
 					const char *handler_name,
-					NihList *prototypes, NihList *externs)
+					NihList *prototypes, NihList *handlers)
 	__attribute__ ((warn_unused_result, malloc));
 
 char *    method_reply_function        (const void *parent, Method *method,

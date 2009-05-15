@@ -429,17 +429,16 @@ method_lookup_argument (Method *    method,
  * @name: name of function to generate,
  * @handler_name: name of handler function to call,
  * @prototypes: list to append function prototypes to,
- * @externs: list to append definitions of extern function prototypes to.
+ * @handlers: list to append definitions of required handlers to.
  *
  * Generates C code for a function @name to handle the method @method,
  * demarshalling the incoming arguments, calling a function named
  * @handler_name and marshalling the output arguments into a reply or
- * responding with an error.
+ * responding with an error.  The prototype for this function is specified
+ * as a TypeFunc object added to the @handlers list.
  *
  * The prototype of the function is given as a TypeFunc object appended to
- * the @prototypes list, with the name as @name itself.  Should the C code
- * call other functions that need to be defined, similar TypeFunc objects
- * will be appended to the @externs list.
+ * the @prototypes list, with the name as @name itself.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -454,7 +453,7 @@ method_object_function (const void *parent,
 			const char *name,
 			const char *handler_name,
 			NihList *   prototypes,
-			NihList *   externs)
+			NihList *   handlers)
 {
 	NihList             locals;
 	nih_local TypeFunc *func = NULL;
@@ -475,7 +474,7 @@ method_object_function (const void *parent,
 	nih_assert (name != NULL);
 	nih_assert (handler_name != NULL);
 	nih_assert (prototypes != NULL);
-	nih_assert (externs != NULL);
+	nih_assert (handlers != NULL);
 
 	nih_list_init (&locals);
 
@@ -884,11 +883,11 @@ method_object_function (const void *parent,
 		return NULL;
 	}
 
-	/* Append the functions to the prototypes and externs lists */
+	/* Append the functions to the prototypes and handlers lists */
 	nih_list_add (prototypes, &func->entry);
 	nih_ref (func, code);
 
-	nih_list_add (externs, &handler_func->entry);
+	nih_list_add (handlers, &handler_func->entry);
 	nih_ref (handler_func, code);
 
 	return code;

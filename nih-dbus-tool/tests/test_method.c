@@ -1217,7 +1217,7 @@ test_object_function (void)
 	DBusConnection *  server_conn;
 	DBusConnection *  client_conn;
 	NihList           prototypes;
-	NihList           externs;
+	NihList           handlers;
 	Method *          method = NULL;
 	Argument *        argument1 = NULL;
 	Argument *        argument2 = NULL;
@@ -1254,7 +1254,7 @@ test_object_function (void)
 	TEST_FEATURE ("with standard method");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
+		nih_list_init (&handlers);
 
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "MyMethod");
@@ -1279,13 +1279,13 @@ test_object_function (void)
 		str = method_object_function (NULL, method,
 					      "MyMethod_handle",
 					      "my_method_handler",
-					      &prototypes, &externs);
+					      &prototypes, &handlers);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
+			TEST_LIST_EMPTY (&handlers);
 
 			nih_free (method);
 			continue;
@@ -1499,9 +1499,9 @@ test_object_function (void)
 		TEST_LIST_EMPTY (&prototypes);
 
 
-		TEST_LIST_NOT_EMPTY (&externs);
+		TEST_LIST_NOT_EMPTY (&handlers);
 
-		func = (TypeFunc *)externs.next;
+		func = (TypeFunc *)handlers.next;
 		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
@@ -1578,7 +1578,7 @@ test_object_function (void)
 		TEST_LIST_EMPTY (&func->attribs);
 		nih_free (func);
 
-		TEST_LIST_EMPTY (&externs);
+		TEST_LIST_EMPTY (&handlers);
 
 		nih_free (str);
 		nih_free (method);
@@ -1591,7 +1591,7 @@ test_object_function (void)
 	TEST_FEATURE ("with no input arguments");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
+		nih_list_init (&handlers);
 
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "MyMethod");
@@ -1606,13 +1606,13 @@ test_object_function (void)
 		str = method_object_function (NULL, method,
 					      "MyMethod_handle",
 					      "my_method_handler",
-					      &prototypes, &externs);
+					      &prototypes, &handlers);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
+			TEST_LIST_EMPTY (&handlers);
 
 			nih_free (method);
 			continue;
@@ -1778,9 +1778,9 @@ test_object_function (void)
 		TEST_LIST_EMPTY (&prototypes);
 
 
-		TEST_LIST_NOT_EMPTY (&externs);
+		TEST_LIST_NOT_EMPTY (&handlers);
 
-		func = (TypeFunc *)externs.next;
+		func = (TypeFunc *)handlers.next;
 		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
@@ -1835,7 +1835,7 @@ test_object_function (void)
 		TEST_LIST_EMPTY (&func->attribs);
 		nih_free (func);
 
-		TEST_LIST_EMPTY (&externs);
+		TEST_LIST_EMPTY (&handlers);
 
 		nih_free (str);
 		nih_free (method);
@@ -1848,7 +1848,7 @@ test_object_function (void)
 	TEST_FEATURE ("with no output arguments");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
+		nih_list_init (&handlers);
 
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "MyMethod");
@@ -1868,13 +1868,13 @@ test_object_function (void)
 		str = method_object_function (NULL, method,
 					      "MyMethod_handle",
 					      "my_method_handler",
-					      &prototypes, &externs);
+					      &prototypes, &handlers);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
+			TEST_LIST_EMPTY (&handlers);
 
 			nih_free (method);
 			continue;
@@ -2059,9 +2059,9 @@ test_object_function (void)
 		TEST_LIST_EMPTY (&prototypes);
 
 
-		TEST_LIST_NOT_EMPTY (&externs);
+		TEST_LIST_NOT_EMPTY (&handlers);
 
-		func = (TypeFunc *)externs.next;
+		func = (TypeFunc *)handlers.next;
 		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
@@ -2127,7 +2127,7 @@ test_object_function (void)
 		TEST_LIST_EMPTY (&func->attribs);
 		nih_free (func);
 
-		TEST_LIST_EMPTY (&externs);
+		TEST_LIST_EMPTY (&handlers);
 
 		nih_free (str);
 		nih_free (method);
@@ -2140,7 +2140,7 @@ test_object_function (void)
 	TEST_FEATURE ("with no arguments");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
+		nih_list_init (&handlers);
 
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "MyMethod");
@@ -2150,13 +2150,13 @@ test_object_function (void)
 		str = method_object_function (NULL, method,
 					      "MyMethod_handle",
 					      "my_method_handler",
-					      &prototypes, &externs);
+					      &prototypes, &handlers);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
+			TEST_LIST_EMPTY (&handlers);
 
 			nih_free (method);
 			continue;
@@ -2293,9 +2293,9 @@ test_object_function (void)
 		TEST_LIST_EMPTY (&prototypes);
 
 
-		TEST_LIST_NOT_EMPTY (&externs);
+		TEST_LIST_NOT_EMPTY (&handlers);
 
-		func = (TypeFunc *)externs.next;
+		func = (TypeFunc *)handlers.next;
 		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
@@ -2339,7 +2339,7 @@ test_object_function (void)
 		TEST_LIST_EMPTY (&func->attribs);
 		nih_free (func);
 
-		TEST_LIST_EMPTY (&externs);
+		TEST_LIST_EMPTY (&handlers);
 
 		nih_free (str);
 		nih_free (method);
@@ -2912,7 +2912,7 @@ test_object_function (void)
 	TEST_FEATURE ("with asynchronous method");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
+		nih_list_init (&handlers);
 
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "MyAsyncMethod");
@@ -2938,13 +2938,13 @@ test_object_function (void)
 		str = method_object_function (NULL, method,
 					      "MyAsyncMethod_handle",
 					      "my_async_method_handler",
-					      &prototypes, &externs);
+					      &prototypes, &handlers);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
+			TEST_LIST_EMPTY (&handlers);
 
 			nih_free (method);
 			continue;
@@ -3106,9 +3106,9 @@ test_object_function (void)
 		TEST_LIST_EMPTY (&prototypes);
 
 
-		TEST_LIST_NOT_EMPTY (&externs);
+		TEST_LIST_NOT_EMPTY (&handlers);
 
-		func = (TypeFunc *)externs.next;
+		func = (TypeFunc *)handlers.next;
 		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
@@ -3174,7 +3174,7 @@ test_object_function (void)
 		TEST_LIST_EMPTY (&func->attribs);
 		nih_free (func);
 
-		TEST_LIST_EMPTY (&externs);
+		TEST_LIST_EMPTY (&handlers);
 
 		nih_free (str);
 		nih_free (method);
@@ -3678,7 +3678,7 @@ test_object_function (void)
 	TEST_FEATURE ("with deprecated method");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
+		nih_list_init (&handlers);
 
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "MyMethod");
@@ -3694,13 +3694,13 @@ test_object_function (void)
 		str = method_object_function (NULL, method,
 					      "MyMethod_handle",
 					      "my_method_handler",
-					      &prototypes, &externs);
+					      &prototypes, &handlers);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
+			TEST_LIST_EMPTY (&handlers);
 
 			nih_free (method);
 			continue;
@@ -3864,9 +3864,9 @@ test_object_function (void)
 		TEST_LIST_EMPTY (&prototypes);
 
 
-		TEST_LIST_NOT_EMPTY (&externs);
+		TEST_LIST_NOT_EMPTY (&handlers);
 
-		func = (TypeFunc *)externs.next;
+		func = (TypeFunc *)handlers.next;
 		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
@@ -3921,7 +3921,7 @@ test_object_function (void)
 		TEST_LIST_EMPTY (&func->attribs);
 		nih_free (func);
 
-		TEST_LIST_EMPTY (&externs);
+		TEST_LIST_EMPTY (&handlers);
 
 		nih_free (str);
 		nih_free (method);

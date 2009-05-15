@@ -1,5 +1,12 @@
 2009-05-15  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_object_function): Rename externs
+	to handlers
+	* nih-dbus-tool/method.h: Update prototype
+	* nih-dbus-tool/tests/method_factory.c: Update calls
+	* nih-dbus-tool/tests/test_method.c (test_object_function): Update
+	variable names in tests
+
 	* nih-dbus-tool/method.c (method_reply_function)
 	(method_proxy_sync_function): Remove the unused externs parameters
 	* nih-dbus-tool/method.h: Update prototypes

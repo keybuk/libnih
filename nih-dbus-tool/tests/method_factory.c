@@ -40,7 +40,7 @@ main (int   argc,
       char *argv[])
 {
 	NihList           prototypes;
-	NihList           externs;
+	NihList           handlers;
 	NihList           typedefs;
 	nih_local Method *method = NULL;
 	Argument *        arg;
@@ -83,20 +83,20 @@ main (int   argc,
 
 
 	nih_list_init (&prototypes);
-	nih_list_init (&externs);
+	nih_list_init (&handlers);
 
 	code = method_object_function (NULL, method,
 				       "MyMethod_handle",
 				       "my_method_handler",
-				       &prototypes, &externs);
+				       &prototypes, &handlers);
 
-	NIH_LIST_FOREACH (&externs, iter) {
+	NIH_LIST_FOREACH (&handlers, iter) {
 		TypeFunc *func = (TypeFunc *)iter;
 
 		NIH_MUST (type_to_extern (&func->type, func));
 	}
 
-	block = type_func_layout (NULL, &externs);
+	block = type_func_layout (NULL, &handlers);
 
 	printf ("%s\n", block);
 	printf ("%s", code);
@@ -105,22 +105,22 @@ main (int   argc,
 
 
 	nih_list_init (&prototypes);
-	nih_list_init (&externs);
+	nih_list_init (&handlers);
 
 	method->async = TRUE;
 
 	code = method_object_function (NULL, method,
 				       "MyAsyncMethod_handle",
 				       "my_async_method_handler",
-				       &prototypes, &externs);
+				       &prototypes, &handlers);
 
-	NIH_LIST_FOREACH (&externs, iter) {
+	NIH_LIST_FOREACH (&handlers, iter) {
 		TypeFunc *func = (TypeFunc *)iter;
 
 		NIH_MUST (type_to_extern (&func->type, func));
 	}
 
-	block = type_func_layout (NULL, &externs);
+	block = type_func_layout (NULL, &handlers);
 
 	printf ("%s\n", block);
 	printf ("%s", code);

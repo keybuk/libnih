@@ -1,5 +1,10 @@
 2009-05-15  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_object_function): Push an error
+	context around the handler call
+	* nih-dbus-tool/tests/test_method.c (test_object_function): Adjust
+	tests to expect the error context
+
 	* nih-dbus-tool/tests/test_method.c (test_proxy_sync_function): Make
 	sure the methods aren't marked to expect no reply (completeness)
 

@@ -541,6 +541,7 @@ method_object_function (const void *parent,
 	 */
 	if (! nih_strcat_sprintf (&call_block, NULL,
 				  "/* Call the handler function */\n"
+				  "nih_error_push_context ();\n"
 				  "if (%s (object->data, message",
 				  handler_name))
 		return NULL;
@@ -780,6 +781,7 @@ method_object_function (const void *parent,
 				  "\terr = nih_error_get ();\n"
 				  "\tif (err->number == ENOMEM) {\n"
 				  "\t\tnih_free (err);\n"
+				  "\t\tnih_error_pop_context ();\n"
 				  "\n"
 				  "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
 				  "\t} else if (err->number == NIH_DBUS_ERROR) {\n"
@@ -787,6 +789,7 @@ method_object_function (const void *parent,
 				  "\n"
 				  "\t\treply = NIH_MUST (dbus_message_new_error (message->message, dbus_err->name, err->message));\n"
 				  "\t\tnih_free (err);\n"
+				  "\t\tnih_error_pop_context ();\n"
 				  "\n"
 				  "\t\tNIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
 				  "\n"
@@ -795,6 +798,7 @@ method_object_function (const void *parent,
 				  "\t} else {\n"
 				  "\t\treply = NIH_MUST (dbus_message_new_error (message->message, DBUS_ERROR_FAILED, err->message));\n"
 				  "\t\tnih_free (err);\n"
+				  "\t\tnih_error_pop_context ();\n"
 				  "\n"
 				  "\t\tNIH_MUST (dbus_connection_send (message->conn, reply, NULL));\n"
 				  "\n"
@@ -802,6 +806,7 @@ method_object_function (const void *parent,
 				  "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
 				  "\t}\n"
 				  "}\n"
+				  "nih_error_pop_context ();\n"
 				  "\n"))
 		return NULL;
 

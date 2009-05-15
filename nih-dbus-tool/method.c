@@ -1955,9 +1955,8 @@ method_proxy_sync_function (const void *parent,
 
 	nih_list_add (&func->args, &arg->entry);
 
-	assert_block = nih_strcat (&assert_block, NULL,
-				   "nih_assert (proxy != NULL);\n");
-	if (! assert_block)
+	if (! nih_strcat (&assert_block, NULL,
+			  "nih_assert (proxy != NULL);\n"))
 		return NULL;
 
 

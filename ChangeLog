@@ -1,5 +1,8 @@
 2009-05-15  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_proxy_sync_function): Fix nih_strcat
+	call to not overwrite variable with return value
+
 	* nih-dbus-tool/method.c (method_proxy_function)
 	(method_proxy_notify_function): Functions to generate the two
 	functions required for an asynchronous method call, the first makes

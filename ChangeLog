@@ -1,5 +1,12 @@
 2009-05-15  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/signal.c (signal_emit_function): Remove the externs
+	parameter, which is not used.
+	* nih-dbus-tool/signal.h: Update prototype
+	* nih-dbus-tool/tests/signal_factory.c: Drop externs handling
+	* nih-dbus-tool/tests/test_signal.c (test_emit_function): Drop
+	tests for empty externs list
+
 	* nih/errors.h: Remove the D-Bus errors from this file
 	* nih-dbus/errors.h: Place them in a new file.
 	* nih-dbus/libnih-dbus.h: Include the new header

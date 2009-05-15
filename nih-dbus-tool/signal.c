@@ -396,17 +396,14 @@ signal_lookup_argument (Signal *    signal,
  * @interface_name: name of interface,
  * @signal: signal to generate function for,
  * @name: name of function to generate,
- * @prototypes: list to append function prototypes to,
- * @externs: list to append definitions of extern function prototypes to.
+ * @prototypes: list to append function prototypes to.
  *
  * Generates C code for a function @name to emit a signal @signal by
  * marshalling the arguments.  The interface name of the signal must be
  * supplied in @interface_name.
  *
  * The prototype of the function is given as a TypeFunc object appended to
- * the @prototypes list, with the name as @name itself.  Should the C code
- * call other functions that need to be defined, similar TypeFunc objects
- * will be appended to the @externs list.
+ * the @prototypes list, with the name as @name itself.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -420,8 +417,7 @@ signal_emit_function (const void *parent,
 		      const char *interface_name,
 		      Signal *    signal,
 		      const char *name,
-		      NihList *   prototypes,
-		      NihList *   externs)
+		      NihList *   prototypes)
 {
 	NihList             locals;
 	nih_local TypeFunc *func = NULL;
@@ -439,7 +435,6 @@ signal_emit_function (const void *parent,
 	nih_assert (signal != NULL);
 	nih_assert (name != NULL);
 	nih_assert (prototypes != NULL);
-	nih_assert (externs != NULL);
 
 	nih_list_init (&locals);
 
@@ -625,7 +620,7 @@ signal_emit_function (const void *parent,
 		return NULL;
 	}
 
-	/* Append the functions to the prototypes and externs lists */
+	/* Append the function to the prototypes list */
 	nih_list_add (prototypes, &func->entry);
 	nih_ref (func, code);
 

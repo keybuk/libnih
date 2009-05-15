@@ -943,7 +943,6 @@ test_emit_function (void)
 	DBusConnection *  server_conn;
 	DBusConnection *  client_conn;
 	NihList           prototypes;
-	NihList           externs;
 	Signal *          signal = NULL;
 	Argument *        argument = NULL;
 	char *            str;
@@ -967,7 +966,6 @@ test_emit_function (void)
 	TEST_FEATURE ("with signal");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
 
 		TEST_ALLOC_SAFE {
 			signal = signal_new (NULL, "MySignal");
@@ -981,13 +979,12 @@ test_emit_function (void)
 
 		str = signal_emit_function (NULL, "com.netsplit.Nih.Test",
 					    signal, "my_emit_signal",
-					    &prototypes, &externs);
+					    &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
 
 			nih_free (signal);
 			continue;
@@ -1088,9 +1085,6 @@ test_emit_function (void)
 
 		TEST_LIST_EMPTY (&prototypes);
 
-
-		TEST_LIST_EMPTY (&externs);
-
 		nih_free (str);
 		nih_free (signal);
 	}
@@ -1102,7 +1096,6 @@ test_emit_function (void)
 	TEST_FEATURE ("with no arguments");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
 
 		TEST_ALLOC_SAFE {
 			signal = signal_new (NULL, "MySignal");
@@ -1111,13 +1104,12 @@ test_emit_function (void)
 
 		str = signal_emit_function (NULL, "com.netsplit.Nih.Test",
 					    signal, "my_emit_signal",
-					    &prototypes, &externs);
+					    &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
 
 			nih_free (signal);
 			continue;
@@ -1199,9 +1191,6 @@ test_emit_function (void)
 
 		TEST_LIST_EMPTY (&prototypes);
 
-
-		TEST_LIST_EMPTY (&externs);
-
 		nih_free (str);
 		nih_free (signal);
 	}
@@ -1253,7 +1242,6 @@ test_emit_function (void)
 	TEST_FEATURE ("with deprecated signal");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
-		nih_list_init (&externs);
 
 		TEST_ALLOC_SAFE {
 			signal = signal_new (NULL, "MySignal");
@@ -1268,13 +1256,12 @@ test_emit_function (void)
 
 		str = signal_emit_function (NULL, "com.netsplit.Nih.Test",
 					    signal, "my_emit_signal",
-					    &prototypes, &externs);
+					    &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
-			TEST_LIST_EMPTY (&externs);
 
 			nih_free (signal);
 			continue;
@@ -1374,9 +1361,6 @@ test_emit_function (void)
 		nih_free (func);
 
 		TEST_LIST_EMPTY (&prototypes);
-
-
-		TEST_LIST_EMPTY (&externs);
 
 		nih_free (str);
 		nih_free (signal);

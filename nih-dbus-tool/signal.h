@@ -74,7 +74,7 @@ Argument *signal_lookup_argument (Signal *signal, const char *symbol);
 char *    signal_emit_function   (const void *parent,
 				  const char *interface_name, Signal *signal,
 				  const char *name,
-				  NihList *prototypes, NihList *externs)
+				  NihList *prototypes)
 	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN

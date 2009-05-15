@@ -58,38 +58,52 @@ typedef struct method {
 
 NIH_BEGIN_EXTERN
 
-int       method_name_valid          (const char *name);
+int       method_name_valid            (const char *name);
 
-Method *  method_new                 (const void *parent, const char *name)
+Method *  method_new                   (const void *parent, const char *name)
 	__attribute__ ((warn_unused_result, malloc));
 
-int       method_start_tag           (XML_Parser xmlp, const char *tag,
-				      char * const *attr)
+int       method_start_tag             (XML_Parser xmlp, const char *tag,
+					char * const *attr)
 	__attribute__ ((warn_unused_result));
-int       method_end_tag             (XML_Parser xmlp, const char *tag)
+int       method_end_tag               (XML_Parser xmlp, const char *tag)
 	__attribute__ ((warn_unused_result));
 
-int       method_annotation          (Method *method,
-				      const char *name, const char *value)
+int       method_annotation            (Method *method,
+					const char *name, const char *value)
 	__attribute__ ((warn_unused_result));
 
 Argument *method_lookup_argument (Method *method, const char *symbol);
 
-char *    method_object_function     (const void *parent, Method *method,
-				      const char *name,
-				      const char *handler_name,
-				      NihList *prototypes, NihList *externs)
+char *    method_object_function       (const void *parent, Method *method,
+					const char *name,
+					const char *handler_name,
+					NihList *prototypes, NihList *externs)
 	__attribute__ ((warn_unused_result, malloc));
 
-char *    method_reply_function      (const void *parent, Method *method,
-				      const char *name,
-				      NihList *prototypes, NihList *externs)
+char *    method_reply_function        (const void *parent, Method *method,
+					const char *name,
+					NihList *prototypes, NihList *externs)
 	__attribute__ ((warn_unused_result, malloc));
 
-char *    method_proxy_sync_function (const void *parent,
-				      const char *interface_name,
-				      Method *method, const char *name,
-				      NihList *prototypes, NihList *externs)
+char *    method_proxy_function        (const void *parent,
+					const char *interface_name,
+					Method *method, const char *name,
+					const char *notify_name,
+					const char *handler_type,
+					NihList *prototypes)
+	__attribute__ ((warn_unused_result, malloc));
+
+char *    method_proxy_notify_function (const void *parent,
+					Method *method, const char *name,
+					const char *handler_type,
+					NihList *prototypes, NihList *typedefs)
+	__attribute__ ((warn_unused_result, malloc));
+
+char *    method_proxy_sync_function   (const void *parent,
+					const char *interface_name,
+					Method *method, const char *name,
+					NihList *prototypes, NihList *externs)
 	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN

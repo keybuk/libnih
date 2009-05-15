@@ -41,6 +41,7 @@ main (int   argc,
 {
 	NihList           prototypes;
 	NihList           externs;
+	NihList           typedefs;
 	nih_local Method *method = NULL;
 	Argument *        arg;
 	nih_local char *  code = NULL;
@@ -58,6 +59,7 @@ main (int   argc,
 		"#include <nih-dbus/dbus_error.h>\n"
 		"#include <nih-dbus/dbus_message.h>\n"
 		"#include <nih-dbus/dbus_object.h>\n"
+		"#include <nih-dbus/dbus_pending_data.h>\n"
 		"#include <nih-dbus/dbus_proxy.h>\n"
 		"\n"
 		"#include \"method_code.h\"\n"
@@ -124,7 +126,6 @@ main (int   argc,
 	printf ("%s", code);
 	printf ("\n");
 
-
 	nih_list_init (&prototypes);
 	nih_list_init (&externs);
 
@@ -142,16 +143,49 @@ main (int   argc,
 
 	printf ("%s\n", block);
 	printf ("%s", code);
+	printf ("\n"
+		"\n");
 
 
 	nih_list_init (&prototypes);
-	nih_list_init (&externs);
 
 	method->async = FALSE;
 
 	arg = argument_new (method, "Length", "i", NIH_DBUS_ARG_OUT);
 	arg->symbol = nih_strdup (arg, "length");
 	nih_list_add (&method->arguments, &arg->entry);
+
+	code = method_proxy_function (NULL, "com.netsplit.Nih.Test",
+				      method,
+				      "my_method",
+				      "my_test_method_notify",
+				      "MyMethodHandler",
+				      &prototypes);
+
+	printf ("extern void my_test_method_notify (DBusPendingCall *pending_call, "
+		"NihDBusPendingData *pending_data);\n");
+	printf ("\n");
+
+	printf ("%s", code);
+	printf ("\n"
+		"\n");
+
+
+	nih_list_init (&prototypes);
+	nih_list_init (&typedefs);
+
+
+	code = method_proxy_notify_function (NULL, method,
+					     "my_method_notify",
+					     "MyMethodHandler",
+					     &prototypes, &typedefs);
+
+	printf ("%s", code);
+	printf ("\n");
+
+
+	nih_list_init (&prototypes);
+	nih_list_init (&externs);
 
 	code = method_proxy_sync_function (NULL, "com.netsplit.Nih.Test",
 					   method,

@@ -1,3 +1,19 @@
+2009-05-15  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/method.c (method_proxy_function)
+	(method_proxy_notify_function): Functions to generate the two
+	functions required for an asynchronous method call, the first makes
+	the call and the second is the pending call notify function for it
+	that calls the reply handler.
+	* nih-dbus-tool/method.h: Prototypes.
+	* nih-dbus-tool/tests/method_factory.c: Call both functions to
+	generate functions for testing
+	* nih-dbus-tool/tests/method_code.h: Expected prototypes for the
+	generated functions.
+	* nih-dbus-tool/tests/test_method.c (test_proxy_function)
+	(test_proxy_notify_function): Test the code generator and the
+	generated code.
+
 2009-05-14  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus/dbus_pending_data.c (nih_dbus_pending_data_new): Allocate

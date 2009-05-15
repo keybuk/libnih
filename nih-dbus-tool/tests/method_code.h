@@ -26,6 +26,11 @@
 
 #include <nih-dbus/dbus_message.h>
 #include <nih-dbus/dbus_object.h>
+#include <nih-dbus/dbus_pending_data.h>
+
+
+typedef void (*MyMethodHandler) (void *data, NihDBusMessage *message,
+				 char * const *output, int32_t length);
 
 
 NIH_BEGIN_EXTERN
@@ -39,6 +44,16 @@ DBusHandlerResult MyAsyncMethod_handle  (NihDBusObject *object,
 int               my_async_method_reply (NihDBusMessage *message,
 					 char * const *output)
 	__attribute__ ((warn_unused_result));
+
+DBusPendingCall * my_method             (NihDBusProxy *proxy,
+					 const char *str, int32_t flags,
+					 MyMethodHandler handler,
+					 NihDBusErrorHandler error_handler,
+					 void *data, int timeout)
+	__attribute__ ((malloc, warn_unused_result));
+
+void              my_method_notify      (DBusPendingCall *pending_call,
+					 NihDBusPendingData *pending_data);
 
 NihDBusMessage *  my_method_sync        (NihDBusProxy *proxy,
 					 const char *str, int32_t flags,

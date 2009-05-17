@@ -48,6 +48,9 @@
 	* Dependency on Python for the D-Bus binding tool has been dropped
 	  and replaced with a dependency on expat 2.0.0
 
+	* The NIH_DBUS_ERROR and NIH_DBUS_INVALID_ARGS error enums have
+	  been moved to nih-dbus/errors.h
+
 0.2.0  2009-01-29
 
 	* nih_alloc_set_allocator() is now a macro that casts the function

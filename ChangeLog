@@ -1,3 +1,7 @@
+2009-05-17  Scott James Remnant  <scott@netsplit.com>
+
+	* NEWS: Add entry for move of nih-dbus errors
+
 2009-05-15  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/tests/test_error.c (test_raise_no_memory): Fix missing

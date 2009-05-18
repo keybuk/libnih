@@ -1,3 +1,18 @@
+2009-05-18  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/property.c (property_proxy_get_sync_function)
+	(property_proxy_set_sync_function): Functions to generate functions
+	to make a synchronous method call to get or set the value of a
+	property respectively.
+	* nih-dbus-tool/property.h: Add prototypes
+	* nih-dbus-tool/tests/property_factory.c: Call the two functions
+	to generate functions for testing
+	* nih-dbus-tool/tests/property_code.h: Prototypes for expected
+	generated functions
+	* nih-dbus-tool/tests/test_property.c (test_proxy_get_sync_function)
+	(test_proxy_set_sync_function): Test the code generator and the
+	generated code.
+
 2009-05-17  Scott James Remnant  <scott@netsplit.com>
 
 	* NEWS: Add entry for move of nih-dbus errors

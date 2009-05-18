@@ -922,3 +922,705 @@ property_object_set_function (const void *parent,
 
 	return code;
 }
+
+
+/**
+ * property_proxy_get_sync_function:
+ * @parent: parent object for new string.
+ * @interface_name: name of interface,
+ * @property: property to generate function for,
+ * @name: name of function to generate,
+ * @prototypes: list to append function prototypes to.
+ *
+ * Generates C code for a function called @name that will make a
+ * synchronous method call to obtain the value of the property @property.
+ * The interface name of the property must be supplied in @interface_name.
+ *
+ * The prototype of the function is given as a TypeFunc object appended to
+ * the @prototypes list, with the name as @name itself.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the return string will also be
+ * freed.
+ *
+ * Returns: newly allocated string or NULL if insufficient memory.
+ **/
+char *
+property_proxy_get_sync_function (const void *parent,
+				  const char *interface_name,
+				  Property *  property,
+				  const char *name,
+				  NihList *   prototypes)
+{
+	DBusSignatureIter   iter;
+	NihList             outputs;
+	NihList             locals;
+	nih_local TypeFunc *func = NULL;
+	TypeVar *           arg;
+	NihListEntry *      attrib;
+	nih_local char *    assert_block = NULL;
+	nih_local TypeVar * message_var = NULL;
+	nih_local TypeVar * iter_var = NULL;
+	nih_local TypeVar * variter_var = NULL;
+	nih_local TypeVar * error_var = NULL;
+	nih_local TypeVar * reply_var = NULL;
+	nih_local TypeVar * interface_var = NULL;
+	nih_local TypeVar * property_var = NULL;
+	nih_local char *    call_block = NULL;
+	nih_local char *    demarshal_block = NULL;
+	nih_local char *    oom_error_code = NULL;
+	nih_local char *    type_error_code = NULL;
+	nih_local char *    block = NULL;
+	nih_local char *    vars_block = NULL;
+	nih_local char *    body = NULL;
+	char *              code = NULL;
+
+	nih_assert (interface_name != NULL);
+	nih_assert (property != NULL);
+	nih_assert (name != NULL);
+	nih_assert (prototypes != NULL);
+
+	dbus_signature_iter_init (&iter, property->type);
+
+	nih_list_init (&outputs);
+	nih_list_init (&locals);
+
+	/* The function returns an integer, and takes a parent object and
+	 * the proxy object as the argument along with an output argument
+	 * for the property value.  The integer is negative if a raised
+	 * error occurred, so we want warning if the result isn't used.
+	 * Since this is used by the client, we also add a deprecated
+	 * attribute if the property is deprecated.
+	 */
+	func = type_func_new (NULL, "int", name);
+	if (! func)
+		return NULL;
+
+	attrib = nih_list_entry_new (func);
+	if (! attrib)
+		return NULL;
+
+	attrib->str = nih_strdup (attrib, "warn_unused_result");
+	if (! attrib->str)
+		return NULL;
+
+	nih_list_add (&func->attribs, &attrib->entry);
+
+	if (property->deprecated) {
+		attrib = nih_list_entry_new (func);
+		if (! attrib)
+			return NULL;
+
+		attrib->str = nih_strdup (attrib, "deprecated");
+		if (! attrib->str)
+			return NULL;
+
+		nih_list_add (&func->attribs, &attrib->entry);
+	}
+
+	arg = type_var_new (func, "const void *", "parent");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&func->args, &arg->entry);
+
+	arg = type_var_new (func, "NihDBusProxy *", "proxy");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&func->args, &arg->entry);
+
+	if (! nih_strcat (&assert_block, NULL,
+			  "nih_assert (proxy != NULL);\n"))
+		return NULL;
+
+
+	/* The function requires a message pointer, which we allocate,
+	 * and an iterator for it to append the arguments.  We also need
+	 * a reply message pointer as well and an error object.
+	 * Rather than deal with these by hand, it's far easier to put them
+	 * on the locals list and deal with them along with the rest.
+	 */
+	message_var = type_var_new (NULL, "DBusMessage *", "method_call");
+	if (! message_var)
+		return NULL;
+
+	nih_list_add (&locals, &message_var->entry);
+
+	iter_var = type_var_new (NULL, "DBusMessageIter", "iter");
+	if (! iter_var)
+		return NULL;
+
+	nih_list_add (&locals, &iter_var->entry);
+
+	variter_var = type_var_new (NULL, "DBusMessageIter", "variter");
+	if (! variter_var)
+		return NULL;
+
+	nih_list_add (&locals, &variter_var->entry);
+
+	error_var = type_var_new (NULL, "DBusError", "error");
+	if (! error_var)
+		return NULL;
+
+	nih_list_add (&locals, &error_var->entry);
+
+	reply_var = type_var_new (NULL, "DBusMessage *", "reply");
+	if (! reply_var)
+		return NULL;
+
+	nih_list_add (&locals, &reply_var->entry);
+
+	/* Annoyingly we also need variables for the interface and
+	 * property names, since D-Bus wants their address and can't just
+	 * take a constant string.
+	 */
+	interface_var = type_var_new (NULL, "const char *", "interface");
+	if (! interface_var)
+		return NULL;
+
+	nih_list_add (&locals, &interface_var->entry);
+
+	property_var = type_var_new (NULL, "const char *", "property");
+	if (! property_var)
+		return NULL;
+
+	nih_list_add (&locals, &property_var->entry);
+
+
+	/* Create the method call to get the property, the property
+	 * interface gets specified as an argument - the method call
+	 * interface is the D-Bus properties one.
+	 */
+	if (! nih_strcat_sprintf (&call_block, NULL,
+				  "/* Construct the method call message. */\n"
+				  "method_call = dbus_message_new_method_call (proxy->name, proxy->path, \"%s\", \"Get\");\n"
+				  "if (! method_call)\n"
+				  "\tnih_return_no_memory_error (-1);\n"
+				  "\n"
+				  "dbus_message_iter_init_append (method_call, &iter);\n"
+				  "\n"
+				  "interface = \"%s\";\n"
+				  "if (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &interface))\n"
+				  "\tnih_return_no_memory_error (-1);\n"
+				  "\n"
+				  "property = \"%s\";\n"
+				  "if (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property))\n"
+				  "\tnih_return_no_memory_error (-1);\n"
+				  "\n",
+				  DBUS_INTERFACE_PROPERTIES,
+				  interface_name,
+				  property->name))
+		return NULL;
+
+	/* FIXME autostart? */
+
+	/* Complete the marshalling block by sending the message and checking
+	 * for error replies.
+	 */
+	if (! nih_strcat_sprintf (&call_block, NULL,
+				  "/* Send the message, and wait for the reply. */\n"
+				  "dbus_error_init (&error);\n"
+				  "\n"
+				  "reply = dbus_connection_send_with_reply_and_block (proxy->conn, method_call, -1, &error);\n"
+				  "if (! reply) {\n"
+				  "\tdbus_message_unref (method_call);\n"
+				  "\n"
+				  "\tif (dbus_error_has_name (&error, DBUS_ERROR_NO_MEMORY)) {\n"
+				  "\t\tnih_error_raise_no_memory ();\n"
+				  "\t} else {\n"
+				  "\t\tnih_dbus_error_raise (error.name, error.message);\n"
+				  "\t}\n"
+				  "\n"
+				  "\tdbus_error_free (&error);\n"
+				  "\treturn -1;\n"
+				  "}\n"
+				  "\n"))
+		return NULL;
+
+	/* Begin the demarshalling block, making sure the first argument
+	 * is a variant and recursing into it and also making sure that
+	 * there are no subsequent arguments before we allocate the
+	 * return value.
+	 */
+	if (! nih_strcat_sprintf (&demarshal_block, NULL,
+				  "dbus_message_unref (method_call);\n"
+				  "\n"
+				  "/* Iterate the method arguments, recursing into the variant */\n"
+				  "dbus_message_iter_init (reply, &iter);\n"
+				  "\n"
+				  "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_VARIANT) {\n"
+				  "\tdbus_message_unref (reply);\n"
+				  "\tnih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
+				  "\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				  "}\n"
+				  "\n"
+				  "dbus_message_iter_recurse (&iter, &variter);\n"
+				  "\n"
+				  "dbus_message_iter_next (&iter);\n"
+				  "\n"
+				  "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
+				  "\tdbus_message_unref (reply);\n"
+				  "\tnih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
+				  "\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				  "}\n"
+				  "\n"))
+		return NULL;
+
+	/* In case of out of memory, we can't just return because we've
+	 * already made the method call so we loop over the code instead.
+	 * But in case of type error in the returned arguments, all we
+	 * can do is return an error.
+	 */
+	oom_error_code = nih_sprintf (NULL,
+				      "*value = NULL;\n"
+				      "goto enomem;\n");
+	if (! oom_error_code)
+		return NULL;
+
+	type_error_code = nih_strdup (NULL,
+				      "dbus_message_unref (reply);\n"
+				      "nih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
+				      "                  _(NIH_DBUS_INVALID_ARGS_STR));\n");
+	if (! type_error_code)
+		return NULL;
+
+	block = demarshal (NULL, &iter, "parent", "variter", "local",
+			   oom_error_code,
+			   type_error_code,
+			   &outputs, &locals);
+	if (! block)
+		return NULL;
+
+	if (! nih_strcat (&block, NULL, "\n"))
+		return NULL;
+
+	/* Each of the outputs from the demarshalling code becomes a local
+	 * variable to our function that we store the value in, and an
+	 * argument to the function that we set when done.
+	 */
+	NIH_LIST_FOREACH_SAFE (&outputs, iter) {
+		TypeVar *       var = (TypeVar *)iter;
+		nih_local char *arg_type = NULL;
+		const char *    suffix;
+		nih_local char *arg_name = NULL;
+		TypeVar *       arg;
+
+		/* Output variable */
+		arg_type = nih_strdup (NULL, var->type);
+		if (! arg_type)
+			return NULL;
+
+		if (! type_to_pointer (&arg_type, NULL))
+			return NULL;
+
+		nih_assert (! strncmp (var->name, "local", 5));
+		suffix = var->name + 5;
+
+		arg_name = nih_sprintf (NULL, "value%s", suffix);
+		if (! arg_name)
+			return NULL;
+
+		arg = type_var_new (func, arg_type, arg_name);
+		if (! arg)
+			return NULL;
+
+		nih_list_add (&func->args, &arg->entry);
+
+		if (! nih_strcat_sprintf (&assert_block, NULL,
+					  "nih_assert (%s != NULL);\n",
+					  arg->name))
+			return NULL;
+
+		/* Copy from local variable to output */
+		if (! nih_strcat_sprintf (&block, NULL,
+					  "*%s = %s;\n",
+					  arg->name, var->name))
+			return NULL;
+
+		nih_list_add (&locals, &var->entry);
+		nih_ref (var, demarshal_block);
+	}
+
+	/* Loop over the demarshalling code for out-of-memory situations */
+	if (! indent (&block, NULL, 1))
+		return NULL;
+
+	if (! nih_strcat_sprintf (&demarshal_block, NULL,
+				  "do {\n"
+				  "\t__label__ enomem;\n"
+				  "\n"
+				  "%s"
+				  "enomem: __attribute__ ((unused));\n"
+				  "} while (! *value);\n"
+				  "\n"
+				  "dbus_message_unref (reply);\n",
+				  block))
+		return NULL;
+
+	/* Lay out the function body, indenting it all before placing it
+	 * in the function code.
+	 */
+	vars_block = type_var_layout (NULL, &locals);
+	if (! vars_block)
+		return NULL;
+
+	if (! nih_strcat_sprintf (&body, NULL,
+				  "%s"
+				  "\n"
+				  "%s"
+				  "\n"
+				  "%s"
+				  "%s"
+				  "\n"
+				  "return 0;\n",
+				  vars_block,
+				  assert_block,
+				  call_block,
+				  demarshal_block))
+		return NULL;
+
+	if (! indent (&body, NULL, 1))
+		return NULL;
+
+	/* Function header */
+	code = type_func_to_string (parent, func);
+	if (! code)
+		return NULL;
+
+	if (! nih_strcat_sprintf (&code, parent,
+				  "{\n"
+				  "%s"
+				  "}\n",
+				  body)) {
+		nih_free (code);
+		return NULL;
+	}
+
+	/* Append the function to the prototypes list */
+	nih_list_add (prototypes, &func->entry);
+	nih_ref (func, code);
+
+	return code;
+}
+
+/**
+ * property_proxy_set_sync_function:
+ * @parent: parent object for new string.
+ * @interface_name: name of interface,
+ * @property: property to generate function for,
+ * @name: name of function to generate,
+ * @prototypes: list to append function prototypes to.
+ *
+ * Generates C code for a function called @name that will make a
+ * synchronous method call to set the value of the property @property.
+ * The interface name of the property must be supplied in @interface_name.
+ *
+ * The prototype of the function is given as a TypeFunc object appended to
+ * the @prototypes list, with the name as @name itself.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the return string will also be
+ * freed.
+ *
+ * Returns: newly allocated string or NULL if insufficient memory.
+ **/
+char *
+property_proxy_set_sync_function (const void *parent,
+				  const char *interface_name,
+				  Property *  property,
+				  const char *name,
+				  NihList *   prototypes)
+{
+	DBusSignatureIter   iter;
+	NihList             inputs;
+	NihList             locals;
+	nih_local TypeFunc *func = NULL;
+	TypeVar *           arg;
+	NihListEntry *      attrib;
+	nih_local char *    assert_block = NULL;
+	nih_local TypeVar * message_var = NULL;
+	nih_local TypeVar * iter_var = NULL;
+	nih_local TypeVar * variter_var = NULL;
+	nih_local TypeVar * error_var = NULL;
+	nih_local TypeVar * reply_var = NULL;
+	nih_local TypeVar * interface_var = NULL;
+	nih_local TypeVar * property_var = NULL;
+	nih_local char *    marshal_block = NULL;
+	nih_local char *    call_block = NULL;
+	nih_local char *    oom_error_code = NULL;
+	nih_local char *    block = NULL;
+	nih_local char *    vars_block = NULL;
+	nih_local char *    body = NULL;
+	char *              code = NULL;
+
+	nih_assert (interface_name != NULL);
+	nih_assert (property != NULL);
+	nih_assert (name != NULL);
+	nih_assert (prototypes != NULL);
+
+	dbus_signature_iter_init (&iter, property->type);
+
+	nih_list_init (&inputs);
+	nih_list_init (&locals);
+
+	/* The function returns an integer, and takes the proxy object
+	 * as the argument along with an input argument for the property
+	 * value.  The integer is negative if a raised error occurred,
+	 * so we want warning if the result isn't used.  Since this is
+	 * used by the client, we also add a deprecated attribute if
+	 * the property is deprecated.
+	 */
+	func = type_func_new (NULL, "int", name);
+	if (! func)
+		return NULL;
+
+	attrib = nih_list_entry_new (func);
+	if (! attrib)
+		return NULL;
+
+	attrib->str = nih_strdup (attrib, "warn_unused_result");
+	if (! attrib->str)
+		return NULL;
+
+	nih_list_add (&func->attribs, &attrib->entry);
+
+	if (property->deprecated) {
+		attrib = nih_list_entry_new (func);
+		if (! attrib)
+			return NULL;
+
+		attrib->str = nih_strdup (attrib, "deprecated");
+		if (! attrib->str)
+			return NULL;
+
+		nih_list_add (&func->attribs, &attrib->entry);
+	}
+
+	arg = type_var_new (func, "NihDBusProxy *", "proxy");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&func->args, &arg->entry);
+
+	if (! nih_strcat (&assert_block, NULL,
+			  "nih_assert (proxy != NULL);\n"))
+		return NULL;
+
+
+	/* The function requires a message pointer, which we allocate,
+	 * and an iterator for it to append the arguments.  We also need
+	 * a reply message pointer as well and an error object.
+	 * Rather than deal with these by hand, it's far easier to put them
+	 * on the locals list and deal with them along with the rest.
+	 */
+	message_var = type_var_new (NULL, "DBusMessage *", "method_call");
+	if (! message_var)
+		return NULL;
+
+	nih_list_add (&locals, &message_var->entry);
+
+	iter_var = type_var_new (NULL, "DBusMessageIter", "iter");
+	if (! iter_var)
+		return NULL;
+
+	nih_list_add (&locals, &iter_var->entry);
+
+	variter_var = type_var_new (NULL, "DBusMessageIter", "variter");
+	if (! variter_var)
+		return NULL;
+
+	nih_list_add (&locals, &variter_var->entry);
+
+	error_var = type_var_new (NULL, "DBusError", "error");
+	if (! error_var)
+		return NULL;
+
+	nih_list_add (&locals, &error_var->entry);
+
+	reply_var = type_var_new (NULL, "DBusMessage *", "reply");
+	if (! reply_var)
+		return NULL;
+
+	nih_list_add (&locals, &reply_var->entry);
+
+	/* Annoyingly we also need variables for the interface and
+	 * property names, since D-Bus wants their address and can't just
+	 * take a constant string.
+	 */
+	interface_var = type_var_new (NULL, "const char *", "interface");
+	if (! interface_var)
+		return NULL;
+
+	nih_list_add (&locals, &interface_var->entry);
+
+	property_var = type_var_new (NULL, "const char *", "property");
+	if (! property_var)
+		return NULL;
+
+	nih_list_add (&locals, &property_var->entry);
+
+
+	/* Create the method call to set the property, the property
+	 * interface gets specified as an argument - the method call
+	 * interface is the D-Bus properties one.  Append a variant
+	 * which is where we put the new value.
+	 */
+	if (! nih_strcat_sprintf (&marshal_block, NULL,
+				  "/* Construct the method call message. */\n"
+				  "method_call = dbus_message_new_method_call (proxy->name, proxy->path, \"%s\", \"Set\");\n"
+				  "if (! method_call)\n"
+				  "\tnih_return_no_memory_error (-1);\n"
+				  "\n"
+				  "dbus_message_iter_init_append (method_call, &iter);\n"
+				  "\n"
+				  "interface = \"%s\";\n"
+				  "if (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &interface))\n"
+				  "\tnih_return_no_memory_error (-1);\n"
+				  "\n"
+				  "property = \"%s\";\n"
+				  "if (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property))\n"
+				  "\tnih_return_no_memory_error (-1);\n"
+				  "\n"
+				  "if (! dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT, \"%s\", &variter))\n"
+				  "\tnih_return_no_memory_error (-1);\n"
+				  "\n",
+				  DBUS_INTERFACE_PROPERTIES,
+				  interface_name,
+				  property->name,
+				  property->type))
+		return NULL;
+
+	/* FIXME autostart? */
+
+	/* In case of out of memory, we just return the error to the caller
+	 * since we haven't made the method call yet.
+	 */
+	oom_error_code = nih_sprintf (NULL,
+				      "dbus_message_iter_close_container (&iter, &variter);\n"
+				      "dbus_message_unref (method_call);\n"
+				      "nih_return_no_memory_error (-1);\n");
+	if (! oom_error_code)
+		return NULL;
+
+	block = marshal (NULL, &iter, "variter", "value",
+			 oom_error_code,
+			 &inputs, &locals);
+	if (! block)
+		return NULL;
+
+	if (! nih_strcat_sprintf (&marshal_block, NULL,
+				  "%s"
+				  "\n",
+				  block))
+		return NULL;
+
+	/* Each of the inputs of the marshalling code becomes a const
+	 * argument to our function that we obtain the value from.
+	 */
+	NIH_LIST_FOREACH_SAFE (&inputs, iter) {
+		TypeVar *var = (TypeVar *)iter;
+
+		if (! type_to_const (&var->type, var))
+			return NULL;
+
+		if (strchr (var->type, '*'))
+			if (! nih_strcat_sprintf (&assert_block, NULL,
+						  "nih_assert (%s != NULL);\n",
+						  var->name))
+				return NULL;
+
+		nih_list_add (&func->args, &var->entry);
+		nih_ref (var, func);
+	}
+
+	/* Complete the marshalling block by closing the container. */
+	if (! nih_strcat_sprintf (&marshal_block, NULL,
+				  "if (! dbus_message_iter_close_container (&iter, &variter)) {\n"
+				  "\tdbus_message_unref (method_call);\n"
+				  "\tnih_return_no_memory_error (-1);\n"
+				  "}\n"
+				  "\n"))
+		return NULL;
+
+	/* Send the message and check for error replies, or arguments
+	 * in the reply (which is an error).
+	 */
+	if (! nih_strcat_sprintf (&call_block, NULL,
+				  "/* Send the message, and wait for the reply. */\n"
+				  "dbus_error_init (&error);\n"
+				  "\n"
+				  "reply = dbus_connection_send_with_reply_and_block (proxy->conn, method_call, -1, &error);\n"
+				  "if (! reply) {\n"
+				  "\tdbus_message_unref (method_call);\n"
+				  "\n"
+				  "\tif (dbus_error_has_name (&error, DBUS_ERROR_NO_MEMORY)) {\n"
+				  "\t\tnih_error_raise_no_memory ();\n"
+				  "\t} else {\n"
+				  "\t\tnih_dbus_error_raise (error.name, error.message);\n"
+				  "\t}\n"
+				  "\n"
+				  "\tdbus_error_free (&error);\n"
+				  "\treturn -1;\n"
+				  "}\n"
+				  "\n"
+				  "/* Check the reply has no arguments */\n"
+				  "dbus_message_unref (method_call);\n"
+				  "dbus_message_iter_init (reply, &iter);\n"
+				  "\n"
+				  "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
+				  "\tdbus_message_unref (reply);\n"
+				  "\tnih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
+				  "\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				  "}\n"
+				  "\n"
+				  "dbus_message_unref (reply);\n"))
+		return NULL;
+
+	/* Lay out the function body, indenting it all before placing it
+	 * in the function code.
+	 */
+	vars_block = type_var_layout (NULL, &locals);
+	if (! vars_block)
+		return NULL;
+
+	if (! nih_strcat_sprintf (&body, NULL,
+				  "%s"
+				  "\n"
+				  "%s"
+				  "\n"
+				  "%s"
+				  "%s"
+				  "\n"
+				  "return 0;\n",
+				  vars_block,
+				  assert_block,
+				  marshal_block,
+				  call_block))
+		return NULL;
+
+	if (! indent (&body, NULL, 1))
+		return NULL;
+
+	/* Function header */
+	code = type_func_to_string (parent, func);
+	if (! code)
+		return NULL;
+
+	if (! nih_strcat_sprintf (&code, parent,
+				  "{\n"
+				  "%s"
+				  "}\n",
+				  body)) {
+		nih_free (code);
+		return NULL;
+	}
+
+	/* Append the function to the prototypes list */
+	nih_list_add (prototypes, &func->entry);
+	nih_ref (func, code);
+
+	return code;
+}

@@ -2673,6 +2673,1773 @@ test_object_set_function (void)
 }
 
 
+void
+test_proxy_get_sync_function (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *server_conn;
+	DBusConnection *client_conn;
+	NihList         prototypes;
+	Property *      property = NULL;
+	char *          str;
+	TypeFunc *      func;
+	TypeVar *       arg;
+	NihListEntry *  attrib;
+	NihDBusProxy *  proxy = NULL;
+	void *          parent = NULL;
+	pid_t           pid;
+	int             status;
+	DBusMessage *   method_call;
+	DBusMessage *   reply;
+	DBusMessageIter iter;
+	DBusMessageIter subiter;
+	char *          str_value;
+	double          double_value;
+	int             ret;
+	NihError *      err;
+	NihDBusError *  dbus_err;
+
+	TEST_FUNCTION ("property_proxy_get_sync_function");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (server_conn);
+	TEST_DBUS_OPEN (client_conn);
+
+
+	/* Check that we can generate a function that will make a method
+	 * call to obtain the value of a property and return it in the
+	 * pointer argument supplied.  The function returns an integer
+	 * to indicate success.
+	 */
+	TEST_FEATURE ("with property");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+
+		TEST_ALLOC_SAFE {
+			property = property_new (NULL, "my_property",
+						 "s", NIH_DBUS_READWRITE);
+			property->symbol = nih_strdup (property, "my_property");
+		}
+
+		str = property_proxy_get_sync_function (NULL,
+							"com.netsplit.Nih.Test",
+							property,
+							"my_property_get_sync",
+							&prototypes);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+
+			nih_free (property);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "my_property_get_sync (const void *  parent,\n"
+				   "                      NihDBusProxy *proxy,\n"
+				   "                      char **       value)\n"
+				   "{\n"
+				   "\tDBusMessage *   method_call;\n"
+				   "\tDBusMessageIter iter;\n"
+				   "\tDBusMessageIter variter;\n"
+				   "\tDBusError       error;\n"
+				   "\tDBusMessage *   reply;\n"
+				   "\tconst char *    interface;\n"
+				   "\tconst char *    property;\n"
+				   "\tconst char *    local_dbus;\n"
+				   "\tchar *          local;\n"
+				   "\n"
+				   "\tnih_assert (proxy != NULL);\n"
+				   "\tnih_assert (value != NULL);\n"
+				   "\n"
+				   "\t/* Construct the method call message. */\n"
+				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"org.freedesktop.DBus.Properties\", \"Get\");\n"
+				   "\tif (! method_call)\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\n"
+				   "\tdbus_message_iter_init_append (method_call, &iter);\n"
+				   "\n"
+				   "\tinterface = \"com.netsplit.Nih.Test\";\n"
+				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &interface))\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\n"
+				   "\tproperty = \"my_property\";\n"
+				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property))\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\n"
+				   "\t/* Send the message, and wait for the reply. */\n"
+				   "\tdbus_error_init (&error);\n"
+				   "\n"
+				   "\treply = dbus_connection_send_with_reply_and_block (proxy->conn, method_call, -1, &error);\n"
+				   "\tif (! reply) {\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\n"
+				   "\t\tif (dbus_error_has_name (&error, DBUS_ERROR_NO_MEMORY)) {\n"
+				   "\t\t\tnih_error_raise_no_memory ();\n"
+				   "\t\t} else {\n"
+				   "\t\t\tnih_dbus_error_raise (error.name, error.message);\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_error_free (&error);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_unref (method_call);\n"
+				   "\n"
+				   "\t/* Iterate the method arguments, recursing into the variant */\n"
+				   "\tdbus_message_iter_init (reply, &iter);\n"
+				   "\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_VARIANT) {\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\tnih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_recurse (&iter, &variter);\n"
+				   "\n"
+				   "\tdbus_message_iter_next (&iter);\n"
+				   "\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\tnih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdo {\n"
+				   "\t\t__label__ enomem;\n"
+				   "\n"
+				   "\t\t/* Demarshal a char * from the message */\n"
+				   "\t\tif (dbus_message_iter_get_arg_type (&variter) != DBUS_TYPE_STRING) {\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\tnih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_iter_get_basic (&variter, &local_dbus);\n"
+				   "\n"
+				   "\t\tlocal = nih_strdup (parent, local_dbus);\n"
+				   "\t\tif (! local) {\n"
+				   "\t\t\t*value = NULL;\n"
+				   "\t\t\tgoto enomem;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_iter_next (&variter);\n"
+				   "\n"
+				   "\t\t*value = local;\n"
+				   "\tenomem: __attribute__ ((unused));\n"
+				   "\t} while (! *value);\n"
+				   "\n"
+				   "\tdbus_message_unref (reply);\n"
+				   "\n"
+				   "\treturn 0;\n"
+				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_property_get_sync");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const void *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "parent");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusProxy *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "proxy");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "char **");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "value");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		nih_free (str);
+		nih_free (property);
+	}
+
+
+	/* Check that we can use the generated code to make a method call
+	 * and obtain the value of the property.
+	 */
+	TEST_FEATURE ("with method call (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih");
+			parent = nih_alloc (proxy, 0);
+		}
+
+		TEST_CHILD (pid) {
+			TEST_DBUS_MESSAGE (server_conn, method_call);
+
+			/* Check the incoming message */
+			TEST_TRUE (dbus_message_is_method_call (method_call,
+								DBUS_INTERFACE_PROPERTIES,
+								"Get"));
+
+			dbus_message_iter_init (method_call, &iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&iter, &str_value);
+			TEST_EQ_STR (str_value, "com.netsplit.Nih.Test");
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&iter, &str_value);
+			TEST_EQ_STR (str_value, "my_property");
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_INVALID);
+
+			/* Construct and send the reply */
+			reply = dbus_message_new_method_return (method_call);
+			dbus_message_unref (method_call);
+
+			dbus_message_iter_init_append (reply, &iter);
+
+			dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+							  DBUS_TYPE_STRING_AS_STRING,
+							  &subiter);
+
+			str_value = "wibble";
+			dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+							&str_value);
+
+			dbus_message_iter_close_container (&iter, &subiter);
+
+			dbus_connection_send (server_conn, reply, NULL);
+			dbus_connection_flush (server_conn);
+			dbus_message_unref (reply);
+
+			TEST_DBUS_CLOSE (client_conn);
+			TEST_DBUS_CLOSE (server_conn);
+
+			dbus_shutdown ();
+			exit (0);
+		}
+
+		str_value = NULL;
+
+		ret = my_property_get_sync (parent, proxy, &str_value);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			/* If we failed with ENOMEM, the server must not
+			 * have processed the reply
+			 */
+			kill (pid, SIGTERM);
+
+			waitpid (pid, &status, 0);
+			TEST_TRUE (WIFSIGNALED (status));
+			TEST_EQ (WTERMSIG (status), SIGTERM);
+
+			TEST_EQ_P (str_value, NULL);
+
+			nih_free (proxy);
+			continue;
+		}
+
+		waitpid (pid, &status, 0);
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		TEST_EQ (ret, 0);
+
+		TEST_NE_P (str_value, NULL);
+		TEST_ALLOC_PARENT (str_value, parent);
+		TEST_EQ_STR (str_value, "wibble");
+
+		nih_free (proxy);
+	}
+
+
+	/* Check that the generated code handles an error returned from
+	 * the property get function, returning a raised error.
+	 */
+	TEST_FEATURE ("with error returned (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih");
+			parent = nih_alloc (proxy, 0);
+		}
+
+		TEST_CHILD (pid) {
+			TEST_DBUS_MESSAGE (server_conn, method_call);
+
+			/* Check the incoming message */
+			TEST_TRUE (dbus_message_is_method_call (method_call,
+								DBUS_INTERFACE_PROPERTIES,
+								"Get"));
+
+			dbus_message_iter_init (method_call, &iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&iter, &str_value);
+			TEST_EQ_STR (str_value, "com.netsplit.Nih.Test");
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&iter, &str_value);
+			TEST_EQ_STR (str_value, "my_property");
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_INVALID);
+
+			/* Construct and send the reply */
+			reply = dbus_message_new_error (method_call,
+							"com.netsplit.Nih.Failed",
+							"Didn't work out");
+			dbus_message_unref (method_call);
+
+			dbus_connection_send (server_conn, reply, NULL);
+			dbus_connection_flush (server_conn);
+			dbus_message_unref (reply);
+
+			TEST_DBUS_CLOSE (client_conn);
+			TEST_DBUS_CLOSE (server_conn);
+
+			dbus_shutdown ();
+			exit (0);
+		}
+
+		str_value = NULL;
+
+		ret = my_property_get_sync (parent, proxy, &str_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			/* If we failed with ENOMEM, the server must not
+			 * have processed the reply
+			 */
+			kill (pid, SIGTERM);
+
+			waitpid (pid, &status, 0);
+			TEST_TRUE (WIFSIGNALED (status));
+			TEST_EQ (WTERMSIG (status), SIGTERM);
+
+			TEST_EQ_P (str_value, NULL);
+
+			nih_free (proxy);
+			continue;
+		}
+
+		waitpid (pid, &status, 0);
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Failed");
+		TEST_EQ_STR (err->message, "Didn't work out");
+		nih_free (err);
+
+		TEST_EQ_P (str_value, NULL);
+
+		nih_free (proxy);
+	}
+
+
+	/* Check that an incorrect type in the variant results in the
+	 * function returning a raised error.
+	 */
+	TEST_FEATURE ("with incorrect type in variant (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih");
+			parent = nih_alloc (proxy, 0);
+		}
+
+		TEST_CHILD (pid) {
+			TEST_DBUS_MESSAGE (server_conn, method_call);
+
+			/* Check the incoming message */
+			TEST_TRUE (dbus_message_is_method_call (method_call,
+								DBUS_INTERFACE_PROPERTIES,
+								"Get"));
+
+			dbus_message_iter_init (method_call, &iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&iter, &str_value);
+			TEST_EQ_STR (str_value, "com.netsplit.Nih.Test");
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&iter, &str_value);
+			TEST_EQ_STR (str_value, "my_property");
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_INVALID);
+
+			/* Construct and send the reply */
+			reply = dbus_message_new_method_return (method_call);
+			dbus_message_unref (method_call);
+
+			dbus_message_iter_init_append (reply, &iter);
+
+			dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+							  DBUS_TYPE_DOUBLE_AS_STRING,
+							  &subiter);
+
+			double_value = 3.14;
+			dbus_message_iter_append_basic (&subiter, DBUS_TYPE_DOUBLE,
+							&double_value);
+
+			dbus_message_iter_close_container (&iter, &subiter);
+
+			dbus_connection_send (server_conn, reply, NULL);
+			dbus_connection_flush (server_conn);
+			dbus_message_unref (reply);
+
+			TEST_DBUS_CLOSE (client_conn);
+			TEST_DBUS_CLOSE (server_conn);
+
+			dbus_shutdown ();
+			exit (0);
+		}
+
+		str_value = NULL;
+
+		ret = my_property_get_sync (parent, proxy, &str_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			/* If we failed with ENOMEM, the server must not
+			 * have processed the reply
+			 */
+			kill (pid, SIGTERM);
+
+			waitpid (pid, &status, 0);
+			TEST_TRUE (WIFSIGNALED (status));
+			TEST_EQ (WTERMSIG (status), SIGTERM);
+
+			TEST_EQ_P (str_value, NULL);
+
+			nih_free (proxy);
+			continue;
+		}
+
+		waitpid (pid, &status, 0);
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		TEST_EQ (err->number, NIH_DBUS_INVALID_ARGS);
+		nih_free (err);
+
+		TEST_EQ_P (str_value, NULL);
+
+		nih_free (proxy);
+	}
+
+
+	/* Check that an incorrect type in the arguments results in the
+	 * function returning a raised error.
+	 */
+	TEST_FEATURE ("with incorrect type (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih");
+			parent = nih_alloc (proxy, 0);
+		}
+
+		TEST_CHILD (pid) {
+			TEST_DBUS_MESSAGE (server_conn, method_call);
+
+			/* Check the incoming message */
+			TEST_TRUE (dbus_message_is_method_call (method_call,
+								DBUS_INTERFACE_PROPERTIES,
+								"Get"));
+
+			dbus_message_iter_init (method_call, &iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&iter, &str_value);
+			TEST_EQ_STR (str_value, "com.netsplit.Nih.Test");
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&iter, &str_value);
+			TEST_EQ_STR (str_value, "my_property");
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_INVALID);
+
+			/* Construct and send the reply */
+			reply = dbus_message_new_method_return (method_call);
+			dbus_message_unref (method_call);
+
+			dbus_message_iter_init_append (reply, &iter);
+
+			double_value = 3.14;
+			dbus_message_iter_append_basic (&iter, DBUS_TYPE_DOUBLE,
+							&double_value);
+
+			dbus_connection_send (server_conn, reply, NULL);
+			dbus_connection_flush (server_conn);
+			dbus_message_unref (reply);
+
+			TEST_DBUS_CLOSE (client_conn);
+			TEST_DBUS_CLOSE (server_conn);
+
+			dbus_shutdown ();
+			exit (0);
+		}
+
+		str_value = NULL;
+
+		ret = my_property_get_sync (parent, proxy, &str_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			/* If we failed with ENOMEM, the server must not
+			 * have processed the reply
+			 */
+			kill (pid, SIGTERM);
+
+			waitpid (pid, &status, 0);
+			TEST_TRUE (WIFSIGNALED (status));
+			TEST_EQ (WTERMSIG (status), SIGTERM);
+
+			TEST_EQ_P (str_value, NULL);
+
+			nih_free (proxy);
+			continue;
+		}
+
+		waitpid (pid, &status, 0);
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		TEST_EQ (err->number, NIH_DBUS_INVALID_ARGS);
+		nih_free (err);
+
+		TEST_EQ_P (str_value, NULL);
+
+		nih_free (proxy);
+	}
+
+
+	/* Check that a missing argument results in the function
+	 * returning a raised error.
+	 */
+	TEST_FEATURE ("with missing argument (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih");
+			parent = nih_alloc (proxy, 0);
+		}
+
+		TEST_CHILD (pid) {
+			TEST_DBUS_MESSAGE (server_conn, method_call);
+
+			/* Check the incoming message */
+			TEST_TRUE (dbus_message_is_method_call (method_call,
+								DBUS_INTERFACE_PROPERTIES,
+								"Get"));
+
+			dbus_message_iter_init (method_call, &iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&iter, &str_value);
+			TEST_EQ_STR (str_value, "com.netsplit.Nih.Test");
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&iter, &str_value);
+			TEST_EQ_STR (str_value, "my_property");
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_INVALID);
+
+			/* Construct and send the reply */
+			reply = dbus_message_new_method_return (method_call);
+			dbus_message_unref (method_call);
+
+			dbus_connection_send (server_conn, reply, NULL);
+			dbus_connection_flush (server_conn);
+			dbus_message_unref (reply);
+
+			TEST_DBUS_CLOSE (client_conn);
+			TEST_DBUS_CLOSE (server_conn);
+
+			dbus_shutdown ();
+			exit (0);
+		}
+
+		str_value = NULL;
+
+		ret = my_property_get_sync (parent, proxy, &str_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			/* If we failed with ENOMEM, the server must not
+			 * have processed the reply
+			 */
+			kill (pid, SIGTERM);
+
+			waitpid (pid, &status, 0);
+			TEST_TRUE (WIFSIGNALED (status));
+			TEST_EQ (WTERMSIG (status), SIGTERM);
+
+			TEST_EQ_P (str_value, NULL);
+
+			nih_free (proxy);
+			continue;
+		}
+
+		waitpid (pid, &status, 0);
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		TEST_EQ (err->number, NIH_DBUS_INVALID_ARGS);
+		nih_free (err);
+
+		TEST_EQ_P (str_value, NULL);
+
+		nih_free (proxy);
+	}
+
+
+	/* Check that an extra arguments results in the function
+	 * returning a raised error.
+	 */
+	TEST_FEATURE ("with extra argument (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih");
+			parent = nih_alloc (proxy, 0);
+		}
+
+		TEST_CHILD (pid) {
+			TEST_DBUS_MESSAGE (server_conn, method_call);
+
+			/* Check the incoming message */
+			TEST_TRUE (dbus_message_is_method_call (method_call,
+								DBUS_INTERFACE_PROPERTIES,
+								"Get"));
+
+			dbus_message_iter_init (method_call, &iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&iter, &str_value);
+			TEST_EQ_STR (str_value, "com.netsplit.Nih.Test");
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&iter, &str_value);
+			TEST_EQ_STR (str_value, "my_property");
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_INVALID);
+
+			/* Construct and send the reply */
+			reply = dbus_message_new_method_return (method_call);
+			dbus_message_unref (method_call);
+
+			dbus_message_iter_init_append (reply, &iter);
+
+			dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+							  DBUS_TYPE_STRING_AS_STRING,
+							  &subiter);
+
+			str_value = "wibble";
+			dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+							&str_value);
+
+			dbus_message_iter_close_container (&iter, &subiter);
+
+			double_value = 3.14;
+			dbus_message_iter_append_basic (&iter, DBUS_TYPE_DOUBLE,
+							&double_value);
+
+			dbus_connection_send (server_conn, reply, NULL);
+			dbus_connection_flush (server_conn);
+			dbus_message_unref (reply);
+
+			TEST_DBUS_CLOSE (client_conn);
+			TEST_DBUS_CLOSE (server_conn);
+
+			dbus_shutdown ();
+			exit (0);
+		}
+
+		str_value = NULL;
+
+		ret = my_property_get_sync (parent, proxy, &str_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			/* If we failed with ENOMEM, the server must not
+			 * have processed the reply
+			 */
+			kill (pid, SIGTERM);
+
+			waitpid (pid, &status, 0);
+			TEST_TRUE (WIFSIGNALED (status));
+			TEST_EQ (WTERMSIG (status), SIGTERM);
+
+			TEST_EQ_P (str_value, NULL);
+
+			nih_free (proxy);
+			continue;
+		}
+
+		waitpid (pid, &status, 0);
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		TEST_EQ (err->number, NIH_DBUS_INVALID_ARGS);
+		nih_free (err);
+
+		TEST_EQ_P (str_value, NULL);
+
+		nih_free (proxy);
+	}
+
+
+	/* Check that a deprecated property has the deprecated attribute
+	 * added to its function prototype, since we want to warn about
+	 * client code using them.
+	 */
+	TEST_FEATURE ("with deprecated property");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+
+		TEST_ALLOC_SAFE {
+			property = property_new (NULL, "my_property",
+						 "s", NIH_DBUS_READWRITE);
+			property->symbol = nih_strdup (property, "my_property");
+			property->deprecated = TRUE;
+		}
+
+		str = property_proxy_get_sync_function (NULL,
+							"com.netsplit.Nih.Test",
+							property,
+							"my_property_get_sync",
+							&prototypes);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+
+			nih_free (property);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "my_property_get_sync (const void *  parent,\n"
+				   "                      NihDBusProxy *proxy,\n"
+				   "                      char **       value)\n"
+				   "{\n"
+				   "\tDBusMessage *   method_call;\n"
+				   "\tDBusMessageIter iter;\n"
+				   "\tDBusMessageIter variter;\n"
+				   "\tDBusError       error;\n"
+				   "\tDBusMessage *   reply;\n"
+				   "\tconst char *    interface;\n"
+				   "\tconst char *    property;\n"
+				   "\tconst char *    local_dbus;\n"
+				   "\tchar *          local;\n"
+				   "\n"
+				   "\tnih_assert (proxy != NULL);\n"
+				   "\tnih_assert (value != NULL);\n"
+				   "\n"
+				   "\t/* Construct the method call message. */\n"
+				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"org.freedesktop.DBus.Properties\", \"Get\");\n"
+				   "\tif (! method_call)\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\n"
+				   "\tdbus_message_iter_init_append (method_call, &iter);\n"
+				   "\n"
+				   "\tinterface = \"com.netsplit.Nih.Test\";\n"
+				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &interface))\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\n"
+				   "\tproperty = \"my_property\";\n"
+				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property))\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\n"
+				   "\t/* Send the message, and wait for the reply. */\n"
+				   "\tdbus_error_init (&error);\n"
+				   "\n"
+				   "\treply = dbus_connection_send_with_reply_and_block (proxy->conn, method_call, -1, &error);\n"
+				   "\tif (! reply) {\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\n"
+				   "\t\tif (dbus_error_has_name (&error, DBUS_ERROR_NO_MEMORY)) {\n"
+				   "\t\t\tnih_error_raise_no_memory ();\n"
+				   "\t\t} else {\n"
+				   "\t\t\tnih_dbus_error_raise (error.name, error.message);\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_error_free (&error);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_unref (method_call);\n"
+				   "\n"
+				   "\t/* Iterate the method arguments, recursing into the variant */\n"
+				   "\tdbus_message_iter_init (reply, &iter);\n"
+				   "\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_VARIANT) {\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\tnih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_recurse (&iter, &variter);\n"
+				   "\n"
+				   "\tdbus_message_iter_next (&iter);\n"
+				   "\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\tnih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdo {\n"
+				   "\t\t__label__ enomem;\n"
+				   "\n"
+				   "\t\t/* Demarshal a char * from the message */\n"
+				   "\t\tif (dbus_message_iter_get_arg_type (&variter) != DBUS_TYPE_STRING) {\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\tnih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_iter_get_basic (&variter, &local_dbus);\n"
+				   "\n"
+				   "\t\tlocal = nih_strdup (parent, local_dbus);\n"
+				   "\t\tif (! local) {\n"
+				   "\t\t\t*value = NULL;\n"
+				   "\t\t\tgoto enomem;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_iter_next (&variter);\n"
+				   "\n"
+				   "\t\t*value = local;\n"
+				   "\tenomem: __attribute__ ((unused));\n"
+				   "\t} while (! *value);\n"
+				   "\n"
+				   "\tdbus_message_unref (reply);\n"
+				   "\n"
+				   "\treturn 0;\n"
+				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_property_get_sync");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const void *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "parent");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusProxy *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "proxy");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "char **");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "value");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "deprecated");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		nih_free (str);
+		nih_free (property);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_proxy_set_sync_function (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *server_conn;
+	DBusConnection *client_conn;
+	NihList         prototypes;
+	Property *      property = NULL;
+	char *          str;
+	TypeFunc *      func;
+	TypeVar *       arg;
+	NihListEntry *  attrib;
+	NihDBusProxy *  proxy = NULL;
+	void *          parent = NULL;
+	pid_t           pid;
+	int             status;
+	DBusMessage *   method_call;
+	DBusMessage *   reply;
+	DBusMessageIter iter;
+	DBusMessageIter subiter;
+	char *          str_value;
+	double          double_value;
+	int             ret;
+	NihError *      err;
+	NihDBusError *  dbus_err;
+
+	TEST_FUNCTION ("property_proxy_set_sync_function");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (server_conn);
+	TEST_DBUS_OPEN (client_conn);
+
+
+	/* Check that we can generate a function that will make a method
+	 * call to set the value of a property, returning an integer to
+	 * indicate success.
+	 */
+	TEST_FEATURE ("with property");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+
+		TEST_ALLOC_SAFE {
+			property = property_new (NULL, "my_property",
+						 "s", NIH_DBUS_READWRITE);
+			property->symbol = nih_strdup (property, "my_property");
+		}
+
+		str = property_proxy_set_sync_function (NULL,
+							"com.netsplit.Nih.Test",
+							property,
+							"my_property_set_sync",
+							&prototypes);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+
+			nih_free (property);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "my_property_set_sync (NihDBusProxy *proxy,\n"
+				   "                      const char *  value)\n"
+				   "{\n"
+				   "\tDBusMessage *   method_call;\n"
+				   "\tDBusMessageIter iter;\n"
+				   "\tDBusMessageIter variter;\n"
+				   "\tDBusError       error;\n"
+				   "\tDBusMessage *   reply;\n"
+				   "\tconst char *    interface;\n"
+				   "\tconst char *    property;\n"
+				   "\n"
+				   "\tnih_assert (proxy != NULL);\n"
+				   "\tnih_assert (value != NULL);\n"
+				   "\n"
+				   "\t/* Construct the method call message. */\n"
+				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"org.freedesktop.DBus.Properties\", \"Set\");\n"
+				   "\tif (! method_call)\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\n"
+				   "\tdbus_message_iter_init_append (method_call, &iter);\n"
+				   "\n"
+				   "\tinterface = \"com.netsplit.Nih.Test\";\n"
+				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &interface))\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\n"
+				   "\tproperty = \"my_property\";\n"
+				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property))\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\n"
+				   "\tif (! dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT, \"s\", &variter))\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\n"
+				   "\t/* Marshal a char * onto the message */\n"
+				   "\tif (! dbus_message_iter_append_basic (&variter, DBUS_TYPE_STRING, &value)) {\n"
+				   "\t\tdbus_message_iter_close_container (&iter, &variter);\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\t}\n"
+				   "\n"
+				   "\tif (! dbus_message_iter_close_container (&iter, &variter)) {\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Send the message, and wait for the reply. */\n"
+				   "\tdbus_error_init (&error);\n"
+				   "\n"
+				   "\treply = dbus_connection_send_with_reply_and_block (proxy->conn, method_call, -1, &error);\n"
+				   "\tif (! reply) {\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\n"
+				   "\t\tif (dbus_error_has_name (&error, DBUS_ERROR_NO_MEMORY)) {\n"
+				   "\t\t\tnih_error_raise_no_memory ();\n"
+				   "\t\t} else {\n"
+				   "\t\t\tnih_dbus_error_raise (error.name, error.message);\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_error_free (&error);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Check the reply has no arguments */\n"
+				   "\tdbus_message_unref (method_call);\n"
+				   "\tdbus_message_iter_init (reply, &iter);\n"
+				   "\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\tnih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_unref (reply);\n"
+				   "\n"
+				   "\treturn 0;\n"
+ 				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_property_set_sync");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusProxy *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "proxy");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const char *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "value");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		nih_free (str);
+		nih_free (property);
+	}
+
+
+	/* Check that we can use the generated code to make a method call
+	 * and set the value of the property.
+	 */
+	TEST_FEATURE ("with method call (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih");
+			parent = nih_alloc (proxy, 0);
+		}
+
+		TEST_CHILD (pid) {
+			TEST_DBUS_MESSAGE (server_conn, method_call);
+
+			/* Check the incoming message */
+			TEST_TRUE (dbus_message_is_method_call (method_call,
+								DBUS_INTERFACE_PROPERTIES,
+								"Set"));
+
+			dbus_message_iter_init (method_call, &iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&iter, &str_value);
+			TEST_EQ_STR (str_value, "com.netsplit.Nih.Test");
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&iter, &str_value);
+			TEST_EQ_STR (str_value, "my_property");
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_VARIANT);
+
+			dbus_message_iter_recurse (&iter, &subiter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&subiter, &str_value);
+			TEST_EQ_STR (str_value, "wibble");
+
+			dbus_message_iter_next (&subiter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+				 DBUS_TYPE_INVALID);
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_INVALID);
+
+			/* Construct and send the reply */
+			reply = dbus_message_new_method_return (method_call);
+			dbus_message_unref (method_call);
+
+			dbus_connection_send (server_conn, reply, NULL);
+			dbus_connection_flush (server_conn);
+			dbus_message_unref (reply);
+
+			TEST_DBUS_CLOSE (client_conn);
+			TEST_DBUS_CLOSE (server_conn);
+
+			dbus_shutdown ();
+			exit (0);
+		}
+
+		ret = my_property_set_sync (proxy, "wibble");
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			/* If we failed with ENOMEM, the server must not
+			 * have processed the reply
+			 */
+			kill (pid, SIGTERM);
+
+			waitpid (pid, &status, 0);
+			TEST_TRUE (WIFSIGNALED (status));
+			TEST_EQ (WTERMSIG (status), SIGTERM);
+
+			TEST_EQ_P (str_value, NULL);
+
+			nih_free (proxy);
+			continue;
+		}
+
+		waitpid (pid, &status, 0);
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		TEST_EQ (ret, 0);
+
+		nih_free (proxy);
+	}
+
+
+	/* Check that the generated code handles an error returned from
+	 * the property get function, returning a raised error.
+	 */
+	TEST_FEATURE ("with error returned (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih");
+			parent = nih_alloc (proxy, 0);
+		}
+
+		TEST_CHILD (pid) {
+			TEST_DBUS_MESSAGE (server_conn, method_call);
+
+			/* Check the incoming message */
+			TEST_TRUE (dbus_message_is_method_call (method_call,
+								DBUS_INTERFACE_PROPERTIES,
+								"Set"));
+
+			dbus_message_iter_init (method_call, &iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&iter, &str_value);
+			TEST_EQ_STR (str_value, "com.netsplit.Nih.Test");
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&iter, &str_value);
+			TEST_EQ_STR (str_value, "my_property");
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_VARIANT);
+
+			dbus_message_iter_recurse (&iter, &subiter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&subiter, &str_value);
+			TEST_EQ_STR (str_value, "wibble");
+
+			dbus_message_iter_next (&subiter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+				 DBUS_TYPE_INVALID);
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_INVALID);
+
+			/* Construct and send the reply */
+			reply = dbus_message_new_error (method_call,
+							"com.netsplit.Nih.Failed",
+							"Didn't work out");
+			dbus_message_unref (method_call);
+
+			dbus_connection_send (server_conn, reply, NULL);
+			dbus_connection_flush (server_conn);
+			dbus_message_unref (reply);
+
+			TEST_DBUS_CLOSE (client_conn);
+			TEST_DBUS_CLOSE (server_conn);
+
+			dbus_shutdown ();
+			exit (0);
+		}
+
+		ret = my_property_set_sync (proxy, "wibble");
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			/* If we failed with ENOMEM, the server must not
+			 * have processed the reply
+			 */
+			kill (pid, SIGTERM);
+
+			waitpid (pid, &status, 0);
+			TEST_TRUE (WIFSIGNALED (status));
+			TEST_EQ (WTERMSIG (status), SIGTERM);
+
+			TEST_EQ_P (str_value, NULL);
+
+			nih_free (proxy);
+			continue;
+		}
+
+		waitpid (pid, &status, 0);
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Failed");
+		TEST_EQ_STR (err->message, "Didn't work out");
+		nih_free (err);
+
+		nih_free (proxy);
+	}
+
+
+	/* Check that an extra arguments results in the function
+	 * returning a raised error.
+	 */
+	TEST_FEATURE ("with extra argument (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih");
+			parent = nih_alloc (proxy, 0);
+		}
+
+		TEST_CHILD (pid) {
+			TEST_DBUS_MESSAGE (server_conn, method_call);
+
+			/* Check the incoming message */
+			TEST_TRUE (dbus_message_is_method_call (method_call,
+								DBUS_INTERFACE_PROPERTIES,
+								"Set"));
+
+			dbus_message_iter_init (method_call, &iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&iter, &str_value);
+			TEST_EQ_STR (str_value, "com.netsplit.Nih.Test");
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&iter, &str_value);
+			TEST_EQ_STR (str_value, "my_property");
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_VARIANT);
+
+			dbus_message_iter_recurse (&iter, &subiter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+				 DBUS_TYPE_STRING);
+
+			dbus_message_iter_get_basic (&subiter, &str_value);
+			TEST_EQ_STR (str_value, "wibble");
+
+			dbus_message_iter_next (&subiter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+				 DBUS_TYPE_INVALID);
+
+			dbus_message_iter_next (&iter);
+
+			TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+				 DBUS_TYPE_INVALID);
+
+			/* Construct and send the reply */
+			reply = dbus_message_new_method_return (method_call);
+			dbus_message_unref (method_call);
+
+			dbus_message_iter_init_append (reply, &iter);
+
+			double_value = 3.14;
+			dbus_message_iter_append_basic (&iter, DBUS_TYPE_DOUBLE,
+							&double_value);
+
+			dbus_connection_send (server_conn, reply, NULL);
+			dbus_connection_flush (server_conn);
+			dbus_message_unref (reply);
+
+			TEST_DBUS_CLOSE (client_conn);
+			TEST_DBUS_CLOSE (server_conn);
+
+			dbus_shutdown ();
+			exit (0);
+		}
+
+		ret = my_property_set_sync (proxy, "wibble");
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			/* If we failed with ENOMEM, the server must not
+			 * have processed the reply
+			 */
+			kill (pid, SIGTERM);
+
+			waitpid (pid, &status, 0);
+			TEST_TRUE (WIFSIGNALED (status));
+			TEST_EQ (WTERMSIG (status), SIGTERM);
+
+			nih_free (proxy);
+			continue;
+		}
+
+		waitpid (pid, &status, 0);
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		TEST_EQ (err->number, NIH_DBUS_INVALID_ARGS);
+		nih_free (err);
+
+		nih_free (proxy);
+	}
+
+
+	/* Check that a deprecated property has the deprecated attribute
+	 * added to its function prototype, since we want to warn against
+	 * client code using this.
+	 */
+	TEST_FEATURE ("with deprecated property");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+
+		TEST_ALLOC_SAFE {
+			property = property_new (NULL, "my_property",
+						 "s", NIH_DBUS_READWRITE);
+			property->symbol = nih_strdup (property, "my_property");
+			property->deprecated = TRUE;
+		}
+
+		str = property_proxy_set_sync_function (NULL,
+							"com.netsplit.Nih.Test",
+							property,
+							"my_property_set_sync",
+							&prototypes);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+
+			nih_free (property);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "my_property_set_sync (NihDBusProxy *proxy,\n"
+				   "                      const char *  value)\n"
+				   "{\n"
+				   "\tDBusMessage *   method_call;\n"
+				   "\tDBusMessageIter iter;\n"
+				   "\tDBusMessageIter variter;\n"
+				   "\tDBusError       error;\n"
+				   "\tDBusMessage *   reply;\n"
+				   "\tconst char *    interface;\n"
+				   "\tconst char *    property;\n"
+				   "\n"
+				   "\tnih_assert (proxy != NULL);\n"
+				   "\tnih_assert (value != NULL);\n"
+				   "\n"
+				   "\t/* Construct the method call message. */\n"
+				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"org.freedesktop.DBus.Properties\", \"Set\");\n"
+				   "\tif (! method_call)\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\n"
+				   "\tdbus_message_iter_init_append (method_call, &iter);\n"
+				   "\n"
+				   "\tinterface = \"com.netsplit.Nih.Test\";\n"
+				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &interface))\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\n"
+				   "\tproperty = \"my_property\";\n"
+				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property))\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\n"
+				   "\tif (! dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT, \"s\", &variter))\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\n"
+				   "\t/* Marshal a char * onto the message */\n"
+				   "\tif (! dbus_message_iter_append_basic (&variter, DBUS_TYPE_STRING, &value)) {\n"
+				   "\t\tdbus_message_iter_close_container (&iter, &variter);\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\t}\n"
+				   "\n"
+				   "\tif (! dbus_message_iter_close_container (&iter, &variter)) {\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Send the message, and wait for the reply. */\n"
+				   "\tdbus_error_init (&error);\n"
+				   "\n"
+				   "\treply = dbus_connection_send_with_reply_and_block (proxy->conn, method_call, -1, &error);\n"
+				   "\tif (! reply) {\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\n"
+				   "\t\tif (dbus_error_has_name (&error, DBUS_ERROR_NO_MEMORY)) {\n"
+				   "\t\t\tnih_error_raise_no_memory ();\n"
+				   "\t\t} else {\n"
+				   "\t\t\tnih_dbus_error_raise (error.name, error.message);\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_error_free (&error);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Check the reply has no arguments */\n"
+				   "\tdbus_message_unref (method_call);\n"
+				   "\tdbus_message_iter_init (reply, &iter);\n"
+				   "\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\tnih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_unref (reply);\n"
+				   "\n"
+				   "\treturn 0;\n"
+ 				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_property_set_sync");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusProxy *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "proxy");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const char *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "value");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "deprecated");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		nih_free (str);
+		nih_free (property);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
 
 int
 main (int   argc,
@@ -2689,6 +4456,9 @@ main (int   argc,
 
 	test_object_get_function ();
 	test_object_set_function ();
+
+	test_proxy_get_sync_function ();
+	test_proxy_set_sync_function ();
 
 	return 0;
 }

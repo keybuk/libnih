@@ -26,17 +26,22 @@
 
 #include <nih-dbus/dbus_message.h>
 #include <nih-dbus/dbus_object.h>
+#include <nih-dbus/dbus_proxy.h>
 
 
 NIH_BEGIN_EXTERN
 
-int MyProperty_get (NihDBusObject *object,
-		    NihDBusMessage *message,
-		    DBusMessageIter *iter)
+int MyProperty_get       (NihDBusObject *object, NihDBusMessage *message,
+			  DBusMessageIter *iter)
 	__attribute__ ((warn_unused_result));
-int MyProperty_set (NihDBusObject *object,
-		    NihDBusMessage *message,
-		    DBusMessageIter *iter)
+int MyProperty_set       (NihDBusObject *object, NihDBusMessage *message,
+			  DBusMessageIter *iter)
+	__attribute__ ((warn_unused_result));
+
+int my_property_get_sync (const void *parent, NihDBusProxy *proxy,
+			  char **value)
+	__attribute__ ((warn_unused_result));
+int my_property_set_sync (NihDBusProxy *proxy, const char *value)
 	__attribute__ ((warn_unused_result));
 
 NIH_END_EXTERN

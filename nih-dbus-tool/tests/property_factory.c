@@ -105,6 +105,31 @@ main (int   argc,
 
 	printf ("%s\n", block);
 	printf ("%s", code);
+	printf ("\n"
+		"\n");
+
+
+	nih_list_init (&prototypes);
+
+	code = property_proxy_get_sync_function (NULL,
+						 "com.netsplit.Nih.Test",
+						 property,
+						 "my_property_get_sync",
+						 &prototypes);
+
+	printf ("%s"
+		"\n", code);
+
+
+	nih_list_init (&prototypes);
+
+	code = property_proxy_set_sync_function (NULL,
+						 "com.netsplit.Nih.Test",
+						 property,
+						 "my_property_set_sync",
+						 &prototypes);
+
+	printf ("%s", code);
 
 	return 0;
 }

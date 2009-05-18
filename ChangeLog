@@ -1,5 +1,10 @@
 2009-05-18  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_pending_data.c (nih_dbus_pending_data_new): Allow
+	handler to be NULL.
+	* nih-dbus/tests/test_dbus_pending_data.c (test_new): Make sure
+	that NULL is permitted.
+
 	* nih-dbus-tool/property.c (property_proxy_get_function)
 	(property_proxy_get_notify_function): Functions to generate functions
 	to make an asynchronous method call to get the value of a property.

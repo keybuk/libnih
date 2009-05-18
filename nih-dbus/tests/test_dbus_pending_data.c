@@ -55,14 +55,16 @@ test_new (void)
 	pid_t               dbus_pid;
 	DBusConnection *    conn;
 
-	/* Check that we can create a new NihDBusPendingData structure,
-	 * with all the details filled in correctly, and that it references
-	 * the connection.
-	 */
 	TEST_FUNCTION ("nih_dbus_pending_data_new");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (conn);
 
+
+	/* Check that we can create a new NihDBusPendingData structure,
+	 * with all the details filled in correctly, and that it references
+	 * the connection.
+	 */
+	TEST_FEATURE ("with handler");
 	TEST_ALLOC_FAIL {
 		pending_data = nih_dbus_pending_data_new (NULL, conn,
 							  (NihDBusReplyHandler)my_reply_handler,
@@ -83,6 +85,33 @@ test_new (void)
 
 		nih_free (pending_data);
 	}
+
+
+	/* Check that the handler argument is optional and NULL may be
+	 * specified for it.
+	 */
+	TEST_FEATURE ("with no handler");
+	TEST_ALLOC_FAIL {
+		pending_data = nih_dbus_pending_data_new (NULL, conn,
+							  NULL,
+							  my_error_handler,
+							  &conn);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (pending_data, NULL);
+
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (pending_data, sizeof (NihDBusPendingData));
+		TEST_EQ_P (pending_data->conn, conn);
+		TEST_EQ_P (pending_data->handler, NULL);
+		TEST_EQ_P (pending_data->error_handler, my_error_handler);
+		TEST_EQ_P (pending_data->data, &conn);
+
+		nih_free (pending_data);
+	}
+
 
 	TEST_DBUS_CLOSE (conn);
 	TEST_DBUS_END (dbus_pid);

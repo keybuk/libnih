@@ -66,7 +66,6 @@ nih_dbus_pending_data_new (const void *        parent,
 	NihDBusPendingData *pending_data;
 
 	nih_assert (conn != NULL);
-	nih_assert (handler != NULL);
 	nih_assert (error_handler != NULL);
 
 	pending_data = nih_new (parent, NihDBusPendingData);

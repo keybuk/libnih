@@ -1631,7 +1631,10 @@ method_proxy_notify_function (const void *parent,
 			  "/* Create a message context for the reply, and iterate\n"
 			  " * over its arguments.\n"
 			  " */\n"
-			  "message = NIH_MUST (nih_dbus_message_new (pending_data, pending_data->conn, reply));\n"
+			  "message = nih_dbus_message_new (pending_data, pending_data->conn, reply);\n"
+			  "if (! message)\n"
+			  "\tgoto enomem;\n"
+			  "\n"
 			  "dbus_message_iter_init (message->message, &iter);\n"
 			  "\n"))
 		return NULL;

@@ -164,7 +164,6 @@ main (int   argc,
 	nih_list_init (&prototypes);
 	nih_list_init (&typedefs);
 
-
 	code = method_proxy_notify_function (NULL, method,
 					     "my_method_notify",
 					     "MyMethodHandler",

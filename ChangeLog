@@ -1,5 +1,10 @@
 2009-05-18  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_proxy_notify_function): No need
+	to use NIH_MUST when we're in an emomem loop.
+	* nih-dbus-tool/tests/test_method.c (test_proxy_notify_function): 
+	Update output tests to match.
+
 	* nih-dbus-tool/property.c (property_proxy_get_sync_function)
 	(property_proxy_set_sync_function): Functions to generate functions
 	to make a synchronous method call to get or set the value of a

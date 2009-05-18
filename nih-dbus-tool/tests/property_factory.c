@@ -40,6 +40,7 @@ main (int   argc,
 {
 	NihList             prototypes;
 	NihList             handlers;
+	NihList             typedefs;
 	nih_local Property *property = NULL;
 	nih_local char *    code = NULL;
 	nih_local char *    block = NULL;
@@ -55,6 +56,8 @@ main (int   argc,
 		"#include <nih-dbus/dbus_error.h>\n"
 		"#include <nih-dbus/dbus_message.h>\n"
 		"#include <nih-dbus/dbus_object.h>\n"
+		"#include <nih-dbus/dbus_pending_data.h>\n"
+		"#include <nih-dbus/dbus_proxy.h>\n"
 		"#include <nih-dbus/errors.h>\n"
 		"\n"
 		"#include \"property_code.h\"\n"
@@ -70,7 +73,7 @@ main (int   argc,
 
 	code = property_object_get_function (NULL, property,
 					     "MyProperty_get",
-					     "my_property_get",
+					     "my_property_get_handler",
 					     &prototypes, &handlers);
 
 	NIH_LIST_FOREACH (&handlers, iter) {
@@ -92,7 +95,7 @@ main (int   argc,
 
 	code = property_object_set_function (NULL, property,
 					     "MyProperty_set",
-					     "my_property_set",
+					     "my_property_set_handler",
 					     &prototypes, &handlers);
 
 	NIH_LIST_FOREACH (&handlers, iter) {
@@ -104,6 +107,37 @@ main (int   argc,
 	block = type_func_layout (NULL, &handlers);
 
 	printf ("%s\n", block);
+	printf ("%s", code);
+	printf ("\n"
+		"\n");
+
+
+	nih_list_init (&prototypes);
+
+	code = property_proxy_get_function (NULL,
+					    "com.netsplit.Nih.Test",
+					    property,
+					    "my_property_get",
+					    "my_test_property_get_notify",
+					    "MyPropertyGetHandler",
+					    &prototypes);
+
+	printf ("extern void my_test_property_get_notify (DBusPendingCall *pending_call, "
+		"NihDBusPendingData *pending_data);\n");
+	printf ("\n");
+
+	printf ("%s"
+		"\n", code);
+
+
+	nih_list_init (&prototypes);
+	nih_list_init (&typedefs);
+
+	code = property_proxy_get_notify_function (NULL, property,
+						   "my_property_get_notify",
+						   "MyPropertyGetHandler",
+						   &prototypes, &typedefs);
+
 	printf ("%s", code);
 	printf ("\n"
 		"\n");

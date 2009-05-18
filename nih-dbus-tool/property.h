@@ -57,51 +57,67 @@ typedef struct property {
 
 NIH_BEGIN_EXTERN
 
-int       property_name_valid              (const char *name);
+int       property_name_valid                (const char *name);
 
-Property *property_new                     (const void *parent,
-					    const char *name,
-					    const char *type,
-					    NihDBusAccess access)
+Property *property_new                       (const void *parent,
+					      const char *name,
+					      const char *type,
+					      NihDBusAccess access)
 	__attribute__ ((warn_unused_result, malloc));
 
-int       property_start_tag               (XML_Parser xmlp, const char *tag,
-					    char * const *attr)
+int       property_start_tag                 (XML_Parser xmlp, const char *tag,
+					      char * const *attr)
 	__attribute__ ((warn_unused_result));
-int       property_end_tag                 (XML_Parser xmlp, const char *tag)
-	__attribute__ ((warn_unused_result));
-
-int       property_annotation              (Property *property,
-					    const char *name,
-					    const char *value)
+int       property_end_tag                   (XML_Parser xmlp, const char *tag)
 	__attribute__ ((warn_unused_result));
 
-char *    property_object_get_function     (const void *parent,
-					    Property *property,
-					    const char *name,
-					    const char *handler_name,
-					    NihList *prototypes,
-					    NihList *handlers)
+int       property_annotation                (Property *property,
+					      const char *name,
+					      const char *value)
+	__attribute__ ((warn_unused_result));
+
+char *    property_object_get_function       (const void *parent,
+					      Property *property,
+					      const char *name,
+					      const char *handler_name,
+					      NihList *prototypes,
+					      NihList *handlers)
 	__attribute__ ((warn_unused_result, malloc));
-char *    property_object_set_function     (const void *parent,
-					    Property *property,
-					    const char *name,
-					    const char *handler_name,
-					    NihList *prototypes,
-					    NihList *handlers)
+char *    property_object_set_function       (const void *parent,
+					      Property *property,
+					      const char *name,
+					      const char *handler_name,
+					      NihList *prototypes,
+					      NihList *handlers)
 	__attribute__ ((warn_unused_result, malloc));
 
-char *    property_proxy_get_sync_function (const void *parent,
-					    const char *interface_name,
-					    Property *property,
-					    const char *name,
-					    NihList *prototypes)
+char *    property_proxy_get_function        (const void *parent,
+					      const char *interface_name,
+					      Property *property,
+					      const char *name,
+					      const char *notify_name,
+					      const char *handler_type,
+					      NihList *prototypes)
 	__attribute__ ((warn_unused_result, malloc));
-char *    property_proxy_set_sync_function (const void *parent,
-					    const char *interface_name,
-					    Property *property,
-					    const char *name,
-					    NihList *prototypes)
+char *    property_proxy_get_notify_function (const void *parent,
+					      Property *property,
+					      const char *name,
+					      const char *handler_type,
+					      NihList *prototypes,
+					      NihList *typedefs)
+	__attribute__ ((warn_unused_result, malloc));
+
+char *    property_proxy_get_sync_function   (const void *parent,
+					      const char *interface_name,
+					      Property *property,
+					      const char *name,
+					      NihList *prototypes)
+	__attribute__ ((warn_unused_result, malloc));
+char *    property_proxy_set_sync_function   (const void *parent,
+					      const char *interface_name,
+					      Property *property,
+					      const char *name,
+					      NihList *prototypes)
 	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN

@@ -1102,12 +1102,16 @@ property_proxy_get_sync_function (const void *parent,
 				  "dbus_message_iter_init_append (method_call, &iter);\n"
 				  "\n"
 				  "interface = \"%s\";\n"
-				  "if (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &interface))\n"
+				  "if (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &interface)) {\n"
+				  "\tdbus_message_unref (method_call);\n"
 				  "\tnih_return_no_memory_error (-1);\n"
+				  "}\n"
 				  "\n"
 				  "property = \"%s\";\n"
-				  "if (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property))\n"
+				  "if (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property)) {\n"
+				  "\tdbus_message_unref (method_call);\n"
 				  "\tnih_return_no_memory_error (-1);\n"
+				  "}\n"
 				  "\n",
 				  DBUS_INTERFACE_PROPERTIES,
 				  interface_name,
@@ -1477,15 +1481,21 @@ property_proxy_set_sync_function (const void *parent,
 				  "dbus_message_iter_init_append (method_call, &iter);\n"
 				  "\n"
 				  "interface = \"%s\";\n"
-				  "if (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &interface))\n"
+				  "if (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &interface)) {\n"
+				  "\tdbus_message_unref (method_call);\n"
 				  "\tnih_return_no_memory_error (-1);\n"
+				  "}\n"
 				  "\n"
 				  "property = \"%s\";\n"
-				  "if (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property))\n"
+				  "if (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property)) {\n"
+				  "\tdbus_message_unref (method_call);\n"
 				  "\tnih_return_no_memory_error (-1);\n"
+				  "}\n"
 				  "\n"
-				  "if (! dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT, \"%s\", &variter))\n"
+				  "if (! dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT, \"%s\", &variter)) {\n"
+				  "\tdbus_message_unref (method_call);\n"
 				  "\tnih_return_no_memory_error (-1);\n"
+				  "}\n"
 				  "\n",
 				  DBUS_INTERFACE_PROPERTIES,
 				  interface_name,

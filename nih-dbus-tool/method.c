@@ -1890,8 +1890,8 @@ method_proxy_sync_function (const void *parent,
 	nih_local TypeVar * iter_var = NULL;
 	nih_local TypeVar * error_var = NULL;
 	nih_local TypeVar * reply_var = NULL;
-	nih_local TypeVar * parent_var = NULL;
 	nih_local char *    marshal_block = NULL;
+	nih_local char *    free_block = NULL;
 	nih_local char *    demarshal_block = NULL;
 	nih_local char *    vars_block = NULL;
 	nih_local char *    body = NULL;
@@ -1904,14 +1904,14 @@ method_proxy_sync_function (const void *parent,
 
 	nih_list_init (&locals);
 
-	/* The function returns a message context, and takes the proxy object
-	 * as the argument along with the input and output arguments of
-	 * the method call.  The integer indicates whether an error
-	 * occurred, so we want warning if the result isn't used.  Since
-	 * this is used by the client, we also add a deprecated attribute
-	 * if the method is deprecated.
+	/* The function returns an integer, and takes a parent object and
+	 * the proxy object as the arguments along with the input and
+	 * output arguments of the method call.  The integer indicates
+	 * whether an error occurred, so we want warning if the result
+	 * isn't used.  Since this is used by the client, we also add a
+	 * deprecated attribute if the method is deprecated.
 	 */
-	func = type_func_new (NULL, "NihDBusMessage *", name);
+	func = type_func_new (NULL, "int", name);
 	if (! func)
 		return NULL;
 
@@ -1947,6 +1947,12 @@ method_proxy_sync_function (const void *parent,
 		nih_list_add (&func->attribs, &attrib->entry);
 	}
 
+	arg = type_var_new (func, "const void *", "parent");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&func->args, &arg->entry);
+
 	arg = type_var_new (func, "NihDBusProxy *", "proxy");
 	if (! arg)
 		return NULL;
@@ -1960,10 +1966,7 @@ method_proxy_sync_function (const void *parent,
 
 	/* The function requires a message pointer, which we allocate,
 	 * and an iterator for it to append the arguments.  We also need
-	 * a reply message pointer as well, an encapsulating (parent)
-	 * object and an error object.  Rather than deal with these by hand,
-	 * it's far easier to put them on the locals list and deal with them
-	 * along with the rest.
+	 * a reply message pointer as well and an error object.
 	 */
 	message_var = type_var_new (NULL, "DBusMessage *", "method_call");
 	if (! message_var)
@@ -1989,12 +1992,6 @@ method_proxy_sync_function (const void *parent,
 
 	nih_list_add (&locals, &reply_var->entry);
 
-	parent_var = type_var_new (NULL, "NihDBusMessage *", "message");
-	if (! parent_var)
-		return NULL;
-
-	nih_list_add (&locals, &parent_var->entry);
-
 
 	/* Create the message and set up the iterator to append to it.
 	 * When demarshalling we set up the iterator to go over the reply.
@@ -2003,7 +2000,7 @@ method_proxy_sync_function (const void *parent,
 				  "/* Construct the method call message. */\n"
 				  "method_call = dbus_message_new_method_call (proxy->name, proxy->path, \"%s\", \"%s\");\n"
 				  "if (! method_call)\n"
-				  "\tnih_return_no_memory_error (NULL);\n"
+				  "\tnih_return_no_memory_error (-1);\n"
 				  "\n"
 				  "dbus_message_iter_init_append (method_call, &iter);\n"
 				  "\n",
@@ -2015,13 +2012,8 @@ method_proxy_sync_function (const void *parent,
 	if (! nih_strcat_sprintf (&demarshal_block, NULL,
 				  "dbus_message_unref (method_call);\n"
 				  "\n"
-				  "/* Create a message context for the reply, then iterate\n"
-				  " * its arguments.  This contexts holds a reference, so\n"
-				  " * we can drop the one we've already received.\n"
-				  " */\n"
-				  "message = NIH_MUST (nih_dbus_message_new (proxy, proxy->conn, reply));\n"
-				  "dbus_message_unref (reply);\n"
-				  "dbus_message_iter_init (message->message, &iter);\n"
+				  "/* Iterate the arguments of the reply */\n"
+				  "dbus_message_iter_init (reply, &iter);\n"
 				  "\n"))
 		return NULL;
 
@@ -2052,7 +2044,7 @@ method_proxy_sync_function (const void *parent,
 			 */
 			oom_error_code = nih_strdup (NULL,
 						     "dbus_message_unref (method_call);\n"
-						     "nih_return_no_memory_error (NULL);\n");
+						     "nih_return_no_memory_error (-1);\n");
 			if (! oom_error_code)
 				return NULL;
 
@@ -2119,14 +2111,16 @@ method_proxy_sync_function (const void *parent,
 			if (! oom_error_code)
 				return NULL;
 
-			type_error_code = nih_strdup (NULL,
-						      "nih_free (message);\n"
-						      "nih_return_error (NULL, NIH_DBUS_INVALID_ARGS,\n"
-						      "                  _(NIH_DBUS_INVALID_ARGS_STR));\n");
+			type_error_code = nih_sprintf (NULL,
+						       "%s"
+						       "dbus_message_unref (reply);\n"
+						       "nih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
+						       "                  _(NIH_DBUS_INVALID_ARGS_STR));\n",
+						       free_block ?: "");
 			if (! type_error_code)
 				return NULL;
 
-			block = demarshal (NULL, &iter, "message", "iter",
+			block = demarshal (NULL, &iter, "parent", "iter",
 					   local_name,
 					   oom_error_code,
 					   type_error_code,
@@ -2187,6 +2181,21 @@ method_proxy_sync_function (const void *parent,
 
 				nih_list_add (&locals, &var->entry);
 				nih_ref (var, demarshal_block);
+
+				/* Build up the code to free the output
+				 * arguments on error as we go.
+				 */
+				if (strchr (var->type, '*')) {
+					free_block = nih_sprintf (NULL,
+								  "nih_free (%s);\n"
+								  "*%s = NULL;\n"
+								  "%s",
+								  var->name,
+								  arg->name,
+								  free_block ?: "");
+					if (! free_block)
+						return NULL;
+				}
 			}
 
 			NIH_LIST_FOREACH_SAFE (&arg_locals, iter) {
@@ -2235,7 +2244,7 @@ method_proxy_sync_function (const void *parent,
 				  "\t}\n"
 				  "\n"
 				  "\tdbus_error_free (&error);\n"
-				  "\treturn NULL;\n"
+				  "\treturn -1;\n"
 				  "}\n"
 				  "\n"))
 		return NULL;
@@ -2243,12 +2252,19 @@ method_proxy_sync_function (const void *parent,
 	/* Complete the demarshalling block, checking for any unexpected
 	 * reply arguments which we also want to error on.
 	 */
+	if (free_block)
+		if (! indent (&free_block, NULL, 1))
+			return NULL;
 	if (! nih_strcat_sprintf (&demarshal_block, NULL,
 				  "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
-				  "\tnih_free (message);\n"
-				  "\tnih_return_error (NULL, NIH_DBUS_INVALID_ARGS,\n"
+				  "%s"
+				  "\tdbus_message_unref (reply);\n"
+				  "\tnih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
 				  "\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
-				  "}\n"))
+				  "}\n"
+				  "\n"
+				  "dbus_message_unref (reply);\n",
+				  free_block ?: ""))
 		return NULL;
 
 	/* Lay out the function body, indenting it all before placing it
@@ -2266,7 +2282,7 @@ method_proxy_sync_function (const void *parent,
 				  "%s"
 				  "%s"
 				  "\n"
-				  "return message;\n",
+				  "return 0;\n",
 				  vars_block,
 				  assert_block,
 				  marshal_block,

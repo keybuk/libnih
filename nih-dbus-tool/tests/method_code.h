@@ -50,15 +50,16 @@ DBusPendingCall * my_method             (NihDBusProxy *proxy,
 					 MyMethodHandler handler,
 					 NihDBusErrorHandler error_handler,
 					 void *data, int timeout)
-	__attribute__ ((malloc, warn_unused_result));
+	__attribute__ ((warn_unused_result));
 
 void              my_method_notify      (DBusPendingCall *pending_call,
 					 NihDBusPendingData *pending_data);
 
-NihDBusMessage *  my_method_sync        (NihDBusProxy *proxy,
+int               my_method_sync        (const void *parent,
+					 NihDBusProxy *proxy,
 					 const char *str, int32_t flags,
 					 char ***output, int32_t *length)
-	__attribute__ ((malloc, warn_unused_result));
+	__attribute__ ((warn_unused_result));
 
 NIH_END_EXTERN
 

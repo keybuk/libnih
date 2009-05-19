@@ -1,5 +1,12 @@
 2009-05-19  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_proxy_sync_function): Also
+	following the property code, rework method calls to return an
+	integer as well - which means some tricksy cleanup code in the
+	case of argument errors now we don't have a top-level message
+	to free.
+	* nih-dbus-tool/tests/method_code.h: Update the expected prototype
+
 	* nih-dbus-tool/method.c (method_proxy_notify_function): Of course,
 	that's only useful if the notify function handles there being no
 	reply handler, so put an if around the calling of it.

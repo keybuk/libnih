@@ -937,7 +937,7 @@ test_lookup_argument (void)
 
 
 void
-test_emit_function (void)
+test_object_function (void)
 {
 	pid_t             dbus_pid;
 	DBusConnection *  server_conn;
@@ -954,7 +954,7 @@ test_emit_function (void)
 	DBusError         dbus_error;
 	int               ret;
 
-	TEST_FUNCTION ("signal_emit_function");
+	TEST_FUNCTION ("signal_object_function");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (server_conn);
 	TEST_DBUS_OPEN (client_conn);
@@ -977,9 +977,9 @@ test_emit_function (void)
 			nih_list_add (&signal->arguments, &argument->entry);
 		}
 
-		str = signal_emit_function (NULL, "com.netsplit.Nih.Test",
-					    signal, "my_emit_signal",
-					    &prototypes);
+		str = signal_object_function (NULL, "com.netsplit.Nih.Test",
+					      signal, "my_emit_signal",
+					      &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
@@ -1102,9 +1102,9 @@ test_emit_function (void)
 			signal->symbol = nih_strdup (signal, "my_signal");
 		}
 
-		str = signal_emit_function (NULL, "com.netsplit.Nih.Test",
-					    signal, "my_emit_signal",
-					    &prototypes);
+		str = signal_object_function (NULL, "com.netsplit.Nih.Test",
+					      signal, "my_emit_signal",
+					      &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
@@ -1254,9 +1254,9 @@ test_emit_function (void)
 			nih_list_add (&signal->arguments, &argument->entry);
 		}
 
-		str = signal_emit_function (NULL, "com.netsplit.Nih.Test",
-					    signal, "my_emit_signal",
-					    &prototypes);
+		str = signal_object_function (NULL, "com.netsplit.Nih.Test",
+					      signal, "my_emit_signal",
+					      &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
@@ -1389,7 +1389,7 @@ main (int   argc,
 	test_annotation ();
 	test_lookup_argument ();
 
-	test_emit_function ();
+	test_object_function ();
 
 	return 0;
 }

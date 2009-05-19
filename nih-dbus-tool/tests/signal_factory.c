@@ -70,9 +70,9 @@ main (int   argc,
 
 	nih_list_init (&prototypes);
 
-	code = signal_emit_function (NULL, "com.netsplit.Nih.Test", signal,
-				     "my_emit_signal",
-				     &prototypes);
+	code = signal_object_function (NULL, "com.netsplit.Nih.Test", signal,
+				       "my_emit_signal",
+				       &prototypes);
 
 	printf ("%s", code);
 

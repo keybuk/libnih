@@ -391,7 +391,7 @@ signal_lookup_argument (Signal *    signal,
 
 
 /**
- * signal_emit_function:
+ * signal_object_function:
  * @parent: parent object for new string.
  * @interface_name: name of interface,
  * @signal: signal to generate function for,
@@ -413,11 +413,11 @@ signal_lookup_argument (Signal *    signal,
  * Returns: newly allocated string or NULL if insufficient memory.
  **/
 char *
-signal_emit_function (const void *parent,
-		      const char *interface_name,
-		      Signal *    signal,
-		      const char *name,
-		      NihList *   prototypes)
+signal_object_function (const void *parent,
+			const char *interface_name,
+			Signal *    signal,
+			const char *name,
+			NihList *   prototypes)
 {
 	NihList             locals;
 	nih_local TypeFunc *func = NULL;

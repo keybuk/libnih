@@ -6388,9 +6388,11 @@ test_proxy_notify_function (void)
 				   "\t} while (! message);\n"
 				   "\n"
 				   "\t/* Call the handler function */\n"
-				   "\tnih_error_push_context ();\n"
-				   "\t((MyMethodHandler)pending_data->handler) (pending_data->data, message, output, length);\n"
-				   "\tnih_error_pop_context ();\n"
+				   "\tif (pending_data->handler) {\n"
+				   "\t\tnih_error_push_context ();\n"
+				   "\t\t((MyMethodHandler)pending_data->handler) (pending_data->data, message, output, length);\n"
+				   "\t\tnih_error_pop_context ();\n"
+				   "\t}\n"
 				   "\n"
 				   "\tnih_free (message);\n"
 				   "\tdbus_message_unref (reply);\n"
@@ -6597,9 +6599,11 @@ test_proxy_notify_function (void)
 				   "\t} while (! message);\n"
 				   "\n"
 				   "\t/* Call the handler function */\n"
-				   "\tnih_error_push_context ();\n"
-				   "\t((MyMethodHandler)pending_data->handler) (pending_data->data, message);\n"
-				   "\tnih_error_pop_context ();\n"
+				   "\tif (pending_data->handler) {\n"
+				   "\t\tnih_error_push_context ();\n"
+				   "\t\t((MyMethodHandler)pending_data->handler) (pending_data->data, message);\n"
+				   "\t\tnih_error_pop_context ();\n"
+				   "\t}\n"
 				   "\n"
 				   "\tnih_free (message);\n"
 				   "\tdbus_message_unref (reply);\n"
@@ -6784,6 +6788,97 @@ test_proxy_notify_function (void)
 		TEST_EQ (dbus_message_get_reply_serial (last_msg),
 			 serial);
 		dbus_message_unref (last_msg);
+
+		nih_free (pending_data);
+		dbus_pending_call_unref (pending_call);
+	}
+
+
+	/* Check that the caller can omit the reply handler when it has
+	 * no useful information it wants to obtain from the reply (thus
+	 * only requiring the error handler), in which case the handler
+	 * function should not be called.
+	 */
+	TEST_FEATURE ("with no handler (generated code)");
+	TEST_ALLOC_FAIL {
+		/* Make the method call */
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			"com.netsplit.Nih",
+			"MyMethod");
+
+		pending_call = NULL;
+		dbus_connection_send_with_reply (client_conn, method_call,
+						 &pending_call, -1);
+		dbus_connection_flush (client_conn);
+
+		serial = dbus_message_get_serial (method_call);
+		dbus_message_unref (method_call);
+
+		/* Catch it */
+		TEST_DBUS_MESSAGE (server_conn, method_call);
+		assert (dbus_message_get_serial (method_call) == serial);
+
+		/* Reply to it */
+		reply = dbus_message_new_method_return (method_call);
+		dbus_message_unref (method_call);
+
+		dbus_message_iter_init_append (reply, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "land";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "of";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "make";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "believe";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		int32_value = 1234;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		/* Send the reply */
+		dbus_connection_send (server_conn, reply, NULL);
+		dbus_connection_flush (server_conn);
+		dbus_message_unref (reply);
+
+		/* Now we should have the reply */
+		dbus_pending_call_block (pending_call);
+		assert (dbus_pending_call_get_completed (pending_call));
+
+
+		TEST_ALLOC_SAFE {
+			pending_data = nih_dbus_pending_data_new (
+				NULL, client_conn,
+				NULL,
+				my_error_handler, (void *)my_handler);
+		}
+
+		my_handler_called = FALSE;
+		my_error_handler_called = FALSE;
+		last_message = NULL;
+		last_conn = NULL;
+		last_msg = NULL;
+
+		my_method_notify (pending_call, pending_data);
+
+		TEST_FALSE (my_handler_called);
+		TEST_FALSE (my_error_handler_called);
 
 		nih_free (pending_data);
 		dbus_pending_call_unref (pending_call);
@@ -7097,6 +7192,112 @@ test_proxy_notify_function (void)
 			pending_data = nih_dbus_pending_data_new (
 				NULL, client_conn,
 				(NihDBusReplyHandler)my_handler,
+				my_error_handler, (void *)my_handler);
+		}
+
+		my_handler_called = FALSE;
+		my_error_handler_called = FALSE;
+		last_message = NULL;
+		last_conn = NULL;
+		last_msg = NULL;
+		last_error = NULL;
+
+		my_method_notify (pending_call, pending_data);
+
+		TEST_FALSE (my_handler_called);
+		TEST_TRUE (my_error_handler_called);
+
+		TEST_NE_P (last_message, NULL);
+		TEST_FREE (last_message);
+
+		TEST_EQ_P (last_conn, client_conn);
+		dbus_connection_unref (last_conn);
+
+		TEST_NE_P (last_msg, NULL);
+		TEST_EQ (dbus_message_get_reply_serial (last_msg),
+			 serial);
+		dbus_message_unref (last_msg);
+
+		TEST_NE_P (last_error, NULL);
+		TEST_EQ (last_error->number, NIH_DBUS_INVALID_ARGS);
+		nih_free (last_error);
+
+		nih_free (pending_data);
+		dbus_pending_call_unref (pending_call);
+	}
+
+
+	/* Check that the generated code catches an invalid argument type in
+	 * the reply even when there's no handler for it and still calls the
+	 * error handler with the invalid arguments error raised.
+	 */
+	TEST_FEATURE ("with incorrect argument type and no handler (generated code)");
+	TEST_ALLOC_FAIL {
+		/* Make the method call */
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			"com.netsplit.Nih",
+			"MyMethod");
+
+		pending_call = NULL;
+		dbus_connection_send_with_reply (client_conn, method_call,
+						 &pending_call, -1);
+		dbus_connection_flush (client_conn);
+
+		serial = dbus_message_get_serial (method_call);
+		dbus_message_unref (method_call);
+
+		/* Catch it */
+		TEST_DBUS_MESSAGE (server_conn, method_call);
+		assert (dbus_message_get_serial (method_call) == serial);
+
+		/* Reply to it */
+		reply = dbus_message_new_method_return (method_call);
+		dbus_message_unref (method_call);
+
+		dbus_message_iter_init_append (reply, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "land";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "of";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "make";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "believe";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		double_value = 1.618;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_DOUBLE,
+						&double_value);
+
+		/* Send the reply */
+		dbus_connection_send (server_conn, reply, NULL);
+		dbus_connection_flush (server_conn);
+		dbus_message_unref (reply);
+
+		/* Now we should have the reply */
+		dbus_pending_call_block (pending_call);
+		assert (dbus_pending_call_get_completed (pending_call));
+
+
+		TEST_ALLOC_SAFE {
+			pending_data = nih_dbus_pending_data_new (
+				NULL, client_conn,
+				NULL,
 				my_error_handler, (void *)my_handler);
 		}
 
@@ -7572,9 +7773,11 @@ test_proxy_notify_function (void)
 				   "\t} while (! message);\n"
 				   "\n"
 				   "\t/* Call the handler function */\n"
-				   "\tnih_error_push_context ();\n"
-				   "\t((MyMethodHandler)pending_data->handler) (pending_data->data, message, output, length);\n"
-				   "\tnih_error_pop_context ();\n"
+				   "\tif (pending_data->handler) {\n"
+				   "\t\tnih_error_push_context ();\n"
+				   "\t\t((MyMethodHandler)pending_data->handler) (pending_data->data, message, output, length);\n"
+				   "\t\tnih_error_pop_context ();\n"
+				   "\t}\n"
 				   "\n"
 				   "\tnih_free (message);\n"
 				   "\tdbus_message_unref (reply);\n"

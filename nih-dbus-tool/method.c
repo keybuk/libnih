@@ -1643,8 +1643,9 @@ method_proxy_notify_function (const void *parent,
 	 */
 	if (! nih_strcat_sprintf (&call_block, NULL,
 				  "/* Call the handler function */\n"
-				  "nih_error_push_context ();\n"
-				  "((%s)pending_data->handler) (pending_data->data, message",
+				  "if (pending_data->handler) {\n"
+				  "\tnih_error_push_context ();\n"
+				  "\t((%s)pending_data->handler) (pending_data->data, message",
 				  handler_type))
 		return NULL;
 
@@ -1785,7 +1786,8 @@ method_proxy_notify_function (const void *parent,
 
 	/* Complete the call block. */
 	if (! nih_strcat (&call_block, NULL, ");\n"
-			  "nih_error_pop_context ();\n"
+			  "\tnih_error_pop_context ();\n"
+			  "}\n"
 			  "\n"
 			  "nih_free (message);\n"
 			  "dbus_message_unref (reply);\n"))

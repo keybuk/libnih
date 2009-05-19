@@ -105,10 +105,10 @@ test_mode_option (void)
 
 extern char *source_file_path (const void *parent, const char *output_path,
 			       const char *filename)
-	__attribute__ ((malloc, warn_unused_result));
+	__attribute__ ((warn_unused_result, malloc));
 extern char *header_file_path (const void *parent, const char *output_path,
 			       const char *filename)
-	__attribute__ ((malloc, warn_unused_result));
+	__attribute__ ((warn_unused_result, malloc));
 
 void
 test_source_file_path (void)

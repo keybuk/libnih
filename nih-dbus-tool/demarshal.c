@@ -47,7 +47,7 @@ static char *demarshal_basic  (const void *parent,
 			       const char *oom_error_code,
 			       const char *type_error_code,
 			       NihList *outputs, NihList *locals)
-	__attribute__ ((malloc, warn_unused_result));
+	__attribute__ ((warn_unused_result, malloc));
 static char *demarshal_array  (const void *parent,
 			       DBusSignatureIter *iter,
 			       const char *parent_name,
@@ -55,7 +55,7 @@ static char *demarshal_array  (const void *parent,
 			       const char *oom_error_code,
 			       const char *type_error_code,
 			       NihList *outputs, NihList *locals)
-	__attribute__ ((malloc, warn_unused_result));
+	__attribute__ ((warn_unused_result, malloc));
 static char *demarshal_struct (const void *parent,
 			       DBusSignatureIter *iter,
 			       const char *parent_name,
@@ -63,7 +63,7 @@ static char *demarshal_struct (const void *parent,
 			       const char *oom_error_code,
 			       const char *type_error_code,
 			       NihList *outputs, NihList *locals)
-	__attribute__ ((malloc, warn_unused_result));
+	__attribute__ ((warn_unused_result, malloc));
 
 
 /**

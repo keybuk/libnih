@@ -62,10 +62,10 @@ int mode_option (NihOption *option, const char *arg);
 /* Prototypes for local functions */
 char *source_file_path (const void *parent, const char *output_path,
 			const char *filename)
-	__attribute__ ((malloc, warn_unused_result));
+	__attribute__ ((warn_unused_result, malloc));
 char *header_file_path (const void *parent, const char *output_path,
 			const char *filename)
-	__attribute__ ((malloc, warn_unused_result));
+	__attribute__ ((warn_unused_result, malloc));
 
 
 /**

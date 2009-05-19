@@ -1,3 +1,17 @@
+2009-05-19  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/property.c (property_proxy_set_function)
+	(property_proxy_set_notify_function): Functions to generate functions
+	to make an asynchronous method call to set the value of a property.
+	* nih-dbus-tool/property.h: Add prototypes
+	* nih-dbus-tool/tests/property_factory.c: Use the functions to
+	generate functions for testing purposes
+	* nih-dbus-tool/tests/property_code.h: Expected prototypes of
+	generated functions, along with the handler typedef that we need
+	* nih-dbus-tool/tests/test_property.c (test_proxy_set_function)
+	(test_proxy_set_notify_function): Test the functions and the
+	generated code
+
 2009-05-18  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus/dbus_pending_data.c (nih_dbus_pending_data_new): Allow

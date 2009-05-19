@@ -32,6 +32,7 @@
 
 typedef void (*MyPropertyGetHandler) (void *data, NihDBusMessage *message,
 				      const char *value);
+typedef void (*MyPropertySetHandler) (void *data, NihDBusMessage *message);
 
 
 NIH_BEGIN_EXTERN
@@ -52,6 +53,16 @@ DBusPendingCall *my_property_get        (NihDBusProxy *proxy,
 	__attribute__ ((warn_unused_result));
 
 void             my_property_get_notify (DBusPendingCall *pending_call,
+					 NihDBusPendingData *pending_data);
+
+DBusPendingCall *my_property_set        (NihDBusProxy *proxy,
+					 const char *value,
+					 MyPropertySetHandler handler,
+					 NihDBusErrorHandler error_handler,
+					 void *data, int timeout)
+	__attribute__ ((warn_unused_result));
+
+void             my_property_set_notify (DBusPendingCall *pending_call,
 					 NihDBusPendingData *pending_data);
 
 int              my_property_get_sync   (const void *parent,

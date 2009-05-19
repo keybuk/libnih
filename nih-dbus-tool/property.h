@@ -107,6 +107,22 @@ char *    property_proxy_get_notify_function (const void *parent,
 					      NihList *typedefs)
 	__attribute__ ((warn_unused_result, malloc));
 
+char *    property_proxy_set_function        (const void *parent,
+					      const char *interface_name,
+					      Property *property,
+					      const char *name,
+					      const char *notify_name,
+					      const char *handler_type,
+					      NihList *prototypes)
+	__attribute__ ((warn_unused_result, malloc));
+char *    property_proxy_set_notify_function (const void *parent,
+					      Property *property,
+					      const char *name,
+					      const char *handler_type,
+					      NihList *prototypes,
+					      NihList *typedefs)
+	__attribute__ ((warn_unused_result, malloc));
+
 char *    property_proxy_get_sync_function   (const void *parent,
 					      const char *interface_name,
 					      Property *property,

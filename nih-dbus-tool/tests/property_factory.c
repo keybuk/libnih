@@ -145,6 +145,37 @@ main (int   argc,
 
 	nih_list_init (&prototypes);
 
+	code = property_proxy_set_function (NULL,
+					    "com.netsplit.Nih.Test",
+					    property,
+					    "my_property_set",
+					    "my_test_property_set_notify",
+					    "MyPropertySetHandler",
+					    &prototypes);
+
+	printf ("extern void my_test_property_set_notify (DBusPendingCall *pending_call, "
+		"NihDBusPendingData *pending_data);\n");
+	printf ("\n");
+
+	printf ("%s"
+		"\n", code);
+
+
+	nih_list_init (&prototypes);
+	nih_list_init (&typedefs);
+
+	code = property_proxy_set_notify_function (NULL, property,
+						   "my_property_set_notify",
+						   "MyPropertySetHandler",
+						   &prototypes, &typedefs);
+
+	printf ("%s", code);
+	printf ("\n"
+		"\n");
+
+
+	nih_list_init (&prototypes);
+
 	code = property_proxy_get_sync_function (NULL,
 						 "com.netsplit.Nih.Test",
 						 property,

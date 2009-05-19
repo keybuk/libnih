@@ -1373,8 +1373,7 @@ method_proxy_function (const void *parent,
 	nih_list_add (&func->args, &arg->entry);
 
 	if (! nih_strcat (&assert_block, NULL,
-			  "nih_assert (((handler != NULL) && (error_handler != NULL))\n"
-			  "            || ((handler == NULL) && (error_handler == NULL)));\n"))
+			  "nih_assert ((handler == NULL) || (error_handler != NULL));\n"))
 		return NULL;
 
 	arg = type_var_new (func, "int", "timeout");
@@ -1388,7 +1387,7 @@ method_proxy_function (const void *parent,
 	 */
 	if (! nih_strcat_sprintf (&marshal_block, NULL,
 				  "/* Handle a fire-and-forget message */\n"
-				  "if (! handler) {\n"
+				  "if (! error_handler) {\n"
 				  "\tdbus_message_set_no_reply (method_call, TRUE);\n"
 				  "\tif (! dbus_connection_send (proxy->conn, method_call, NULL)) {\n"
 				  "\t\tdbus_message_unref (method_call);\n"

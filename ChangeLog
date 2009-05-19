@@ -1,5 +1,12 @@
 2009-05-19  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_proxy_function): Make the same
+	modification that we made to the property functions, allowing the
+	reply handler to be NULL as long as the error handler isn't
+	* nih-dbus-tool/tests/test_method.c (test_proxy_function): Adjust
+	the output test functions, and also add a test in for no reply
+	handler but an error handler
+
 	* nih-dbus-tool/property.c (property_proxy_set_function)
 	(property_proxy_set_notify_function): Functions to generate functions
 	to make an asynchronous method call to set the value of a property.

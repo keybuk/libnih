@@ -4,6 +4,8 @@
 	signal_object_function for consistency
 	* nih-dbus-tool/signal.h: Update header
 	* nih-dbus-tool/tests/signal_factory.c: Update.
+	* nih-dbus-tool/tests/test_signal.c (test_emit_function): Rename to
+	test_object_function to match; update
 
 	* nih-dbus-tool/method.c (method_proxy_sync_function): Also
 	following the property code, rework method calls to return an

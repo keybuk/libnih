@@ -1,3 +1,12 @@
+2009-05-21  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus/dbus_object.h: Separate out the actual structure
+	definitions for an interface, the overlap is getting difficult
+	to manage and they're shared with proxies anyway.
+	* nih-dbus/dbus_interface.h: File for the separated out interfaces
+	* nih-dbus/libnih-dbus.h: Include new header
+	* nih-dbus/Makefile.am (nihdbusinclude_HEADERS): Ship and install it
+
 2009-05-19  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/signal.c (signal_emit_function): Rename to

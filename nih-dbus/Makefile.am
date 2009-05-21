@@ -49,6 +49,7 @@ nihdbusinclude_HEADERS = \
 	dbus_error.h \
 	dbus_connection.h \
 	dbus_message.h \
+	dbus_interface.h \
 	dbus_object.h \
 	dbus_pending_data.h \
 	dbus_proxy.h \

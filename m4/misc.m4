@@ -63,7 +63,7 @@ PKG_PROG_PKG_CONFIG([0.22])
 NIH_LIB_DBUS
 
 # Checks for header files.
-AC_CHECK_HEADERS([sys/inotify.h valgrind/valgrind.h])
+AC_CHECK_HEADERS([valgrind/valgrind.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_PROG_CC_C99

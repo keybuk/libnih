@@ -71,7 +71,6 @@ nihinclude_HEADERS = \
 	logging.h \
 	error.h \
 	errors.h \
-	inotify.h \
 	test.h \
 	test_output.h \
 	test_values.h \

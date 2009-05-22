@@ -27,12 +27,7 @@
 
 #include <nih/test.h>
 
-#ifdef HAVE_SYS_INOTIFY_H
-# include <sys/inotify.h>
-#else
-# include <nih/inotify.h>
-#endif /* HAVE_SYS_INOTIFY_H */
-
+#include <sys/inotify.h>
 #include <sys/select.h>
 
 #include <errno.h>

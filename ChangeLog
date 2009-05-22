@@ -1,5 +1,13 @@
 2009-05-22  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/inotify.h: Remove this wrapper, we require a libc with
+	inotify support.
+	* m4/misc.m4 (NIH_INIT): Remove the check for sys/inotify.h
+	* nih/watch.c, 
+	* nih/watch.h,
+	* nih/tests/test_watch.c: Update includes.
+	* nih/Makefile.am (nihinclude_HEADERS): Remove inotify.h
+
 	* COPYING: Change licence from GPL-2+ to MIT.
 	All files have been updated to reflect this.
 

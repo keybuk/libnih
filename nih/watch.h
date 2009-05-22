@@ -26,12 +26,7 @@
 #ifndef NIH_WATCH_H
 #define NIH_WATCH_H
 
-#ifdef HAVE_SYS_INOTIFY_H
-# include <sys/inotify.h>
-#else
-# include <nih/inotify.h>
-#endif /* HAVE_SYS_INOTIFY_H */
-
+#include <sys/inotify.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 

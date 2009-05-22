@@ -1,3 +1,8 @@
+2009-05-22  Scott James Remnant  <scott@netsplit.com>
+
+	* COPYING: Change licence from GPL-2+ to MIT.
+	All files have been updated to reflect this.
+
 2009-05-21  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus/dbus_object.h: Separate out the actual structure

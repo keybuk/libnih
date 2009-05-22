@@ -3,6 +3,7 @@
 # misc.m4 - miscellaneous autoconf macros
 #
 # Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
+# Copyright © 2009 Canonical Ltd.
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the

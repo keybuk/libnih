@@ -76,7 +76,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with valid argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -99,7 +100,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with valid argument (async)");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	auto void async_with_valid_argument (NihDBusProxy *proxy, void *userdata, char *output);
 
@@ -133,7 +135,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with returned D-Bus error");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -160,7 +163,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with out of memory error");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -182,7 +186,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with unknown error");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -209,7 +214,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with valid argument to async call");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -231,7 +237,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with returned D-Bus error from async call");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -259,7 +266,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with out of memory error from async call");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -281,7 +289,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with unknown error from async call");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -309,7 +318,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with wrong argument type in reply");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -332,7 +342,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with too many arguments in reply");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -355,7 +366,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with missing arguments in reply");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -377,7 +389,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with Byte input argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -399,7 +412,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with Byte output argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	byte_arg = 0;
 
@@ -419,7 +433,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with Boolean input argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -441,7 +456,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with Boolean output argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	boolean_arg = TRUE;
 
@@ -461,7 +477,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with Int16 input argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -483,7 +500,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with Int16 output argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	int16_arg = 0;
 
@@ -503,7 +521,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with UInt16 input argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -525,7 +544,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with UInt16 output argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	uint16_arg = 0;
 
@@ -545,7 +565,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with Int32 input argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -567,7 +588,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with Int32 output argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	int32_arg = 0;
 
@@ -587,7 +609,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with UInt32 input argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -609,7 +632,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with UInt32 output argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	uint32_arg = 0;
 
@@ -629,7 +653,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with Int64 input argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -651,7 +676,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with Int64 output argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	int64_arg = 0;
 
@@ -671,7 +697,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with UInt64 input argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -693,7 +720,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with UInt64 output argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	uint64_arg = 0;
 
@@ -713,7 +741,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with Double input argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -735,7 +764,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with Double output argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	double_arg = 0;
 
@@ -755,7 +785,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with ObjectPath input argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -777,7 +808,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with ObjectPath output argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -799,7 +831,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with Signature input argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -821,7 +854,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with Signature output argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	output = NULL;
 
@@ -843,7 +877,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with Int32 Array input argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	int32_array = nih_alloc (NULL, sizeof (int32_t) * 6);
 	int32_array[0] = 4;
@@ -876,7 +911,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with Int32 Array output argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	int32_array = NULL;
 	array_len = 0;
@@ -906,7 +942,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with String Array input argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	str_array = nih_alloc (NULL, sizeof (char *) * 5);
 	str_array[0] = "this";
@@ -936,7 +973,8 @@ test_method_dispatch (void)
 	 */
 	TEST_FEATURE ("with String Array output argument");
 	conn = my_setup ();
-	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih");
+	proxy = nih_dbus_proxy_new (NULL, conn, NULL, "/com/netsplit/Nih",
+				    NULL, NULL);
 
 	str_array = NULL;
 

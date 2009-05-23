@@ -1,5 +1,13 @@
 2009-05-24  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_method.c (test_proxy_function)
+	(test_proxy_sync_function),
+	* nih-dbus-tool/tests/test_property.c (test_proxy_get_function)
+	(test_proxy_set_function, test_proxy_get_sync_function)
+	(test_proxy_set_sync_function),
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c (test_method_dispatch): 
+	Update arguments to nih_dbus_proxy_new() calls
+
 	* nih-dbus/dbus_proxy.h (NihDBusProxy): Add owner member to
 	store the unique name of the proxied object, also add a handler
 	function for the owner dropping off the bus and a data pointer to

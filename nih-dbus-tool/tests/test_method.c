@@ -5065,7 +5065,8 @@ test_proxy_function (void)
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
 						    dbus_bus_get_unique_name (server_conn),
-						    "/com/netsplit/Nih");
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
 		}
 
 		my_test_method_notify_called = FALSE;
@@ -5202,7 +5203,8 @@ test_proxy_function (void)
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
 						    dbus_bus_get_unique_name (server_conn),
-						    "/com/netsplit/Nih");
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
 		}
 
 		my_test_method_notify_called = FALSE;
@@ -5336,7 +5338,8 @@ test_proxy_function (void)
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
 						    dbus_bus_get_unique_name (server_conn),
-						    "/com/netsplit/Nih");
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
 		}
 
 		my_test_method_notify_called = FALSE;
@@ -5445,7 +5448,8 @@ test_proxy_function (void)
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
 						    dbus_bus_get_unique_name (server_conn),
-						    "/com/netsplit/Nih");
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
 		}
 
 		my_test_method_notify_called = FALSE;
@@ -5547,7 +5551,8 @@ test_proxy_function (void)
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
 						    dbus_bus_get_unique_name (flakey_conn),
-						    "/com/netsplit/Nih");
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
 		}
 
 		my_test_method_notify_called = FALSE;
@@ -5652,7 +5657,8 @@ test_proxy_function (void)
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
 						    dbus_bus_get_unique_name (server_conn),
-						    "/com/netsplit/Nih");
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
 		}
 
 		my_test_method_notify_called = FALSE;
@@ -5739,7 +5745,8 @@ test_proxy_function (void)
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
 						    dbus_bus_get_unique_name (server_conn),
-						    "/com/netsplit/Nih");
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
 		}
 
 		my_test_method_notify_called = FALSE;
@@ -8883,7 +8890,8 @@ test_proxy_sync_function (void)
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
 						    dbus_bus_get_unique_name (server_conn),
-						    "/com/netsplit/Nih");
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
 			parent = nih_alloc (proxy, 0);
 		}
 
@@ -9024,7 +9032,8 @@ test_proxy_sync_function (void)
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
 						    dbus_bus_get_unique_name (server_conn),
-						    "/com/netsplit/Nih");
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
 			parent = nih_alloc (proxy, 0);
 		}
 
@@ -9110,7 +9119,8 @@ test_proxy_sync_function (void)
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
 						    dbus_bus_get_unique_name (server_conn),
-						    "/com/netsplit/Nih");
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
 			parent = nih_alloc (proxy, 0);
 		}
 
@@ -9218,7 +9228,8 @@ test_proxy_sync_function (void)
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
 						    dbus_bus_get_unique_name (server_conn),
-						    "/com/netsplit/Nih");
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
 			parent = nih_alloc (proxy, 0);
 		}
 
@@ -9346,7 +9357,8 @@ test_proxy_sync_function (void)
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
 						    dbus_bus_get_unique_name (server_conn),
-						    "/com/netsplit/Nih");
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
 			parent = nih_alloc (proxy, 0);
 		}
 
@@ -9470,7 +9482,8 @@ test_proxy_sync_function (void)
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
 						    dbus_bus_get_unique_name (server_conn),
-						    "/com/netsplit/Nih");
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
 			parent = nih_alloc (proxy, 0);
 		}
 

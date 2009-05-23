@@ -1,3 +1,30 @@
+2009-05-24  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus/dbus_proxy.h (NihDBusProxy): Add owner member to
+	store the unique name of the proxied object, also add a handler
+	function for the owner dropping off the bus and a data pointer to
+	pass to it.
+	(NihDBusLostHandler): typedef for lost handler function
+	* nih-dbus/dbus_proxy.c (nih_dbus_proxy_new): Accept the lost handler
+	and data members, setting in the function.  If the lost handler is
+	passed (which may only be passed if name is not NULL) then we'll
+	track that name on the bus.
+	(nih_dbus_proxy_destroy): We need a destructor to tear down and
+	remove bus matches and connection filters, and also unreference the
+	connection.
+	(nih_dbus_proxy_name_track): Set up tracking for a name, which is
+	far more complicated than it needs to be; arranges for the
+	NameOwnerChanged signal to be received, and obtains the current owner
+	of the name.
+	(nih_dbus_proxy_name_rule): Function to generate the match rule
+	used for the NameOwnerChanged signal.
+	(nih_dbus_proxy_name_owner_changed): Handle the NameOwnerChanged
+	rule, updating the owner member of the proxy and calling the lost
+	handler if the name becomes NULL.
+	* nih-dbus/dbus_interface.h: Add a pre-declaration for the
+	NihDBusProxy typedef since we'll need to pass this to signal filter
+	functions defined here later on
+
 2009-05-22  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/inotify.h: Remove this wrapper, we require a libc with

@@ -35,6 +35,7 @@
 
 /* Structures declared elsewhere */
 typedef struct nih_dbus_object NihDBusObject;
+typedef struct nih_dbus_proxy  NihDBusProxy;
 
 
 /**

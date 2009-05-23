@@ -30,30 +30,68 @@
 
 #include <dbus/dbus.h>
 
+#include <nih-dbus/dbus_interface.h>
+
+
+/**
+ * NihDBusLostHandler:
+ * @data: data pointer passed to nih_dbus_proxy_new(),
+ * @proxy: proxy object.
+ *
+ * The D-Bus Lost Handler function is called when a proxied remote object
+ * is no longer available, due to the owner of the name being changed or
+ * leaving the bus.
+ *
+ * A common activity is to free the proxy.
+ **/
+typedef void (*NihDBusLostHandler) (void *data, NihDBusProxy *proxy);
+
 
 /**
  * NihDBusProxy:
+ * @conn: associated connection,
  * @name: D-Bus name of object owner,
+ * @owner: actual unique D-Bus owner,
  * @path: path of object,
- * @conn: associated connection.
+ * @lost_handler: handler to call when the proxied object is lost,
+ * @data: data to pass to handler functions.
  *
- * Instances of this structure may be created for remote objects that you
- * wish to use.  Fundamentally they combine the three elements of data
- * necessary into one easy object that is bound to the lifetime of the
- * associated connection.
+ * Proxy objects represent a remote D-Bus object accessible over the bus.
+ * The primary purpose of this object is to combine the three elements
+ * of data that uniquely identify that remote object: the connection,
+ * the bus name (either well known or unique) and the path.
+ *
+ * @name may be NULL for peer-to-peer D-Bus connections.
+ *
+ * Proxies are not generally bound to the life-time of the connection or
+ * the remote object, thus there may be periods when functions will fail
+ * or signal filter functions left dormant due to unavailability of the
+ * remote object or even cease permanently when the bus connection is
+ * disconnected.
+ *
+ * Passing a @lost_handler function means that @name will be tracked on
+ * the bus.  Should the owner of @name change @lost_handler will be called
+ * to allow clean-up of the proxy.
  **/
-typedef struct nih_dbus_proxy {
-	char *          name;
-	char *          path;
-	DBusConnection *conn;
-} NihDBusProxy;
+struct nih_dbus_proxy {
+	DBusConnection *   conn;
+	char *             name;
+	char *             owner;
+	char *             path;
+
+	NihDBusLostHandler lost_handler;
+	void *             data;
+};
 
 
 NIH_BEGIN_EXTERN
 
-NihDBusProxy *nih_dbus_proxy_new (const void *parent, DBusConnection *conn,
-				  const char *name, const char *path)
-	__attribute__ ((malloc));
+NihDBusProxy *      nih_dbus_proxy_new     (const void *parent,
+					    DBusConnection *conn,
+					    const char *name, const char *path,
+					    NihDBusLostHandler lost_handler,
+					    void *data)
+	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN
 

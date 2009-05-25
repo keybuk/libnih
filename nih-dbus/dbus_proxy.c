@@ -160,6 +160,7 @@ static int
 nih_dbus_proxy_destroy (NihDBusProxy *proxy)
 {
 	nih_local char *rule = NULL;
+	DBusError       dbus_error;
 
 	nih_assert (proxy != NULL);
 
@@ -168,7 +169,10 @@ nih_dbus_proxy_destroy (NihDBusProxy *proxy)
 
 		rule = NIH_MUST (nih_dbus_proxy_name_rule (NULL, proxy));
 
-		dbus_bus_remove_match (proxy->conn, rule, NULL);
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (proxy->conn, rule, &dbus_error);
+		dbus_error_free (&dbus_error);
+
 		dbus_connection_remove_filter (proxy->conn,
 					       (DBusHandleMessageFunction)nih_dbus_proxy_name_owner_changed,
 					       proxy);
@@ -331,7 +335,9 @@ nih_dbus_proxy_name_track (NihDBusProxy *proxy)
 	return 0;
 
 error_after_match:
-	dbus_bus_remove_match (proxy->conn, rule, NULL);
+	dbus_error_init (&dbus_error);
+	dbus_bus_remove_match (proxy->conn, rule, &dbus_error);
+	dbus_error_free (&dbus_error);
 error_after_filter:
 	dbus_connection_remove_filter (proxy->conn,
 				       (DBusHandleMessageFunction)nih_dbus_proxy_name_owner_changed,

@@ -47,11 +47,15 @@
 
 
 /* Prototypes for static functions */
-static int   nih_dbus_proxy_destroy    (NihDBusProxy *proxy);
-static int   nih_dbus_proxy_name_track (NihDBusProxy *proxy)
+static int   nih_dbus_proxy_destroy           (NihDBusProxy *proxy);
+static int   nih_dbus_proxy_name_track        (NihDBusProxy *proxy)
 	__attribute__ ((warn_unused_result));
-static char *nih_dbus_proxy_name_rule  (const void *parent,
-					NihDBusProxy *proxy)
+static char *nih_dbus_proxy_name_rule         (const void *parent,
+					       NihDBusProxy *proxy)
+	__attribute__ ((warn_unused_result, malloc));
+static int   nih_dbus_proxy_signal_destroy    (NihDBusProxySignal *proxied);
+static char *nih_dbus_proxy_signal_rule       (const void *parent,
+					       NihDBusProxySignal *proxied)
 	__attribute__ ((warn_unused_result, malloc));
 
 /* Prototypes for handler functions */
@@ -461,4 +465,157 @@ nih_dbus_proxy_name_owner_changed (DBusConnection *conn,
 	}
 
 	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+}
+
+
+/**
+ * nih_dbus_proxy_connect:
+ * @proxy: proxy for remote object,
+ * @interface: signal interface definition,
+ * @signal: signal definition,
+ * @handler: signal handler function.
+ *
+ * Connect the signal @signal on @interface to @proxy so that the @handler
+ * function is passed to the filter function defined by @signal when it
+ * is received on the proxied D-Bus connection.
+ *
+ * The returned NihDBusProxySignal structure is allocated with nih_alloc()
+ * and is a child of @proxy, this means that should @proxy be freed, the
+ * returned structure will also be freed.  Additional references are not
+ * supported.
+ *
+ * The signal can be disconnected by freeing the returned structure.
+ *
+ * Returns: newly allocated NihDBusProxySignal structure or NULL on raised
+ * error.
+ **/
+NihDBusProxySignal *
+nih_dbus_proxy_connect (NihDBusProxy *          proxy,
+			const NihDBusInterface *interface,
+			const NihDBusSignal *   signal,
+			NihDBusSignalHandler    handler)
+{
+	NihDBusProxySignal *proxied;
+	nih_local char *    rule = NULL;
+	DBusError           dbus_error;
+
+	nih_assert (proxy != NULL);
+	nih_assert (interface != NULL);
+	nih_assert (signal != NULL);
+	nih_assert (handler != NULL);
+
+	proxied = nih_new (proxy, NihDBusProxySignal);
+	if (! proxied)
+		nih_return_no_memory_error (NULL);
+
+	proxied->proxy = proxy;
+	proxied->interface = interface;
+	proxied->signal = signal;
+	proxied->handler = handler;
+
+	if (! dbus_connection_add_filter (proxied->proxy->conn,
+					  (DBusHandleMessageFunction)proxied->signal->filter,
+					  proxied, NULL))
+		nih_return_no_memory_error (NULL);
+
+	if (proxied->proxy->name) {
+		rule = nih_dbus_proxy_signal_rule (NULL, proxied);
+		if (! rule) {
+			nih_error_raise_no_memory ();
+			goto error;
+		}
+
+		dbus_error_init (&dbus_error);
+
+		dbus_bus_add_match (proxied->proxy->conn, rule, &dbus_error);
+		if (dbus_error_is_set (&dbus_error)) {
+			if (dbus_error_has_name (&dbus_error, DBUS_ERROR_NO_MEMORY)) {
+				nih_error_raise_no_memory ();
+			} else {
+				nih_dbus_error_raise (dbus_error.name,
+						      dbus_error.message);
+			}
+
+			dbus_error_free (&dbus_error);
+			goto error;
+		}
+	}
+
+	nih_alloc_set_destructor (proxied, nih_dbus_proxy_signal_destroy);
+
+	return proxied;
+
+error:
+	dbus_connection_remove_filter (proxied->proxy->conn,
+				       (DBusHandleMessageFunction)proxied->signal->filter,
+				       proxied);
+
+	return NULL;
+}
+
+/**
+ * nih_dbus_proxy_signal_destroy:
+ * @proxied: proxied signal being destroyed.
+ *
+ * Destructor function for an NihDBusProxySignal structure; drops the bus
+ * rule matching the signal and the associated filter function.
+ *
+ * Returns: always zero.
+ **/
+static int
+nih_dbus_proxy_signal_destroy (NihDBusProxySignal *proxied)
+{
+	nih_local char *rule = NULL;
+	DBusError       dbus_error;
+
+	nih_assert (proxied != NULL);
+
+	if (proxied->proxy->name) {
+		rule = NIH_MUST (nih_dbus_proxy_signal_rule (NULL, proxied));
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (proxied->proxy->conn, rule,
+				       &dbus_error);
+		dbus_error_free (&dbus_error);
+	}
+
+	dbus_connection_remove_filter (proxied->proxy->conn,
+				       (DBusHandleMessageFunction)proxied->signal->filter,
+				       proxied);
+
+	return 0;
+}
+
+/**
+ * nih_dbus_proxy_signal_rule:
+ * @parent: parent object for new string,
+ * @proxied: proxied signal.
+ *
+ * Generates a D-Bus match rule for the @proxied signal.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the returned string will also be
+ * freed.
+ *
+ * Returns: newly allocated string or NULL on insufficient memory.
+ **/
+static char *
+nih_dbus_proxy_signal_rule (const void *        parent,
+			    NihDBusProxySignal *proxied)
+{
+	char *rule;
+
+	nih_assert (proxied != NULL);
+	nih_assert (proxied->proxy->name != NULL);
+
+	rule = nih_sprintf (parent, ("type='%s',sender='%s',path='%s',"
+				     "interface='%s',member='%s'"),
+			    "signal",
+			    proxied->proxy->name,
+			    proxied->proxy->path,
+			    proxied->interface->name,
+			    proxied->signal->name);
+
+	return rule;
 }

@@ -46,6 +46,20 @@
  **/
 typedef void (*NihDBusLostHandler) (void *data, NihDBusProxy *proxy);
 
+/**
+ * NihDBusSignalHandler:
+ * @data: data pointer passed to nih_dbus_proxy_new(),
+ * @proxy: proxy object,
+ * @message: NihDBusMessage context for signal arguments.
+ *
+ * A D-Bus Signal Handler is called when the expected signal is emitted
+ * and caught by the @proxy signal filter function, generally they will
+ * be called with additional arguments representing the demarshalled
+ * data from the signal itself.
+ **/
+typedef void (*NihDBusSignalHandler) (void *data, NihDBusProxy *proxy,
+				      NihDBusMessage *message, ...);
+
 
 /**
  * NihDBusProxy:
@@ -83,6 +97,28 @@ struct nih_dbus_proxy {
 	void *             data;
 };
 
+/**
+ * NihDBusProxySignal:
+ * @proxy: proxy for remote object,
+ * @interface: signal interface definition,
+ * @signal: signal definition,
+ * @handler: signal handler function.
+ *
+ * This structure represents a signal handler @handler connected to the
+ * proxied remote object @object, called when a signal matching @signal on
+ * @interface is received.
+ *
+ * These structures are created by nih_dbus_proxy_connect() and are
+ * linked to the life cycle of @proxy.  You should not create additional
+ * references since invalid data may then be accessed.
+ **/
+struct nih_dbus_proxy_signal {
+	NihDBusProxy *          proxy;
+	const NihDBusInterface *interface;
+	const NihDBusSignal *   signal;
+	NihDBusSignalHandler    handler;
+};
+
 
 NIH_BEGIN_EXTERN
 
@@ -91,6 +127,12 @@ NihDBusProxy *      nih_dbus_proxy_new     (const void *parent,
 					    const char *name, const char *path,
 					    NihDBusLostHandler lost_handler,
 					    void *data)
+	__attribute__ ((warn_unused_result, malloc));
+
+NihDBusProxySignal *nih_dbus_proxy_connect (NihDBusProxy *proxy,
+					    const NihDBusInterface *interface,
+					    const NihDBusSignal *signal,
+					    NihDBusSignalHandler handler)
 	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN

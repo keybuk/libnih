@@ -83,6 +83,13 @@ char *    signal_object_function (const void *parent,
 				  NihList *prototypes)
 	__attribute__ ((warn_unused_result, malloc));
 
+char *    signal_proxy_function  (const void *parent,
+				  Signal *signal, const char *name,
+				  const char *handler_type,
+				  NihList *prototypes,
+				  NihList *typedefs)
+	__attribute__ ((warn_unused_result, malloc));
+
 NIH_END_EXTERN
 
 #endif /* NIH_DBUS_TOOL_SIGNAL_H */

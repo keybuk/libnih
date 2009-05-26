@@ -44,6 +44,7 @@
 
 #include <nih-dbus/dbus_error.h>
 #include <nih-dbus/dbus_message.h>
+#include <nih-dbus/dbus_proxy.h>
 
 #include "type.h"
 #include "node.h"
@@ -1381,6 +1382,729 @@ test_object_function (void)
 }
 
 
+static int my_signal_handler_called = FALSE;
+static NihDBusProxy *last_proxy = NULL;
+
+static void
+my_signal_handler (void *          data,
+		   NihDBusProxy *  proxy,
+		   NihDBusMessage *message,
+		   const char *    msg)
+{
+	my_signal_handler_called++;
+	TEST_EQ_P (data, &my_signal_handler_called);
+
+	last_proxy = proxy;
+
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_EQ_P (message->conn, proxy->conn);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_ALLOC_PARENT (msg, message);
+	TEST_EQ_STR (msg, "this is a test");
+}
+
+const NihDBusSignal    my_signal    = { "MySignal", NULL, my_signal_filter };
+const NihDBusInterface my_interface = { "com.netsplit.Nih", NULL, NULL, NULL };
+
+void
+test_proxy_function (void)
+{
+	pid_t               dbus_pid;
+	DBusConnection *    server_conn;
+	DBusConnection *    client_conn;
+	NihList             prototypes;
+	NihList             typedefs;
+	Signal *            signal = NULL;
+	Argument *          argument = NULL;
+	char *              str;
+	TypeFunc *          func;
+	TypeVar *           arg;
+	NihListEntry *      attrib;
+	NihDBusProxy *      proxy = NULL;
+	NihDBusProxySignal *proxied = NULL;
+	DBusMessage *       sig;
+	DBusMessageIter     iter;
+
+	TEST_FUNCTION ("signal_proxy_function");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (server_conn);
+	TEST_DBUS_OPEN (client_conn);
+
+
+	/* Check that we can generate a filter function that checks and
+	 * demarshals the arguments of a received signal and calls a
+	 * handler function for it.
+	 */
+	TEST_FEATURE ("with signal");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&typedefs);
+
+		TEST_ALLOC_SAFE {
+			signal = signal_new (NULL, "MySignal");
+			signal->symbol = nih_strdup (signal, "my_signal");
+
+			argument = argument_new (signal, "Msg",
+						 "s", NIH_DBUS_ARG_OUT);
+			argument->symbol = nih_strdup (argument, "msg");
+			nih_list_add (&signal->arguments, &argument->entry);
+		}
+
+		str = signal_proxy_function (NULL,
+					     signal, "my_signal_filter",
+					     "MySignalHandler",
+					     &prototypes, &typedefs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&typedefs);
+
+			nih_free (signal);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("DBusHandlerResult\n"
+				   "my_signal_filter (DBusConnection *    connection,\n"
+				   "                  DBusMessage *       signal,\n"
+				   "                  NihDBusProxySignal *proxied)\n"
+				   "{\n"
+				   "\tDBusMessageIter iter;\n"
+				   "\tNihDBusMessage *message;\n"
+				   "\tchar *          msg;\n"
+				   "\tconst char *    msg_dbus;\n"
+				   "\n"
+				   "\tnih_assert (connection != NULL);\n"
+				   "\tnih_assert (signal != NULL);\n"
+				   "\tnih_assert (proxied != NULL);\n"
+				   "\tnih_assert (connection == proxied->proxy->conn);\n"
+				   "\n"
+				   "\tif (! dbus_message_is_signal (signal, proxied->interface->name, proxied->signal->name))\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\n"
+				   "\tif (! dbus_message_has_path (signal, proxied->proxy->path))\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\n"
+				   "\tif (proxied->proxy->name)\n"
+				   "\t\tif (! dbus_message_has_sender (signal, proxied->proxy->name))\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\n"
+				   "\tmessage = nih_dbus_message_new (NULL, connection, signal);\n"
+				   "\tif (! message)\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\n"
+				   "\t/* Iterate the arguments to the signal and demarshal into arguments\n"
+				   "\t * for our own function call.\n"
+				   "\t */\n"
+				   "\tdbus_message_iter_init (message->message, &iter);\n"
+				   "\n"
+				   "\t/* Demarshal a char * from the message */\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING) {\n"
+				   "\t\tnih_free (message);\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_get_basic (&iter, &msg_dbus);\n"
+				   "\n"
+				   "\tmsg = nih_strdup (message, msg_dbus);\n"
+				   "\tif (! msg) {\n"
+				   "\t\tnih_free (message);\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_next (&iter);\n"
+				   "\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
+				   "\t\tnih_free (message);\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Call the handler function */\n"
+				   "\tnih_error_push_context ();\n"
+				   "\t((MySignalHandler)proxied->handler) (proxied->proxy->data, proxied->proxy, message, msg);\n"
+				   "\tnih_error_pop_context ();\n"
+				   "\tnih_free (message);\n"
+				   "\n"
+				   "\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "DBusHandlerResult");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_signal_filter");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "DBusConnection *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "connection");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "DBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "signal");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusProxySignal *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "proxied");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_NOT_EMPTY (&typedefs);
+
+		func = (TypeFunc *)typedefs.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "typedef void");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "(*MySignalHandler)");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "void *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "data");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusProxy *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "proxy");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const char *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "msg");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&typedefs);
+
+		nih_free (str);
+		nih_free (signal);
+	}
+
+
+	/* Check that we can still generate a filter function for a signal
+	 * with no arguments.
+	 */
+	TEST_FEATURE ("with no arguments");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&typedefs);
+
+		TEST_ALLOC_SAFE {
+			signal = signal_new (NULL, "MySignal");
+			signal->symbol = nih_strdup (signal, "my_signal");
+		}
+
+		str = signal_proxy_function (NULL,
+					     signal, "my_signal_filter",
+					     "MySignalHandler",
+					     &prototypes, &typedefs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&typedefs);
+
+			nih_free (signal);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("DBusHandlerResult\n"
+				   "my_signal_filter (DBusConnection *    connection,\n"
+				   "                  DBusMessage *       signal,\n"
+				   "                  NihDBusProxySignal *proxied)\n"
+				   "{\n"
+				   "\tDBusMessageIter iter;\n"
+				   "\tNihDBusMessage *message;\n"
+				   "\n"
+				   "\tnih_assert (connection != NULL);\n"
+				   "\tnih_assert (signal != NULL);\n"
+				   "\tnih_assert (proxied != NULL);\n"
+				   "\tnih_assert (connection == proxied->proxy->conn);\n"
+				   "\n"
+				   "\tif (! dbus_message_is_signal (signal, proxied->interface->name, proxied->signal->name))\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\n"
+				   "\tif (! dbus_message_has_path (signal, proxied->proxy->path))\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\n"
+				   "\tif (proxied->proxy->name)\n"
+				   "\t\tif (! dbus_message_has_sender (signal, proxied->proxy->name))\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\n"
+				   "\tmessage = nih_dbus_message_new (NULL, connection, signal);\n"
+				   "\tif (! message)\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\n"
+				   "\t/* Iterate the arguments to the signal and demarshal into arguments\n"
+				   "\t * for our own function call.\n"
+				   "\t */\n"
+				   "\tdbus_message_iter_init (message->message, &iter);\n"
+				   "\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
+				   "\t\tnih_free (message);\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Call the handler function */\n"
+				   "\tnih_error_push_context ();\n"
+				   "\t((MySignalHandler)proxied->handler) (proxied->proxy->data, proxied->proxy, message);\n"
+				   "\tnih_error_pop_context ();\n"
+				   "\tnih_free (message);\n"
+				   "\n"
+				   "\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "DBusHandlerResult");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_signal_filter");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "DBusConnection *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "connection");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "DBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "signal");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusProxySignal *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "proxied");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_NOT_EMPTY (&typedefs);
+
+		func = (TypeFunc *)typedefs.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "typedef void");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "(*MySignalHandler)");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "void *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "data");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusProxy *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "proxy");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&typedefs);
+
+		nih_free (str);
+		nih_free (signal);
+	}
+
+
+	/* Check that we can use the generated code to catch a signal
+	 * and make a call to the handler with the expected arguments.
+	 */
+	TEST_FEATURE ("with signal (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih",
+						    NULL, &my_signal_handler_called);
+
+			proxied = nih_dbus_proxy_connect (proxy,
+							  &my_interface,
+							  &my_signal,
+							  (NihDBusSignalHandler)my_signal_handler);
+		}
+
+		sig = dbus_message_new_signal ("/com/netsplit/Nih",
+					       "com.netsplit.Nih",
+					       "MySignal");
+
+		dbus_message_iter_init_append (sig, &iter);
+
+		str = "this is a test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str);
+
+		dbus_connection_send (server_conn, sig, NULL);
+		dbus_connection_flush (server_conn);
+		dbus_message_unref (sig);
+
+		my_signal_handler_called = FALSE;
+		last_proxy = NULL;
+
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (my_signal_handler_called);
+		TEST_EQ_P (last_proxy, proxy);
+
+		TEST_ALLOC_SAFE {
+			nih_free (proxy);
+		}
+	}
+
+
+	/* Check that a deprecated signal generates a warning since we
+	 * don't want people catching them (passing the pointer should be
+	 * enough I think).
+	 */
+	TEST_FEATURE ("with deprecated signal");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&typedefs);
+
+		TEST_ALLOC_SAFE {
+			signal = signal_new (NULL, "MySignal");
+			signal->symbol = nih_strdup (signal, "my_signal");
+			signal->deprecated = TRUE;
+
+			argument = argument_new (signal, "Msg",
+						 "s", NIH_DBUS_ARG_OUT);
+			argument->symbol = nih_strdup (argument, "msg");
+			nih_list_add (&signal->arguments, &argument->entry);
+		}
+
+		str = signal_proxy_function (NULL,
+					     signal, "my_signal_filter",
+					     "MySignalHandler",
+					     &prototypes, &typedefs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&typedefs);
+
+			nih_free (signal);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("DBusHandlerResult\n"
+				   "my_signal_filter (DBusConnection *    connection,\n"
+				   "                  DBusMessage *       signal,\n"
+				   "                  NihDBusProxySignal *proxied)\n"
+				   "{\n"
+				   "\tDBusMessageIter iter;\n"
+				   "\tNihDBusMessage *message;\n"
+				   "\tchar *          msg;\n"
+				   "\tconst char *    msg_dbus;\n"
+				   "\n"
+				   "\tnih_assert (connection != NULL);\n"
+				   "\tnih_assert (signal != NULL);\n"
+				   "\tnih_assert (proxied != NULL);\n"
+				   "\tnih_assert (connection == proxied->proxy->conn);\n"
+				   "\n"
+				   "\tif (! dbus_message_is_signal (signal, proxied->interface->name, proxied->signal->name))\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\n"
+				   "\tif (! dbus_message_has_path (signal, proxied->proxy->path))\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\n"
+				   "\tif (proxied->proxy->name)\n"
+				   "\t\tif (! dbus_message_has_sender (signal, proxied->proxy->name))\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\n"
+				   "\tmessage = nih_dbus_message_new (NULL, connection, signal);\n"
+				   "\tif (! message)\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\n"
+				   "\t/* Iterate the arguments to the signal and demarshal into arguments\n"
+				   "\t * for our own function call.\n"
+				   "\t */\n"
+				   "\tdbus_message_iter_init (message->message, &iter);\n"
+				   "\n"
+				   "\t/* Demarshal a char * from the message */\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING) {\n"
+				   "\t\tnih_free (message);\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_get_basic (&iter, &msg_dbus);\n"
+				   "\n"
+				   "\tmsg = nih_strdup (message, msg_dbus);\n"
+				   "\tif (! msg) {\n"
+				   "\t\tnih_free (message);\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_next (&iter);\n"
+				   "\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
+				   "\t\tnih_free (message);\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Call the handler function */\n"
+				   "\tnih_error_push_context ();\n"
+				   "\t((MySignalHandler)proxied->handler) (proxied->proxy->data, proxied->proxy, message, msg);\n"
+				   "\tnih_error_pop_context ();\n"
+				   "\tnih_free (message);\n"
+				   "\n"
+				   "\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "DBusHandlerResult");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_signal_filter");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "DBusConnection *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "connection");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "DBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "signal");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusProxySignal *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "proxied");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_NOT_EMPTY (&typedefs);
+
+		func = (TypeFunc *)typedefs.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "typedef void");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "(*MySignalHandler)");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "void *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "data");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusProxy *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "proxy");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const char *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "msg");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "deprecated");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&typedefs);
+
+		nih_free (str);
+		nih_free (signal);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -1396,6 +2120,7 @@ main (int   argc,
 	test_lookup_argument ();
 
 	test_object_function ();
+	test_proxy_function ();
 
 	return 0;
 }

@@ -34,11 +34,19 @@
 #include <nih-dbus/dbus_object.h>
 
 
+typedef void (*MySignalHandler) (void *data, NihDBusProxy *proxy,
+				 NihDBusMessage *message, const char *msg);
+
+
 NIH_BEGIN_EXTERN
 
-int my_emit_signal (DBusConnection *connection, const char *origin_path,
-		    const char *msg)
+int               my_emit_signal   (DBusConnection *connection,
+				    const char *origin_path, const char *msg)
 	__attribute__ ((warn_unused_result));
+
+DBusHandlerResult my_signal_filter (DBusConnection *connection,
+				    DBusMessage *signal,
+				    NihDBusProxySignal *proxied);
 
 NIH_END_EXTERN
 

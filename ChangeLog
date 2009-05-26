@@ -1,5 +1,16 @@
 2009-05-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/signal.c (signal_proxy_function): Function to
+	generate D-Bus connection filter functions to catch signal
+	messages and pass them to a handler
+	* nih-dbus-tool/signal.h: Add prototype
+	* nih-dbus-tool/tests/signal_factory.c: Call the function to
+	generate a filter function for testing
+	* nih-dbus-tool/tests/signal_code.h: Expected prototype for
+	generated function, and the typedef it casts handler functions to
+	* nih-dbus-tool/tests/test_signal.c (test_proxy_function): Test
+	cases for the function and the generated function
+
 	* nih-dbus/dbus_interface.h (NihDBusSignalFilter): Rename the
 	message argument to signal, since we use message for the context
 

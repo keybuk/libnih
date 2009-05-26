@@ -46,6 +46,7 @@ main (int   argc,
       char *argv[])
 {
 	NihList           prototypes;
+	NihList           typedefs;
 	nih_local Signal *signal = NULL;
 	Argument *        arg;
 	nih_local char *  code = NULL;
@@ -61,6 +62,7 @@ main (int   argc,
 		"#include <nih-dbus/dbus_error.h>\n"
 		"#include <nih-dbus/dbus_message.h>\n"
 		"#include <nih-dbus/dbus_object.h>\n"
+		"#include <nih-dbus/dbus_proxy.h>\n"
 		"#include <nih-dbus/errors.h>\n"
 		"\n"
 		"#include \"signal_code.h\"\n"
@@ -79,6 +81,20 @@ main (int   argc,
 	code = signal_object_function (NULL, "com.netsplit.Nih.Test", signal,
 				       "my_emit_signal",
 				       &prototypes);
+
+	printf ("%s"
+		"\n",
+		code);
+
+
+	nih_list_init (&prototypes);
+	nih_list_init (&typedefs);
+
+	code = signal_proxy_function (NULL, signal,
+				      "my_signal_filter",
+				      "MySignalHandler",
+				      &prototypes,
+				      &typedefs);
 
 	printf ("%s", code);
 

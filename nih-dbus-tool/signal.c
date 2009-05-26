@@ -42,6 +42,7 @@
 #include "indent.h"
 #include "type.h"
 #include "marshal.h"
+#include "demarshal.h"
 #include "interface.h"
 #include "signal.h"
 #include "argument.h"
@@ -629,6 +630,352 @@ signal_object_function (const void *parent,
 	/* Append the function to the prototypes list */
 	nih_list_add (prototypes, &func->entry);
 	nih_ref (func, code);
+
+	return code;
+}
+
+
+/**
+ * signal_proxy_function:
+ * @parent: parent object for new string.
+ * @signal: signal to generate function for,
+ * @name: name of function to generate,
+ * @handler_type: typedef for handler function,
+ * @prototypes: list to append function prototypes to,
+ * @typedefs: list to append function pointer typedef definitions to.
+ *
+ * Generates C code for a function @name that acts as a D-Bus connection
+ * filter function checking that the incoming message matches @signal and
+ * calling a handler function after demarshalling the arguments.
+ *
+ * The notify function will call a handler function passed in if the
+ * reply is valid, the typedef name for this handler must be passed as
+ * @handler_type.  The actual type for this can be obtained from the
+ * entry added to @typedefs.
+ *
+ * The prototype of the function is given as a TypeFunc object appended to
+ * the @prototypes list, with the name as @name itself.  @typedefs contains
+ * a similar TypeFunc object to define the type of the handler function.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the return string will also be
+ * freed.
+ *
+ * Returns: newly allocated string or NULL if insufficient memory.
+ **/
+char *
+signal_proxy_function  (const void *parent,
+			Signal *    signal,
+			const char *name,
+			const char *handler_type,
+			NihList *   prototypes,
+			NihList *   typedefs)
+{
+	NihList             locals;
+	nih_local TypeFunc *func;
+	TypeVar  *          arg;
+	nih_local char *    assert_block = NULL;
+	nih_local TypeVar * iter_var = NULL;
+	nih_local TypeVar * parent_var = NULL;
+	nih_local char *    demarshal_block = NULL;
+	nih_local char *    call_block = NULL;
+	nih_local char *    handler_name = NULL;
+	nih_local TypeFunc *handler_func = NULL;
+	NihListEntry *      attrib;
+	nih_local char *    vars_block = NULL;
+	nih_local char *    body = NULL;
+	char *              code;
+
+	nih_assert (signal != NULL);
+	nih_assert (name != NULL);
+	nih_assert (handler_type != NULL);
+	nih_assert (prototypes != NULL);
+	nih_assert (typedefs != NULL);
+
+	nih_list_init (&locals);
+
+	/* The function returns a D-Bus handler result, accepting arguments
+	 * for the connection, received message and proxied signal structure.
+	 */
+	func = type_func_new (NULL, "DBusHandlerResult", name);
+	if (! func)
+		return NULL;
+
+	arg = type_var_new (func, "DBusConnection *", "connection");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&func->args, &arg->entry);
+
+	if (! nih_strcat (&assert_block, NULL,
+			  "nih_assert (connection != NULL);\n"))
+		return NULL;
+
+	arg = type_var_new (func, "DBusMessage *", "signal");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&func->args, &arg->entry);
+
+	if (! nih_strcat (&assert_block, NULL,
+			  "nih_assert (signal != NULL);\n"))
+		return NULL;
+
+	arg = type_var_new (func, "NihDBusProxySignal *", "proxied");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&func->args, &arg->entry);
+
+	if (! nih_strcat (&assert_block, NULL,
+			  "nih_assert (proxied != NULL);\n"))
+		return NULL;
+
+	if (! nih_strcat (&assert_block, NULL,
+			  "nih_assert (connection == proxied->proxy->conn);\n"))
+		return NULL;
+
+	/* The function requires a message context to act as the parent of
+	 * arguments and is passed to the handler function; we also need
+	 * an iterator for it.
+	 */
+	iter_var = type_var_new (NULL, "DBusMessageIter", "iter");
+	if (! iter_var)
+		return NULL;
+
+	nih_list_add (&locals, &iter_var->entry);
+
+	parent_var = type_var_new (NULL, "NihDBusMessage *", "message");
+	if (! parent_var)
+		return NULL;
+
+	nih_list_add (&locals, &parent_var->entry);
+
+	/* Begin the demarshalling block by checking that the message is
+	 * the signal we're looking for, and then if it is, allocating a
+	 * message context and iterating the arguments.
+	 */
+	if (! nih_strcat_sprintf (&demarshal_block, NULL,
+				  "if (! dbus_message_is_signal (signal, proxied->interface->name, proxied->signal->name))\n"
+				  "\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				  "\n"
+				  "if (! dbus_message_has_path (signal, proxied->proxy->path))\n"
+				  "\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				  "\n"
+				  "if (proxied->proxy->name)\n"
+				  "\tif (! dbus_message_has_sender (signal, proxied->proxy->name))\n"
+				  "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				  "\n"
+				  "message = nih_dbus_message_new (NULL, connection, signal);\n"
+				  "if (! message)\n"
+				  "\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				  "\n"
+				  "/* Iterate the arguments to the signal and demarshal into arguments\n"
+				  " * for our own function call.\n"
+				  " */\n"
+				  "dbus_message_iter_init (message->message, &iter);\n"
+				  "\n"))
+		return NULL;
+
+	/* Begin the handler calling block, which is not permitted to
+	 * reply.  Build up the typedef for it, which we mostly use for
+	 * type passing reasons.
+	 */
+	if (! nih_strcat_sprintf (&call_block, NULL,
+				  "/* Call the handler function */\n"
+				  "nih_error_push_context ();\n"
+				  "((%s)proxied->handler) (proxied->proxy->data, proxied->proxy, message",
+				  handler_type))
+		return NULL;
+
+	handler_name = nih_sprintf (NULL, "(*%s)", handler_type);
+	if (! handler_name)
+		return NULL;
+
+	handler_func = type_func_new (NULL, "typedef void", handler_name);
+	if (! handler_func)
+		return NULL;
+
+	if (signal->deprecated) {
+		attrib = nih_list_entry_new (handler_func);
+		if (! attrib)
+			return NULL;
+
+		attrib->str = nih_strdup (attrib, "deprecated");
+		if (! attrib->str)
+			return NULL;
+
+		nih_list_add (&handler_func->attribs, &attrib->entry);
+	}
+
+
+	arg = type_var_new (handler_func, "void *", "data");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&handler_func->args, &arg->entry);
+
+	arg = type_var_new (handler_func, "NihDBusProxy *", "proxy");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&handler_func->args, &arg->entry);
+
+	arg = type_var_new (handler_func, "NihDBusMessage *", "message");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&handler_func->args, &arg->entry);
+
+	/* Iterate over the signal arguments, for each output argument
+	 * we append the code to the the demarshalling code.  At the
+	 * same time, we build up the handler call itself and transfer
+	 * the actual arguments to the locals list.
+	 */
+	NIH_LIST_FOREACH (&signal->arguments, iter) {
+		Argument *        argument = (Argument *)iter;
+		NihList           arg_vars;
+		NihList           arg_locals;
+		DBusSignatureIter iter;
+		nih_local char *  local_name = NULL;
+		nih_local char *  oom_error_code = NULL;
+		nih_local char *  type_error_code = NULL;
+		nih_local char *  block = NULL;
+
+		if (argument->direction != NIH_DBUS_ARG_OUT)
+			continue;
+
+		nih_list_init (&arg_vars);
+		nih_list_init (&arg_locals);
+
+		dbus_signature_iter_init (&iter, argument->type);
+
+		/* In case of out of memory, we just return and D-Bus will
+		 * call us again.  In case of type error, just ignore the
+		 * signal entirely.
+		 */
+		oom_error_code = nih_sprintf (NULL,
+					      "nih_free (message);\n"
+					      "return DBUS_HANDLER_RESULT_NEED_MEMORY;\n");
+		if (! oom_error_code)
+			return NULL;
+
+		type_error_code = nih_strdup (NULL,
+					      "nih_free (message);\n"
+					      "return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n");
+		if (! type_error_code)
+			return NULL;
+
+		block = demarshal (NULL, &iter, "message", "iter",
+				   argument->symbol,
+				   oom_error_code,
+				   type_error_code,
+				   &arg_vars, &arg_locals);
+		if (! block)
+			return NULL;
+
+		if (! nih_strcat (&block, NULL, "\n"))
+			return NULL;
+
+		NIH_LIST_FOREACH_SAFE (&arg_vars, iter) {
+			TypeVar *var = (TypeVar *)iter;
+			TypeVar *arg;
+
+			if (! nih_strcat_sprintf (&call_block, NULL,
+						  ", %s",
+						  var->name))
+				return NULL;
+
+			nih_list_add (&locals, &var->entry);
+			nih_ref (var, call_block);
+
+			/* Handler argument is const */
+			arg = type_var_new (handler_func,
+					    var->type, var->name);
+			if (! arg)
+				return NULL;
+
+			if (! type_to_const (&arg->type, arg))
+				return NULL;
+
+			nih_list_add (&handler_func->args,
+				      &arg->entry);
+		}
+
+		NIH_LIST_FOREACH_SAFE (&arg_locals, iter) {
+			TypeVar *var = (TypeVar *)iter;
+
+			nih_list_add (&locals, &var->entry);
+			nih_ref (var, demarshal_block);
+		}
+
+		if (! nih_strcat (&demarshal_block, NULL, block))
+			return NULL;
+	}
+
+	/* Complete the demarshalling block, checking for any unexpected
+	 * arguments which we also want to error on.
+	 */
+	if (! nih_strcat_sprintf (&demarshal_block, NULL,
+				  "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
+				  "\tnih_free (message);\n"
+				  "\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				  "}\n"
+				  "\n"))
+	    return NULL;
+
+	/* Complete the call block */
+	if (! nih_strcat (&call_block, NULL, ");\n"
+			  "nih_error_pop_context ();\n"
+			  "nih_free (message);\n"
+			  "\n"))
+		return NULL;
+
+	/* Lay out the function body, indenting it all before placing it
+	 * in the function code.
+	 */
+	vars_block = type_var_layout (NULL, &locals);
+	if (! vars_block)
+		return NULL;
+
+	if (! nih_strcat_sprintf (&body, NULL,
+				  "%s"
+				  "\n"
+				  "%s"
+				  "\n"
+				  "%s"
+				  "%s"
+				  "return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n",
+				  vars_block,
+				  assert_block,
+				  demarshal_block,
+				  call_block))
+		return NULL;
+
+	if (! indent (&body, NULL, 1))
+		return NULL;
+
+	/* Function header */
+	code = type_func_to_string (parent, func);
+	if (! code)
+		return NULL;
+
+	if (! nih_strcat_sprintf (&code, parent,
+				  "{\n"
+				  "%s"
+				  "}\n",
+				  body)) {
+		nih_free (code);
+		return NULL;
+	}
+
+	/* Append the functions to the prototypes and typedefs lists */
+	nih_list_add (prototypes, &func->entry);
+	nih_ref (func, code);
+
+	nih_list_add (typedefs, &handler_func->entry);
+	nih_ref (handler_func, code);
 
 	return code;
 }

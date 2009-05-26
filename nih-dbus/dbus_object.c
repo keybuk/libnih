@@ -49,21 +49,21 @@
 
 /* Prototypes for static functions */
 static int               nih_dbus_object_destroy      (NihDBusObject *object);
-static void              nih_dbus_object_unregister   (DBusConnection *conn,
+static void              nih_dbus_object_unregister   (DBusConnection *connection,
 						       NihDBusObject *object);
-static DBusHandlerResult nih_dbus_object_message      (DBusConnection *conn,
+static DBusHandlerResult nih_dbus_object_message      (DBusConnection *connection,
 						       DBusMessage *message,
 						       NihDBusObject *object);
-static DBusHandlerResult nih_dbus_object_introspect   (DBusConnection *conn,
+static DBusHandlerResult nih_dbus_object_introspect   (DBusConnection *connection,
 						       DBusMessage *message,
 						       NihDBusObject *object);
-static DBusHandlerResult nih_dbus_object_property_get (DBusConnection *conn,
+static DBusHandlerResult nih_dbus_object_property_get (DBusConnection *connection,
 						       DBusMessage *message,
 						       NihDBusObject *object);
-static DBusHandlerResult nih_dbus_object_property_get_all (DBusConnection *conn,
+static DBusHandlerResult nih_dbus_object_property_get_all (DBusConnection *connection,
 							   DBusMessage *message,
 							   NihDBusObject *object);
-static DBusHandlerResult nih_dbus_object_property_set (DBusConnection *conn,
+static DBusHandlerResult nih_dbus_object_property_set (DBusConnection *connection,
 						       DBusMessage *message,
 						       NihDBusObject *object);
 
@@ -83,7 +83,7 @@ static const DBusObjectPathVTable nih_dbus_object_vtable = {
 /**
  * nih_dbus_object_new:
  * @parent: parent object for new object,
- * @conn: D-Bus connection to associate with,
+ * @connection: D-Bus connection to associate with,
  * @path: path of object,
  * @interfaces: interfaces list to attach,
  * @data: data pointer.
@@ -98,8 +98,8 @@ static const DBusObjectPathVTable nih_dbus_object_vtable = {
  * glue arrays and functions.
  *
  * The object structure is allocated using nih_alloc() and connected to
- * the given @conn, it can be unregistered by freeing it and it will be
- * automatically unregistered should @conn be disconnected.
+ * the given @connection, it can be unregistered by freeing it and it will be
+ * automatically unregistered should @connection be disconnected.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned object.  When all parents
@@ -111,14 +111,14 @@ static const DBusObjectPathVTable nih_dbus_object_vtable = {
  **/
 NihDBusObject *
 nih_dbus_object_new (const void *             parent,
-		     DBusConnection *         conn,
+		     DBusConnection *         connection,
 		     const char *             path,
 		     const NihDBusInterface **interfaces,
 		     void *                   data)
 {
 	NihDBusObject *object;
 
-	nih_assert (conn != NULL);
+	nih_assert (connection != NULL);
 	nih_assert (path != NULL);
 	nih_assert (interfaces != NULL);
 
@@ -137,13 +137,14 @@ nih_dbus_object_new (const void *             parent,
 	 * the connection is freed and discard this object - and don't want
 	 * to block that happening.
 	 */
-	object->conn = conn;
+	object->connection = connection;
 
 	object->data = data;
 	object->interfaces = interfaces;
 	object->registered = FALSE;
 
-	if (! dbus_connection_register_object_path (object->conn, object->path,
+	if (! dbus_connection_register_object_path (object->connection,
+						    object->path,
 						    &nih_dbus_object_vtable,
 						    object)) {
 		nih_free (object);
@@ -172,7 +173,7 @@ nih_dbus_object_destroy (NihDBusObject *object)
 
 	if (object->registered) {
 		object->registered = FALSE;
-		dbus_connection_unregister_object_path (object->conn,
+		dbus_connection_unregister_object_path (object->connection,
 							object->path);
 	}
 
@@ -181,19 +182,19 @@ nih_dbus_object_destroy (NihDBusObject *object)
 
 /**
  * nih_dbus_object_unregister:
- * @conn: D-Bus connection,
+ * @connection: D-Bus connection,
  * @object: D-Bus object to destroy.
  *
  * Called by D-Bus to unregister the @object attached to the D-Bus connection
- * @conn, requires us to free the attached structure.
+ * @connection, requires us to free the attached structure.
  **/
 static void
-nih_dbus_object_unregister (DBusConnection *conn,
+nih_dbus_object_unregister (DBusConnection *connection,
 			    NihDBusObject * object)
 {
-	nih_assert (conn != NULL);
+	nih_assert (connection != NULL);
 	nih_assert (object != NULL);
-	nih_assert (object->conn == conn);
+	nih_assert (object->connection == connection);
 
 	if (object->registered) {
 		object->registered = FALSE;
@@ -204,7 +205,7 @@ nih_dbus_object_unregister (DBusConnection *conn,
 
 /**
  * nih_dbus_object_message:
- * @conn: D-Bus connection,
+ * @connection: D-Bus connection,
  * @message: D-Bus message received,
  * @object: Object that received the message.
  *
@@ -216,34 +217,34 @@ nih_dbus_object_unregister (DBusConnection *conn,
  * Returns: result of handling the message.
  **/
 static DBusHandlerResult
-nih_dbus_object_message (DBusConnection *conn,
+nih_dbus_object_message (DBusConnection *connection,
 			 DBusMessage *   message,
 			 NihDBusObject * object)
 {
 	const NihDBusInterface **interface;
 
-	nih_assert (conn != NULL);
+	nih_assert (connection != NULL);
 	nih_assert (message != NULL);
 	nih_assert (object != NULL);
-	nih_assert (object->conn == conn);
+	nih_assert (object->connection == connection);
 
 	/* Handle introspection internally */
 	if (dbus_message_is_method_call (
 		    message, DBUS_INTERFACE_INTROSPECTABLE, "Introspect"))
-		return nih_dbus_object_introspect (conn, message, object);
+		return nih_dbus_object_introspect (connection, message, object);
 
 	/* Handle properties semi-internally */
 	if (dbus_message_is_method_call (
 		    message, DBUS_INTERFACE_PROPERTIES, "Get"))
-		return nih_dbus_object_property_get (conn, message, object);
+		return nih_dbus_object_property_get (connection, message, object);
 
 	if (dbus_message_is_method_call (
 		    message, DBUS_INTERFACE_PROPERTIES, "Set"))
-		return nih_dbus_object_property_set (conn, message, object);
+		return nih_dbus_object_property_set (connection, message, object);
 
 	if (dbus_message_is_method_call (
 		    message, DBUS_INTERFACE_PROPERTIES, "GetAll"))
-		return nih_dbus_object_property_get_all (conn, message, object);
+		return nih_dbus_object_property_get_all (connection, message, object);
 
 
 	/* No built-in handling, locate a handler function in the defined
@@ -264,7 +265,7 @@ nih_dbus_object_message (DBusConnection *conn,
 				DBusHandlerResult         result;
 
 				msg = nih_dbus_message_new (NULL,
-							    conn, message);
+							    connection, message);
 				if (! msg)
 					return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
@@ -283,7 +284,7 @@ nih_dbus_object_message (DBusConnection *conn,
 
 /**
  * nih_dbus_object_introspect:
- * @conn: D-Bus connection,
+ * @connection: D-Bus connection,
  * @message: D-Bus message received,
  * @object: Object that received the message.
  *
@@ -294,7 +295,7 @@ nih_dbus_object_message (DBusConnection *conn,
  * Returns: result of handling the message.
  **/
 static DBusHandlerResult
-nih_dbus_object_introspect (DBusConnection *conn,
+nih_dbus_object_introspect (DBusConnection *connection,
 			    DBusMessage *   message,
 			    NihDBusObject * object)
 {
@@ -305,10 +306,10 @@ nih_dbus_object_introspect (DBusConnection *conn,
 	DBusMessage *            reply = NULL;
 	int                      have_props = FALSE;
 
-	nih_assert (conn != NULL);
+	nih_assert (connection != NULL);
 	nih_assert (message != NULL);
 	nih_assert (object != NULL);
-	nih_assert (object->conn == conn);
+	nih_assert (object->connection == connection);
 
 	/* Make sure the message signature was what we expected */
 	if (! dbus_message_has_signature (message, "")) {
@@ -317,7 +318,7 @@ nih_dbus_object_introspect (DBusConnection *conn,
 		if (! reply)
 			return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
-		if (! dbus_connection_send (conn, reply, NULL)) {
+		if (! dbus_connection_send (connection, reply, NULL)) {
 			dbus_message_unref (reply);
 			return DBUS_HANDLER_RESULT_NEED_MEMORY;
 		}
@@ -447,7 +448,7 @@ nih_dbus_object_introspect (DBusConnection *conn,
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
 	/* Add node items for children */
-	if (! dbus_connection_list_registered (conn, object->path, &children))
+	if (! dbus_connection_list_registered (connection, object->path, &children))
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
 	for (child = children; *child; child++) {
@@ -478,7 +479,7 @@ nih_dbus_object_introspect (DBusConnection *conn,
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 	}
 
-	if (! dbus_connection_send (conn, reply, NULL)) {
+	if (! dbus_connection_send (connection, reply, NULL)) {
 		dbus_message_unref (reply);
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 	}
@@ -490,7 +491,7 @@ nih_dbus_object_introspect (DBusConnection *conn,
 
 /**
  * nih_dbus_object_property_get:
- * @conn: D-Bus connection,
+ * @connection: D-Bus connection,
  * @message: D-Bus message received,
  * @object: Object that received the message.
  *
@@ -502,7 +503,7 @@ nih_dbus_object_introspect (DBusConnection *conn,
  * Returns: result of handling the message.
  **/
 static DBusHandlerResult
-nih_dbus_object_property_get (DBusConnection *conn,
+nih_dbus_object_property_get (DBusConnection *connection,
 			      DBusMessage *   message,
 			      NihDBusObject * object)
 {
@@ -512,10 +513,10 @@ nih_dbus_object_property_get (DBusConnection *conn,
 	const char *             property_name;
 	const NihDBusInterface **interface;
 
-	nih_assert (conn != NULL);
+	nih_assert (connection != NULL);
 	nih_assert (message != NULL);
 	nih_assert (object != NULL);
-	nih_assert (object->conn == conn);
+	nih_assert (object->connection == connection);
 
 	/* Retrieve the requested interface and property names from the
 	 * method call, first making sure the message signature was what
@@ -529,7 +530,7 @@ nih_dbus_object_property_get (DBusConnection *conn,
 		if (! reply)
 			return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
-		if (! dbus_connection_send (conn, reply, NULL)) {
+		if (! dbus_connection_send (connection, reply, NULL)) {
 			dbus_message_unref (reply);
 			return DBUS_HANDLER_RESULT_NEED_MEMORY;
 		}
@@ -562,7 +563,7 @@ nih_dbus_object_property_get (DBusConnection *conn,
 				int                       ret;
 
 				msg = nih_dbus_message_new (NULL,
-							    conn, message);
+							    connection, message);
 				if (! msg)
 					return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
@@ -581,7 +582,7 @@ nih_dbus_object_property_get (DBusConnection *conn,
 					return DBUS_HANDLER_RESULT_NEED_MEMORY;
 				}
 
-				if (! dbus_connection_send (conn, reply, NULL)) {
+				if (! dbus_connection_send (connection, reply, NULL)) {
 					dbus_message_unref (reply);
 					return DBUS_HANDLER_RESULT_NEED_MEMORY;
 				}
@@ -598,7 +599,7 @@ nih_dbus_object_property_get (DBusConnection *conn,
 
 /**
  * nih_dbus_object_property_get_all:
- * @conn: D-Bus connection,
+ * @connection: D-Bus connection,
  * @message: D-Bus message received,
  * @object: Object that received the message.
  *
@@ -610,7 +611,7 @@ nih_dbus_object_property_get (DBusConnection *conn,
  * Returns: result of handling the message.
  **/
 static DBusHandlerResult
-nih_dbus_object_property_get_all (DBusConnection *conn,
+nih_dbus_object_property_get_all (DBusConnection *connection,
 				  DBusMessage *   message,
 				  NihDBusObject * object)
 {
@@ -622,10 +623,10 @@ nih_dbus_object_property_get_all (DBusConnection *conn,
 	nih_local NihDBusMessage *msg = NULL;
 	const NihDBusInterface ** interface;
 
-	nih_assert (conn != NULL);
+	nih_assert (connection != NULL);
 	nih_assert (message != NULL);
 	nih_assert (object != NULL);
-	nih_assert (object->conn == conn);
+	nih_assert (object->connection == connection);
 
 	/* Retrieve the requested interface name from the method call,
 	 * first making sure the message signature was what we expected.
@@ -636,7 +637,7 @@ nih_dbus_object_property_get_all (DBusConnection *conn,
 		if (! reply)
 			return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
-		if (! dbus_connection_send (conn, reply, NULL)) {
+		if (! dbus_connection_send (connection, reply, NULL)) {
 			dbus_message_unref (reply);
 			return DBUS_HANDLER_RESULT_NEED_MEMORY;
 		}
@@ -661,7 +662,7 @@ nih_dbus_object_property_get_all (DBusConnection *conn,
 	/* Use the same NihDBusMessage object for each of the getters we
 	 * call for efficiency
 	 */
-	msg = nih_dbus_message_new (NULL, conn, message);
+	msg = nih_dbus_message_new (NULL, connection, message);
 	if (! msg)
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
@@ -756,7 +757,7 @@ nih_dbus_object_property_get_all (DBusConnection *conn,
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 	}
 
-	if (! dbus_connection_send (conn, reply, NULL)) {
+	if (! dbus_connection_send (connection, reply, NULL)) {
 		dbus_message_unref (reply);
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 	}
@@ -768,7 +769,7 @@ nih_dbus_object_property_get_all (DBusConnection *conn,
 
 /**
  * nih_dbus_object_property_set:
- * @conn: D-Bus connection,
+ * @connection: D-Bus connection,
  * @message: D-Bus message received,
  * @object: Object that received the message.
  *
@@ -779,7 +780,7 @@ nih_dbus_object_property_get_all (DBusConnection *conn,
  * Returns: result of handling the message.
  **/
 static DBusHandlerResult
-nih_dbus_object_property_set (DBusConnection *conn,
+nih_dbus_object_property_set (DBusConnection *connection,
 			      DBusMessage *   message,
 			      NihDBusObject * object)
 {
@@ -789,10 +790,10 @@ nih_dbus_object_property_set (DBusConnection *conn,
 	const char *             property_name;
 	const NihDBusInterface **interface;
 
-	nih_assert (conn != NULL);
+	nih_assert (connection != NULL);
 	nih_assert (message != NULL);
 	nih_assert (object != NULL);
-	nih_assert (object->conn == conn);
+	nih_assert (object->connection == connection);
 
 	/* Retrieve the requested interface and property names from the
 	 * method call, first making sure the message signature was what
@@ -807,7 +808,7 @@ nih_dbus_object_property_set (DBusConnection *conn,
 		if (! reply)
 			return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
-		if (! dbus_connection_send (conn, reply, NULL)) {
+		if (! dbus_connection_send (connection, reply, NULL)) {
 			dbus_message_unref (reply);
 			return DBUS_HANDLER_RESULT_NEED_MEMORY;
 		}
@@ -841,7 +842,7 @@ nih_dbus_object_property_set (DBusConnection *conn,
 				int                       ret;
 
 				msg = nih_dbus_message_new (NULL,
-							    conn, message);
+							    connection, message);
 				if (! msg)
 					return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
@@ -879,7 +880,7 @@ nih_dbus_object_property_set (DBusConnection *conn,
 					reply = NIH_MUST (dbus_message_new_method_return (message));
 				}
 
-				NIH_MUST (dbus_connection_send (conn, reply, NULL));
+				NIH_MUST (dbus_connection_send (connection, reply, NULL));
 				dbus_message_unref (reply);
 
 				return DBUS_HANDLER_RESULT_HANDLED;

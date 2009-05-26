@@ -36,25 +36,25 @@
 /**
  * NihDBusObject:
  * @path: path of object,
- * @conn: associated connection,
+ * @connection: associated connection,
  * @data: pointer to object data,
  * @interfaces: NULL-terminated array of interfaces the object supports,
  * @registered: TRUE while the object is registered.
  *
- * This structure represents an object visible on the given @conn at @path
- * and being handled by libnih-dbus.  It connects the @data pointer to the
- * individual method and property handler functions defined by the
- * @interfaces.
+ * This structure represents an object visible on the given @connection
+ * at @path and being handled by libnih-dbus.  It connects the @data
+ * pointer to the individual method and property handler functions
+ * defined by the @interfaces.
  *
  * Automatic introspection is provided based on @interfaces.
  *
- * No reference is held to @conn, therefore you may not assume that it is
- * valid.  In general, the object will be automatically freed should @conn
- * be cleaned up.
+ * No reference is held to @connection, therefore you may not assume that
+ * it is valid.  In general, the object will be automatically freed should
+ * @connection be cleaned up.
  **/
 struct nih_dbus_object {
 	char *                   path;
-	DBusConnection *         conn;
+	DBusConnection *         connection;
 	void *                   data;
 	const NihDBusInterface **interfaces;
 	int                      registered;
@@ -63,7 +63,8 @@ struct nih_dbus_object {
 
 NIH_BEGIN_EXTERN
 
-NihDBusObject *nih_dbus_object_new (const void *parent, DBusConnection *conn,
+NihDBusObject *nih_dbus_object_new (const void *parent,
+				    DBusConnection *connection,
 				    const char *path,
 				    const NihDBusInterface **interfaces,
 				    void *data)

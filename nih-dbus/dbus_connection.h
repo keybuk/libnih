@@ -77,27 +77,27 @@
 
 /**
  * NihDBusDisconnectHandler:
- * @conn: Connection that was lost.
+ * @connection: Connection that was lost.
  *
  * A D-Bus disconnect handler is a function called when the D-Bus connection
- * @conn is disconnected from its server.  Once called, the connection is
- * automatically unreferenced.
+ * @connection is disconnected from its server.  Once called, the connection
+ * is automatically unreferenced.
  **/
-typedef void (*NihDBusDisconnectHandler) (DBusConnection *conn);
+typedef void (*NihDBusDisconnectHandler) (DBusConnection *connection);
 
 /**
  * NihDBusConnectHandler:
  * @server: Server that received new connection,
- * @conn: New connection.
+ * @connection: New connection.
  *
  * A D-Bus connection handler is a function called when the D-Bus @server
- * receives a new connection @conn.  The function must return TRUE for the
- * connection to be accepted, otherwise it will be dropped.
+ * receives a new connection @connection.  The function must return TRUE
+ * for the connection to be accepted, otherwise it will be dropped.
  *
  * Returns: TRUE if connection accepted, FALSE otherwise.
  **/
 typedef int (*NihDBusConnectHandler) (DBusServer *server,
-				      DBusConnection *conn);
+				      DBusConnection *connection);
 
 
 NIH_BEGIN_EXTERN
@@ -110,7 +110,7 @@ DBusConnection *nih_dbus_bus     (DBusBusType bus,
 				  NihDBusDisconnectHandler disconnect_handler)
 	__attribute__ ((warn_unused_result));
 
-int             nih_dbus_setup   (DBusConnection *conn,
+int             nih_dbus_setup   (DBusConnection *connection,
 				  NihDBusDisconnectHandler disconnect_handler)
 	__attribute__ ((warn_unused_result));
 

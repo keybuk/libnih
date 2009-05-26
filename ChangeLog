@@ -1,5 +1,9 @@
 2009-05-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_connection.c: Rename conn arguments/variables to
+	connection, for style-wise stuff
+	* nih-dbus/dbus_connection.h: Update prototypes
+
 	* nih-dbus-tool/signal.c (signal_proxy_function): Function to
 	generate D-Bus connection filter functions to catch signal
 	messages and pass them to a handler

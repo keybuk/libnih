@@ -65,13 +65,13 @@ static void              nih_dbus_timeout_toggled   (DBusTimeout *timeout,
 static void              nih_dbus_timer             (DBusTimeout *timeout,
 						     NihTimer *timer);
 static void              nih_dbus_wakeup_main       (void *data);
-static void              nih_dbus_callback          (DBusConnection *conn,
+static void              nih_dbus_callback          (DBusConnection *connection,
 						     NihMainLoopFunc *loop);
-static DBusHandlerResult nih_dbus_connection_disconnected (DBusConnection *conn,
+static DBusHandlerResult nih_dbus_connection_disconnected (DBusConnection *connection,
 							   DBusMessage *message,
 							   NihDBusDisconnectHandler handler);
 static void              nih_dbus_new_connection    (DBusServer *server,
-						     DBusConnection *conn,
+						     DBusConnection *connection,
 						     void *data);
 
 
@@ -122,15 +122,15 @@ DBusConnection *
 nih_dbus_connect (const char *             address,
 		  NihDBusDisconnectHandler disconnect_handler)
 {
-	DBusConnection *conn;
+	DBusConnection *connection;
 	DBusError       error;
 
 	nih_assert (address != NULL);
 
 	dbus_error_init (&error);
 
-	conn = dbus_connection_open (address, &error);
-	if (! conn) {
+	connection = dbus_connection_open (address, &error);
+	if (! connection) {
 		if (! strcmp (error.name, DBUS_ERROR_NO_MEMORY)) {
 			nih_error_raise (ENOMEM, strerror (ENOMEM));
 		} else {
@@ -141,13 +141,13 @@ nih_dbus_connect (const char *             address,
 		return NULL;
 	}
 
-	if (nih_dbus_setup (conn, disconnect_handler) < 0) {
-		dbus_connection_unref (conn);
+	if (nih_dbus_setup (connection, disconnect_handler) < 0) {
+		dbus_connection_unref (connection);
 
 		nih_return_no_memory_error (NULL);
 	}
 
-	return conn;
+	return connection;
 }
 
 /**
@@ -177,13 +177,13 @@ DBusConnection *
 nih_dbus_bus (DBusBusType              bus,
 	      NihDBusDisconnectHandler disconnect_handler)
 {
-	DBusConnection *conn;
+	DBusConnection *connection;
 	DBusError       error;
 
 	dbus_error_init (&error);
 
-	conn = dbus_bus_get (bus, &error);
-	if (! conn) {
+	connection = dbus_bus_get (bus, &error);
+	if (! connection) {
 		if (! strcmp (error.name, DBUS_ERROR_NO_MEMORY)) {
 			nih_error_raise (ENOMEM, strerror (ENOMEM));
 		} else {
@@ -194,23 +194,23 @@ nih_dbus_bus (DBusBusType              bus,
 		return NULL;
 	}
 
-	dbus_connection_set_exit_on_disconnect (conn, FALSE);
+	dbus_connection_set_exit_on_disconnect (connection, FALSE);
 
-	if (nih_dbus_setup (conn, disconnect_handler) < 0) {
-		dbus_connection_unref (conn);
+	if (nih_dbus_setup (connection, disconnect_handler) < 0) {
+		dbus_connection_unref (connection);
 
 		nih_return_no_memory_error (NULL);
 	}
 
-	return conn;
+	return connection;
 }
 
 /**
  * nih_dbus_setup:
- * @conn: D-Bus connection to setup,
+ * @connection: D-Bus connection to setup,
  * @disconnect_handler: function to call on disconnection.
  *
- * Sets up the given connection @conn so that it may use libnih's own
+ * Sets up the given connection @connection so that it may use libnih's own
  * main loop meaning that messages will be received, sent and dispatched
  * automatically.
  *
@@ -218,19 +218,19 @@ nih_dbus_bus (DBusBusType              bus,
  * automatically unreference the connection after calling the given
  * @disconnect_handler.
  *
- * It's safe to call this function multiple times for a single @conn,
+ * It's safe to call this function multiple times for a single @connection,
  * for example for setting an additional @disconnect_handler for a shared
  * connection.
  *
  * Returns: zero on success, negative value on insufficient memory.
  **/
 int
-nih_dbus_setup (DBusConnection *         conn,
+nih_dbus_setup (DBusConnection *         connection,
 		NihDBusDisconnectHandler disconnect_handler)
 {
 	NihMainLoopFunc *loop;
 
-	nih_assert (conn != NULL);
+	nih_assert (connection != NULL);
 
 	/* Allocate a data slot for storing the main loop function; if
 	 * this is set for the structure, we've already set it up before
@@ -240,9 +240,9 @@ nih_dbus_setup (DBusConnection *         conn,
  	if (! dbus_connection_allocate_data_slot (&main_loop_slot))
 		return -1;
 
-	if (! dbus_connection_get_data (conn, main_loop_slot)) {
+	if (! dbus_connection_get_data (connection, main_loop_slot)) {
 		/* Allow the connection to watch its file descriptors */
-		if (! dbus_connection_set_watch_functions (conn,
+		if (! dbus_connection_set_watch_functions (connection,
 							   nih_dbus_add_watch,
 							   nih_dbus_remove_watch,
 							   nih_dbus_watch_toggled,
@@ -250,7 +250,7 @@ nih_dbus_setup (DBusConnection *         conn,
 			goto error;
 
 		/* Allow the connection to set up timers */
-		if (! dbus_connection_set_timeout_functions (conn,
+		if (! dbus_connection_set_timeout_functions (connection,
 							     nih_dbus_add_timeout,
 							     nih_dbus_remove_timeout,
 							     nih_dbus_timeout_toggled,
@@ -258,7 +258,7 @@ nih_dbus_setup (DBusConnection *         conn,
 			goto error;
 
 		/* Allow the connection to wake up the main loop */
-		dbus_connection_set_wakeup_main_function (conn,
+		dbus_connection_set_wakeup_main_function (connection,
 							  nih_dbus_wakeup_main,
 							  NULL, NULL);
 
@@ -268,11 +268,11 @@ nih_dbus_setup (DBusConnection *         conn,
 		 * time.
 		 */
 		loop = nih_main_loop_add_func (NULL, (NihMainLoopCb)nih_dbus_callback,
-					       conn);
+					       connection);
 		if (! loop)
 			goto error;
 
-		if (! dbus_connection_set_data (conn, main_loop_slot, loop,
+		if (! dbus_connection_set_data (connection, main_loop_slot, loop,
 						(DBusFreeFunction)nih_discard)) {
 			nih_free (loop);
 			goto error;
@@ -285,7 +285,7 @@ nih_dbus_setup (DBusConnection *         conn,
 	 * which has the right effect.
 	 */
 	if (! dbus_connection_add_filter (
-		    conn, (DBusHandleMessageFunction)nih_dbus_connection_disconnected,
+		    connection, (DBusHandleMessageFunction)nih_dbus_connection_disconnected,
 		    disconnect_handler, NULL))
 		return -1;
 
@@ -295,13 +295,13 @@ error:
 	/* Unwind setup of a non-shared connection so that next time we call,
 	 * we're not in a strange half-done state.
 	 */
-	dbus_connection_set_watch_functions (conn,
+	dbus_connection_set_watch_functions (connection,
 					     NULL, NULL, NULL,
 					     NULL, NULL);
-	dbus_connection_set_timeout_functions (conn,
+	dbus_connection_set_timeout_functions (connection,
 					       NULL, NULL, NULL,
 					       NULL, NULL);
-	dbus_connection_set_wakeup_main_function (conn,
+	dbus_connection_set_wakeup_main_function (connection,
 						  NULL,
 						  NULL, NULL);
 
@@ -682,7 +682,7 @@ nih_dbus_wakeup_main (void *data)
 
 /**
  * nih_dbus_callback:
- * @conn: D-Bus connection,
+ * @connection: D-Bus connection,
  * @loop: loop callback structure.
  *
  * Called on each iteration of our main loop to dispatch any remaining items
@@ -690,24 +690,24 @@ nih_dbus_wakeup_main (void *data)
  * handled automatically.
  **/
 static void
-nih_dbus_callback (DBusConnection * conn,
+nih_dbus_callback (DBusConnection * connection,
 		   NihMainLoopFunc *loop)
 {
-	nih_assert (conn != NULL);
+	nih_assert (connection != NULL);
 	nih_assert (loop != NULL);
 
-	while (dbus_connection_dispatch (conn) == DBUS_DISPATCH_DATA_REMAINS)
+	while (dbus_connection_dispatch (connection) == DBUS_DISPATCH_DATA_REMAINS)
 		;
 }
 
 
 /**
  * nih_dbus_connection_disconnected:
- * @conn: D-Bus connection,
+ * @connection: D-Bus connection,
  * @message: D-Bus message received,
  * @handler: Disconnection handler.
  *
- * Called as a filter function to determine whether @conn has been
+ * Called as a filter function to determine whether @connection has been
  * disconnected, and if so, call the user disconnect @handler function.
  *
  * Once the handler has been called, the connection will be automatically
@@ -716,11 +716,11 @@ nih_dbus_callback (DBusConnection * conn,
  * Returns: result of handling the message.
  **/
 static DBusHandlerResult
-nih_dbus_connection_disconnected (DBusConnection *         conn,
+nih_dbus_connection_disconnected (DBusConnection *         connection,
 				  DBusMessage *            message,
 				  NihDBusDisconnectHandler handler)
 {
-	nih_assert (conn != NULL);
+	nih_assert (connection != NULL);
 	nih_assert (message != NULL);
 
 	if (! dbus_message_is_signal (message, DBUS_INTERFACE_LOCAL,
@@ -733,10 +733,10 @@ nih_dbus_connection_disconnected (DBusConnection *         conn,
 	/* Ok, it's really the disconnected signal, call the handler. */
 	nih_error_push_context ();
 	if (handler)
-		handler (conn);
+		handler (connection);
 	nih_error_pop_context ();
 
-	dbus_connection_unref (conn);
+	dbus_connection_unref (connection);
 
 	/* Lie.  We want other filter functions for this to be called so
 	 * we unreference for each copy we hold.
@@ -747,24 +747,24 @@ nih_dbus_connection_disconnected (DBusConnection *         conn,
 /**
  * nih_dbus_new_connection:
  * @server: D-Bus server,
- * @conn: new D-Bus connection,
+ * @connection: new D-Bus connection,
  * @data: not used.
  *
- * Called by D-Bus because a new connection @conn has been made to @server;
- * we call the connect handler if set, and if that returns TRUE (or not set),
- * we reference the connection so it is not dropped and set it up with
- * our main loop.
+ * Called by D-Bus because a new connection @connection has been made to
+ * @server; we call the connect handler if set, and if that returns TRUE
+ * (or not set), we reference the connection so it is not dropped and set
+ * it up with our main loop.
  **/
 static void
 nih_dbus_new_connection (DBusServer *    server,
-			 DBusConnection *conn,
+			 DBusConnection *connection,
 			 void *          data)
 {
 	NihDBusConnectHandler    connect_handler;
 	NihDBusDisconnectHandler disconnect_handler;
 
 	nih_assert (server != NULL);
-	nih_assert (conn != NULL);
+	nih_assert (connection != NULL);
 
 	/* Call the connect handler if set, if it returns FALSE, drop the
 	 * connection.
@@ -774,7 +774,7 @@ nih_dbus_new_connection (DBusServer *    server,
 		int ret;
 
 		nih_error_push_context ();
-		ret = connect_handler (server, conn);
+		ret = connect_handler (server, connection);
 		nih_error_pop_context ();
 
 		if (! ret)
@@ -784,8 +784,8 @@ nih_dbus_new_connection (DBusServer *    server,
 	/* We're keeping the connection, reference it and hook it up to the
 	 * main loop.
 	 */
-	dbus_connection_ref (conn);
+	dbus_connection_ref (connection);
 	disconnect_handler = dbus_server_get_data (server,
 						   disconnect_handler_slot);
-	NIH_ZERO (nih_dbus_setup (conn, disconnect_handler));
+	NIH_ZERO (nih_dbus_setup (connection, disconnect_handler));
 }

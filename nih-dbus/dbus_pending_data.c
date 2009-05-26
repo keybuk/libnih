@@ -46,7 +46,7 @@ static int nih_dbus_pending_data_destroy (NihDBusPendingData *pending_data);
 /**
  * nih_dbus_pending_data_new:
  * @parent: parent object for new structure,
- * @conn: D-Bus connection to associate with,
+ * @connection: D-Bus connection to associate with,
  * @message: D-Bus message to encapulsate.
  *
  * Creates a new D-Bus pending call data object allocated using
@@ -64,22 +64,22 @@ static int nih_dbus_pending_data_destroy (NihDBusPendingData *pending_data);
  **/
 NihDBusPendingData *
 nih_dbus_pending_data_new (const void *        parent,
-			   DBusConnection *    conn,
+			   DBusConnection *    connection,
 			   NihDBusReplyHandler handler,
 			   NihDBusErrorHandler error_handler,
 			   void *              data)
 {
 	NihDBusPendingData *pending_data;
 
-	nih_assert (conn != NULL);
+	nih_assert (connection != NULL);
 	nih_assert (error_handler != NULL);
 
 	pending_data = nih_new (parent, NihDBusPendingData);
 	if (! pending_data)
 		return NULL;
 
-	pending_data->conn = conn;
-	dbus_connection_ref (pending_data->conn);
+	pending_data->connection = connection;
+	dbus_connection_ref (pending_data->connection);
 
 	pending_data->handler = handler;
 	pending_data->error_handler = error_handler;
@@ -103,7 +103,7 @@ nih_dbus_pending_data_destroy (NihDBusPendingData *pending_data)
 {
 	nih_assert (pending_data != NULL);
 
-	dbus_connection_unref (pending_data->conn);
+	dbus_connection_unref (pending_data->connection);
 
 	return 0;
 }

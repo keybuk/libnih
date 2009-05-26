@@ -83,7 +83,7 @@ typedef void (*NihDBusErrorHandler) (void *data, NihDBusMessage *message);
 
 /**
  * NihDBusPendingData:
- * @conn: D-Bus connection message message is pending on,
+ * @connection: D-Bus connection message message is pending on,
  * @handler: function to handle a valid reply,
  * @error_handler: function to handle errors,
  * @data: data to pass to @handler and @error_handler.
@@ -96,7 +96,7 @@ typedef void (*NihDBusErrorHandler) (void *data, NihDBusMessage *message);
  * and freed on their return.
  **/
 typedef struct nih_dbus_pending_data {
-	DBusConnection *    conn;
+	DBusConnection *    connection;
 	NihDBusReplyHandler handler;
 	NihDBusErrorHandler error_handler;
 	void *              data;
@@ -106,7 +106,7 @@ typedef struct nih_dbus_pending_data {
 NIH_BEGIN_EXTERN
 
 NihDBusPendingData *nih_dbus_pending_data_new (const void *parent,
-					       DBusConnection *conn,
+					       DBusConnection *connection,
 					       NihDBusReplyHandler handler,
 					       NihDBusErrorHandler error_handler,
 					       void *data)

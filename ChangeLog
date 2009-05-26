@@ -1,5 +1,9 @@
 2009-05-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_pending_data.c: rename conn to connection
+	* nih-dbus/dbus_pending_data.h (NihDBusPendingData): rename conn
+	to connection
+
 	* nih-dbus/dbus_message.c: rename conn to connection
 	* nih-dbus/dbus_message.h (NihDBusMessage): rename conn to connection
 

@@ -1087,7 +1087,7 @@ my_property_get_handler (void *          data,
 	TEST_EQ_P (data, NULL);
 
 	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
-	TEST_NE_P (message->conn, NULL);
+	TEST_NE_P (message->connection, NULL);
 	TEST_NE_P (message->message, NULL);
 
 	TEST_NE_P (str, NULL);
@@ -1338,12 +1338,12 @@ test_object_get_function (void)
 
 		TEST_ALLOC_SAFE {
 			message = nih_new (NULL, NihDBusMessage);
-			message->conn = client_conn;
+			message->connection = client_conn;
 			message->message = method_call;
 
 			object = nih_new (NULL, NihDBusObject);
 			object->path = "/com/netsplit/Nih";
-			object->conn = client_conn;
+			object->connection = client_conn;
 			object->data = NULL;
 			object->interfaces = NULL;
 			object->registered = TRUE;
@@ -1599,7 +1599,7 @@ my_property_set_handler (void *          data,
 	TEST_EQ_P (data, NULL);
 
 	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
-	TEST_NE_P (message->conn, NULL);
+	TEST_NE_P (message->connection, NULL);
 	TEST_NE_P (message->message, NULL);
 
 	TEST_ALLOC_PARENT (str, message);
@@ -1896,12 +1896,12 @@ test_object_set_function (void)
 
 		TEST_ALLOC_SAFE {
 			message = nih_new (NULL, NihDBusMessage);
-			message->conn = client_conn;
+			message->connection = client_conn;
 			message->message = method_call;
 
 			object = nih_new (NULL, NihDBusObject);
 			object->path = "/com/netsplit/Nih";
-			object->conn = client_conn;
+			object->connection = client_conn;
 			object->data = NULL;
 			object->interfaces = NULL;
 			object->registered = TRUE;
@@ -1981,12 +1981,12 @@ test_object_set_function (void)
 
 		TEST_ALLOC_SAFE {
 			message = nih_new (NULL, NihDBusMessage);
-			message->conn = client_conn;
+			message->connection = client_conn;
 			message->message = method_call;
 
 			object = nih_new (NULL, NihDBusObject);
 			object->path = "/com/netsplit/Nih";
-			object->conn = client_conn;
+			object->connection = client_conn;
 			object->data = NULL;
 			object->interfaces = NULL;
 			object->registered = TRUE;
@@ -2072,12 +2072,12 @@ test_object_set_function (void)
 
 		TEST_ALLOC_SAFE {
 			message = nih_new (NULL, NihDBusMessage);
-			message->conn = client_conn;
+			message->connection = client_conn;
 			message->message = method_call;
 
 			object = nih_new (NULL, NihDBusObject);
 			object->path = "/com/netsplit/Nih";
-			object->conn = client_conn;
+			object->connection = client_conn;
 			object->data = NULL;
 			object->interfaces = NULL;
 			object->registered = TRUE;
@@ -2151,12 +2151,12 @@ test_object_set_function (void)
 
 		TEST_ALLOC_SAFE {
 			message = nih_new (NULL, NihDBusMessage);
-			message->conn = client_conn;
+			message->connection = client_conn;
 			message->message = method_call;
 
 			object = nih_new (NULL, NihDBusObject);
 			object->path = "/com/netsplit/Nih";
-			object->conn = client_conn;
+			object->connection = client_conn;
 			object->data = NULL;
 			object->interfaces = NULL;
 			object->registered = TRUE;
@@ -2236,12 +2236,12 @@ test_object_set_function (void)
 
 		TEST_ALLOC_SAFE {
 			message = nih_new (NULL, NihDBusMessage);
-			message->conn = client_conn;
+			message->connection = client_conn;
 			message->message = method_call;
 
 			object = nih_new (NULL, NihDBusObject);
 			object->path = "/com/netsplit/Nih";
-			object->conn = client_conn;
+			object->connection = client_conn;
 			object->data = NULL;
 			object->interfaces = NULL;
 			object->registered = TRUE;
@@ -2327,12 +2327,12 @@ test_object_set_function (void)
 
 		TEST_ALLOC_SAFE {
 			message = nih_new (NULL, NihDBusMessage);
-			message->conn = client_conn;
+			message->connection = client_conn;
 			message->message = method_call;
 
 			object = nih_new (NULL, NihDBusObject);
 			object->path = "/com/netsplit/Nih";
-			object->conn = client_conn;
+			object->connection = client_conn;
 			object->data = NULL;
 			object->interfaces = NULL;
 			object->registered = TRUE;
@@ -2422,12 +2422,12 @@ test_object_set_function (void)
 
 		TEST_ALLOC_SAFE {
 			message = nih_new (NULL, NihDBusMessage);
-			message->conn = client_conn;
+			message->connection = client_conn;
 			message->message = method_call;
 
 			object = nih_new (NULL, NihDBusObject);
 			object->path = "/com/netsplit/Nih";
-			object->conn = client_conn;
+			object->connection = client_conn;
 			object->data = NULL;
 			object->interfaces = NULL;
 			object->registered = TRUE;
@@ -2801,7 +2801,7 @@ test_proxy_get_function (void)
 				   "\t}\n"
 				   "\n"
 				   "\t/* Send the message and set up the reply notification. */\n"
-				   "\tpending_data = nih_dbus_pending_data_new (NULL, proxy->conn,\n"
+				   "\tpending_data = nih_dbus_pending_data_new (NULL, proxy->connection,\n"
 				   "\t                                          (NihDBusReplyHandler)handler,\n"
 				   "\t                                          error_handler, data);\n"
 				   "\tif (! pending_data) {\n"
@@ -2810,7 +2810,7 @@ test_proxy_get_function (void)
 				   "\t}\n"
 				   "\n"
 				   "\tpending_call = NULL;\n"
-				   "\tif (! dbus_connection_send_with_reply (proxy->conn, method_call,\n"
+				   "\tif (! dbus_connection_send_with_reply (proxy->connection, method_call,\n"
 				   "\t                                       &pending_call, timeout)) {\n"
 				   "\t\tdbus_message_unref (method_call);\n"
 				   "\t\tnih_free (pending_data);\n"
@@ -3014,7 +3014,7 @@ test_proxy_get_function (void)
 		TEST_EQ_P (last_pending_call, pending_call);
 		TEST_ALLOC_SIZE (last_pending_data, sizeof (NihDBusPendingData));
 
-		TEST_EQ_P (last_pending_data->conn, client_conn);
+		TEST_EQ_P (last_pending_data->connection, client_conn);
 		TEST_EQ_P (last_pending_data->handler,
 			   (NihDBusReplyHandler)my_blank_get_handler);
 		TEST_EQ_P (last_pending_data->error_handler,
@@ -3125,7 +3125,7 @@ test_proxy_get_function (void)
 		TEST_EQ_P (last_pending_call, pending_call);
 		TEST_ALLOC_SIZE (last_pending_data, sizeof (NihDBusPendingData));
 
-		TEST_EQ_P (last_pending_data->conn, client_conn);
+		TEST_EQ_P (last_pending_data->connection, client_conn);
 		TEST_EQ_P (last_pending_data->handler,
 			   (NihDBusReplyHandler)my_blank_get_handler);
 		TEST_EQ_P (last_pending_data->error_handler,
@@ -3225,7 +3225,7 @@ test_proxy_get_function (void)
 		TEST_EQ_P (last_pending_call, pending_call);
 		TEST_ALLOC_SIZE (last_pending_data, sizeof (NihDBusPendingData));
 
-		TEST_EQ_P (last_pending_data->conn, client_conn);
+		TEST_EQ_P (last_pending_data->connection, client_conn);
 		TEST_EQ_P (last_pending_data->handler,
 			   (NihDBusReplyHandler)my_blank_get_handler);
 		TEST_EQ_P (last_pending_data->error_handler,
@@ -3333,7 +3333,7 @@ test_proxy_get_function (void)
 		TEST_EQ_P (last_pending_call, pending_call);
 		TEST_ALLOC_SIZE (last_pending_data, sizeof (NihDBusPendingData));
 
-		TEST_EQ_P (last_pending_data->conn, client_conn);
+		TEST_EQ_P (last_pending_data->connection, client_conn);
 		TEST_EQ_P (last_pending_data->handler,
 			   (NihDBusReplyHandler)my_blank_get_handler);
 		TEST_EQ_P (last_pending_data->error_handler,
@@ -3508,7 +3508,7 @@ test_proxy_get_function (void)
 				   "\t}\n"
 				   "\n"
 				   "\t/* Send the message and set up the reply notification. */\n"
-				   "\tpending_data = nih_dbus_pending_data_new (NULL, proxy->conn,\n"
+				   "\tpending_data = nih_dbus_pending_data_new (NULL, proxy->connection,\n"
 				   "\t                                          (NihDBusReplyHandler)handler,\n"
 				   "\t                                          error_handler, data);\n"
 				   "\tif (! pending_data) {\n"
@@ -3517,7 +3517,7 @@ test_proxy_get_function (void)
 				   "\t}\n"
 				   "\n"
 				   "\tpending_call = NULL;\n"
-				   "\tif (! dbus_connection_send_with_reply (proxy->conn, method_call,\n"
+				   "\tif (! dbus_connection_send_with_reply (proxy->connection, method_call,\n"
 				   "\t                                       &pending_call, timeout)) {\n"
 				   "\t\tdbus_message_unref (method_call);\n"
 				   "\t\tnih_free (pending_data);\n"
@@ -3651,13 +3651,13 @@ my_get_handler (void *          data,
 	TEST_EQ_P (data, (void *)my_error_handler);
 
 	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
-	TEST_NE_P (message->conn, NULL);
+	TEST_NE_P (message->connection, NULL);
 	TEST_NE_P (message->message, NULL);
 
 	last_message = message;
 	TEST_FREE_TAG (last_message);
 
-	last_conn = message->conn;
+	last_conn = message->connection;
 	dbus_connection_ref (last_conn);
 
 	last_msg = message->message;
@@ -3677,13 +3677,13 @@ my_error_handler (void *          data,
 	TEST_EQ_P (data, (void *)my_error_handler);
 
 	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
-	TEST_NE_P (message->conn, NULL);
+	TEST_NE_P (message->connection, NULL);
 	TEST_NE_P (message->message, NULL);
 
 	last_message = message;
 	TEST_FREE_TAG (last_message);
 
-	last_conn = message->conn;
+	last_conn = message->connection;
 	dbus_connection_ref (last_conn);
 
 	last_msg = message->message;
@@ -3780,7 +3780,7 @@ test_proxy_get_notify_function (void)
 				   "\n"
 				   "\t/* Handle error replies */\n"
 				   "\tif (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR) {\n"
-				   "\t\tmessage = NIH_MUST (nih_dbus_message_new (pending_data, pending_data->conn, reply));\n"
+				   "\t\tmessage = NIH_MUST (nih_dbus_message_new (pending_data, pending_data->connection, reply));\n"
 				   "\n"
 				   "\t\tdbus_error_init (&error);\n"
 				   "\t\tdbus_set_error_from_message (&error, message->message);\n"
@@ -3804,7 +3804,7 @@ test_proxy_get_notify_function (void)
 				   "\t\t/* Create a message context for the reply, and iterate\n"
 				   "\t\t * over and recurse into the arguments.\n"
 				   "\t\t */\n"
-				   "\t\tmessage = nih_dbus_message_new (pending_data, pending_data->conn, reply);\n"
+				   "\t\tmessage = nih_dbus_message_new (pending_data, pending_data->connection, reply);\n"
 				   "\t\tif (! message)\n"
 				   "\t\t\tgoto enomem;\n"
 				   "\n"
@@ -4684,7 +4684,7 @@ test_proxy_get_notify_function (void)
 				   "\n"
 				   "\t/* Handle error replies */\n"
 				   "\tif (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR) {\n"
-				   "\t\tmessage = NIH_MUST (nih_dbus_message_new (pending_data, pending_data->conn, reply));\n"
+				   "\t\tmessage = NIH_MUST (nih_dbus_message_new (pending_data, pending_data->connection, reply));\n"
 				   "\n"
 				   "\t\tdbus_error_init (&error);\n"
 				   "\t\tdbus_set_error_from_message (&error, message->message);\n"
@@ -4708,7 +4708,7 @@ test_proxy_get_notify_function (void)
 				   "\t\t/* Create a message context for the reply, and iterate\n"
 				   "\t\t * over and recurse into the arguments.\n"
 				   "\t\t */\n"
-				   "\t\tmessage = nih_dbus_message_new (pending_data, pending_data->conn, reply);\n"
+				   "\t\tmessage = nih_dbus_message_new (pending_data, pending_data->connection, reply);\n"
 				   "\t\tif (! message)\n"
 				   "\t\t\tgoto enomem;\n"
 				   "\n"
@@ -5016,7 +5016,7 @@ test_proxy_set_function (void)
 				   "\t/* Handle a fire-and-forget message */\n"
 				   "\tif (! error_handler) {\n"
 				   "\t\tdbus_message_set_no_reply (method_call, TRUE);\n"
-				   "\t\tif (! dbus_connection_send (proxy->conn, method_call, NULL)) {\n"
+				   "\t\tif (! dbus_connection_send (proxy->connection, method_call, NULL)) {\n"
 				   "\t\t\tdbus_message_unref (method_call);\n"
 				   "\t\t\tnih_return_no_memory_error (NULL);\n"
 				   "\t\t}\n"
@@ -5026,7 +5026,7 @@ test_proxy_set_function (void)
 				   "\t}\n"
 				   "\n"
 				   "\t/* Send the message and set up the reply notification. */\n"
-				   "\tpending_data = nih_dbus_pending_data_new (NULL, proxy->conn,\n"
+				   "\tpending_data = nih_dbus_pending_data_new (NULL, proxy->connection,\n"
 				   "\t                                          (NihDBusReplyHandler)handler,\n"
 				   "\t                                          error_handler, data);\n"
 				   "\tif (! pending_data) {\n"
@@ -5035,7 +5035,7 @@ test_proxy_set_function (void)
 				   "\t}\n"
 				   "\n"
 				   "\tpending_call = NULL;\n"
-				   "\tif (! dbus_connection_send_with_reply (proxy->conn, method_call,\n"
+				   "\tif (! dbus_connection_send_with_reply (proxy->connection, method_call,\n"
 				   "\t                                       &pending_call, timeout)) {\n"
 				   "\t\tdbus_message_unref (method_call);\n"
 				   "\t\tnih_free (pending_data);\n"
@@ -5251,7 +5251,7 @@ test_proxy_set_function (void)
 		TEST_EQ_P (last_pending_call, pending_call);
 		TEST_ALLOC_SIZE (last_pending_data, sizeof (NihDBusPendingData));
 
-		TEST_EQ_P (last_pending_data->conn, client_conn);
+		TEST_EQ_P (last_pending_data->connection, client_conn);
 		TEST_EQ_P (last_pending_data->handler,
 			   (NihDBusReplyHandler)my_blank_set_handler);
 		TEST_EQ_P (last_pending_data->error_handler,
@@ -5375,7 +5375,7 @@ test_proxy_set_function (void)
 		TEST_EQ_P (last_pending_call, pending_call);
 		TEST_ALLOC_SIZE (last_pending_data, sizeof (NihDBusPendingData));
 
-		TEST_EQ_P (last_pending_data->conn, client_conn);
+		TEST_EQ_P (last_pending_data->connection, client_conn);
 		TEST_EQ_P (last_pending_data->handler, NULL);
 		TEST_EQ_P (last_pending_data->error_handler,
 			   my_blank_error_handler);
@@ -5594,7 +5594,7 @@ test_proxy_set_function (void)
 		TEST_EQ_P (last_pending_call, pending_call);
 		TEST_ALLOC_SIZE (last_pending_data, sizeof (NihDBusPendingData));
 
-		TEST_EQ_P (last_pending_data->conn, client_conn);
+		TEST_EQ_P (last_pending_data->connection, client_conn);
 		TEST_EQ_P (last_pending_data->handler,
 			   (NihDBusReplyHandler)my_blank_set_handler);
 		TEST_EQ_P (last_pending_data->error_handler,
@@ -5707,7 +5707,7 @@ test_proxy_set_function (void)
 		TEST_EQ_P (last_pending_call, pending_call);
 		TEST_ALLOC_SIZE (last_pending_data, sizeof (NihDBusPendingData));
 
-		TEST_EQ_P (last_pending_data->conn, client_conn);
+		TEST_EQ_P (last_pending_data->connection, client_conn);
 		TEST_EQ_P (last_pending_data->handler,
 			   (NihDBusReplyHandler)my_blank_set_handler);
 		TEST_EQ_P (last_pending_data->error_handler,
@@ -5828,7 +5828,7 @@ test_proxy_set_function (void)
 		TEST_EQ_P (last_pending_call, pending_call);
 		TEST_ALLOC_SIZE (last_pending_data, sizeof (NihDBusPendingData));
 
-		TEST_EQ_P (last_pending_data->conn, client_conn);
+		TEST_EQ_P (last_pending_data->connection, client_conn);
 		TEST_EQ_P (last_pending_data->handler,
 			   (NihDBusReplyHandler)my_blank_set_handler);
 		TEST_EQ_P (last_pending_data->error_handler,
@@ -6038,7 +6038,7 @@ test_proxy_set_function (void)
 				   "\t/* Handle a fire-and-forget message */\n"
 				   "\tif (! error_handler) {\n"
 				   "\t\tdbus_message_set_no_reply (method_call, TRUE);\n"
-				   "\t\tif (! dbus_connection_send (proxy->conn, method_call, NULL)) {\n"
+				   "\t\tif (! dbus_connection_send (proxy->connection, method_call, NULL)) {\n"
 				   "\t\t\tdbus_message_unref (method_call);\n"
 				   "\t\t\tnih_return_no_memory_error (NULL);\n"
 				   "\t\t}\n"
@@ -6048,7 +6048,7 @@ test_proxy_set_function (void)
 				   "\t}\n"
 				   "\n"
 				   "\t/* Send the message and set up the reply notification. */\n"
-				   "\tpending_data = nih_dbus_pending_data_new (NULL, proxy->conn,\n"
+				   "\tpending_data = nih_dbus_pending_data_new (NULL, proxy->connection,\n"
 				   "\t                                          (NihDBusReplyHandler)handler,\n"
 				   "\t                                          error_handler, data);\n"
 				   "\tif (! pending_data) {\n"
@@ -6057,7 +6057,7 @@ test_proxy_set_function (void)
 				   "\t}\n"
 				   "\n"
 				   "\tpending_call = NULL;\n"
-				   "\tif (! dbus_connection_send_with_reply (proxy->conn, method_call,\n"
+				   "\tif (! dbus_connection_send_with_reply (proxy->connection, method_call,\n"
 				   "\t                                       &pending_call, timeout)) {\n"
 				   "\t\tdbus_message_unref (method_call);\n"
 				   "\t\tnih_free (pending_data);\n"
@@ -6194,13 +6194,13 @@ my_set_handler (void *          data,
 	TEST_EQ_P (data, (void *)my_error_handler);
 
 	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
-	TEST_NE_P (message->conn, NULL);
+	TEST_NE_P (message->connection, NULL);
 	TEST_NE_P (message->message, NULL);
 
 	last_message = message;
 	TEST_FREE_TAG (last_message);
 
-	last_conn = message->conn;
+	last_conn = message->connection;
 	dbus_connection_ref (last_conn);
 
 	last_msg = message->message;
@@ -6288,7 +6288,7 @@ test_proxy_set_notify_function (void)
 				   "\n"
 				   "\t/* Handle error replies */\n"
 				   "\tif (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR) {\n"
-				   "\t\tmessage = NIH_MUST (nih_dbus_message_new (pending_data, pending_data->conn, reply));\n"
+				   "\t\tmessage = NIH_MUST (nih_dbus_message_new (pending_data, pending_data->connection, reply));\n"
 				   "\n"
 				   "\t\tdbus_error_init (&error);\n"
 				   "\t\tdbus_set_error_from_message (&error, message->message);\n"
@@ -6309,7 +6309,7 @@ test_proxy_set_notify_function (void)
 				   "\t/* Create a message context for the reply, and check\n"
 				   "\t * there are no arguments.\n"
 				   "\t */\n"
-				   "\tmessage = NIH_MUST (nih_dbus_message_new (pending_data, pending_data->conn, reply));\n"
+				   "\tmessage = NIH_MUST (nih_dbus_message_new (pending_data, pending_data->connection, reply));\n"
 				   "\tdbus_message_iter_init (message->message, &iter);\n"
 				   "\n"
 				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
@@ -7004,7 +7004,7 @@ test_proxy_set_notify_function (void)
 				   "\n"
 				   "\t/* Handle error replies */\n"
 				   "\tif (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR) {\n"
-				   "\t\tmessage = NIH_MUST (nih_dbus_message_new (pending_data, pending_data->conn, reply));\n"
+				   "\t\tmessage = NIH_MUST (nih_dbus_message_new (pending_data, pending_data->connection, reply));\n"
 				   "\n"
 				   "\t\tdbus_error_init (&error);\n"
 				   "\t\tdbus_set_error_from_message (&error, message->message);\n"
@@ -7025,7 +7025,7 @@ test_proxy_set_notify_function (void)
 				   "\t/* Create a message context for the reply, and check\n"
 				   "\t * there are no arguments.\n"
 				   "\t */\n"
-				   "\tmessage = NIH_MUST (nih_dbus_message_new (pending_data, pending_data->conn, reply));\n"
+				   "\tmessage = NIH_MUST (nih_dbus_message_new (pending_data, pending_data->connection, reply));\n"
 				   "\tdbus_message_iter_init (message->message, &iter);\n"
 				   "\n"
 				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
@@ -7245,7 +7245,7 @@ test_proxy_get_sync_function (void)
 				   "\t/* Send the message, and wait for the reply. */\n"
 				   "\tdbus_error_init (&error);\n"
 				   "\n"
-				   "\treply = dbus_connection_send_with_reply_and_block (proxy->conn, method_call, -1, &error);\n"
+				   "\treply = dbus_connection_send_with_reply_and_block (proxy->connection, method_call, -1, &error);\n"
 				   "\tif (! reply) {\n"
 				   "\t\tdbus_message_unref (method_call);\n"
 				   "\n"
@@ -8076,7 +8076,7 @@ test_proxy_get_sync_function (void)
 				   "\t/* Send the message, and wait for the reply. */\n"
 				   "\tdbus_error_init (&error);\n"
 				   "\n"
-				   "\treply = dbus_connection_send_with_reply_and_block (proxy->conn, method_call, -1, &error);\n"
+				   "\treply = dbus_connection_send_with_reply_and_block (proxy->connection, method_call, -1, &error);\n"
 				   "\tif (! reply) {\n"
 				   "\t\tdbus_message_unref (method_call);\n"
 				   "\n"
@@ -8335,7 +8335,7 @@ test_proxy_set_sync_function (void)
 				   "\t/* Send the message, and wait for the reply. */\n"
 				   "\tdbus_error_init (&error);\n"
 				   "\n"
-				   "\treply = dbus_connection_send_with_reply_and_block (proxy->conn, method_call, -1, &error);\n"
+				   "\treply = dbus_connection_send_with_reply_and_block (proxy->connection, method_call, -1, &error);\n"
 				   "\tif (! reply) {\n"
 				   "\t\tdbus_message_unref (method_call);\n"
 				   "\n"
@@ -8841,7 +8841,7 @@ test_proxy_set_sync_function (void)
 				   "\t/* Send the message, and wait for the reply. */\n"
 				   "\tdbus_error_init (&error);\n"
 				   "\n"
-				   "\treply = dbus_connection_send_with_reply_and_block (proxy->conn, method_call, -1, &error);\n"
+				   "\treply = dbus_connection_send_with_reply_and_block (proxy->connection, method_call, -1, &error);\n"
 				   "\tif (! reply) {\n"
 				   "\t\tdbus_message_unref (method_call);\n"
 				   "\n"

@@ -1,5 +1,10 @@
 2009-05-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_method.c,
+	* nih-dbus-tool/tests/test_signal.c, 
+	* nih-dbus-tool/tests/test_property.c: Update variable names in
+	test cases too
+
 	* nih-dbus-tool/method.c,
 	* nih-dbus-tool/signal.c,
 	* nih-dbus-tool/property.c: Update accessor of message, proxy and

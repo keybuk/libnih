@@ -1397,7 +1397,7 @@ my_signal_handler (void *          data,
 	last_proxy = proxy;
 
 	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
-	TEST_EQ_P (message->conn, proxy->conn);
+	TEST_EQ_P (message->connection, proxy->connection);
 	TEST_NE_P (message->message, NULL);
 
 	TEST_ALLOC_PARENT (msg, message);
@@ -1479,7 +1479,7 @@ test_proxy_function (void)
 				   "\tnih_assert (connection != NULL);\n"
 				   "\tnih_assert (signal != NULL);\n"
 				   "\tnih_assert (proxied != NULL);\n"
-				   "\tnih_assert (connection == proxied->proxy->conn);\n"
+				   "\tnih_assert (connection == proxied->proxy->connection);\n"
 				   "\n"
 				   "\tif (! dbus_message_is_signal (signal, proxied->interface->name, proxied->signal->name))\n"
 				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
@@ -1686,7 +1686,7 @@ test_proxy_function (void)
 				   "\tnih_assert (connection != NULL);\n"
 				   "\tnih_assert (signal != NULL);\n"
 				   "\tnih_assert (proxied != NULL);\n"
-				   "\tnih_assert (connection == proxied->proxy->conn);\n"
+				   "\tnih_assert (connection == proxied->proxy->connection);\n"
 				   "\n"
 				   "\tif (! dbus_message_is_signal (signal, proxied->interface->name, proxied->signal->name))\n"
 				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
@@ -1920,7 +1920,7 @@ test_proxy_function (void)
 				   "\tnih_assert (connection != NULL);\n"
 				   "\tnih_assert (signal != NULL);\n"
 				   "\tnih_assert (proxied != NULL);\n"
-				   "\tnih_assert (connection == proxied->proxy->conn);\n"
+				   "\tnih_assert (connection == proxied->proxy->connection);\n"
 				   "\n"
 				   "\tif (! dbus_message_is_signal (signal, proxied->interface->name, proxied->signal->name))\n"
 				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"

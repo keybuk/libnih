@@ -1,5 +1,10 @@
 2009-05-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c,
+	* nih-dbus-tool/signal.c,
+	* nih-dbus-tool/property.c: Update accessor of message, proxy and
+	object functions
+
 	* nih-dbus/tests/test_dbus_message.c,
 	* nih-dbus/tests/test_dbus_object.c,
 	* nih-dbus/tests/test_dbus_pending_data.c,

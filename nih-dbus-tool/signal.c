@@ -733,7 +733,7 @@ signal_proxy_function  (const void *parent,
 		return NULL;
 
 	if (! nih_strcat (&assert_block, NULL,
-			  "nih_assert (connection == proxied->proxy->conn);\n"))
+			  "nih_assert (connection == proxied->proxy->connection);\n"))
 		return NULL;
 
 	/* The function requires a message context to act as the parent of

@@ -70,7 +70,7 @@ my_test_method (void            *data,
 	static int32_t last_flags = -1;
 
 	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
-	TEST_NE_P (message->conn, NULL);
+	TEST_NE_P (message->connection, NULL);
 	TEST_NE_P (message->message, NULL);
 
 	TEST_NE_P (input, NULL);
@@ -135,7 +135,7 @@ async_method_reply (AsyncMethod *method,
 					  DBUS_TYPE_INT32, &method->flags,
 					  DBUS_TYPE_INVALID);
 
-		ret = dbus_connection_send (method->message->conn, reply, NULL);
+		ret = dbus_connection_send (method->message->connection, reply, NULL);
 		assert (ret);
 
 		dbus_message_unref (reply);
@@ -152,7 +152,7 @@ async_method_reply (AsyncMethod *method,
 					  DBUS_TYPE_INT32, &method->flags,
 					  DBUS_TYPE_INVALID);
 
-		ret = dbus_connection_send (method->message->conn, reply, NULL);
+		ret = dbus_connection_send (method->message->connection, reply, NULL);
 		assert (ret);
 
 		dbus_message_unref (reply);
@@ -164,7 +164,7 @@ async_method_reply (AsyncMethod *method,
 		reply = dbus_message_new_method_return (method->message->message);
 		assert (reply != NULL);
 
-		ret = dbus_connection_send (method->message->conn, reply, NULL);
+		ret = dbus_connection_send (method->message->connection, reply, NULL);
 		assert (ret);
 
 		dbus_message_unref (reply);
@@ -192,7 +192,7 @@ my_test_async_method (void           *data,
 	AsyncMethod *method;
 
 	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
-	TEST_NE_P (message->conn, NULL);
+	TEST_NE_P (message->connection, NULL);
 	TEST_NE_P (message->message, NULL);
 
 	TEST_NE_P (input, NULL);
@@ -649,74 +649,74 @@ my_emit_signal (void           *data,
 
 	switch (signum) {
 	case 0:
-		ret = my_test_signal (message->conn,
+		ret = my_test_signal (message->connection,
 				      dbus_message_get_path (message->message),
 				      "hello there", 0);
 		break;
 	case 1:
-		ret = my_emit_byte (message->conn,
+		ret = my_emit_byte (message->connection,
 				    dbus_message_get_path (message->message),
 				    65);
 		break;
 	case 2:
-		ret = my_emit_boolean (message->conn,
+		ret = my_emit_boolean (message->connection,
 				       dbus_message_get_path (message->message),
 				       TRUE);
 		break;
 	case 3:
-		ret = my_emit_int16 (message->conn,
+		ret = my_emit_int16 (message->connection,
 				     dbus_message_get_path (message->message),
 				     1701);
 		break;
 	case 4:
-		ret = my_emit_uint16 (message->conn,
+		ret = my_emit_uint16 (message->connection,
 				      dbus_message_get_path (message->message),
 				      1701);
 		break;
 	case 5:
-		ret = my_emit_int32 (message->conn,
+		ret = my_emit_int32 (message->connection,
 				     dbus_message_get_path (message->message),
 				     1701);
 		break;
 	case 6:
-		ret = my_emit_uint32 (message->conn,
+		ret = my_emit_uint32 (message->connection,
 				      dbus_message_get_path (message->message),
 				      1701);
 		break;
 	case 7:
-		ret = my_emit_int64 (message->conn,
+		ret = my_emit_int64 (message->connection,
 				     dbus_message_get_path (message->message),
 				     1701);
 		break;
 	case 8:
-		ret = my_emit_uint64 (message->conn,
+		ret = my_emit_uint64 (message->connection,
 				      dbus_message_get_path (message->message),
 				      1701);
 		break;
 	case 9:
-		ret = my_emit_double (message->conn,
+		ret = my_emit_double (message->connection,
 				      dbus_message_get_path (message->message),
 				      3.141);
 		break;
 	case 10:
-		ret = my_emit_string (message->conn,
+		ret = my_emit_string (message->connection,
 				      dbus_message_get_path (message->message),
 				      "test data");
 		break;
 	case 11:
-		ret = my_emit_object_path (message->conn,
+		ret = my_emit_object_path (message->connection,
 					   dbus_message_get_path (message->message),
 					   "/com/netsplit/Nih");
 		break;
 	case 12:
-		ret = my_emit_signature (message->conn,
+		ret = my_emit_signature (message->connection,
 					 dbus_message_get_path (message->message),
 					 "a{sv}");
 		break;
 	case 13: {
 		int32_t array[] = { 4, 8, 15, 16, 23, 42 };
 
-		ret = my_emit_int32_array (message->conn,
+		ret = my_emit_int32_array (message->connection,
 					   dbus_message_get_path (message->message),
 					   array, 6);
 		break;
@@ -724,7 +724,7 @@ my_emit_signal (void           *data,
 	case 14: {
 		char *array[] = { "this", "is", "a", "test", NULL };
 
-		ret = my_emit_str_array (message->conn,
+		ret = my_emit_str_array (message->connection,
 					 dbus_message_get_path (message->message),
 					 array);
 		break;

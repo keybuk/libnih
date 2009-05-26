@@ -1135,7 +1135,7 @@ return DBUS_HANDLER_RESULT_NEED_MEMORY;
         code += "\nsend:\n"
         code += indent("""\
 /* Send the reply, appending it to the outgoing queue. */
-if (! dbus_connection_send (message->conn, reply, NULL)) {
+if (! dbus_connection_send (message->connection, reply, NULL)) {
 	dbus_message_unref (reply);
 	return DBUS_HANDLER_RESULT_NEED_MEMORY;
 }
@@ -1252,7 +1252,7 @@ return -1;
         code += "\n"
         code += indent("""\
 /* Send the reply, appending it to the outgoing queue. */
-if (! dbus_connection_send (message->conn, reply, NULL)) {
+if (! dbus_connection_send (message->connection, reply, NULL)) {
 	dbus_message_unref (reply);
 	return -1;
 }
@@ -1461,7 +1461,7 @@ nih_return_no_memory_error (-1);
         code += indent("""\
 /* If we don't specify a callback, just finish it now */
 if (! callback) {
-	dbus_bool_t succ = dbus_connection_send (proxy->conn, message, NULL);
+	dbus_bool_t succ = dbus_connection_send (proxy->connection, message, NULL);
 	dbus_message_unref (message);
 	if (! succ)
 		nih_return_no_memory_error (-1);
@@ -1469,7 +1469,7 @@ if (! callback) {
 }
 
 /* Send the reply, appending it to the outgoing queue and blocking. */
-if (! dbus_connection_send_with_reply (proxy->conn, message, &call, -1)) {
+if (! dbus_connection_send_with_reply (proxy->connection, message, &call, -1)) {
 	dbus_message_unref (message);
         nih_return_no_memory_error (-1);
 }
@@ -1563,7 +1563,7 @@ nih_return_no_memory_error (-1);
 dbus_error_init (&error);
 
 /* Send the reply, appending it to the outgoing queue and blocking. */
-reply = dbus_connection_send_with_reply_and_block (proxy->conn, message, -1, &error);
+reply = dbus_connection_send_with_reply_and_block (proxy->connection, message, -1, &error);
 if (! reply) {
 	dbus_message_unref (message);
 

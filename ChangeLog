@@ -1,5 +1,9 @@
 2009-05-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/nih_dbus_tool.py: Rename conn to connection
+	* nih-dbus-tool/tests/com.netsplit.Nih.Test_impl.c: Update conn
+	to connection here too
+
 	* nih-dbus-tool/tests/test_method.c,
 	* nih-dbus-tool/tests/test_signal.c, 
 	* nih-dbus-tool/tests/test_property.c: Update variable names in

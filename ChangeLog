@@ -1,5 +1,8 @@
 2009-05-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_proxy.c: rename conn to connection
+	* nih-dbus/dbus_proxy.h (NihDBusProxy): rename conn to connection
+
 	* nih-dbus/dbus_object.c: rename conn to connection
 	* nih-dbus/dbus_object.h (NihDBusObject): rename conn to connection
  

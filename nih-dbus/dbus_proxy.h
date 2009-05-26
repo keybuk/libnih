@@ -63,7 +63,7 @@ typedef void (*NihDBusSignalHandler) (void *data, NihDBusProxy *proxy,
 
 /**
  * NihDBusProxy:
- * @conn: associated connection,
+ * @connection: associated connection,
  * @name: D-Bus name of object owner,
  * @owner: actual unique D-Bus owner,
  * @path: path of object,
@@ -88,7 +88,7 @@ typedef void (*NihDBusSignalHandler) (void *data, NihDBusProxy *proxy,
  * to allow clean-up of the proxy.
  **/
 struct nih_dbus_proxy {
-	DBusConnection *   conn;
+	DBusConnection *   connection;
 	char *             name;
 	char *             owner;
 	char *             path;
@@ -123,7 +123,7 @@ struct nih_dbus_proxy_signal {
 NIH_BEGIN_EXTERN
 
 NihDBusProxy *      nih_dbus_proxy_new     (const void *parent,
-					    DBusConnection *conn,
+					    DBusConnection *connection,
 					    const char *name, const char *path,
 					    NihDBusLostHandler lost_handler,
 					    void *data)

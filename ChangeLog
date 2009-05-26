@@ -1,5 +1,8 @@
 2009-05-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_message.c: rename conn to connection
+	* nih-dbus/dbus_message.h (NihDBusMessage): rename conn to connection
+
 	* nih-dbus/dbus_interface.h: Rename conn arguments to connection.
 
 	* nih-dbus/dbus_connection.c: Rename conn arguments/variables to

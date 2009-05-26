@@ -48,7 +48,7 @@
 
 /**
  * NihDBusMessage:
- * @conn: D-Bus connection message was received on,
+ * @connection: D-Bus connection message was received on,
  * @message: message object received.
  *
  * This structure is used as a context for the processing of a message; the
@@ -59,7 +59,7 @@
  * and freed on their return.
  **/
 typedef struct nih_dbus_message {
-	DBusConnection *conn;
+	DBusConnection *connection;
 	DBusMessage *   message;
 } NihDBusMessage;
 
@@ -67,7 +67,7 @@ typedef struct nih_dbus_message {
 NIH_BEGIN_EXTERN
 
 NihDBusMessage *nih_dbus_message_new   (const void *parent,
-					DBusConnection *conn,
+					DBusConnection *connection,
 					DBusMessage *message)
 	__attribute__ ((warn_unused_result));
 

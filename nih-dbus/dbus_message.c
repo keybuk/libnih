@@ -47,7 +47,7 @@ static int nih_dbus_message_destroy (NihDBusMessage *msg);
 /**
  * nih_dbus_message_new:
  * @parent: parent object for new message,
- * @conn: D-Bus connection to associate with,
+ * @connection: D-Bus connection to associate with,
  * @message: D-Bus message to encapulsate.
  *
  * Creates a new D-Bus message object allocated using nih_alloc().  This
@@ -71,20 +71,20 @@ static int nih_dbus_message_destroy (NihDBusMessage *msg);
  **/
 NihDBusMessage *
 nih_dbus_message_new (const void *    parent,
-		      DBusConnection *conn,
+		      DBusConnection *connection,
 		      DBusMessage *   message)
 {
 	NihDBusMessage *msg;
 
-	nih_assert (conn != NULL);
+	nih_assert (connection != NULL);
 	nih_assert (message != NULL);
 
 	msg = nih_new (parent, NihDBusMessage);
 	if (! msg)
 		return NULL;
 
-	msg->conn = conn;
-	dbus_connection_ref (msg->conn);
+	msg->connection = connection;
+	dbus_connection_ref (msg->connection);
 
 	msg->message = message;
 	dbus_message_ref (msg->message);
@@ -108,7 +108,7 @@ nih_dbus_message_destroy (NihDBusMessage *msg)
 	nih_assert (msg != NULL);
 
 	dbus_message_unref (msg->message);
-	dbus_connection_unref (msg->conn);
+	dbus_connection_unref (msg->connection);
 
 	return 0;
 }
@@ -155,7 +155,7 @@ nih_dbus_message_error (NihDBusMessage *msg,
 	/* Send the error back to the connection the original message
 	 * was received from.
 	 */
-	if (! dbus_connection_send (msg->conn, message, NULL)) {
+	if (! dbus_connection_send (msg->connection, message, NULL)) {
 		dbus_message_unref (message);
 		return -1;
 	}

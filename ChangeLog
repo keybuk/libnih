@@ -1,3 +1,11 @@
+2009-05-27  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/tests/test_method.c (test_proxy_sync_function):
+	Do the child process stuff before creating the proxy, otherwise
+	it holds a reference to the connection.
+	* nih-dbus-tool/tests/test_property.c (test_proxy_get_sync_function)
+	(test_proxy_set_sync_function): Likewise.
+
 2009-05-26  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/nih_dbus_tool.py: Rename conn to connection

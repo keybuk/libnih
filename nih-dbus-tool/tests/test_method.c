@@ -8887,14 +8887,6 @@ test_proxy_sync_function (void)
 	 */
 	TEST_FEATURE ("with method call (generated code)");
 	TEST_ALLOC_FAIL {
-		TEST_ALLOC_SAFE {
-			proxy = nih_dbus_proxy_new (NULL, client_conn,
-						    dbus_bus_get_unique_name (server_conn),
-						    "/com/netsplit/Nih",
-						    NULL, NULL);
-			parent = nih_alloc (proxy, 0);
-		}
-
 		TEST_CHILD (pid) {
 			TEST_DBUS_MESSAGE (server_conn, method_call);
 
@@ -8967,6 +8959,14 @@ test_proxy_sync_function (void)
 
 			dbus_shutdown ();
 			exit (0);
+		}
+
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
+			parent = nih_alloc (proxy, 0);
 		}
 
 		output = NULL;
@@ -9029,14 +9029,6 @@ test_proxy_sync_function (void)
 	 */
 	TEST_FEATURE ("with no memory error (generated code)");
 	TEST_ALLOC_FAIL {
-		TEST_ALLOC_SAFE {
-			proxy = nih_dbus_proxy_new (NULL, client_conn,
-						    dbus_bus_get_unique_name (server_conn),
-						    "/com/netsplit/Nih",
-						    NULL, NULL);
-			parent = nih_alloc (proxy, 0);
-		}
-
 		TEST_CHILD (pid) {
 			TEST_DBUS_MESSAGE (server_conn, method_call);
 
@@ -9085,6 +9077,14 @@ test_proxy_sync_function (void)
 			exit (0);
 		}
 
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
+			parent = nih_alloc (proxy, 0);
+		}
+
 		output = NULL;
 		int32_value = 0;
 
@@ -9116,14 +9116,6 @@ test_proxy_sync_function (void)
 	 */
 	TEST_FEATURE ("with error return (generated code)");
 	TEST_ALLOC_FAIL {
-		TEST_ALLOC_SAFE {
-			proxy = nih_dbus_proxy_new (NULL, client_conn,
-						    dbus_bus_get_unique_name (server_conn),
-						    "/com/netsplit/Nih",
-						    NULL, NULL);
-			parent = nih_alloc (proxy, 0);
-		}
-
 		TEST_CHILD (pid) {
 			TEST_DBUS_MESSAGE (server_conn, method_call);
 
@@ -9170,6 +9162,14 @@ test_proxy_sync_function (void)
 
 			dbus_shutdown ();
 			exit (0);
+		}
+
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
+			parent = nih_alloc (proxy, 0);
 		}
 
 		output = NULL;
@@ -9225,14 +9225,6 @@ test_proxy_sync_function (void)
 	 */
 	TEST_FEATURE ("with incorrect type (generated code)");
 	TEST_ALLOC_FAIL {
-		TEST_ALLOC_SAFE {
-			proxy = nih_dbus_proxy_new (NULL, client_conn,
-						    dbus_bus_get_unique_name (server_conn),
-						    "/com/netsplit/Nih",
-						    NULL, NULL);
-			parent = nih_alloc (proxy, 0);
-		}
-
 		TEST_CHILD (pid) {
 			TEST_DBUS_MESSAGE (server_conn, method_call);
 
@@ -9307,6 +9299,14 @@ test_proxy_sync_function (void)
 			exit (0);
 		}
 
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
+			parent = nih_alloc (proxy, 0);
+		}
+
 		output = NULL;
 		int32_value = 0;
 
@@ -9354,14 +9354,6 @@ test_proxy_sync_function (void)
 	 */
 	TEST_FEATURE ("with missing argument (generated code)");
 	TEST_ALLOC_FAIL {
-		TEST_ALLOC_SAFE {
-			proxy = nih_dbus_proxy_new (NULL, client_conn,
-						    dbus_bus_get_unique_name (server_conn),
-						    "/com/netsplit/Nih",
-						    NULL, NULL);
-			parent = nih_alloc (proxy, 0);
-		}
-
 		TEST_CHILD (pid) {
 			TEST_DBUS_MESSAGE (server_conn, method_call);
 
@@ -9432,6 +9424,14 @@ test_proxy_sync_function (void)
 			exit (0);
 		}
 
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
+			parent = nih_alloc (proxy, 0);
+		}
+
 		output = NULL;
 		int32_value = 0;
 
@@ -9479,14 +9479,6 @@ test_proxy_sync_function (void)
 	 */
 	TEST_FEATURE ("with too many arguments (generated code)");
 	TEST_ALLOC_FAIL {
-		TEST_ALLOC_SAFE {
-			proxy = nih_dbus_proxy_new (NULL, client_conn,
-						    dbus_bus_get_unique_name (server_conn),
-						    "/com/netsplit/Nih",
-						    NULL, NULL);
-			parent = nih_alloc (proxy, 0);
-		}
-
 		TEST_CHILD (pid) {
 			TEST_DBUS_MESSAGE (server_conn, method_call);
 
@@ -9563,6 +9555,14 @@ test_proxy_sync_function (void)
 
 			dbus_shutdown ();
 			exit (0);
+		}
+
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
+			parent = nih_alloc (proxy, 0);
 		}
 
 		output = NULL;

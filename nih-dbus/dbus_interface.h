@@ -65,14 +65,14 @@ typedef DBusHandlerResult (*NihDBusMethodHandler) (NihDBusObject *object,
 
 /**
  * NihDBusSignalFilter:
- * @conn: D-Bus connection that received the message,
+ * @connection: D-Bus connection that received the message,
  * @signal: D-Bus message containing the message received,
  * @proxied: proxied signal connection information.
  *
- * A signal filter is hooked up to a D-Bus connection @conn and called for
- * all messages received on that connection, it is expected to check that the
- * @message matches the @proxied signal and if so, call the signal handler
- * function with the expected arguments.
+ * A signal filter is hooked up to a D-Bus connection @connection and called
+ * for all messages received on that connection, it is expected to check
+ * that the @message matches the @proxied signal and if so, call the signal
+ * handler function with the expected arguments.
  *
  * While signal filter functions can be written by hand, it's far more
  * efficient to have them generated automatically.  nih-dbus-tool will
@@ -85,7 +85,7 @@ typedef DBusHandlerResult (*NihDBusMethodHandler) (NihDBusObject *object,
  * message or DBUS_HANDLER_RESULT_NEED_MEMORY if insufficient memory to
  * handle the message.
  **/
-typedef DBusHandlerResult (*NihDBusSignalFilter) (DBusConnection *conn,
+typedef DBusHandlerResult (*NihDBusSignalFilter) (DBusConnection *connection,
 						  DBusMessage *signal,
 						  NihDBusProxySignal *proxied);
 

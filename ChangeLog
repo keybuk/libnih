@@ -1,3 +1,8 @@
+2009-05-26  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus/dbus_interface.h (NihDBusSignalFilter): Rename the
+	message argument to signal, since we use message for the context
+
 2009-05-25  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus/dbus_interface.h (NihDBusSignal): Add filter function

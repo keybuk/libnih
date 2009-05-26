@@ -66,7 +66,7 @@ typedef DBusHandlerResult (*NihDBusMethodHandler) (NihDBusObject *object,
 /**
  * NihDBusSignalFilter:
  * @conn: D-Bus connection that received the message,
- * @message: D-Bus message containing the message received,
+ * @signal: D-Bus message containing the message received,
  * @proxied: proxied signal connection information.
  *
  * A signal filter is hooked up to a D-Bus connection @conn and called for
@@ -86,7 +86,7 @@ typedef DBusHandlerResult (*NihDBusMethodHandler) (NihDBusObject *object,
  * handle the message.
  **/
 typedef DBusHandlerResult (*NihDBusSignalFilter) (DBusConnection *conn,
-						  DBusMessage *message,
+						  DBusMessage *signal,
 						  NihDBusProxySignal *proxied);
 
 /**

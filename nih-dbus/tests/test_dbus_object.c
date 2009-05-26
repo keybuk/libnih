@@ -53,7 +53,7 @@ foo_handler (NihDBusObject * object,
 	foo_called = TRUE;
 	last_object = object;
 	last_message = message;
-	last_message_conn = message->conn;
+	last_message_conn = message->connection;
 
 	TEST_FREE_TAG (message);
 
@@ -70,7 +70,7 @@ bar_handler (NihDBusObject * object,
 	bar_called = TRUE;
 	last_object = object;
 	last_message = message;
-	last_message_conn = message->conn;
+	last_message_conn = message->connection;
 
 	if (bar_decline)
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
@@ -94,7 +94,7 @@ colour_get (NihDBusObject *  object,
 	colour_get_called = TRUE;
 	last_object = object;
 	last_message = message;
-	last_message_conn = message->conn;
+	last_message_conn = message->connection;
 
 	TEST_FREE_TAG (message);
 
@@ -126,7 +126,7 @@ colour_set (NihDBusObject *  object,
 	colour_set_called = TRUE;
 	last_object = object;
 	last_message = message;
-	last_message_conn = message->conn;
+	last_message_conn = message->connection;
 
 	TEST_FREE_TAG (message);
 
@@ -175,7 +175,7 @@ size_get (NihDBusObject *  object,
 	size_get_called = TRUE;
 	last_object = object;
 	last_message = message;
-	last_message_conn = message->conn;
+	last_message_conn = message->connection;
 
 	TEST_FREE_TAG (message);
 
@@ -208,7 +208,7 @@ other_get (NihDBusObject *  object,
 	other_get_called = TRUE;
 	last_object = object;
 	last_message = message;
-	last_message_conn = message->conn;
+	last_message_conn = message->connection;
 
 	TEST_FREE_TAG (message);
 
@@ -238,7 +238,7 @@ poke_set (NihDBusObject *  object,
 	poke_set_called = TRUE;
 	last_object = object;
 	last_message = message;
-	last_message_conn = message->conn;
+	last_message_conn = message->connection;
 
 	TEST_FREE_TAG (message);
 
@@ -371,7 +371,7 @@ test_object_new (void)
 		TEST_ALLOC_PARENT (object->path, object);
 		TEST_EQ_STR (object->path, "/com/netsplit/Nih");
 
-		TEST_EQ_P (object->conn, conn);
+		TEST_EQ_P (object->connection, conn);
 		TEST_EQ_P (object->data, &object);
 		TEST_EQ_P (object->interfaces, all_interfaces);
 		TEST_EQ (object->registered, TRUE);

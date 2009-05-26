@@ -46,7 +46,7 @@ my_lost_handler (void *        data,
 	my_lost_handler_called++;
 
 	TEST_NE_P (proxy, NULL);
-	TEST_EQ_P (data, proxy->conn);
+	TEST_EQ_P (data, proxy->connection);
 }
 
 static void
@@ -56,7 +56,7 @@ my_freeing_lost_handler (void *        data,
 	my_lost_handler_called++;
 
 	TEST_NE_P (proxy, NULL);
-	TEST_EQ_P (data, proxy->conn);
+	TEST_EQ_P (data, proxy->connection);
 
 	nih_free (proxy);
 }
@@ -97,7 +97,7 @@ test_new (void)
 
 		TEST_ALLOC_SIZE (proxy, sizeof (NihDBusProxy));
 
-		TEST_EQ_P (proxy->conn, conn);
+		TEST_EQ_P (proxy->connection, conn);
 
 		TEST_EQ_P (proxy->name, NULL);
 
@@ -135,7 +135,7 @@ test_new (void)
 
 		TEST_ALLOC_SIZE (proxy, sizeof (NihDBusProxy));
 
-		TEST_EQ_P (proxy->conn, conn);
+		TEST_EQ_P (proxy->connection, conn);
 
 		TEST_ALLOC_PARENT (proxy->name, proxy);
 		TEST_EQ_STR (proxy->name, "com.netsplit.Nih");
@@ -175,7 +175,7 @@ test_new (void)
 
 		TEST_ALLOC_SIZE (proxy, sizeof (NihDBusProxy));
 
-		TEST_EQ_P (proxy->conn, conn);
+		TEST_EQ_P (proxy->connection, conn);
 
 		TEST_ALLOC_PARENT (proxy->name, proxy);
 		TEST_EQ_STR (proxy->name, "com.netsplit.Nih");
@@ -224,7 +224,7 @@ test_new (void)
 
 		TEST_ALLOC_SIZE (proxy, sizeof (NihDBusProxy));
 
-		TEST_EQ_P (proxy->conn, conn);
+		TEST_EQ_P (proxy->connection, conn);
 
 		TEST_ALLOC_PARENT (proxy->name, proxy);
 		TEST_EQ_STR (proxy->name, "com.netsplit.Nih");

@@ -75,7 +75,7 @@ test_message_new (void)
 		}
 
 		TEST_ALLOC_SIZE (msg, sizeof (NihDBusMessage));
-		TEST_EQ_P (msg->conn, conn);
+		TEST_EQ_P (msg->connection, conn);
 		TEST_EQ_P (msg->message, message);
 
 		nih_free (msg);
@@ -128,7 +128,7 @@ test_message_error (void)
 
 		TEST_ALLOC_SAFE {
 			message = nih_new (NULL, NihDBusMessage);
-			message->conn = client_conn;
+			message->connection = client_conn;
 			message->message = method_call;
 		}
 

@@ -84,7 +84,7 @@ test_new (void)
 		}
 
 		TEST_ALLOC_SIZE (pending_data, sizeof (NihDBusPendingData));
-		TEST_EQ_P (pending_data->conn, conn);
+		TEST_EQ_P (pending_data->connection, conn);
 		TEST_EQ_P (pending_data->handler, (NihDBusReplyHandler)my_reply_handler);
 		TEST_EQ_P (pending_data->error_handler, my_error_handler);
 		TEST_EQ_P (pending_data->data, &conn);
@@ -110,7 +110,7 @@ test_new (void)
 		}
 
 		TEST_ALLOC_SIZE (pending_data, sizeof (NihDBusPendingData));
-		TEST_EQ_P (pending_data->conn, conn);
+		TEST_EQ_P (pending_data->connection, conn);
 		TEST_EQ_P (pending_data->handler, NULL);
 		TEST_EQ_P (pending_data->error_handler, my_error_handler);
 		TEST_EQ_P (pending_data->data, &conn);

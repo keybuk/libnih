@@ -280,7 +280,8 @@ node_end_tag (XML_Parser  xmlp,
  * @symbol: interface symbol to find.
  *
  * Finds an interface in @node's interfaces list which has the generated
- * or supplied C symbol @symbol.
+ * or supplied C symbol @symbol.  If @symbol is NULL, the default interface
+ * will be returned.
  *
  * Returns: interface found or NULL if no interface matches.
  **/
@@ -289,13 +290,13 @@ node_lookup_interface (Node *      node,
 		       const char *symbol)
 {
 	nih_assert (node != NULL);
-	nih_assert (symbol != NULL);
 
 	NIH_LIST_FOREACH (&node->interfaces, iter) {
 		Interface *interface = (Interface *)iter;
 
-		if (interface->symbol
-		    && (! strcmp (interface->symbol, symbol)))
+		if ((interface->symbol && symbol
+		     && (! strcmp (interface->symbol, symbol)))
+		    || ((! interface->symbol) && (! symbol)))
 			return interface;
 	}
 

@@ -1,5 +1,11 @@
 2009-05-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_node.c (test_lookup_interface): Extend
+	test case to look for NULL
+	* nih-dbus-tool/node.c (node_lookup_interface): Allow NULL symbol
+	lookup, which returns an Interface with a NULL symbol (ie. the
+	default).
+
 	* nih-dbus-tool/symbol.c (symbol_impl, symbol_extern)
 	(symbol_typedef): Name generation functions
 	(symbol_strcat_interface, symbol_strcat_title): Utility functions

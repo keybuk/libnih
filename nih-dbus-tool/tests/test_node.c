@@ -588,6 +588,34 @@ test_lookup_interface (void)
 	}
 
 
+	/* Check that the function returns the interface if there is one
+	 * with no symbol and NULL is given.
+	 */
+	TEST_FEATURE ("with no specified symbol");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			node = node_new (NULL, NULL);
+
+			interface1 = interface_new (node, "com.netsplit.Nih.Test");
+			interface1->symbol = nih_strdup (interface1, "test");
+			nih_list_add (&node->interfaces, &interface1->entry);
+
+			interface2 = interface_new (node, "com.netsplit.Nih.Foo");
+			nih_list_add (&node->interfaces, &interface2->entry);
+
+			interface3 = interface_new (node, "com.netsplit.Nih.Bar");
+			interface3->symbol = nih_strdup (interface3, "bar");
+			nih_list_add (&node->interfaces, &interface3->entry);
+		}
+
+		ret = node_lookup_interface (node, NULL);
+
+		TEST_EQ_P (ret, interface2);
+
+		nih_free (node);
+	}
+
+
 	/* Check that the function returns NULL if there is no interface
 	 * with the given symbol.
 	 */

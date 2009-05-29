@@ -8256,15 +8256,6 @@ test_proxy_sync_function (void)
 		TEST_ALLOC_PARENT (attrib->str, attrib);
 		nih_free (attrib);
 
-		TEST_LIST_NOT_EMPTY (&func->attribs);
-
-		attrib = (NihListEntry *)func->attribs.next;
-		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
-		TEST_ALLOC_PARENT (attrib, func);
-		TEST_EQ_STR (attrib->str, "malloc");
-		TEST_ALLOC_PARENT (attrib->str, attrib);
-		nih_free (attrib);
-
 		TEST_LIST_EMPTY (&func->attribs);
 		nih_free (func);
 
@@ -8535,15 +8526,6 @@ test_proxy_sync_function (void)
 		TEST_ALLOC_PARENT (attrib->str, attrib);
 		nih_free (attrib);
 
-		TEST_LIST_NOT_EMPTY (&func->attribs);
-
-		attrib = (NihListEntry *)func->attribs.next;
-		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
-		TEST_ALLOC_PARENT (attrib, func);
-		TEST_EQ_STR (attrib->str, "malloc");
-		TEST_ALLOC_PARENT (attrib->str, attrib);
-		nih_free (attrib);
-
 		TEST_LIST_EMPTY (&func->attribs);
 		nih_free (func);
 
@@ -8722,15 +8704,6 @@ test_proxy_sync_function (void)
 		TEST_ALLOC_PARENT (attrib->str, attrib);
 		nih_free (attrib);
 
-		TEST_LIST_NOT_EMPTY (&func->attribs);
-
-		attrib = (NihListEntry *)func->attribs.next;
-		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
-		TEST_ALLOC_PARENT (attrib, func);
-		TEST_EQ_STR (attrib->str, "malloc");
-		TEST_ALLOC_PARENT (attrib->str, attrib);
-		nih_free (attrib);
-
 		TEST_LIST_EMPTY (&func->attribs);
 		nih_free (func);
 
@@ -8859,15 +8832,6 @@ test_proxy_sync_function (void)
 		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
 		TEST_ALLOC_PARENT (attrib, func);
 		TEST_EQ_STR (attrib->str, "warn_unused_result");
-		TEST_ALLOC_PARENT (attrib->str, attrib);
-		nih_free (attrib);
-
-		TEST_LIST_NOT_EMPTY (&func->attribs);
-
-		attrib = (NihListEntry *)func->attribs.next;
-		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
-		TEST_ALLOC_PARENT (attrib, func);
-		TEST_EQ_STR (attrib->str, "malloc");
 		TEST_ALLOC_PARENT (attrib->str, attrib);
 		nih_free (attrib);
 
@@ -9749,15 +9713,6 @@ test_proxy_sync_function (void)
 		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
 		TEST_ALLOC_PARENT (attrib, func);
 		TEST_EQ_STR (attrib->str, "warn_unused_result");
-		TEST_ALLOC_PARENT (attrib->str, attrib);
-		nih_free (attrib);
-
-		TEST_LIST_NOT_EMPTY (&func->attribs);
-
-		attrib = (NihListEntry *)func->attribs.next;
-		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
-		TEST_ALLOC_PARENT (attrib, func);
-		TEST_EQ_STR (attrib->str, "malloc");
 		TEST_ALLOC_PARENT (attrib->str, attrib);
 		nih_free (attrib);
 

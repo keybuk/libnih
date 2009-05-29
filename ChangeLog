@@ -1,5 +1,10 @@
 2009-05-27  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_proxy_sync_function): sync function
+	returns an integer, so should not be malloc
+	* nih-dbus-tool/tests/test_method.c (test_proxy_sync_function):
+	Remove from tests as well
+
 	* nih-dbus-tool/tests/test_method.c (test_proxy_sync_function):
 	Do the child process stuff before creating the proxy, otherwise
 	it holds a reference to the connection.

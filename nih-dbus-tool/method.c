@@ -1931,16 +1931,6 @@ method_proxy_sync_function (const void *parent,
 
 	nih_list_add (&func->attribs, &attrib->entry);
 
-	attrib = nih_list_entry_new (func);
-	if (! attrib)
-		return NULL;
-
-	attrib->str = nih_strdup (attrib, "malloc");
-	if (! attrib->str)
-		return NULL;
-
-	nih_list_add (&func->attribs, &attrib->entry);
-
 	if (method->deprecated) {
 		attrib = nih_list_entry_new (func);
 		if (! attrib)

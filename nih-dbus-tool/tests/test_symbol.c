@@ -358,12 +358,297 @@ test_from_name (void)
 }
 
 
+void
+test_impl (void)
+{
+	char *str;
+
+	/* Check that we can create an implementation function name,
+	 * which returns a name that you'd never want to call but is
+	 * sufficiently unique for internal structures.
+	 */
+	TEST_FUNCTION ("symbol_impl");
+	TEST_ALLOC_FAIL {
+		str = symbol_impl (NULL, "my", "com.netsplit.Nih.Test",
+				   "MyMethod", "method");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "my_com_netsplit_Nih_Test_MyMethod_method");
+
+		nih_free (str);
+	}
+}
+
+void
+test_extern (void)
+{
+	char *str;
+
+
+	TEST_FUNCTION ("symbol_extern");
+
+
+	/* Check that we can create an extern function name, either one the
+	 * user is expected to implement or one that they might call, when
+	 * passing all arguments - the name should be in a nice format.
+	 */
+	TEST_FEATURE ("with all arguments");
+	TEST_ALLOC_FAIL {
+		str = symbol_extern (NULL, "my", "test", "get", "my_property",
+				     "sync");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "my_test_get_my_property_sync");
+
+		nih_free (str);
+	}
+
+
+	/* Check that the interface symbol is optional, since the default
+	 * interface will not end up having one.
+	 */
+	TEST_FEATURE ("without interface symbol");
+	TEST_ALLOC_FAIL {
+		str = symbol_extern (NULL, "my", NULL, "get", "my_property",
+				     "sync");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "my_get_my_property_sync");
+
+		nih_free (str);
+	}
+
+
+	/* Check that we don't need to supply the midfix component */
+	TEST_FEATURE ("without midfix");
+	TEST_ALLOC_FAIL {
+		str = symbol_extern (NULL, "my", "test", NULL, "my_method",
+				     "reply");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "my_test_my_method_reply");
+
+		nih_free (str);
+	}
+
+
+	/* Check that we don't need to supply the postfix component */
+	TEST_FEATURE ("without postfix");
+	TEST_ALLOC_FAIL {
+		str = symbol_extern (NULL, "my", "test", "emit", "my_signal",
+				     NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "my_test_emit_my_signal");
+
+		nih_free (str);
+	}
+
+
+	/* Check that we can omit both the interface symbol and the midfix */
+	TEST_FEATURE ("without interface symbol or midfix");
+	TEST_ALLOC_FAIL {
+		str = symbol_extern (NULL, "my", NULL, NULL, "my_method",
+				     "sync");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "my_my_method_sync");
+
+		nih_free (str);
+	}
+
+
+	/* Check that we can omit both the interface symbol and the postfix */
+	TEST_FEATURE ("without interface symbol or postfix");
+	TEST_ALLOC_FAIL {
+		str = symbol_extern (NULL, "my", NULL, "emit", "my_signal",
+				     NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "my_emit_my_signal");
+
+		nih_free (str);
+	}
+
+
+	/* Check that we can pass just the prefix and member symbol, as is
+	 * the case for methods on the default interface.
+	 */
+	TEST_FEATURE ("without optional arguments");
+	TEST_ALLOC_FAIL {
+		str = symbol_extern (NULL, "my", NULL, NULL, "my_method",
+				     NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "my_my_method");
+
+		nih_free (str);
+	}
+}
+
+void
+test_typedef (void)
+{
+	char *str;
+
+
+	TEST_FUNCTION ("symbol_typedef");
+
+
+	/* Check that we can create an typedef name, which should be of
+	 * a similar style to an extern name except that the individual
+	 * components are capitalised.
+	 */
+	TEST_FEATURE ("with all arguments");
+	TEST_ALLOC_FAIL {
+		str = symbol_typedef (NULL, "my", "test", "Get", "my_property",
+				      "Reply");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "MyTestGetMyPropertyReply");
+
+		nih_free (str);
+	}
+
+
+	/* Check that where the prefix has multiple underscore separated
+	 * words, they are turned into TitleCase words.
+	 */
+	TEST_FEATURE ("with multiple words in prefix");
+	TEST_ALLOC_FAIL {
+		str = symbol_typedef (NULL, "my_first", "test", "Get",
+				      "my_property", "Reply");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "MyFirstTestGetMyPropertyReply");
+
+		nih_free (str);
+	}
+
+
+	/* Check that where the interface symbol has multiple underscore
+	 * separated words, they are turned into TitleCase words.
+	 */
+	TEST_FEATURE ("with multiple words in interface");
+	TEST_ALLOC_FAIL {
+		str = symbol_typedef (NULL, "my", "cool_test", "Get",
+				      "my_property", "Reply");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "MyCoolTestGetMyPropertyReply");
+
+		nih_free (str);
+	}
+
+
+	/* Check that the interface symbol is optional, since the default
+	 * interface will not end up having one.
+	 */
+	TEST_FEATURE ("without interface symbol");
+	TEST_ALLOC_FAIL {
+		str = symbol_typedef (NULL, "my", NULL, "Get", "my_property",
+				     "Reply");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "MyGetMyPropertyReply");
+
+		nih_free (str);
+	}
+
+
+	/* Check that we don't need to supply the midfix component */
+	TEST_FEATURE ("without midfix");
+	TEST_ALLOC_FAIL {
+		str = symbol_typedef (NULL, "my", "test", NULL, "my_method",
+				     "Reply");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "MyTestMyMethodReply");
+
+		nih_free (str);
+	}
+
+
+	/* Check that we can omit both the interface symbol and the midfix */
+	TEST_FEATURE ("without optional arguments");
+	TEST_ALLOC_FAIL {
+		str = symbol_typedef (NULL, "my", NULL, NULL, "my_method",
+				     "Reply");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "MyMyMethodReply");
+
+		nih_free (str);
+	}
+}
+
+
 int
 main (int   argc,
       char *argv[])
 {
 	test_valid ();
 	test_from_name ();
+
+	test_impl ();
+	test_extern ();
+	test_typedef ();
 
 	return 0;
 }

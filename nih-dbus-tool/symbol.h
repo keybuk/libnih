@@ -36,6 +36,21 @@ int   symbol_valid     (const char *symbol);
 char *symbol_from_name (const void *parent, const char *name)
 	__attribute__ ((warn_unused_result, malloc));
 
+char *symbol_impl      (const void *parent, const char *prefix,
+			const char *interface_name, const char *name,
+			const char *postfix)
+	__attribute__ ((warn_unused_result, malloc));
+
+char *symbol_extern    (const void *parent, const char *prefix,
+			const char *interface_symbol, const char *midfix,
+			const char *symbol, const char *postfix)
+	__attribute__ ((warn_unused_result, malloc));
+
+char *symbol_typedef   (const void *parent, const char *prefix,
+			const char *interface_symbol, const char *midfix,
+			const char *symbol, const char *postfix)
+	__attribute__ ((warn_unused_result, malloc));
+
 NIH_END_EXTERN
 
 #endif /* NIH_DBUS_TOOL_SYMBOL_H */

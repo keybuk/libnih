@@ -1,3 +1,13 @@
+2009-05-29  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/symbol.c (symbol_impl, symbol_extern)
+	(symbol_typedef): Name generation functions
+	(symbol_strcat_interface, symbol_strcat_title): Utility functions
+	used for the above
+	* nih-dbus-tool/symbol.h: Add prototypes
+	* nih-dbus-tool/tests/test_symbol.c (test_impl, test_extern)
+	(test_typedef): Test cases for the new functions
+
 2009-05-27  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/method.c (method_proxy_sync_function): sync function

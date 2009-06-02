@@ -1,3 +1,9 @@
+2009-06-02  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus/dbus_proxy.c (nih_dbus_proxy_name_owner_changed): Add
+	missing DBUS_TYPE_INVALID sentinel to the dbus_message_get_args()
+	call.
+
 2009-05-29  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/tests/test_node.c (test_lookup_interface): Extend

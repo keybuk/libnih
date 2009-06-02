@@ -431,7 +431,8 @@ nih_dbus_proxy_name_owner_changed (DBusConnection *connection,
 	if (! dbus_message_get_args (message, &dbus_error,
 				     DBUS_TYPE_STRING, &name,
 				     DBUS_TYPE_STRING, &old_owner,
-				     DBUS_TYPE_STRING, &new_owner)) {
+				     DBUS_TYPE_STRING, &new_owner,
+				     DBUS_TYPE_INVALID)) {
 		dbus_error_free (&dbus_error);
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 	}

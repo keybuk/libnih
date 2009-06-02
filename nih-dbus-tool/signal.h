@@ -79,17 +79,14 @@ int       signal_annotation      (Signal *signal,
 Signal *  signal_lookup          (Interface *interface, const char *symbol);
 Argument *signal_lookup_argument (Signal *signal, const char *symbol);
 
-char *    signal_object_function (const void *parent,
-				  const char *interface_name, Signal *signal,
-				  const char *name,
+char *    signal_object_function (const void *parent, const char *prefix,
+				  Interface *interface, Signal *signal,
 				  NihList *prototypes)
 	__attribute__ ((warn_unused_result, malloc));
 
-char *    signal_proxy_function  (const void *parent,
-				  Signal *signal, const char *name,
-				  const char *handler_type,
-				  NihList *prototypes,
-				  NihList *typedefs)
+char *    signal_proxy_function  (const void *parent, const char *prefix,
+				  Interface *interface, Signal *signal,
+				  NihList *prototypes, NihList *typedefs)
 	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN

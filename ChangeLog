@@ -1,5 +1,15 @@
 2009-06-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/signal.c (signal_object_function)
+	(signal_proxy_function): Rather than accepting precanned names, accept
+	prefix, interface and signal and generate them every time
+	* nih-dbus-tool/signal.h: Update prototypes.
+	* nih-dbus-tool/tests/signal_factory.c: Create an interface and
+	pass it to the functions
+	* nih-dbus-tool/tests/signal_code.h: Filter function name changes
+	as a result.
+	* nih-dbus-tool/tests/test_signal.c: Update tests.
+
 	* nih-dbus-tool/method.c (method_object_function)
 	(method_reply_function, method_proxy_function)
 	(method_proxy_notify_function, method_proxy_sync_function): Rather

@@ -428,17 +428,16 @@ signal_lookup_argument (Signal *    signal,
 /**
  * signal_object_function:
  * @parent: parent object for new string.
- * @interface_name: name of interface,
+ * @prefix: prefix for function name,
+ * @interface: interface of @signal,
  * @signal: signal to generate function for,
- * @name: name of function to generate,
  * @prototypes: list to append function prototypes to.
  *
- * Generates C code for a function @name to emit a signal @signal by
- * marshalling the arguments.  The interface name of the signal must be
- * supplied in @interface_name.
+ * Generates C code for a function to emit a signal @signal on @interface by
+ * marshalling the arguments.
  *
- * The prototype of the function is given as a TypeFunc object appended to
- * the @prototypes list, with the name as @name itself.
+ * The prototype of the returned function is returned as a TypeFunc object
+ * appended to the @prototypes list.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -449,12 +448,13 @@ signal_lookup_argument (Signal *    signal,
  **/
 char *
 signal_object_function (const void *parent,
-			const char *interface_name,
+			const char *prefix,
+			Interface * interface,
 			Signal *    signal,
-			const char *name,
 			NihList *   prototypes)
 {
 	NihList             locals;
+	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
 	NihListEntry *      attrib;
@@ -466,9 +466,9 @@ signal_object_function (const void *parent,
 	nih_local char *    body = NULL;
 	char *              code = NULL;
 
-	nih_assert (interface_name != NULL);
+	nih_assert (prefix != NULL);
+	nih_assert (interface != NULL);
 	nih_assert (signal != NULL);
-	nih_assert (name != NULL);
 	nih_assert (prototypes != NULL);
 
 	nih_list_init (&locals);
@@ -477,6 +477,11 @@ signal_object_function (const void *parent,
 	 * the connection and origin path.  The integer indicates whether
 	 * an error occurred, so we want a warning if the result isn't used.
 	 */
+	name = symbol_extern (NULL, prefix, interface->symbol, "emit",
+			      signal->symbol, NULL);
+	if (! name)
+		return NULL;
+
 	func = type_func_new (NULL, "int", name);
 	if (! func)
 		return NULL;
@@ -538,7 +543,7 @@ signal_object_function (const void *parent,
 				  "\n"
 				  "dbus_message_iter_init_append (signal, &iter);\n"
 				  "\n",
-				  interface_name, signal->name))
+				  interface->name, signal->name))
 		return NULL;
 
 	/* Iterate over the signal's output arguments, for each one we
@@ -666,24 +671,21 @@ signal_object_function (const void *parent,
 /**
  * signal_proxy_function:
  * @parent: parent object for new string.
+ * @prefix: prefix for function name,
+ * @interface: interface of @signal,
  * @signal: signal to generate function for,
- * @name: name of function to generate,
- * @handler_type: typedef for handler function,
  * @prototypes: list to append function prototypes to,
  * @typedefs: list to append function pointer typedef definitions to.
  *
- * Generates C code for a function @name that acts as a D-Bus connection
- * filter function checking that the incoming message matches @signal and
- * calling a handler function after demarshalling the arguments.
+ * Generates C code for a function that acts as a D-Bus connection filter
+ * function checking that the incoming message matches @signal on @itnerface
+ * and calls a handler function after demarshalling the arguments.
  *
- * The notify function will call a handler function passed in if the
- * reply is valid, the typedef name for this handler must be passed as
- * @handler_type.  The actual type for this can be obtained from the
- * entry added to @typedefs.
+ * The prototype of the returned function is returned as a TypeFunc object
+ * appended to the @prototypes list.
  *
- * The prototype of the function is given as a TypeFunc object appended to
- * the @prototypes list, with the name as @name itself.  @typedefs contains
- * a similar TypeFunc object to define the type of the handler function.
+ * The typedef of the handler function is returned as a TypeFunc object
+ * appended to the @typedefs list.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -694,20 +696,22 @@ signal_object_function (const void *parent,
  **/
 char *
 signal_proxy_function  (const void *parent,
+			const char *prefix,
+			Interface * interface,
 			Signal *    signal,
-			const char *name,
-			const char *handler_type,
 			NihList *   prototypes,
 			NihList *   typedefs)
 {
 	NihList             locals;
-	nih_local TypeFunc *func;
+	nih_local char *    name = NULL;
+	nih_local TypeFunc *func = NULL;
 	TypeVar  *          arg;
 	nih_local char *    assert_block = NULL;
 	nih_local TypeVar * iter_var = NULL;
 	nih_local TypeVar * parent_var = NULL;
 	nih_local char *    demarshal_block = NULL;
 	nih_local char *    call_block = NULL;
+	nih_local char *    handler_type = NULL;
 	nih_local char *    handler_name = NULL;
 	nih_local TypeFunc *handler_func = NULL;
 	NihListEntry *      attrib;
@@ -715,9 +719,9 @@ signal_proxy_function  (const void *parent,
 	nih_local char *    body = NULL;
 	char *              code;
 
+	nih_assert (prefix != NULL);
+	nih_assert (interface != NULL);
 	nih_assert (signal != NULL);
-	nih_assert (name != NULL);
-	nih_assert (handler_type != NULL);
 	nih_assert (prototypes != NULL);
 	nih_assert (typedefs != NULL);
 
@@ -726,6 +730,11 @@ signal_proxy_function  (const void *parent,
 	/* The function returns a D-Bus handler result, accepting arguments
 	 * for the connection, received message and proxied signal structure.
 	 */
+	name = symbol_impl (NULL, prefix, interface->name,
+			    signal->name, "filter");
+	if (! name)
+		return NULL;
+
 	func = type_func_new (NULL, "DBusHandlerResult", name);
 	if (! func)
 		return NULL;
@@ -810,6 +819,11 @@ signal_proxy_function  (const void *parent,
 	 * reply.  Build up the typedef for it, which we mostly use for
 	 * type passing reasons.
 	 */
+	handler_type = symbol_typedef (NULL, prefix, interface->symbol, NULL,
+				       signal->symbol, "Handler");
+	if (! handler_type)
+		return NULL;
+
 	if (! nih_strcat_sprintf (&call_block, NULL,
 				  "/* Call the handler function */\n"
 				  "nih_error_push_context ();\n"

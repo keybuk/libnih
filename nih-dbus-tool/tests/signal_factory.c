@@ -37,6 +37,7 @@
 #include <nih/string.h>
 
 #include "type.h"
+#include "interface.h"
 #include "signal.h"
 #include "argument.h"
 
@@ -45,11 +46,12 @@ int
 main (int   argc,
       char *argv[])
 {
-	NihList           prototypes;
-	NihList           typedefs;
-	nih_local Signal *signal = NULL;
-	Argument *        arg;
-	nih_local char *  code = NULL;
+	NihList              prototypes;
+	NihList              typedefs;
+	nih_local Interface *interface = NULL;
+	nih_local Signal *   signal = NULL;
+	Argument *           arg;
+	nih_local char *     code = NULL;
 
 	printf ("#include <dbus/dbus.h>\n"
 		"\n"
@@ -68,8 +70,11 @@ main (int   argc,
 		"#include \"signal_code.h\"\n"
 		"\n");
 
-	signal = signal_new (NULL, "MySignal");
-	signal->symbol = nih_strdup (signal, "my_signal");
+	interface = interface_new (NULL, "com.netsplit.Nih.Test");
+	interface->symbol = NULL;
+
+	signal = signal_new (NULL, "Signal");
+	signal->symbol = nih_strdup (signal, "signal");
 
 	arg = argument_new (signal, "Msg", "s", NIH_DBUS_ARG_OUT);
 	arg->symbol = nih_strdup (arg, "msg");
@@ -78,8 +83,7 @@ main (int   argc,
 
 	nih_list_init (&prototypes);
 
-	code = signal_object_function (NULL, "com.netsplit.Nih.Test", signal,
-				       "my_emit_signal",
+	code = signal_object_function (NULL, "my", interface, signal,
 				       &prototypes);
 
 	printf ("%s"
@@ -90,11 +94,8 @@ main (int   argc,
 	nih_list_init (&prototypes);
 	nih_list_init (&typedefs);
 
-	code = signal_proxy_function (NULL, signal,
-				      "my_signal_filter",
-				      "MySignalHandler",
-				      &prototypes,
-				      &typedefs);
+	code = signal_proxy_function (NULL, "my", interface, signal,
+				      &prototypes, &typedefs);
 
 	printf ("%s", code);
 

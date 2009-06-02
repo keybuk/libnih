@@ -1017,6 +1017,7 @@ test_object_function (void)
 	DBusConnection *  server_conn;
 	DBusConnection *  client_conn;
 	NihList           prototypes;
+	Interface *       interface = NULL;
 	Signal *          signal = NULL;
 	Argument *        argument = NULL;
 	char *            str;
@@ -1042,8 +1043,11 @@ test_object_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			signal = signal_new (NULL, "MySignal");
-			signal->symbol = nih_strdup (signal, "my_signal");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			signal = signal_new (NULL, "Signal");
+			signal->symbol = nih_strdup (signal, "signal");
 
 			argument = argument_new (signal, "Msg",
 						 "s", NIH_DBUS_ARG_OUT);
@@ -1051,8 +1055,7 @@ test_object_function (void)
 			nih_list_add (&signal->arguments, &argument->entry);
 		}
 
-		str = signal_object_function (NULL, "com.netsplit.Nih.Test",
-					      signal, "my_emit_signal",
+		str = signal_object_function (NULL, "my", interface, signal,
 					      &prototypes);
 
 		if (test_alloc_failed) {
@@ -1061,6 +1064,7 @@ test_object_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (signal);
+			nih_free (interface);
 			continue;
 		}
 
@@ -1077,7 +1081,7 @@ test_object_function (void)
 				   "\tnih_assert (msg != NULL);\n"
 				   "\n"
 				   "\t/* Construct the message. */\n"
-				   "\tsignal = dbus_message_new_signal (origin_path, \"com.netsplit.Nih.Test\", \"MySignal\");\n"
+				   "\tsignal = dbus_message_new_signal (origin_path, \"com.netsplit.Nih.Test\", \"Signal\");\n"
 				   "\tif (! signal)\n"
 				   "\t\treturn -1;\n"
 				   "\n"
@@ -1161,6 +1165,7 @@ test_object_function (void)
 
 		nih_free (str);
 		nih_free (signal);
+		nih_free (interface);
 	}
 
 
@@ -1172,12 +1177,14 @@ test_object_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			signal = signal_new (NULL, "MySignal");
-			signal->symbol = nih_strdup (signal, "my_signal");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			signal = signal_new (NULL, "Signal");
+			signal->symbol = nih_strdup (signal, "signal");
 		}
 
-		str = signal_object_function (NULL, "com.netsplit.Nih.Test",
-					      signal, "my_emit_signal",
+		str = signal_object_function (NULL, "my", interface, signal,
 					      &prototypes);
 
 		if (test_alloc_failed) {
@@ -1186,6 +1193,7 @@ test_object_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (signal);
+			nih_free (interface);
 			continue;
 		}
 
@@ -1200,7 +1208,7 @@ test_object_function (void)
 				   "\tnih_assert (origin_path != NULL);\n"
 				   "\n"
 				   "\t/* Construct the message. */\n"
-				   "\tsignal = dbus_message_new_signal (origin_path, \"com.netsplit.Nih.Test\", \"MySignal\");\n"
+				   "\tsignal = dbus_message_new_signal (origin_path, \"com.netsplit.Nih.Test\", \"Signal\");\n"
 				   "\tif (! signal)\n"
 				   "\t\treturn -1;\n"
 				   "\n"
@@ -1267,6 +1275,7 @@ test_object_function (void)
 
 		nih_free (str);
 		nih_free (signal);
+		nih_free (interface);
 	}
 
 
@@ -1318,8 +1327,11 @@ test_object_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			signal = signal_new (NULL, "MySignal");
-			signal->symbol = nih_strdup (signal, "my_signal");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			signal = signal_new (NULL, "Signal");
+			signal->symbol = nih_strdup (signal, "signal");
 			signal->deprecated = TRUE;
 
 			argument = argument_new (signal, "Msg",
@@ -1328,8 +1340,7 @@ test_object_function (void)
 			nih_list_add (&signal->arguments, &argument->entry);
 		}
 
-		str = signal_object_function (NULL, "com.netsplit.Nih.Test",
-					      signal, "my_emit_signal",
+		str = signal_object_function (NULL, "my", interface, signal,
 					      &prototypes);
 
 		if (test_alloc_failed) {
@@ -1338,6 +1349,7 @@ test_object_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (signal);
+			nih_free (interface);
 			continue;
 		}
 
@@ -1354,7 +1366,7 @@ test_object_function (void)
 				   "\tnih_assert (msg != NULL);\n"
 				   "\n"
 				   "\t/* Construct the message. */\n"
-				   "\tsignal = dbus_message_new_signal (origin_path, \"com.netsplit.Nih.Test\", \"MySignal\");\n"
+				   "\tsignal = dbus_message_new_signal (origin_path, \"com.netsplit.Nih.Test\", \"Signal\");\n"
 				   "\tif (! signal)\n"
 				   "\t\treturn -1;\n"
 				   "\n"
@@ -1438,6 +1450,7 @@ test_object_function (void)
 
 		nih_free (str);
 		nih_free (signal);
+		nih_free (interface);
 	}
 
 
@@ -1471,7 +1484,7 @@ my_signal_handler (void *          data,
 	TEST_EQ_STR (msg, "this is a test");
 }
 
-const NihDBusSignal    my_signal    = { "MySignal", NULL, my_signal_filter };
+const NihDBusSignal    my_signal    = { "Signal", NULL, my_com_netsplit_Nih_Test_Signal_filter };
 const NihDBusInterface my_interface = { "com.netsplit.Nih", NULL, NULL, NULL };
 
 void
@@ -1482,6 +1495,7 @@ test_proxy_function (void)
 	DBusConnection *    client_conn;
 	NihList             prototypes;
 	NihList             typedefs;
+	Interface *         interface = NULL;
 	Signal *            signal = NULL;
 	Argument *          argument = NULL;
 	char *              str;
@@ -1509,8 +1523,11 @@ test_proxy_function (void)
 		nih_list_init (&typedefs);
 
 		TEST_ALLOC_SAFE {
-			signal = signal_new (NULL, "MySignal");
-			signal->symbol = nih_strdup (signal, "my_signal");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			signal = signal_new (NULL, "Signal");
+			signal->symbol = nih_strdup (signal, "signal");
 
 			argument = argument_new (signal, "Msg",
 						 "s", NIH_DBUS_ARG_OUT);
@@ -1518,9 +1535,7 @@ test_proxy_function (void)
 			nih_list_add (&signal->arguments, &argument->entry);
 		}
 
-		str = signal_proxy_function (NULL,
-					     signal, "my_signal_filter",
-					     "MySignalHandler",
+		str = signal_proxy_function (NULL, "my", interface, signal,
 					     &prototypes, &typedefs);
 
 		if (test_alloc_failed) {
@@ -1530,13 +1545,14 @@ test_proxy_function (void)
 			TEST_LIST_EMPTY (&typedefs);
 
 			nih_free (signal);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("DBusHandlerResult\n"
-				   "my_signal_filter (DBusConnection *    connection,\n"
-				   "                  DBusMessage *       signal,\n"
-				   "                  NihDBusProxySignal *proxied)\n"
+				   "my_com_netsplit_Nih_Test_Signal_filter (DBusConnection *    connection,\n"
+				   "                                        DBusMessage *       signal,\n"
+				   "                                        NihDBusProxySignal *proxied)\n"
 				   "{\n"
 				   "\tDBusMessageIter iter;\n"
 				   "\tNihDBusMessage *message;\n"
@@ -1604,7 +1620,7 @@ test_proxy_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "DBusHandlerResult");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_signal_filter");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Signal_filter");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -1711,6 +1727,7 @@ test_proxy_function (void)
 
 		nih_free (str);
 		nih_free (signal);
+		nih_free (interface);
 	}
 
 
@@ -1723,13 +1740,14 @@ test_proxy_function (void)
 		nih_list_init (&typedefs);
 
 		TEST_ALLOC_SAFE {
-			signal = signal_new (NULL, "MySignal");
-			signal->symbol = nih_strdup (signal, "my_signal");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			signal = signal_new (NULL, "Signal");
+			signal->symbol = nih_strdup (signal, "signal");
 		}
 
-		str = signal_proxy_function (NULL,
-					     signal, "my_signal_filter",
-					     "MySignalHandler",
+		str = signal_proxy_function (NULL, "my", interface, signal,
 					     &prototypes, &typedefs);
 
 		if (test_alloc_failed) {
@@ -1739,13 +1757,14 @@ test_proxy_function (void)
 			TEST_LIST_EMPTY (&typedefs);
 
 			nih_free (signal);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("DBusHandlerResult\n"
-				   "my_signal_filter (DBusConnection *    connection,\n"
-				   "                  DBusMessage *       signal,\n"
-				   "                  NihDBusProxySignal *proxied)\n"
+				   "my_com_netsplit_Nih_Test_Signal_filter (DBusConnection *    connection,\n"
+				   "                                        DBusMessage *       signal,\n"
+				   "                                        NihDBusProxySignal *proxied)\n"
 				   "{\n"
 				   "\tDBusMessageIter iter;\n"
 				   "\tNihDBusMessage *message;\n"
@@ -1795,7 +1814,7 @@ test_proxy_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "DBusHandlerResult");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_signal_filter");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Signal_filter");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -1891,6 +1910,7 @@ test_proxy_function (void)
 
 		nih_free (str);
 		nih_free (signal);
+		nih_free (interface);
 	}
 
 
@@ -1913,7 +1933,7 @@ test_proxy_function (void)
 
 		sig = dbus_message_new_signal ("/com/netsplit/Nih",
 					       "com.netsplit.Nih",
-					       "MySignal");
+					       "Signal");
 
 		dbus_message_iter_init_append (sig, &iter);
 
@@ -1949,8 +1969,11 @@ test_proxy_function (void)
 		nih_list_init (&typedefs);
 
 		TEST_ALLOC_SAFE {
-			signal = signal_new (NULL, "MySignal");
-			signal->symbol = nih_strdup (signal, "my_signal");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			signal = signal_new (NULL, "Signal");
+			signal->symbol = nih_strdup (signal, "signal");
 			signal->deprecated = TRUE;
 
 			argument = argument_new (signal, "Msg",
@@ -1959,9 +1982,7 @@ test_proxy_function (void)
 			nih_list_add (&signal->arguments, &argument->entry);
 		}
 
-		str = signal_proxy_function (NULL,
-					     signal, "my_signal_filter",
-					     "MySignalHandler",
+		str = signal_proxy_function (NULL, "my", interface, signal,
 					     &prototypes, &typedefs);
 
 		if (test_alloc_failed) {
@@ -1971,13 +1992,14 @@ test_proxy_function (void)
 			TEST_LIST_EMPTY (&typedefs);
 
 			nih_free (signal);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("DBusHandlerResult\n"
-				   "my_signal_filter (DBusConnection *    connection,\n"
-				   "                  DBusMessage *       signal,\n"
-				   "                  NihDBusProxySignal *proxied)\n"
+				   "my_com_netsplit_Nih_Test_Signal_filter (DBusConnection *    connection,\n"
+				   "                                        DBusMessage *       signal,\n"
+				   "                                        NihDBusProxySignal *proxied)\n"
 				   "{\n"
 				   "\tDBusMessageIter iter;\n"
 				   "\tNihDBusMessage *message;\n"
@@ -2045,7 +2067,7 @@ test_proxy_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "DBusHandlerResult");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_signal_filter");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Signal_filter");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -2161,6 +2183,7 @@ test_proxy_function (void)
 
 		nih_free (str);
 		nih_free (signal);
+		nih_free (interface);
 	}
 
 

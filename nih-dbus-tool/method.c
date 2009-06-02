@@ -458,21 +458,27 @@ method_lookup_argument (Method *    method,
 
 /**
  * method_object_function:
- * @parent: parent object for new string.
+ * @parent: parent object for new string,
+ * @prefix: prefix for function name,
+ * @interface: interface of @method,
  * @method: method to generate function for,
- * @name: name of function to generate,
- * @handler_name: name of handler function to call,
  * @prototypes: list to append function prototypes to,
  * @handlers: list to append definitions of required handlers to.
  *
- * Generates C code for a function @name to handle the method @method,
- * demarshalling the incoming arguments, calling a function named
- * @handler_name and marshalling the output arguments into a reply or
- * responding with an error.  The prototype for this function is specified
- * as a TypeFunc object added to the @handlers list.
+ * Generates C code for a function to handle the method @method on @interface,
+ * demarshalling the incoming arguments, calling a handler function
+ * and marshalling the output arguments into a reply or responding with an
+ * error.
  *
- * The prototype of the function is given as a TypeFunc object appended to
- * the @prototypes list, with the name as @name itself.
+ * The prototype of the returned function is returned as a TypeFunc object
+ * appended to the @prototypes list.
+ *
+ * The prototype for the handler function is returned as a TypeFunc object
+ * added to the @handlers list.
+ *
+ * The names of both the returned function and handled function prototype
+ * will be generated using information in @interface and @method, prefixed
+ * with @prefix.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -483,13 +489,14 @@ method_lookup_argument (Method *    method,
  **/
 char *
 method_object_function (const void *parent,
+			const char *prefix,
+			Interface * interface,
 			Method *    method,
-			const char *name,
-			const char *handler_name,
 			NihList *   prototypes,
 			NihList *   handlers)
 {
 	NihList             locals;
+	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
 	nih_local char *    assert_block = NULL;
@@ -497,6 +504,7 @@ method_object_function (const void *parent,
 	nih_local TypeVar * reply_var = NULL;
 	nih_local char *    demarshal_block = NULL;
 	nih_local char *    call_block = NULL;
+	nih_local char *    handler_name = NULL;
 	nih_local TypeFunc *handler_func = NULL;
 	NihListEntry *      attrib;
 	nih_local char *    marshal_block = NULL;
@@ -504,9 +512,9 @@ method_object_function (const void *parent,
 	nih_local char *    body = NULL;
 	char *              code = NULL;
 
+	nih_assert (prefix != NULL);
+	nih_assert (interface != NULL);
 	nih_assert (method != NULL);
-	nih_assert (name != NULL);
-	nih_assert (handler_name != NULL);
 	nih_assert (prototypes != NULL);
 	nih_assert (handlers != NULL);
 
@@ -518,6 +526,11 @@ method_object_function (const void *parent,
 	 * deprecated method since we always want to implement it without
 	 * error.
 	 */
+	name = symbol_impl (NULL, prefix, interface->name, method->name,
+			    "method");
+	if (! name)
+		return NULL;
+
 	func = type_func_new (NULL, "DBusHandlerResult", name);
 	if (! func)
 		return NULL;
@@ -572,6 +585,11 @@ method_object_function (const void *parent,
 	/* Begin the handler calling block.  The handler function always
 	 * has a warn_unusued_result attribute, just for completeness.
 	 */
+	handler_name = symbol_extern (NULL, prefix, interface->symbol,
+				      NULL, method->symbol, NULL);
+	if (! handler_name)
+		return NULL;
+
 	if (! nih_strcat_sprintf (&call_block, NULL,
 				  "/* Call the handler function */\n"
 				  "nih_error_push_context ();\n"
@@ -930,15 +948,19 @@ method_object_function (const void *parent,
 /**
  * method_reply_function:
  * @parent: parent object for new string.
+ * @prefix: prefix for function name,
+ * @interface: interface of @method,
  * @method: method to generate function for,
- * @name: name of function to generate,
  * @prototypes: list to append function prototypes to.
  *
- * Generates C code for a function @name to send a reply for the method
- * @method by marshalling the arguments.
+ * Generates C code for a function to send a reply for the method @method
+ * on @interface by marshalling the arguments.
  *
- * The prototype of the function is given as a TypeFunc object appended to
- * the @prototypes list, with the name as @name itself.
+ * The prototype of the returned function is returned as a TypeFunc object
+ * appended to the @prototypes list.
+ *
+ * The name of the returned function will be generated using information
+ * in @interface and @method, prefixed with @prefix.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -949,11 +971,13 @@ method_object_function (const void *parent,
  **/
 char *
 method_reply_function (const void *parent,
+		       const char *prefix,
+		       Interface * interface,
 		       Method *    method,
-		       const char *name,
 		       NihList *   prototypes)
 {
 	NihList             locals;
+	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
 	NihListEntry *      attrib;
@@ -965,8 +989,9 @@ method_reply_function (const void *parent,
 	nih_local char *    body = NULL;
 	char *              code = NULL;
 
+	nih_assert (prefix != NULL);
+	nih_assert (interface != NULL);
 	nih_assert (method != NULL);
-	nih_assert (name != NULL);
 	nih_assert (prototypes != NULL);
 
 	nih_list_init (&locals);
@@ -976,6 +1001,11 @@ method_reply_function (const void *parent,
 	 * occurred, so we want if the result isn't used; but like the
 	 * method handler, we don't care about marshalling.
 	 */
+	name = symbol_extern (NULL, prefix, interface->symbol, NULL,
+			      method->symbol, "reply");
+	if (! name)
+		return NULL;
+
 	func = type_func_new (NULL, "int", name);
 	if (! func)
 		return NULL;
@@ -1160,25 +1190,28 @@ method_reply_function (const void *parent,
 /**
  * method_proxy_function:
  * @parent: parent object for new string.
- * @interface_name: name of interface,
+ * @prefix: prefix for function name,
+ * @interface: interface of @method,
  * @method: method to generate function for,
- * @name: name of function to generate,
- * @notify_name: name of notification function to call,
- * @handler_type: typedef for handler function,
  * @prototypes: list to append function prototypes to.
  *
- * Generates C code for a function @name to make an asynchronous method
- * call for the method @method by marshalling the arguments.  The interface
- * name of the method must be supplied in @interface_name and the notify
- * function to be called when the call completes given as @notify_name.
+ * Generates C code for a function to make an asynchronous method call for
+ * the method @method on interface @interface by marshalling the arguments,
+ * calling a notify function when the method call completes.
+ *
+ * The prototype of the returned function is returned as a TypeFunc object
+ * appended to the @prototypes list.
+ *
+ * The prototype for the notify function is returned as a TypeFunc object
+ * added to the @handlers list.
+ *
+ * The names of both the returned function and notify function prototype
+ * will be generated using information in @interface and @method, prefixed
+ * with @prefix.
  *
  * The notify function will call a handler function passed in if the
- * reply is valid, the typedef name for this handler must be passed as
- * @handler_type.  The actual type for this can be obtained from
+ * reply is valid.  The name and type for this can be obtained from
  * method_proxy_notify_function().
- *
- * The prototype of the function is given as a TypeFunc object appended to
- * the @prototypes list, with the name as @name itself.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -1189,14 +1222,13 @@ method_reply_function (const void *parent,
  **/
 char *
 method_proxy_function (const void *parent,
-		       const char *interface_name,
+		       const char *prefix,
+		       Interface * interface,
 		       Method *    method,
-		       const char *name,
-		       const char *notify_name,
-		       const char *handler_type,
 		       NihList *   prototypes)
 {
 	NihList             locals;
+	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
 	NihListEntry *      attrib;
@@ -1207,14 +1239,14 @@ method_proxy_function (const void *parent,
 	nih_local TypeVar * data_var = NULL;
 	nih_local char *    marshal_block = NULL;
 	nih_local char *    vars_block = NULL;
+	nih_local char *    handler_type = NULL;
+	nih_local char *    notify_name = NULL;
 	nih_local char *    body = NULL;
 	char *              code = NULL;
 
-	nih_assert (interface_name != NULL);
+	nih_assert (prefix != NULL);
+	nih_assert (interface != NULL);
 	nih_assert (method != NULL);
-	nih_assert (name != NULL);
-	nih_assert (notify_name != NULL);
-	nih_assert (handler_type != NULL);
 	nih_assert (prototypes != NULL);
 
 	nih_list_init (&locals);
@@ -1227,6 +1259,11 @@ method_proxy_function (const void *parent,
 	 * Since this is used by the client, we also add a deprecated
 	 * attribute if the method is deprecated.
 	 */
+	name = symbol_extern (NULL, prefix, interface->symbol, NULL,
+			      method->symbol, NULL);
+	if (! name)
+		return NULL;
+
 	func = type_func_new (NULL, "DBusPendingCall *", name);
 	if (! func)
 		return NULL;
@@ -1306,7 +1343,7 @@ method_proxy_function (const void *parent,
 				  "\n"
 				  "dbus_message_iter_init_append (method_call, &iter);\n"
 				  "\n",
-				  interface_name, method->name))
+				  interface->name, method->name))
 		return NULL;
 
 	/* FIXME autostart? */
@@ -1388,6 +1425,11 @@ method_proxy_function (const void *parent,
 	 * both must be given - if you make a method call, you have to
 	 * deal with the reply or not expect one at all.
 	 */
+	handler_type = symbol_typedef (NULL, prefix, interface->symbol,
+				       NULL, method->symbol, "Reply");
+	if (! handler_type)
+		return NULL;
+
 	arg = type_var_new (func, handler_type, "handler");
 	if (! arg)
 		return NULL;
@@ -1419,6 +1461,11 @@ method_proxy_function (const void *parent,
 	/* Complete the marshalling block by sending the message and
 	 * establishing the pending call.
 	 */
+	notify_name = symbol_extern (NULL, prefix, interface->symbol, NULL,
+				     method->symbol, "notify");
+	if (! notify_name)
+		return NULL;
+
 	if (! nih_strcat_sprintf (&marshal_block, NULL,
 				  "/* Handle a fire-and-forget message */\n"
 				  "if (! error_handler) {\n"
@@ -1503,25 +1550,27 @@ method_proxy_function (const void *parent,
 /**
  * method_proxy_notify_function:
  * @parent: parent object for new string.
+ * @prefix: prefix for function name,
+ * @interface: interface of @method,
  * @method: method to generate function for,
- * @name: name of function to generate,
- * @handler_type: typedef for handler function,
  * @prototypes: list to append function prototypes to,
  * @typedefs: list to append function pointer typedef definitions to.
  *
- * Generates C code for a function @name to handle the notification of
- * a complete pending call for the method @method by demarshalling the
- * arguments of the attached reply and calling either the handler
- * function or error function.
+ * Generates C code for a function to handle the notification of a
+ * complete pending call for the method @method on @interface by
+ * demarshalling the arguments of the attached reply and calling either
+ * the handler function or error function.
  *
  * The notify function will call a handler function passed in if the
  * reply is valid, the typedef name for this handler must be passed as
  * @handler_type.  The actual type for this can be obtained from the
  * entry added to @typedefs.
  *
- * The prototype of the function is given as a TypeFunc object appended to
- * the @prototypes list, with the name as @name itself.  @typedefs contains
- * a similar TypeFunc object to define the type of the handler function.
+ * The prototype of the returned function is returned as a TypeFunc object
+ * appended to the @prototypes list.
+ *
+ * The typedef for the handler function is returned as a TypeFunc object
+ * added to the @typedefs list.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -1532,13 +1581,14 @@ method_proxy_function (const void *parent,
  **/
 char *
 method_proxy_notify_function (const void *parent,
+			      const char *prefix,
+			      Interface * interface,
 			      Method *    method,
-			      const char *name,
-			      const char *handler_type,
 			      NihList *   prototypes,
 			      NihList *   typedefs)
 {
 	NihList             locals;
+	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
 	nih_local char *    assert_block = NULL;
@@ -1550,14 +1600,15 @@ method_proxy_notify_function (const void *parent,
 	nih_local char *    demarshal_block = NULL;
 	nih_local char *    call_block = NULL;
 	nih_local char *    handler_name = NULL;
+	nih_local char *    handler_type = NULL;
 	nih_local TypeFunc *handler_func = NULL;
 	nih_local char *    vars_block = NULL;
 	nih_local char *    body = NULL;
 	char *              code = NULL;
 
+	nih_assert (prefix != NULL);
+	nih_assert (interface != NULL);
 	nih_assert (method != NULL);
-	nih_assert (name != NULL);
-	nih_assert (handler_type != NULL);
 	nih_assert (prototypes != NULL);
 	nih_assert (typedefs != NULL);
 
@@ -1568,6 +1619,11 @@ method_proxy_notify_function (const void *parent,
 	 * since it's used internally, it's enough to mark the method
 	 * call function deprecated.
 	 */
+	name = symbol_extern (NULL, prefix, interface->symbol, NULL,
+			      method->symbol, "notify");
+	if (! name)
+		return NULL;
+
 	func = type_func_new (NULL, "void", name);
 	if (! func)
 		return NULL;
@@ -1675,6 +1731,11 @@ method_proxy_notify_function (const void *parent,
 	/* Begin the handler calling block, the handler is not permitted
 	 * to reply.
 	 */
+	handler_type = symbol_typedef (NULL, prefix, interface->symbol,
+				       NULL, method->symbol, "Reply");
+	if (! handler_type)
+		return NULL;
+
 	if (! nih_strcat_sprintf (&call_block, NULL,
 				  "/* Call the handler function */\n"
 				  "if (pending_data->handler) {\n"
@@ -1889,17 +1950,17 @@ method_proxy_notify_function (const void *parent,
 /**
  * method_proxy_sync_function:
  * @parent: parent object for new string.
- * @interface_name: name of interface,
+ * @prefix: prefix for function name,
+ * @interface: interface of @method,
  * @method: method to generate function for,
- * @name: name of function to generate,
  * @prototypes: list to append function prototypes to.
  *
- * Generates C code for a function @name to make a synchronous method
- * call for the method @method by marshalling the arguments.  The interface
- * name of the method must be supplied in @interface_name.
+ * Generates C code for a function to make a synchronous method call for
+ * the method @method on @interface by marshalling the arguments, wiating
+ * for the reply, then demarshalling the reply arguments.
  *
- * The prototype of the function is given as a TypeFunc object appended to
- * the @prototypes list, with the name as @name itself.
+ * The prototype of the returned function is returned as a TypeFunc object
+ * appended to the @prototypes list.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -1910,12 +1971,13 @@ method_proxy_notify_function (const void *parent,
  **/
 char *
 method_proxy_sync_function (const void *parent,
-			    const char *interface_name,
+			    const char *prefix,
+			    Interface * interface,
 			    Method *    method,
-			    const char *name,
 			    NihList *   prototypes)
 {
 	NihList             locals;
+	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
 	NihListEntry *      attrib;
@@ -1931,9 +1993,9 @@ method_proxy_sync_function (const void *parent,
 	nih_local char *    body = NULL;
 	char *              code = NULL;
 
-	nih_assert (interface_name != NULL);
+	nih_assert (prefix != NULL);
+	nih_assert (interface != NULL);
 	nih_assert (method != NULL);
-	nih_assert (name != NULL);
 	nih_assert (prototypes != NULL);
 
 	nih_list_init (&locals);
@@ -1945,6 +2007,11 @@ method_proxy_sync_function (const void *parent,
 	 * isn't used.  Since this is used by the client, we also add a
 	 * deprecated attribute if the method is deprecated.
 	 */
+	name = symbol_extern (NULL, prefix, interface->symbol, NULL,
+			      method->symbol, "sync");
+	if (! name)
+		return NULL;
+
 	func = type_func_new (NULL, "int", name);
 	if (! func)
 		return NULL;
@@ -2028,7 +2095,7 @@ method_proxy_sync_function (const void *parent,
 				  "\n"
 				  "dbus_message_iter_init_append (method_call, &iter);\n"
 				  "\n",
-				  interface_name, method->name))
+				  interface->name, method->name))
 		return NULL;
 
 	/* FIXME autostart? */

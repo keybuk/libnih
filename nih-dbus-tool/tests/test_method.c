@@ -1209,16 +1209,16 @@ test_lookup_argument (void)
 }
 
 
-static int my_method_handler_called = 0;
+static int my_method_called = 0;
 
 int
-my_method_handler (void *          data,
-		   NihDBusMessage *message,
-		   const char *    str,
-		   int32_t         flags,
-		   char ***        output)
+my_method (void *          data,
+	   NihDBusMessage *message,
+	   const char *    str,
+	   int32_t         flags,
+	   char ***        output)
 {
-	my_method_handler_called++;
+	my_method_called++;
 
 	TEST_EQ_P (data, NULL);
 
@@ -1239,8 +1239,8 @@ my_method_handler (void *          data,
 
 		break;
 	case 1:
-		nih_dbus_error_raise ("com.netsplit.Nih.MyMethod.Fail",
-				      "MyMethod failed");
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Method.Fail",
+				      "Method failed");
 		return -1;
 	case 2:
 		nih_error_raise (EBADF, strerror (EBADF));
@@ -1250,15 +1250,15 @@ my_method_handler (void *          data,
 	return 0;
 }
 
-static int my_async_method_handler_called = 0;
+static int my_async_method_called = 0;
 
 int
-my_async_method_handler (void *          data,
-			 NihDBusMessage *message,
-			 const char *    str,
-			 int32_t         flags)
+my_async_method (void *          data,
+		 NihDBusMessage *message,
+		 const char *    str,
+		 int32_t         flags)
 {
-	my_async_method_handler_called++;
+	my_async_method_called++;
 
 	TEST_EQ_P (data, NULL);
 
@@ -1273,8 +1273,8 @@ my_async_method_handler (void *          data,
 	case 0:
 		break;
 	case 1:
-		nih_dbus_error_raise ("com.netsplit.Nih.MyAsyncMethod.Fail",
-				      "MyMethod failed");
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.AsyncMethod.Fail",
+				      "Method failed");
 		return -1;
 	case 2:
 		nih_error_raise (EBADF, strerror (EBADF));
@@ -1292,6 +1292,7 @@ test_object_function (void)
 	DBusConnection *  client_conn;
 	NihList           prototypes;
 	NihList           handlers;
+	Interface *       interface = NULL;
 	Method *          method = NULL;
 	Argument *        argument1 = NULL;
 	Argument *        argument2 = NULL;
@@ -1331,8 +1332,11 @@ test_object_function (void)
 		nih_list_init (&handlers);
 
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyMethod");
-			method->symbol = nih_strdup (method, "my_method");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			method = method_new (NULL, "Method");
+			method->symbol = nih_strdup (method, "method");
 
 			argument1 = argument_new (method, "Str",
 						  "s", NIH_DBUS_ARG_IN);
@@ -1350,9 +1354,7 @@ test_object_function (void)
 			nih_list_add (&method->arguments, &argument3->entry);
 		}
 
-		str = method_object_function (NULL, method,
-					      "MyMethod_handle",
-					      "my_method_handler",
+		str = method_object_function (NULL, "my", interface, method,
 					      &prototypes, &handlers);
 
 		if (test_alloc_failed) {
@@ -1362,12 +1364,13 @@ test_object_function (void)
 			TEST_LIST_EMPTY (&handlers);
 
 			nih_free (method);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("DBusHandlerResult\n"
-				   "MyMethod_handle (NihDBusObject * object,\n"
-				   "                 NihDBusMessage *message)\n"
+				   "my_com_netsplit_Nih_Test_Method_method (NihDBusObject * object,\n"
+				   "                                        NihDBusMessage *message)\n"
 				   "{\n"
 				   "\tDBusMessageIter iter;\n"
 				   "\tDBusMessage *   reply;\n"
@@ -1388,7 +1391,7 @@ test_object_function (void)
 				   "\t/* Demarshal a char * from the message */\n"
 				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING) {\n"
 				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to MyMethod method\"));\n"
+				   "\t\t                                _(\"Invalid arguments to Method method\"));\n"
 				   "\t\tif (! reply)\n"
 				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
 				   "\n"
@@ -1413,7 +1416,7 @@ test_object_function (void)
 				   "\t/* Demarshal a int32_t from the message */\n"
 				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INT32) {\n"
 				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to MyMethod method\"));\n"
+				   "\t\t                                _(\"Invalid arguments to Method method\"));\n"
 				   "\t\tif (! reply)\n"
 				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
 				   "\n"
@@ -1432,7 +1435,7 @@ test_object_function (void)
 				   "\n"
 				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
 				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to MyMethod method\"));\n"
+				   "\t\t                                _(\"Invalid arguments to Method method\"));\n"
 				   "\t\tif (! reply)\n"
 				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
 				   "\n"
@@ -1447,7 +1450,7 @@ test_object_function (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\tif (my_method_handler (object->data, message, str, flags, &output) < 0) {\n"
+				   "\tif (my_method (object->data, message, str, flags, &output) < 0) {\n"
 				   "\t\tNihError *err;\n"
 				   "\n"
 				   "\t\terr = nih_error_get ();\n"
@@ -1540,7 +1543,7 @@ test_object_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "DBusHandlerResult");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "MyMethod_handle");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Method_method");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -1580,7 +1583,7 @@ test_object_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_method_handler");
+		TEST_EQ_STR (func->name, "my_method");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -1656,6 +1659,7 @@ test_object_function (void)
 
 		nih_free (str);
 		nih_free (method);
+		nih_free (interface);
 	}
 
 
@@ -1668,8 +1672,11 @@ test_object_function (void)
 		nih_list_init (&handlers);
 
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyMethod");
-			method->symbol = nih_strdup (method, "my_method");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			method = method_new (NULL, "Method");
+			method->symbol = nih_strdup (method, "method");
 
 			argument1 = argument_new (method, "Output",
 						  "as", NIH_DBUS_ARG_OUT);
@@ -1677,9 +1684,7 @@ test_object_function (void)
 			nih_list_add (&method->arguments, &argument1->entry);
 		}
 
-		str = method_object_function (NULL, method,
-					      "MyMethod_handle",
-					      "my_method_handler",
+		str = method_object_function (NULL, "my", interface, method,
 					      &prototypes, &handlers);
 
 		if (test_alloc_failed) {
@@ -1689,12 +1694,13 @@ test_object_function (void)
 			TEST_LIST_EMPTY (&handlers);
 
 			nih_free (method);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("DBusHandlerResult\n"
-				   "MyMethod_handle (NihDBusObject * object,\n"
-				   "                 NihDBusMessage *message)\n"
+				   "my_com_netsplit_Nih_Test_Method_method (NihDBusObject * object,\n"
+				   "                                        NihDBusMessage *message)\n"
 				   "{\n"
 				   "\tDBusMessageIter iter;\n"
 				   "\tDBusMessage *   reply;\n"
@@ -1711,7 +1717,7 @@ test_object_function (void)
 				   "\n"
 				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
 				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to MyMethod method\"));\n"
+				   "\t\t                                _(\"Invalid arguments to Method method\"));\n"
 				   "\t\tif (! reply)\n"
 				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
 				   "\n"
@@ -1726,7 +1732,7 @@ test_object_function (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\tif (my_method_handler (object->data, message, &output) < 0) {\n"
+				   "\tif (my_method (object->data, message, &output) < 0) {\n"
 				   "\t\tNihError *err;\n"
 				   "\n"
 				   "\t\terr = nih_error_get ();\n"
@@ -1819,7 +1825,7 @@ test_object_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "DBusHandlerResult");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "MyMethod_handle");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Method_method");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -1859,7 +1865,7 @@ test_object_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_method_handler");
+		TEST_EQ_STR (func->name, "my_method");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -1913,6 +1919,7 @@ test_object_function (void)
 
 		nih_free (str);
 		nih_free (method);
+		nih_free (interface);
 	}
 
 
@@ -1925,8 +1932,11 @@ test_object_function (void)
 		nih_list_init (&handlers);
 
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyMethod");
-			method->symbol = nih_strdup (method, "my_method");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			method = method_new (NULL, "Method");
+			method->symbol = nih_strdup (method, "method");
 
 			argument1 = argument_new (method, "Str",
 						  "s", NIH_DBUS_ARG_IN);
@@ -1939,9 +1949,7 @@ test_object_function (void)
 			nih_list_add (&method->arguments, &argument2->entry);
 		}
 
-		str = method_object_function (NULL, method,
-					      "MyMethod_handle",
-					      "my_method_handler",
+		str = method_object_function (NULL, "my", interface, method,
 					      &prototypes, &handlers);
 
 		if (test_alloc_failed) {
@@ -1951,12 +1959,13 @@ test_object_function (void)
 			TEST_LIST_EMPTY (&handlers);
 
 			nih_free (method);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("DBusHandlerResult\n"
-				   "MyMethod_handle (NihDBusObject * object,\n"
-				   "                 NihDBusMessage *message)\n"
+				   "my_com_netsplit_Nih_Test_Method_method (NihDBusObject * object,\n"
+				   "                                        NihDBusMessage *message)\n"
 				   "{\n"
 				   "\tDBusMessageIter iter;\n"
 				   "\tDBusMessage *   reply;\n"
@@ -1975,7 +1984,7 @@ test_object_function (void)
 				   "\t/* Demarshal a char * from the message */\n"
 				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING) {\n"
 				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to MyMethod method\"));\n"
+				   "\t\t                                _(\"Invalid arguments to Method method\"));\n"
 				   "\t\tif (! reply)\n"
 				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
 				   "\n"
@@ -2000,7 +2009,7 @@ test_object_function (void)
 				   "\t/* Demarshal a int32_t from the message */\n"
 				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INT32) {\n"
 				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to MyMethod method\"));\n"
+				   "\t\t                                _(\"Invalid arguments to Method method\"));\n"
 				   "\t\tif (! reply)\n"
 				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
 				   "\n"
@@ -2019,7 +2028,7 @@ test_object_function (void)
 				   "\n"
 				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
 				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to MyMethod method\"));\n"
+				   "\t\t                                _(\"Invalid arguments to Method method\"));\n"
 				   "\t\tif (! reply)\n"
 				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
 				   "\n"
@@ -2034,7 +2043,7 @@ test_object_function (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\tif (my_method_handler (object->data, message, str, flags) < 0) {\n"
+				   "\tif (my_method (object->data, message, str, flags) < 0) {\n"
 				   "\t\tNihError *err;\n"
 				   "\n"
 				   "\t\terr = nih_error_get ();\n"
@@ -2100,7 +2109,7 @@ test_object_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "DBusHandlerResult");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "MyMethod_handle");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Method_method");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -2140,7 +2149,7 @@ test_object_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_method_handler");
+		TEST_EQ_STR (func->name, "my_method");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -2205,6 +2214,7 @@ test_object_function (void)
 
 		nih_free (str);
 		nih_free (method);
+		nih_free (interface);
 	}
 
 
@@ -2217,13 +2227,14 @@ test_object_function (void)
 		nih_list_init (&handlers);
 
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyMethod");
-			method->symbol = nih_strdup (method, "my_method");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			method = method_new (NULL, "Method");
+			method->symbol = nih_strdup (method, "method");
 		}
 
-		str = method_object_function (NULL, method,
-					      "MyMethod_handle",
-					      "my_method_handler",
+		str = method_object_function (NULL, "my", interface, method,
 					      &prototypes, &handlers);
 
 		if (test_alloc_failed) {
@@ -2233,12 +2244,13 @@ test_object_function (void)
 			TEST_LIST_EMPTY (&handlers);
 
 			nih_free (method);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("DBusHandlerResult\n"
-				   "MyMethod_handle (NihDBusObject * object,\n"
-				   "                 NihDBusMessage *message)\n"
+				   "my_com_netsplit_Nih_Test_Method_method (NihDBusObject * object,\n"
+				   "                                        NihDBusMessage *message)\n"
 				   "{\n"
 				   "\tDBusMessageIter iter;\n"
 				   "\tDBusMessage *   reply;\n"
@@ -2253,7 +2265,7 @@ test_object_function (void)
 				   "\n"
 				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
 				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to MyMethod method\"));\n"
+				   "\t\t                                _(\"Invalid arguments to Method method\"));\n"
 				   "\t\tif (! reply)\n"
 				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
 				   "\n"
@@ -2268,7 +2280,7 @@ test_object_function (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\tif (my_method_handler (object->data, message) < 0) {\n"
+				   "\tif (my_method (object->data, message) < 0) {\n"
 				   "\t\tNihError *err;\n"
 				   "\n"
 				   "\t\terr = nih_error_get ();\n"
@@ -2334,7 +2346,7 @@ test_object_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "DBusHandlerResult");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "MyMethod_handle");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Method_method");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -2374,7 +2386,7 @@ test_object_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_method_handler");
+		TEST_EQ_STR (func->name, "my_method");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -2417,6 +2429,7 @@ test_object_function (void)
 
 		nih_free (str);
 		nih_free (method);
+		nih_free (interface);
 	}
 
 
@@ -2429,8 +2442,8 @@ test_object_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyMethod");
+			"com.netsplit.Nih.Test",
+			"Method");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
@@ -2462,9 +2475,9 @@ test_object_function (void)
 			object->registered = TRUE;
 		}
 
-		my_method_handler_called = 0;
+		my_method_called = 0;
 
-		result = MyMethod_handle (object, message);
+		result = my_com_netsplit_Nih_Test_Method_method (object, message);
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
@@ -2474,7 +2487,7 @@ test_object_function (void)
 			continue;
 		}
 
-		TEST_TRUE (my_method_handler_called);
+		TEST_TRUE (my_method_called);
 		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
 		TEST_DBUS_MESSAGE (server_conn, reply);
@@ -2547,8 +2560,8 @@ test_object_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyMethod");
+			"com.netsplit.Nih.Test",
+			"Method");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
@@ -2582,9 +2595,9 @@ test_object_function (void)
 			object->registered = TRUE;
 		}
 
-		my_method_handler_called = 0;
+		my_method_called = 0;
 
-		result = MyMethod_handle (object, message);
+		result = my_com_netsplit_Nih_Test_Method_method (object, message);
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
@@ -2594,13 +2607,13 @@ test_object_function (void)
 			continue;
 		}
 
-		TEST_TRUE (my_method_handler_called);
+		TEST_TRUE (my_method_called);
 		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
 		next_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (server_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
+			"com.netsplit.Nih.Test",
 			"NextMethod");
 
 		dbus_connection_send (server_conn, next_call, &next_serial);
@@ -2627,8 +2640,8 @@ test_object_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyMethod");
+			"com.netsplit.Nih.Test",
+			"Method");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
@@ -2660,9 +2673,9 @@ test_object_function (void)
 			object->registered = TRUE;
 		}
 
-		my_method_handler_called = 0;
+		my_method_called = 0;
 
-		result = MyMethod_handle (object, message);
+		result = my_com_netsplit_Nih_Test_Method_method (object, message);
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
@@ -2672,7 +2685,7 @@ test_object_function (void)
 			continue;
 		}
 
-		TEST_TRUE (my_method_handler_called);
+		TEST_TRUE (my_method_called);
 		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
 		TEST_DBUS_MESSAGE (server_conn, reply);
@@ -2681,7 +2694,7 @@ test_object_function (void)
 		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
 		TEST_EQ_STR (dbus_message_get_error_name (reply),
-			     "com.netsplit.Nih.MyMethod.Fail");
+			     "com.netsplit.Nih.Test.Method.Fail");
 
 		nih_free (object);
 		nih_free (message);
@@ -2699,8 +2712,8 @@ test_object_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyMethod");
+			"com.netsplit.Nih.Test",
+			"Method");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
@@ -2732,9 +2745,9 @@ test_object_function (void)
 			object->registered = TRUE;
 		}
 
-		my_method_handler_called = 0;
+		my_method_called = 0;
 
-		result = MyMethod_handle (object, message);
+		result = my_com_netsplit_Nih_Test_Method_method (object, message);
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
@@ -2744,7 +2757,7 @@ test_object_function (void)
 			continue;
 		}
 
-		TEST_TRUE (my_method_handler_called);
+		TEST_TRUE (my_method_called);
 		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
 		TEST_DBUS_MESSAGE (server_conn, reply);
@@ -2777,8 +2790,8 @@ test_object_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyMethod");
+			"com.netsplit.Nih.Test",
+			"Method");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
@@ -2806,9 +2819,9 @@ test_object_function (void)
 			object->registered = TRUE;
 		}
 
-		my_method_handler_called = 0;
+		my_method_called = 0;
 
-		result = MyMethod_handle (object, message);
+		result = my_com_netsplit_Nih_Test_Method_method (object, message);
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
@@ -2818,7 +2831,7 @@ test_object_function (void)
 			continue;
 		}
 
-		TEST_FALSE (my_method_handler_called);
+		TEST_FALSE (my_method_called);
 		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
 		TEST_DBUS_MESSAGE (server_conn, reply);
@@ -2844,8 +2857,8 @@ test_object_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyMethod");
+			"com.netsplit.Nih.Test",
+			"Method");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
@@ -2873,9 +2886,9 @@ test_object_function (void)
 			object->registered = TRUE;
 		}
 
-		my_method_handler_called = 0;
+		my_method_called = 0;
 
-		result = MyMethod_handle (object, message);
+		result = my_com_netsplit_Nih_Test_Method_method (object, message);
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
@@ -2885,7 +2898,7 @@ test_object_function (void)
 			continue;
 		}
 
-		TEST_FALSE (my_method_handler_called);
+		TEST_FALSE (my_method_called);
 		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
 		TEST_DBUS_MESSAGE (server_conn, reply);
@@ -2911,8 +2924,8 @@ test_object_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyMethod");
+			"com.netsplit.Nih.Test",
+			"Method");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
@@ -2948,9 +2961,9 @@ test_object_function (void)
 			object->registered = TRUE;
 		}
 
-		my_method_handler_called = 0;
+		my_method_called = 0;
 
-		result = MyMethod_handle (object, message);
+		result = my_com_netsplit_Nih_Test_Method_method (object, message);
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
@@ -2960,7 +2973,7 @@ test_object_function (void)
 			continue;
 		}
 
-		TEST_FALSE (my_method_handler_called);
+		TEST_FALSE (my_method_called);
 		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
 		TEST_DBUS_MESSAGE (server_conn, reply);
@@ -2989,8 +3002,11 @@ test_object_function (void)
 		nih_list_init (&handlers);
 
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyAsyncMethod");
-			method->symbol = nih_strdup (method, "my_async_method");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			method = method_new (NULL, "AsyncMethod");
+			method->symbol = nih_strdup (method, "async_method");
 			method->async = TRUE;
 
 			argument1 = argument_new (method, "Str",
@@ -3009,9 +3025,7 @@ test_object_function (void)
 			nih_list_add (&method->arguments, &argument3->entry);
 		}
 
-		str = method_object_function (NULL, method,
-					      "MyAsyncMethod_handle",
-					      "my_async_method_handler",
+		str = method_object_function (NULL, "my", interface, method,
 					      &prototypes, &handlers);
 
 		if (test_alloc_failed) {
@@ -3021,12 +3035,13 @@ test_object_function (void)
 			TEST_LIST_EMPTY (&handlers);
 
 			nih_free (method);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("DBusHandlerResult\n"
-				   "MyAsyncMethod_handle (NihDBusObject * object,\n"
-				   "                      NihDBusMessage *message)\n"
+				   "my_com_netsplit_Nih_Test_AsyncMethod_method (NihDBusObject * object,\n"
+				   "                                             NihDBusMessage *message)\n"
 				   "{\n"
 				   "\tDBusMessageIter iter;\n"
 				   "\tDBusMessage *   reply;\n"
@@ -3045,7 +3060,7 @@ test_object_function (void)
 				   "\t/* Demarshal a char * from the message */\n"
 				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING) {\n"
 				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to MyAsyncMethod method\"));\n"
+				   "\t\t                                _(\"Invalid arguments to AsyncMethod method\"));\n"
 				   "\t\tif (! reply)\n"
 				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
 				   "\n"
@@ -3070,7 +3085,7 @@ test_object_function (void)
 				   "\t/* Demarshal a int32_t from the message */\n"
 				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INT32) {\n"
 				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to MyAsyncMethod method\"));\n"
+				   "\t\t                                _(\"Invalid arguments to AsyncMethod method\"));\n"
 				   "\t\tif (! reply)\n"
 				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
 				   "\n"
@@ -3089,7 +3104,7 @@ test_object_function (void)
 				   "\n"
 				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
 				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to MyAsyncMethod method\"));\n"
+				   "\t\t                                _(\"Invalid arguments to AsyncMethod method\"));\n"
 				   "\t\tif (! reply)\n"
 				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
 				   "\n"
@@ -3104,7 +3119,7 @@ test_object_function (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\tif (my_async_method_handler (object->data, message, str, flags) < 0) {\n"
+				   "\tif (my_async_method (object->data, message, str, flags) < 0) {\n"
 				   "\t\tNihError *err;\n"
 				   "\n"
 				   "\t\terr = nih_error_get ();\n"
@@ -3147,7 +3162,7 @@ test_object_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "DBusHandlerResult");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "MyAsyncMethod_handle");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_AsyncMethod_method");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -3187,7 +3202,7 @@ test_object_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_async_method_handler");
+		TEST_EQ_STR (func->name, "my_async_method");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -3252,6 +3267,7 @@ test_object_function (void)
 
 		nih_free (str);
 		nih_free (method);
+		nih_free (interface);
 	}
 
 
@@ -3263,8 +3279,8 @@ test_object_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyAsyncMethod");
+			"com.netsplit.Nih.Test",
+			"AsyncMethod");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
@@ -3296,9 +3312,9 @@ test_object_function (void)
 			object->registered = TRUE;
 		}
 
-		my_async_method_handler_called = 0;
+		my_async_method_called = 0;
 
-		result = MyAsyncMethod_handle (object, message);
+		result = my_com_netsplit_Nih_Test_AsyncMethod_method (object, message);
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
@@ -3308,7 +3324,7 @@ test_object_function (void)
 			continue;
 		}
 
-		TEST_TRUE (my_async_method_handler_called);
+		TEST_TRUE (my_async_method_called);
 		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
 		nih_free (object);
@@ -3325,8 +3341,8 @@ test_object_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyAsyncMethod");
+			"com.netsplit.Nih.Test",
+			"AsyncMethod");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
@@ -3360,9 +3376,9 @@ test_object_function (void)
 			object->registered = TRUE;
 		}
 
-		my_async_method_handler_called = 0;
+		my_async_method_called = 0;
 
-		result = MyAsyncMethod_handle (object, message);
+		result = my_com_netsplit_Nih_Test_AsyncMethod_method (object, message);
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
@@ -3372,7 +3388,7 @@ test_object_function (void)
 			continue;
 		}
 
-		TEST_TRUE (my_async_method_handler_called);
+		TEST_TRUE (my_async_method_called);
 		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
 		nih_free (object);
@@ -3390,8 +3406,8 @@ test_object_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyAsyncMethod");
+			"com.netsplit.Nih.Test",
+			"AsyncMethod");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
@@ -3423,9 +3439,9 @@ test_object_function (void)
 			object->registered = TRUE;
 		}
 
-		my_async_method_handler_called = 0;
+		my_async_method_called = 0;
 
-		result = MyAsyncMethod_handle (object, message);
+		result = my_com_netsplit_Nih_Test_AsyncMethod_method (object, message);
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
@@ -3435,7 +3451,7 @@ test_object_function (void)
 			continue;
 		}
 
-		TEST_TRUE (my_async_method_handler_called);
+		TEST_TRUE (my_async_method_called);
 		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
 		TEST_DBUS_MESSAGE (server_conn, reply);
@@ -3444,7 +3460,7 @@ test_object_function (void)
 		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
 		TEST_EQ_STR (dbus_message_get_error_name (reply),
-			     "com.netsplit.Nih.MyAsyncMethod.Fail");
+			     "com.netsplit.Nih.Test.AsyncMethod.Fail");
 
 		nih_free (object);
 		nih_free (message);
@@ -3462,8 +3478,8 @@ test_object_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyAsyncMethod");
+			"com.netsplit.Nih.Test",
+			"AsyncMethod");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
@@ -3495,9 +3511,9 @@ test_object_function (void)
 			object->registered = TRUE;
 		}
 
-		my_async_method_handler_called = 0;
+		my_async_method_called = 0;
 
-		result = MyAsyncMethod_handle (object, message);
+		result = my_com_netsplit_Nih_Test_AsyncMethod_method (object, message);
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
@@ -3507,7 +3523,7 @@ test_object_function (void)
 			continue;
 		}
 
-		TEST_TRUE (my_async_method_handler_called);
+		TEST_TRUE (my_async_method_called);
 		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
 		TEST_DBUS_MESSAGE (server_conn, reply);
@@ -3541,8 +3557,8 @@ test_object_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyAsyncMethod");
+			"com.netsplit.Nih.Test",
+			"AsyncMethod");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
@@ -3570,9 +3586,9 @@ test_object_function (void)
 			object->registered = TRUE;
 		}
 
-		my_async_method_handler_called = 0;
+		my_async_method_called = 0;
 
-		result = MyAsyncMethod_handle (object, message);
+		result = my_com_netsplit_Nih_Test_AsyncMethod_method (object, message);
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
@@ -3582,7 +3598,7 @@ test_object_function (void)
 			continue;
 		}
 
-		TEST_FALSE (my_async_method_handler_called);
+		TEST_FALSE (my_async_method_called);
 		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
 		TEST_DBUS_MESSAGE (server_conn, reply);
@@ -3609,8 +3625,8 @@ test_object_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyAsyncMethod");
+			"com.netsplit.Nih.Test",
+			"AsyncMethod");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
@@ -3638,9 +3654,9 @@ test_object_function (void)
 			object->registered = TRUE;
 		}
 
-		my_async_method_handler_called = 0;
+		my_async_method_called = 0;
 
-		result = MyAsyncMethod_handle (object, message);
+		result = my_com_netsplit_Nih_Test_AsyncMethod_method (object, message);
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
@@ -3650,7 +3666,7 @@ test_object_function (void)
 			continue;
 		}
 
-		TEST_FALSE (my_async_method_handler_called);
+		TEST_FALSE (my_async_method_called);
 		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
 		TEST_DBUS_MESSAGE (server_conn, reply);
@@ -3677,8 +3693,8 @@ test_object_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyAsyncMethod");
+			"com.netsplit.Nih.Test",
+			"AsyncMethod");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
@@ -3714,9 +3730,9 @@ test_object_function (void)
 			object->registered = TRUE;
 		}
 
-		my_async_method_handler_called = 0;
+		my_async_method_called = 0;
 
-		result = MyAsyncMethod_handle (object, message);
+		result = my_com_netsplit_Nih_Test_AsyncMethod_method (object, message);
 
 		if (test_alloc_failed
 		    && (result == DBUS_HANDLER_RESULT_NEED_MEMORY)) {
@@ -3726,7 +3742,7 @@ test_object_function (void)
 			continue;
 		}
 
-		TEST_FALSE (my_async_method_handler_called);
+		TEST_FALSE (my_async_method_called);
 		TEST_EQ (result, DBUS_HANDLER_RESULT_HANDLED);
 
 		TEST_DBUS_MESSAGE (server_conn, reply);
@@ -3755,8 +3771,11 @@ test_object_function (void)
 		nih_list_init (&handlers);
 
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyMethod");
-			method->symbol = nih_strdup (method, "my_method");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			method = method_new (NULL, "Method");
+			method->symbol = nih_strdup (method, "method");
 			method->deprecated = TRUE;
 
 			argument1 = argument_new (method, "Str",
@@ -3765,9 +3784,7 @@ test_object_function (void)
 			nih_list_add (&method->arguments, &argument1->entry);
 		}
 
-		str = method_object_function (NULL, method,
-					      "MyMethod_handle",
-					      "my_method_handler",
+		str = method_object_function (NULL, "my", interface, method,
 					      &prototypes, &handlers);
 
 		if (test_alloc_failed) {
@@ -3777,12 +3794,13 @@ test_object_function (void)
 			TEST_LIST_EMPTY (&handlers);
 
 			nih_free (method);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("DBusHandlerResult\n"
-				   "MyMethod_handle (NihDBusObject * object,\n"
-				   "                 NihDBusMessage *message)\n"
+				   "my_com_netsplit_Nih_Test_Method_method (NihDBusObject * object,\n"
+				   "                                        NihDBusMessage *message)\n"
 				   "{\n"
 				   "\tDBusMessageIter iter;\n"
 				   "\tDBusMessage *   reply;\n"
@@ -3800,7 +3818,7 @@ test_object_function (void)
 				   "\t/* Demarshal a char * from the message */\n"
 				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING) {\n"
 				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to MyMethod method\"));\n"
+				   "\t\t                                _(\"Invalid arguments to Method method\"));\n"
 				   "\t\tif (! reply)\n"
 				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
 				   "\n"
@@ -3824,7 +3842,7 @@ test_object_function (void)
 				   "\n"
 				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
 				   "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                                _(\"Invalid arguments to MyMethod method\"));\n"
+				   "\t\t                                _(\"Invalid arguments to Method method\"));\n"
 				   "\t\tif (! reply)\n"
 				   "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
 				   "\n"
@@ -3839,7 +3857,7 @@ test_object_function (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\tif (my_method_handler (object->data, message, str) < 0) {\n"
+				   "\tif (my_method (object->data, message, str) < 0) {\n"
 				   "\t\tNihError *err;\n"
 				   "\n"
 				   "\t\terr = nih_error_get ();\n"
@@ -3905,7 +3923,7 @@ test_object_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "DBusHandlerResult");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "MyMethod_handle");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Method_method");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -3945,7 +3963,7 @@ test_object_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_method_handler");
+		TEST_EQ_STR (func->name, "my_method");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -3999,6 +4017,7 @@ test_object_function (void)
 
 		nih_free (str);
 		nih_free (method);
+		nih_free (interface);
 	}
 
 
@@ -4017,6 +4036,7 @@ test_reply_function (void)
 	DBusConnection *  server_conn;
 	DBusConnection *  client_conn;
 	NihList           prototypes;
+	Interface *       interface = NULL;
 	Method *          method = NULL;
 	Argument *        argument1 = NULL;
 	Argument *        argument2 = NULL;
@@ -4053,8 +4073,11 @@ test_reply_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyAsyncMethod");
-			method->symbol = nih_strdup (method, "my_async_method");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			method = method_new (NULL, "AsyncMethod");
+			method->symbol = nih_strdup (method, "async_method");
 
 			argument1 = argument_new (method, "Str",
 						  "s", NIH_DBUS_ARG_IN);
@@ -4072,8 +4095,7 @@ test_reply_function (void)
 			nih_list_add (&method->arguments, &argument3->entry);
 		}
 
-		str = method_reply_function (NULL, method,
-					     "my_async_method_reply",
+		str = method_reply_function (NULL, "my", interface, method,
 					     &prototypes);
 
 		if (test_alloc_failed) {
@@ -4082,6 +4104,7 @@ test_reply_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (method);
+			nih_free (interface);
 			continue;
 		}
 
@@ -4194,6 +4217,7 @@ test_reply_function (void)
 
 		nih_free (str);
 		nih_free (method);
+		nih_free (interface);
 	}
 
 
@@ -4205,12 +4229,14 @@ test_reply_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyAsyncMethod");
-			method->symbol = nih_strdup (method, "my_async_method");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			method = method_new (NULL, "AsyncMethod");
+			method->symbol = nih_strdup (method, "async_method");
 		}
 
-		str = method_reply_function (NULL, method,
-					     "my_async_method_reply",
+		str = method_reply_function (NULL, "my", interface, method,
 					     &prototypes);
 
 		if (test_alloc_failed) {
@@ -4219,6 +4245,7 @@ test_reply_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (method);
+			nih_free (interface);
 			continue;
 		}
 
@@ -4293,6 +4320,7 @@ test_reply_function (void)
 
 		nih_free (str);
 		nih_free (method);
+		nih_free (interface);
 	}
 
 
@@ -4304,8 +4332,8 @@ test_reply_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyMethod");
+			"com.netsplit.Nih.Test",
+			"Method");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
@@ -4423,8 +4451,8 @@ test_reply_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyMethod");
+			"com.netsplit.Nih.Test",
+			"Method");
 
 		dbus_message_iter_init_append (method_call, &iter);
 
@@ -4477,7 +4505,7 @@ test_reply_function (void)
 		next_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (server_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
+			"com.netsplit.Nih.Test",
 			"NextMethod");
 
 		dbus_connection_send (server_conn, next_call, &next_serial);
@@ -4506,8 +4534,11 @@ test_reply_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyAsyncMethod");
-			method->symbol = nih_strdup (method, "my_async_method");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			method = method_new (NULL, "AsyncMethod");
+			method->symbol = nih_strdup (method, "async_method");
 			method->deprecated = TRUE;
 
 			argument1 = argument_new (method, "Str",
@@ -4526,8 +4557,7 @@ test_reply_function (void)
 			nih_list_add (&method->arguments, &argument3->entry);
 		}
 
-		str = method_reply_function (NULL, method,
-					     "my_async_method_reply",
+		str = method_reply_function (NULL, "my", interface, method,
 					     &prototypes);
 
 		if (test_alloc_failed) {
@@ -4536,6 +4566,7 @@ test_reply_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (method);
+			nih_free (interface);
 			continue;
 		}
 
@@ -4648,6 +4679,7 @@ test_reply_function (void)
 
 		nih_free (str);
 		nih_free (method);
+		nih_free (interface);
 	}
 
 
@@ -4693,6 +4725,7 @@ test_proxy_function (void)
 	DBusConnection *  server_conn;
 	DBusConnection *  client_conn;
 	NihList           prototypes;
+	Interface *       interface = NULL;
 	Method *          method = NULL;
 	Argument *        argument1 = NULL;
 	Argument *        argument2 = NULL;
@@ -4728,8 +4761,11 @@ test_proxy_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyMethod");
-			method->symbol = nih_strdup (method, "my_method");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			method = method_new (NULL, "TestMethod");
+			method->symbol = nih_strdup (method, "test_method");
 
 			argument1 = argument_new (method, "Str",
 						  "s", NIH_DBUS_ARG_IN);
@@ -4752,12 +4788,7 @@ test_proxy_function (void)
 			nih_list_add (&method->arguments, &argument4->entry);
 		}
 
-		str = method_proxy_function (NULL,
-					     "com.netsplit.Nih.Test",
-					     method,
-					     "my_method",
-					     "my_method_notify",
-					     "MyMethodHandler",
+		str = method_proxy_function (NULL, "my", interface, method,
 					     &prototypes);
 
 		if (test_alloc_failed) {
@@ -4766,17 +4797,18 @@ test_proxy_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (method);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("DBusPendingCall *\n"
-				   "my_method (NihDBusProxy *      proxy,\n"
-				   "           const char *        str,\n"
-				   "           int32_t             flags,\n"
-				   "           MyMethodHandler     handler,\n"
-				   "           NihDBusErrorHandler error_handler,\n"
-				   "           void *              data,\n"
-				   "           int                 timeout)\n"
+				   "my_test_method (NihDBusProxy *      proxy,\n"
+				   "                const char *        str,\n"
+				   "                int32_t             flags,\n"
+				   "                MyTestMethodReply   handler,\n"
+				   "                NihDBusErrorHandler error_handler,\n"
+				   "                void *              data,\n"
+				   "                int                 timeout)\n"
 				   "{\n"
 				   "\tDBusMessage *       method_call;\n"
 				   "\tDBusMessageIter     iter;\n"
@@ -4788,7 +4820,7 @@ test_proxy_function (void)
 				   "\tnih_assert ((handler == NULL) || (error_handler != NULL));\n"
 				   "\n"
 				   "\t/* Construct the method call message. */\n"
-				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"com.netsplit.Nih.Test\", \"MyMethod\");\n"
+				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"com.netsplit.Nih.Test\", \"TestMethod\");\n"
 				   "\tif (! method_call)\n"
 				   "\t\tnih_return_no_memory_error (NULL);\n"
 				   "\n"
@@ -4837,7 +4869,7 @@ test_proxy_function (void)
 				   "\n"
 				   "\tdbus_message_unref (method_call);\n"
 				   "\n"
-				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_method_notify,\n"
+				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_test_method_notify,\n"
 				   "\t                                        pending_data, (DBusFreeFunction)nih_discard));\n"
 				   "\n"
 				   "\treturn pending_call;\n"
@@ -4850,7 +4882,7 @@ test_proxy_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "DBusPendingCall *");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_method");
+		TEST_EQ_STR (func->name, "my_test_method");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -4891,7 +4923,7 @@ test_proxy_function (void)
 		arg = (TypeVar *)func->args.next;
 		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "MyMethodHandler");
+		TEST_EQ_STR (arg->type, "MyTestMethodReply");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "handler");
 		TEST_ALLOC_PARENT (arg->name, arg);
@@ -4946,6 +4978,7 @@ test_proxy_function (void)
 
 		nih_free (str);
 		nih_free (method);
+		nih_free (interface);
 	}
 
 
@@ -4957,16 +4990,14 @@ test_proxy_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyMethod");
-			method->symbol = nih_strdup (method, "my_method");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			method = method_new (NULL, "TestMethod");
+			method->symbol = nih_strdup (method, "test_method");
 		}
 
-		str = method_proxy_function (NULL,
-					     "com.netsplit.Nih.Test",
-					     method,
-					     "my_method",
-					     "my_method_notify",
-					     "MyMethodHandler",
+		str = method_proxy_function (NULL, "my", interface, method,
 					     &prototypes);
 
 		if (test_alloc_failed) {
@@ -4975,15 +5006,16 @@ test_proxy_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (method);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("DBusPendingCall *\n"
-				   "my_method (NihDBusProxy *      proxy,\n"
-				   "           MyMethodHandler     handler,\n"
-				   "           NihDBusErrorHandler error_handler,\n"
-				   "           void *              data,\n"
-				   "           int                 timeout)\n"
+				   "my_test_method (NihDBusProxy *      proxy,\n"
+				   "                MyTestMethodReply   handler,\n"
+				   "                NihDBusErrorHandler error_handler,\n"
+				   "                void *              data,\n"
+				   "                int                 timeout)\n"
 				   "{\n"
 				   "\tDBusMessage *       method_call;\n"
 				   "\tDBusMessageIter     iter;\n"
@@ -4994,7 +5026,7 @@ test_proxy_function (void)
 				   "\tnih_assert ((handler == NULL) || (error_handler != NULL));\n"
 				   "\n"
 				   "\t/* Construct the method call message. */\n"
-				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"com.netsplit.Nih.Test\", \"MyMethod\");\n"
+				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"com.netsplit.Nih.Test\", \"TestMethod\");\n"
 				   "\tif (! method_call)\n"
 				   "\t\tnih_return_no_memory_error (NULL);\n"
 				   "\n"
@@ -5031,7 +5063,7 @@ test_proxy_function (void)
 				   "\n"
 				   "\tdbus_message_unref (method_call);\n"
 				   "\n"
-				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_method_notify,\n"
+				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_test_method_notify,\n"
 				   "\t                                        pending_data, (DBusFreeFunction)nih_discard));\n"
 				   "\n"
 				   "\treturn pending_call;\n"
@@ -5044,7 +5076,7 @@ test_proxy_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "DBusPendingCall *");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_method");
+		TEST_EQ_STR (func->name, "my_test_method");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -5063,7 +5095,7 @@ test_proxy_function (void)
 		arg = (TypeVar *)func->args.next;
 		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "MyMethodHandler");
+		TEST_EQ_STR (arg->type, "MyTestMethodReply");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "handler");
 		TEST_ALLOC_PARENT (arg->name, arg);
@@ -5118,6 +5150,7 @@ test_proxy_function (void)
 
 		nih_free (str);
 		nih_free (method);
+		nih_free (interface);
 	}
 
 
@@ -5141,9 +5174,9 @@ test_proxy_function (void)
 		last_pending_call = NULL;
 		last_pending_data = NULL;
 
-		pending_call = my_method (proxy, "test string", 42,
-					  my_blank_handler,
-					  my_blank_error_handler, &proxy, -1);
+		pending_call = my_test_method (proxy, "test string", 42,
+					       my_blank_handler,
+					       my_blank_error_handler, &proxy, -1);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -5163,7 +5196,7 @@ test_proxy_function (void)
 		/* Check the incoming message */
 		TEST_TRUE (dbus_message_is_method_call (method_call,
 							"com.netsplit.Nih.Test",
-							"MyMethod"));
+							"TestMethod"));
 		TEST_FALSE (dbus_message_get_no_reply (method_call));
 
 		dbus_message_iter_init (method_call, &iter);
@@ -5279,9 +5312,9 @@ test_proxy_function (void)
 		last_pending_call = NULL;
 		last_pending_data = NULL;
 
-		pending_call = my_method (proxy, "test string", 42,
-					  NULL,
-					  my_blank_error_handler, &proxy, -1);
+		pending_call = my_test_method (proxy, "test string", 42,
+					       NULL,
+					       my_blank_error_handler, &proxy, -1);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -5301,7 +5334,7 @@ test_proxy_function (void)
 		/* Check the incoming message */
 		TEST_TRUE (dbus_message_is_method_call (method_call,
 							"com.netsplit.Nih.Test",
-							"MyMethod"));
+							"TestMethod"));
 		TEST_FALSE (dbus_message_get_no_reply (method_call));
 
 		dbus_message_iter_init (method_call, &iter);
@@ -5414,9 +5447,9 @@ test_proxy_function (void)
 		last_pending_call = NULL;
 		last_pending_data = NULL;
 
-		pending_call = my_method (proxy, "test string", 42,
-					  my_blank_handler,
-					  my_blank_error_handler, &proxy, -1);
+		pending_call = my_test_method (proxy, "test string", 42,
+					       my_blank_handler,
+					       my_blank_error_handler, &proxy, -1);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -5436,7 +5469,7 @@ test_proxy_function (void)
 		/* Check the incoming message */
 		TEST_TRUE (dbus_message_is_method_call (method_call,
 							"com.netsplit.Nih.Test",
-							"MyMethod"));
+							"TestMethod"));
 
 		TEST_FALSE (dbus_message_get_no_reply (method_call));
 
@@ -5463,7 +5496,7 @@ test_proxy_function (void)
 
 		/* Construct and send the reply */
 		reply = dbus_message_new_error (method_call,
-						"com.netsplit.Nih.MyMethod.Fail",
+						"com.netsplit.Nih.Test.Method.Fail",
 						"Things didn't work out");
 		dbus_message_unref (method_call);
 
@@ -5478,7 +5511,7 @@ test_proxy_function (void)
 
 		reply = dbus_pending_call_steal_reply (pending_call);
 		TEST_TRUE (dbus_message_is_error (reply,
-						  "com.netsplit.Nih.MyMethod.Fail"));
+						  "com.netsplit.Nih.Test.Method.Fail"));
 		dbus_message_unref (reply);
 
 		/* Check the notify function was called with all the right
@@ -5524,9 +5557,9 @@ test_proxy_function (void)
 		last_pending_call = NULL;
 		last_pending_data = NULL;
 
-		pending_call = my_method (proxy, "test string", 42,
-					  my_blank_handler,
-					  my_blank_error_handler, &proxy, 50);
+		pending_call = my_test_method (proxy, "test string", 42,
+					       my_blank_handler,
+					       my_blank_error_handler, &proxy, 50);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -5546,7 +5579,7 @@ test_proxy_function (void)
 		/* Check the incoming message */
 		TEST_TRUE (dbus_message_is_method_call (method_call,
 							"com.netsplit.Nih.Test",
-							"MyMethod"));
+							"TestMethod"));
 
 		TEST_FALSE (dbus_message_get_no_reply (method_call));
 
@@ -5627,9 +5660,9 @@ test_proxy_function (void)
 		last_pending_call = NULL;
 		last_pending_data = NULL;
 
-		pending_call = my_method (proxy, "test string", 42,
-					  my_blank_handler,
-					  my_blank_error_handler, &proxy, -1);
+		pending_call = my_test_method (proxy, "test string", 42,
+					       my_blank_handler,
+					       my_blank_error_handler, &proxy, -1);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -5650,7 +5683,7 @@ test_proxy_function (void)
 		/* Check the incoming message */
 		TEST_TRUE (dbus_message_is_method_call (method_call,
 							"com.netsplit.Nih.Test",
-							"MyMethod"));
+							"TestMethod"));
 
 		TEST_FALSE (dbus_message_get_no_reply (method_call));
 
@@ -5733,9 +5766,9 @@ test_proxy_function (void)
 		last_pending_call = NULL;
 		last_pending_data = NULL;
 
-		pending_call = my_method (proxy, "test string", 42,
-					  my_blank_handler,
-					  my_blank_error_handler, &proxy, 50);
+		pending_call = my_test_method (proxy, "test string", 42,
+					       my_blank_handler,
+					       my_blank_error_handler, &proxy, 50);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -5755,7 +5788,7 @@ test_proxy_function (void)
 		/* Check the incoming message */
 		TEST_TRUE (dbus_message_is_method_call (method_call,
 							"com.netsplit.Nih.Test",
-							"MyMethod"));
+							"TestMethod"));
 
 		TEST_FALSE (dbus_message_get_no_reply (method_call));
 
@@ -5821,8 +5854,8 @@ test_proxy_function (void)
 		last_pending_call = NULL;
 		last_pending_data = NULL;
 
-		pending_call = my_method (proxy, "test string", 42,
-					  NULL, NULL, NULL, -1);
+		pending_call = my_test_method (proxy, "test string", 42,
+					       NULL, NULL, NULL, -1);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -5843,7 +5876,7 @@ test_proxy_function (void)
 		/* Check the incoming message */
 		TEST_TRUE (dbus_message_is_method_call (method_call,
 							"com.netsplit.Nih.Test",
-							"MyMethod"));
+							"TestMethod"));
 
 		TEST_TRUE (dbus_message_get_no_reply (method_call));
 
@@ -5895,8 +5928,11 @@ test_proxy_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyMethod");
-			method->symbol = nih_strdup (method, "my_method");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			method = method_new (NULL, "TestMethod");
+			method->symbol = nih_strdup (method, "test_method");
 			method->deprecated = TRUE;
 
 			argument1 = argument_new (method, "Str",
@@ -5920,12 +5956,7 @@ test_proxy_function (void)
 			nih_list_add (&method->arguments, &argument4->entry);
 		}
 
-		str = method_proxy_function (NULL,
-					     "com.netsplit.Nih.Test",
-					     method,
-					     "my_method",
-					     "my_method_notify",
-					     "MyMethodHandler",
+		str = method_proxy_function (NULL, "my", interface, method,
 					     &prototypes);
 
 		if (test_alloc_failed) {
@@ -5934,17 +5965,18 @@ test_proxy_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (method);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("DBusPendingCall *\n"
-				   "my_method (NihDBusProxy *      proxy,\n"
-				   "           const char *        str,\n"
-				   "           int32_t             flags,\n"
-				   "           MyMethodHandler     handler,\n"
-				   "           NihDBusErrorHandler error_handler,\n"
-				   "           void *              data,\n"
-				   "           int                 timeout)\n"
+				   "my_test_method (NihDBusProxy *      proxy,\n"
+				   "                const char *        str,\n"
+				   "                int32_t             flags,\n"
+				   "                MyTestMethodReply   handler,\n"
+				   "                NihDBusErrorHandler error_handler,\n"
+				   "                void *              data,\n"
+				   "                int                 timeout)\n"
 				   "{\n"
 				   "\tDBusMessage *       method_call;\n"
 				   "\tDBusMessageIter     iter;\n"
@@ -5956,7 +5988,7 @@ test_proxy_function (void)
 				   "\tnih_assert ((handler == NULL) || (error_handler != NULL));\n"
 				   "\n"
 				   "\t/* Construct the method call message. */\n"
-				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"com.netsplit.Nih.Test\", \"MyMethod\");\n"
+				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"com.netsplit.Nih.Test\", \"TestMethod\");\n"
 				   "\tif (! method_call)\n"
 				   "\t\tnih_return_no_memory_error (NULL);\n"
 				   "\n"
@@ -6005,7 +6037,7 @@ test_proxy_function (void)
 				   "\n"
 				   "\tdbus_message_unref (method_call);\n"
 				   "\n"
-				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_method_notify,\n"
+				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_test_method_notify,\n"
 				   "\t                                        pending_data, (DBusFreeFunction)nih_discard));\n"
 				   "\n"
 				   "\treturn pending_call;\n"
@@ -6018,7 +6050,7 @@ test_proxy_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "DBusPendingCall *");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_method");
+		TEST_EQ_STR (func->name, "my_test_method");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -6059,7 +6091,7 @@ test_proxy_function (void)
 		arg = (TypeVar *)func->args.next;
 		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "MyMethodHandler");
+		TEST_EQ_STR (arg->type, "MyTestMethodReply");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "handler");
 		TEST_ALLOC_PARENT (arg->name, arg);
@@ -6122,6 +6154,7 @@ test_proxy_function (void)
 
 		nih_free (str);
 		nih_free (method);
+		nih_free (interface);
 	}
 
 
@@ -6212,6 +6245,7 @@ test_proxy_notify_function (void)
 	DBusConnection *    flakey_conn;
 	NihList             prototypes;
 	NihList             typedefs;
+	Interface *         interface = NULL;
 	Method *            method = NULL;
 	Argument *          argument1 = NULL;
 	Argument *          argument2 = NULL;
@@ -6251,8 +6285,11 @@ test_proxy_notify_function (void)
 		nih_list_init (&typedefs);
 
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyMethod");
-			method->symbol = nih_strdup (method, "my_method");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			method = method_new (NULL, "Method");
+			method->symbol = nih_strdup (method, "method");
 
 			argument1 = argument_new (method, "Str",
 						  "s", NIH_DBUS_ARG_IN);
@@ -6275,10 +6312,8 @@ test_proxy_notify_function (void)
 			nih_list_add (&method->arguments, &argument4->entry);
 		}
 
-		str = method_proxy_notify_function (NULL,
+		str = method_proxy_notify_function (NULL, "my", interface,
 						    method,
-						    "my_method_notify",
-						    "MyMethodHandler",
 						    &prototypes, &typedefs);
 
 		if (test_alloc_failed) {
@@ -6288,6 +6323,7 @@ test_proxy_notify_function (void)
 			TEST_LIST_EMPTY (&typedefs);
 
 			nih_free (method);
+			nih_free (interface);
 			continue;
 		}
 
@@ -6471,7 +6507,7 @@ test_proxy_notify_function (void)
 				   "\t/* Call the handler function */\n"
 				   "\tif (pending_data->handler) {\n"
 				   "\t\tnih_error_push_context ();\n"
-				   "\t\t((MyMethodHandler)pending_data->handler) (pending_data->data, message, output, length);\n"
+				   "\t\t((MyMethodReply)pending_data->handler) (pending_data->data, message, output, length);\n"
 				   "\t\tnih_error_pop_context ();\n"
 				   "\t}\n"
 				   "\n"
@@ -6526,7 +6562,7 @@ test_proxy_notify_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "typedef void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "(*MyMethodHandler)");
+		TEST_EQ_STR (func->name, "(*MyMethodReply)");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -6582,6 +6618,7 @@ test_proxy_notify_function (void)
 
 		nih_free (str);
 		nih_free (method);
+		nih_free (interface);
 	}
 
 
@@ -6594,14 +6631,15 @@ test_proxy_notify_function (void)
 		nih_list_init (&typedefs);
 
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyMethod");
-			method->symbol = nih_strdup (method, "my_method");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			method = method_new (NULL, "Method");
+			method->symbol = nih_strdup (method, "method");
 		}
 
-		str = method_proxy_notify_function (NULL,
+		str = method_proxy_notify_function (NULL, "my", interface,
 						    method,
-						    "my_method_notify",
-						    "MyMethodHandler",
 						    &prototypes, &typedefs);
 
 		if (test_alloc_failed) {
@@ -6611,6 +6649,7 @@ test_proxy_notify_function (void)
 			TEST_LIST_EMPTY (&typedefs);
 
 			nih_free (method);
+			nih_free (interface);
 			continue;
 		}
 
@@ -6682,7 +6721,7 @@ test_proxy_notify_function (void)
 				   "\t/* Call the handler function */\n"
 				   "\tif (pending_data->handler) {\n"
 				   "\t\tnih_error_push_context ();\n"
-				   "\t\t((MyMethodHandler)pending_data->handler) (pending_data->data, message);\n"
+				   "\t\t((MyMethodReply)pending_data->handler) (pending_data->data, message);\n"
 				   "\t\tnih_error_pop_context ();\n"
 				   "\t}\n"
 				   "\n"
@@ -6737,7 +6776,7 @@ test_proxy_notify_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "typedef void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "(*MyMethodHandler)");
+		TEST_EQ_STR (func->name, "(*MyMethodReply)");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -6771,6 +6810,7 @@ test_proxy_notify_function (void)
 
 		nih_free (str);
 		nih_free (method);
+		nih_free (interface);
 	}
 
 
@@ -6784,8 +6824,8 @@ test_proxy_notify_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (server_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyMethod");
+			"com.netsplit.Nih.Test",
+			"Method");
 
 		pending_call = NULL;
 		dbus_connection_send_with_reply (client_conn, method_call,
@@ -6886,8 +6926,8 @@ test_proxy_notify_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (server_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyMethod");
+			"com.netsplit.Nih.Test",
+			"Method");
 
 		pending_call = NULL;
 		dbus_connection_send_with_reply (client_conn, method_call,
@@ -6976,8 +7016,8 @@ test_proxy_notify_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (server_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyMethod");
+			"com.netsplit.Nih.Test",
+			"Method");
 
 		pending_call = NULL;
 		dbus_connection_send_with_reply (client_conn, method_call,
@@ -6993,7 +7033,7 @@ test_proxy_notify_function (void)
 
 		/* Reply to it */
 		reply = dbus_message_new_error (method_call,
-						"com.netsplit.Nih.MyMethod.Fail",
+						"com.netsplit.Nih.Test.Method.Fail",
 						"Things didn't work out");
 		dbus_message_unref (method_call);
 
@@ -7041,7 +7081,7 @@ test_proxy_notify_function (void)
 		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
 
 		dbus_err = (NihDBusError *)last_error;
-		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.MyMethod.Fail");
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Method.Fail");
 		TEST_EQ_STR (last_error->message, "Things didn't work out");
 		nih_free (last_error);
 
@@ -7060,8 +7100,8 @@ test_proxy_notify_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (server_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyMethod");
+			"com.netsplit.Nih.Test",
+			"Method");
 
 		pending_call = NULL;
 		dbus_connection_send_with_reply (client_conn, method_call,
@@ -7136,8 +7176,8 @@ test_proxy_notify_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (flakey_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyMethod");
+			"com.netsplit.Nih.Test",
+			"Method");
 
 		pending_call = NULL;
 		dbus_connection_send_with_reply (client_conn, method_call,
@@ -7212,8 +7252,8 @@ test_proxy_notify_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (server_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyMethod");
+			"com.netsplit.Nih.Test",
+			"Method");
 
 		pending_call = NULL;
 		dbus_connection_send_with_reply (client_conn, method_call,
@@ -7318,8 +7358,8 @@ test_proxy_notify_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (server_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyMethod");
+			"com.netsplit.Nih.Test",
+			"Method");
 
 		pending_call = NULL;
 		dbus_connection_send_with_reply (client_conn, method_call,
@@ -7424,8 +7464,8 @@ test_proxy_notify_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (server_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyMethod");
+			"com.netsplit.Nih.Test",
+			"Method");
 
 		pending_call = NULL;
 		dbus_connection_send_with_reply (client_conn, method_call,
@@ -7526,8 +7566,8 @@ test_proxy_notify_function (void)
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (server_conn),
 			"/com/netsplit/Nih",
-			"com.netsplit.Nih",
-			"MyMethod");
+			"com.netsplit.Nih.Test",
+			"Method");
 
 		pending_call = NULL;
 		dbus_connection_send_with_reply (client_conn, method_call,
@@ -7635,8 +7675,11 @@ test_proxy_notify_function (void)
 		nih_list_init (&typedefs);
 
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyMethod");
-			method->symbol = nih_strdup (method, "my_method");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			method = method_new (NULL, "Method");
+			method->symbol = nih_strdup (method, "method");
 			method->deprecated = TRUE;
 
 			argument1 = argument_new (method, "Str",
@@ -7660,10 +7703,8 @@ test_proxy_notify_function (void)
 			nih_list_add (&method->arguments, &argument4->entry);
 		}
 
-		str = method_proxy_notify_function (NULL,
+		str = method_proxy_notify_function (NULL, "my", interface,
 						    method,
-						    "my_method_notify",
-						    "MyMethodHandler",
 						    &prototypes, &typedefs);
 
 		if (test_alloc_failed) {
@@ -7673,6 +7714,7 @@ test_proxy_notify_function (void)
 			TEST_LIST_EMPTY (&typedefs);
 
 			nih_free (method);
+			nih_free (interface);
 			continue;
 		}
 
@@ -7856,7 +7898,7 @@ test_proxy_notify_function (void)
 				   "\t/* Call the handler function */\n"
 				   "\tif (pending_data->handler) {\n"
 				   "\t\tnih_error_push_context ();\n"
-				   "\t\t((MyMethodHandler)pending_data->handler) (pending_data->data, message, output, length);\n"
+				   "\t\t((MyMethodReply)pending_data->handler) (pending_data->data, message, output, length);\n"
 				   "\t\tnih_error_pop_context ();\n"
 				   "\t}\n"
 				   "\n"
@@ -7911,7 +7953,7 @@ test_proxy_notify_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "typedef void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "(*MyMethodHandler)");
+		TEST_EQ_STR (func->name, "(*MyMethodReply)");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -7967,6 +8009,7 @@ test_proxy_notify_function (void)
 
 		nih_free (str);
 		nih_free (method);
+		nih_free (interface);
 	}
 
 
@@ -7985,6 +8028,7 @@ test_proxy_sync_function (void)
 	DBusConnection *  server_conn;
 	DBusConnection *  client_conn;
 	NihList           prototypes;
+	Interface *       interface = NULL;
 	Method *          method = NULL;
 	Argument *        argument1 = NULL;
 	Argument *        argument2 = NULL;
@@ -8025,8 +8069,11 @@ test_proxy_sync_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyMethod");
-			method->symbol = nih_strdup (method, "my_method");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			method = method_new (NULL, "Method");
+			method->symbol = nih_strdup (method, "method");
 
 			argument1 = argument_new (method, "Str",
 						  "s", NIH_DBUS_ARG_IN);
@@ -8049,10 +8096,8 @@ test_proxy_sync_function (void)
 			nih_list_add (&method->arguments, &argument4->entry);
 		}
 
-		str = method_proxy_sync_function (NULL,
-						  "com.netsplit.Nih.Test",
+		str = method_proxy_sync_function (NULL, "my", interface,
 						  method,
-						  "my_method_sync",
 						  &prototypes);
 
 		if (test_alloc_failed) {
@@ -8061,6 +8106,7 @@ test_proxy_sync_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (method);
+			nih_free (interface);
 			continue;
 		}
 
@@ -8087,7 +8133,7 @@ test_proxy_sync_function (void)
 				   "\tnih_assert (length != NULL);\n"
 				   "\n"
 				   "\t/* Construct the method call message. */\n"
-				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"com.netsplit.Nih.Test\", \"MyMethod\");\n"
+				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"com.netsplit.Nih.Test\", \"Method\");\n"
 				   "\tif (! method_call)\n"
 				   "\t\tnih_return_no_memory_error (-1);\n"
 				   "\n"
@@ -8331,6 +8377,7 @@ test_proxy_sync_function (void)
 
 		nih_free (str);
 		nih_free (method);
+		nih_free (interface);
 	}
 
 
@@ -8342,8 +8389,11 @@ test_proxy_sync_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyMethod");
-			method->symbol = nih_strdup (method, "my_method");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			method = method_new (NULL, "Method");
+			method->symbol = nih_strdup (method, "method");
 
 			argument1 = argument_new (method, "Output",
 						  "as", NIH_DBUS_ARG_OUT);
@@ -8356,10 +8406,8 @@ test_proxy_sync_function (void)
 			nih_list_add (&method->arguments, &argument2->entry);
 		}
 
-		str = method_proxy_sync_function (NULL,
-						  "com.netsplit.Nih.Test",
+		str = method_proxy_sync_function (NULL, "my", interface,
 						  method,
-						  "my_method_sync",
 						  &prototypes);
 
 		if (test_alloc_failed) {
@@ -8368,6 +8416,7 @@ test_proxy_sync_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (method);
+			nih_free (interface);
 			continue;
 		}
 
@@ -8391,7 +8440,7 @@ test_proxy_sync_function (void)
 				   "\tnih_assert (length != NULL);\n"
 				   "\n"
 				   "\t/* Construct the method call message. */\n"
-				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"com.netsplit.Nih.Test\", \"MyMethod\");\n"
+				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"com.netsplit.Nih.Test\", \"Method\");\n"
 				   "\tif (! method_call)\n"
 				   "\t\tnih_return_no_memory_error (-1);\n"
 				   "\n"
@@ -8601,6 +8650,7 @@ test_proxy_sync_function (void)
 
 		nih_free (str);
 		nih_free (method);
+		nih_free (interface);
 	}
 
 
@@ -8612,8 +8662,11 @@ test_proxy_sync_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyMethod");
-			method->symbol = nih_strdup (method, "my_method");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			method = method_new (NULL, "Method");
+			method->symbol = nih_strdup (method, "method");
 
 			argument1 = argument_new (method, "Str",
 						  "s", NIH_DBUS_ARG_IN);
@@ -8626,10 +8679,8 @@ test_proxy_sync_function (void)
 			nih_list_add (&method->arguments, &argument2->entry);
 		}
 
-		str = method_proxy_sync_function (NULL,
-						  "com.netsplit.Nih.Test",
+		str = method_proxy_sync_function (NULL, "my", interface,
 						  method,
-						  "my_method_sync",
 						  &prototypes);
 
 		if (test_alloc_failed) {
@@ -8638,6 +8689,7 @@ test_proxy_sync_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (method);
+			nih_free (interface);
 			continue;
 		}
 
@@ -8656,7 +8708,7 @@ test_proxy_sync_function (void)
 				   "\tnih_assert (str != NULL);\n"
 				   "\n"
 				   "\t/* Construct the method call message. */\n"
-				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"com.netsplit.Nih.Test\", \"MyMethod\");\n"
+				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"com.netsplit.Nih.Test\", \"Method\");\n"
 				   "\tif (! method_call)\n"
 				   "\t\tnih_return_no_memory_error (-1);\n"
 				   "\n"
@@ -8779,6 +8831,7 @@ test_proxy_sync_function (void)
 
 		nih_free (str);
 		nih_free (method);
+		nih_free (interface);
 	}
 
 
@@ -8790,14 +8843,15 @@ test_proxy_sync_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyMethod");
-			method->symbol = nih_strdup (method, "my_method");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			method = method_new (NULL, "Method");
+			method->symbol = nih_strdup (method, "method");
 		}
 
-		str = method_proxy_sync_function (NULL,
-						  "com.netsplit.Nih.Test",
+		str = method_proxy_sync_function (NULL, "my", interface,
 						  method,
-						  "my_method_sync",
 						  &prototypes);
 
 		if (test_alloc_failed) {
@@ -8806,6 +8860,7 @@ test_proxy_sync_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (method);
+			nih_free (interface);
 			continue;
 		}
 
@@ -8821,7 +8876,7 @@ test_proxy_sync_function (void)
 				   "\tnih_assert (proxy != NULL);\n"
 				   "\n"
 				   "\t/* Construct the method call message. */\n"
-				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"com.netsplit.Nih.Test\", \"MyMethod\");\n"
+				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"com.netsplit.Nih.Test\", \"Method\");\n"
 				   "\tif (! method_call)\n"
 				   "\t\tnih_return_no_memory_error (-1);\n"
 				   "\n"
@@ -8910,6 +8965,7 @@ test_proxy_sync_function (void)
 
 		nih_free (str);
 		nih_free (method);
+		nih_free (interface);
 	}
 
 
@@ -8925,7 +8981,7 @@ test_proxy_sync_function (void)
 			/* Check the incoming message */
 			TEST_TRUE (dbus_message_is_method_call (method_call,
 								"com.netsplit.Nih.Test",
-								"MyMethod"));
+								"Method"));
 
 			TEST_FALSE (dbus_message_get_no_reply (method_call));
 
@@ -9067,7 +9123,7 @@ test_proxy_sync_function (void)
 			/* Check the incoming message */
 			TEST_TRUE (dbus_message_is_method_call (method_call,
 								"com.netsplit.Nih.Test",
-								"MyMethod"));
+								"Method"));
 
 			TEST_FALSE (dbus_message_get_no_reply (method_call));
 
@@ -9154,7 +9210,7 @@ test_proxy_sync_function (void)
 			/* Check the incoming message */
 			TEST_TRUE (dbus_message_is_method_call (method_call,
 								"com.netsplit.Nih.Test",
-								"MyMethod"));
+								"Method"));
 
 			TEST_FALSE (dbus_message_get_no_reply (method_call));
 
@@ -9181,7 +9237,7 @@ test_proxy_sync_function (void)
 
 			/* Construct and send the reply */
 			reply = dbus_message_new_error (method_call,
-							"com.netsplit.Nih.MyMethod.Failed",
+							"com.netsplit.Nih.Test.Method.Failed",
 							"Didn't work out, sorry");
 			dbus_message_unref (method_call);
 
@@ -9242,7 +9298,7 @@ test_proxy_sync_function (void)
 		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
 		dbus_err = (NihDBusError *)err;
 
-		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.MyMethod.Failed");
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Method.Failed");
 		TEST_EQ_STR (err->message, "Didn't work out, sorry");
 
 		nih_free (err);
@@ -9263,7 +9319,7 @@ test_proxy_sync_function (void)
 			/* Check the incoming message */
 			TEST_TRUE (dbus_message_is_method_call (method_call,
 								"com.netsplit.Nih.Test",
-								"MyMethod"));
+								"Method"));
 
 			TEST_FALSE (dbus_message_get_no_reply (method_call));
 
@@ -9392,7 +9448,7 @@ test_proxy_sync_function (void)
 			/* Check the incoming message */
 			TEST_TRUE (dbus_message_is_method_call (method_call,
 								"com.netsplit.Nih.Test",
-								"MyMethod"));
+								"Method"));
 
 			TEST_FALSE (dbus_message_get_no_reply (method_call));
 
@@ -9517,7 +9573,7 @@ test_proxy_sync_function (void)
 			/* Check the incoming message */
 			TEST_TRUE (dbus_message_is_method_call (method_call,
 								"com.netsplit.Nih.Test",
-								"MyMethod"));
+								"Method"));
 
 			TEST_FALSE (dbus_message_get_no_reply (method_call));
 
@@ -9647,8 +9703,11 @@ test_proxy_sync_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			method = method_new (NULL, "MyMethod");
-			method->symbol = nih_strdup (method, "my_method");
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			method = method_new (NULL, "Method");
+			method->symbol = nih_strdup (method, "method");
 			method->deprecated = TRUE;
 
 			argument1 = argument_new (method, "Flags",
@@ -9657,10 +9716,8 @@ test_proxy_sync_function (void)
 			nih_list_add (&method->arguments, &argument1->entry);
 		}
 
-		str = method_proxy_sync_function (NULL,
-						  "com.netsplit.Nih.Test",
+		str = method_proxy_sync_function (NULL, "my", interface,
 						  method,
-						  "my_method_sync",
 						  &prototypes);
 
 		if (test_alloc_failed) {
@@ -9669,6 +9726,7 @@ test_proxy_sync_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (method);
+			nih_free (interface);
 			continue;
 		}
 
@@ -9685,7 +9743,7 @@ test_proxy_sync_function (void)
 				   "\tnih_assert (proxy != NULL);\n"
 				   "\n"
 				   "\t/* Construct the method call message. */\n"
-				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"com.netsplit.Nih.Test\", \"MyMethod\");\n"
+				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"com.netsplit.Nih.Test\", \"Method\");\n"
 				   "\tif (! method_call)\n"
 				   "\t\tnih_return_no_memory_error (-1);\n"
 				   "\n"
@@ -9800,6 +9858,7 @@ test_proxy_sync_function (void)
 
 		nih_free (str);
 		nih_free (method);
+		nih_free (interface);
 	}
 
 

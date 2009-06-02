@@ -84,34 +84,28 @@ Method *  method_lookup                (Interface *interface,
 					const char *symbol);
 Argument *method_lookup_argument       (Method *method, const char *symbol);
 
-char *    method_object_function       (const void *parent, Method *method,
-					const char *name,
-					const char *handler_name,
+char *    method_object_function       (const void *parent, const char *prefix,
+					Interface *interface, Method *method,
 					NihList *prototypes, NihList *handlers)
 	__attribute__ ((warn_unused_result, malloc));
 
-char *    method_reply_function        (const void *parent, Method *method,
-					const char *name,
+char *    method_reply_function        (const void *parent, const char *prefix,
+					Interface *interface, Method *method,
 					NihList *prototypes)
 	__attribute__ ((warn_unused_result, malloc));
 
-char *    method_proxy_function        (const void *parent,
-					const char *interface_name,
-					Method *method, const char *name,
-					const char *notify_name,
-					const char *handler_type,
+char *    method_proxy_function        (const void *parent, const char *prefix,
+					Interface *interface, Method *method,
 					NihList *prototypes)
 	__attribute__ ((warn_unused_result, malloc));
 
-char *    method_proxy_notify_function (const void *parent,
-					Method *method, const char *name,
-					const char *handler_type,
+char *    method_proxy_notify_function (const void *parent, const char *prefix,
+					Interface *interface, Method *method,
 					NihList *prototypes, NihList *typedefs)
 	__attribute__ ((warn_unused_result, malloc));
 
-char *    method_proxy_sync_function   (const void *parent,
-					const char *interface_name,
-					Method *method, const char *name,
+char *    method_proxy_sync_function   (const void *parent, const char *prefix,
+					Interface *interface, Method *method,
 					NihList *prototypes)
 	__attribute__ ((warn_unused_result, malloc));
 

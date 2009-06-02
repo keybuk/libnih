@@ -37,6 +37,7 @@
 #include <nih/string.h>
 
 #include "type.h"
+#include "interface.h"
 #include "method.h"
 #include "argument.h"
 
@@ -45,13 +46,14 @@ int
 main (int   argc,
       char *argv[])
 {
-	NihList           prototypes;
-	NihList           handlers;
-	NihList           typedefs;
-	nih_local Method *method = NULL;
-	Argument *        arg;
-	nih_local char *  code = NULL;
-	nih_local char *  block = NULL;
+	NihList              prototypes;
+	NihList              handlers;
+	NihList              typedefs;
+	nih_local Interface *interface = NULL;
+	nih_local Method *   method = NULL;
+	Argument *           arg;
+	nih_local char *     code = NULL;
+	nih_local char *     block = NULL;
 
 	printf ("#include <dbus/dbus.h>\n"
 		"\n"
@@ -72,8 +74,11 @@ main (int   argc,
 		"\n"
 		"\n");
 
-	method = method_new (NULL, "MyMethod");
-	method->symbol = nih_strdup (method, "my_method");
+	interface = interface_new (NULL, "com.netsplit.Nih.Test");
+	interface->symbol = NULL;
+
+	method = method_new (NULL, "Method");
+	method->symbol = nih_strdup (method, "method");
 
 	arg = argument_new (method, "Str", "s", NIH_DBUS_ARG_IN);
 	arg->symbol = nih_strdup (arg, "str");
@@ -91,9 +96,7 @@ main (int   argc,
 	nih_list_init (&prototypes);
 	nih_list_init (&handlers);
 
-	code = method_object_function (NULL, method,
-				       "MyMethod_handle",
-				       "my_method_handler",
+	code = method_object_function (NULL, "my", interface, method,
 				       &prototypes, &handlers);
 
 	NIH_LIST_FOREACH (&handlers, iter) {
@@ -113,11 +116,11 @@ main (int   argc,
 	nih_list_init (&prototypes);
 	nih_list_init (&handlers);
 
+	method->name = "AsyncMethod";
+	method->symbol = "async_method";
 	method->async = TRUE;
 
-	code = method_object_function (NULL, method,
-				       "MyAsyncMethod_handle",
-				       "my_async_method_handler",
+	code = method_object_function (NULL, "my", interface, method,
 				       &prototypes, &handlers);
 
 	NIH_LIST_FOREACH (&handlers, iter) {
@@ -135,8 +138,7 @@ main (int   argc,
 
 	nih_list_init (&prototypes);
 
-	code = method_reply_function (NULL, method,
-				      "my_async_method_reply",
+	code = method_reply_function (NULL, "my", interface, method,
 				      &prototypes);
 
 	printf ("%s", code);
@@ -146,17 +148,15 @@ main (int   argc,
 
 	nih_list_init (&prototypes);
 
+	method->name = "TestMethod";
+	method->symbol = "test_method";
 	method->async = FALSE;
 
 	arg = argument_new (method, "Length", "i", NIH_DBUS_ARG_OUT);
 	arg->symbol = nih_strdup (arg, "length");
 	nih_list_add (&method->arguments, &arg->entry);
 
-	code = method_proxy_function (NULL, "com.netsplit.Nih.Test",
-				      method,
-				      "my_method",
-				      "my_test_method_notify",
-				      "MyMethodHandler",
+	code = method_proxy_function (NULL, "my", interface, method,
 				      &prototypes);
 
 	printf ("extern void my_test_method_notify (DBusPendingCall *pending_call, "
@@ -170,9 +170,10 @@ main (int   argc,
 	nih_list_init (&prototypes);
 	nih_list_init (&typedefs);
 
-	code = method_proxy_notify_function (NULL, method,
-					     "my_method_notify",
-					     "MyMethodHandler",
+	method->name = "Method";
+	method->symbol = "method";
+
+	code = method_proxy_notify_function (NULL, "my", interface, method,
 					     &prototypes, &typedefs);
 
 	printf ("%s", code);
@@ -182,9 +183,7 @@ main (int   argc,
 
 	nih_list_init (&prototypes);
 
-	code = method_proxy_sync_function (NULL, "com.netsplit.Nih.Test",
-					   method,
-					   "my_method_sync",
+	code = method_proxy_sync_function (NULL, "my", interface, method,
 					   &prototypes);
 
 	printf ("%s", code);

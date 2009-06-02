@@ -35,25 +35,27 @@
 #include <nih-dbus/dbus_pending_data.h>
 
 
-typedef void (*MyMethodHandler) (void *data, NihDBusMessage *message,
-				 char * const *output, int32_t length);
+typedef void (*MyMethodReply) (void *data, NihDBusMessage *message,
+			       char * const *output, int32_t length);
+typedef void (*MyTestMethodReply) (void *data, NihDBusMessage *message,
+				   char * const *output, int32_t length);
 
 
 NIH_BEGIN_EXTERN
 
-DBusHandlerResult MyMethod_handle       (NihDBusObject *object,
-					 NihDBusMessage *message);
+DBusHandlerResult my_com_netsplit_Nih_Test_Method_method      (NihDBusObject *object,
+							       NihDBusMessage *message);
 
-DBusHandlerResult MyAsyncMethod_handle  (NihDBusObject *object,
-					 NihDBusMessage *message);
+DBusHandlerResult my_com_netsplit_Nih_Test_AsyncMethod_method (NihDBusObject *object,
+							       NihDBusMessage *message);
 
 int               my_async_method_reply (NihDBusMessage *message,
 					 char * const *output)
 	__attribute__ ((warn_unused_result));
 
-DBusPendingCall * my_method             (NihDBusProxy *proxy,
+DBusPendingCall * my_test_method        (NihDBusProxy *proxy,
 					 const char *str, int32_t flags,
-					 MyMethodHandler handler,
+					 MyTestMethodReply handler,
 					 NihDBusErrorHandler error_handler,
 					 void *data, int timeout)
 	__attribute__ ((warn_unused_result));

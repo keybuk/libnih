@@ -1,5 +1,17 @@
 2009-06-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_object_function)
+	(method_reply_function, method_proxy_function)
+	(method_proxy_notify_function, method_proxy_sync_function): Rather
+	than accepting precanned names, accept prefix, interface and method
+	and generate them every time.
+	* nih-dbus-tool/method.h: Update prototypes.
+	* nih-dbus-tool/tests/method_factory.c: Create an interface and pass
+	it to the functions
+	* nih-dbus-tool/tests/method_code.h: A couple of names of generated
+	functions change as a result (becoming proper)
+	* nih-dbus-tool/tests/test_method.c: Update tests
+
 	* nih-dbus-tool/interface.c (interface_lookup_method): Move to method.c
 	(interface_lookup_signal): Move to signal.c
 	(interface_lookup_property): Move to property.c

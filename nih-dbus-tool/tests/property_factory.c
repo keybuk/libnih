@@ -37,6 +37,7 @@
 #include <nih/string.h>
 
 #include "type.h"
+#include "interface.h"
 #include "property.h"
 
 
@@ -44,12 +45,13 @@ int
 main (int   argc,
       char *argv[])
 {
-	NihList             prototypes;
-	NihList             handlers;
-	NihList             typedefs;
-	nih_local Property *property = NULL;
-	nih_local char *    code = NULL;
-	nih_local char *    block = NULL;
+	NihList              prototypes;
+	NihList              handlers;
+	NihList              typedefs;
+	nih_local Interface *interface = NULL;
+	nih_local Property * property = NULL;
+	nih_local char *     code = NULL;
+	nih_local char *     block = NULL;
 
 	printf ("#include <dbus/dbus.h>\n"
 		"\n"
@@ -70,16 +72,17 @@ main (int   argc,
 		"\n"
 		"\n");
 
-	property = property_new (NULL, "my_property", "s", NIH_DBUS_READWRITE);
-	property->symbol = nih_strdup (property, "my_property");
+	interface = interface_new (NULL, "com.netsplit.Nih.Test");
+	interface->symbol = NULL;
+
+	property = property_new (NULL, "property", "s", NIH_DBUS_READWRITE);
+	property->symbol = nih_strdup (property, "property");
 
 
 	nih_list_init (&prototypes);
 	nih_list_init (&handlers);
 
-	code = property_object_get_function (NULL, property,
-					     "MyProperty_get",
-					     "my_property_get_handler",
+	code = property_object_get_function (NULL, "my", interface, property,
 					     &prototypes, &handlers);
 
 	NIH_LIST_FOREACH (&handlers, iter) {
@@ -99,9 +102,7 @@ main (int   argc,
 	nih_list_init (&prototypes);
 	nih_list_init (&handlers);
 
-	code = property_object_set_function (NULL, property,
-					     "MyProperty_set",
-					     "my_property_set_handler",
+	code = property_object_set_function (NULL, "my", interface, property,
 					     &prototypes, &handlers);
 
 	NIH_LIST_FOREACH (&handlers, iter) {
@@ -120,15 +121,13 @@ main (int   argc,
 
 	nih_list_init (&prototypes);
 
-	code = property_proxy_get_function (NULL,
-					    "com.netsplit.Nih.Test",
-					    property,
-					    "my_property_get",
-					    "my_test_property_get_notify",
-					    "MyPropertyGetHandler",
+	property->name = "test_property";
+	property->symbol = "test_property";
+
+	code = property_proxy_get_function (NULL, "my", interface, property,
 					    &prototypes);
 
-	printf ("extern void my_test_property_get_notify (DBusPendingCall *pending_call, "
+	printf ("extern void my_com_netsplit_Nih_Test_test_property_get_notify (DBusPendingCall *pending_call, "
 		"NihDBusPendingData *pending_data);\n");
 	printf ("\n");
 
@@ -139,9 +138,11 @@ main (int   argc,
 	nih_list_init (&prototypes);
 	nih_list_init (&typedefs);
 
-	code = property_proxy_get_notify_function (NULL, property,
-						   "my_property_get_notify",
-						   "MyPropertyGetHandler",
+	property->name = "property";
+	property->symbol = "property";
+
+	code = property_proxy_get_notify_function (NULL, "my", interface,
+						   property,
 						   &prototypes, &typedefs);
 
 	printf ("%s", code);
@@ -151,15 +152,13 @@ main (int   argc,
 
 	nih_list_init (&prototypes);
 
-	code = property_proxy_set_function (NULL,
-					    "com.netsplit.Nih.Test",
-					    property,
-					    "my_property_set",
-					    "my_test_property_set_notify",
-					    "MyPropertySetHandler",
+	property->name = "test_property";
+	property->symbol = "test_property";
+
+	code = property_proxy_set_function (NULL, "my", interface, property,
 					    &prototypes);
 
-	printf ("extern void my_test_property_set_notify (DBusPendingCall *pending_call, "
+	printf ("extern void my_com_netsplit_Nih_Test_test_property_set_notify (DBusPendingCall *pending_call, "
 		"NihDBusPendingData *pending_data);\n");
 	printf ("\n");
 
@@ -170,9 +169,11 @@ main (int   argc,
 	nih_list_init (&prototypes);
 	nih_list_init (&typedefs);
 
-	code = property_proxy_set_notify_function (NULL, property,
-						   "my_property_set_notify",
-						   "MyPropertySetHandler",
+	property->name = "property";
+	property->symbol = "property";
+
+	code = property_proxy_set_notify_function (NULL, "my", interface,
+						   property,
 						   &prototypes, &typedefs);
 
 	printf ("%s", code);
@@ -182,10 +183,8 @@ main (int   argc,
 
 	nih_list_init (&prototypes);
 
-	code = property_proxy_get_sync_function (NULL,
-						 "com.netsplit.Nih.Test",
+	code = property_proxy_get_sync_function (NULL, "my", interface,
 						 property,
-						 "my_property_get_sync",
 						 &prototypes);
 
 	printf ("%s"
@@ -194,10 +193,8 @@ main (int   argc,
 
 	nih_list_init (&prototypes);
 
-	code = property_proxy_set_sync_function (NULL,
-						 "com.netsplit.Nih.Test",
+	code = property_proxy_set_sync_function (NULL, "my", interface,
 						 property,
-						 "my_property_set_sync",
 						 &prototypes);
 
 	printf ("%s", code);

@@ -1150,14 +1150,14 @@ test_lookup (void)
 }
 
 
-static int my_property_get_called = 0;
+static int my_get_property_called = 0;
 
 int
-my_property_get_handler (void *          data,
-			 NihDBusMessage *message,
-			 char **         str)
+my_get_property (void *          data,
+		 NihDBusMessage *message,
+		 char **         str)
 {
-	my_property_get_called++;
+	my_get_property_called++;
 
 	TEST_EQ_P (data, NULL);
 
@@ -1182,6 +1182,7 @@ test_object_get_function (void)
 	DBusConnection *  client_conn;
 	NihList           prototypes;
 	NihList           handlers;
+	Interface *       interface = NULL;
 	Property *        property = NULL;
 	char *            iface;
 	char *            name;
@@ -1214,14 +1215,15 @@ test_object_get_function (void)
 		nih_list_init (&handlers);
 
 		TEST_ALLOC_SAFE {
-			property = property_new (NULL, "my_property",
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "property",
 						 "s", NIH_DBUS_READWRITE);
-			property->symbol = nih_strdup (property, "my_property");
+			property->symbol = nih_strdup (property, "property");
 		}
 
-		str = property_object_get_function (NULL, property,
-						    "MyProperty_get",
-						    "my_property_get",
+		str = property_object_get_function (NULL, "my", interface, property,
 						    &prototypes, &handlers);
 
 		if (test_alloc_failed) {
@@ -1231,13 +1233,14 @@ test_object_get_function (void)
 			TEST_LIST_EMPTY (&handlers);
 
 			nih_free (property);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("int\n"
-				   "MyProperty_get (NihDBusObject *  object,\n"
-				   "                NihDBusMessage * message,\n"
-				   "                DBusMessageIter *iter)\n"
+				   "my_com_netsplit_Nih_Test_property_get (NihDBusObject *  object,\n"
+				   "                                       NihDBusMessage * message,\n"
+				   "                                       DBusMessageIter *iter)\n"
 				   "{\n"
 				   "\tDBusMessageIter variter;\n"
 				   "\tchar *          value;\n"
@@ -1247,7 +1250,7 @@ test_object_get_function (void)
 				   "\tnih_assert (iter != NULL);\n"
 				   "\n"
 				   "\t/* Call the handler function */\n"
-				   "\tif (my_property_get (object->data, message, &value) < 0)\n"
+				   "\tif (my_get_property (object->data, message, &value) < 0)\n"
 				   "\t\treturn -1;\n"
 				   "\n"
 				   "\t/* Append a variant onto the message to contain the property value. */\n"
@@ -1274,7 +1277,7 @@ test_object_get_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "MyProperty_get");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_property_get");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -1324,7 +1327,7 @@ test_object_get_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_property_get");
+		TEST_EQ_STR (func->name, "my_get_property");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -1378,6 +1381,7 @@ test_object_get_function (void)
 
 		nih_free (str);
 		nih_free (property);
+		nih_free (interface);
 	}
 
 
@@ -1400,7 +1404,7 @@ test_object_get_function (void)
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
 						&iface);
 
-		name = "my_property";
+		name = "property";
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
 						&name);
 
@@ -1428,9 +1432,9 @@ test_object_get_function (void)
 
 		dbus_message_iter_init_append (reply, &iter);
 
-		my_property_get_called = 0;
+		my_get_property_called = 0;
 
-		ret = MyProperty_get (object, message, &iter);
+		ret = my_com_netsplit_Nih_Test_property_get (object, message, &iter);
 
 		if (test_alloc_failed
 		    && (ret < 0)) {
@@ -1441,7 +1445,7 @@ test_object_get_function (void)
 			continue;
 		}
 
-		TEST_TRUE (my_property_get_called);
+		TEST_TRUE (my_get_property_called);
 		TEST_EQ (ret, 0);
 
 		dbus_message_iter_init (reply, &iter);
@@ -1484,15 +1488,16 @@ test_object_get_function (void)
 		nih_list_init (&handlers);
 
 		TEST_ALLOC_SAFE {
-			property = property_new (NULL, "my_property",
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "property",
 						 "s", NIH_DBUS_READWRITE);
-			property->symbol = nih_strdup (property, "my_property");
+			property->symbol = nih_strdup (property, "property");
 			property->deprecated = TRUE;
 		}
 
-		str = property_object_get_function (NULL, property,
-						    "MyProperty_get",
-						    "my_property_get",
+		str = property_object_get_function (NULL, "my", interface, property,
 						    &prototypes, &handlers);
 
 		if (test_alloc_failed) {
@@ -1502,13 +1507,14 @@ test_object_get_function (void)
 			TEST_LIST_EMPTY (&handlers);
 
 			nih_free (property);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("int\n"
-				   "MyProperty_get (NihDBusObject *  object,\n"
-				   "                NihDBusMessage * message,\n"
-				   "                DBusMessageIter *iter)\n"
+				   "my_com_netsplit_Nih_Test_property_get (NihDBusObject *  object,\n"
+				   "                                       NihDBusMessage * message,\n"
+				   "                                       DBusMessageIter *iter)\n"
 				   "{\n"
 				   "\tDBusMessageIter variter;\n"
 				   "\tchar *          value;\n"
@@ -1518,7 +1524,7 @@ test_object_get_function (void)
 				   "\tnih_assert (iter != NULL);\n"
 				   "\n"
 				   "\t/* Call the handler function */\n"
-				   "\tif (my_property_get (object->data, message, &value) < 0)\n"
+				   "\tif (my_get_property (object->data, message, &value) < 0)\n"
 				   "\t\treturn -1;\n"
 				   "\n"
 				   "\t/* Append a variant onto the message to contain the property value. */\n"
@@ -1545,7 +1551,7 @@ test_object_get_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "MyProperty_get");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_property_get");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -1595,7 +1601,7 @@ test_object_get_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_property_get");
+		TEST_EQ_STR (func->name, "my_get_property");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -1649,6 +1655,7 @@ test_object_get_function (void)
 
 		nih_free (str);
 		nih_free (property);
+		nih_free (interface);
 	}
 
 
@@ -1660,16 +1667,16 @@ test_object_get_function (void)
 }
 
 
-static int my_property_set_called = 0;
+static int my_set_property_called = 0;
 
 int
-my_property_set_handler (void *          data,
-			 NihDBusMessage *message,
-			 const char *    str)
+my_set_property (void *          data,
+		 NihDBusMessage *message,
+		 const char *    str)
 {
 	nih_local char *dup = NULL;
 
-	my_property_set_called++;
+	my_set_property_called++;
 
 	TEST_EQ_P (data, NULL);
 
@@ -1688,7 +1695,7 @@ my_property_set_handler (void *          data,
 
 	} else if (! strcmp (str, "felch and firkin")) {
 		nih_dbus_error_raise ("com.netsplit.Nih.MyProperty.Fail",
-				      "Bad value for my_property");
+				      "Bad value for property");
 		return -1;
 
 	} else if (! strcmp (str, "fruitbat and ball")) {
@@ -1707,6 +1714,7 @@ test_object_set_function (void)
 	DBusConnection *  client_conn;
 	NihList           prototypes;
 	NihList           handlers;
+	Interface *       interface = NULL;
 	Property *        property = NULL;
 	char *            iface;
 	char *            name;
@@ -1742,14 +1750,15 @@ test_object_set_function (void)
 		nih_list_init (&handlers);
 
 		TEST_ALLOC_SAFE {
-			property = property_new (NULL, "my_property",
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "property",
 						 "s", NIH_DBUS_READWRITE);
-			property->symbol = nih_strdup (property, "my_property");
+			property->symbol = nih_strdup (property, "property");
 		}
 
-		str = property_object_set_function (NULL, property,
-						    "MyProperty_set",
-						    "my_property_set",
+		str = property_object_set_function (NULL, "my", interface, property,
 						    &prototypes, &handlers);
 
 		if (test_alloc_failed) {
@@ -1759,13 +1768,14 @@ test_object_set_function (void)
 			TEST_LIST_EMPTY (&handlers);
 
 			nih_free (property);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("int\n"
-				   "MyProperty_set (NihDBusObject *  object,\n"
-				   "                NihDBusMessage * message,\n"
-				   "                DBusMessageIter *iter)\n"
+				   "my_com_netsplit_Nih_Test_property_set (NihDBusObject *  object,\n"
+				   "                                       NihDBusMessage * message,\n"
+				   "                                       DBusMessageIter *iter)\n"
 				   "{\n"
 				   "\tDBusMessageIter variter;\n"
 				   "\tconst char *    value_dbus;\n"
@@ -1778,7 +1788,7 @@ test_object_set_function (void)
 				   "\t/* Recurse into the variant */\n"
 				   "\tif (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_VARIANT) {\n"
 				   "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                             _(\"Invalid arguments to my_property property\"));\n"
+				   "\t\t                             _(\"Invalid arguments to property property\"));\n"
 				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
@@ -1787,7 +1797,7 @@ test_object_set_function (void)
 				   "\t/* Demarshal a char * from the message */\n"
 				   "\tif (dbus_message_iter_get_arg_type (&variter) != DBUS_TYPE_STRING) {\n"
 				   "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                             _(\"Invalid arguments to my_property property\"));\n"
+				   "\t\t                             _(\"Invalid arguments to property property\"));\n"
 				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
@@ -1805,12 +1815,12 @@ test_object_set_function (void)
 				   "\n"
 				   "\tif (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_INVALID) {\n"
 				   "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                             _(\"Invalid arguments to my_property property\"));\n"
+				   "\t\t                             _(\"Invalid arguments to property property\"));\n"
 				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\t/* Call the handler function */\n"
-				   "\tif (my_property_set (object->data, message, value) < 0)\n"
+				   "\tif (my_set_property (object->data, message, value) < 0)\n"
 				   "\t\treturn -1;\n"
 				   "\n"
 				   "\treturn 0;\n"
@@ -1823,7 +1833,7 @@ test_object_set_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "MyProperty_set");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_property_set");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -1873,7 +1883,7 @@ test_object_set_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_property_set");
+		TEST_EQ_STR (func->name, "my_set_property");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -1927,6 +1937,7 @@ test_object_set_function (void)
 
 		nih_free (str);
 		nih_free (property);
+		nih_free (interface);
 	}
 
 
@@ -1948,7 +1959,7 @@ test_object_set_function (void)
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
 						&iface);
 
-		name = "my_property";
+		name = "property";
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
 						&name);
 
@@ -1990,9 +2001,9 @@ test_object_set_function (void)
 		dbus_message_iter_next (&iter);
 		assert (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_VARIANT);
 
-		my_property_set_called = 0;
+		my_set_property_called = 0;
 
-		ret = MyProperty_set (object, message, &iter);
+		ret = my_com_netsplit_Nih_Test_property_set (object, message, &iter);
 
 		if (test_alloc_failed) {
 			TEST_LT (ret, 0);
@@ -2007,7 +2018,7 @@ test_object_set_function (void)
 			continue;
 		}
 
-		TEST_TRUE (my_property_set_called);
+		TEST_TRUE (my_set_property_called);
 		TEST_EQ (ret, 0);
 
 		nih_free (object);
@@ -2033,7 +2044,7 @@ test_object_set_function (void)
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
 						&iface);
 
-		name = "my_property";
+		name = "property";
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
 						&name);
 
@@ -2075,9 +2086,9 @@ test_object_set_function (void)
 		dbus_message_iter_next (&iter);
 		assert (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_VARIANT);
 
-		my_property_set_called = 0;
+		my_set_property_called = 0;
 
-		ret = MyProperty_set (object, message, &iter);
+		ret = my_com_netsplit_Nih_Test_property_set (object, message, &iter);
 
 		TEST_LT (ret, 0);
 
@@ -2093,7 +2104,7 @@ test_object_set_function (void)
 			continue;
 		}
 
-		TEST_TRUE (my_property_set_called);
+		TEST_TRUE (my_set_property_called);
 
 		TEST_EQ (err->number, NIH_DBUS_ERROR);
 		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
@@ -2124,7 +2135,7 @@ test_object_set_function (void)
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
 						&iface);
 
-		name = "my_property";
+		name = "property";
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
 						&name);
 
@@ -2166,9 +2177,9 @@ test_object_set_function (void)
 		dbus_message_iter_next (&iter);
 		assert (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_VARIANT);
 
-		my_property_set_called = 0;
+		my_set_property_called = 0;
 
-		ret = MyProperty_set (object, message, &iter);
+		ret = my_com_netsplit_Nih_Test_property_set (object, message, &iter);
 
 		TEST_LT (ret, 0);
 
@@ -2184,7 +2195,7 @@ test_object_set_function (void)
 			continue;
 		}
 
-		TEST_TRUE (my_property_set_called);
+		TEST_TRUE (my_set_property_called);
 
 		TEST_EQ (err->number, EBADF);
 		nih_free (err);
@@ -2213,7 +2224,7 @@ test_object_set_function (void)
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
 						&iface);
 
-		name = "my_property";
+		name = "property";
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
 						&name);
 
@@ -2244,9 +2255,9 @@ test_object_set_function (void)
 		assert (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_STRING);
 		dbus_message_iter_next (&iter);
 
-		my_property_set_called = 0;
+		my_set_property_called = 0;
 
-		ret = MyProperty_set (object, message, &iter);
+		ret = my_com_netsplit_Nih_Test_property_set (object, message, &iter);
 
 		TEST_LT (ret, 0);
 
@@ -2262,7 +2273,7 @@ test_object_set_function (void)
 			continue;
 		}
 
-		TEST_FALSE (my_property_set_called);
+		TEST_FALSE (my_set_property_called);
 
 		TEST_EQ (err->number, NIH_DBUS_ERROR);
 		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
@@ -2294,7 +2305,7 @@ test_object_set_function (void)
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
 						&iface);
 
-		name = "my_property";
+		name = "property";
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
 						&name);
 
@@ -2329,9 +2340,9 @@ test_object_set_function (void)
 		assert (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_STRING);
 		dbus_message_iter_next (&iter);
 
-		my_property_set_called = 0;
+		my_set_property_called = 0;
 
-		ret = MyProperty_set (object, message, &iter);
+		ret = my_com_netsplit_Nih_Test_property_set (object, message, &iter);
 
 		TEST_LT (ret, 0);
 
@@ -2347,7 +2358,7 @@ test_object_set_function (void)
 			continue;
 		}
 
-		TEST_FALSE (my_property_set_called);
+		TEST_FALSE (my_set_property_called);
 
 		TEST_EQ (err->number, NIH_DBUS_ERROR);
 		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
@@ -2379,7 +2390,7 @@ test_object_set_function (void)
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
 						&iface);
 
-		name = "my_property";
+		name = "property";
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
 						&name);
 
@@ -2420,9 +2431,9 @@ test_object_set_function (void)
 		assert (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_STRING);
 		dbus_message_iter_next (&iter);
 
-		my_property_set_called = 0;
+		my_set_property_called = 0;
 
-		ret = MyProperty_set (object, message, &iter);
+		ret = my_com_netsplit_Nih_Test_property_set (object, message, &iter);
 
 		TEST_LT (ret, 0);
 
@@ -2438,7 +2449,7 @@ test_object_set_function (void)
 			continue;
 		}
 
-		TEST_FALSE (my_property_set_called);
+		TEST_FALSE (my_set_property_called);
 
 		TEST_EQ (err->number, NIH_DBUS_ERROR);
 		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
@@ -2470,7 +2481,7 @@ test_object_set_function (void)
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
 						&iface);
 
-		name = "my_property";
+		name = "property";
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
 						&name);
 
@@ -2515,9 +2526,9 @@ test_object_set_function (void)
 		assert (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_STRING);
 		dbus_message_iter_next (&iter);
 
-		my_property_set_called = 0;
+		my_set_property_called = 0;
 
-		ret = MyProperty_set (object, message, &iter);
+		ret = my_com_netsplit_Nih_Test_property_set (object, message, &iter);
 
 		TEST_LT (ret, 0);
 
@@ -2533,7 +2544,7 @@ test_object_set_function (void)
 			continue;
 		}
 
-		TEST_FALSE (my_property_set_called);
+		TEST_FALSE (my_set_property_called);
 
 		TEST_EQ (err->number, NIH_DBUS_ERROR);
 		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
@@ -2557,15 +2568,16 @@ test_object_set_function (void)
 		nih_list_init (&handlers);
 
 		TEST_ALLOC_SAFE {
-			property = property_new (NULL, "my_property",
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "property",
 						 "s", NIH_DBUS_READWRITE);
-			property->symbol = nih_strdup (property, "my_property");
+			property->symbol = nih_strdup (property, "property");
 			property->deprecated = TRUE;
 		}
 
-		str = property_object_set_function (NULL, property,
-						    "MyProperty_set",
-						    "my_property_set",
+		str = property_object_set_function (NULL, "my", interface, property,
 						    &prototypes, &handlers);
 
 		if (test_alloc_failed) {
@@ -2575,13 +2587,14 @@ test_object_set_function (void)
 			TEST_LIST_EMPTY (&handlers);
 
 			nih_free (property);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("int\n"
-				   "MyProperty_set (NihDBusObject *  object,\n"
-				   "                NihDBusMessage * message,\n"
-				   "                DBusMessageIter *iter)\n"
+				   "my_com_netsplit_Nih_Test_property_set (NihDBusObject *  object,\n"
+				   "                                       NihDBusMessage * message,\n"
+				   "                                       DBusMessageIter *iter)\n"
 				   "{\n"
 				   "\tDBusMessageIter variter;\n"
 				   "\tconst char *    value_dbus;\n"
@@ -2594,7 +2607,7 @@ test_object_set_function (void)
 				   "\t/* Recurse into the variant */\n"
 				   "\tif (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_VARIANT) {\n"
 				   "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                             _(\"Invalid arguments to my_property property\"));\n"
+				   "\t\t                             _(\"Invalid arguments to property property\"));\n"
 				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
@@ -2603,7 +2616,7 @@ test_object_set_function (void)
 				   "\t/* Demarshal a char * from the message */\n"
 				   "\tif (dbus_message_iter_get_arg_type (&variter) != DBUS_TYPE_STRING) {\n"
 				   "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                             _(\"Invalid arguments to my_property property\"));\n"
+				   "\t\t                             _(\"Invalid arguments to property property\"));\n"
 				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
@@ -2621,12 +2634,12 @@ test_object_set_function (void)
 				   "\n"
 				   "\tif (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_INVALID) {\n"
 				   "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
-				   "\t\t                             _(\"Invalid arguments to my_property property\"));\n"
+				   "\t\t                             _(\"Invalid arguments to property property\"));\n"
 				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\t/* Call the handler function */\n"
-				   "\tif (my_property_set (object->data, message, value) < 0)\n"
+				   "\tif (my_set_property (object->data, message, value) < 0)\n"
 				   "\t\treturn -1;\n"
 				   "\n"
 				   "\treturn 0;\n"
@@ -2639,7 +2652,7 @@ test_object_set_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "MyProperty_set");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_property_set");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -2689,7 +2702,7 @@ test_object_set_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_property_set");
+		TEST_EQ_STR (func->name, "my_set_property");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -2743,6 +2756,7 @@ test_object_set_function (void)
 
 		nih_free (str);
 		nih_free (property);
+		nih_free (interface);
 	}
 
 
@@ -2754,15 +2768,15 @@ test_object_set_function (void)
 }
 
 
-int my_test_property_get_notify_called = FALSE;
+int my_com_netsplit_Nih_Test_test_property_get_notify_called = FALSE;
 static DBusPendingCall *   last_pending_call = NULL;
 static NihDBusPendingData *last_pending_data = NULL;
 
 void
-my_test_property_get_notify (DBusPendingCall *   pending_call,
+my_com_netsplit_Nih_Test_test_property_get_notify (DBusPendingCall *   pending_call,
 			     NihDBusPendingData *pending_data)
 {
-	my_test_property_get_notify_called = TRUE;
+	my_com_netsplit_Nih_Test_test_property_get_notify_called = TRUE;
 	last_pending_call = pending_call;
 	last_pending_data = pending_data;
 }
@@ -2787,6 +2801,7 @@ test_proxy_get_function (void)
 	DBusConnection *  server_conn;
 	DBusConnection *  client_conn;
 	NihList           prototypes;
+	Interface *       interface = NULL;
 	Property *        property = NULL;
 	char *            str;
 	TypeFunc *        func;
@@ -2817,17 +2832,15 @@ test_proxy_get_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			property = property_new (NULL, "my_property",
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "test_property",
 						 "s", NIH_DBUS_READWRITE);
-			property->symbol = nih_strdup (property, "my_property");
+			property->symbol = nih_strdup (property, "test_property");
 		}
 
-		str = property_proxy_get_function (NULL,
-						   "com.netsplit.Nih.Test",
-						   property,
-						   "my_property_get",
-						   "my_property_get_notify",
-						   "MyPropertyGetHandler",
+		str = property_proxy_get_function (NULL, "my", interface, property,
 						   &prototypes);
 
 		if (test_alloc_failed) {
@@ -2836,15 +2849,16 @@ test_proxy_get_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (property);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("DBusPendingCall *\n"
-				   "my_property_get (NihDBusProxy *       proxy,\n"
-				   "                 MyPropertyGetHandler handler,\n"
-				   "                 NihDBusErrorHandler  error_handler,\n"
-				   "                 void *               data,\n"
-				   "                 int                  timeout)\n"
+				   "my_get_test_property (NihDBusProxy *         proxy,\n"
+				   "                      MyGetTestPropertyReply handler,\n"
+				   "                      NihDBusErrorHandler    error_handler,\n"
+				   "                      void *                 data,\n"
+				   "                      int                    timeout)\n"
 				   "{\n"
 				   "\tDBusMessage *       method_call;\n"
 				   "\tDBusMessageIter     iter;\n"
@@ -2869,7 +2883,7 @@ test_proxy_get_function (void)
 				   "\t\tnih_return_no_memory_error (NULL);\n"
 				   "\t}\n"
 				   "\n"
-				   "\tproperty = \"my_property\";\n"
+				   "\tproperty = \"test_property\";\n"
 				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property)) {\n"
 				   "\t\tdbus_message_unref (method_call);\n"
 				   "\t\tnih_return_no_memory_error (NULL);\n"
@@ -2894,7 +2908,7 @@ test_proxy_get_function (void)
 				   "\n"
 				   "\tdbus_message_unref (method_call);\n"
 				   "\n"
-				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_property_get_notify,\n"
+				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Test_test_property_get_notify,\n"
 				   "\t                                        pending_data, (DBusFreeFunction)nih_discard));\n"
 				   "\n"
 				   "\treturn pending_call;\n"
@@ -2907,7 +2921,7 @@ test_proxy_get_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "DBusPendingCall *");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_property_get");
+		TEST_EQ_STR (func->name, "my_get_test_property");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -2926,7 +2940,7 @@ test_proxy_get_function (void)
 		arg = (TypeVar *)func->args.next;
 		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "MyPropertyGetHandler");
+		TEST_EQ_STR (arg->type, "MyGetTestPropertyReply");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "handler");
 		TEST_ALLOC_PARENT (arg->name, arg);
@@ -2981,6 +2995,7 @@ test_proxy_get_function (void)
 
 		nih_free (str);
 		nih_free (property);
+		nih_free (interface);
 	}
 
 
@@ -3001,14 +3016,14 @@ test_proxy_get_function (void)
 						    NULL, NULL);
 		}
 
-		my_test_property_get_notify_called = FALSE;
+		my_com_netsplit_Nih_Test_test_property_get_notify_called = FALSE;
 		last_pending_call = NULL;
 		last_pending_data = NULL;
 
-		pending_call = my_property_get (proxy,
-						my_blank_get_handler,
-						my_blank_error_handler,
-						&proxy, -1);
+		pending_call = my_get_test_property (proxy,
+						     my_blank_get_handler,
+						     my_blank_error_handler,
+						     &proxy, -1);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -3045,7 +3060,7 @@ test_proxy_get_function (void)
 			 DBUS_TYPE_STRING);
 
 		dbus_message_iter_get_basic (&iter, &str_value);
-		TEST_EQ_STR (str_value, "my_property");
+		TEST_EQ_STR (str_value, "test_property");
 
 		dbus_message_iter_next (&iter);
 
@@ -3085,7 +3100,7 @@ test_proxy_get_function (void)
 		/* Check the notify function was called with all the right
 		 * things.
 		 */
-		TEST_TRUE (my_test_property_get_notify_called);
+		TEST_TRUE (my_com_netsplit_Nih_Test_test_property_get_notify_called);
 		TEST_EQ_P (last_pending_call, pending_call);
 		TEST_ALLOC_SIZE (last_pending_data, sizeof (NihDBusPendingData));
 
@@ -3122,14 +3137,14 @@ test_proxy_get_function (void)
 						    NULL, NULL);
 		}
 
-		my_test_property_get_notify_called = FALSE;
+		my_com_netsplit_Nih_Test_test_property_get_notify_called = FALSE;
 		last_pending_call = NULL;
 		last_pending_data = NULL;
 
-		pending_call = my_property_get (proxy,
-						my_blank_get_handler,
-						my_blank_error_handler,
-						&proxy, -1);
+		pending_call = my_get_test_property (proxy,
+						     my_blank_get_handler,
+						     my_blank_error_handler,
+						     &proxy, -1);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -3166,7 +3181,7 @@ test_proxy_get_function (void)
 			 DBUS_TYPE_STRING);
 
 		dbus_message_iter_get_basic (&iter, &str_value);
-		TEST_EQ_STR (str_value, "my_property");
+		TEST_EQ_STR (str_value, "test_property");
 
 		dbus_message_iter_next (&iter);
 
@@ -3196,7 +3211,7 @@ test_proxy_get_function (void)
 		/* Check the notify function was called with all the right
 		 * things.
 		 */
-		TEST_TRUE (my_test_property_get_notify_called);
+		TEST_TRUE (my_com_netsplit_Nih_Test_test_property_get_notify_called);
 		TEST_EQ_P (last_pending_call, pending_call);
 		TEST_ALLOC_SIZE (last_pending_data, sizeof (NihDBusPendingData));
 
@@ -3231,14 +3246,14 @@ test_proxy_get_function (void)
 						    NULL, NULL);
 		}
 
-		my_test_property_get_notify_called = FALSE;
+		my_com_netsplit_Nih_Test_test_property_get_notify_called = FALSE;
 		last_pending_call = NULL;
 		last_pending_data = NULL;
 
-		pending_call = my_property_get (proxy,
-						my_blank_get_handler,
-						my_blank_error_handler,
-						&proxy, 50);
+		pending_call = my_get_test_property (proxy,
+						     my_blank_get_handler,
+						     my_blank_error_handler,
+						     &proxy, 50);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -3275,7 +3290,7 @@ test_proxy_get_function (void)
 			 DBUS_TYPE_STRING);
 
 		dbus_message_iter_get_basic (&iter, &str_value);
-		TEST_EQ_STR (str_value, "my_property");
+		TEST_EQ_STR (str_value, "test_property");
 
 		dbus_message_iter_next (&iter);
 
@@ -3296,7 +3311,7 @@ test_proxy_get_function (void)
 		/* Check the notify function was called with all the right
 		 * things.
 		 */
-		TEST_TRUE (my_test_property_get_notify_called);
+		TEST_TRUE (my_com_netsplit_Nih_Test_test_property_get_notify_called);
 		TEST_EQ_P (last_pending_call, pending_call);
 		TEST_ALLOC_SIZE (last_pending_data, sizeof (NihDBusPendingData));
 
@@ -3334,14 +3349,14 @@ test_proxy_get_function (void)
 						    NULL, NULL);
 		}
 
-		my_test_property_get_notify_called = FALSE;
+		my_com_netsplit_Nih_Test_test_property_get_notify_called = FALSE;
 		last_pending_call = NULL;
 		last_pending_data = NULL;
 
-		pending_call = my_property_get (proxy,
-						my_blank_get_handler,
-						my_blank_error_handler,
-						&proxy, -1);
+		pending_call = my_get_test_property (proxy,
+						     my_blank_get_handler,
+						     my_blank_error_handler,
+						     &proxy, -1);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -3379,7 +3394,7 @@ test_proxy_get_function (void)
 			 DBUS_TYPE_STRING);
 
 		dbus_message_iter_get_basic (&iter, &str_value);
-		TEST_EQ_STR (str_value, "my_property");
+		TEST_EQ_STR (str_value, "test_property");
 
 		dbus_message_iter_next (&iter);
 
@@ -3404,7 +3419,7 @@ test_proxy_get_function (void)
 		/* Check the notify function was called with all the right
 		 * things.
 		 */
-		TEST_TRUE (my_test_property_get_notify_called);
+		TEST_TRUE (my_com_netsplit_Nih_Test_test_property_get_notify_called);
 		TEST_EQ_P (last_pending_call, pending_call);
 		TEST_ALLOC_SIZE (last_pending_data, sizeof (NihDBusPendingData));
 
@@ -3440,14 +3455,14 @@ test_proxy_get_function (void)
 						    NULL, NULL);
 		}
 
-		my_test_property_get_notify_called = FALSE;
+		my_com_netsplit_Nih_Test_test_property_get_notify_called = FALSE;
 		last_pending_call = NULL;
 		last_pending_data = NULL;
 
-		pending_call = my_property_get (proxy,
-						my_blank_get_handler,
-						my_blank_error_handler,
-						&proxy, -1);
+		pending_call = my_get_test_property (proxy,
+						     my_blank_get_handler,
+						     my_blank_error_handler,
+						     &proxy, -1);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -3484,7 +3499,7 @@ test_proxy_get_function (void)
 			 DBUS_TYPE_STRING);
 
 		dbus_message_iter_get_basic (&iter, &str_value);
-		TEST_EQ_STR (str_value, "my_property");
+		TEST_EQ_STR (str_value, "test_property");
 
 		dbus_message_iter_next (&iter);
 
@@ -3508,7 +3523,7 @@ test_proxy_get_function (void)
 		TEST_DBUS_DISPATCH (client_conn);
 
 		/* Check the notify function was not called. */
-		TEST_FALSE (my_test_property_get_notify_called);
+		TEST_FALSE (my_com_netsplit_Nih_Test_test_property_get_notify_called);
 
 		nih_free (proxy);
 	}
@@ -3523,18 +3538,16 @@ test_proxy_get_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			property = property_new (NULL, "my_property",
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "test_property",
 						 "s", NIH_DBUS_READWRITE);
-			property->symbol = nih_strdup (property, "my_property");
+			property->symbol = nih_strdup (property, "test_property");
 			property->deprecated = TRUE;
 		}
 
-		str = property_proxy_get_function (NULL,
-						   "com.netsplit.Nih.Test",
-						   property,
-						   "my_property_get",
-						   "my_property_get_notify",
-						   "MyPropertyGetHandler",
+		str = property_proxy_get_function (NULL, "my", interface, property,
 						   &prototypes);
 
 		if (test_alloc_failed) {
@@ -3543,15 +3556,16 @@ test_proxy_get_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (property);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("DBusPendingCall *\n"
-				   "my_property_get (NihDBusProxy *       proxy,\n"
-				   "                 MyPropertyGetHandler handler,\n"
-				   "                 NihDBusErrorHandler  error_handler,\n"
-				   "                 void *               data,\n"
-				   "                 int                  timeout)\n"
+				   "my_get_test_property (NihDBusProxy *         proxy,\n"
+				   "                      MyGetTestPropertyReply handler,\n"
+				   "                      NihDBusErrorHandler    error_handler,\n"
+				   "                      void *                 data,\n"
+				   "                      int                    timeout)\n"
 				   "{\n"
 				   "\tDBusMessage *       method_call;\n"
 				   "\tDBusMessageIter     iter;\n"
@@ -3576,7 +3590,7 @@ test_proxy_get_function (void)
 				   "\t\tnih_return_no_memory_error (NULL);\n"
 				   "\t}\n"
 				   "\n"
-				   "\tproperty = \"my_property\";\n"
+				   "\tproperty = \"test_property\";\n"
 				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property)) {\n"
 				   "\t\tdbus_message_unref (method_call);\n"
 				   "\t\tnih_return_no_memory_error (NULL);\n"
@@ -3601,7 +3615,7 @@ test_proxy_get_function (void)
 				   "\n"
 				   "\tdbus_message_unref (method_call);\n"
 				   "\n"
-				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_property_get_notify,\n"
+				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Test_test_property_get_notify,\n"
 				   "\t                                        pending_data, (DBusFreeFunction)nih_discard));\n"
 				   "\n"
 				   "\treturn pending_call;\n"
@@ -3614,7 +3628,7 @@ test_proxy_get_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "DBusPendingCall *");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_property_get");
+		TEST_EQ_STR (func->name, "my_get_test_property");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -3633,7 +3647,7 @@ test_proxy_get_function (void)
 		arg = (TypeVar *)func->args.next;
 		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "MyPropertyGetHandler");
+		TEST_EQ_STR (arg->type, "MyGetTestPropertyReply");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "handler");
 		TEST_ALLOC_PARENT (arg->name, arg);
@@ -3697,6 +3711,7 @@ test_proxy_get_function (void)
 
 		nih_free (str);
 		nih_free (property);
+		nih_free (interface);
 	}
 
 
@@ -3709,7 +3724,7 @@ test_proxy_get_function (void)
 
 static void my_error_handler (void *data, NihDBusMessage *message);
 
-static int my_get_handler_called = FALSE;
+static int my_get_property_handler_called = FALSE;
 static int my_error_handler_called = FALSE;
 static NihDBusMessage *last_message = NULL;
 static DBusConnection *last_conn = NULL;
@@ -3717,11 +3732,11 @@ static DBusMessage *last_msg = NULL;
 static NihError *last_error = NULL;
 
 static void
-my_get_handler (void *          data,
-		NihDBusMessage *message,
-		const char *    value)
+my_get_property_handler (void *          data,
+			 NihDBusMessage *message,
+			 const char *    value)
 {
-	my_get_handler_called++;
+	my_get_property_handler_called++;
 
 	TEST_EQ_P (data, (void *)my_error_handler);
 
@@ -3774,6 +3789,7 @@ test_proxy_get_notify_function (void)
 	pid_t               dbus_pid;
 	NihList             prototypes;
 	NihList             typedefs;
+	Interface *         interface = NULL;
 	Property *          property = NULL;
 	char *              str;
 	TypeFunc *          func;
@@ -3811,15 +3827,16 @@ test_proxy_get_notify_function (void)
 		nih_list_init (&typedefs);
 
 		TEST_ALLOC_SAFE {
-			property = property_new (NULL, "my_property",
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "property",
 						 "s", NIH_DBUS_READWRITE);
-			property->symbol = nih_strdup (property, "my_property");
+			property->symbol = nih_strdup (property, "property");
 		}
 
-		str = property_proxy_get_notify_function (NULL,
+		str = property_proxy_get_notify_function (NULL, "my", interface,
 							  property,
-							  "my_property_get_notify",
-							  "MyPropertyGetHandler",
 							  &prototypes, &typedefs);
 
 		if (test_alloc_failed) {
@@ -3829,12 +3846,13 @@ test_proxy_get_notify_function (void)
 			TEST_LIST_EMPTY (&typedefs);
 
 			nih_free (property);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("void\n"
-				   "my_property_get_notify (DBusPendingCall *   pending_call,\n"
-				   "                        NihDBusPendingData *pending_data)\n"
+				   "my_com_netsplit_Nih_Test_property_get_notify (DBusPendingCall *   pending_call,\n"
+				   "                                              NihDBusPendingData *pending_data)\n"
 				   "{\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tDBusMessageIter iter;\n"
@@ -3942,7 +3960,7 @@ test_proxy_get_notify_function (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\t((MyPropertyGetHandler)pending_data->handler) (pending_data->data, message, value);\n"
+				   "\t((MyGetPropertyReply)pending_data->handler) (pending_data->data, message, value);\n"
 				   "\tnih_error_pop_context ();\n"
 				   "\n"
 				   "\tnih_free (message);\n"
@@ -3956,7 +3974,7 @@ test_proxy_get_notify_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_property_get_notify");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_property_get_notify");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -3996,7 +4014,7 @@ test_proxy_get_notify_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "typedef void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "(*MyPropertyGetHandler)");
+		TEST_EQ_STR (func->name, "(*MyGetPropertyReply)");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -4041,6 +4059,7 @@ test_proxy_get_notify_function (void)
 
 		nih_free (str);
 		nih_free (property);
+		nih_free (interface);
 	}
 
 
@@ -4098,19 +4117,19 @@ test_proxy_get_notify_function (void)
 		TEST_ALLOC_SAFE {
 			pending_data = nih_dbus_pending_data_new (
 				NULL, client_conn,
-				(NihDBusReplyHandler)my_get_handler,
+				(NihDBusReplyHandler)my_get_property_handler,
 				my_error_handler, (void *)my_error_handler);
 		}
 
-		my_get_handler_called = FALSE;
+		my_get_property_handler_called = FALSE;
 		my_error_handler_called = FALSE;
 		last_message = NULL;
 		last_conn = NULL;
 		last_msg = NULL;
 
-		my_property_get_notify (pending_call, pending_data);
+		my_com_netsplit_Nih_Test_property_get_notify (pending_call, pending_data);
 
-		TEST_TRUE (my_get_handler_called);
+		TEST_TRUE (my_get_property_handler_called);
 		TEST_FALSE (my_error_handler_called);
 
 		TEST_NE_P (last_message, NULL);
@@ -4173,19 +4192,19 @@ test_proxy_get_notify_function (void)
 		TEST_ALLOC_SAFE {
 			pending_data = nih_dbus_pending_data_new (
 				NULL, client_conn,
-				(NihDBusReplyHandler)my_get_handler,
+				(NihDBusReplyHandler)my_get_property_handler,
 				my_error_handler, (void *)my_error_handler);
 		}
 
-		my_get_handler_called = FALSE;
+		my_get_property_handler_called = FALSE;
 		my_error_handler_called = FALSE;
 		last_message = NULL;
 		last_conn = NULL;
 		last_msg = NULL;
 
-		my_property_get_notify (pending_call, pending_data);
+		my_com_netsplit_Nih_Test_property_get_notify (pending_call, pending_data);
 
-		TEST_FALSE (my_get_handler_called);
+		TEST_FALSE (my_get_property_handler_called);
 		TEST_TRUE (my_error_handler_called);
 
 		TEST_NE_P (last_message, NULL);
@@ -4247,19 +4266,19 @@ test_proxy_get_notify_function (void)
 		TEST_ALLOC_SAFE {
 			pending_data = nih_dbus_pending_data_new (
 				NULL, client_conn,
-				(NihDBusReplyHandler)my_get_handler,
+				(NihDBusReplyHandler)my_get_property_handler,
 				my_error_handler, (void *)my_error_handler);
 		}
 
-		my_get_handler_called = FALSE;
+		my_get_property_handler_called = FALSE;
 		my_error_handler_called = FALSE;
 		last_message = NULL;
 		last_conn = NULL;
 		last_msg = NULL;
 
-		my_property_get_notify (pending_call, pending_data);
+		my_com_netsplit_Nih_Test_property_get_notify (pending_call, pending_data);
 
-		TEST_FALSE (my_get_handler_called);
+		TEST_FALSE (my_get_property_handler_called);
 		TEST_TRUE (my_error_handler_called);
 
 		TEST_NE_P (last_message, NULL);
@@ -4324,19 +4343,19 @@ test_proxy_get_notify_function (void)
 		TEST_ALLOC_SAFE {
 			pending_data = nih_dbus_pending_data_new (
 				NULL, client_conn,
-				(NihDBusReplyHandler)my_get_handler,
+				(NihDBusReplyHandler)my_get_property_handler,
 				my_error_handler, (void *)my_error_handler);
 		}
 
-		my_get_handler_called = FALSE;
+		my_get_property_handler_called = FALSE;
 		my_error_handler_called = FALSE;
 		last_message = NULL;
 		last_conn = NULL;
 		last_msg = NULL;
 
-		my_property_get_notify (pending_call, pending_data);
+		my_com_netsplit_Nih_Test_property_get_notify (pending_call, pending_data);
 
-		TEST_FALSE (my_get_handler_called);
+		TEST_FALSE (my_get_property_handler_called);
 		TEST_TRUE (my_error_handler_called);
 
 		TEST_NE_P (last_message, NULL);
@@ -4417,19 +4436,19 @@ test_proxy_get_notify_function (void)
 		TEST_ALLOC_SAFE {
 			pending_data = nih_dbus_pending_data_new (
 				NULL, client_conn,
-				(NihDBusReplyHandler)my_get_handler,
+				(NihDBusReplyHandler)my_get_property_handler,
 				my_error_handler, (void *)my_error_handler);
 		}
 
-		my_get_handler_called = FALSE;
+		my_get_property_handler_called = FALSE;
 		my_error_handler_called = FALSE;
 		last_message = NULL;
 		last_conn = NULL;
 		last_msg = NULL;
 
-		my_property_get_notify (pending_call, pending_data);
+		my_com_netsplit_Nih_Test_property_get_notify (pending_call, pending_data);
 
-		TEST_FALSE (my_get_handler_called);
+		TEST_FALSE (my_get_property_handler_called);
 		TEST_TRUE (my_error_handler_called);
 
 		TEST_NE_P (last_message, NULL);
@@ -4500,19 +4519,19 @@ test_proxy_get_notify_function (void)
 		TEST_ALLOC_SAFE {
 			pending_data = nih_dbus_pending_data_new (
 				NULL, client_conn,
-				(NihDBusReplyHandler)my_get_handler,
+				(NihDBusReplyHandler)my_get_property_handler,
 				my_error_handler, (void *)my_error_handler);
 		}
 
-		my_get_handler_called = FALSE;
+		my_get_property_handler_called = FALSE;
 		my_error_handler_called = FALSE;
 		last_message = NULL;
 		last_conn = NULL;
 		last_msg = NULL;
 
-		my_property_get_notify (pending_call, pending_data);
+		my_com_netsplit_Nih_Test_property_get_notify (pending_call, pending_data);
 
-		TEST_FALSE (my_get_handler_called);
+		TEST_FALSE (my_get_property_handler_called);
 		TEST_TRUE (my_error_handler_called);
 
 		TEST_NE_P (last_message, NULL);
@@ -4577,19 +4596,19 @@ test_proxy_get_notify_function (void)
 		TEST_ALLOC_SAFE {
 			pending_data = nih_dbus_pending_data_new (
 				NULL, client_conn,
-				(NihDBusReplyHandler)my_get_handler,
+				(NihDBusReplyHandler)my_get_property_handler,
 				my_error_handler, (void *)my_error_handler);
 		}
 
-		my_get_handler_called = FALSE;
+		my_get_property_handler_called = FALSE;
 		my_error_handler_called = FALSE;
 		last_message = NULL;
 		last_conn = NULL;
 		last_msg = NULL;
 
-		my_property_get_notify (pending_call, pending_data);
+		my_com_netsplit_Nih_Test_property_get_notify (pending_call, pending_data);
 
-		TEST_FALSE (my_get_handler_called);
+		TEST_FALSE (my_get_property_handler_called);
 		TEST_TRUE (my_error_handler_called);
 
 		TEST_NE_P (last_message, NULL);
@@ -4670,19 +4689,19 @@ test_proxy_get_notify_function (void)
 		TEST_ALLOC_SAFE {
 			pending_data = nih_dbus_pending_data_new (
 				NULL, client_conn,
-				(NihDBusReplyHandler)my_get_handler,
+				(NihDBusReplyHandler)my_get_property_handler,
 				my_error_handler, (void *)my_error_handler);
 		}
 
-		my_get_handler_called = FALSE;
+		my_get_property_handler_called = FALSE;
 		my_error_handler_called = FALSE;
 		last_message = NULL;
 		last_conn = NULL;
 		last_msg = NULL;
 
-		my_property_get_notify (pending_call, pending_data);
+		my_com_netsplit_Nih_Test_property_get_notify (pending_call, pending_data);
 
-		TEST_FALSE (my_get_handler_called);
+		TEST_FALSE (my_get_property_handler_called);
 		TEST_TRUE (my_error_handler_called);
 
 		TEST_NE_P (last_message, NULL);
@@ -4714,16 +4733,17 @@ test_proxy_get_notify_function (void)
 		nih_list_init (&typedefs);
 
 		TEST_ALLOC_SAFE {
-			property = property_new (NULL, "my_property",
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "property",
 						 "s", NIH_DBUS_READWRITE);
-			property->symbol = nih_strdup (property, "my_property");
+			property->symbol = nih_strdup (property, "property");
 			property->deprecated = TRUE;
 		}
 
-		str = property_proxy_get_notify_function (NULL,
+		str = property_proxy_get_notify_function (NULL, "my", interface,
 							  property,
-							  "my_property_get_notify",
-							  "MyPropertyGetHandler",
 							  &prototypes, &typedefs);
 
 		if (test_alloc_failed) {
@@ -4733,12 +4753,13 @@ test_proxy_get_notify_function (void)
 			TEST_LIST_EMPTY (&typedefs);
 
 			nih_free (property);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("void\n"
-				   "my_property_get_notify (DBusPendingCall *   pending_call,\n"
-				   "                        NihDBusPendingData *pending_data)\n"
+				   "my_com_netsplit_Nih_Test_property_get_notify (DBusPendingCall *   pending_call,\n"
+				   "                                              NihDBusPendingData *pending_data)\n"
 				   "{\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tDBusMessageIter iter;\n"
@@ -4846,7 +4867,7 @@ test_proxy_get_notify_function (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\t((MyPropertyGetHandler)pending_data->handler) (pending_data->data, message, value);\n"
+				   "\t((MyGetPropertyReply)pending_data->handler) (pending_data->data, message, value);\n"
 				   "\tnih_error_pop_context ();\n"
 				   "\n"
 				   "\tnih_free (message);\n"
@@ -4860,7 +4881,7 @@ test_proxy_get_notify_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_property_get_notify");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_property_get_notify");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -4900,7 +4921,7 @@ test_proxy_get_notify_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "typedef void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "(*MyPropertyGetHandler)");
+		TEST_EQ_STR (func->name, "(*MyGetPropertyReply)");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -4945,6 +4966,7 @@ test_proxy_get_notify_function (void)
 
 		nih_free (str);
 		nih_free (property);
+		nih_free (interface);
 	}
 
 
@@ -4956,13 +4978,13 @@ test_proxy_get_notify_function (void)
 }
 
 
-int my_test_property_set_notify_called = FALSE;
+int my_com_netsplit_Nih_Test_test_property_set_notify_called = FALSE;
 
 void
-my_test_property_set_notify (DBusPendingCall *   pending_call,
+my_com_netsplit_Nih_Test_test_property_set_notify (DBusPendingCall *   pending_call,
 			     NihDBusPendingData *pending_data)
 {
-	my_test_property_set_notify_called = TRUE;
+	my_com_netsplit_Nih_Test_test_property_set_notify_called = TRUE;
 	last_pending_call = pending_call;
 	last_pending_data = pending_data;
 }
@@ -4980,6 +5002,7 @@ test_proxy_set_function (void)
 	DBusConnection *  server_conn;
 	DBusConnection *  client_conn;
 	NihList           prototypes;
+	Interface *       interface = NULL;
 	Property *        property = NULL;
 	char *            str;
 	TypeFunc *        func;
@@ -5010,17 +5033,15 @@ test_proxy_set_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			property = property_new (NULL, "my_property",
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "test_property",
 						 "s", NIH_DBUS_READWRITE);
-			property->symbol = nih_strdup (property, "my_property");
+			property->symbol = nih_strdup (property, "test_property");
 		}
 
-		str = property_proxy_set_function (NULL,
-						   "com.netsplit.Nih.Test",
-						   property,
-						   "my_property_set",
-						   "my_property_set_notify",
-						   "MyPropertySetHandler",
+		str = property_proxy_set_function (NULL, "my", interface, property,
 						   &prototypes);
 
 		if (test_alloc_failed) {
@@ -5029,16 +5050,17 @@ test_proxy_set_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (property);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("DBusPendingCall *\n"
-				   "my_property_set (NihDBusProxy *       proxy,\n"
-				   "                 const char *         value,\n"
-				   "                 MyPropertySetHandler handler,\n"
-				   "                 NihDBusErrorHandler  error_handler,\n"
-				   "                 void *               data,\n"
-				   "                 int                  timeout)\n"
+				   "my_set_test_property (NihDBusProxy *         proxy,\n"
+				   "                      const char *           value,\n"
+				   "                      MySetTestPropertyReply handler,\n"
+				   "                      NihDBusErrorHandler    error_handler,\n"
+				   "                      void *                 data,\n"
+				   "                      int                    timeout)\n"
 				   "{\n"
 				   "\tDBusMessage *       method_call;\n"
 				   "\tDBusMessageIter     iter;\n"
@@ -5065,7 +5087,7 @@ test_proxy_set_function (void)
 				   "\t\tnih_return_no_memory_error (NULL);\n"
 				   "\t}\n"
 				   "\n"
-				   "\tproperty = \"my_property\";\n"
+				   "\tproperty = \"test_property\";\n"
 				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property)) {\n"
 				   "\t\tdbus_message_unref (method_call);\n"
 				   "\t\tnih_return_no_memory_error (NULL);\n"
@@ -5119,7 +5141,7 @@ test_proxy_set_function (void)
 				   "\n"
 				   "\tdbus_message_unref (method_call);\n"
 				   "\n"
-				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_property_set_notify,\n"
+				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Test_test_property_set_notify,\n"
 				   "\t                                        pending_data, (DBusFreeFunction)nih_discard));\n"
 				   "\n"
 				   "\treturn pending_call;\n"
@@ -5132,7 +5154,7 @@ test_proxy_set_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "DBusPendingCall *");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_property_set");
+		TEST_EQ_STR (func->name, "my_set_test_property");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -5162,7 +5184,7 @@ test_proxy_set_function (void)
 		arg = (TypeVar *)func->args.next;
 		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "MyPropertySetHandler");
+		TEST_EQ_STR (arg->type, "MySetTestPropertyReply");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "handler");
 		TEST_ALLOC_PARENT (arg->name, arg);
@@ -5217,6 +5239,7 @@ test_proxy_set_function (void)
 
 		nih_free (str);
 		nih_free (property);
+		nih_free (interface);
 	}
 
 
@@ -5237,14 +5260,14 @@ test_proxy_set_function (void)
 						    NULL, NULL);
 		}
 
-		my_test_property_set_notify_called = FALSE;
+		my_com_netsplit_Nih_Test_test_property_set_notify_called = FALSE;
 		last_pending_call = NULL;
 		last_pending_data = NULL;
 
-		pending_call = my_property_set (proxy, "wibble",
-						my_blank_set_handler,
-						my_blank_error_handler,
-						&proxy, -1);
+		pending_call = my_set_test_property (proxy, "wibble",
+						     my_blank_set_handler,
+						     my_blank_error_handler,
+						     &proxy, -1);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -5281,7 +5304,7 @@ test_proxy_set_function (void)
 			 DBUS_TYPE_STRING);
 
 		dbus_message_iter_get_basic (&iter, &str_value);
-		TEST_EQ_STR (str_value, "my_property");
+		TEST_EQ_STR (str_value, "test_property");
 
 		dbus_message_iter_next (&iter);
 
@@ -5322,7 +5345,7 @@ test_proxy_set_function (void)
 		/* Check the notify function was called with all the right
 		 * things.
 		 */
-		TEST_TRUE (my_test_property_set_notify_called);
+		TEST_TRUE (my_com_netsplit_Nih_Test_test_property_set_notify_called);
 		TEST_EQ_P (last_pending_call, pending_call);
 		TEST_ALLOC_SIZE (last_pending_data, sizeof (NihDBusPendingData));
 
@@ -5361,14 +5384,14 @@ test_proxy_set_function (void)
 						    NULL, NULL);
 		}
 
-		my_test_property_set_notify_called = FALSE;
+		my_com_netsplit_Nih_Test_test_property_set_notify_called = FALSE;
 		last_pending_call = NULL;
 		last_pending_data = NULL;
 
-		pending_call = my_property_set (proxy, "wibble",
-						NULL,
-						my_blank_error_handler,
-						&proxy, -1);
+		pending_call = my_set_test_property (proxy, "wibble",
+						     NULL,
+						     my_blank_error_handler,
+						     &proxy, -1);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -5405,7 +5428,7 @@ test_proxy_set_function (void)
 			 DBUS_TYPE_STRING);
 
 		dbus_message_iter_get_basic (&iter, &str_value);
-		TEST_EQ_STR (str_value, "my_property");
+		TEST_EQ_STR (str_value, "test_property");
 
 		dbus_message_iter_next (&iter);
 
@@ -5446,7 +5469,7 @@ test_proxy_set_function (void)
 		/* Check the notify function was called with all the right
 		 * things.
 		 */
-		TEST_TRUE (my_test_property_set_notify_called);
+		TEST_TRUE (my_com_netsplit_Nih_Test_test_property_set_notify_called);
 		TEST_EQ_P (last_pending_call, pending_call);
 		TEST_ALLOC_SIZE (last_pending_data, sizeof (NihDBusPendingData));
 
@@ -5483,12 +5506,12 @@ test_proxy_set_function (void)
 						    NULL, NULL);
 		}
 
-		my_test_property_set_notify_called = FALSE;
+		my_com_netsplit_Nih_Test_test_property_set_notify_called = FALSE;
 		last_pending_call = NULL;
 		last_pending_data = NULL;
 
-		pending_call = my_property_set (proxy, "wibble",
-						NULL, NULL, NULL, -1);
+		pending_call = my_set_test_property (proxy, "wibble",
+						     NULL, NULL, NULL, -1);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -5525,7 +5548,7 @@ test_proxy_set_function (void)
 			 DBUS_TYPE_STRING);
 
 		dbus_message_iter_get_basic (&iter, &str_value);
-		TEST_EQ_STR (str_value, "my_property");
+		TEST_EQ_STR (str_value, "test_property");
 
 		dbus_message_iter_next (&iter);
 
@@ -5558,7 +5581,7 @@ test_proxy_set_function (void)
 		TEST_DBUS_DISPATCH (client_conn);
 
 		/* Check the notify function was not called. */
-		TEST_FALSE (my_test_property_set_notify_called);
+		TEST_FALSE (my_com_netsplit_Nih_Test_test_property_set_notify_called);
 
 		nih_free (proxy);
 	}
@@ -5578,14 +5601,14 @@ test_proxy_set_function (void)
 						    NULL, NULL);
 		}
 
-		my_test_property_set_notify_called = FALSE;
+		my_com_netsplit_Nih_Test_test_property_set_notify_called = FALSE;
 		last_pending_call = NULL;
 		last_pending_data = NULL;
 
-		pending_call = my_property_set (proxy, "wibble",
-						my_blank_set_handler,
-						my_blank_error_handler,
-						&proxy, -1);
+		pending_call = my_set_test_property (proxy, "wibble",
+						     my_blank_set_handler,
+						     my_blank_error_handler,
+						     &proxy, -1);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -5622,7 +5645,7 @@ test_proxy_set_function (void)
 			 DBUS_TYPE_STRING);
 
 		dbus_message_iter_get_basic (&iter, &str_value);
-		TEST_EQ_STR (str_value, "my_property");
+		TEST_EQ_STR (str_value, "test_property");
 
 		dbus_message_iter_next (&iter);
 
@@ -5665,7 +5688,7 @@ test_proxy_set_function (void)
 		/* Check the notify function was called with all the right
 		 * things.
 		 */
-		TEST_TRUE (my_test_property_set_notify_called);
+		TEST_TRUE (my_com_netsplit_Nih_Test_test_property_set_notify_called);
 		TEST_EQ_P (last_pending_call, pending_call);
 		TEST_ALLOC_SIZE (last_pending_data, sizeof (NihDBusPendingData));
 
@@ -5700,14 +5723,14 @@ test_proxy_set_function (void)
 						    NULL, NULL);
 		}
 
-		my_test_property_set_notify_called = FALSE;
+		my_com_netsplit_Nih_Test_test_property_set_notify_called = FALSE;
 		last_pending_call = NULL;
 		last_pending_data = NULL;
 
-		pending_call = my_property_set (proxy, "wibble",
-						my_blank_set_handler,
-						my_blank_error_handler,
-						&proxy, 50);
+		pending_call = my_set_test_property (proxy, "wibble",
+						     my_blank_set_handler,
+						     my_blank_error_handler,
+						     &proxy, 50);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -5744,7 +5767,7 @@ test_proxy_set_function (void)
 			 DBUS_TYPE_STRING);
 
 		dbus_message_iter_get_basic (&iter, &str_value);
-		TEST_EQ_STR (str_value, "my_property");
+		TEST_EQ_STR (str_value, "test_property");
 
 		dbus_message_iter_next (&iter);
 
@@ -5778,7 +5801,7 @@ test_proxy_set_function (void)
 		/* Check the notify function was called with all the right
 		 * things.
 		 */
-		TEST_TRUE (my_test_property_set_notify_called);
+		TEST_TRUE (my_com_netsplit_Nih_Test_test_property_set_notify_called);
 		TEST_EQ_P (last_pending_call, pending_call);
 		TEST_ALLOC_SIZE (last_pending_data, sizeof (NihDBusPendingData));
 
@@ -5816,14 +5839,14 @@ test_proxy_set_function (void)
 						    NULL, NULL);
 		}
 
-		my_test_property_set_notify_called = FALSE;
+		my_com_netsplit_Nih_Test_test_property_set_notify_called = FALSE;
 		last_pending_call = NULL;
 		last_pending_data = NULL;
 
-		pending_call = my_property_set (proxy, "wibble",
-						my_blank_set_handler,
-						my_blank_error_handler,
-						&proxy, -1);
+		pending_call = my_set_test_property (proxy, "wibble",
+						     my_blank_set_handler,
+						     my_blank_error_handler,
+						     &proxy, -1);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -5861,7 +5884,7 @@ test_proxy_set_function (void)
 			 DBUS_TYPE_STRING);
 
 		dbus_message_iter_get_basic (&iter, &str_value);
-		TEST_EQ_STR (str_value, "my_property");
+		TEST_EQ_STR (str_value, "test_property");
 
 		dbus_message_iter_next (&iter);
 
@@ -5899,7 +5922,7 @@ test_proxy_set_function (void)
 		/* Check the notify function was called with all the right
 		 * things.
 		 */
-		TEST_TRUE (my_test_property_set_notify_called);
+		TEST_TRUE (my_com_netsplit_Nih_Test_test_property_set_notify_called);
 		TEST_EQ_P (last_pending_call, pending_call);
 		TEST_ALLOC_SIZE (last_pending_data, sizeof (NihDBusPendingData));
 
@@ -5935,14 +5958,14 @@ test_proxy_set_function (void)
 						    NULL, NULL);
 		}
 
-		my_test_property_set_notify_called = FALSE;
+		my_com_netsplit_Nih_Test_test_property_set_notify_called = FALSE;
 		last_pending_call = NULL;
 		last_pending_data = NULL;
 
-		pending_call = my_property_set (proxy, "wibble",
-						my_blank_set_handler,
-						my_blank_error_handler,
-						&proxy, -1);
+		pending_call = my_set_test_property (proxy, "wibble",
+						     my_blank_set_handler,
+						     my_blank_error_handler,
+						     &proxy, -1);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -5979,7 +6002,7 @@ test_proxy_set_function (void)
 			 DBUS_TYPE_STRING);
 
 		dbus_message_iter_get_basic (&iter, &str_value);
-		TEST_EQ_STR (str_value, "my_property");
+		TEST_EQ_STR (str_value, "test_property");
 
 		dbus_message_iter_next (&iter);
 
@@ -6016,7 +6039,7 @@ test_proxy_set_function (void)
 		TEST_DBUS_DISPATCH (client_conn);
 
 		/* Check the notify function was not called. */
-		TEST_FALSE (my_test_property_set_notify_called);
+		TEST_FALSE (my_com_netsplit_Nih_Test_test_property_set_notify_called);
 
 		nih_free (proxy);
 	}
@@ -6031,18 +6054,16 @@ test_proxy_set_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			property = property_new (NULL, "my_property",
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "test_property",
 						 "s", NIH_DBUS_READWRITE);
-			property->symbol = nih_strdup (property, "my_property");
+			property->symbol = nih_strdup (property, "test_property");
 			property->deprecated = TRUE;
 		}
 
-		str = property_proxy_set_function (NULL,
-						   "com.netsplit.Nih.Test",
-						   property,
-						   "my_property_set",
-						   "my_property_set_notify",
-						   "MyPropertySetHandler",
+		str = property_proxy_set_function (NULL, "my", interface, property,
 						   &prototypes);
 
 		if (test_alloc_failed) {
@@ -6051,16 +6072,17 @@ test_proxy_set_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (property);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("DBusPendingCall *\n"
-				   "my_property_set (NihDBusProxy *       proxy,\n"
-				   "                 const char *         value,\n"
-				   "                 MyPropertySetHandler handler,\n"
-				   "                 NihDBusErrorHandler  error_handler,\n"
-				   "                 void *               data,\n"
-				   "                 int                  timeout)\n"
+				   "my_set_test_property (NihDBusProxy *         proxy,\n"
+				   "                      const char *           value,\n"
+				   "                      MySetTestPropertyReply handler,\n"
+				   "                      NihDBusErrorHandler    error_handler,\n"
+				   "                      void *                 data,\n"
+				   "                      int                    timeout)\n"
 				   "{\n"
 				   "\tDBusMessage *       method_call;\n"
 				   "\tDBusMessageIter     iter;\n"
@@ -6087,7 +6109,7 @@ test_proxy_set_function (void)
 				   "\t\tnih_return_no_memory_error (NULL);\n"
 				   "\t}\n"
 				   "\n"
-				   "\tproperty = \"my_property\";\n"
+				   "\tproperty = \"test_property\";\n"
 				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property)) {\n"
 				   "\t\tdbus_message_unref (method_call);\n"
 				   "\t\tnih_return_no_memory_error (NULL);\n"
@@ -6141,7 +6163,7 @@ test_proxy_set_function (void)
 				   "\n"
 				   "\tdbus_message_unref (method_call);\n"
 				   "\n"
-				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_property_set_notify,\n"
+				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Test_test_property_set_notify,\n"
 				   "\t                                        pending_data, (DBusFreeFunction)nih_discard));\n"
 				   "\n"
 				   "\treturn pending_call;\n"
@@ -6154,7 +6176,7 @@ test_proxy_set_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "DBusPendingCall *");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_property_set");
+		TEST_EQ_STR (func->name, "my_set_test_property");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -6184,7 +6206,7 @@ test_proxy_set_function (void)
 		arg = (TypeVar *)func->args.next;
 		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "MyPropertySetHandler");
+		TEST_EQ_STR (arg->type, "MySetTestPropertyReply");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "handler");
 		TEST_ALLOC_PARENT (arg->name, arg);
@@ -6248,6 +6270,7 @@ test_proxy_set_function (void)
 
 		nih_free (str);
 		nih_free (property);
+		nih_free (interface);
 	}
 
 
@@ -6258,13 +6281,13 @@ test_proxy_set_function (void)
 	dbus_shutdown ();
 }
 
-static int my_set_handler_called = FALSE;
+static int my_set_property_handler_called = FALSE;
 
 static void
-my_set_handler (void *          data,
-		NihDBusMessage *message)
+my_set_property_handler (void *          data,
+		 NihDBusMessage *message)
 {
-	my_set_handler_called++;
+	my_set_property_handler_called++;
 
 	TEST_EQ_P (data, (void *)my_error_handler);
 
@@ -6288,6 +6311,7 @@ test_proxy_set_notify_function (void)
 	pid_t               dbus_pid;
 	NihList             prototypes;
 	NihList             typedefs;
+	Interface *         interface = NULL;
 	Property *          property = NULL;
 	char *              str;
 	TypeFunc *          func;
@@ -6322,15 +6346,16 @@ test_proxy_set_notify_function (void)
 		nih_list_init (&typedefs);
 
 		TEST_ALLOC_SAFE {
-			property = property_new (NULL, "my_property",
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "property",
 						 "s", NIH_DBUS_READWRITE);
-			property->symbol = nih_strdup (property, "my_property");
+			property->symbol = nih_strdup (property, "property");
 		}
 
-		str = property_proxy_set_notify_function (NULL,
+		str = property_proxy_set_notify_function (NULL, "my", interface,
 							  property,
-							  "my_property_set_notify",
-							  "MyPropertySetHandler",
 							  &prototypes, &typedefs);
 
 		if (test_alloc_failed) {
@@ -6340,12 +6365,13 @@ test_proxy_set_notify_function (void)
 			TEST_LIST_EMPTY (&typedefs);
 
 			nih_free (property);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("void\n"
-				   "my_property_set_notify (DBusPendingCall *   pending_call,\n"
-				   "                        NihDBusPendingData *pending_data)\n"
+				   "my_com_netsplit_Nih_Test_property_set_notify (DBusPendingCall *   pending_call,\n"
+				   "                                              NihDBusPendingData *pending_data)\n"
 				   "{\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tDBusMessageIter iter;\n"
@@ -6402,7 +6428,7 @@ test_proxy_set_notify_function (void)
 				   "\t/* Call the handler function */\n"
 				   "\tif (pending_data->handler) {\n"
 				   "\t\tnih_error_push_context ();\n"
-				   "\t\t((MyPropertySetHandler)pending_data->handler) (pending_data->data, message);\n"
+				   "\t\t((MySetPropertyReply)pending_data->handler) (pending_data->data, message);\n"
 				   "\t\tnih_error_pop_context ();\n"
 				   "\t}\n"
 				   "\n"
@@ -6417,7 +6443,7 @@ test_proxy_set_notify_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_property_set_notify");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_property_set_notify");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -6457,7 +6483,7 @@ test_proxy_set_notify_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "typedef void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "(*MyPropertySetHandler)");
+		TEST_EQ_STR (func->name, "(*MySetPropertyReply)");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -6491,6 +6517,7 @@ test_proxy_set_notify_function (void)
 
 		nih_free (str);
 		nih_free (property);
+		nih_free (interface);
 	}
 
 
@@ -6536,19 +6563,19 @@ test_proxy_set_notify_function (void)
 		TEST_ALLOC_SAFE {
 			pending_data = nih_dbus_pending_data_new (
 				NULL, client_conn,
-				(NihDBusReplyHandler)my_set_handler,
+				(NihDBusReplyHandler)my_set_property_handler,
 				my_error_handler, (void *)my_error_handler);
 		}
 
-		my_set_handler_called = FALSE;
+		my_set_property_handler_called = FALSE;
 		my_error_handler_called = FALSE;
 		last_message = NULL;
 		last_conn = NULL;
 		last_msg = NULL;
 
-		my_property_set_notify (pending_call, pending_data);
+		my_com_netsplit_Nih_Test_property_set_notify (pending_call, pending_data);
 
-		TEST_TRUE (my_set_handler_called);
+		TEST_TRUE (my_set_property_handler_called);
 		TEST_FALSE (my_error_handler_called);
 
 		TEST_NE_P (last_message, NULL);
@@ -6613,15 +6640,15 @@ test_proxy_set_notify_function (void)
 				my_error_handler, (void *)my_error_handler);
 		}
 
-		my_set_handler_called = FALSE;
+		my_set_property_handler_called = FALSE;
 		my_error_handler_called = FALSE;
 		last_message = NULL;
 		last_conn = NULL;
 		last_msg = NULL;
 
-		my_property_set_notify (pending_call, pending_data);
+		my_com_netsplit_Nih_Test_property_set_notify (pending_call, pending_data);
 
-		TEST_FALSE (my_set_handler_called);
+		TEST_FALSE (my_set_property_handler_called);
 		TEST_FALSE (my_error_handler_called);
 
 		nih_free (pending_data);
@@ -6673,19 +6700,19 @@ test_proxy_set_notify_function (void)
 		TEST_ALLOC_SAFE {
 			pending_data = nih_dbus_pending_data_new (
 				NULL, client_conn,
-				(NihDBusReplyHandler)my_set_handler,
+				(NihDBusReplyHandler)my_set_property_handler,
 				my_error_handler, (void *)my_error_handler);
 		}
 
-		my_set_handler_called = FALSE;
+		my_set_property_handler_called = FALSE;
 		my_error_handler_called = FALSE;
 		last_message = NULL;
 		last_conn = NULL;
 		last_msg = NULL;
 
-		my_property_set_notify (pending_call, pending_data);
+		my_com_netsplit_Nih_Test_property_set_notify (pending_call, pending_data);
 
-		TEST_FALSE (my_set_handler_called);
+		TEST_FALSE (my_set_property_handler_called);
 		TEST_TRUE (my_error_handler_called);
 
 		TEST_NE_P (last_message, NULL);
@@ -6747,19 +6774,19 @@ test_proxy_set_notify_function (void)
 		TEST_ALLOC_SAFE {
 			pending_data = nih_dbus_pending_data_new (
 				NULL, client_conn,
-				(NihDBusReplyHandler)my_set_handler,
+				(NihDBusReplyHandler)my_set_property_handler,
 				my_error_handler, (void *)my_error_handler);
 		}
 
-		my_set_handler_called = FALSE;
+		my_set_property_handler_called = FALSE;
 		my_error_handler_called = FALSE;
 		last_message = NULL;
 		last_conn = NULL;
 		last_msg = NULL;
 
-		my_property_set_notify (pending_call, pending_data);
+		my_com_netsplit_Nih_Test_property_set_notify (pending_call, pending_data);
 
-		TEST_FALSE (my_set_handler_called);
+		TEST_FALSE (my_set_property_handler_called);
 		TEST_TRUE (my_error_handler_called);
 
 		TEST_NE_P (last_message, NULL);
@@ -6824,19 +6851,19 @@ test_proxy_set_notify_function (void)
 		TEST_ALLOC_SAFE {
 			pending_data = nih_dbus_pending_data_new (
 				NULL, client_conn,
-				(NihDBusReplyHandler)my_set_handler,
+				(NihDBusReplyHandler)my_set_property_handler,
 				my_error_handler, (void *)my_error_handler);
 		}
 
-		my_set_handler_called = FALSE;
+		my_set_property_handler_called = FALSE;
 		my_error_handler_called = FALSE;
 		last_message = NULL;
 		last_conn = NULL;
 		last_msg = NULL;
 
-		my_property_set_notify (pending_call, pending_data);
+		my_com_netsplit_Nih_Test_property_set_notify (pending_call, pending_data);
 
-		TEST_FALSE (my_set_handler_called);
+		TEST_FALSE (my_set_property_handler_called);
 		TEST_TRUE (my_error_handler_called);
 
 		TEST_NE_P (last_message, NULL);
@@ -6911,19 +6938,19 @@ test_proxy_set_notify_function (void)
 		TEST_ALLOC_SAFE {
 			pending_data = nih_dbus_pending_data_new (
 				NULL, client_conn,
-				(NihDBusReplyHandler)my_set_handler,
+				(NihDBusReplyHandler)my_set_property_handler,
 				my_error_handler, (void *)my_error_handler);
 		}
 
-		my_set_handler_called = FALSE;
+		my_set_property_handler_called = FALSE;
 		my_error_handler_called = FALSE;
 		last_message = NULL;
 		last_conn = NULL;
 		last_msg = NULL;
 
-		my_property_set_notify (pending_call, pending_data);
+		my_com_netsplit_Nih_Test_property_set_notify (pending_call, pending_data);
 
-		TEST_FALSE (my_set_handler_called);
+		TEST_FALSE (my_set_property_handler_called);
 		TEST_TRUE (my_error_handler_called);
 
 		TEST_NE_P (last_message, NULL);
@@ -6997,15 +7024,15 @@ test_proxy_set_notify_function (void)
 				my_error_handler, (void *)my_error_handler);
 		}
 
-		my_set_handler_called = FALSE;
+		my_set_property_handler_called = FALSE;
 		my_error_handler_called = FALSE;
 		last_message = NULL;
 		last_conn = NULL;
 		last_msg = NULL;
 
-		my_property_set_notify (pending_call, pending_data);
+		my_com_netsplit_Nih_Test_property_set_notify (pending_call, pending_data);
 
-		TEST_FALSE (my_set_handler_called);
+		TEST_FALSE (my_set_property_handler_called);
 		TEST_TRUE (my_error_handler_called);
 
 		TEST_NE_P (last_message, NULL);
@@ -7037,16 +7064,17 @@ test_proxy_set_notify_function (void)
 		nih_list_init (&typedefs);
 
 		TEST_ALLOC_SAFE {
-			property = property_new (NULL, "my_property",
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "property",
 						 "s", NIH_DBUS_READWRITE);
-			property->symbol = nih_strdup (property, "my_property");
+			property->symbol = nih_strdup (property, "property");
 			property->deprecated = TRUE;
 		}
 
-		str = property_proxy_set_notify_function (NULL,
+		str = property_proxy_set_notify_function (NULL, "my", interface,
 							  property,
-							  "my_property_set_notify",
-							  "MyPropertySetHandler",
 							  &prototypes, &typedefs);
 
 		if (test_alloc_failed) {
@@ -7056,12 +7084,13 @@ test_proxy_set_notify_function (void)
 			TEST_LIST_EMPTY (&typedefs);
 
 			nih_free (property);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("void\n"
-				   "my_property_set_notify (DBusPendingCall *   pending_call,\n"
-				   "                        NihDBusPendingData *pending_data)\n"
+				   "my_com_netsplit_Nih_Test_property_set_notify (DBusPendingCall *   pending_call,\n"
+				   "                                              NihDBusPendingData *pending_data)\n"
 				   "{\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tDBusMessageIter iter;\n"
@@ -7118,7 +7147,7 @@ test_proxy_set_notify_function (void)
 				   "\t/* Call the handler function */\n"
 				   "\tif (pending_data->handler) {\n"
 				   "\t\tnih_error_push_context ();\n"
-				   "\t\t((MyPropertySetHandler)pending_data->handler) (pending_data->data, message);\n"
+				   "\t\t((MySetPropertyReply)pending_data->handler) (pending_data->data, message);\n"
 				   "\t\tnih_error_pop_context ();\n"
 				   "\t}\n"
 				   "\n"
@@ -7133,7 +7162,7 @@ test_proxy_set_notify_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_property_set_notify");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_property_set_notify");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -7173,7 +7202,7 @@ test_proxy_set_notify_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "typedef void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "(*MyPropertySetHandler)");
+		TEST_EQ_STR (func->name, "(*MySetPropertyReply)");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -7207,6 +7236,7 @@ test_proxy_set_notify_function (void)
 
 		nih_free (str);
 		nih_free (property);
+		nih_free (interface);
 	}
 
 
@@ -7225,6 +7255,7 @@ test_proxy_get_sync_function (void)
 	DBusConnection *server_conn;
 	DBusConnection *client_conn;
 	NihList         prototypes;
+	Interface *     interface = NULL;
 	Property *      property = NULL;
 	char *          str;
 	TypeFunc *      func;
@@ -7260,15 +7291,16 @@ test_proxy_get_sync_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			property = property_new (NULL, "my_property",
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "property",
 						 "s", NIH_DBUS_READWRITE);
-			property->symbol = nih_strdup (property, "my_property");
+			property->symbol = nih_strdup (property, "property");
 		}
 
-		str = property_proxy_get_sync_function (NULL,
-							"com.netsplit.Nih.Test",
+		str = property_proxy_get_sync_function (NULL, "my", interface,
 							property,
-							"my_property_get_sync",
 							&prototypes);
 
 		if (test_alloc_failed) {
@@ -7277,11 +7309,12 @@ test_proxy_get_sync_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (property);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("int\n"
-				   "my_property_get_sync (const void *  parent,\n"
+				   "my_get_property_sync (const void *  parent,\n"
 				   "                      NihDBusProxy *proxy,\n"
 				   "                      char **       value)\n"
 				   "{\n"
@@ -7311,7 +7344,7 @@ test_proxy_get_sync_function (void)
 				   "\t\tnih_return_no_memory_error (-1);\n"
 				   "\t}\n"
 				   "\n"
-				   "\tproperty = \"my_property\";\n"
+				   "\tproperty = \"property\";\n"
 				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property)) {\n"
 				   "\t\tdbus_message_unref (method_call);\n"
 				   "\t\tnih_return_no_memory_error (-1);\n"
@@ -7391,7 +7424,7 @@ test_proxy_get_sync_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_property_get_sync");
+		TEST_EQ_STR (func->name, "my_get_property_sync");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -7445,6 +7478,7 @@ test_proxy_get_sync_function (void)
 
 		nih_free (str);
 		nih_free (property);
+		nih_free (interface);
 	}
 
 
@@ -7475,7 +7509,7 @@ test_proxy_get_sync_function (void)
 				 DBUS_TYPE_STRING);
 
 			dbus_message_iter_get_basic (&iter, &str_value);
-			TEST_EQ_STR (str_value, "my_property");
+			TEST_EQ_STR (str_value, "property");
 
 			dbus_message_iter_next (&iter);
 
@@ -7519,7 +7553,7 @@ test_proxy_get_sync_function (void)
 
 		str_value = NULL;
 
-		ret = my_property_get_sync (parent, proxy, &str_value);
+		ret = my_get_property_sync (parent, proxy, &str_value);
 
 		if (test_alloc_failed
 		    && (ret < 0)) {
@@ -7583,7 +7617,7 @@ test_proxy_get_sync_function (void)
 				 DBUS_TYPE_STRING);
 
 			dbus_message_iter_get_basic (&iter, &str_value);
-			TEST_EQ_STR (str_value, "my_property");
+			TEST_EQ_STR (str_value, "property");
 
 			dbus_message_iter_next (&iter);
 
@@ -7617,7 +7651,7 @@ test_proxy_get_sync_function (void)
 
 		str_value = NULL;
 
-		ret = my_property_get_sync (parent, proxy, &str_value);
+		ret = my_get_property_sync (parent, proxy, &str_value);
 
 		TEST_LT (ret, 0);
 
@@ -7686,7 +7720,7 @@ test_proxy_get_sync_function (void)
 				 DBUS_TYPE_STRING);
 
 			dbus_message_iter_get_basic (&iter, &str_value);
-			TEST_EQ_STR (str_value, "my_property");
+			TEST_EQ_STR (str_value, "property");
 
 			dbus_message_iter_next (&iter);
 
@@ -7730,7 +7764,7 @@ test_proxy_get_sync_function (void)
 
 		str_value = NULL;
 
-		ret = my_property_get_sync (parent, proxy, &str_value);
+		ret = my_get_property_sync (parent, proxy, &str_value);
 
 		TEST_LT (ret, 0);
 
@@ -7795,7 +7829,7 @@ test_proxy_get_sync_function (void)
 				 DBUS_TYPE_STRING);
 
 			dbus_message_iter_get_basic (&iter, &str_value);
-			TEST_EQ_STR (str_value, "my_property");
+			TEST_EQ_STR (str_value, "property");
 
 			dbus_message_iter_next (&iter);
 
@@ -7833,7 +7867,7 @@ test_proxy_get_sync_function (void)
 
 		str_value = NULL;
 
-		ret = my_property_get_sync (parent, proxy, &str_value);
+		ret = my_get_property_sync (parent, proxy, &str_value);
 
 		TEST_LT (ret, 0);
 
@@ -7898,7 +7932,7 @@ test_proxy_get_sync_function (void)
 				 DBUS_TYPE_STRING);
 
 			dbus_message_iter_get_basic (&iter, &str_value);
-			TEST_EQ_STR (str_value, "my_property");
+			TEST_EQ_STR (str_value, "property");
 
 			dbus_message_iter_next (&iter);
 
@@ -7930,7 +7964,7 @@ test_proxy_get_sync_function (void)
 
 		str_value = NULL;
 
-		ret = my_property_get_sync (parent, proxy, &str_value);
+		ret = my_get_property_sync (parent, proxy, &str_value);
 
 		TEST_LT (ret, 0);
 
@@ -7995,7 +8029,7 @@ test_proxy_get_sync_function (void)
 				 DBUS_TYPE_STRING);
 
 			dbus_message_iter_get_basic (&iter, &str_value);
-			TEST_EQ_STR (str_value, "my_property");
+			TEST_EQ_STR (str_value, "property");
 
 			dbus_message_iter_next (&iter);
 
@@ -8043,7 +8077,7 @@ test_proxy_get_sync_function (void)
 
 		str_value = NULL;
 
-		ret = my_property_get_sync (parent, proxy, &str_value);
+		ret = my_get_property_sync (parent, proxy, &str_value);
 
 		TEST_LT (ret, 0);
 
@@ -8090,16 +8124,17 @@ test_proxy_get_sync_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			property = property_new (NULL, "my_property",
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "property",
 						 "s", NIH_DBUS_READWRITE);
-			property->symbol = nih_strdup (property, "my_property");
+			property->symbol = nih_strdup (property, "property");
 			property->deprecated = TRUE;
 		}
 
-		str = property_proxy_get_sync_function (NULL,
-							"com.netsplit.Nih.Test",
+		str = property_proxy_get_sync_function (NULL, "my", interface,
 							property,
-							"my_property_get_sync",
 							&prototypes);
 
 		if (test_alloc_failed) {
@@ -8108,11 +8143,12 @@ test_proxy_get_sync_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (property);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("int\n"
-				   "my_property_get_sync (const void *  parent,\n"
+				   "my_get_property_sync (const void *  parent,\n"
 				   "                      NihDBusProxy *proxy,\n"
 				   "                      char **       value)\n"
 				   "{\n"
@@ -8142,7 +8178,7 @@ test_proxy_get_sync_function (void)
 				   "\t\tnih_return_no_memory_error (-1);\n"
 				   "\t}\n"
 				   "\n"
-				   "\tproperty = \"my_property\";\n"
+				   "\tproperty = \"property\";\n"
 				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property)) {\n"
 				   "\t\tdbus_message_unref (method_call);\n"
 				   "\t\tnih_return_no_memory_error (-1);\n"
@@ -8222,7 +8258,7 @@ test_proxy_get_sync_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_property_get_sync");
+		TEST_EQ_STR (func->name, "my_get_property_sync");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -8285,6 +8321,7 @@ test_proxy_get_sync_function (void)
 
 		nih_free (str);
 		nih_free (property);
+		nih_free (interface);
 	}
 
 
@@ -8302,6 +8339,7 @@ test_proxy_set_sync_function (void)
 	DBusConnection *server_conn;
 	DBusConnection *client_conn;
 	NihList         prototypes;
+	Interface *     interface = NULL;
 	Property *      property = NULL;
 	char *          str;
 	TypeFunc *      func;
@@ -8336,15 +8374,16 @@ test_proxy_set_sync_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			property = property_new (NULL, "my_property",
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "property",
 						 "s", NIH_DBUS_READWRITE);
-			property->symbol = nih_strdup (property, "my_property");
+			property->symbol = nih_strdup (property, "property");
 		}
 
-		str = property_proxy_set_sync_function (NULL,
-							"com.netsplit.Nih.Test",
+		str = property_proxy_set_sync_function (NULL, "my", interface,
 							property,
-							"my_property_set_sync",
 							&prototypes);
 
 		if (test_alloc_failed) {
@@ -8353,11 +8392,12 @@ test_proxy_set_sync_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (property);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("int\n"
-				   "my_property_set_sync (NihDBusProxy *proxy,\n"
+				   "my_set_property_sync (NihDBusProxy *proxy,\n"
 				   "                      const char *  value)\n"
 				   "{\n"
 				   "\tDBusMessage *   method_call;\n"
@@ -8384,7 +8424,7 @@ test_proxy_set_sync_function (void)
 				   "\t\tnih_return_no_memory_error (-1);\n"
 				   "\t}\n"
 				   "\n"
-				   "\tproperty = \"my_property\";\n"
+				   "\tproperty = \"property\";\n"
 				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property)) {\n"
 				   "\t\tdbus_message_unref (method_call);\n"
 				   "\t\tnih_return_no_memory_error (-1);\n"
@@ -8446,7 +8486,7 @@ test_proxy_set_sync_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_property_set_sync");
+		TEST_EQ_STR (func->name, "my_set_property_sync");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -8489,6 +8529,7 @@ test_proxy_set_sync_function (void)
 
 		nih_free (str);
 		nih_free (property);
+		nih_free (interface);
 	}
 
 
@@ -8519,7 +8560,7 @@ test_proxy_set_sync_function (void)
 				 DBUS_TYPE_STRING);
 
 			dbus_message_iter_get_basic (&iter, &str_value);
-			TEST_EQ_STR (str_value, "my_property");
+			TEST_EQ_STR (str_value, "property");
 
 			dbus_message_iter_next (&iter);
 
@@ -8567,7 +8608,7 @@ test_proxy_set_sync_function (void)
 			parent = nih_alloc (proxy, 0);
 		}
 
-		ret = my_property_set_sync (proxy, "wibble");
+		ret = my_set_property_sync (proxy, "wibble");
 
 		if (test_alloc_failed
 		    && (ret < 0)) {
@@ -8627,7 +8668,7 @@ test_proxy_set_sync_function (void)
 				 DBUS_TYPE_STRING);
 
 			dbus_message_iter_get_basic (&iter, &str_value);
-			TEST_EQ_STR (str_value, "my_property");
+			TEST_EQ_STR (str_value, "property");
 
 			dbus_message_iter_next (&iter);
 
@@ -8677,7 +8718,7 @@ test_proxy_set_sync_function (void)
 			parent = nih_alloc (proxy, 0);
 		}
 
-		ret = my_property_set_sync (proxy, "wibble");
+		ret = my_set_property_sync (proxy, "wibble");
 
 		TEST_LT (ret, 0);
 
@@ -8744,7 +8785,7 @@ test_proxy_set_sync_function (void)
 				 DBUS_TYPE_STRING);
 
 			dbus_message_iter_get_basic (&iter, &str_value);
-			TEST_EQ_STR (str_value, "my_property");
+			TEST_EQ_STR (str_value, "property");
 
 			dbus_message_iter_next (&iter);
 
@@ -8798,7 +8839,7 @@ test_proxy_set_sync_function (void)
 			parent = nih_alloc (proxy, 0);
 		}
 
-		ret = my_property_set_sync (proxy, "wibble");
+		ret = my_set_property_sync (proxy, "wibble");
 
 		TEST_LT (ret, 0);
 
@@ -8841,16 +8882,17 @@ test_proxy_set_sync_function (void)
 		nih_list_init (&prototypes);
 
 		TEST_ALLOC_SAFE {
-			property = property_new (NULL, "my_property",
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "property",
 						 "s", NIH_DBUS_READWRITE);
-			property->symbol = nih_strdup (property, "my_property");
+			property->symbol = nih_strdup (property, "property");
 			property->deprecated = TRUE;
 		}
 
-		str = property_proxy_set_sync_function (NULL,
-							"com.netsplit.Nih.Test",
+		str = property_proxy_set_sync_function (NULL, "my", interface,
 							property,
-							"my_property_set_sync",
 							&prototypes);
 
 		if (test_alloc_failed) {
@@ -8859,11 +8901,12 @@ test_proxy_set_sync_function (void)
 			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (property);
+			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("int\n"
-				   "my_property_set_sync (NihDBusProxy *proxy,\n"
+				   "my_set_property_sync (NihDBusProxy *proxy,\n"
 				   "                      const char *  value)\n"
 				   "{\n"
 				   "\tDBusMessage *   method_call;\n"
@@ -8890,7 +8933,7 @@ test_proxy_set_sync_function (void)
 				   "\t\tnih_return_no_memory_error (-1);\n"
 				   "\t}\n"
 				   "\n"
-				   "\tproperty = \"my_property\";\n"
+				   "\tproperty = \"property\";\n"
 				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property)) {\n"
 				   "\t\tdbus_message_unref (method_call);\n"
 				   "\t\tnih_return_no_memory_error (-1);\n"
@@ -8952,7 +8995,7 @@ test_proxy_set_sync_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "int");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_property_set_sync");
+		TEST_EQ_STR (func->name, "my_set_property_sync");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -9004,6 +9047,7 @@ test_proxy_set_sync_function (void)
 
 		nih_free (str);
 		nih_free (property);
+		nih_free (interface);
 	}
 
 

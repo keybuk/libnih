@@ -36,46 +36,50 @@
 #include <nih-dbus/dbus_proxy.h>
 
 
-typedef void (*MyPropertyGetHandler) (void *data, NihDBusMessage *message,
-				      const char *value);
-typedef void (*MyPropertySetHandler) (void *data, NihDBusMessage *message);
+typedef void (*MyGetPropertyReply) (void *data, NihDBusMessage *message,
+				    const char *value);
+typedef void (*MySetPropertyReply) (void *data, NihDBusMessage *message);
+
+typedef void (*MyGetTestPropertyReply) (void *data, NihDBusMessage *message,
+					const char *value);
+typedef void (*MySetTestPropertyReply) (void *data, NihDBusMessage *message);
 
 
 NIH_BEGIN_EXTERN
 
-int              MyProperty_get         (NihDBusObject *object,
-					 NihDBusMessage *message,
-					 DBusMessageIter *iter)
+int              my_com_netsplit_Nih_Test_property_get (NihDBusObject *object,
+							NihDBusMessage *message,
+							DBusMessageIter *iter)
 	__attribute__ ((warn_unused_result));
-int              MyProperty_set         (NihDBusObject *object,
-					 NihDBusMessage *message,
-					 DBusMessageIter *iter)
-	__attribute__ ((warn_unused_result));
-
-DBusPendingCall *my_property_get        (NihDBusProxy *proxy,
-					 MyPropertyGetHandler handler,
-					 NihDBusErrorHandler error_handler,
-					 void *data, int timeout)
+int              my_com_netsplit_Nih_Test_property_set (NihDBusObject *object,
+							NihDBusMessage *message,
+							DBusMessageIter *iter)
 	__attribute__ ((warn_unused_result));
 
-void             my_property_get_notify (DBusPendingCall *pending_call,
-					 NihDBusPendingData *pending_data);
-
-DBusPendingCall *my_property_set        (NihDBusProxy *proxy,
-					 const char *value,
-					 MyPropertySetHandler handler,
-					 NihDBusErrorHandler error_handler,
-					 void *data, int timeout)
+DBusPendingCall *my_get_test_property (NihDBusProxy *proxy,
+				       MyGetTestPropertyReply handler,
+				       NihDBusErrorHandler error_handler,
+				       void *data, int timeout)
 	__attribute__ ((warn_unused_result));
 
-void             my_property_set_notify (DBusPendingCall *pending_call,
-					 NihDBusPendingData *pending_data);
+void             my_com_netsplit_Nih_Test_property_get_notify (DBusPendingCall *pending_call,
+							       NihDBusPendingData *pending_data);
 
-int              my_property_get_sync   (const void *parent,
-					 NihDBusProxy *proxy, char **value)
+DBusPendingCall *my_set_test_property (NihDBusProxy *proxy,
+				       const char *value,
+				       MySetTestPropertyReply handler,
+				       NihDBusErrorHandler error_handler,
+				       void *data, int timeout)
 	__attribute__ ((warn_unused_result));
-int              my_property_set_sync   (NihDBusProxy *proxy,
-					 const char *value)
+
+void             my_com_netsplit_Nih_Test_property_set_notify (DBusPendingCall *pending_call,
+							       NihDBusPendingData *pending_data);
+
+int              my_get_property_sync (const void *parent,
+				       NihDBusProxy *proxy, char **value)
+	__attribute__ ((warn_unused_result));
+int              my_set_property_sync (NihDBusProxy *proxy,
+				       const char *value)
 	__attribute__ ((warn_unused_result));
 
 NIH_END_EXTERN

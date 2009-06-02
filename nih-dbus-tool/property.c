@@ -452,20 +452,25 @@ property_lookup (Interface * interface,
 /**
  * property_object_get_function:
  * @parent: parent object for new string,
+ * @prefix: prefix for function name,
+ * @interface: interface of @property,
  * @property: property to generate function for,
- * @name: name of function to generate,
- * @handler_name: name of handler function to call,
  * @prototypes: list to append function prototypes to,
  * @handlers: list to append definitions of required handlers to.
  *
- * Generates C code for a function called @name that will append a variant
- * containing the value of property @property to a D-Bus message iterator.
- * The value of the property is obtained by calling a function named
- * @handler_name, the prototype for this function is specified as a TypeFunc
- * object added to the @handlers list.
+ * Generates C code for a function that will append a variant containing
+ * the value of property @property on @interface to a D-Bus message iterator,
+ * the value being obtained from a handler function.
  *
- * The prototype of the function is given as a TypeFunc object appended to
- * the @prototypes list, with the name as @name itself.
+ * The prototype of the returned function is returned as a TypeFunc object
+ * appended to the @prototypes list.
+ *
+ * The prototype for the handler function is returned as a TypeFunc object
+ * added to the @handlers list.
+ *
+ * The names of both the returned function and handled function prototype
+ * will be generated using information in @interface and @property, prefixed
+ * with @prefix.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -476,30 +481,32 @@ property_lookup (Interface * interface,
  **/
 char *
 property_object_get_function (const void *parent,
+			      const char *prefix,
+			      Interface * interface,
 			      Property *  property,
-			      const char *name,
-			      const char *handler_name,
 			      NihList *   prototypes,
 			      NihList *   handlers)
 {
 	DBusSignatureIter   iter;
 	NihList             inputs;
 	NihList             locals;
+	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
 	nih_local TypeVar * iter_var = NULL;
 	nih_local char *    code_block = NULL;
 	nih_local char *    oom_error_code = NULL;
 	nih_local char *    block = NULL;
+	nih_local char *    handler_name = NULL;
 	nih_local TypeFunc *handler_func = NULL;
 	NihListEntry *      attrib;
 	nih_local char *    vars_block = NULL;
 	nih_local char *    body = NULL;
 	char *              code;
 
+	nih_assert (prefix != NULL);
+	nih_assert (interface != NULL);
 	nih_assert (property != NULL);
-	nih_assert (name != NULL);
-	nih_assert (handler_name != NULL);
 	nih_assert (prototypes != NULL);
 	nih_assert (handlers != NULL);
 
@@ -511,6 +518,11 @@ property_object_get_function (const void *parent,
 	/* The function returns an integer, and accepts an arguments for
 	 * the D-Bus object, message and a message iterator.
 	 */
+	name = symbol_impl (NULL, prefix, interface->name,
+			    property->name, "get");
+	if (! name)
+		return NULL;
+
 	func = type_func_new (NULL, "int", name);
 	if (! func)
 		return NULL;
@@ -559,6 +571,11 @@ property_object_get_function (const void *parent,
 		return NULL;
 
 	/* Begin the handler calling block */
+	handler_name = symbol_extern (NULL, prefix, interface->symbol, "get",
+				      property->symbol, NULL);
+	if (! handler_name)
+		return NULL;
+
 	if (! nih_strcat_sprintf (&code_block, NULL,
 				  "/* Call the handler function */\n"
 				  "if (%s (object->data, message",
@@ -692,20 +709,26 @@ property_object_get_function (const void *parent,
 /**
  * property_object_set_function:
  * @parent: parent object for new string,
+ * @prefix: prefix for function name,
+ * @interface: interface of @property,
  * @property: property to generate function for,
- * @name: name of function to generate,
- * @handler_name: name of handler function to call,
  * @prototypes: list to append function prototypes to,
  * @handlers: list to append definitions of required handlers to.
  *
- * Generates C code for a function called @name that will extract the new
- * value of a property @property from a variant at the D-Bus message iterator
- * passed.  The new value of the property is then passed to a function named
- * @handler_name to set it, the prototype for this function is specified as
- * a TypeFunc object added to the @handlers list.
+ * Generates C code for a function that will extract the new value of
+ * property @property on @interface from a variant at the D-Bus message
+ * iterator passed.  The new value of the property is then passed to
+ * a handler function.
  *
- * The prototype of the function is given as a TypeFunc object appended to
- * the @prototypes list, with the name as @name itself.
+ * The prototype of the returned function is returned as a TypeFunc object
+ * appended to the @prototypes list.
+ *
+ * The prototype for the handler function is returned as a TypeFunc object
+ * added to the @handlers list.
+ *
+ * The names of both the returned function and handled function prototype
+ * will be generated using information in @interface and @property, prefixed
+ * with @prefix.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -716,15 +739,16 @@ property_object_get_function (const void *parent,
  **/
 char *
 property_object_set_function (const void *parent,
+			      const char *prefix,
+			      Interface * interface,
 			      Property *  property,
-			      const char *name,
-			      const char *handler_name,
 			      NihList *   prototypes,
 			      NihList *   handlers)
 {
 	DBusSignatureIter   iter;
 	NihList             outputs;
 	NihList             locals;
+	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
 	nih_local TypeVar * iter_var = NULL;
@@ -734,15 +758,16 @@ property_object_set_function (const void *parent,
 	nih_local char *    type_error_code = NULL;
 	nih_local char *    block = NULL;
 	nih_local char *    call_block = NULL;
+	nih_local char *    handler_name = NULL;
 	nih_local TypeFunc *handler_func = NULL;
 	NihListEntry *      attrib;
 	nih_local char *    vars_block = NULL;
 	nih_local char *    body = NULL;
 	char *              code;
 
+	nih_assert (prefix != NULL);
+	nih_assert (interface != NULL);
 	nih_assert (property != NULL);
-	nih_assert (name != NULL);
-	nih_assert (handler_name != NULL);
 	nih_assert (prototypes != NULL);
 	nih_assert (handlers != NULL);
 
@@ -755,6 +780,11 @@ property_object_set_function (const void *parent,
 	 * or a raised error when non-zero and accepts arguments for the
 	 * D-Bus object, message and a message iterator.
 	 */
+	name = symbol_impl (NULL, prefix, interface->name,
+			    property->name, "set");
+	if (! name)
+		return NULL;
+
 	func = type_func_new (NULL, "int", name);
 	if (! func)
 		return NULL;
@@ -831,6 +861,11 @@ property_object_set_function (const void *parent,
 	 * arguments which we also want to error on and begin the handler
 	 * calling block.
 	 */
+	handler_name = symbol_extern (NULL, prefix, interface->symbol, "set",
+				      property->symbol, NULL);
+	if (! handler_name)
+		return NULL;
+
 	if (! nih_strcat_sprintf (&call_block, NULL,
 				  "dbus_message_iter_next (iter);\n"
 				  "\n"
@@ -962,26 +997,25 @@ property_object_set_function (const void *parent,
 /**
  * property_proxy_get_function:
  * @parent: parent object for new string.
- * @interface_name: name of interface,
+ * @prefix: prefix for function name,
+ * @interface: interface of @property,
  * @property: property to generate function for,
- * @name: name of function to generate,
- * @notify_name: name of notification function to call,
- * @handler_type: typedef for handler function,
  * @prototypes: list to append function prototypes to.
  *
- * Generates C code for a function called @name that will make an
- * asynchronous method call to obtain the value of the property @property.
- * The interface name of the property must be supplied in @interface_name
- * and the notify function to be called when the call completes given as
- * @notify_name.
+ * Generates C code for a function that will make an asynchronous method
+ * call to obtain the value of the property @property on @interface,
+ * calling a notify function when the method call completes.
+ *
+ * The prototype of the returned function is returned as a TypeFunc object
+ * appended to the @prototypes list.
+ *
+ * The names of both the returned function and notify function prototype
+ * will be generated using information in @interface and @property, prefixed
+ * with @prefix.
  *
  * The notify function will call a handler function passed in if the
- * reply is valid, the typedef name for this handler must be passed as
- * @handler_type.  The actual type for this can be obtained from
+ * reply is valid.  The name and type for this can be obtained from
  * property_proxy_get_notify_function().
- *
- * The prototype of the function is given as a TypeFunc object appended to
- * the @prototypes list, with the name as @name itself.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -992,18 +1026,18 @@ property_object_set_function (const void *parent,
  **/
 char *
 property_proxy_get_function (const void *parent,
-			     const char *interface_name,
+			     const char *prefix,
+			     Interface * interface,
 			     Property *  property,
-			     const char *name,
-			     const char *notify_name,
-			     const char *handler_type,
 			     NihList *   prototypes)
 {
 	NihList             locals;
+	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
 	NihListEntry *      attrib;
 	nih_local char *    assert_block = NULL;
+	nih_local char *    handler_type = NULL;
 	nih_local TypeVar * message_var = NULL;
 	nih_local TypeVar * iter_var = NULL;
 	nih_local TypeVar * pending_var = NULL;
@@ -1011,16 +1045,15 @@ property_proxy_get_function (const void *parent,
 	nih_local TypeVar * interface_var = NULL;
 	nih_local TypeVar * property_var = NULL;
 	nih_local char *    call_block = NULL;
+	nih_local char *    notify_name = NULL;
 	nih_local char *    block = NULL;
 	nih_local char *    vars_block = NULL;
 	nih_local char *    body = NULL;
 	char *              code = NULL;
 
-	nih_assert (interface_name != NULL);
+	nih_assert (prefix != NULL);
+	nih_assert (interface != NULL);
 	nih_assert (property != NULL);
-	nih_assert (name != NULL);
-	nih_assert (notify_name != NULL);
-	nih_assert (handler_type != NULL);
 	nih_assert (prototypes != NULL);
 
 	nih_list_init (&locals);
@@ -1032,6 +1065,11 @@ property_proxy_get_function (const void *parent,
 	 * D-Bus doesn't cache them.  Since this is used by the client, we
 	 * also add a deprecated attribute if the property is deprecated.
 	 */
+	name = symbol_extern (NULL, prefix, interface->symbol, "get",
+			      property->symbol, NULL);
+	if (! name)
+		return NULL;
+
 	func = type_func_new (NULL, "DBusPendingCall *", name);
 	if (! func)
 		return NULL;
@@ -1074,6 +1112,11 @@ property_proxy_get_function (const void *parent,
 	 * method call case, we don't allow for no-reply calls since
 	 * they're nonsensical.
 	 */
+	handler_type = symbol_typedef (NULL, prefix, interface->symbol,
+				       "Get", property->symbol, "Reply");
+	if (! handler_type)
+		return NULL;
+
 	arg = type_var_new (func, handler_type, "handler");
 	if (! arg)
 		return NULL;
@@ -1175,7 +1218,7 @@ property_proxy_get_function (const void *parent,
 				  "}\n"
 				  "\n",
 				  DBUS_INTERFACE_PROPERTIES,
-				  interface_name,
+				  interface->name,
 				  property->name))
 		return NULL;
 
@@ -1184,6 +1227,11 @@ property_proxy_get_function (const void *parent,
 	/* Complete the marshalling block by sending the message and checking
 	 * for error replies.
 	 */
+	notify_name = symbol_impl (NULL, prefix, interface->name,
+				   property->name, "get_notify");
+	if (! notify_name)
+		return NULL;
+
 	if (! nih_strcat_sprintf (&call_block, NULL,
 				  "/* Send the message and set up the reply notification. */\n"
 				  "pending_data = nih_dbus_pending_data_new (NULL, proxy->connection,\n"
@@ -1256,25 +1304,27 @@ property_proxy_get_function (const void *parent,
 /**
  * property_proxy_get_notify_function:
  * @parent: parent object for new string.
+ * @prefix: prefix for function name,
+ * @interface: interface of @property,
  * @property: property to generate function for,
- * @name: name of function to generate,
- * @handler_type: typedef for handler function,
  * @prototypes: list to append function prototypes to,
  * @typedefs: list to append function pointer typedef definitions to.
  *
- * Generates C code for a function @name to handle the notification of
+ * Generates C code for a function to handle the notification of
  * a complete pending call to obtain the value of the property @property
- * by demarshalling the arguments of the attached reply and calling either
- * the handler function or error function.
+ * on @interface by calling either the handler function on success or
+ * error function on failure.
  *
  * The notify function will call a handler function passed in if the
  * reply is valid, the typedef name for this handler must be passed as
  * @handler_type.  The actual type for this can be obtained from the
  * entry added to @typedefs.
  *
- * The prototype of the function is given as a TypeFunc object appended to
- * the @prototypes list, with the name as @name itself.  @typedefs contains
- * a similar TypeFunc object to define the type of the handler function.
+ * The prototype of the returned function is returned as a TypeFunc object
+ * appended to the @prototypes list.
+ *
+ * The typedef for the handler function is returned as a TypeFunc object
+ * added to the @typedefs list.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -1285,15 +1335,16 @@ property_proxy_get_function (const void *parent,
  **/
 char *
 property_proxy_get_notify_function (const void *parent,
+				    const char *prefix,
+				    Interface * interface,
 				    Property *  property,
-				    const char *name,
-				    const char *handler_type,
 				    NihList *   prototypes,
 				    NihList *   typedefs)
 {
 	DBusSignatureIter   iter;
 	NihList             outputs;
 	NihList             locals;
+	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
 	nih_local char *    assert_block = NULL;
@@ -1305,6 +1356,7 @@ property_proxy_get_notify_function (const void *parent,
 	nih_local char *    steal_block = NULL;
 	nih_local char *    demarshal_block = NULL;
 	nih_local char *    call_block = NULL;
+	nih_local char *    handler_type = NULL;
 	nih_local char *    handler_name = NULL;
 	nih_local TypeFunc *handler_func = NULL;
 	nih_local char *    oom_error_code = NULL;
@@ -1314,9 +1366,9 @@ property_proxy_get_notify_function (const void *parent,
 	nih_local char *    body = NULL;
 	char *              code = NULL;
 
+	nih_assert (prefix != NULL);
+	nih_assert (interface != NULL);
 	nih_assert (property != NULL);
-	nih_assert (name != NULL);
-	nih_assert (handler_type != NULL);
 	nih_assert (prototypes != NULL);
 	nih_assert (typedefs != NULL);
 
@@ -1330,6 +1382,11 @@ property_proxy_get_notify_function (const void *parent,
 	 * since it's used internally, it's enough to mark the method
 	 * call function deprecated.
 	 */
+	name = symbol_impl (NULL, prefix, interface->name,
+			    property->name, "get_notify");
+	if (! name)
+		return NULL;
+
 	func = type_func_new (NULL, "void", name);
 	if (! func)
 		return NULL;
@@ -1457,6 +1514,11 @@ property_proxy_get_notify_function (const void *parent,
 	/* Begin the handler calling block, the handler is not permitted
 	 * to reply.
 	 */
+	handler_type = symbol_typedef (NULL, prefix, interface->symbol, "Get",
+				       property->symbol, "Reply");
+	if (! handler_type)
+		return NULL;
+
 	if (! nih_strcat_sprintf (&call_block, NULL,
 				  "/* Call the handler function */\n"
 				  "nih_error_push_context ();\n"
@@ -1639,26 +1701,25 @@ property_proxy_get_notify_function (const void *parent,
 /**
  * property_proxy_set_function:
  * @parent: parent object for new string.
- * @interface_name: name of interface,
+ * @prefix: prefix for function name,
+ * @interface: interface of @property,
  * @property: property to generate function for,
- * @name: name of function to generate,
- * @notify_name: name of notification function to call,
- * @handler_type: typedef for handler function,
  * @prototypes: list to append function prototypes to.
  *
- * Generates C code for a function called @name that will make an
- * asynchronous method call to set the value of the property @property.
- * The interface name of the property must be supplied in @interface_name
- * and the notify function to be called when the call completes given as
- * @notify_name.
+ * Generates C code for a function that will make an asynchronous method
+ * call to set the value of the property @property on @interface,
+ * calling a notify function when the method call completes.
+ *
+ * The prototype of the returned function is returned as a TypeFunc object
+ * appended to the @prototypes list.
+ *
+ * The names of both the returned function and notify function prototype
+ * will be generated using information in @interface and @property, prefixed
+ * with @prefix.
  *
  * The notify function will call a handler function passed in if the
- * reply is valid, the typedef name for this handler must be passed as
- * @handler_type.  The actual type for this can be obtained from
+ * reply is valid.  The name and type for this can be obtained from
  * property_proxy_set_notify_function().
- *
- * The prototype of the function is given as a TypeFunc object appended to
- * the @prototypes list, with the name as @name itself.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -1669,20 +1730,20 @@ property_proxy_get_notify_function (const void *parent,
  **/
 char *
 property_proxy_set_function (const void *parent,
-			     const char *interface_name,
+			     const char *prefix,
+			     Interface * interface,
 			     Property *  property,
-			     const char *name,
-			     const char *notify_name,
-			     const char *handler_type,
 			     NihList *   prototypes)
 {
 	DBusSignatureIter   iter;
 	NihList             inputs;
 	NihList             locals;
+	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
 	NihListEntry *      attrib;
 	nih_local char *    assert_block = NULL;
+	nih_local char *    handler_type = NULL;
 	nih_local TypeVar * message_var = NULL;
 	nih_local TypeVar * iter_var = NULL;
 	nih_local TypeVar * variter_var = NULL;
@@ -1692,17 +1753,16 @@ property_proxy_set_function (const void *parent,
 	nih_local TypeVar * property_var = NULL;
 	nih_local char *    marshal_block = NULL;
 	nih_local char *    call_block = NULL;
+	nih_local char *    notify_name = NULL;
 	nih_local char *    block = NULL;
 	nih_local char *    vars_block = NULL;
 	nih_local char *    oom_error_code = NULL;
 	nih_local char *    body = NULL;
 	char *              code = NULL;
 
-	nih_assert (interface_name != NULL);
+	nih_assert (prefix != NULL);
+	nih_assert (interface != NULL);
 	nih_assert (property != NULL);
-	nih_assert (name != NULL);
-	nih_assert (notify_name != NULL);
-	nih_assert (handler_type != NULL);
 	nih_assert (prototypes != NULL);
 
 	dbus_signature_iter_init (&iter, property->type);
@@ -1718,6 +1778,11 @@ property_proxy_set_function (const void *parent,
 	 * used by the client, we also add a deprecated attribute if the
 	 * property is deprecated.
 	 */
+	name = symbol_extern (NULL, prefix, interface->symbol, "set",
+			      property->symbol, NULL);
+	if (! name)
+		return NULL;
+
 	func = type_func_new (NULL, "DBusPendingCall *", name);
 	if (! func)
 		return NULL;
@@ -1836,7 +1901,7 @@ property_proxy_set_function (const void *parent,
 				  "}\n"
 				  "\n",
 				  DBUS_INTERFACE_PROPERTIES,
-				  interface_name,
+				  interface->name,
 				  property->name,
 				  property->type))
 		return NULL;
@@ -1899,6 +1964,11 @@ property_proxy_set_function (const void *parent,
 	 * itself is NULL.  A data argument is passed to both, and we also
 	 * have the timeout for the method call.
 	 */
+	handler_type = symbol_typedef (NULL, prefix, interface->symbol,
+				       "Set", property->symbol, "Reply");
+	if (! handler_type)
+		return NULL;
+
 	arg = type_var_new (func, handler_type, "handler");
 	if (! arg)
 		return NULL;
@@ -1930,6 +2000,11 @@ property_proxy_set_function (const void *parent,
 	/* Send the message and check for error replies, or arguments
 	 * in the reply (which is an error).
 	 */
+	notify_name = symbol_impl (NULL, prefix, interface->name,
+				   property->name, "set_notify");
+	if (! notify_name)
+		return NULL;
+
 	if (! nih_strcat_sprintf (&call_block, NULL,
 				  "/* Handle a fire-and-forget message */\n"
 				  "if (! error_handler) {\n"
@@ -2016,25 +2091,27 @@ property_proxy_set_function (const void *parent,
 /**
  * property_proxy_set_notify_function:
  * @parent: parent object for new string.
+ * @prefix: prefix for function name,
+ * @interface: interface of @property,
  * @property: property to generate function for,
- * @name: name of function to generate,
- * @handler_type: typedef for handler function,
  * @prototypes: list to append function prototypes to,
  * @typedefs: list to append function pointer typedef definitions to.
  *
- * Generates C code for a function @name to handle the notification of
+ * Generates C code for a function to handle the notification of
  * a complete pending call to set the value of the property @property
- * by calling either the handler function on success or error function
- * on failure.
+ * on @interface by calling either the handler function on success or
+ * error function on failure.
  *
  * The notify function will call a handler function passed in if the
  * reply is valid, the typedef name for this handler must be passed as
  * @handler_type.  The actual type for this can be obtained from the
  * entry added to @typedefs.
  *
- * The prototype of the function is given as a TypeFunc object appended to
- * the @prototypes list, with the name as @name itself.  @typedefs contains
- * a similar TypeFunc object to define the type of the handler function.
+ * The prototype of the returned function is returned as a TypeFunc object
+ * appended to the @prototypes list.
+ *
+ * The typedef for the handler function is returned as a TypeFunc object
+ * added to the @typedefs list.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -2045,15 +2122,16 @@ property_proxy_set_function (const void *parent,
  **/
 char *
 property_proxy_set_notify_function (const void *parent,
+				    const char *prefix,
+				    Interface * interface,
 				    Property *  property,
-				    const char *name,
-				    const char *handler_type,
 				    NihList *   prototypes,
 				    NihList *   typedefs)
 {
 	DBusSignatureIter   iter;
 	NihList             outputs;
 	NihList             locals;
+	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
 	nih_local char *    assert_block = NULL;
@@ -2063,6 +2141,7 @@ property_proxy_set_notify_function (const void *parent,
 	nih_local TypeVar * parent_var = NULL;
 	nih_local char *    steal_block = NULL;
 	nih_local char *    call_block = NULL;
+	nih_local char *    handler_type = NULL;
 	nih_local char *    handler_name = NULL;
 	nih_local TypeFunc *handler_func = NULL;
 	nih_local char *    oom_error_code = NULL;
@@ -2072,9 +2151,9 @@ property_proxy_set_notify_function (const void *parent,
 	nih_local char *    body = NULL;
 	char *              code = NULL;
 
+	nih_assert (prefix != NULL);
+	nih_assert (interface != NULL);
 	nih_assert (property != NULL);
-	nih_assert (name != NULL);
-	nih_assert (handler_type != NULL);
 	nih_assert (prototypes != NULL);
 	nih_assert (typedefs != NULL);
 
@@ -2088,6 +2167,11 @@ property_proxy_set_notify_function (const void *parent,
 	 * since it's used internally, it's enough to mark the method
 	 * call function deprecated.
 	 */
+	name = symbol_impl (NULL, prefix, interface->name,
+			    property->name, "set_notify");
+	if (! name)
+		return NULL;
+
 	func = type_func_new (NULL, "void", name);
 	if (! func)
 		return NULL;
@@ -2178,6 +2262,11 @@ property_proxy_set_notify_function (const void *parent,
 	/* Create a message context, and check that the reply had no
 	 * arguments before calling the handler.
 	 */
+	handler_type = symbol_typedef (NULL, prefix, interface->symbol, "Set",
+				       property->symbol, "Reply");
+	if (! handler_type)
+		return NULL;
+
 	if (! nih_strcat_sprintf (&call_block, NULL,
 				  "/* Create a message context for the reply, and check\n"
 				  " * there are no arguments.\n"
@@ -2281,17 +2370,16 @@ property_proxy_set_notify_function (const void *parent,
 /**
  * property_proxy_get_sync_function:
  * @parent: parent object for new string.
- * @interface_name: name of interface,
+ * @prefix: prefix for function name,
+ * @interface: interface of @property,
  * @property: property to generate function for,
- * @name: name of function to generate,
  * @prototypes: list to append function prototypes to.
  *
- * Generates C code for a function called @name that will make a
- * synchronous method call to obtain the value of the property @property.
- * The interface name of the property must be supplied in @interface_name.
+ * Generates C code for a function that will make a synchronous method
+ * call to obtain the value of the property @property on @interface.
  *
- * The prototype of the function is given as a TypeFunc object appended to
- * the @prototypes list, with the name as @name itself.
+ * The prototype of the returned function is returned as a TypeFunc object
+ * appended to the @prototypes list, with the name as @name itself.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -2302,14 +2390,15 @@ property_proxy_set_notify_function (const void *parent,
  **/
 char *
 property_proxy_get_sync_function (const void *parent,
-				  const char *interface_name,
+				  const char *prefix,
+				  Interface * interface,
 				  Property *  property,
-				  const char *name,
 				  NihList *   prototypes)
 {
 	DBusSignatureIter   iter;
 	NihList             outputs;
 	NihList             locals;
+	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
 	NihListEntry *      attrib;
@@ -2330,9 +2419,9 @@ property_proxy_get_sync_function (const void *parent,
 	nih_local char *    body = NULL;
 	char *              code = NULL;
 
-	nih_assert (interface_name != NULL);
+	nih_assert (prefix != NULL);
+	nih_assert (interface != NULL);
 	nih_assert (property != NULL);
-	nih_assert (name != NULL);
 	nih_assert (prototypes != NULL);
 
 	dbus_signature_iter_init (&iter, property->type);
@@ -2347,6 +2436,11 @@ property_proxy_get_sync_function (const void *parent,
 	 * Since this is used by the client, we also add a deprecated
 	 * attribute if the property is deprecated.
 	 */
+	name = symbol_extern (NULL, prefix, interface->symbol, "get",
+			      property->symbol, "sync");
+	if (! name)
+		return NULL;
+
 	func = type_func_new (NULL, "int", name);
 	if (! func)
 		return NULL;
@@ -2468,7 +2562,7 @@ property_proxy_get_sync_function (const void *parent,
 				  "}\n"
 				  "\n",
 				  DBUS_INTERFACE_PROPERTIES,
-				  interface_name,
+				  interface->name,
 				  property->name))
 		return NULL;
 
@@ -2666,17 +2760,16 @@ property_proxy_get_sync_function (const void *parent,
 /**
  * property_proxy_set_sync_function:
  * @parent: parent object for new string.
- * @interface_name: name of interface,
+ * @prefix: prefix for function name,
+ * @interface: interface of @property,
  * @property: property to generate function for,
- * @name: name of function to generate,
  * @prototypes: list to append function prototypes to.
  *
- * Generates C code for a function called @name that will make a
- * synchronous method call to set the value of the property @property.
- * The interface name of the property must be supplied in @interface_name.
+ * Generates C code for a function that will make a synchronous method
+ * call to set the value of the property @property on @interface.
  *
- * The prototype of the function is given as a TypeFunc object appended to
- * the @prototypes list, with the name as @name itself.
+ * The prototype of the returned function is returned as a TypeFunc object
+ * appended to the @prototypes list, with the name as @name itself.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -2687,14 +2780,15 @@ property_proxy_get_sync_function (const void *parent,
  **/
 char *
 property_proxy_set_sync_function (const void *parent,
-				  const char *interface_name,
+				  const char *prefix,
+				  Interface * interface,
 				  Property *  property,
-				  const char *name,
 				  NihList *   prototypes)
 {
 	DBusSignatureIter   iter;
 	NihList             inputs;
 	NihList             locals;
+	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
 	NihListEntry *      attrib;
@@ -2714,9 +2808,9 @@ property_proxy_set_sync_function (const void *parent,
 	nih_local char *    body = NULL;
 	char *              code = NULL;
 
-	nih_assert (interface_name != NULL);
+	nih_assert (prefix != NULL);
+	nih_assert (interface != NULL);
 	nih_assert (property != NULL);
-	nih_assert (name != NULL);
 	nih_assert (prototypes != NULL);
 
 	dbus_signature_iter_init (&iter, property->type);
@@ -2731,6 +2825,11 @@ property_proxy_set_sync_function (const void *parent,
 	 * used by the client, we also add a deprecated attribute if
 	 * the property is deprecated.
 	 */
+	name = symbol_extern (NULL, prefix, interface->symbol, "set",
+			      property->symbol, "sync");
+	if (! name)
+		return NULL;
+
 	func = type_func_new (NULL, "int", name);
 	if (! func)
 		return NULL;
@@ -2852,7 +2951,7 @@ property_proxy_set_sync_function (const void *parent,
 				  "}\n"
 				  "\n",
 				  DBUS_INTERFACE_PROPERTIES,
-				  interface_name,
+				  interface->name,
 				  property->name,
 				  property->type))
 		return NULL;

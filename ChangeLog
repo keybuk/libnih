@@ -1,5 +1,20 @@
 2009-06-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/property.c (property_object_get_function)
+	(property_object_set_function, property_proxy_get_function)
+	(property_proxy_get_notify_function)
+	(property_proxy_set_function)
+	(property_proxy_set_notify_function)
+	(property_proxy_get_sync_function)
+	(property_proxy_set_sync_function): Rather than accepting precanned
+	names, accept prefix, interface and property and generate them every
+	time.
+	* nih-dbus-tool/property.h: Update prototypes.
+	* nih-dbus-tool/tests/property_factory.c: Create an interface and
+	pass it to the functions.
+	* nih-dbus-tool/tests/property_code.h: Prototypes all change
+	* nih-dbus-tool/tests/test_property.c: Update tests.
+
 	* nih-dbus-tool/signal.c (signal_object_function)
 	(signal_proxy_function): Rather than accepting precanned names, accept
 	prefix, interface and signal and generate them every time

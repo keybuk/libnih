@@ -1075,6 +1075,81 @@ test_annotation (void)
 }
 
 
+void
+test_lookup (void)
+{
+	Interface *interface = NULL;
+	Property * property1 = NULL;
+	Property * property2 = NULL;
+	Property * property3 = NULL;
+	Property * ret;
+
+	TEST_FUNCTION ("property_lookup");
+
+
+	/* Check that the function returns the property if there is one
+	 * with the given symbol.
+	 */
+	TEST_FEATURE ("with matching symbol");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+
+			property1 = property_new (interface, "Test",
+						  "s", NIH_DBUS_READ);
+			property1->symbol = nih_strdup (property1, "test");
+			nih_list_add (&interface->properties, &property1->entry);
+
+			property2 = property_new (interface, "Foo",
+						  "s", NIH_DBUS_READ);
+			nih_list_add (&interface->properties, &property2->entry);
+
+			property3 = property_new (interface, "Bar",
+						  "s", NIH_DBUS_READ);
+			property3->symbol = nih_strdup (property3, "bar");
+			nih_list_add (&interface->properties, &property3->entry);
+		}
+
+		ret = property_lookup (interface, "bar");
+
+		TEST_EQ_P (ret, property3);
+
+		nih_free (interface);
+	}
+
+
+	/* Check that the function returns NULL if there is no property
+	 * with the given symbol.
+	 */
+	TEST_FEATURE ("with non-matching symbol");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+
+			property1 = property_new (interface, "Test",
+						  "s", NIH_DBUS_READ);
+			property1->symbol = nih_strdup (property1, "test");
+			nih_list_add (&interface->properties, &property1->entry);
+
+			property2 = property_new (interface, "Foo",
+						  "s", NIH_DBUS_READ);
+			nih_list_add (&interface->properties, &property2->entry);
+
+			property3 = property_new (interface, "Bar",
+						  "s", NIH_DBUS_READ);
+			property3->symbol = nih_strdup (property3, "bar");
+			nih_list_add (&interface->properties, &property3->entry);
+		}
+
+		ret = property_lookup (interface, "baz");
+
+		TEST_EQ_P (ret, NULL);
+
+		nih_free (interface);
+	}
+}
+
+
 static int my_property_get_called = 0;
 
 int
@@ -8952,6 +9027,7 @@ main (int   argc,
 	test_start_tag ();
 	test_end_tag ();
 	test_annotation ();
+	test_lookup ();
 
 	test_object_get_function ();
 	test_object_set_function ();

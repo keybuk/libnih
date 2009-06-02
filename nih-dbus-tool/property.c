@@ -335,7 +335,7 @@ property_end_tag (XML_Parser  xmlp,
 	interface = parent->interface;
 
 	/* Make sure there's not a conflict before adding the property */
-	conflict = interface_lookup_property (interface, property->symbol);
+	conflict = property_lookup (interface, property->symbol);
 	if (conflict) {
 		nih_error_raise_printf (PROPERTY_DUPLICATE_SYMBOL,
 					_(PROPERTY_DUPLICATE_SYMBOL_STR),
@@ -417,6 +417,35 @@ property_annotation (Property *  property,
 	}
 
 	return 0;
+}
+
+
+/**
+ * property_lookup:
+ * @interface: interface to search,
+ * @symbol: property symbol to find.
+ *
+ * Finds a property in @interface's properties list which has the generated
+ * or supplied C symbol @symbol.
+ *
+ * Returns: property found or NULL if no property matches.
+ **/
+Property *
+property_lookup (Interface * interface,
+		 const char *symbol)
+{
+	nih_assert (interface != NULL);
+	nih_assert (symbol != NULL);
+
+	NIH_LIST_FOREACH (&interface->properties, iter) {
+		Property *property = (Property *)iter;
+
+		if (property->symbol
+		    && (! strcmp (property->symbol, symbol)))
+			return property;
+	}
+
+	return NULL;
 }
 
 

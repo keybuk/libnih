@@ -867,6 +867,73 @@ test_annotation (void)
 }
 
 
+void
+test_lookup (void)
+{
+	Interface *interface = NULL;
+	Signal *   signal1 = NULL;
+	Signal *   signal2 = NULL;
+	Signal *   signal3 = NULL;
+	Signal *   ret;
+
+	TEST_FUNCTION ("signal_lookup");
+
+
+	/* Check that the function returns the signal if there is one
+	 * with the given symbol.
+	 */
+	TEST_FEATURE ("with matching symbol");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+
+			signal1 = signal_new (interface, "Test");
+			signal1->symbol = nih_strdup (signal1, "test");
+			nih_list_add (&interface->signals, &signal1->entry);
+
+			signal2 = signal_new (interface, "Foo");
+			nih_list_add (&interface->signals, &signal2->entry);
+
+			signal3 = signal_new (interface, "Bar");
+			signal3->symbol = nih_strdup (signal3, "bar");
+			nih_list_add (&interface->signals, &signal3->entry);
+		}
+
+		ret = signal_lookup (interface, "bar");
+
+		TEST_EQ_P (ret, signal3);
+
+		nih_free (interface);
+	}
+
+
+	/* Check that the function returns NULL if there is no signal
+	 * with the given symbol.
+	 */
+	TEST_FEATURE ("with non-matching symbol");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+
+			signal1 = signal_new (interface, "Test");
+			signal1->symbol = nih_strdup (signal1, "test");
+			nih_list_add (&interface->signals, &signal1->entry);
+
+			signal2 = signal_new (interface, "Foo");
+			nih_list_add (&interface->signals, &signal2->entry);
+
+			signal3 = signal_new (interface, "Bar");
+			signal3->symbol = nih_strdup (signal3, "bar");
+			nih_list_add (&interface->signals, &signal3->entry);
+		}
+
+		ret = signal_lookup (interface, "baz");
+
+		TEST_EQ_P (ret, NULL);
+
+		nih_free (interface);
+	}
+}
 
 void
 test_lookup_argument (void)
@@ -2117,6 +2184,7 @@ main (int   argc,
 	test_start_tag ();
 	test_end_tag ();
 	test_annotation ();
+	test_lookup ();
 	test_lookup_argument ();
 
 	test_object_function ();

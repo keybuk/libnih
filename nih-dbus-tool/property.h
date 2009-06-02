@@ -33,6 +33,8 @@
 
 #include <nih-dbus/dbus_object.h>
 
+#include "interface.h"
+
 
 /**
  * Property:
@@ -81,6 +83,9 @@ int       property_annotation                (Property *property,
 					      const char *name,
 					      const char *value)
 	__attribute__ ((warn_unused_result));
+
+Property *property_lookup                    (Interface *interface,
+					      const char *symbol);
 
 char *    property_object_get_function       (const void *parent,
 					      Property *property,

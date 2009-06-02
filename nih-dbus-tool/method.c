@@ -285,7 +285,7 @@ method_end_tag (XML_Parser  xmlp,
 	interface = parent->interface;
 
 	/* Make sure there's not a conflict before adding the method */
-	conflict = interface_lookup_method (interface, method->symbol);
+	conflict = method_lookup (interface, method->symbol);
 	if (conflict) {
 		nih_error_raise_printf (METHOD_DUPLICATE_SYMBOL,
 					_(METHOD_DUPLICATE_SYMBOL_STR),
@@ -398,6 +398,34 @@ method_annotation (Method *    method,
 	return 0;
 }
 
+
+/**
+ * method_lookup:
+ * @interface: interface to search,
+ * @symbol: method symbol to find.
+ *
+ * Finds a method in @interface's methods list which has the generated
+ * or supplied C symbol @symbol.
+ *
+ * Returns: method found or NULL if no method matches.
+ **/
+Method *
+method_lookup (Interface * interface,
+	       const char *symbol)
+{
+	nih_assert (interface != NULL);
+	nih_assert (symbol != NULL);
+
+	NIH_LIST_FOREACH (&interface->methods, iter) {
+		Method *method = (Method *)iter;
+
+		if (method->symbol
+		    && (! strcmp (method->symbol, symbol)))
+			return method;
+	}
+
+	return NULL;
+}
 
 /**
  * method_lookup_argument:

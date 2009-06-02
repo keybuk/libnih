@@ -283,7 +283,7 @@ signal_end_tag (XML_Parser  xmlp,
 	interface = parent->interface;
 
 	/* Make sure there's not a conflict before adding the signal */
-	conflict = interface_lookup_signal (interface, signal->symbol);
+	conflict = signal_lookup (interface, signal->symbol);
 	if (conflict) {
 		nih_error_raise_printf (SIGNAL_DUPLICATE_SYMBOL,
 					_(SIGNAL_DUPLICATE_SYMBOL_STR),
@@ -367,6 +367,34 @@ signal_annotation (Signal *    signal,
 	return 0;
 }
 
+
+/**
+ * signal_lookup:
+ * @interface: interface to search,
+ * @symbol: signal symbol to find.
+ *
+ * Finds a signal in @interface's signals list which has the generated
+ * or supplied C symbol @symbol.
+ *
+ * Returns: signal found or NULL if no signal matches.
+ **/
+Signal *
+signal_lookup (Interface * interface,
+	       const char *symbol)
+{
+	nih_assert (interface != NULL);
+	nih_assert (symbol != NULL);
+
+	NIH_LIST_FOREACH (&interface->signals, iter) {
+		Signal *signal = (Signal *)iter;
+
+		if (signal->symbol
+		    && (! strcmp (signal->symbol, symbol)))
+			return signal;
+	}
+
+	return NULL;
+}
 
 /**
  * signal_lookup_argument:

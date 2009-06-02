@@ -41,9 +41,6 @@
 #include "symbol.h"
 #include "node.h"
 #include "interface.h"
-#include "method.h"
-#include "signal.h"
-#include "property.h"
 #include "parse.h"
 #include "errors.h"
 
@@ -401,89 +398,4 @@ interface_annotation (Interface * interface,
 	}
 
 	return 0;
-}
-
-
-/**
- * interface_lookup_method:
- * @interface: interface to search,
- * @symbol: method symbol to find.
- *
- * Finds a method in @interface's methods list which has the generated
- * or supplied C symbol @symbol.
- *
- * Returns: method found or NULL if no method matches.
- **/
-Method *
-interface_lookup_method (Interface * interface,
-			 const char *symbol)
-{
-	nih_assert (interface != NULL);
-	nih_assert (symbol != NULL);
-
-	NIH_LIST_FOREACH (&interface->methods, iter) {
-		Method *method = (Method *)iter;
-
-		if (method->symbol
-		    && (! strcmp (method->symbol, symbol)))
-			return method;
-	}
-
-	return NULL;
-}
-
-/**
- * interface_lookup_signal:
- * @interface: interface to search,
- * @symbol: signal symbol to find.
- *
- * Finds a signal in @interface's signals list which has the generated
- * or supplied C symbol @symbol.
- *
- * Returns: signal found or NULL if no signal matches.
- **/
-Signal *
-interface_lookup_signal (Interface * interface,
-			 const char *symbol)
-{
-	nih_assert (interface != NULL);
-	nih_assert (symbol != NULL);
-
-	NIH_LIST_FOREACH (&interface->signals, iter) {
-		Signal *signal = (Signal *)iter;
-
-		if (signal->symbol
-		    && (! strcmp (signal->symbol, symbol)))
-			return signal;
-	}
-
-	return NULL;
-}
-
-/**
- * interface_lookup_property:
- * @interface: interface to search,
- * @symbol: property symbol to find.
- *
- * Finds a property in @interface's properties list which has the generated
- * or supplied C symbol @symbol.
- *
- * Returns: property found or NULL if no property matches.
- **/
-Property *
-interface_lookup_property (Interface * interface,
-			   const char *symbol)
-{
-	nih_assert (interface != NULL);
-	nih_assert (symbol != NULL);
-
-	NIH_LIST_FOREACH (&interface->properties, iter) {
-		Property *property = (Property *)iter;
-
-		if (property->symbol
-		    && (! strcmp (property->symbol, symbol)))
-			return property;
-	}
-
-	return NULL;
 }

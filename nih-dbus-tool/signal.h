@@ -31,6 +31,7 @@
 #include <nih/macros.h>
 #include <nih/list.h>
 
+#include "interface.h"
 #include "argument.h"
 
 
@@ -75,6 +76,7 @@ int       signal_annotation      (Signal *signal,
 				  const char *name, const char *value)
 	__attribute__ ((warn_unused_result));
 
+Signal *  signal_lookup          (Interface *interface, const char *symbol);
 Argument *signal_lookup_argument (Signal *signal, const char *symbol);
 
 char *    signal_object_function (const void *parent,

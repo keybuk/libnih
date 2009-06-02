@@ -31,10 +31,6 @@
 #include <nih/macros.h>
 #include <nih/list.h>
 
-#include "method.h"
-#include "signal.h"
-#include "property.h"
-
 
 /**
  * Interface:
@@ -81,13 +77,6 @@ int        interface_end_tag         (XML_Parser xmlp, const char *tag)
 int        interface_annotation      (Interface *interface,
 				      const char *name, const char *value)
 	__attribute__ ((warn_unused_result));
-
-Method *   interface_lookup_method   (Interface *interface,
-				      const char *symbol);
-Signal *   interface_lookup_signal   (Interface *interface,
-				      const char *symbol);
-Property * interface_lookup_property (Interface *interface,
-				      const char *symbol);
 
 NIH_END_EXTERN
 

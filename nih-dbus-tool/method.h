@@ -31,6 +31,7 @@
 #include <nih/macros.h>
 #include <nih/list.h>
 
+#include "interface.h"
 #include "argument.h"
 
 
@@ -79,7 +80,9 @@ int       method_annotation            (Method *method,
 					const char *name, const char *value)
 	__attribute__ ((warn_unused_result));
 
-Argument *method_lookup_argument (Method *method, const char *symbol);
+Method *  method_lookup                (Interface *interface,
+					const char *symbol);
+Argument *method_lookup_argument       (Method *method, const char *symbol);
 
 char *    method_object_function       (const void *parent, Method *method,
 					const char *name,

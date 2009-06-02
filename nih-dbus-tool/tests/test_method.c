@@ -1067,6 +1067,74 @@ test_annotation (void)
 
 
 void
+test_lookup (void)
+{
+	Interface *interface = NULL;
+	Method *   method1 = NULL;
+	Method *   method2 = NULL;
+	Method *   method3 = NULL;
+	Method *   ret;
+
+	TEST_FUNCTION ("method_lookup");
+
+
+	/* Check that the function returns the method if there is one
+	 * with the given symbol.
+	 */
+	TEST_FEATURE ("with matching symbol");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+
+			method1 = method_new (interface, "Test");
+			method1->symbol = nih_strdup (method1, "test");
+			nih_list_add (&interface->methods, &method1->entry);
+
+			method2 = method_new (interface, "Foo");
+			nih_list_add (&interface->methods, &method2->entry);
+
+			method3 = method_new (interface, "Bar");
+			method3->symbol = nih_strdup (method3, "bar");
+			nih_list_add (&interface->methods, &method3->entry);
+		}
+
+		ret = method_lookup (interface, "bar");
+
+		TEST_EQ_P (ret, method3);
+
+		nih_free (interface);
+	}
+
+
+	/* Check that the function returns NULL if there is no method
+	 * with the given symbol.
+	 */
+	TEST_FEATURE ("with non-matching symbol");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+
+			method1 = method_new (interface, "Test");
+			method1->symbol = nih_strdup (method1, "test");
+			nih_list_add (&interface->methods, &method1->entry);
+
+			method2 = method_new (interface, "Foo");
+			nih_list_add (&interface->methods, &method2->entry);
+
+			method3 = method_new (interface, "Bar");
+			method3->symbol = nih_strdup (method3, "bar");
+			nih_list_add (&interface->methods, &method3->entry);
+		}
+
+		ret = method_lookup (interface, "baz");
+
+		TEST_EQ_P (ret, NULL);
+
+		nih_free (interface);
+	}
+}
+
+void
 test_lookup_argument (void)
 {
 	Method *  method = NULL;
@@ -9755,6 +9823,7 @@ main (int   argc,
 	test_start_tag ();
 	test_end_tag ();
 	test_annotation ();
+	test_lookup ();
 	test_lookup_argument ();
 
 	test_object_function ();

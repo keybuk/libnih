@@ -2540,7 +2540,7 @@ method_args_array (const void *parent,
 		return NULL;
 
 	code = nih_sprintf (parent,
-			    "static const %s[] = {\n"
+			    "static const NihDBusArg %s[] = {\n"
 			    "%s"
 			    "};\n",
 			    name,

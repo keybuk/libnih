@@ -1,5 +1,18 @@
 2009-06-03  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_args_array): Add missing NihDBusArg
+	* nih-dbus-tool/tests/test_method.c (test_args_array): Update
+	expected test output
+	* nih-dbus-tool/signal.c (signal_args_array): Add missing NihDBusArg
+	* nih-dbus-tool/tests/test_signal.c (test_args_array): Update
+	expected test output
+	* nih-dbus-tool/interface.c (interface_methods_array)
+	(interface_signals_array, interface_properties_array): Add missing
+	NihDBusMethod, NihDBusSignal and NihDBusProperty type names.
+	* nih-dbus-tool/tests/test_interface.c (test_methods_array)
+	(test_signals_array, test_properties_array): Update expected
+	test output
+
 	* nih-dbus-tool/interface.c (interface_properties_array): Generate
 	the array of properties for an interface
 	* nih-dbus-tool/interface.h: Add prototype

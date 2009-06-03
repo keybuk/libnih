@@ -9925,7 +9925,7 @@ test_args_array (void)
 		}
 
 		TEST_EQ_STR (str,
-			     "static const my_com_netsplit_Nih_Test_Method_method_args[] = {\n"
+			     "static const NihDBusArg my_com_netsplit_Nih_Test_Method_method_args[] = {\n"
 			     "\t{ \"foo\",    \"as\",     NIH_DBUS_ARG_IN  },\n"
 			     "\t{ \"wibble\", \"i\",      NIH_DBUS_ARG_OUT },\n"
 			     "\t{ NULL,     \"a(iii)\", NIH_DBUS_ARG_IN  },\n"
@@ -9962,7 +9962,7 @@ test_args_array (void)
 		}
 
 		TEST_EQ_STR (str,
-			     "static const my_com_netsplit_Nih_Test_Method_method_args[] = {\n"
+			     "static const NihDBusArg my_com_netsplit_Nih_Test_Method_method_args[] = {\n"
 			     "\t{ NULL }\n"
 			     "};\n");
 

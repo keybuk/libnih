@@ -2250,7 +2250,7 @@ test_args_array (void)
 		}
 
 		TEST_EQ_STR (str,
-			     "static const my_com_netsplit_Nih_Test_Signal_signal_args[] = {\n"
+			     "static const NihDBusArg my_com_netsplit_Nih_Test_Signal_signal_args[] = {\n"
 			     "\t{ \"foo\",    \"as\",     NIH_DBUS_ARG_OUT },\n"
 			     "\t{ \"wibble\", \"i\",      NIH_DBUS_ARG_OUT },\n"
 			     "\t{ NULL,     \"a(iii)\", NIH_DBUS_ARG_OUT },\n"
@@ -2287,7 +2287,7 @@ test_args_array (void)
 		}
 
 		TEST_EQ_STR (str,
-			     "static const my_com_netsplit_Nih_Test_Signal_signal_args[] = {\n"
+			     "static const NihDBusArg my_com_netsplit_Nih_Test_Signal_signal_args[] = {\n"
 			     "\t{ NULL }\n"
 			     "};\n");
 

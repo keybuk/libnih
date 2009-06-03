@@ -576,7 +576,7 @@ interface_methods_array (const void *parent,
 
 	code = nih_sprintf (parent,
 			    "%s"
-			    "static const %s[] = {\n"
+			    "static const NihDBusMethod %s[] = {\n"
 			    "%s"
 			    "};\n",
 			    args ? args : "",
@@ -761,7 +761,7 @@ interface_signals_array (const void *parent,
 
 	code = nih_sprintf (parent,
 			    "%s"
-			    "static const %s[] = {\n"
+			    "static const NihDBusSignal %s[] = {\n"
 			    "%s"
 			    "};\n",
 			    args ? args : "",
@@ -1006,7 +1006,7 @@ interface_properties_array (const void *parent,
 		return NULL;
 
 	code = nih_sprintf (parent,
-			    "static const %s[] = {\n"
+			    "static const NihDBusProperty %s[] = {\n"
 			    "%s"
 			    "};\n",
 			    name,

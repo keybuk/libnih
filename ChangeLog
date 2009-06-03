@@ -1,5 +1,10 @@
 2009-06-03  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/signal.c (signal_args_array): Generate the array
+	of arguments for a signal.
+	* nih-dbus-tool/signal.h: Add prototype.
+	* nih-dbus-tool/tests/test_signal.c (test_args_array): Tests.
+
 	* nih-dbus-tool/method.c (method_args_array): Generate the array
 	of arguments for a method.
 	* nih-dbus-tool/method.h: Add prototype.

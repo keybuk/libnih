@@ -2550,4 +2550,3 @@ method_args_array (const void *parent,
 
 	return code;
 }
-

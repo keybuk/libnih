@@ -2195,6 +2195,109 @@ test_proxy_function (void)
 }
 
 
+void
+test_args_array (void)
+{
+	Interface *interface = NULL;
+	Signal *   signal = NULL;
+	Argument * arg1 = NULL;
+	Argument * arg2 = NULL;
+	Argument * arg3 = NULL;
+	char *     str;
+
+
+	TEST_FUNCTION ("signal_args_array");
+
+
+	/* Check that we can generate an array of argument definitions for
+	 * a signal, with each name and type lined up with each other and
+	 * the final part lined up too.  Arguments without names should have
+	 * NULL in place of the name.
+	 */
+	TEST_FEATURE ("with arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = "test";
+
+			signal = signal_new (interface, "Signal");
+			signal->symbol = "signal";
+			nih_list_add (&interface->signals, &signal->entry);
+
+			arg1 = argument_new (signal, "foo",
+					     "as", NIH_DBUS_ARG_OUT);
+			arg1->symbol = "foo";
+			nih_list_add (&signal->arguments, &arg1->entry);
+
+			arg2 = argument_new (signal, "wibble",
+					     "i", NIH_DBUS_ARG_OUT);
+			arg2->symbol = "wibble";
+			nih_list_add (&signal->arguments, &arg2->entry);
+
+			arg3 = argument_new (signal, NULL,
+					     "a(iii)", NIH_DBUS_ARG_OUT);
+			arg3->symbol = "arg3";
+			nih_list_add (&signal->arguments, &arg3->entry);
+		}
+
+		str = signal_args_array (NULL, "my", interface, signal);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ_STR (str,
+			     "static const my_com_netsplit_Nih_Test_Signal_args[] = {\n"
+			     "\t{ \"foo\",    \"as\",     NIH_DBUS_ARG_OUT },\n"
+			     "\t{ \"wibble\", \"i\",      NIH_DBUS_ARG_OUT },\n"
+			     "\t{ NULL,     \"a(iii)\", NIH_DBUS_ARG_OUT },\n"
+			     "\t{ NULL }\n"
+			     "};\n");
+
+		nih_free (str);
+
+		nih_free (interface);
+	}
+
+
+	/* Check that a signal with no arguments has an empty array
+	 * returned.
+	 */
+	TEST_FEATURE ("with no arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = "test";
+
+			signal = signal_new (interface, "Signal");
+			signal->symbol = "signal";
+			nih_list_add (&interface->signals, &signal->entry);
+		}
+
+		str = signal_args_array (NULL, "my", interface, signal);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ_STR (str,
+			     "static const my_com_netsplit_Nih_Test_Signal_args[] = {\n"
+			     "\t{ NULL }\n"
+			     "};\n");
+
+		nih_free (str);
+
+		nih_free (interface);
+	}
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -2212,6 +2315,8 @@ main (int   argc,
 
 	test_object_function ();
 	test_proxy_function ();
+
+	test_args_array ();
 
 	return 0;
 }

@@ -1,5 +1,10 @@
 2009-06-03  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_args_array): Generate the array
+	of arguments for a method.
+	* nih-dbus-tool/method.h: Add prototype.
+	* nih-dbus-tool/tests/test_method.c (test_args_array): Tests.
+
 	* nih-dbus-tool/symbol.c (symbol_impl): Allow the symbol name and
 	postfix to be NULL, as is the case for structure definitions.
 	* nih-dbus-tool/tests/test_symbol.c (test_impl): Extend test cases

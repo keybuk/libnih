@@ -109,6 +109,10 @@ char *    method_proxy_sync_function   (const void *parent, const char *prefix,
 					NihList *prototypes)
 	__attribute__ ((warn_unused_result, malloc));
 
+char *    method_args_array            (const void *parent, const char *prefix,
+					Interface *interface, Method *method)
+	__attribute__ ((warn_unused_result, malloc));
+
 NIH_END_EXTERN
 
 #endif /* NIH_DBUS_TOOL_METHOD_H */

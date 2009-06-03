@@ -2403,3 +2403,151 @@ method_proxy_sync_function (const void *parent,
 
 	return code;
 }
+
+
+/**
+ * method_args_array:
+ * @parent: parent object for new string,
+ * @prefix: prefix for array name,
+ * @interface: interface of @method,
+ * @method: method to generate array for.
+ *
+ * Generates C code to declare an array of NihDBusArg variables containing
+ * information about the arguments of the method @method on @interface.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the return string will also be
+ * freed.
+ *
+ * Returns: newly allocated string or NULL if insufficient memory.
+ **/
+char *
+method_args_array (const void *parent,
+		   const char *prefix,
+		   Interface * interface,
+		   Method *    method)
+{
+	nih_local char *name = NULL;
+	size_t          max_name = 0;
+	size_t          max_type = 0;
+	nih_local char *block = NULL;
+	char *          code = NULL;
+
+	nih_assert (prefix != NULL);
+	nih_assert (interface != NULL);
+	nih_assert (method != NULL);
+
+	name = symbol_impl (NULL, prefix, interface->name,
+			    method->name, "args");
+	if (! name)
+		return NULL;
+
+	/* Figure out the longest argument name and signature */
+	NIH_LIST_FOREACH (&method->arguments, iter) {
+		Argument *argument = (Argument *)iter;
+
+		if (argument->name) {
+			if (strlen (argument->name) > max_name)
+				max_name = strlen (argument->name);
+		} else {
+			if (max_name < 4)
+				max_name = 4;
+		}
+
+		if (strlen (argument->type) > max_type)
+			max_type = strlen (argument->type);
+	}
+
+	/* Append each argument such that the names, types and directions
+	 * are all lined up with each other.
+	 */
+	NIH_LIST_FOREACH (&method->arguments, iter) {
+		Argument *      argument = (Argument *)iter;
+		nih_local char *line = NULL;
+		char *          dest;
+
+		line = nih_alloc (NULL, max_name + max_type + 31);
+		if (! line)
+			return NULL;
+
+		dest = line;
+
+		memcpy (dest, "{ ", 2);
+		dest += 2;
+
+		if (argument->name) {
+			memcpy (dest, "\"", 1);
+			dest += 1;
+
+			memcpy (dest, argument->name, strlen (argument->name));
+			dest += strlen (argument->name);
+
+			memcpy (dest, "\", ", 3);
+			dest += 3;
+
+			memset (dest, ' ', max_name - strlen (argument->name));
+			dest += max_name - strlen (argument->name);
+		} else {
+			memcpy (dest, "NULL, ", 6);
+			dest += 6;
+
+			memset (dest, ' ', max_name - 2);
+			dest += max_name - 2;
+		}
+
+		memcpy (dest, "\"", 1);
+		dest += 1;
+
+		memcpy (dest, argument->type, strlen (argument->type));
+		dest += strlen (argument->type);
+
+		memcpy (dest, "\", ", 3);
+		dest += 3;
+
+		memset (dest, ' ', max_type - strlen (argument->type));
+		dest += max_type - strlen (argument->type);
+
+		switch (argument->direction) {
+		case NIH_DBUS_ARG_IN:
+			memcpy (dest, "NIH_DBUS_ARG_IN ", 16);
+			dest += 16;
+			break;
+		case NIH_DBUS_ARG_OUT:
+			memcpy (dest, "NIH_DBUS_ARG_OUT", 16);
+			dest += 16;
+			break;
+		default:
+			nih_assert_not_reached ();
+		}
+
+		memcpy (dest, " },\n", 4);
+		dest += 4;
+
+		*dest = '\0';
+
+		if (! nih_strcat (&block, NULL, line))
+			return NULL;
+	}
+
+	/* Append the final element to the block of elements, indent and
+	 * surround with the structure definition.
+	 */
+	if (! nih_strcat (&block, NULL, "{ NULL }\n"))
+		return NULL;
+
+	if (! indent (&block, NULL, 1))
+		return NULL;
+
+	code = nih_sprintf (parent,
+			    "static const %s[] = {\n"
+			    "%s"
+			    "};\n",
+			    name,
+			    block);
+	if (! code)
+		return NULL;
+
+	return code;
+}
+

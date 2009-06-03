@@ -81,6 +81,9 @@ int        interface_annotation      (Interface *interface,
 char *     interface_methods_array   (const void *parent, const char *prefix,
 				      Interface *interface, int with_handlers)
 	__attribute__ ((warn_unused_result, malloc));
+char *     interface_signals_array   (const void *parent, const char *prefix,
+				      Interface *interface, int with_filters)
+	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN
 

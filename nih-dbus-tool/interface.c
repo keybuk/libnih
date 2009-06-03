@@ -587,3 +587,188 @@ interface_methods_array (const void *parent,
 
 	return code;
 }
+
+/**
+ * interface_signals_array:
+ * @parent: parent object for new string,
+ * @prefix: prefix for array name,
+ * @interface: interface to generate array for,
+ * @with_filter: whether to include filter function pointers.
+ *
+ * Generates C code to declare an array of NihDBusSignal variables
+ * containing information about the signals of the interface @interface;
+ * this will also include array definitions for the arguments of each
+ * signals, since these are referred to by the returned array.
+ *
+ * If @with_filters is TRUE the returned array will contain pointers to
+ * filter functions that should be already defined (or at least prototyped);
+ * when FALSE this member will be NULL.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the return string will also be
+ * freed.
+ *
+ * Returns: newly allocated string or NULL if insufficient memory.
+ **/
+char *
+interface_signals_array (const void *parent,
+			 const char *prefix,
+			 Interface * interface,
+			 int         with_filters)
+{
+	nih_local char *name = NULL;
+	size_t          max_name = 0;
+	size_t          max_args = 0;
+	size_t          max_filter = 0;
+	nih_local char *args = NULL;
+	nih_local char *block = NULL;
+	char *          code = NULL;
+
+	nih_assert (prefix != NULL);
+	nih_assert (interface != NULL);
+
+	name = symbol_impl (NULL, prefix, interface->name, NULL, "signals");
+	if (! name)
+		return NULL;
+
+	/* Figure out the longest signal name, arguments array variable name
+	 * and filter function name.
+	 */
+	NIH_LIST_FOREACH (&interface->signals, iter) {
+		Signal *        signal = (Signal *)iter;
+		nih_local char *args_name = NULL;
+		nih_local char *filter_name = NULL;
+
+		if (strlen (signal->name) > max_name)
+			max_name = strlen (signal->name);
+
+		args_name = symbol_impl (NULL, prefix, interface->name,
+					 signal->name, "args");
+		if (! args_name)
+			return NULL;
+
+		if (strlen (args_name) > max_args)
+			max_args = strlen (args_name);
+
+		if (with_filters) {
+			filter_name = symbol_impl (NULL, prefix,
+						    interface->name,
+						    signal->name, "signal");
+			if (! filter_name)
+				return NULL;
+
+			if (strlen (filter_name) > max_filter)
+				max_filter = strlen (filter_name);
+		} else {
+			if (max_filter < 4)
+				max_filter = 4;
+		}
+	}
+
+	/* Append each signal such that the names, args variable names and
+	 * filter function names are all lined up with each other.
+	 */
+	NIH_LIST_FOREACH (&interface->signals, iter) {
+		Signal *        signal = (Signal *)iter;
+		nih_local char *line = NULL;
+		char *          dest;
+		nih_local char *args_name = NULL;
+		nih_local char *filter_name = NULL;
+		nih_local char *args_array = NULL;
+
+		line = nih_alloc (NULL, max_name + max_args + max_filter + 13);
+		if (! line)
+			return NULL;
+
+		dest = line;
+
+		memcpy (dest, "{ \"", 3);
+		dest += 3;
+
+		memcpy (dest, signal->name, strlen (signal->name));
+		dest += strlen (signal->name);
+
+		memcpy (dest, "\", ", 3);
+		dest += 3;
+
+		memset (dest, ' ', max_name - strlen (signal->name));
+		dest += max_name - strlen (signal->name);
+
+		args_name = symbol_impl (NULL, prefix, interface->name,
+					 signal->name, "args");
+		if (! args_name)
+			return NULL;
+
+		memcpy (dest, args_name, strlen (args_name));
+		dest += strlen (args_name);
+
+		memcpy (dest, ", ", 2);
+		dest += 2;
+
+		memset (dest, ' ', max_args - strlen (args_name));
+		dest += max_args - strlen (args_name);
+
+		if (with_filters) {
+			filter_name = symbol_impl (NULL, prefix,
+						    interface->name,
+						    signal->name, "signal");
+			if (! filter_name)
+				return NULL;
+
+			memcpy (dest, filter_name, strlen (filter_name));
+			dest += strlen (filter_name);
+
+			memset (dest, ' ', max_filter - strlen (filter_name));
+			dest += max_filter - strlen (filter_name);
+		} else {
+			memcpy (dest, "NULL", 4);
+			dest += 4;
+
+			memset (dest, ' ', max_filter - 4);
+			dest += max_filter - 4;
+		}
+
+		memcpy (dest, " },\n", 4);
+		dest += 4;
+
+		*dest = '\0';
+
+		if (! nih_strcat (&block, NULL, line))
+			return NULL;
+
+		/* Prepend the variables for the arguments array */
+		args_array = signal_args_array (NULL, prefix, interface,
+						signal);
+		if (! args_array)
+			return NULL;
+
+		if (! nih_strcat_sprintf (&args, NULL,
+					  "%s"
+					  "\n",
+					  args_array))
+			return NULL;
+	}
+
+	/* Append the final element to the block of elements, indent and
+	 * surround with the structure definition.
+	 */
+	if (! nih_strcat (&block, NULL, "{ NULL }\n"))
+		return NULL;
+
+	if (! indent (&block, NULL, 1))
+		return NULL;
+
+	code = nih_sprintf (parent,
+			    "%s"
+			    "static const %s[] = {\n"
+			    "%s"
+			    "};\n",
+			    args ? args : "",
+			    name,
+			    block);
+	if (! code)
+		return NULL;
+
+	return code;
+}

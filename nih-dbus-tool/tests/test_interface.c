@@ -1096,6 +1096,168 @@ test_methods_array (void)
 	}
 }
 
+void
+test_signals_array (void)
+{
+	Interface *interface = NULL;
+	Signal *   signal = NULL;
+	Argument * arg = NULL;
+	char *     str;
+
+
+	TEST_FUNCTION ("interface_signals_array");
+
+
+	/* Check that we can generate an array of interface signals with
+	 * their filter functions.  The C code returned should be lined up
+	 * nicely and include the argument variable definitions as well.
+	 */
+	TEST_FEATURE ("with filters");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = "test";
+
+			signal = signal_new (interface, "Bounce");
+			signal->symbol = "bounce";
+			nih_list_add (&interface->signals, &signal->entry);
+
+			arg = argument_new (signal, "height",
+					    "u", NIH_DBUS_ARG_OUT);
+			arg->symbol = "height";
+			nih_list_add (&signal->arguments, &arg->entry);
+
+			arg = argument_new (signal, "velocity",
+					    "i", NIH_DBUS_ARG_OUT);
+			arg->symbol = "velocity";
+			nih_list_add (&signal->arguments, &arg->entry);
+
+			signal = signal_new (interface, "Exploded");
+			signal->symbol = "exploded";
+			nih_list_add (&interface->signals, &signal->entry);
+		}
+
+		str = interface_signals_array (NULL, "my", interface, TRUE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ_STR (str,
+			     "static const my_com_netsplit_Nih_Test_Bounce_args[] = {\n"
+			     "\t{ \"height\",   \"u\", NIH_DBUS_ARG_OUT },\n"
+			     "\t{ \"velocity\", \"i\", NIH_DBUS_ARG_OUT },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const my_com_netsplit_Nih_Test_Exploded_args[] = {\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const my_com_netsplit_Nih_Test_signals[] = {\n"
+			     "\t{ \"Bounce\",   my_com_netsplit_Nih_Test_Bounce_args,   my_com_netsplit_Nih_Test_Bounce_signal   },\n"
+			     "\t{ \"Exploded\", my_com_netsplit_Nih_Test_Exploded_args, my_com_netsplit_Nih_Test_Exploded_signal },\n"
+			     "\t{ NULL }\n"
+			     "};\n");
+
+		nih_free (str);
+		nih_free (interface);
+	}
+
+
+	/* Check that we can generate an array of interface signals without
+	 * their filter functions.  The C code returned should be lined up
+	 * nicely, but should include NULL in the place of the filter
+	 * function.
+	 */
+	TEST_FEATURE ("without filters");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = "test";
+
+			signal = signal_new (interface, "Bounce");
+			signal->symbol = "bounce";
+			nih_list_add (&interface->signals, &signal->entry);
+
+			arg = argument_new (signal, "height",
+					    "u", NIH_DBUS_ARG_OUT);
+			arg->symbol = "height";
+			nih_list_add (&signal->arguments, &arg->entry);
+
+			arg = argument_new (signal, "velocity",
+					    "i", NIH_DBUS_ARG_OUT);
+			arg->symbol = "velocity";
+			nih_list_add (&signal->arguments, &arg->entry);
+
+			signal = signal_new (interface, "Exploded");
+			signal->symbol = "exploded";
+			nih_list_add (&interface->signals, &signal->entry);
+		}
+
+		str = interface_signals_array (NULL, "my", interface, FALSE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ_STR (str,
+			     "static const my_com_netsplit_Nih_Test_Bounce_args[] = {\n"
+			     "\t{ \"height\",   \"u\", NIH_DBUS_ARG_OUT },\n"
+			     "\t{ \"velocity\", \"i\", NIH_DBUS_ARG_OUT },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const my_com_netsplit_Nih_Test_Exploded_args[] = {\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const my_com_netsplit_Nih_Test_signals[] = {\n"
+			     "\t{ \"Bounce\",   my_com_netsplit_Nih_Test_Bounce_args,   NULL },\n"
+			     "\t{ \"Exploded\", my_com_netsplit_Nih_Test_Exploded_args, NULL },\n"
+			     "\t{ NULL }\n"
+			     "};\n");
+
+		nih_free (str);
+		nih_free (interface);
+	}
+
+
+	/* Check that the array is returned empty if the interface has
+	 * no signals.
+	 */
+	TEST_FEATURE ("with no signals");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = "test";
+		}
+
+		str = interface_signals_array (NULL, "my", interface, FALSE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ_STR (str,
+			     "static const my_com_netsplit_Nih_Test_signals[] = {\n"
+			     "\t{ NULL }\n"
+			     "};\n");
+
+		nih_free (str);
+		nih_free (interface);
+	}
+}
+
 
 int
 main (int   argc,
@@ -1111,6 +1273,7 @@ main (int   argc,
 	test_annotation ();
 
 	test_methods_array ();
+	test_signals_array ();
 
 	return 0;
 }

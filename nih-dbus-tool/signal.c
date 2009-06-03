@@ -1057,7 +1057,7 @@ signal_args_array (const void *parent,
 	nih_assert (signal != NULL);
 
 	name = symbol_impl (NULL, prefix, interface->name,
-			    signal->name, "args");
+			    signal->name, "signal_args");
 	if (! name)
 		return NULL;
 

@@ -2439,7 +2439,7 @@ method_args_array (const void *parent,
 	nih_assert (method != NULL);
 
 	name = symbol_impl (NULL, prefix, interface->name,
-			    method->name, "args");
+			    method->name, "method_args");
 	if (! name)
 		return NULL;
 

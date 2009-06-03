@@ -459,7 +459,7 @@ interface_methods_array (const void *parent,
 			max_name = strlen (method->name);
 
 		args_name = symbol_impl (NULL, prefix, interface->name,
-					 method->name, "args");
+					 method->name, "method_args");
 		if (! args_name)
 			return NULL;
 
@@ -511,7 +511,7 @@ interface_methods_array (const void *parent,
 		dest += max_name - strlen (method->name);
 
 		args_name = symbol_impl (NULL, prefix, interface->name,
-					 method->name, "args");
+					 method->name, "method_args");
 		if (! args_name)
 			return NULL;
 
@@ -644,7 +644,7 @@ interface_signals_array (const void *parent,
 			max_name = strlen (signal->name);
 
 		args_name = symbol_impl (NULL, prefix, interface->name,
-					 signal->name, "args");
+					 signal->name, "signal_args");
 		if (! args_name)
 			return NULL;
 
@@ -696,7 +696,7 @@ interface_signals_array (const void *parent,
 		dest += max_name - strlen (signal->name);
 
 		args_name = symbol_impl (NULL, prefix, interface->name,
-					 signal->name, "args");
+					 signal->name, "signal_args");
 		if (! args_name)
 			return NULL;
 

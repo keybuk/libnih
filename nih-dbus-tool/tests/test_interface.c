@@ -950,27 +950,27 @@ test_methods_array (void)
 		}
 
 		TEST_EQ_STR (str,
-			     "static const my_com_netsplit_Nih_Test_Poke_args[] = {\n"
+			     "static const my_com_netsplit_Nih_Test_Poke_method_args[] = {\n"
 			     "\t{ \"address\", \"u\", NIH_DBUS_ARG_IN  },\n"
 			     "\t{ \"value\",   \"s\", NIH_DBUS_ARG_IN  },\n"
 			     "\t{ NULL }\n"
 			     "};\n"
 			     "\n"
-			     "static const my_com_netsplit_Nih_Test_Peek_args[] = {\n"
+			     "static const my_com_netsplit_Nih_Test_Peek_method_args[] = {\n"
 			     "\t{ \"address\", \"u\", NIH_DBUS_ARG_IN  },\n"
 			     "\t{ \"value\",   \"s\", NIH_DBUS_ARG_OUT },\n"
 			     "\t{ NULL }\n"
 			     "};\n"
 			     "\n"
-			     "static const my_com_netsplit_Nih_Test_IsValidAddress_args[] = {\n"
+			     "static const my_com_netsplit_Nih_Test_IsValidAddress_method_args[] = {\n"
 			     "\t{ \"address\", \"u\", NIH_DBUS_ARG_IN  },\n"
 			     "\t{ NULL }\n"
 			     "};\n"
 			     "\n"
 			     "static const my_com_netsplit_Nih_Test_methods[] = {\n"
-			     "\t{ \"Poke\",           my_com_netsplit_Nih_Test_Poke_args,           my_com_netsplit_Nih_Test_Poke_method           },\n"
-			     "\t{ \"Peek\",           my_com_netsplit_Nih_Test_Peek_args,           my_com_netsplit_Nih_Test_Peek_method           },\n"
-			     "\t{ \"IsValidAddress\", my_com_netsplit_Nih_Test_IsValidAddress_args, my_com_netsplit_Nih_Test_IsValidAddress_method },\n"
+			     "\t{ \"Poke\",           my_com_netsplit_Nih_Test_Poke_method_args,           my_com_netsplit_Nih_Test_Poke_method           },\n"
+			     "\t{ \"Peek\",           my_com_netsplit_Nih_Test_Peek_method_args,           my_com_netsplit_Nih_Test_Peek_method           },\n"
+			     "\t{ \"IsValidAddress\", my_com_netsplit_Nih_Test_IsValidAddress_method_args, my_com_netsplit_Nih_Test_IsValidAddress_method },\n"
 			     "\t{ NULL }\n"
 			     "};\n");
 
@@ -1038,27 +1038,27 @@ test_methods_array (void)
 		}
 
 		TEST_EQ_STR (str,
-			     "static const my_com_netsplit_Nih_Test_Poke_args[] = {\n"
+			     "static const my_com_netsplit_Nih_Test_Poke_method_args[] = {\n"
 			     "\t{ \"address\", \"u\", NIH_DBUS_ARG_IN  },\n"
 			     "\t{ \"value\",   \"s\", NIH_DBUS_ARG_IN  },\n"
 			     "\t{ NULL }\n"
 			     "};\n"
 			     "\n"
-			     "static const my_com_netsplit_Nih_Test_Peek_args[] = {\n"
+			     "static const my_com_netsplit_Nih_Test_Peek_method_args[] = {\n"
 			     "\t{ \"address\", \"u\", NIH_DBUS_ARG_IN  },\n"
 			     "\t{ \"value\",   \"s\", NIH_DBUS_ARG_OUT },\n"
 			     "\t{ NULL }\n"
 			     "};\n"
 			     "\n"
-			     "static const my_com_netsplit_Nih_Test_IsValidAddress_args[] = {\n"
+			     "static const my_com_netsplit_Nih_Test_IsValidAddress_method_args[] = {\n"
 			     "\t{ \"address\", \"u\", NIH_DBUS_ARG_IN  },\n"
 			     "\t{ NULL }\n"
 			     "};\n"
 			     "\n"
 			     "static const my_com_netsplit_Nih_Test_methods[] = {\n"
-			     "\t{ \"Poke\",           my_com_netsplit_Nih_Test_Poke_args,           NULL },\n"
-			     "\t{ \"Peek\",           my_com_netsplit_Nih_Test_Peek_args,           NULL },\n"
-			     "\t{ \"IsValidAddress\", my_com_netsplit_Nih_Test_IsValidAddress_args, NULL },\n"
+			     "\t{ \"Poke\",           my_com_netsplit_Nih_Test_Poke_method_args,           NULL },\n"
+			     "\t{ \"Peek\",           my_com_netsplit_Nih_Test_Peek_method_args,           NULL },\n"
+			     "\t{ \"IsValidAddress\", my_com_netsplit_Nih_Test_IsValidAddress_method_args, NULL },\n"
 			     "\t{ NULL }\n"
 			     "};\n");
 
@@ -1147,19 +1147,19 @@ test_signals_array (void)
 		}
 
 		TEST_EQ_STR (str,
-			     "static const my_com_netsplit_Nih_Test_Bounce_args[] = {\n"
+			     "static const my_com_netsplit_Nih_Test_Bounce_signal_args[] = {\n"
 			     "\t{ \"height\",   \"u\", NIH_DBUS_ARG_OUT },\n"
 			     "\t{ \"velocity\", \"i\", NIH_DBUS_ARG_OUT },\n"
 			     "\t{ NULL }\n"
 			     "};\n"
 			     "\n"
-			     "static const my_com_netsplit_Nih_Test_Exploded_args[] = {\n"
+			     "static const my_com_netsplit_Nih_Test_Exploded_signal_args[] = {\n"
 			     "\t{ NULL }\n"
 			     "};\n"
 			     "\n"
 			     "static const my_com_netsplit_Nih_Test_signals[] = {\n"
-			     "\t{ \"Bounce\",   my_com_netsplit_Nih_Test_Bounce_args,   my_com_netsplit_Nih_Test_Bounce_signal   },\n"
-			     "\t{ \"Exploded\", my_com_netsplit_Nih_Test_Exploded_args, my_com_netsplit_Nih_Test_Exploded_signal },\n"
+			     "\t{ \"Bounce\",   my_com_netsplit_Nih_Test_Bounce_signal_args,   my_com_netsplit_Nih_Test_Bounce_signal   },\n"
+			     "\t{ \"Exploded\", my_com_netsplit_Nih_Test_Exploded_signal_args, my_com_netsplit_Nih_Test_Exploded_signal },\n"
 			     "\t{ NULL }\n"
 			     "};\n");
 
@@ -1208,19 +1208,19 @@ test_signals_array (void)
 		}
 
 		TEST_EQ_STR (str,
-			     "static const my_com_netsplit_Nih_Test_Bounce_args[] = {\n"
+			     "static const my_com_netsplit_Nih_Test_Bounce_signal_args[] = {\n"
 			     "\t{ \"height\",   \"u\", NIH_DBUS_ARG_OUT },\n"
 			     "\t{ \"velocity\", \"i\", NIH_DBUS_ARG_OUT },\n"
 			     "\t{ NULL }\n"
 			     "};\n"
 			     "\n"
-			     "static const my_com_netsplit_Nih_Test_Exploded_args[] = {\n"
+			     "static const my_com_netsplit_Nih_Test_Exploded_signal_args[] = {\n"
 			     "\t{ NULL }\n"
 			     "};\n"
 			     "\n"
 			     "static const my_com_netsplit_Nih_Test_signals[] = {\n"
-			     "\t{ \"Bounce\",   my_com_netsplit_Nih_Test_Bounce_args,   NULL },\n"
-			     "\t{ \"Exploded\", my_com_netsplit_Nih_Test_Exploded_args, NULL },\n"
+			     "\t{ \"Bounce\",   my_com_netsplit_Nih_Test_Bounce_signal_args,   NULL },\n"
+			     "\t{ \"Exploded\", my_com_netsplit_Nih_Test_Exploded_signal_args, NULL },\n"
 			     "\t{ NULL }\n"
 			     "};\n");
 

@@ -1,3 +1,10 @@
+2009-06-03  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/symbol.c (symbol_impl): Allow the symbol name and
+	postfix to be NULL, as is the case for structure definitions.
+	* nih-dbus-tool/tests/test_symbol.c (test_impl): Extend test cases
+	to cover new cases.
+
 2009-06-02  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/property.c (property_object_get_function)

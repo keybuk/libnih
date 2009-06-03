@@ -363,11 +363,14 @@ test_impl (void)
 {
 	char *str;
 
+	TEST_FUNCTION ("symbol_impl");
+
+
 	/* Check that we can create an implementation function name,
 	 * which returns a name that you'd never want to call but is
 	 * sufficiently unique for internal structures.
 	 */
-	TEST_FUNCTION ("symbol_impl");
+	TEST_FEATURE ("with all arguments");
 	TEST_ALLOC_FAIL {
 		str = symbol_impl (NULL, "my", "com.netsplit.Nih.Test",
 				   "MyMethod", "method");
@@ -378,6 +381,44 @@ test_impl (void)
 		}
 
 		TEST_EQ_STR (str, "my_com_netsplit_Nih_Test_MyMethod_method");
+
+		nih_free (str);
+	}
+
+
+	/* Check that the symbol name may be omitted, as is the case for
+	 * the structure variables.
+	 */
+	TEST_FEATURE ("without symbol");
+	TEST_ALLOC_FAIL {
+		str = symbol_impl (NULL, "my", "com.netsplit.Nih.Test",
+				   NULL, "methods");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "my_com_netsplit_Nih_Test_methods");
+
+		nih_free (str);
+	}
+
+
+	/* Check that the symbol name and postfix may be omitted, as is
+	 * the case for the interface structure variable.
+	 */
+	TEST_FEATURE ("without symbol or postfix");
+	TEST_ALLOC_FAIL {
+		str = symbol_impl (NULL, "my", "com.netsplit.Nih.Test",
+				   NULL, NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "my_com_netsplit_Nih_Test");
 
 		nih_free (str);
 	}

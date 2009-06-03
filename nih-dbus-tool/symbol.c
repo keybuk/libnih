@@ -321,26 +321,30 @@ symbol_impl (const void *parent,
 
 	nih_assert (prefix != NULL);
 	nih_assert (interface_name != NULL);
-	nih_assert (name != NULL);
-	nih_assert (postfix != NULL);
+	nih_assert ((postfix != NULL) || (name == NULL));
 
 	str = nih_sprintf (parent, "%s_", prefix);
 	if (! str)
 		return NULL;
 
-	if (! symbol_strcat_interface (&str, parent, "%s_", interface_name)) {
+	if (! symbol_strcat_interface (&str, parent, (name ? "%s_" : "%s"),
+				       interface_name)) {
 		nih_free (str);
 		return NULL;
 	}
 
-	if (! nih_strcat (&str, parent, name)) {
-		nih_free (str);
-		return NULL;
+	if (name) {
+		if (! nih_strcat (&str, parent, name)) {
+			nih_free (str);
+			return NULL;
+		}
 	}
 
-	if (! nih_strcat_sprintf (&str, parent, "_%s", postfix)) {
-		nih_free (str);
-		return NULL;
+	if (postfix) {
+		if (! nih_strcat_sprintf (&str, parent, "_%s", postfix)) {
+			nih_free (str);
+			return NULL;
+		}
 	}
 
 	return str;

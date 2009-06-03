@@ -1259,6 +1259,142 @@ test_signals_array (void)
 }
 
 
+void
+test_properties_array (void)
+{
+	Interface *interface = NULL;
+	Property * property = NULL;
+	char *     str;
+
+	TEST_FUNCTION ("interface_properties_array");
+
+
+	/* Check that we can create an array of an interface's properties,
+	 * with getter and setter functions filled in where appropriate.
+	 * Each of the columns should be lined up nicely.
+	 */
+	TEST_FEATURE ("with handler functions");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = "test";
+
+			property = property_new (interface, "colour",
+						 "s", NIH_DBUS_READWRITE);
+			property->symbol = "colour";
+			nih_list_add (&interface->properties, &property->entry);
+
+			property = property_new (interface, "size",
+						 "u", NIH_DBUS_READ);
+			property->symbol = "size";
+			nih_list_add (&interface->properties, &property->entry);
+
+			property = property_new (interface, "touch",
+						 "b", NIH_DBUS_WRITE);
+			property->symbol = "touch";
+			nih_list_add (&interface->properties, &property->entry);
+		}
+
+		str = interface_properties_array (NULL, "my", interface, TRUE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ_STR (str,
+			     "static const my_com_netsplit_Nih_Test_properties[] = {\n"
+			     "\t{ \"colour\", \"s\", NIH_DBUS_READWRITE, my_com_netsplit_Nih_Test_colour_get, my_com_netsplit_Nih_Test_colour_set },\n"
+			     "\t{ \"size\",   \"u\", NIH_DBUS_READ,      my_com_netsplit_Nih_Test_size_get,   NULL                                },\n"
+			     "\t{ \"touch\",  \"b\", NIH_DBUS_WRITE,     NULL,                                my_com_netsplit_Nih_Test_touch_set  },\n"
+			     "\t{ NULL }\n"
+			     "};\n");
+
+		nih_free (str);
+		nih_free (interface);
+	}
+
+
+	/* Check that we can create an array of an interface's properties
+	 * without getter and setter functions filled in.  Each of the
+	 * columns should still be lined up.
+	 */
+	TEST_FEATURE ("without handler functions");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = "test";
+
+			property = property_new (interface, "colour",
+						 "s", NIH_DBUS_READWRITE);
+			property->symbol = "colour";
+			nih_list_add (&interface->properties, &property->entry);
+
+			property = property_new (interface, "size",
+						 "u", NIH_DBUS_READ);
+			property->symbol = "size";
+			nih_list_add (&interface->properties, &property->entry);
+
+			property = property_new (interface, "touch",
+						 "b", NIH_DBUS_WRITE);
+			property->symbol = "touch";
+			nih_list_add (&interface->properties, &property->entry);
+		}
+
+		str = interface_properties_array (NULL, "my", interface, FALSE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ_STR (str,
+			     "static const my_com_netsplit_Nih_Test_properties[] = {\n"
+			     "\t{ \"colour\", \"s\", NIH_DBUS_READWRITE, NULL, NULL },\n"
+			     "\t{ \"size\",   \"u\", NIH_DBUS_READ,      NULL, NULL },\n"
+			     "\t{ \"touch\",  \"b\", NIH_DBUS_WRITE,     NULL, NULL },\n"
+			     "\t{ NULL }\n"
+			     "};\n");
+
+		nih_free (str);
+		nih_free (interface);
+	}
+
+
+	/* Check that we return an empty array when the interface has no
+	 * properties.
+	 */
+	TEST_FEATURE ("with no properties");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = "test";
+		}
+
+		str = interface_properties_array (NULL, "my", interface, FALSE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ_STR (str,
+			     "static const my_com_netsplit_Nih_Test_properties[] = {\n"
+			     "\t{ NULL }\n"
+			     "};\n");
+
+		nih_free (str);
+		nih_free (interface);
+	}
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -1274,6 +1410,7 @@ main (int   argc,
 
 	test_methods_array ();
 	test_signals_array ();
+	test_properties_array ();
 
 	return 0;
 }

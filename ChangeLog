@@ -1,5 +1,10 @@
 2009-06-03  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/interface.c (interface_properties_array): Generate
+	the array of properties for an interface
+	* nih-dbus-tool/interface.h: Add prototype
+	* nih-dbus-tool/tests/test_interface.c (test_properties_array): Tests
+
 	* nih-dbus-tool/method.c (method_args_array): Use method_args instead
 	of args to distinguish from signals.
 	* nih-dbus-tool/tests/test_method.c (test_args_array): Update.

@@ -772,3 +772,247 @@ interface_signals_array (const void *parent,
 
 	return code;
 }
+
+/**
+ * interface_properties_array:
+ * @parent: parent object for new string,
+ * @prefix: prefix for array name,
+ * @interface: interface to generate array for,
+ * @with_handlers: whether to include handler pointers.
+ *
+ * Generates C code to declare an array of NihDBusProperty variables
+ * containing information about the properties of the interface @interface.
+ *
+ * If @with_handlers is TRUE the returned array will contain pointers to
+ * getter and setter functions that should be already defined (or at least
+ * prototyped); when FALSE these members will be NULL.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the return string will also be
+ * freed.
+ *
+ * Returns: newly allocated string or NULL if insufficient memory.
+ **/
+char *
+interface_properties_array (const void *parent,
+			    const char *prefix,
+			    Interface * interface,
+			    int         with_handlers)
+{
+	nih_local char *name = NULL;
+	size_t          max_name = 0;
+	size_t          max_type = 0;
+	size_t          max_access = 0;
+	size_t          max_getter = 0;
+	size_t          max_setter = 0;
+	nih_local char *block = NULL;
+	char *          code = NULL;
+
+	nih_assert (prefix != NULL);
+	nih_assert (interface != NULL);
+
+	name = symbol_impl (NULL, prefix, interface->name, NULL, "properties");
+	if (! name)
+		return NULL;
+
+	/* Figure out the longest property name, type, access variable,
+	 * getter and setter function names.
+	 */
+	NIH_LIST_FOREACH (&interface->properties, iter) {
+		Property *      property = (Property *)iter;
+		nih_local char *getter_name = NULL;
+		nih_local char *setter_name = NULL;
+
+		if (strlen (property->name) > max_name)
+			max_name = strlen (property->name);
+
+		if (strlen (property->type) > max_type)
+			max_type = strlen (property->type);
+
+		switch (property->access) {
+		case NIH_DBUS_READ:
+			if (max_access < 13)
+				max_access = 13;
+			break;
+		case NIH_DBUS_WRITE:
+			if (max_access < 14)
+				max_access = 14;
+			break;
+		case NIH_DBUS_READWRITE:
+			if (max_access < 18)
+				max_access = 18;
+			break;
+		default:
+			nih_assert_not_reached ();
+		}
+
+		if (with_handlers && (property->access != NIH_DBUS_WRITE)) {
+			getter_name = symbol_impl (NULL, prefix,
+						   interface->name,
+						   property->name, "get");
+			if (! getter_name)
+				return NULL;
+
+			if (strlen (getter_name) > max_getter)
+				max_getter = strlen (getter_name);
+		} else {
+			if (max_getter < 4)
+				max_getter = 4;
+		}
+
+		if (with_handlers && (property->access != NIH_DBUS_READ)) {
+			setter_name = symbol_impl (NULL, prefix,
+						   interface->name,
+						   property->name, "set");
+			if (! setter_name)
+				return NULL;
+
+			if (strlen (setter_name) > max_setter)
+				max_setter = strlen (setter_name);
+		} else {
+			if (max_setter < 4)
+				max_setter = 4;
+		}
+	}
+
+	/* Append each property such that the names, types, access enum,
+	 * getter and setter function names are all lined up with each other.
+	 */
+	NIH_LIST_FOREACH (&interface->properties, iter) {
+		Property *      property = (Property *)iter;
+		nih_local char *line = NULL;
+		char *          dest;
+		nih_local char *getter_name = NULL;
+		nih_local char *setter_name = NULL;
+
+		line = nih_alloc (NULL, (max_name + max_type + max_access
+					 + max_getter + max_setter + 19));
+		if (! line)
+			return NULL;
+
+		dest = line;
+
+		memcpy (dest, "{ \"", 3);
+		dest += 3;
+
+		memcpy (dest, property->name, strlen (property->name));
+		dest += strlen (property->name);
+
+		memcpy (dest, "\", ", 3);
+		dest += 3;
+
+		memset (dest, ' ', max_name - strlen (property->name));
+		dest += max_name - strlen (property->name);
+
+
+		memcpy (dest, "\"", 1);
+		dest += 1;
+
+		memcpy (dest, property->type, strlen (property->type));
+		dest += strlen (property->type);
+
+		memcpy (dest, "\", ", 3);
+		dest += 3;
+
+		memset (dest, ' ', max_type - strlen (property->type));
+		dest += max_type - strlen (property->type);
+
+		switch (property->access) {
+		case NIH_DBUS_READ:
+			memcpy (dest, "NIH_DBUS_READ, ", 15);
+			dest += 15;
+
+			memset (dest, ' ', max_access - 13);
+			dest += max_access - 13;
+			break;
+		case NIH_DBUS_WRITE:
+			memcpy (dest, "NIH_DBUS_WRITE, ", 16);
+			dest += 16;
+
+			memset (dest, ' ', max_access - 14);
+			dest += max_access - 14;
+			break;
+		case NIH_DBUS_READWRITE:
+			memcpy (dest, "NIH_DBUS_READWRITE, ", 20);
+			dest += 20;
+
+			memset (dest, ' ', max_access - 18);
+			dest += max_access - 18;
+			break;
+		default:
+			nih_assert_not_reached ();
+		}
+
+		if (with_handlers && (property->access != NIH_DBUS_WRITE)) {
+			getter_name = symbol_impl (NULL, prefix,
+						   interface->name,
+						   property->name, "get");
+			if (! getter_name)
+				return NULL;
+
+			memcpy (dest, getter_name, strlen (getter_name));
+			dest += strlen (getter_name);
+
+			memcpy (dest, ", ", 2);
+			dest += 2;
+
+			memset (dest, ' ', max_getter - strlen (getter_name));
+			dest += max_getter - strlen (getter_name);
+		} else {
+			memcpy (dest, "NULL, ", 6);
+			dest += 6;
+
+			memset (dest, ' ', max_getter - 4);
+			dest += max_getter - 4;
+		}
+
+		if (with_handlers && (property->access != NIH_DBUS_READ)) {
+			setter_name = symbol_impl (NULL, prefix,
+						   interface->name,
+						   property->name, "set");
+			if (! setter_name)
+				return NULL;
+
+			memcpy (dest, setter_name, strlen (setter_name));
+			dest += strlen (setter_name);
+
+			memset (dest, ' ', max_setter - strlen (setter_name));
+			dest += max_setter - strlen (setter_name);
+		} else {
+			memcpy (dest, "NULL", 4);
+			dest += 4;
+
+			memset (dest, ' ', max_setter - 4);
+			dest += max_setter - 4;
+		}
+
+		memcpy (dest, " },\n", 4);
+		dest += 4;
+
+		*dest = '\0';
+
+		if (! nih_strcat (&block, NULL, line))
+			return NULL;
+	}
+
+	/* Append the final element to the block of elements, indent and
+	 * surround with the structure definition.
+	 */
+	if (! nih_strcat (&block, NULL, "{ NULL }\n"))
+		return NULL;
+
+	if (! indent (&block, NULL, 1))
+		return NULL;
+
+	code = nih_sprintf (parent,
+			    "static const %s[] = {\n"
+			    "%s"
+			    "};\n",
+			    name,
+			    block);
+	if (! code)
+		return NULL;
+
+	return code;
+}

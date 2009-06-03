@@ -63,26 +63,29 @@ typedef struct interface {
 
 NIH_BEGIN_EXTERN
 
-int        interface_name_valid      (const char *name);
+int        interface_name_valid       (const char *name);
 
-Interface *interface_new             (const void *parent, const char *name)
+Interface *interface_new              (const void *parent, const char *name)
 	__attribute__ ((warn_unused_result, malloc));
 
-int        interface_start_tag       (XML_Parser xmlp, const char *tag,
+int        interface_start_tag        (XML_Parser xmlp, const char *tag,
 				       char * const *attr)
 	__attribute__ ((warn_unused_result));
-int        interface_end_tag         (XML_Parser xmlp, const char *tag)
+int        interface_end_tag          (XML_Parser xmlp, const char *tag)
 	__attribute__ ((warn_unused_result));
 
-int        interface_annotation      (Interface *interface,
-				      const char *name, const char *value)
+int        interface_annotation       (Interface *interface,
+				       const char *name, const char *value)
 	__attribute__ ((warn_unused_result));
 
-char *     interface_methods_array   (const void *parent, const char *prefix,
-				      Interface *interface, int with_handlers)
+char *     interface_methods_array    (const void *parent, const char *prefix,
+				       Interface *interface, int with_handlers)
 	__attribute__ ((warn_unused_result, malloc));
-char *     interface_signals_array   (const void *parent, const char *prefix,
-				      Interface *interface, int with_filters)
+char *     interface_signals_array    (const void *parent, const char *prefix,
+				       Interface *interface, int with_filters)
+	__attribute__ ((warn_unused_result, malloc));
+char *     interface_properties_array (const void *parent, const char *prefix,
+				       Interface *interface, int with_handlers)
 	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN

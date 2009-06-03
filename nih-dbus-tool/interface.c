@@ -39,8 +39,10 @@
 #include <nih/error.h>
 
 #include "symbol.h"
+#include "indent.h"
 #include "node.h"
 #include "interface.h"
+#include "method.h"
 #include "parse.h"
 #include "errors.h"
 
@@ -398,4 +400,190 @@ interface_annotation (Interface * interface,
 	}
 
 	return 0;
+}
+
+
+/**
+ * interface_methods_array:
+ * @parent: parent object for new string,
+ * @prefix: prefix for array name,
+ * @interface: interface to generate array for,
+ * @with_handlers: whether to include handler pointers.
+ *
+ * Generates C code to declare an array of NihDBusMethod variables
+ * containing information about the methods of the interface @interface;
+ * this will also include array definitions for the arguments of each
+ * method, since these are referred to by the returned array.
+ *
+ * If @with_handlers is TRUE the returned array will contain pointers to
+ * handler functions that should be already defined (or at least prototyped);
+ * when FALSE this member will be NULL.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the return string will also be
+ * freed.
+ *
+ * Returns: newly allocated string or NULL if insufficient memory.
+ **/
+char *
+interface_methods_array (const void *parent,
+			 const char *prefix,
+			 Interface * interface,
+			 int         with_handlers)
+{
+	nih_local char *name = NULL;
+	size_t          max_name = 0;
+	size_t          max_args = 0;
+	size_t          max_handler = 0;
+	nih_local char *args = NULL;
+	nih_local char *block = NULL;
+	char *          code = NULL;
+
+	nih_assert (prefix != NULL);
+	nih_assert (interface != NULL);
+
+	name = symbol_impl (NULL, prefix, interface->name, NULL, "methods");
+	if (! name)
+		return NULL;
+
+	/* Figure out the longest method name, arguments array variable name
+	 * and handler function name.
+	 */
+	NIH_LIST_FOREACH (&interface->methods, iter) {
+		Method *        method = (Method *)iter;
+		nih_local char *args_name = NULL;
+		nih_local char *handler_name = NULL;
+
+		if (strlen (method->name) > max_name)
+			max_name = strlen (method->name);
+
+		args_name = symbol_impl (NULL, prefix, interface->name,
+					 method->name, "args");
+		if (! args_name)
+			return NULL;
+
+		if (strlen (args_name) > max_args)
+			max_args = strlen (args_name);
+
+		if (with_handlers) {
+			handler_name = symbol_impl (NULL, prefix,
+						    interface->name,
+						    method->name, "method");
+			if (! handler_name)
+				return NULL;
+
+			if (strlen (handler_name) > max_handler)
+				max_handler = strlen (handler_name);
+		} else {
+			if (max_handler < 4)
+				max_handler = 4;
+		}
+	}
+
+	/* Append each method such that the names, args variable names and
+	 * handler function names are all lined up with each other.
+	 */
+	NIH_LIST_FOREACH (&interface->methods, iter) {
+		Method *        method = (Method *)iter;
+		nih_local char *line = NULL;
+		char *          dest;
+		nih_local char *args_name = NULL;
+		nih_local char *handler_name = NULL;
+		nih_local char *args_array = NULL;
+
+		line = nih_alloc (NULL, max_name + max_args + max_handler + 13);
+		if (! line)
+			return NULL;
+
+		dest = line;
+
+		memcpy (dest, "{ \"", 3);
+		dest += 3;
+
+		memcpy (dest, method->name, strlen (method->name));
+		dest += strlen (method->name);
+
+		memcpy (dest, "\", ", 3);
+		dest += 3;
+
+		memset (dest, ' ', max_name - strlen (method->name));
+		dest += max_name - strlen (method->name);
+
+		args_name = symbol_impl (NULL, prefix, interface->name,
+					 method->name, "args");
+		if (! args_name)
+			return NULL;
+
+		memcpy (dest, args_name, strlen (args_name));
+		dest += strlen (args_name);
+
+		memcpy (dest, ", ", 2);
+		dest += 2;
+
+		memset (dest, ' ', max_args - strlen (args_name));
+		dest += max_args - strlen (args_name);
+
+		if (with_handlers) {
+			handler_name = symbol_impl (NULL, prefix,
+						    interface->name,
+						    method->name, "method");
+			if (! handler_name)
+				return NULL;
+
+			memcpy (dest, handler_name, strlen (handler_name));
+			dest += strlen (handler_name);
+
+			memset (dest, ' ', max_handler - strlen (handler_name));
+			dest += max_handler - strlen (handler_name);
+		} else {
+			memcpy (dest, "NULL", 4);
+			dest += 4;
+
+			memset (dest, ' ', max_handler - 4);
+			dest += max_handler - 4;
+		}
+
+		memcpy (dest, " },\n", 4);
+		dest += 4;
+
+		*dest = '\0';
+
+		if (! nih_strcat (&block, NULL, line))
+			return NULL;
+
+		/* Prepend the variables for the arguments array */
+		args_array = method_args_array (NULL, prefix, interface,
+						method);
+		if (! args_array)
+			return NULL;
+
+		if (! nih_strcat_sprintf (&args, NULL,
+					  "%s"
+					  "\n",
+					  args_array))
+			return NULL;
+	}
+
+	/* Append the final element to the block of elements, indent and
+	 * surround with the structure definition.
+	 */
+	if (! nih_strcat (&block, NULL, "{ NULL }\n"))
+		return NULL;
+
+	if (! indent (&block, NULL, 1))
+		return NULL;
+
+	code = nih_sprintf (parent,
+			    "%s"
+			    "static const %s[] = {\n"
+			    "%s"
+			    "};\n",
+			    args ? args : "",
+			    name,
+			    block);
+	if (! code)
+		return NULL;
+
+	return code;
 }

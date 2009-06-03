@@ -1,5 +1,10 @@
 2009-06-03  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/interface.c (interface_methods_array): Generate the
+	array of methods for an interface, including the arguments.
+	* nih-dbus-tool/interface.h: Add prototype
+	* nih-dbus-tool/tests/test_interface.c (test_methods_array): Tests.
+
 	* nih-dbus-tool/signal.c (signal_args_array): Generate the array
 	of arguments for a signal.
 	* nih-dbus-tool/signal.h: Add prototype.

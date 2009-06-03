@@ -880,6 +880,223 @@ test_annotation (void)
 }
 
 
+void
+test_methods_array (void)
+{
+	Interface *interface = NULL;
+	Method *   method = NULL;
+	Argument * arg = NULL;
+	char *     str;
+
+
+	TEST_FUNCTION ("interface_methods_array");
+
+
+	/* Check that we can generate an array of interface methods with
+	 * their handler functions.  The C code returned should be lined up
+	 * nicely and include the argument variable definitions as well.
+	 */
+	TEST_FEATURE ("with handlers");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = "test";
+
+			method = method_new (interface, "Poke");
+			method->symbol = "poke";
+			nih_list_add (&interface->methods, &method->entry);
+
+			arg = argument_new (method, "address",
+					    "u", NIH_DBUS_ARG_IN);
+			arg->symbol = "address";
+			nih_list_add (&method->arguments, &arg->entry);
+
+			arg = argument_new (method, "value",
+					    "s", NIH_DBUS_ARG_IN);
+			arg->symbol = "value";
+			nih_list_add (&method->arguments, &arg->entry);
+
+			method = method_new (interface, "Peek");
+			method->symbol = "peek";
+			nih_list_add (&interface->methods, &method->entry);
+
+			arg = argument_new (method, "address",
+					    "u", NIH_DBUS_ARG_IN);
+			arg->symbol = "address";
+			nih_list_add (&method->arguments, &arg->entry);
+
+			arg = argument_new (method, "value",
+					    "s", NIH_DBUS_ARG_OUT);
+			arg->symbol = "value";
+			nih_list_add (&method->arguments, &arg->entry);
+
+			method = method_new (interface, "IsValidAddress");
+			method->symbol = "is_valid_address";
+			nih_list_add (&interface->methods, &method->entry);
+
+			arg = argument_new (method, "address",
+					    "u", NIH_DBUS_ARG_IN);
+			arg->symbol = "address";
+			nih_list_add (&method->arguments, &arg->entry);
+		}
+
+		str = interface_methods_array (NULL, "my", interface, TRUE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ_STR (str,
+			     "static const my_com_netsplit_Nih_Test_Poke_args[] = {\n"
+			     "\t{ \"address\", \"u\", NIH_DBUS_ARG_IN  },\n"
+			     "\t{ \"value\",   \"s\", NIH_DBUS_ARG_IN  },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const my_com_netsplit_Nih_Test_Peek_args[] = {\n"
+			     "\t{ \"address\", \"u\", NIH_DBUS_ARG_IN  },\n"
+			     "\t{ \"value\",   \"s\", NIH_DBUS_ARG_OUT },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const my_com_netsplit_Nih_Test_IsValidAddress_args[] = {\n"
+			     "\t{ \"address\", \"u\", NIH_DBUS_ARG_IN  },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const my_com_netsplit_Nih_Test_methods[] = {\n"
+			     "\t{ \"Poke\",           my_com_netsplit_Nih_Test_Poke_args,           my_com_netsplit_Nih_Test_Poke_method           },\n"
+			     "\t{ \"Peek\",           my_com_netsplit_Nih_Test_Peek_args,           my_com_netsplit_Nih_Test_Peek_method           },\n"
+			     "\t{ \"IsValidAddress\", my_com_netsplit_Nih_Test_IsValidAddress_args, my_com_netsplit_Nih_Test_IsValidAddress_method },\n"
+			     "\t{ NULL }\n"
+			     "};\n");
+
+		nih_free (str);
+		nih_free (interface);
+	}
+
+
+	/* Check that we can generate an array of interface methods without
+	 * their handler functions.  The C code returned should be lined up
+	 * nicely, but should include NULL in the place of the handler
+	 * function.
+	 */
+	TEST_FEATURE ("without handlers");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = "test";
+
+			method = method_new (interface, "Poke");
+			method->symbol = "poke";
+			nih_list_add (&interface->methods, &method->entry);
+
+			arg = argument_new (method, "address",
+					    "u", NIH_DBUS_ARG_IN);
+			arg->symbol = "address";
+			nih_list_add (&method->arguments, &arg->entry);
+
+			arg = argument_new (method, "value",
+					    "s", NIH_DBUS_ARG_IN);
+			arg->symbol = "value";
+			nih_list_add (&method->arguments, &arg->entry);
+
+			method = method_new (interface, "Peek");
+			method->symbol = "peek";
+			nih_list_add (&interface->methods, &method->entry);
+
+			arg = argument_new (method, "address",
+					    "u", NIH_DBUS_ARG_IN);
+			arg->symbol = "address";
+			nih_list_add (&method->arguments, &arg->entry);
+
+			arg = argument_new (method, "value",
+					    "s", NIH_DBUS_ARG_OUT);
+			arg->symbol = "value";
+			nih_list_add (&method->arguments, &arg->entry);
+
+			method = method_new (interface, "IsValidAddress");
+			method->symbol = "is_valid_address";
+			nih_list_add (&interface->methods, &method->entry);
+
+			arg = argument_new (method, "address",
+					    "u", NIH_DBUS_ARG_IN);
+			arg->symbol = "address";
+			nih_list_add (&method->arguments, &arg->entry);
+		}
+
+		str = interface_methods_array (NULL, "my", interface, FALSE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ_STR (str,
+			     "static const my_com_netsplit_Nih_Test_Poke_args[] = {\n"
+			     "\t{ \"address\", \"u\", NIH_DBUS_ARG_IN  },\n"
+			     "\t{ \"value\",   \"s\", NIH_DBUS_ARG_IN  },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const my_com_netsplit_Nih_Test_Peek_args[] = {\n"
+			     "\t{ \"address\", \"u\", NIH_DBUS_ARG_IN  },\n"
+			     "\t{ \"value\",   \"s\", NIH_DBUS_ARG_OUT },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const my_com_netsplit_Nih_Test_IsValidAddress_args[] = {\n"
+			     "\t{ \"address\", \"u\", NIH_DBUS_ARG_IN  },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const my_com_netsplit_Nih_Test_methods[] = {\n"
+			     "\t{ \"Poke\",           my_com_netsplit_Nih_Test_Poke_args,           NULL },\n"
+			     "\t{ \"Peek\",           my_com_netsplit_Nih_Test_Peek_args,           NULL },\n"
+			     "\t{ \"IsValidAddress\", my_com_netsplit_Nih_Test_IsValidAddress_args, NULL },\n"
+			     "\t{ NULL }\n"
+			     "};\n");
+
+		nih_free (str);
+		nih_free (interface);
+	}
+
+
+	/* Check that the array is returned empty if the interface has
+	 * no methods.
+	 */
+	TEST_FEATURE ("with no methods");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = "test";
+		}
+
+		str = interface_methods_array (NULL, "my", interface, FALSE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ_STR (str,
+			     "static const my_com_netsplit_Nih_Test_methods[] = {\n"
+			     "\t{ NULL }\n"
+			     "};\n");
+
+		nih_free (str);
+		nih_free (interface);
+	}
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -892,6 +1109,8 @@ main (int   argc,
 	test_start_tag ();
 	test_end_tag ();
 	test_annotation ();
+
+	test_methods_array ();
 
 	return 0;
 }

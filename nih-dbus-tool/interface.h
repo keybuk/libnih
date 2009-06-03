@@ -78,6 +78,10 @@ int        interface_annotation      (Interface *interface,
 				      const char *name, const char *value)
 	__attribute__ ((warn_unused_result));
 
+char *     interface_methods_array   (const void *parent, const char *prefix,
+				      Interface *interface, int with_handlers)
+	__attribute__ ((warn_unused_result, malloc));
+
 NIH_END_EXTERN
 
 #endif /* NIH_DBUS_TOOL_INTERFACE_H */

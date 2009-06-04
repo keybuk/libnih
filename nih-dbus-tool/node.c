@@ -40,6 +40,9 @@
 #include <nih/logging.h>
 #include <nih/error.h>
 
+#include "symbol.h"
+#include "indent.h"
+#include "type.h"
 #include "node.h"
 #include "interface.h"
 #include "parse.h"
@@ -301,4 +304,141 @@ node_lookup_interface (Node *      node,
 	}
 
 	return NULL;
+}
+
+
+/**
+ * node_interfaces_array:
+ * @parent: parent object for new string,
+ * @prefix: prefix for array name,
+ * @node: node to generate array for,
+ * @object: whether array is for an object or proxy,
+ * @prototypes: list to append prototypes to.
+ *
+ * Generates C code to declare an array of NihDBusInterface pointers for
+ * the node @node, the code includes each of the NihDBusInterface structure
+ * definitions individually as well as the array definitions for methods,
+ * signals, properties and their arguments in them.
+ *
+ * If @object is TRUE, the array will be for an object definition so method
+ * handler function and property getter and setter function pointers will
+ * be filled in.  If @object is FALSE, the array will be for a proxy
+ * definition so the signal filter function pointers will be filled in.
+ *
+ * The prototype of the returned variable declaration, and the prototypes
+ * of the interface structures, are returned as TypeVar objects appended
+ * to the @prototypes list.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the return string will also be
+ * freed.
+ *
+ * Returns: newly allocated string or NULL if insufficient memory.
+ **/
+char *
+node_interfaces_array (const void *parent,
+		       const char *prefix,
+		       Node *      node,
+		       int         object,
+		       NihList *   prototypes)
+{
+	nih_local char *name = NULL;
+	nih_local char *block = NULL;
+	char *          code = NULL;
+	TypeVar *       var;
+
+	nih_assert (prefix != NULL);
+	nih_assert (node != NULL);
+	nih_assert (prototypes != NULL);
+
+	name = symbol_extern (NULL, prefix, NULL, NULL, "interfaces", NULL);
+	if (! name)
+		return NULL;
+
+	/* Append the address of each of the interface structures to the
+	 * block we build, and the code to the interfaces list.
+	 */
+	NIH_LIST_FOREACH (&node->interfaces, iter) {
+		Interface *     interface = (Interface *)iter;
+		NihList         struct_prototypes;
+		nih_local char *struct_code = NULL;
+
+		nih_list_init (&struct_prototypes);
+
+		struct_code = interface_struct (NULL, prefix, interface,
+						object, &struct_prototypes);
+		if (! struct_code) {
+			if (code)
+				nih_free (code);
+			return NULL;
+		}
+
+		nih_assert (! NIH_LIST_EMPTY (&struct_prototypes));
+
+		var = (TypeVar *)struct_prototypes.next;
+
+		if (! nih_strcat_sprintf (&code, parent,
+					  "%s\n", struct_code)) {
+			if (code)
+				nih_free (code);
+			return NULL;
+		}
+
+		if (! nih_strcat_sprintf (&block, NULL,
+					  "&%s,\n", var->name)) {
+			if (code)
+				nih_free (code);
+			return NULL;
+		}
+
+		/* Copy the prototypes to the list we return, since we
+		 * want to export those as well.
+		 */
+		NIH_LIST_FOREACH_SAFE (&struct_prototypes, iter) {
+			var = (TypeVar *)iter;
+
+			nih_ref (var, code);
+			nih_list_add (prototypes, &var->entry);
+		}
+	}
+
+	/* Append the final element to the block of elements, indent and
+	 * surround with the structure definition.
+	 */
+	if (! nih_strcat (&block, NULL, "{ NULL }\n")) {
+		if (code)
+			nih_free (code);
+		return NULL;
+	}
+
+	if (! indent (&block, NULL, 1)) {
+		if (code)
+			nih_free (code);
+		return NULL;
+	}
+
+	if (! nih_strcat_sprintf (&code, parent,
+				  "const NihDBusInterface *%s[] = {\n"
+				  "%s"
+				  "};\n",
+				  name,
+				  block)) {
+		if (code)
+			nih_free (code);
+		return NULL;
+	}
+
+	/* Append the prototype to the list */
+	var = type_var_new (code, "const NihDBusInterface *", name);
+	if (! var) {
+		nih_free (code);
+		return NULL;
+	}
+
+	var->array = TRUE;
+
+	nih_list_add (prototypes, &var->entry);
+
+	return code;
 }

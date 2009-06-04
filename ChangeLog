@@ -1,5 +1,11 @@
 2009-06-04  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/node.c (node_interfaces_array): Generate the array
+	of interfaces for a given node.
+	* nih-dbus-tool/node.h: Add prototype.
+	* nih-dbus-tool/tests/test_node.c (test_interfaces_array): Add tests
+	for the new function
+
 	* nih-dbus-tool/interface.c (interface_methods_array)
 	(interface_signals_array, interface_properties_array): Return the
 	prototype with the name set, and thus don't return a static argument

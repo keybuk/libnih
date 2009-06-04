@@ -39,6 +39,7 @@
 #include <nih/main.h>
 #include <nih/error.h>
 
+#include "type.h"
 #include "node.h"
 #include "interface.h"
 #include "parse.h"
@@ -645,6 +646,530 @@ test_lookup_interface (void)
 }
 
 
+void
+test_interfaces_array (void)
+{
+	NihList    prototypes;
+	Node *     node = NULL;
+	Interface *interface = NULL;
+	Method *   method = NULL;
+	Signal *   signal = NULL;
+	Argument * arg = NULL;
+	Property * property = NULL;
+	char *     str;
+	TypeVar *  var;
+
+	TEST_FUNCTION ("node_interfaces_array");
+
+	/* Check that we can generate the interfaces array code for a
+	 * node with multiple interfaces.  We want the members set up for
+	 * an object implementation, so the method and property function
+	 * pointers should be set and not the signal filter pointer.
+	 * Since the interface structures themselves are not made static,
+	 * the prototypes should contain those as well.
+	 */
+	TEST_FEATURE ("with object");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+
+		TEST_ALLOC_SAFE {
+			node = node_new (NULL, NULL);
+
+			interface = interface_new (node, "com.netsplit.Nih.Test");
+			interface->symbol = "test";
+			nih_list_add (&node->interfaces, &interface->entry);
+
+			method = method_new (interface, "Poke");
+			method->symbol = "poke";
+			nih_list_add (&interface->methods, &method->entry);
+
+			arg = argument_new (method, "address",
+					    "u", NIH_DBUS_ARG_IN);
+			arg->symbol = "address";
+			nih_list_add (&method->arguments, &arg->entry);
+
+			arg = argument_new (method, "value",
+					    "s", NIH_DBUS_ARG_IN);
+			arg->symbol = "value";
+			nih_list_add (&method->arguments, &arg->entry);
+
+			method = method_new (interface, "Peek");
+			method->symbol = "peek";
+			nih_list_add (&interface->methods, &method->entry);
+
+			arg = argument_new (method, "address",
+					    "u", NIH_DBUS_ARG_IN);
+			arg->symbol = "address";
+			nih_list_add (&method->arguments, &arg->entry);
+
+			arg = argument_new (method, "value",
+					    "s", NIH_DBUS_ARG_OUT);
+			arg->symbol = "value";
+			nih_list_add (&method->arguments, &arg->entry);
+
+			method = method_new (interface, "IsValidAddress");
+			method->symbol = "is_valid_address";
+			nih_list_add (&interface->methods, &method->entry);
+
+			arg = argument_new (method, "address",
+					    "u", NIH_DBUS_ARG_IN);
+			arg->symbol = "address";
+			nih_list_add (&method->arguments, &arg->entry);
+
+
+			signal = signal_new (interface, "Bounce");
+			signal->symbol = "bounce";
+			nih_list_add (&interface->signals, &signal->entry);
+
+			arg = argument_new (signal, "height",
+					    "u", NIH_DBUS_ARG_OUT);
+			arg->symbol = "height";
+			nih_list_add (&signal->arguments, &arg->entry);
+
+			arg = argument_new (signal, "velocity",
+					    "i", NIH_DBUS_ARG_OUT);
+			arg->symbol = "velocity";
+			nih_list_add (&signal->arguments, &arg->entry);
+
+			signal = signal_new (interface, "Exploded");
+			signal->symbol = "exploded";
+			nih_list_add (&interface->signals, &signal->entry);
+
+
+			property = property_new (interface, "colour",
+						 "s", NIH_DBUS_READWRITE);
+			property->symbol = "colour";
+			nih_list_add (&interface->properties, &property->entry);
+
+			property = property_new (interface, "size",
+						 "u", NIH_DBUS_READ);
+			property->symbol = "size";
+			nih_list_add (&interface->properties, &property->entry);
+
+			property = property_new (interface, "touch",
+						 "b", NIH_DBUS_WRITE);
+			property->symbol = "touch";
+			nih_list_add (&interface->properties, &property->entry);
+
+			interface = interface_new (node, "com.netsplit.Nih.Foo");
+			interface->symbol = "foo";
+			nih_list_add (&node->interfaces, &interface->entry);
+		}
+
+		str = node_interfaces_array (NULL, "my", node, TRUE,
+					     &prototypes);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&prototypes);
+
+			nih_free (node);
+			continue;
+		}
+
+		TEST_EQ_STR (str,
+			     "static const NihDBusArg my_com_netsplit_Nih_Test_Poke_method_args[] = {\n"
+			     "\t{ \"address\", \"u\", NIH_DBUS_ARG_IN  },\n"
+			     "\t{ \"value\",   \"s\", NIH_DBUS_ARG_IN  },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const NihDBusArg my_com_netsplit_Nih_Test_Peek_method_args[] = {\n"
+			     "\t{ \"address\", \"u\", NIH_DBUS_ARG_IN  },\n"
+			     "\t{ \"value\",   \"s\", NIH_DBUS_ARG_OUT },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const NihDBusArg my_com_netsplit_Nih_Test_IsValidAddress_method_args[] = {\n"
+			     "\t{ \"address\", \"u\", NIH_DBUS_ARG_IN  },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const NihDBusMethod my_com_netsplit_Nih_Test_methods[] = {\n"
+			     "\t{ \"Poke\",           my_com_netsplit_Nih_Test_Poke_method_args,           my_com_netsplit_Nih_Test_Poke_method           },\n"
+			     "\t{ \"Peek\",           my_com_netsplit_Nih_Test_Peek_method_args,           my_com_netsplit_Nih_Test_Peek_method           },\n"
+			     "\t{ \"IsValidAddress\", my_com_netsplit_Nih_Test_IsValidAddress_method_args, my_com_netsplit_Nih_Test_IsValidAddress_method },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const NihDBusArg my_com_netsplit_Nih_Test_Bounce_signal_args[] = {\n"
+			     "\t{ \"height\",   \"u\", NIH_DBUS_ARG_OUT },\n"
+			     "\t{ \"velocity\", \"i\", NIH_DBUS_ARG_OUT },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const NihDBusArg my_com_netsplit_Nih_Test_Exploded_signal_args[] = {\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const NihDBusSignal my_com_netsplit_Nih_Test_signals[] = {\n"
+			     "\t{ \"Bounce\",   my_com_netsplit_Nih_Test_Bounce_signal_args,   NULL },\n"
+			     "\t{ \"Exploded\", my_com_netsplit_Nih_Test_Exploded_signal_args, NULL },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const NihDBusProperty my_com_netsplit_Nih_Test_properties[] = {\n"
+			     "\t{ \"colour\", \"s\", NIH_DBUS_READWRITE, my_com_netsplit_Nih_Test_colour_get, my_com_netsplit_Nih_Test_colour_set },\n"
+			     "\t{ \"size\",   \"u\", NIH_DBUS_READ,      my_com_netsplit_Nih_Test_size_get,   NULL                                },\n"
+			     "\t{ \"touch\",  \"b\", NIH_DBUS_WRITE,     NULL,                                my_com_netsplit_Nih_Test_touch_set  },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "const NihDBusInterface my_com_netsplit_Nih_Test = {\n"
+			     "\t\"com.netsplit.Nih.Test\",\n"
+			     "\tmy_com_netsplit_Nih_Test_methods,\n"
+			     "\tmy_com_netsplit_Nih_Test_signals,\n"
+			     "\tmy_com_netsplit_Nih_Test_properties\n"
+			     "};\n"
+			     "\n"
+
+			     "static const NihDBusMethod my_com_netsplit_Nih_Foo_methods[] = {\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const NihDBusSignal my_com_netsplit_Nih_Foo_signals[] = {\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const NihDBusProperty my_com_netsplit_Nih_Foo_properties[] = {\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "const NihDBusInterface my_com_netsplit_Nih_Foo = {\n"
+			     "\t\"com.netsplit.Nih.Foo\",\n"
+			     "\tmy_com_netsplit_Nih_Foo_methods,\n"
+			     "\tmy_com_netsplit_Nih_Foo_signals,\n"
+			     "\tmy_com_netsplit_Nih_Foo_properties\n"
+			     "};\n"
+			     "\n"
+
+			     "const NihDBusInterface *my_interfaces[] = {\n"
+			     "\t&my_com_netsplit_Nih_Test,\n"
+			     "\t&my_com_netsplit_Nih_Foo,\n"
+			     "\t{ NULL }\n"
+			     "};\n");
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		var = (TypeVar *)prototypes.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "const NihDBusInterface");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test");
+		TEST_ALLOC_PARENT (var->name, var);
+		TEST_FALSE (var->array);
+		nih_free (var);
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		var = (TypeVar *)prototypes.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "const NihDBusInterface");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Foo");
+		TEST_ALLOC_PARENT (var->name, var);
+		TEST_FALSE (var->array);
+		nih_free (var);
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		var = (TypeVar *)prototypes.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "const NihDBusInterface *");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "my_interfaces");
+		TEST_ALLOC_PARENT (var->name, var);
+		TEST_TRUE (var->array);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+		nih_free (str);
+		nih_free (node);
+	}
+
+
+	/* Check that we can generate the interfaces array code for a
+	 * node with multiple interfaces.  We want the members set up for
+	 * a proxy implementation, so the signal filter pointer should be
+	 * set but not the method or property function pointers.
+	 * Since the interface structures themselves are not made static,
+	 * the prototypes should contain those as well.
+	 */
+	TEST_FEATURE ("with proxy");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+
+		TEST_ALLOC_SAFE {
+			node = node_new (NULL, NULL);
+
+			interface = interface_new (node, "com.netsplit.Nih.Test");
+			interface->symbol = "test";
+			nih_list_add (&node->interfaces, &interface->entry);
+
+			method = method_new (interface, "Poke");
+			method->symbol = "poke";
+			nih_list_add (&interface->methods, &method->entry);
+
+			arg = argument_new (method, "address",
+					    "u", NIH_DBUS_ARG_IN);
+			arg->symbol = "address";
+			nih_list_add (&method->arguments, &arg->entry);
+
+			arg = argument_new (method, "value",
+					    "s", NIH_DBUS_ARG_IN);
+			arg->symbol = "value";
+			nih_list_add (&method->arguments, &arg->entry);
+
+			method = method_new (interface, "Peek");
+			method->symbol = "peek";
+			nih_list_add (&interface->methods, &method->entry);
+
+			arg = argument_new (method, "address",
+					    "u", NIH_DBUS_ARG_IN);
+			arg->symbol = "address";
+			nih_list_add (&method->arguments, &arg->entry);
+
+			arg = argument_new (method, "value",
+					    "s", NIH_DBUS_ARG_OUT);
+			arg->symbol = "value";
+			nih_list_add (&method->arguments, &arg->entry);
+
+			method = method_new (interface, "IsValidAddress");
+			method->symbol = "is_valid_address";
+			nih_list_add (&interface->methods, &method->entry);
+
+			arg = argument_new (method, "address",
+					    "u", NIH_DBUS_ARG_IN);
+			arg->symbol = "address";
+			nih_list_add (&method->arguments, &arg->entry);
+
+
+			signal = signal_new (interface, "Bounce");
+			signal->symbol = "bounce";
+			nih_list_add (&interface->signals, &signal->entry);
+
+			arg = argument_new (signal, "height",
+					    "u", NIH_DBUS_ARG_OUT);
+			arg->symbol = "height";
+			nih_list_add (&signal->arguments, &arg->entry);
+
+			arg = argument_new (signal, "velocity",
+					    "i", NIH_DBUS_ARG_OUT);
+			arg->symbol = "velocity";
+			nih_list_add (&signal->arguments, &arg->entry);
+
+			signal = signal_new (interface, "Exploded");
+			signal->symbol = "exploded";
+			nih_list_add (&interface->signals, &signal->entry);
+
+
+			property = property_new (interface, "colour",
+						 "s", NIH_DBUS_READWRITE);
+			property->symbol = "colour";
+			nih_list_add (&interface->properties, &property->entry);
+
+			property = property_new (interface, "size",
+						 "u", NIH_DBUS_READ);
+			property->symbol = "size";
+			nih_list_add (&interface->properties, &property->entry);
+
+			property = property_new (interface, "touch",
+						 "b", NIH_DBUS_WRITE);
+			property->symbol = "touch";
+			nih_list_add (&interface->properties, &property->entry);
+
+			interface = interface_new (node, "com.netsplit.Nih.Foo");
+			interface->symbol = "foo";
+			nih_list_add (&node->interfaces, &interface->entry);
+		}
+
+		str = node_interfaces_array (NULL, "my", node, FALSE,
+					     &prototypes);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&prototypes);
+
+			nih_free (node);
+			continue;
+		}
+
+		TEST_EQ_STR (str,
+			     "static const NihDBusArg my_com_netsplit_Nih_Test_Poke_method_args[] = {\n"
+			     "\t{ \"address\", \"u\", NIH_DBUS_ARG_IN  },\n"
+			     "\t{ \"value\",   \"s\", NIH_DBUS_ARG_IN  },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const NihDBusArg my_com_netsplit_Nih_Test_Peek_method_args[] = {\n"
+			     "\t{ \"address\", \"u\", NIH_DBUS_ARG_IN  },\n"
+			     "\t{ \"value\",   \"s\", NIH_DBUS_ARG_OUT },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const NihDBusArg my_com_netsplit_Nih_Test_IsValidAddress_method_args[] = {\n"
+			     "\t{ \"address\", \"u\", NIH_DBUS_ARG_IN  },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const NihDBusMethod my_com_netsplit_Nih_Test_methods[] = {\n"
+			     "\t{ \"Poke\",           my_com_netsplit_Nih_Test_Poke_method_args,           NULL },\n"
+			     "\t{ \"Peek\",           my_com_netsplit_Nih_Test_Peek_method_args,           NULL },\n"
+			     "\t{ \"IsValidAddress\", my_com_netsplit_Nih_Test_IsValidAddress_method_args, NULL },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const NihDBusArg my_com_netsplit_Nih_Test_Bounce_signal_args[] = {\n"
+			     "\t{ \"height\",   \"u\", NIH_DBUS_ARG_OUT },\n"
+			     "\t{ \"velocity\", \"i\", NIH_DBUS_ARG_OUT },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const NihDBusArg my_com_netsplit_Nih_Test_Exploded_signal_args[] = {\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const NihDBusSignal my_com_netsplit_Nih_Test_signals[] = {\n"
+			     "\t{ \"Bounce\",   my_com_netsplit_Nih_Test_Bounce_signal_args,   my_com_netsplit_Nih_Test_Bounce_signal   },\n"
+			     "\t{ \"Exploded\", my_com_netsplit_Nih_Test_Exploded_signal_args, my_com_netsplit_Nih_Test_Exploded_signal },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const NihDBusProperty my_com_netsplit_Nih_Test_properties[] = {\n"
+			     "\t{ \"colour\", \"s\", NIH_DBUS_READWRITE, NULL, NULL },\n"
+			     "\t{ \"size\",   \"u\", NIH_DBUS_READ,      NULL, NULL },\n"
+			     "\t{ \"touch\",  \"b\", NIH_DBUS_WRITE,     NULL, NULL },\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "const NihDBusInterface my_com_netsplit_Nih_Test = {\n"
+			     "\t\"com.netsplit.Nih.Test\",\n"
+			     "\tmy_com_netsplit_Nih_Test_methods,\n"
+			     "\tmy_com_netsplit_Nih_Test_signals,\n"
+			     "\tmy_com_netsplit_Nih_Test_properties\n"
+			     "};\n"
+			     "\n"
+
+			     "static const NihDBusMethod my_com_netsplit_Nih_Foo_methods[] = {\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const NihDBusSignal my_com_netsplit_Nih_Foo_signals[] = {\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "static const NihDBusProperty my_com_netsplit_Nih_Foo_properties[] = {\n"
+			     "\t{ NULL }\n"
+			     "};\n"
+			     "\n"
+			     "const NihDBusInterface my_com_netsplit_Nih_Foo = {\n"
+			     "\t\"com.netsplit.Nih.Foo\",\n"
+			     "\tmy_com_netsplit_Nih_Foo_methods,\n"
+			     "\tmy_com_netsplit_Nih_Foo_signals,\n"
+			     "\tmy_com_netsplit_Nih_Foo_properties\n"
+			     "};\n"
+			     "\n"
+
+			     "const NihDBusInterface *my_interfaces[] = {\n"
+			     "\t&my_com_netsplit_Nih_Test,\n"
+			     "\t&my_com_netsplit_Nih_Foo,\n"
+			     "\t{ NULL }\n"
+			     "};\n");
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		var = (TypeVar *)prototypes.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "const NihDBusInterface");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test");
+		TEST_ALLOC_PARENT (var->name, var);
+		TEST_FALSE (var->array);
+		nih_free (var);
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		var = (TypeVar *)prototypes.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "const NihDBusInterface");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Foo");
+		TEST_ALLOC_PARENT (var->name, var);
+		TEST_FALSE (var->array);
+		nih_free (var);
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		var = (TypeVar *)prototypes.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "const NihDBusInterface *");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "my_interfaces");
+		TEST_ALLOC_PARENT (var->name, var);
+		TEST_TRUE (var->array);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+		nih_free (str);
+		nih_free (node);
+	}
+
+
+	/* Check that we can still generate an interfaces array even when
+	 * there are no interfaces.
+	 */
+	TEST_FEATURE ("with no interfaces");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+
+		TEST_ALLOC_SAFE {
+			node = node_new (NULL, NULL);
+		}
+
+		str = node_interfaces_array (NULL, "my", node, TRUE,
+					     &prototypes);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&prototypes);
+
+			nih_free (node);
+			continue;
+		}
+
+		TEST_EQ_STR (str,
+			     "const NihDBusInterface *my_interfaces[] = {\n"
+			     "\t{ NULL }\n"
+			     "};\n");
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		var = (TypeVar *)prototypes.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "const NihDBusInterface *");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "my_interfaces");
+		TEST_ALLOC_PARENT (var->name, var);
+		TEST_TRUE (var->array);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+		nih_free (str);
+		nih_free (node);
+	}
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -657,6 +1182,8 @@ main (int   argc,
 	test_start_tag ();
 	test_end_tag ();
 	test_lookup_interface ();
+
+	test_interfaces_array ();
 
 	return 0;
 }

@@ -63,6 +63,10 @@ int        node_end_tag          (XML_Parser xmlp, const char *tag)
 
 Interface *node_lookup_interface (Node *node, const char *symbol);
 
+char *     node_interfaces_array (const void *parent, const char *prefix,
+				  Node *node, int object, NihList *prototypes)
+	__attribute__ ((warn_unused_result, malloc));
+
 NIH_END_EXTERN
 
 #endif /* NIH_DBUS_TOOL_NODE_H */

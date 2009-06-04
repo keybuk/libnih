@@ -227,6 +227,8 @@ type_var_new (const void *parent,
 		return NULL;
 	}
 
+	var->array = FALSE;
+
 	nih_alloc_set_destructor (var, nih_list_destroy);
 
 	return var;
@@ -259,6 +261,16 @@ type_var_to_string (const void *parent,
 		str = nih_sprintf (parent, "%s%s", var->type, var->name);
 	} else {
 		str = nih_sprintf (parent, "%s %s", var->type, var->name);
+	}
+
+	if (! str)
+		return NULL;
+
+	if (var->array) {
+		if (! nih_strcat (&str, parent, "[]")) {
+			nih_free (str);
+			return NULL;
+		}
 	}
 
 	return str;
@@ -315,7 +327,8 @@ type_var_layout (const void *parent,
 		char *   new_str;
 
 		new_str = nih_realloc (str, parent,
-				       len + max + strlen (var->name) + 3);
+				       (len + max + strlen (var->name)
+					+ (var->array ? 2 : 0) + 3));
 		if (! new_str) {
 			nih_free (str);
 			return NULL;
@@ -329,6 +342,11 @@ type_var_layout (const void *parent,
 
 		memcpy (str + len, var->name, strlen (var->name));
 		len += strlen (var->name);
+
+		if (var->array) {
+			memcpy (str + len, "[]", 2);
+			len += 2;
+		}
 
 		memcpy (str + len, ";\n", 2);
 		len += 2;

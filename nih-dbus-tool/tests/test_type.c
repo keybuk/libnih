@@ -511,6 +511,7 @@ test_var_new (void)
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "foo");
 		TEST_ALLOC_PARENT (var->name, var);
+		TEST_FALSE (var->array);
 
 		nih_free (var);
 	}
@@ -573,6 +574,32 @@ test_var_to_string (void)
 		nih_free (str);
 		nih_free (var);
 	}
+
+
+	/* Check to make sure that an array variable is returned with []
+	 * after the type and name.
+	 */
+	TEST_FEATURE ("with array");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			var = type_var_new (NULL, "char *", "foo");
+			var->array = TRUE;
+		}
+
+		str = type_var_to_string (NULL, var);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (var);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "char *foo[]");
+
+		nih_free (str);
+		nih_free (var);
+	}
 }
 
 void
@@ -600,6 +627,7 @@ test_var_layout (void)
 			nih_list_add (&vars, &var1->entry);
 
 			var2 = type_var_new (NULL, "struct bar", "bar");
+			var2->array = TRUE;
 			nih_list_add (&vars, &var2->entry);
 
 			var3 = type_var_new (NULL, "uint32_t", "baz");
@@ -618,7 +646,7 @@ test_var_layout (void)
 		}
 
 		TEST_EQ_STR (str, ("int        foo;\n"
-				   "struct bar bar;\n"
+				   "struct bar bar[];\n"
 				   "uint32_t   baz;\n"));
 
 		nih_free (var1);
@@ -642,6 +670,7 @@ test_var_layout (void)
 			nih_list_add (&vars, &var1->entry);
 
 			var2 = type_var_new (NULL, "struct bar *", "bar");
+			var2->array = TRUE;
 			nih_list_add (&vars, &var2->entry);
 
 			var3 = type_var_new (NULL, "uint32_t *", "baz");
@@ -660,7 +689,7 @@ test_var_layout (void)
 		}
 
 		TEST_EQ_STR (str, ("int *       foo;\n"
-				   "struct bar *bar;\n"
+				   "struct bar *bar[];\n"
 				   "uint32_t *  baz;\n"));
 
 		nih_free (var1);
@@ -684,6 +713,7 @@ test_var_layout (void)
 			nih_list_add (&vars, &var1->entry);
 
 			var2 = type_var_new (NULL, "struct bar", "bar");
+			var2->array = TRUE;
 			nih_list_add (&vars, &var2->entry);
 
 			var3 = type_var_new (NULL, "uint32_t *", "baz");
@@ -702,7 +732,7 @@ test_var_layout (void)
 		}
 
 		TEST_EQ_STR (str, ("int *      foo;\n"
-				   "struct bar bar;\n"
+				   "struct bar bar[];\n"
 				   "uint32_t * baz;\n"));
 
 		nih_free (var1);

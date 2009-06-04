@@ -36,7 +36,8 @@
  * TypeVar:
  * @entry: list entry,
  * @type: C type,
- * @name: variable name.
+ * @name: variable name,
+ * @array: TRUE of the variable is an array.
  *
  * This structure represents a C variable declaration, containing both
  * the type and name of the variable.  They are returned by the marshal()
@@ -46,6 +47,7 @@ typedef struct type_var {
 	NihList entry;
 	char *  type;
 	char *  name;
+	int     array;
 } TypeVar;
 
 /**

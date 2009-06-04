@@ -731,7 +731,7 @@ signal_proxy_function  (const void *parent,
 	 * for the connection, received message and proxied signal structure.
 	 */
 	name = symbol_impl (NULL, prefix, interface->name,
-			    signal->name, "filter");
+			    signal->name, "signal");
 	if (! name)
 		return NULL;
 

@@ -1,5 +1,10 @@
 2009-06-04  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/signal.c (signal_proxy_function): Name the signal
+	functions _signal to match _method
+	* nih-dbus-tool/tests/signal_code.h: Update to match
+	* nih-dbus-tool/tests/test_signal.c (test_proxy_function): Update
+
 	* nih-dbus-tool/node.c (node_interfaces_array): The last member
 	should be just NULL, it's an array of pointers.
 	* nih-dbus-tool/tests/test_node.c (test_interfaces_array): Adjust

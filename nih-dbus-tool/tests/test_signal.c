@@ -1484,7 +1484,7 @@ my_signal_handler (void *          data,
 	TEST_EQ_STR (msg, "this is a test");
 }
 
-const NihDBusSignal    my_signal    = { "Signal", NULL, my_com_netsplit_Nih_Test_Signal_filter };
+const NihDBusSignal    my_signal    = { "Signal", NULL, my_com_netsplit_Nih_Test_Signal_signal };
 const NihDBusInterface my_interface = { "com.netsplit.Nih", NULL, NULL, NULL };
 
 void
@@ -1550,7 +1550,7 @@ test_proxy_function (void)
 		}
 
 		TEST_EQ_STR (str, ("DBusHandlerResult\n"
-				   "my_com_netsplit_Nih_Test_Signal_filter (DBusConnection *    connection,\n"
+				   "my_com_netsplit_Nih_Test_Signal_signal (DBusConnection *    connection,\n"
 				   "                                        DBusMessage *       signal,\n"
 				   "                                        NihDBusProxySignal *proxied)\n"
 				   "{\n"
@@ -1620,7 +1620,7 @@ test_proxy_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "DBusHandlerResult");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Signal_filter");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Signal_signal");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -1762,7 +1762,7 @@ test_proxy_function (void)
 		}
 
 		TEST_EQ_STR (str, ("DBusHandlerResult\n"
-				   "my_com_netsplit_Nih_Test_Signal_filter (DBusConnection *    connection,\n"
+				   "my_com_netsplit_Nih_Test_Signal_signal (DBusConnection *    connection,\n"
 				   "                                        DBusMessage *       signal,\n"
 				   "                                        NihDBusProxySignal *proxied)\n"
 				   "{\n"
@@ -1814,7 +1814,7 @@ test_proxy_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "DBusHandlerResult");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Signal_filter");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Signal_signal");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -1997,7 +1997,7 @@ test_proxy_function (void)
 		}
 
 		TEST_EQ_STR (str, ("DBusHandlerResult\n"
-				   "my_com_netsplit_Nih_Test_Signal_filter (DBusConnection *    connection,\n"
+				   "my_com_netsplit_Nih_Test_Signal_signal (DBusConnection *    connection,\n"
 				   "                                        DBusMessage *       signal,\n"
 				   "                                        NihDBusProxySignal *proxied)\n"
 				   "{\n"
@@ -2067,7 +2067,7 @@ test_proxy_function (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "DBusHandlerResult");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Signal_filter");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Signal_signal");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);

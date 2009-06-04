@@ -44,7 +44,7 @@ int               my_emit_signal   (DBusConnection *connection,
 				    const char *origin_path, const char *msg)
 	__attribute__ ((warn_unused_result));
 
-DBusHandlerResult my_com_netsplit_Nih_Test_Signal_filter (DBusConnection *connection,
+DBusHandlerResult my_com_netsplit_Nih_Test_Signal_signal (DBusConnection *connection,
 							  DBusMessage *signal,
 							  NihDBusProxySignal *proxied);
 

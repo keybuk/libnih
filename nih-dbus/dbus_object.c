@@ -361,9 +361,21 @@ nih_dbus_object_introspect (DBusConnection *connection,
 			for (arg = method->args; arg && arg->type; arg++) {
 				if (! nih_strcat_sprintf (
 					    &xml, NULL,
-					    "      <arg name=\"%s\" type=\"%s\""
+					    "      <arg"))
+					return DBUS_HANDLER_RESULT_NEED_MEMORY;
+
+				if (arg->name)
+					if (! nih_strcat_sprintf (
+						    &xml, NULL,
+						    " name=\"%s\"",
+						    arg->name))
+						return DBUS_HANDLER_RESULT_NEED_MEMORY;
+
+				if (! nih_strcat_sprintf (
+					    &xml, NULL,
+					    " type=\"%s\""
 					    " direction=\"%s\"/>\n",
-					    arg->name, arg->type,
+					    arg->type,
 					    (arg->dir == NIH_DBUS_ARG_IN ? "in"
 					     : "out")))
 					return DBUS_HANDLER_RESULT_NEED_MEMORY;
@@ -385,8 +397,20 @@ nih_dbus_object_introspect (DBusConnection *connection,
 			for (arg = signal->args; arg && arg->type; arg++) {
 				if (! nih_strcat_sprintf (
 					    &xml, NULL,
-					    "      <arg name=\"%s\" type=\"%s\"/>\n",
-					    arg->name, arg->type))
+					    "      <arg"))
+					return DBUS_HANDLER_RESULT_NEED_MEMORY;
+
+				if (arg->name)
+					if (! nih_strcat_sprintf (
+						    &xml, NULL,
+						    " name=\"%s\"",
+						    arg->name))
+						return DBUS_HANDLER_RESULT_NEED_MEMORY;
+
+				if (! nih_strcat_sprintf (
+					    &xml, NULL,
+					    " type=\"%s\"/>\n",
+					    arg->type))
 					return DBUS_HANDLER_RESULT_NEED_MEMORY;
 			}
 

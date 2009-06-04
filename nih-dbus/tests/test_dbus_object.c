@@ -253,7 +253,7 @@ static const NihDBusArg foo_args[] = {
 };
 
 static const NihDBusArg bar_args[] = {
-	{ "wibble", "d", NIH_DBUS_ARG_IN },
+	{ NULL, "d", NIH_DBUS_ARG_IN },
 	{ NULL }
 };
 
@@ -863,7 +863,7 @@ test_object_introspect (void)
 		xml = strchr (xml, '\n') + 1;
 		TEST_EQ_STRN (xml, "    <method name=\"Bar\">\n");
 		xml = strchr (xml, '\n') + 1;
-		TEST_EQ_STRN (xml, "      <arg name=\"wibble\" type=\"d\" direction=\"in\"/>\n");
+		TEST_EQ_STRN (xml, "      <arg type=\"d\" direction=\"in\"/>\n");
 		xml = strchr (xml, '\n') + 1;
 		TEST_EQ_STRN (xml, "    </method>\n");
 		xml = strchr (xml, '\n') + 1;
@@ -886,7 +886,7 @@ test_object_introspect (void)
 		xml = strchr (xml, '\n') + 1;
 		TEST_EQ_STRN (xml, "    <method name=\"Bar\">\n");
 		xml = strchr (xml, '\n') + 1;
-		TEST_EQ_STRN (xml, "      <arg name=\"wibble\" type=\"d\" direction=\"in\"/>\n");
+		TEST_EQ_STRN (xml, "      <arg type=\"d\" direction=\"in\"/>\n");
 		xml = strchr (xml, '\n') + 1;
 		TEST_EQ_STRN (xml, "    </method>\n");
 		xml = strchr (xml, '\n') + 1;
@@ -1025,7 +1025,7 @@ test_object_introspect (void)
 		xml = strchr (xml, '\n') + 1;
 		TEST_EQ_STRN (xml, "    <method name=\"Bar\">\n");
 		xml = strchr (xml, '\n') + 1;
-		TEST_EQ_STRN (xml, "      <arg name=\"wibble\" type=\"d\" direction=\"in\"/>\n");
+		TEST_EQ_STRN (xml, "      <arg type=\"d\" direction=\"in\"/>\n");
 		xml = strchr (xml, '\n') + 1;
 		TEST_EQ_STRN (xml, "    </method>\n");
 		xml = strchr (xml, '\n') + 1;

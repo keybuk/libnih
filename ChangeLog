@@ -1,5 +1,8 @@
 2009-06-04  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_interface.c (test_struct): Make sure the
+	returned items aren't arrays.
+
 	* nih-dbus-tool/signal.c (signal_args_array): Return the prototype
 	with the name set, and thus don't return a static argument array.
 	* nih-dbus-tool/signal.h: Update prototype

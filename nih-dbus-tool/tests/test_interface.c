@@ -1572,6 +1572,7 @@ test_struct (void)
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test");
 		TEST_ALLOC_PARENT (var->name, var);
+		TEST_FALSE (var->array);
 		nih_free (var);
 
 		TEST_LIST_EMPTY (&prototypes);
@@ -1743,6 +1744,7 @@ test_struct (void)
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test");
 		TEST_ALLOC_PARENT (var->name, var);
+		TEST_FALSE (var->array);
 		nih_free (var);
 
 		TEST_LIST_EMPTY (&prototypes);
@@ -1853,6 +1855,7 @@ test_struct (void)
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test");
 		TEST_ALLOC_PARENT (var->name, var);
+		TEST_FALSE (var->array);
 		nih_free (var);
 
 		TEST_LIST_EMPTY (&prototypes);
@@ -1990,6 +1993,7 @@ test_struct (void)
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test");
 		TEST_ALLOC_PARENT (var->name, var);
+		TEST_FALSE (var->array);
 		nih_free (var);
 
 		TEST_LIST_EMPTY (&prototypes);
@@ -2139,6 +2143,7 @@ test_struct (void)
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test");
 		TEST_ALLOC_PARENT (var->name, var);
+		TEST_FALSE (var->array);
 		nih_free (var);
 
 		TEST_LIST_EMPTY (&prototypes);
@@ -2200,6 +2205,7 @@ test_struct (void)
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test");
 		TEST_ALLOC_PARENT (var->name, var);
+		TEST_FALSE (var->array);
 		nih_free (var);
 
 		TEST_LIST_EMPTY (&prototypes);

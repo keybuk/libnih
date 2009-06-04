@@ -40,6 +40,7 @@
 
 #include "symbol.h"
 #include "indent.h"
+#include "type.h"
 #include "node.h"
 #include "interface.h"
 #include "method.h"
@@ -1013,6 +1014,126 @@ interface_properties_array (const void *parent,
 			    block);
 	if (! code)
 		return NULL;
+
+	return code;
+}
+
+
+/**
+ * interface_struct:
+ * @parent: parent object for new string,
+ * @prefix: prefix for struct name,
+ * @interface: interface to generate struct for,
+ * @object: whether struct is for an object or proxy,
+ * @prototypes: list to append prototype to.
+ *
+ * Generates C code to declare an NihDBusInterface structure variable for
+ * the given interface @interface, the code includes the array definitions
+ * for methods, signals, properties and their arguments.
+ *
+ * If @object is TRUE, the struct will be for an object definition so method
+ * handler function and property getter and setter function pointers will
+ * be filled in.  If @object is FALSE, the struct will be for a proxy
+ * definition so the signal filter function pointers will be filled in.
+ *
+ * The prototype of the returned variable declaration is returned as a
+ * TypeVar object appended to the @prototypes list.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the return string will also be
+ * freed.
+ *
+ * Returns: newly allocated string or NULL if insufficient memory.
+ **/
+char *
+interface_struct (const void *parent,
+		  const char *prefix,
+		  Interface * interface,
+		  int         object,
+		  NihList *   prototypes)
+{
+	nih_local char *name = NULL;
+	nih_local char *methods_name = NULL;
+	nih_local char *methods_array = NULL;
+	nih_local char *signals_name = NULL;
+	nih_local char *signals_array = NULL;
+	nih_local char *properties_name = NULL;
+	nih_local char *properties_array = NULL;
+	char *          code;
+	TypeVar *       var;
+
+	nih_assert (prefix != NULL);
+	nih_assert (interface != NULL);
+	nih_assert (prototypes != NULL);
+
+	name = symbol_impl (NULL, prefix, interface->name, NULL, NULL);
+	if (! name)
+		return NULL;
+
+	methods_name = symbol_impl (NULL, prefix, interface->name,
+				    NULL, "methods");
+	if (! methods_name)
+		return NULL;
+
+	methods_array = interface_methods_array (NULL, prefix, interface,
+						 object ? TRUE : FALSE);
+	if (! methods_array)
+		return NULL;
+
+	signals_name = symbol_impl (NULL, prefix, interface->name,
+				    NULL, "signals");
+	if (! signals_name)
+		return NULL;
+
+	signals_array = interface_signals_array (NULL, prefix, interface,
+						 object ? FALSE : TRUE);
+	if (! signals_array)
+		return NULL;
+
+	properties_name = symbol_impl (NULL, prefix, interface->name,
+				       NULL, "properties");
+	if (! properties_name)
+		return NULL;
+
+	properties_array = interface_properties_array (NULL, prefix, interface,
+						       object ? TRUE : FALSE);
+	if (! properties_array)
+		return NULL;
+
+	/* Output the code */
+	code = nih_sprintf (parent,
+			    "%s"
+			    "\n"
+			    "%s"
+			    "\n"
+			    "%s"
+			    "\n"
+			    "const NihDBusInterface %s = {\n"
+			    "\t\"%s\",\n"
+			    "\t%s,\n"
+			    "\t%s,\n"
+			    "\t%s\n"
+			    "};\n",
+			    methods_array,
+			    signals_array,
+			    properties_array,
+			    name,
+			    interface->name,
+			    methods_name,
+			    signals_name,
+			    properties_name);
+	if (! code)
+		return NULL;
+
+	/* Append the prototype to the list */
+	var = type_var_new (code, "const NihDBusInterface", name);
+	if (! var) {
+		nih_free (code);
+		return NULL;
+	}
+
+	nih_list_add (prototypes, &var->entry);
 
 	return code;
 }

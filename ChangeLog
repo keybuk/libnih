@@ -1,6 +1,15 @@
 2009-06-04  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/interface.c (interface_methods_array)
+	(interface_signals_array, interface_properties_array): Return the
+	prototype with the name set, and thus don't return a static argument
+	array.
+	(interface_struct): Rewrite to reuse the name and insert the static
+	* nih-dbus-tool/interface.h: Update prototypes
+	* nih-dbus-tool/tests/test_interface.c (test_methods_array)
+	(test_signals_array, test_properties_array): Adjust to match
+
+	* nih-dbus-tool/interface.c (interface_methods_array)
 	(interface_signals_array): Restructure to expect prototypes to be
 	returned from the args array functions, using that to get the name
 	of those and generally making things a bit more readable.  Make

@@ -79,13 +79,16 @@ int        interface_annotation       (Interface *interface,
 	__attribute__ ((warn_unused_result));
 
 char *     interface_methods_array    (const void *parent, const char *prefix,
-				       Interface *interface, int with_handlers)
+				       Interface *interface, int with_handlers,
+				       NihList *prototypes)
 	__attribute__ ((warn_unused_result, malloc));
 char *     interface_signals_array    (const void *parent, const char *prefix,
-				       Interface *interface, int with_filters)
+				       Interface *interface, int with_filters,
+				       NihList *prototypes)
 	__attribute__ ((warn_unused_result, malloc));
 char *     interface_properties_array (const void *parent, const char *prefix,
-				       Interface *interface, int with_handlers)
+				       Interface *interface, int with_handlers,
+				       NihList *prototypes)
 	__attribute__ ((warn_unused_result, malloc));
 
 char *     interface_struct           (const void *parent, const char *prefix,

@@ -409,7 +409,8 @@ interface_annotation (Interface * interface,
  * @parent: parent object for new string,
  * @prefix: prefix for array name,
  * @interface: interface to generate array for,
- * @with_handlers: whether to include handler pointers.
+ * @with_handlers: whether to include handler pointers,
+ * @prototypes: list to append prototype to.
  *
  * Generates C code to declare an array of NihDBusMethod variables
  * containing information about the methods of the interface @interface;
@@ -419,6 +420,10 @@ interface_annotation (Interface * interface,
  * If @with_handlers is TRUE the returned array will contain pointers to
  * handler functions that should be already defined (or at least prototyped);
  * when FALSE this member will be NULL.
+ *
+ * The prototype of the returned variable declaration is returned as a
+ * TypeVar object appended to the @prototypes list.  The arguments array
+ * prototypes are not returned since they are made static.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -431,7 +436,8 @@ char *
 interface_methods_array (const void *parent,
 			 const char *prefix,
 			 Interface * interface,
-			 int         with_handlers)
+			 int         with_handlers,
+			 NihList *   prototypes)
 {
 	nih_local char *name = NULL;
 	NihList         vars;
@@ -445,6 +451,7 @@ interface_methods_array (const void *parent,
 
 	nih_assert (prefix != NULL);
 	nih_assert (interface != NULL);
+	nih_assert (prototypes != NULL);
 
 	name = symbol_impl (NULL, prefix, interface->name, NULL, "methods");
 	if (! name)
@@ -590,7 +597,7 @@ interface_methods_array (const void *parent,
 
 	code = nih_sprintf (parent,
 			    "%s"
-			    "static const NihDBusMethod %s[] = {\n"
+			    "const NihDBusMethod %s[] = {\n"
 			    "%s"
 			    "};\n",
 			    args ?: "",
@@ -598,6 +605,17 @@ interface_methods_array (const void *parent,
 			    block);
 	if (! code)
 		return NULL;
+
+	/* Append the prototype to the list */
+	var = type_var_new (code, "const NihDBusMethod", name);
+	if (! var) {
+		nih_free (code);
+		return NULL;
+	}
+
+	var->array = TRUE;
+
+	nih_list_add (prototypes, &var->entry);
 
 	return code;
 }
@@ -607,7 +625,8 @@ interface_methods_array (const void *parent,
  * @parent: parent object for new string,
  * @prefix: prefix for array name,
  * @interface: interface to generate array for,
- * @with_filter: whether to include filter function pointers.
+ * @with_filter: whether to include filter function pointers,
+ * @prototypes: list to append prototype to.
  *
  * Generates C code to declare an array of NihDBusSignal variables
  * containing information about the signals of the interface @interface;
@@ -617,6 +636,10 @@ interface_methods_array (const void *parent,
  * If @with_filters is TRUE the returned array will contain pointers to
  * filter functions that should be already defined (or at least prototyped);
  * when FALSE this member will be NULL.
+ *
+ * The prototype of the returned variable declaration is returned as a
+ * TypeVar object appended to the @prototypes list.  The arguments array
+ * prototypes are not returned since they are made static.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -629,7 +652,8 @@ char *
 interface_signals_array (const void *parent,
 			 const char *prefix,
 			 Interface * interface,
-			 int         with_filters)
+			 int         with_filters,
+			 NihList *   prototypes)
 {
 	nih_local char *name = NULL;
 	NihList         vars;
@@ -643,6 +667,7 @@ interface_signals_array (const void *parent,
 
 	nih_assert (prefix != NULL);
 	nih_assert (interface != NULL);
+	nih_assert (prototypes != NULL);
 
 	name = symbol_impl (NULL, prefix, interface->name, NULL, "signals");
 	if (! name)
@@ -788,7 +813,7 @@ interface_signals_array (const void *parent,
 
 	code = nih_sprintf (parent,
 			    "%s"
-			    "static const NihDBusSignal %s[] = {\n"
+			    "const NihDBusSignal %s[] = {\n"
 			    "%s"
 			    "};\n",
 			    args ?: "",
@@ -796,6 +821,17 @@ interface_signals_array (const void *parent,
 			    block);
 	if (! code)
 		return NULL;
+
+	/* Append the prototype to the list */
+	var = type_var_new (code, "const NihDBusSignal", name);
+	if (! var) {
+		nih_free (code);
+		return NULL;
+	}
+
+	var->array = TRUE;
+
+	nih_list_add (prototypes, &var->entry);
 
 	return code;
 }
@@ -805,7 +841,8 @@ interface_signals_array (const void *parent,
  * @parent: parent object for new string,
  * @prefix: prefix for array name,
  * @interface: interface to generate array for,
- * @with_handlers: whether to include handler pointers.
+ * @with_handlers: whether to include handler pointers,
+ * @prototypes: list to append prototype to.
  *
  * Generates C code to declare an array of NihDBusProperty variables
  * containing information about the properties of the interface @interface.
@@ -813,6 +850,9 @@ interface_signals_array (const void *parent,
  * If @with_handlers is TRUE the returned array will contain pointers to
  * getter and setter functions that should be already defined (or at least
  * prototyped); when FALSE these members will be NULL.
+ *
+ * The prototype of the returned variable declaration is returned as a
+ * TypeVar object appended to the @prototypes list.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -825,7 +865,8 @@ char *
 interface_properties_array (const void *parent,
 			    const char *prefix,
 			    Interface * interface,
-			    int         with_handlers)
+			    int         with_handlers,
+			    NihList *   prototypes)
 {
 	nih_local char *name = NULL;
 	size_t          max_name = 0;
@@ -834,10 +875,12 @@ interface_properties_array (const void *parent,
 	size_t          max_getter = 0;
 	size_t          max_setter = 0;
 	nih_local char *block = NULL;
-	char *          code = NULL;
+	char *          code;
+	TypeVar *       var;
 
 	nih_assert (prefix != NULL);
 	nih_assert (interface != NULL);
+	nih_assert (prototypes != NULL);
 
 	name = symbol_impl (NULL, prefix, interface->name, NULL, "properties");
 	if (! name)
@@ -1033,13 +1076,24 @@ interface_properties_array (const void *parent,
 		return NULL;
 
 	code = nih_sprintf (parent,
-			    "static const NihDBusProperty %s[] = {\n"
+			    "const NihDBusProperty %s[] = {\n"
 			    "%s"
 			    "};\n",
 			    name,
 			    block);
 	if (! code)
 		return NULL;
+
+	/* Append the prototype to the list */
+	var = type_var_new (code, "const NihDBusProperty", name);
+	if (! var) {
+		nih_free (code);
+		return NULL;
+	}
+
+	var->array = TRUE;
+
+	nih_list_add (prototypes, &var->entry);
 
 	return code;
 }
@@ -1063,7 +1117,9 @@ interface_properties_array (const void *parent,
  * definition so the signal filter function pointers will be filled in.
  *
  * The prototype of the returned variable declaration is returned as a
- * TypeVar object appended to the @prototypes list.
+ * TypeVar object appended to the @prototypes list.  The methods, signals
+ * and properties array prototypes are not returned since they are made
+ * static.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -1080,75 +1136,118 @@ interface_struct (const void *parent,
 		  NihList *   prototypes)
 {
 	nih_local char *name = NULL;
-	nih_local char *methods_name = NULL;
+	nih_local char *block = NULL;
+	nih_local char *arrays = NULL;
+	TypeVar *       var;
+	char *          ptr;
+	NihList         methods_prototypes;
 	nih_local char *methods_array = NULL;
-	nih_local char *signals_name = NULL;
+	NihList         signals_prototypes;
 	nih_local char *signals_array = NULL;
-	nih_local char *properties_name = NULL;
+	NihList         properties_prototypes;
 	nih_local char *properties_array = NULL;
 	char *          code;
-	TypeVar *       var;
 
 	nih_assert (prefix != NULL);
 	nih_assert (interface != NULL);
 	nih_assert (prototypes != NULL);
 
+	/* Work out the structure name, and append the interface name to the
+	 * definition.
+	 */
 	name = symbol_impl (NULL, prefix, interface->name, NULL, NULL);
 	if (! name)
 		return NULL;
 
-	methods_name = symbol_impl (NULL, prefix, interface->name,
-				    NULL, "methods");
-	if (! methods_name)
+	if (! nih_strcat_sprintf (&block, NULL, "\"%s\",\n", interface->name))
 		return NULL;
 
+	/* Append the methods array to the arrays block, making it static
+	 * in the process.
+	 */
+	nih_list_init (&methods_prototypes);
+
 	methods_array = interface_methods_array (NULL, prefix, interface,
-						 object ? TRUE : FALSE);
+						 object ? TRUE : FALSE,
+						 &methods_prototypes);
 	if (! methods_array)
 		return NULL;
 
-	signals_name = symbol_impl (NULL, prefix, interface->name,
-				    NULL, "signals");
-	if (! signals_name)
+	nih_assert (! NIH_LIST_EMPTY (&methods_prototypes));
+
+	var = (TypeVar *)methods_prototypes.next;
+	ptr = strstr (methods_array, var->type);
+	nih_assert (ptr != NULL);
+
+	if (! nih_strncat (&arrays, NULL, methods_array, ptr - methods_array))
 		return NULL;
 
+	if (! nih_strcat_sprintf (&arrays, NULL, "static %s\n", ptr))
+		return NULL;
+
+	if (! nih_strcat_sprintf (&block, NULL, "%s,\n", var->name))
+		return NULL;
+
+	/* Append the signals array to the arrays block, making it static
+	 * in the process.
+	 */
+	nih_list_init (&signals_prototypes);
+
 	signals_array = interface_signals_array (NULL, prefix, interface,
-						 object ? FALSE : TRUE);
+						 object ? FALSE : TRUE,
+						 &signals_prototypes);
 	if (! signals_array)
 		return NULL;
 
-	properties_name = symbol_impl (NULL, prefix, interface->name,
-				       NULL, "properties");
-	if (! properties_name)
+	nih_assert (! NIH_LIST_EMPTY (&signals_prototypes));
+
+	var = (TypeVar *)signals_prototypes.next;
+	ptr = strstr (signals_array, var->type);
+	nih_assert (ptr != NULL);
+
+	if (! nih_strncat (&arrays, NULL, signals_array, ptr - signals_array))
 		return NULL;
 
+	if (! nih_strcat_sprintf (&arrays, NULL, "static %s\n", ptr))
+		return NULL;
+
+	if (! nih_strcat_sprintf (&block, NULL, "%s,\n", var->name))
+		return NULL;
+
+	/* Append the properties array to the arrays block, making it static
+	 * in the process.
+	 */
+	nih_list_init (&properties_prototypes);
+
 	properties_array = interface_properties_array (NULL, prefix, interface,
-						       object ? TRUE : FALSE);
+						       object ? TRUE : FALSE,
+						       &properties_prototypes);
 	if (! properties_array)
 		return NULL;
 
+	nih_assert (! NIH_LIST_EMPTY (&properties_prototypes));
+
+	var = (TypeVar *)properties_prototypes.next;
+
+	if (! nih_strcat_sprintf (&arrays, NULL, "static %s\n",
+				  properties_array))
+		return NULL;
+
+	if (! nih_strcat_sprintf (&block, NULL, "%s\n", var->name))
+		return NULL;
+
 	/* Output the code */
+	if (! indent (&block, NULL, 1))
+		return NULL;
+
 	code = nih_sprintf (parent,
 			    "%s"
-			    "\n"
-			    "%s"
-			    "\n"
-			    "%s"
-			    "\n"
 			    "const NihDBusInterface %s = {\n"
-			    "\t\"%s\",\n"
-			    "\t%s,\n"
-			    "\t%s,\n"
-			    "\t%s\n"
+			    "%s"
 			    "};\n",
-			    methods_array,
-			    signals_array,
-			    properties_array,
+			    arrays,
 			    name,
-			    interface->name,
-			    methods_name,
-			    signals_name,
-			    properties_name);
+			    block);
 	if (! code)
 		return NULL;
 

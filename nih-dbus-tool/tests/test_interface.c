@@ -884,11 +884,12 @@ test_annotation (void)
 void
 test_methods_array (void)
 {
+	NihList    prototypes;
 	Interface *interface = NULL;
 	Method *   method = NULL;
 	Argument * arg = NULL;
 	char *     str;
-
+	TypeVar *  var;
 
 	TEST_FUNCTION ("interface_methods_array");
 
@@ -899,6 +900,8 @@ test_methods_array (void)
 	 */
 	TEST_FEATURE ("with handlers");
 	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			interface->symbol = "test";
@@ -941,10 +944,12 @@ test_methods_array (void)
 			nih_list_add (&method->arguments, &arg->entry);
 		}
 
-		str = interface_methods_array (NULL, "my", interface, TRUE);
+		str = interface_methods_array (NULL, "my", interface, TRUE,
+					       &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (interface);
 			continue;
@@ -968,12 +973,26 @@ test_methods_array (void)
 			     "\t{ NULL }\n"
 			     "};\n"
 			     "\n"
-			     "static const NihDBusMethod my_com_netsplit_Nih_Test_methods[] = {\n"
+			     "const NihDBusMethod my_com_netsplit_Nih_Test_methods[] = {\n"
 			     "\t{ \"Poke\",           my_com_netsplit_Nih_Test_Poke_method_args,           my_com_netsplit_Nih_Test_Poke_method           },\n"
 			     "\t{ \"Peek\",           my_com_netsplit_Nih_Test_Peek_method_args,           my_com_netsplit_Nih_Test_Peek_method           },\n"
 			     "\t{ \"IsValidAddress\", my_com_netsplit_Nih_Test_IsValidAddress_method_args, my_com_netsplit_Nih_Test_IsValidAddress_method },\n"
 			     "\t{ NULL }\n"
 			     "};\n");
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		var = (TypeVar *)prototypes.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "const NihDBusMethod");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test_methods");
+		TEST_ALLOC_PARENT (var->name, var);
+		TEST_TRUE (var->array);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&prototypes);
 
 		nih_free (str);
 		nih_free (interface);
@@ -987,6 +1006,8 @@ test_methods_array (void)
 	 */
 	TEST_FEATURE ("without handlers");
 	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			interface->symbol = "test";
@@ -1029,10 +1050,12 @@ test_methods_array (void)
 			nih_list_add (&method->arguments, &arg->entry);
 		}
 
-		str = interface_methods_array (NULL, "my", interface, FALSE);
+		str = interface_methods_array (NULL, "my", interface, FALSE,
+					       &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (interface);
 			continue;
@@ -1056,12 +1079,26 @@ test_methods_array (void)
 			     "\t{ NULL }\n"
 			     "};\n"
 			     "\n"
-			     "static const NihDBusMethod my_com_netsplit_Nih_Test_methods[] = {\n"
+			     "const NihDBusMethod my_com_netsplit_Nih_Test_methods[] = {\n"
 			     "\t{ \"Poke\",           my_com_netsplit_Nih_Test_Poke_method_args,           NULL },\n"
 			     "\t{ \"Peek\",           my_com_netsplit_Nih_Test_Peek_method_args,           NULL },\n"
 			     "\t{ \"IsValidAddress\", my_com_netsplit_Nih_Test_IsValidAddress_method_args, NULL },\n"
 			     "\t{ NULL }\n"
 			     "};\n");
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		var = (TypeVar *)prototypes.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "const NihDBusMethod");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test_methods");
+		TEST_ALLOC_PARENT (var->name, var);
+		TEST_TRUE (var->array);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&prototypes);
 
 		nih_free (str);
 		nih_free (interface);
@@ -1073,24 +1110,42 @@ test_methods_array (void)
 	 */
 	TEST_FEATURE ("with no methods");
 	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			interface->symbol = "test";
 		}
 
-		str = interface_methods_array (NULL, "my", interface, FALSE);
+		str = interface_methods_array (NULL, "my", interface, FALSE,
+					       &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str,
-			     "static const NihDBusMethod my_com_netsplit_Nih_Test_methods[] = {\n"
+			     "const NihDBusMethod my_com_netsplit_Nih_Test_methods[] = {\n"
 			     "\t{ NULL }\n"
 			     "};\n");
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		var = (TypeVar *)prototypes.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "const NihDBusMethod");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test_methods");
+		TEST_ALLOC_PARENT (var->name, var);
+		TEST_TRUE (var->array);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&prototypes);
 
 		nih_free (str);
 		nih_free (interface);
@@ -1100,11 +1155,12 @@ test_methods_array (void)
 void
 test_signals_array (void)
 {
+	NihList    prototypes;
 	Interface *interface = NULL;
 	Signal *   signal = NULL;
 	Argument * arg = NULL;
 	char *     str;
-
+	TypeVar *  var;
 
 	TEST_FUNCTION ("interface_signals_array");
 
@@ -1115,6 +1171,8 @@ test_signals_array (void)
 	 */
 	TEST_FEATURE ("with filters");
 	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			interface->symbol = "test";
@@ -1138,10 +1196,12 @@ test_signals_array (void)
 			nih_list_add (&interface->signals, &signal->entry);
 		}
 
-		str = interface_signals_array (NULL, "my", interface, TRUE);
+		str = interface_signals_array (NULL, "my", interface, TRUE,
+					       &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (interface);
 			continue;
@@ -1158,11 +1218,25 @@ test_signals_array (void)
 			     "\t{ NULL }\n"
 			     "};\n"
 			     "\n"
-			     "static const NihDBusSignal my_com_netsplit_Nih_Test_signals[] = {\n"
+			     "const NihDBusSignal my_com_netsplit_Nih_Test_signals[] = {\n"
 			     "\t{ \"Bounce\",   my_com_netsplit_Nih_Test_Bounce_signal_args,   my_com_netsplit_Nih_Test_Bounce_signal   },\n"
 			     "\t{ \"Exploded\", my_com_netsplit_Nih_Test_Exploded_signal_args, my_com_netsplit_Nih_Test_Exploded_signal },\n"
 			     "\t{ NULL }\n"
 			     "};\n");
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		var = (TypeVar *)prototypes.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "const NihDBusSignal");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test_signals");
+		TEST_ALLOC_PARENT (var->name, var);
+		TEST_TRUE (var->array);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&prototypes);
 
 		nih_free (str);
 		nih_free (interface);
@@ -1176,6 +1250,8 @@ test_signals_array (void)
 	 */
 	TEST_FEATURE ("without filters");
 	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			interface->symbol = "test";
@@ -1199,10 +1275,12 @@ test_signals_array (void)
 			nih_list_add (&interface->signals, &signal->entry);
 		}
 
-		str = interface_signals_array (NULL, "my", interface, FALSE);
+		str = interface_signals_array (NULL, "my", interface, FALSE,
+					       &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (interface);
 			continue;
@@ -1219,11 +1297,25 @@ test_signals_array (void)
 			     "\t{ NULL }\n"
 			     "};\n"
 			     "\n"
-			     "static const NihDBusSignal my_com_netsplit_Nih_Test_signals[] = {\n"
+			     "const NihDBusSignal my_com_netsplit_Nih_Test_signals[] = {\n"
 			     "\t{ \"Bounce\",   my_com_netsplit_Nih_Test_Bounce_signal_args,   NULL },\n"
 			     "\t{ \"Exploded\", my_com_netsplit_Nih_Test_Exploded_signal_args, NULL },\n"
 			     "\t{ NULL }\n"
 			     "};\n");
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		var = (TypeVar *)prototypes.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "const NihDBusSignal");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test_signals");
+		TEST_ALLOC_PARENT (var->name, var);
+		TEST_TRUE (var->array);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&prototypes);
 
 		nih_free (str);
 		nih_free (interface);
@@ -1235,24 +1327,42 @@ test_signals_array (void)
 	 */
 	TEST_FEATURE ("with no signals");
 	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			interface->symbol = "test";
 		}
 
-		str = interface_signals_array (NULL, "my", interface, FALSE);
+		str = interface_signals_array (NULL, "my", interface, FALSE,
+					       &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str,
-			     "static const NihDBusSignal my_com_netsplit_Nih_Test_signals[] = {\n"
+			     "const NihDBusSignal my_com_netsplit_Nih_Test_signals[] = {\n"
 			     "\t{ NULL }\n"
 			     "};\n");
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		var = (TypeVar *)prototypes.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "const NihDBusSignal");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test_signals");
+		TEST_ALLOC_PARENT (var->name, var);
+		TEST_TRUE (var->array);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&prototypes);
 
 		nih_free (str);
 		nih_free (interface);
@@ -1263,9 +1373,11 @@ test_signals_array (void)
 void
 test_properties_array (void)
 {
+	NihList    prototypes;
 	Interface *interface = NULL;
 	Property * property = NULL;
 	char *     str;
+	TypeVar *  var;
 
 	TEST_FUNCTION ("interface_properties_array");
 
@@ -1276,6 +1388,8 @@ test_properties_array (void)
 	 */
 	TEST_FEATURE ("with handler functions");
 	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			interface->symbol = "test";
@@ -1296,22 +1410,38 @@ test_properties_array (void)
 			nih_list_add (&interface->properties, &property->entry);
 		}
 
-		str = interface_properties_array (NULL, "my", interface, TRUE);
+		str = interface_properties_array (NULL, "my", interface, TRUE,
+						  &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str,
-			     "static const NihDBusProperty my_com_netsplit_Nih_Test_properties[] = {\n"
+			     "const NihDBusProperty my_com_netsplit_Nih_Test_properties[] = {\n"
 			     "\t{ \"colour\", \"s\", NIH_DBUS_READWRITE, my_com_netsplit_Nih_Test_colour_get, my_com_netsplit_Nih_Test_colour_set },\n"
 			     "\t{ \"size\",   \"u\", NIH_DBUS_READ,      my_com_netsplit_Nih_Test_size_get,   NULL                                },\n"
 			     "\t{ \"touch\",  \"b\", NIH_DBUS_WRITE,     NULL,                                my_com_netsplit_Nih_Test_touch_set  },\n"
 			     "\t{ NULL }\n"
 			     "};\n");
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		var = (TypeVar *)prototypes.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "const NihDBusProperty");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test_properties");
+		TEST_ALLOC_PARENT (var->name, var);
+		TEST_TRUE (var->array);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&prototypes);
 
 		nih_free (str);
 		nih_free (interface);
@@ -1324,6 +1454,8 @@ test_properties_array (void)
 	 */
 	TEST_FEATURE ("without handler functions");
 	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			interface->symbol = "test";
@@ -1344,22 +1476,38 @@ test_properties_array (void)
 			nih_list_add (&interface->properties, &property->entry);
 		}
 
-		str = interface_properties_array (NULL, "my", interface, FALSE);
+		str = interface_properties_array (NULL, "my", interface, FALSE,
+						  &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str,
-			     "static const NihDBusProperty my_com_netsplit_Nih_Test_properties[] = {\n"
+			     "const NihDBusProperty my_com_netsplit_Nih_Test_properties[] = {\n"
 			     "\t{ \"colour\", \"s\", NIH_DBUS_READWRITE, NULL, NULL },\n"
 			     "\t{ \"size\",   \"u\", NIH_DBUS_READ,      NULL, NULL },\n"
 			     "\t{ \"touch\",  \"b\", NIH_DBUS_WRITE,     NULL, NULL },\n"
 			     "\t{ NULL }\n"
 			     "};\n");
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		var = (TypeVar *)prototypes.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "const NihDBusProperty");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test_properties");
+		TEST_ALLOC_PARENT (var->name, var);
+		TEST_TRUE (var->array);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&prototypes);
 
 		nih_free (str);
 		nih_free (interface);
@@ -1371,24 +1519,42 @@ test_properties_array (void)
 	 */
 	TEST_FEATURE ("with no properties");
 	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			interface->symbol = "test";
 		}
 
-		str = interface_properties_array (NULL, "my", interface, FALSE);
+		str = interface_properties_array (NULL, "my", interface, FALSE,
+						  &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str,
-			     "static const NihDBusProperty my_com_netsplit_Nih_Test_properties[] = {\n"
+			     "const NihDBusProperty my_com_netsplit_Nih_Test_properties[] = {\n"
 			     "\t{ NULL }\n"
 			     "};\n");
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		var = (TypeVar *)prototypes.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "const NihDBusProperty");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test_properties");
+		TEST_ALLOC_PARENT (var->name, var);
+		TEST_TRUE (var->array);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&prototypes);
 
 		nih_free (str);
 		nih_free (interface);

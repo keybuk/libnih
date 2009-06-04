@@ -1,5 +1,10 @@
 2009-06-04  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/node.c (node_interfaces_array): The last member
+	should be just NULL, it's an array of pointers.
+	* nih-dbus-tool/tests/test_node.c (test_interfaces_array): Adjust
+	test case output to match.
+
 	* nih-dbus/dbus_object.c (nih_dbus_object_introspect): Cope with
 	name-less arguments.
 	* nih-dbus/tests/test_dbus_object.c (test_object_introspect): Update

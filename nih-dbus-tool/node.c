@@ -406,7 +406,7 @@ node_interfaces_array (const void *parent,
 	/* Append the final element to the block of elements, indent and
 	 * surround with the structure definition.
 	 */
-	if (! nih_strcat (&block, NULL, "{ NULL }\n")) {
+	if (! nih_strcat (&block, NULL, "NULL\n")) {
 		if (code)
 			nih_free (code);
 		return NULL;

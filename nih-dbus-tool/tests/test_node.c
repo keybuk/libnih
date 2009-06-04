@@ -846,7 +846,7 @@ test_interfaces_array (void)
 			     "const NihDBusInterface *my_interfaces[] = {\n"
 			     "\t&my_com_netsplit_Nih_Test,\n"
 			     "\t&my_com_netsplit_Nih_Foo,\n"
-			     "\t{ NULL }\n"
+			     "\tNULL\n"
 			     "};\n");
 
 		TEST_LIST_NOT_EMPTY (&prototypes);
@@ -1077,7 +1077,7 @@ test_interfaces_array (void)
 			     "const NihDBusInterface *my_interfaces[] = {\n"
 			     "\t&my_com_netsplit_Nih_Test,\n"
 			     "\t&my_com_netsplit_Nih_Foo,\n"
-			     "\t{ NULL }\n"
+			     "\tNULL\n"
 			     "};\n");
 
 		TEST_LIST_NOT_EMPTY (&prototypes);
@@ -1147,7 +1147,7 @@ test_interfaces_array (void)
 
 		TEST_EQ_STR (str,
 			     "const NihDBusInterface *my_interfaces[] = {\n"
-			     "\t{ NULL }\n"
+			     "\tNULL\n"
 			     "};\n");
 
 		TEST_LIST_NOT_EMPTY (&prototypes);

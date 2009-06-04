@@ -1,5 +1,10 @@
 2009-06-04  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/interface.c (interface_end_tag): If the symbol is
+	given as "", set it to NULL.
+	* nih-dbus-tool/tests/test_interface.c (test_end_tag): Add a test
+	case for the empty symbol.
+
 	* nih-dbus-tool/node.c (node_interfaces_array): Generate the array
 	of interfaces for a given node.
 	* nih-dbus-tool/node.h: Add prototype.

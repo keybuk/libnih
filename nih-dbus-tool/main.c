@@ -52,13 +52,13 @@
 /**
  * OutputMode:
  *
- * The tool can either generate code for a local object implementation
- * wrapping existing C functions (OUTPUT_OBJECT) or code for a proxy for
- * a remote object providing C access methods (OUTPUT_PROXY);
+ * The tool can either generate code for a renite object with C access
+ * methods (OUTPUT_PROXY) or a local object implementation wrapping
+ * existing C functions (OUTPUT_OBJECT).
  **/
 typedef enum output_mode {
-	OUTPUT_OBJECT,
-	OUTPUT_PROXY
+	OUTPUT_PROXY,
+	OUTPUT_OBJECT
 } OutputMode;
 
 
@@ -97,10 +97,10 @@ mode_option (NihOption * option,
 
 	value = (OutputMode *)option->value;
 
-	if (! strcmp (arg, "object")) {
-		*value = OUTPUT_OBJECT;
-	} else if (! strcmp (arg, "proxy")) {
+	if (! strcmp (arg, "proxy")) {
 		*value = OUTPUT_PROXY;
+	} else if (! strcmp (arg, "object")) {
+		*value = OUTPUT_OBJECT;
 	} else {
 		fprintf (stderr, _("%s: illegal output mode: %s\n"),
 			 program_name, arg);
@@ -287,11 +287,11 @@ header_file_path (const void *parent,
 /**
  * output_mode:
  *
- * Output mode; set to OUTPUT_OBJECT to output code for a local object
- * implementation wrapping existing C functions or OUTPUT_PROXY to output
- * code for a remote object providing C access methods.
+ * Output mode; set to OUTPUT_PROXY to output code for a remote object with
+ * A access methods or OUTPUT_OBJECT for a local object implementation
+ * wrapping existing C functions.
  **/
-static OutputMode output_mode = OUTPUT_OBJECT;
+static OutputMode output_mode = OUTPUT_PROXY;
 
 /**
  * prefix:
@@ -314,7 +314,7 @@ static const char *output_path = NULL;
  * Command-line options accepted by this tool.
  **/
 static NihOption options[] = {
-	{ 0,   "mode", N_("output mode: object, or proxy [default: object]"),
+	{ 0,   "mode", N_("output mode: object, or proxy [default: proxy]"),
 	  NULL, "MODE", &output_mode, mode_option },
 	{ 0,   "prefix", N_("prefix for C functions [default: dbus]"),
 	  NULL, "PREFIX", &prefix, NULL },

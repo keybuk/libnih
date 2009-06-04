@@ -1,5 +1,8 @@
 2009-06-04  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/main.c: Change the default output mode to proxy,
+	which makes a bit more sense for the majority case.
+
 	* nih-dbus-tool/signal.c (signal_proxy_function): Name the signal
 	functions _signal to match _method
 	* nih-dbus-tool/tests/signal_code.h: Update to match

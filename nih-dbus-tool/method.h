@@ -110,7 +110,8 @@ char *    method_proxy_sync_function   (const void *parent, const char *prefix,
 	__attribute__ ((warn_unused_result, malloc));
 
 char *    method_args_array            (const void *parent, const char *prefix,
-					Interface *interface, Method *method)
+					Interface *interface, Method *method,
+					NihList *prototypes)
 	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN

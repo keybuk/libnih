@@ -2410,10 +2410,14 @@ method_proxy_sync_function (const void *parent,
  * @parent: parent object for new string,
  * @prefix: prefix for array name,
  * @interface: interface of @method,
- * @method: method to generate array for.
+ * @method: method to generate array for,
+ * @prototypes: list to append prototype to.
  *
  * Generates C code to declare an array of NihDBusArg variables containing
  * information about the arguments of the method @method on @interface.
+ *
+ * The prototype of the returned variable declaration is returned as a
+ * TypeVar object appended to the @prototypes list.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -2426,17 +2430,20 @@ char *
 method_args_array (const void *parent,
 		   const char *prefix,
 		   Interface * interface,
-		   Method *    method)
+		   Method *    method,
+		   NihList *   prototypes)
 {
 	nih_local char *name = NULL;
 	size_t          max_name = 0;
 	size_t          max_type = 0;
 	nih_local char *block = NULL;
-	char *          code = NULL;
+	char *          code;
+	TypeVar *       var;
 
 	nih_assert (prefix != NULL);
 	nih_assert (interface != NULL);
 	nih_assert (method != NULL);
+	nih_assert (prototypes != NULL);
 
 	name = symbol_impl (NULL, prefix, interface->name,
 			    method->name, "method_args");
@@ -2540,13 +2547,24 @@ method_args_array (const void *parent,
 		return NULL;
 
 	code = nih_sprintf (parent,
-			    "static const NihDBusArg %s[] = {\n"
+			    "const NihDBusArg %s[] = {\n"
 			    "%s"
 			    "};\n",
 			    name,
 			    block);
 	if (! code)
 		return NULL;
+
+	/* Append the prototype to the list */
+	var = type_var_new (code, "const NihDBusArg", name);
+	if (! var) {
+		nih_free (code);
+		return NULL;
+	}
+
+	var->array = TRUE;
+
+	nih_list_add (prototypes, &var->entry);
 
 	return code;
 }

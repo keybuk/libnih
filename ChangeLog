@@ -1,5 +1,10 @@
 2009-06-04  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_args_array): Return the prototype
+	with the name set, and thus don't return a static argument array.
+	* nih-dbus-tool/method.h: Update prototype
+	* nih-dbus-tool/tests/test_method.c (test_args_array): Adjust to match
+
 	* nih-dbus-tool/type.h (type_var): Add an array member.
 	* nih-dbus-tool/type.c (type_var_new): Initialise array to FALSE.
 	(type_var_to_string, type_var_layout): Append [] if the var is an

@@ -2198,12 +2198,14 @@ test_proxy_function (void)
 void
 test_args_array (void)
 {
+	NihList    prototypes;
 	Interface *interface = NULL;
 	Signal *   signal = NULL;
 	Argument * arg1 = NULL;
 	Argument * arg2 = NULL;
 	Argument * arg3 = NULL;
 	char *     str;
+	TypeVar *  var;
 
 
 	TEST_FUNCTION ("signal_args_array");
@@ -2216,6 +2218,8 @@ test_args_array (void)
 	 */
 	TEST_FEATURE ("with arguments");
 	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			interface->symbol = "test";
@@ -2240,25 +2244,40 @@ test_args_array (void)
 			nih_list_add (&signal->arguments, &arg3->entry);
 		}
 
-		str = signal_args_array (NULL, "my", interface, signal);
+		str = signal_args_array (NULL, "my", interface, signal,
+					 &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str,
-			     "static const NihDBusArg my_com_netsplit_Nih_Test_Signal_signal_args[] = {\n"
+			     "const NihDBusArg my_com_netsplit_Nih_Test_Signal_signal_args[] = {\n"
 			     "\t{ \"foo\",    \"as\",     NIH_DBUS_ARG_OUT },\n"
 			     "\t{ \"wibble\", \"i\",      NIH_DBUS_ARG_OUT },\n"
 			     "\t{ NULL,     \"a(iii)\", NIH_DBUS_ARG_OUT },\n"
 			     "\t{ NULL }\n"
 			     "};\n");
 
-		nih_free (str);
+		TEST_LIST_NOT_EMPTY (&prototypes);
 
+		var = (TypeVar *)prototypes.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "const NihDBusArg");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test_Signal_signal_args");
+		TEST_ALLOC_PARENT (var->name, var);
+		TEST_TRUE (var->array);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+		nih_free (str);
 		nih_free (interface);
 	}
 
@@ -2268,6 +2287,8 @@ test_args_array (void)
 	 */
 	TEST_FEATURE ("with no arguments");
 	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			interface->symbol = "test";
@@ -2277,22 +2298,37 @@ test_args_array (void)
 			nih_list_add (&interface->signals, &signal->entry);
 		}
 
-		str = signal_args_array (NULL, "my", interface, signal);
+		str = signal_args_array (NULL, "my", interface, signal,
+					 &prototypes);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&prototypes);
 
 			nih_free (interface);
 			continue;
 		}
 
 		TEST_EQ_STR (str,
-			     "static const NihDBusArg my_com_netsplit_Nih_Test_Signal_signal_args[] = {\n"
+			     "const NihDBusArg my_com_netsplit_Nih_Test_Signal_signal_args[] = {\n"
 			     "\t{ NULL }\n"
 			     "};\n");
 
-		nih_free (str);
+		TEST_LIST_NOT_EMPTY (&prototypes);
 
+		var = (TypeVar *)prototypes.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "const NihDBusArg");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test_Signal_signal_args");
+		TEST_ALLOC_PARENT (var->name, var);
+		TEST_TRUE (var->array);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+		nih_free (str);
 		nih_free (interface);
 	}
 }

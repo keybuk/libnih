@@ -1,5 +1,11 @@
 2009-06-04  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/interface.c (interface_methods_array)
+	(interface_signals_array): Restructure to expect prototypes to be
+	returned from the args array functions, using that to get the name
+	of those and generally making things a bit more readable.  Make
+	static along the way too.
+
 	* nih-dbus-tool/tests/test_interface.c (test_struct): Make sure the
 	returned items aren't arrays.
 

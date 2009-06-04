@@ -434,12 +434,14 @@ interface_methods_array (const void *parent,
 			 int         with_handlers)
 {
 	nih_local char *name = NULL;
+	NihList         vars;
 	size_t          max_name = 0;
 	size_t          max_args = 0;
 	size_t          max_handler = 0;
 	nih_local char *args = NULL;
+	TypeVar *       var;
 	nih_local char *block = NULL;
-	char *          code = NULL;
+	char *          code;
 
 	nih_assert (prefix != NULL);
 	nih_assert (interface != NULL);
@@ -448,25 +450,47 @@ interface_methods_array (const void *parent,
 	if (! name)
 		return NULL;
 
+	nih_list_init (&vars);
+
 	/* Figure out the longest method name, arguments array variable name
 	 * and handler function name.
 	 */
 	NIH_LIST_FOREACH (&interface->methods, iter) {
 		Method *        method = (Method *)iter;
-		nih_local char *args_name = NULL;
+		NihList         args_prototypes;
+		nih_local char *args_array = NULL;
 		nih_local char *handler_name = NULL;
 
+		/* Obtain the arguments array for the method, giving us the
+		 * name of the array.  Append it as a static to the block
+		 * we prepend to our code.
+		 */
+		nih_list_init (&args_prototypes);
+		args_array = method_args_array (NULL, prefix, interface,
+						method, &args_prototypes);
+		if (! args_array)
+			return NULL;
+
+		if (! nih_strcat_sprintf (&args, NULL,
+					  "static %s"
+					  "\n",
+					  args_array))
+			return NULL;
+
+		nih_assert (! NIH_LIST_EMPTY (&args_prototypes));
+
+		var = (TypeVar *)args_prototypes.next;
+		nih_list_add (&vars, &var->entry);
+		nih_ref (var, args);
+
+		/* Calculate size of method name and args var name */
 		if (strlen (method->name) > max_name)
 			max_name = strlen (method->name);
 
-		args_name = symbol_impl (NULL, prefix, interface->name,
-					 method->name, "method_args");
-		if (! args_name)
-			return NULL;
+		if (strlen (var->name) > max_args)
+			max_args = strlen (var->name);
 
-		if (strlen (args_name) > max_args)
-			max_args = strlen (args_name);
-
+		/* Work out name of handler or leave space for "NULL" */
 		if (with_handlers) {
 			handler_name = symbol_impl (NULL, prefix,
 						    interface->name,
@@ -485,14 +509,18 @@ interface_methods_array (const void *parent,
 	/* Append each method such that the names, args variable names and
 	 * handler function names are all lined up with each other.
 	 */
+	var = (TypeVar *)vars.next;
 	NIH_LIST_FOREACH (&interface->methods, iter) {
 		Method *        method = (Method *)iter;
 		nih_local char *line = NULL;
 		char *          dest;
-		nih_local char *args_name = NULL;
 		nih_local char *handler_name = NULL;
-		nih_local char *args_array = NULL;
 
+		nih_assert (&var->entry != &vars);
+
+		/* Allocate the line and fill in the values, padding out
+		 * where necessary.
+		 */
 		line = nih_alloc (NULL, max_name + max_args + max_handler + 13);
 		if (! line)
 			return NULL;
@@ -511,19 +539,14 @@ interface_methods_array (const void *parent,
 		memset (dest, ' ', max_name - strlen (method->name));
 		dest += max_name - strlen (method->name);
 
-		args_name = symbol_impl (NULL, prefix, interface->name,
-					 method->name, "method_args");
-		if (! args_name)
-			return NULL;
-
-		memcpy (dest, args_name, strlen (args_name));
-		dest += strlen (args_name);
+		memcpy (dest, var->name, strlen (var->name));
+		dest += strlen (var->name);
 
 		memcpy (dest, ", ", 2);
 		dest += 2;
 
-		memset (dest, ' ', max_args - strlen (args_name));
-		dest += max_args - strlen (args_name);
+		memset (dest, ' ', max_args - strlen (var->name));
+		dest += max_args - strlen (var->name);
 
 		if (with_handlers) {
 			handler_name = symbol_impl (NULL, prefix,
@@ -553,17 +576,7 @@ interface_methods_array (const void *parent,
 		if (! nih_strcat (&block, NULL, line))
 			return NULL;
 
-		/* Prepend the variables for the arguments array */
-		args_array = method_args_array (NULL, prefix, interface,
-						method);
-		if (! args_array)
-			return NULL;
-
-		if (! nih_strcat_sprintf (&args, NULL,
-					  "%s"
-					  "\n",
-					  args_array))
-			return NULL;
+		var = (TypeVar *)var->entry.next;
 	}
 
 	/* Append the final element to the block of elements, indent and
@@ -580,7 +593,7 @@ interface_methods_array (const void *parent,
 			    "static const NihDBusMethod %s[] = {\n"
 			    "%s"
 			    "};\n",
-			    args ? args : "",
+			    args ?: "",
 			    name,
 			    block);
 	if (! code)
@@ -619,12 +632,14 @@ interface_signals_array (const void *parent,
 			 int         with_filters)
 {
 	nih_local char *name = NULL;
+	NihList         vars;
 	size_t          max_name = 0;
 	size_t          max_args = 0;
 	size_t          max_filter = 0;
 	nih_local char *args = NULL;
+	TypeVar *       var;
 	nih_local char *block = NULL;
-	char *          code = NULL;
+	char *          code;
 
 	nih_assert (prefix != NULL);
 	nih_assert (interface != NULL);
@@ -633,25 +648,47 @@ interface_signals_array (const void *parent,
 	if (! name)
 		return NULL;
 
+	nih_list_init (&vars);
+
 	/* Figure out the longest signal name, arguments array variable name
 	 * and filter function name.
 	 */
 	NIH_LIST_FOREACH (&interface->signals, iter) {
 		Signal *        signal = (Signal *)iter;
-		nih_local char *args_name = NULL;
+		NihList         args_prototypes;
+		nih_local char *args_array = NULL;
 		nih_local char *filter_name = NULL;
 
+		/* Obtain the arguments array for the signal, giving us the
+		 * name of the array.  Append it as a static to the block
+		 * we prepend to our code.
+		 */
+		nih_list_init (&args_prototypes);
+		args_array = signal_args_array (NULL, prefix, interface,
+						signal, &args_prototypes);
+		if (! args_array)
+			return NULL;
+
+		if (! nih_strcat_sprintf (&args, NULL,
+					  "static %s"
+					  "\n",
+					  args_array))
+			return NULL;
+
+		nih_assert (! NIH_LIST_EMPTY (&args_prototypes));
+
+		var = (TypeVar *)args_prototypes.next;
+		nih_list_add (&vars, &var->entry);
+		nih_ref (var, args);
+
+		/* Calculate size of signal name and args var name */
 		if (strlen (signal->name) > max_name)
 			max_name = strlen (signal->name);
 
-		args_name = symbol_impl (NULL, prefix, interface->name,
-					 signal->name, "signal_args");
-		if (! args_name)
-			return NULL;
+		if (strlen (var->name) > max_args)
+			max_args = strlen (var->name);
 
-		if (strlen (args_name) > max_args)
-			max_args = strlen (args_name);
-
+		/* Work out name of filter or leave space for "NULL" */
 		if (with_filters) {
 			filter_name = symbol_impl (NULL, prefix,
 						    interface->name,
@@ -670,14 +707,18 @@ interface_signals_array (const void *parent,
 	/* Append each signal such that the names, args variable names and
 	 * filter function names are all lined up with each other.
 	 */
+	var = (TypeVar *)vars.next;
 	NIH_LIST_FOREACH (&interface->signals, iter) {
 		Signal *        signal = (Signal *)iter;
 		nih_local char *line = NULL;
 		char *          dest;
-		nih_local char *args_name = NULL;
 		nih_local char *filter_name = NULL;
-		nih_local char *args_array = NULL;
 
+		nih_assert (&var->entry != &vars);
+
+		/* Allocate the line and fill in the values, padding out
+		 * where necessary.
+		 */
 		line = nih_alloc (NULL, max_name + max_args + max_filter + 13);
 		if (! line)
 			return NULL;
@@ -696,19 +737,14 @@ interface_signals_array (const void *parent,
 		memset (dest, ' ', max_name - strlen (signal->name));
 		dest += max_name - strlen (signal->name);
 
-		args_name = symbol_impl (NULL, prefix, interface->name,
-					 signal->name, "signal_args");
-		if (! args_name)
-			return NULL;
-
-		memcpy (dest, args_name, strlen (args_name));
-		dest += strlen (args_name);
+		memcpy (dest, var->name, strlen (var->name));
+		dest += strlen (var->name);
 
 		memcpy (dest, ", ", 2);
 		dest += 2;
 
-		memset (dest, ' ', max_args - strlen (args_name));
-		dest += max_args - strlen (args_name);
+		memset (dest, ' ', max_args - strlen (var->name));
+		dest += max_args - strlen (var->name);
 
 		if (with_filters) {
 			filter_name = symbol_impl (NULL, prefix,
@@ -738,17 +774,7 @@ interface_signals_array (const void *parent,
 		if (! nih_strcat (&block, NULL, line))
 			return NULL;
 
-		/* Prepend the variables for the arguments array */
-		args_array = signal_args_array (NULL, prefix, interface,
-						signal);
-		if (! args_array)
-			return NULL;
-
-		if (! nih_strcat_sprintf (&args, NULL,
-					  "%s"
-					  "\n",
-					  args_array))
-			return NULL;
+		var = (TypeVar *)var->entry.next;
 	}
 
 	/* Append the final element to the block of elements, indent and
@@ -765,7 +791,7 @@ interface_signals_array (const void *parent,
 			    "static const NihDBusSignal %s[] = {\n"
 			    "%s"
 			    "};\n",
-			    args ? args : "",
+			    args ?: "",
 			    name,
 			    block);
 	if (! code)

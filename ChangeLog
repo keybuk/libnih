@@ -1,3 +1,13 @@
+2009-06-09  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/node.c (node_object_functions)
+	(node_proxy_functions): Implement functions that call all the
+	necessary other functions to return C code for a node's object or
+	proxy implementations.
+	* nih-dbus-tool/node.h: Add prototypes.
+	* nih-dbus-tool/tests/test_node.c (test_object_functions)
+	(test_proxy_functions): Test cases for the functions.
+
 2009-06-04  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/main.c: Change the default output mode to proxy,

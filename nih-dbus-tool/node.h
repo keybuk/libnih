@@ -67,6 +67,17 @@ char *     node_interfaces_array (const void *parent, const char *prefix,
 				  Node *node, int object, NihList *prototypes)
 	__attribute__ ((warn_unused_result, malloc));
 
+char *     node_object_functions (const void *parent, const char *prefix,
+				  Node *node,
+				  NihList *prototypes, NihList *handlers,
+				  NihList *externs)
+	__attribute__ ((warn_unused_result, malloc));
+char *     node_proxy_functions  (const void *parent, const char *prefix,
+				  Node *node,
+				  NihList *prototypes, NihList *typedefs,
+				  NihList *externs)
+	__attribute__ ((warn_unused_result, malloc));
+
 NIH_END_EXTERN
 
 #endif /* NIH_DBUS_TOOL_NODE_H */

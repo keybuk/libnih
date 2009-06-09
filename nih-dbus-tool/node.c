@@ -442,3 +442,527 @@ node_interfaces_array (const void *parent,
 
 	return code;
 }
+
+
+/**
+ * node_object_functions:
+ * @parent: parent object for new string,
+ * @prefix: prefix for function names,
+ * @node: node to generate functions for,
+ * @prototypes: list to append prototypes to,
+ * @handlers: list to append handler prototypes to,
+ * @externs: list to append prototypes of extern functions to.
+ *
+ * Generates C code for all of the functions that @node would require to
+ * wrap existing C functions and implement the D-Bus interfaces described
+ * for the object.
+ *
+ * Functions in the returned code to implement method handlers and property
+ * getter and setters will be declared static and their prototypes returned
+ * as TypeFunc objects appended to the @prototypes list.  You normally ensure
+ * that these receive a forward declaration.
+ *
+ * Those functions will call implementation functions that other code is
+ * expected to provide, the names and prototypes of these expected functions
+ * are returned as TypeFunc objects appended to the @handlers list.  You
+ * must implement these elsewhere, and ensure that the prototype has a
+ * forward declaration.
+ *
+ * Functions in the returned code to implement signal emissions are part of
+ * a public API that your own code may call.  The names and prototypes are
+ * returned as TypeFunc objects appended to the @externs list, you would
+ * normally place these in a header file.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the return string will also be
+ * freed.
+ *
+ * Returns: newly allocated string or NULL if insufficient memory.
+ **/
+char *
+node_object_functions (const void *parent,
+		       const char *prefix,
+		       Node *      node,
+		       NihList *   prototypes,
+		       NihList *   handlers,
+		       NihList *   externs)
+{
+	char *code = NULL;
+	int   first = TRUE;
+
+	nih_assert (prefix != NULL);
+	nih_assert (node != NULL);
+	nih_assert (prototypes != NULL);
+	nih_assert (handlers != NULL);
+	nih_assert (externs != NULL);
+
+	code = nih_strdup (parent, "");
+	if (! code)
+		return NULL;
+
+	NIH_LIST_FOREACH (&node->interfaces, interface_iter) {
+		Interface *interface = (Interface *)interface_iter;
+
+		NIH_LIST_FOREACH (&interface->methods, method_iter) {
+			Method *        method = (Method *)method_iter;
+			NihList         method_prototypes;
+			NihList         method_handlers;
+			NihList         method_externs;
+			nih_local char *object_func = NULL;
+			nih_local char *reply_func = NULL;
+
+			nih_list_init (&method_prototypes);
+			nih_list_init (&method_handlers);
+			nih_list_init (&method_externs);
+
+			object_func = method_object_function (
+				NULL, prefix, interface, method,
+				&method_prototypes, &method_handlers);
+			if (! object_func)
+				goto error;
+
+			reply_func = method_reply_function (
+				NULL, prefix, interface, method,
+				&method_externs);
+			if (! reply_func)
+				goto error;
+
+			if (! first)
+				if (! nih_strcat (&code, parent, "\n\n"))
+					goto error;
+			first = FALSE;
+
+			if (! nih_strcat_sprintf (&code, parent,
+						  "static %s"
+						  "\n"
+						  "%s",
+						  object_func,
+						  reply_func))
+				goto error;
+
+			NIH_LIST_FOREACH_SAFE (&method_prototypes, iter) {
+				TypeFunc *func = (TypeFunc *)iter;
+
+				if (! type_to_static (&func->type, func))
+					goto error;
+
+				nih_ref (func, code);
+				nih_list_add (prototypes, &func->entry);
+			}
+
+			NIH_LIST_FOREACH_SAFE (&method_handlers, iter) {
+				TypeFunc *func = (TypeFunc *)iter;
+
+				if (! type_to_extern (&func->type, func))
+					goto error;
+
+				nih_ref (func, code);
+				nih_list_add (handlers, &func->entry);
+			}
+
+			NIH_LIST_FOREACH_SAFE (&method_externs, iter) {
+				TypeFunc *func = (TypeFunc *)iter;
+
+				nih_ref (func, code);
+				nih_list_add (externs, &func->entry);
+			}
+		}
+
+		NIH_LIST_FOREACH (&interface->signals, signal_iter) {
+			Signal *        signal = (Signal *)signal_iter;
+			NihList         signal_externs;
+			nih_local char *object_func = NULL;
+
+			nih_list_init (&signal_externs);
+
+			object_func = signal_object_function (
+				NULL, prefix, interface, signal,
+				&signal_externs);
+			if (! object_func)
+				goto error;
+
+			if (! first)
+				if (! nih_strcat (&code, parent, "\n\n"))
+					goto error;
+			first = FALSE;
+
+			if (! nih_strcat (&code, parent, object_func))
+				goto error;
+
+			NIH_LIST_FOREACH_SAFE (&signal_externs, iter) {
+				TypeFunc *func = (TypeFunc *)iter;
+
+				nih_ref (func, code);
+				nih_list_add (externs, &func->entry);
+			}
+		}
+
+		NIH_LIST_FOREACH (&interface->properties, property_iter) {
+			Property *      property = (Property *)property_iter;
+			NihList         property_prototypes;
+			NihList         property_handlers;
+			nih_local char *get_func = NULL;
+			nih_local char *set_func = NULL;
+
+			nih_list_init (&property_prototypes);
+			nih_list_init (&property_handlers);
+
+			if (! first)
+				if (! nih_strcat (&code, parent, "\n\n"))
+					goto error;
+			first = FALSE;
+
+			if (property->access != NIH_DBUS_WRITE) {
+				get_func = property_object_get_function (
+					NULL, prefix, interface, property,
+					&property_prototypes, &property_handlers);
+				if (! get_func)
+					goto error;
+
+				if (! nih_strcat_sprintf (&code, parent,
+							  "static %s",
+							  get_func))
+					goto error;
+			}
+
+			if (property->access == NIH_DBUS_READWRITE)
+				if (! nih_strcat (&code, parent, "\n"))
+					goto error;
+
+			if (property->access != NIH_DBUS_READ) {
+				set_func = property_object_set_function (
+					NULL, prefix, interface, property,
+					&property_prototypes, &property_handlers);
+				if (! set_func)
+					goto error;
+
+				if (! nih_strcat_sprintf (&code, parent,
+							  "static %s",
+							  set_func))
+					goto error;
+			}
+
+			NIH_LIST_FOREACH_SAFE (&property_prototypes, iter) {
+				TypeFunc *func = (TypeFunc *)iter;
+
+				if (! type_to_static (&func->type, func))
+					goto error;
+
+				nih_ref (func, code);
+				nih_list_add (prototypes, &func->entry);
+			}
+
+			NIH_LIST_FOREACH_SAFE (&property_handlers, iter) {
+				TypeFunc *func = (TypeFunc *)iter;
+
+				if (! type_to_extern (&func->type, func))
+					goto error;
+
+				nih_ref (func, code);
+				nih_list_add (handlers, &func->entry);
+			}
+		}
+	}
+
+	return code;
+error:
+	nih_free (code);
+
+	return NULL;
+}
+
+/**
+ * node_proxy_functions:
+ * @parent: parent object for new string,
+ * @prefix: prefix for function names,
+ * @node: node to generate functions for,
+ * @prototypes: list to append prototypes to,
+ * @typedefs: list to append callback typedefs to,
+ * @externs: list to append prototypes of extern functions to.
+ *
+ * Generates C code for all of the functions that @node would require to
+ * provide remote object access.
+ *
+ * Functions in the returned code to implement signal filter functions
+ * will be declared static and their prototypes returned as TypeFunc objects
+ * appended to the @prototypes list.  You normally ensure that these receive
+ * a forward declaration.
+ *
+ * Functions in the returned code to implement method and property get/set
+ * proxy functions are part of a public API that your own code may call.
+ * The names and prototypes are returned as TypeFunc objects appended to
+ * the @externs list, you would normally place these in a header file.
+ *
+ * Both sets of these functions will call handler and callback functions
+ * that other code is expected to provide, either passed directly to the
+ * function (for method and proxy functions) or passed to
+ * nih_dbus_proxy_connect() (for signal functions).  The typedef for those
+ * functions are returned as TypeFunc objects appended to the @typedefs list.
+ * You would normally place these in a header file.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the return string will also be
+ * freed.
+ *
+ * Returns: newly allocated string or NULL if insufficient memory.
+ **/
+char *
+node_proxy_functions (const void *parent,
+		      const char *prefix,
+		      Node *      node,
+		      NihList *   prototypes,
+		      NihList *   typedefs,
+		      NihList *   externs)
+{
+	char *code = NULL;
+	int   first = TRUE;
+
+	nih_assert (prefix != NULL);
+	nih_assert (node != NULL);
+	nih_assert (prototypes != NULL);
+	nih_assert (typedefs != NULL);
+	nih_assert (externs != NULL);
+
+	code = nih_strdup (parent, "");
+	if (! code)
+		return NULL;
+
+	NIH_LIST_FOREACH (&node->interfaces, interface_iter) {
+		Interface *interface = (Interface *)interface_iter;
+
+		NIH_LIST_FOREACH (&interface->methods, method_iter) {
+			Method *        method = (Method *)method_iter;
+			NihList         method_prototypes;
+			NihList         method_typedefs;
+			NihList         method_externs;
+			nih_local char *proxy_func = NULL;
+			nih_local char *notify_func = NULL;
+			nih_local char *sync_func = NULL;
+
+			nih_list_init (&method_prototypes);
+			nih_list_init (&method_typedefs);
+			nih_list_init (&method_externs);
+
+			if (! first)
+				if (! nih_strcat (&code, parent, "\n\n"))
+					goto error;
+			first = FALSE;
+
+			proxy_func = method_proxy_function (
+				NULL, prefix, interface, method,
+				&method_externs);
+			if (! proxy_func)
+				goto error;
+
+			notify_func = method_proxy_notify_function (
+				NULL, prefix, interface, method,
+				&method_prototypes, &method_typedefs);
+			if (! notify_func)
+				goto error;
+
+			sync_func = method_proxy_sync_function (
+				NULL, prefix, interface, method,
+				&method_externs);
+			if (! sync_func)
+				goto error;
+
+			if (! nih_strcat_sprintf (&code, parent,
+						  "%s"
+						  "\n"
+						  "static %s"
+						  "\n"
+						  "%s",
+						  proxy_func,
+						  notify_func,
+						  sync_func))
+				goto error;
+
+			NIH_LIST_FOREACH_SAFE (&method_prototypes, iter) {
+				TypeFunc *func = (TypeFunc *)iter;
+
+				if (! type_to_static (&func->type, func))
+					goto error;
+
+				nih_ref (func, code);
+				nih_list_add (prototypes, &func->entry);
+			}
+
+			NIH_LIST_FOREACH_SAFE (&method_typedefs, iter) {
+				TypeFunc *func = (TypeFunc *)iter;
+
+				nih_ref (func, code);
+				nih_list_add (typedefs, &func->entry);
+			}
+
+			NIH_LIST_FOREACH_SAFE (&method_externs, iter) {
+				TypeFunc *func = (TypeFunc *)iter;
+
+				nih_ref (func, code);
+				nih_list_add (externs, &func->entry);
+			}
+		}
+
+		NIH_LIST_FOREACH (&interface->signals, signal_iter) {
+			Signal *        signal = (Signal *)signal_iter;
+			NihList         signal_prototypes;
+			NihList         signal_typedefs;
+			nih_local char *proxy_func = NULL;
+
+			nih_list_init (&signal_prototypes);
+			nih_list_init (&signal_typedefs);
+
+			if (! first)
+				if (! nih_strcat (&code, parent, "\n\n"))
+					goto error;
+			first = FALSE;
+
+			proxy_func = signal_proxy_function (
+				NULL, prefix, interface, signal,
+				&signal_prototypes, &signal_typedefs);
+			if (! proxy_func)
+				goto error;
+
+			if (! nih_strcat_sprintf (&code, parent,
+						  "static %s",
+						  proxy_func))
+				goto error;
+
+			NIH_LIST_FOREACH_SAFE (&signal_prototypes, iter) {
+				TypeFunc *func = (TypeFunc *)iter;
+
+				if (! type_to_static (&func->type, func))
+					goto error;
+
+				nih_ref (func, code);
+				nih_list_add (prototypes, &func->entry);
+			}
+
+			NIH_LIST_FOREACH_SAFE (&signal_typedefs, iter) {
+				TypeFunc *func = (TypeFunc *)iter;
+
+				nih_ref (func, code);
+				nih_list_add (typedefs, &func->entry);
+			}
+		}
+
+		NIH_LIST_FOREACH (&interface->properties, property_iter) {
+			Property *      property = (Property *)property_iter;
+			NihList         property_prototypes;
+			NihList         property_typedefs;
+			NihList         property_externs;
+			nih_local char *get_func = NULL;
+			nih_local char *get_notify_func = NULL;
+			nih_local char *get_sync_func = NULL;
+			nih_local char *set_func = NULL;
+			nih_local char *set_notify_func = NULL;
+			nih_local char *set_sync_func = NULL;
+
+			nih_list_init (&property_prototypes);
+			nih_list_init (&property_typedefs);
+			nih_list_init (&property_externs);
+
+			if (! first)
+				if (! nih_strcat (&code, parent, "\n\n"))
+					goto error;
+			first = FALSE;
+
+			if (property->access != NIH_DBUS_WRITE) {
+				get_func = property_proxy_get_function (
+					NULL, prefix, interface, property,
+					&property_externs);
+				if (! get_func)
+					goto error;
+
+				get_notify_func = property_proxy_get_notify_function (
+					NULL, prefix, interface, property,
+					&property_prototypes, &property_typedefs);
+				if (! get_notify_func)
+					goto error;
+
+				get_sync_func = property_proxy_get_sync_function (
+					NULL, prefix, interface, property,
+					&property_externs);
+				if (! get_sync_func)
+					goto error;
+
+				if (! nih_strcat_sprintf (&code, parent,
+							  "%s"
+							  "\n"
+							  "static %s"
+							  "\n"
+							  "%s",
+							  get_func,
+							  get_notify_func,
+							  get_sync_func))
+					goto error;
+			}
+
+			if (property->access == NIH_DBUS_READWRITE)
+				if (! nih_strcat (&code, parent, "\n"))
+					goto error;
+
+			if (property->access != NIH_DBUS_READ) {
+				set_func = property_proxy_set_function (
+					NULL, prefix, interface, property,
+					&property_externs);
+				if (! set_func)
+					goto error;
+
+				set_notify_func = property_proxy_set_notify_function (
+					NULL, prefix, interface, property,
+					&property_prototypes, &property_typedefs);
+				if (! set_notify_func)
+					goto error;
+
+				set_sync_func = property_proxy_set_sync_function (
+					NULL, prefix, interface, property,
+					&property_externs);
+				if (! set_sync_func)
+					goto error;
+
+				if (! nih_strcat_sprintf (&code, parent,
+							  "%s"
+							  "\n"
+							  "static %s"
+							  "\n"
+							  "%s",
+							  set_func,
+							  set_notify_func,
+							  set_sync_func))
+					goto error;
+			}
+
+			NIH_LIST_FOREACH_SAFE (&property_prototypes, iter) {
+				TypeFunc *func = (TypeFunc *)iter;
+
+				if (! type_to_static (&func->type, func))
+					goto error;
+
+				nih_ref (func, code);
+				nih_list_add (prototypes, &func->entry);
+			}
+
+			NIH_LIST_FOREACH_SAFE (&property_typedefs, iter) {
+				TypeFunc *func = (TypeFunc *)iter;
+
+				nih_ref (func, code);
+				nih_list_add (typedefs, &func->entry);
+			}
+
+			NIH_LIST_FOREACH_SAFE (&property_externs, iter) {
+				TypeFunc *func = (TypeFunc *)iter;
+
+				nih_ref (func, code);
+				nih_list_add (externs, &func->entry);
+			}
+		}
+	}
+
+	return code;
+error:
+	nih_free (code);
+
+	return NULL;
+}

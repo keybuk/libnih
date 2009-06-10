@@ -2856,6 +2856,12 @@ property_proxy_set_sync_function (const void *parent,
 		nih_list_add (&func->attribs, &attrib->entry);
 	}
 
+	arg = type_var_new (func, "const void *", "parent");
+	if (! arg)
+		return NULL;
+
+	nih_list_add (&func->args, &arg->entry);
+
 	arg = type_var_new (func, "NihDBusProxy *", "proxy");
 	if (! arg)
 		return NULL;

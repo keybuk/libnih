@@ -78,8 +78,8 @@ void             my_com_netsplit_Nih_Test_property_set_notify (DBusPendingCall *
 int              my_get_property_sync (const void *parent,
 				       NihDBusProxy *proxy, char **value)
 	__attribute__ ((warn_unused_result));
-int              my_set_property_sync (NihDBusProxy *proxy,
-				       const char *value)
+int              my_set_property_sync (const void *parent,
+				       NihDBusProxy *proxy, const char *value)
 	__attribute__ ((warn_unused_result));
 
 NIH_END_EXTERN

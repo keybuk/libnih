@@ -1,5 +1,16 @@
 2009-06-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/property.c (property_proxy_set_sync_function): Add
+	a parent argument to the methods, even though we never use it;
+	otherwise it's irritatingly inconsistent with methods and property
+	get functions.
+	* nih-dbus-tool/tests/property_code.h: Adjust the expected prototype
+	* nih-dbus-tool/tests/test_property.c (test_proxy_set_sync_function):
+	Adjust expected output to include the parent argument
+	* nih-dbus-tool/tests/test_node.c (test_proxy_functions): Update
+	expected output to match
+	* nih-dbus-tool/tests/test_output.c (test_output): Update as well
+
 	* nih-dbus/dbus_proxy.h (NihDBusSignalhandler): Remove the proxy
 	argument.
 	* nih-dbus/tests/test_dbus_proxy.c (my_signal_handler): Remove the

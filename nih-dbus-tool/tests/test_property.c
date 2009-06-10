@@ -8397,7 +8397,8 @@ test_proxy_set_sync_function (void)
 		}
 
 		TEST_EQ_STR (str, ("int\n"
-				   "my_set_property_sync (NihDBusProxy *proxy,\n"
+				   "my_set_property_sync (const void *  parent,\n"
+				   "                      NihDBusProxy *proxy,\n"
 				   "                      const char *  value)\n"
 				   "{\n"
 				   "\tDBusMessage *   method_call;\n"
@@ -8488,6 +8489,17 @@ test_proxy_set_sync_function (void)
 		TEST_ALLOC_PARENT (func->type, func);
 		TEST_EQ_STR (func->name, "my_set_property_sync");
 		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const void *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "parent");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
 
@@ -8608,7 +8620,7 @@ test_proxy_set_sync_function (void)
 			parent = nih_alloc (proxy, 0);
 		}
 
-		ret = my_set_property_sync (proxy, "wibble");
+		ret = my_set_property_sync (NULL, proxy, "wibble");
 
 		if (test_alloc_failed
 		    && (ret < 0)) {
@@ -8718,7 +8730,7 @@ test_proxy_set_sync_function (void)
 			parent = nih_alloc (proxy, 0);
 		}
 
-		ret = my_set_property_sync (proxy, "wibble");
+		ret = my_set_property_sync (NULL, proxy, "wibble");
 
 		TEST_LT (ret, 0);
 
@@ -8839,7 +8851,7 @@ test_proxy_set_sync_function (void)
 			parent = nih_alloc (proxy, 0);
 		}
 
-		ret = my_set_property_sync (proxy, "wibble");
+		ret = my_set_property_sync (NULL, proxy, "wibble");
 
 		TEST_LT (ret, 0);
 
@@ -8906,7 +8918,8 @@ test_proxy_set_sync_function (void)
 		}
 
 		TEST_EQ_STR (str, ("int\n"
-				   "my_set_property_sync (NihDBusProxy *proxy,\n"
+				   "my_set_property_sync (const void *  parent,\n"
+				   "                      NihDBusProxy *proxy,\n"
 				   "                      const char *  value)\n"
 				   "{\n"
 				   "\tDBusMessage *   method_call;\n"
@@ -8997,6 +9010,17 @@ test_proxy_set_sync_function (void)
 		TEST_ALLOC_PARENT (func->type, func);
 		TEST_EQ_STR (func->name, "my_set_property_sync");
 		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const void *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "parent");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
 

@@ -1551,7 +1551,8 @@ test_output (void)
 		TEST_FILE_EQ (source, "}\n");
 		TEST_FILE_EQ (source, "\n");
 		TEST_FILE_EQ (source, "int\n");
-		TEST_FILE_EQ (source, "my_test_set_colour_sync (NihDBusProxy *proxy,\n");
+		TEST_FILE_EQ (source, "my_test_set_colour_sync (const void *  parent,\n");
+		TEST_FILE_EQ (source, "                         NihDBusProxy *proxy,\n");
 		TEST_FILE_EQ (source, "                         const char *  value)\n");
 		TEST_FILE_EQ (source, "{\n");
 		TEST_FILE_EQ (source, "\tDBusMessage *   method_call;\n");
@@ -2062,7 +2063,8 @@ test_output (void)
 		TEST_FILE_EQ (source, "}\n");
 		TEST_FILE_EQ (source, "\n");
 		TEST_FILE_EQ (source, "int\n");
-		TEST_FILE_EQ (source, "my_test_set_touch_sync (NihDBusProxy *proxy,\n");
+		TEST_FILE_EQ (source, "my_test_set_touch_sync (const void *  parent,\n");
+		TEST_FILE_EQ (source, "                        NihDBusProxy *proxy,\n");
 		TEST_FILE_EQ (source, "                        int           value)\n");
 		TEST_FILE_EQ (source, "{\n");
 		TEST_FILE_EQ (source, "\tDBusMessage *   method_call;\n");
@@ -2447,7 +2449,7 @@ test_output (void)
 		TEST_FILE_EQ (header, "\t__attribute__ ((warn_unused_result));\n");
 		TEST_FILE_EQ (header, "DBusPendingCall *my_test_set_colour            (NihDBusProxy *proxy, const char *value, MyTestSetColourReply handler, NihDBusErrorHandler error_handler, void *data, int timeout)\n");
 		TEST_FILE_EQ (header, "\t__attribute__ ((warn_unused_result));\n");
-		TEST_FILE_EQ (header, "int              my_test_set_colour_sync       (NihDBusProxy *proxy, const char *value)\n");
+		TEST_FILE_EQ (header, "int              my_test_set_colour_sync       (const void *parent, NihDBusProxy *proxy, const char *value)\n");
 		TEST_FILE_EQ (header, "\t__attribute__ ((warn_unused_result));\n");
 		TEST_FILE_EQ (header, "DBusPendingCall *my_test_get_size              (NihDBusProxy *proxy, MyTestGetSizeReply handler, NihDBusErrorHandler error_handler, void *data, int timeout)\n");
 		TEST_FILE_EQ (header, "\t__attribute__ ((warn_unused_result));\n");
@@ -2455,7 +2457,7 @@ test_output (void)
 		TEST_FILE_EQ (header, "\t__attribute__ ((warn_unused_result));\n");
 		TEST_FILE_EQ (header, "DBusPendingCall *my_test_set_touch             (NihDBusProxy *proxy, int value, MyTestSetTouchReply handler, NihDBusErrorHandler error_handler, void *data, int timeout)\n");
 		TEST_FILE_EQ (header, "\t__attribute__ ((warn_unused_result));\n");
-		TEST_FILE_EQ (header, "int              my_test_set_touch_sync        (NihDBusProxy *proxy, int value)\n");
+		TEST_FILE_EQ (header, "int              my_test_set_touch_sync        (const void *parent, NihDBusProxy *proxy, int value)\n");
 		TEST_FILE_EQ (header, "\t__attribute__ ((warn_unused_result));\n");
 		TEST_FILE_EQ (header, "DBusPendingCall *my_foo_bing                   (NihDBusProxy *proxy, MyFooBingReply handler, NihDBusErrorHandler error_handler, void *data, int timeout)\n");
 		TEST_FILE_EQ (header, "\t__attribute__ ((warn_unused_result));\n");

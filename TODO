@@ -37,9 +37,6 @@ string table:
 
 
 dbus:
-- set property function takes no parent, it's obvious why but it's annoying
-  to remember that - make it consistent
-
 - accept NULL reply if there are no return arguments for any method, not
   just property set functions
 

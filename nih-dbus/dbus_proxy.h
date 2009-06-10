@@ -98,24 +98,31 @@ struct nih_dbus_proxy {
 
 /**
  * NihDBusProxySignal:
- * @proxy: proxy for remote object,
+ * @connection: associated connection,
+ * @name: D-Bus name of object owner,
+ * @path: path of object,
  * @interface: signal interface definition,
  * @signal: signal definition,
- * @handler: signal handler function.
+ * @handler: signal handler function,
+ * @data: data to pass to @handler function.
  *
- * This structure represents a signal handler @handler connected to the
- * proxied remote object @object, called when a signal matching @signal on
- * @interface is received.
+ * This structure represents a connected signal handler @handler which
+ * should be run when a matching signal @signal on interface @interface
+ * is emitted by an object @path, from @name on @connection.
  *
- * These structures are created by nih_dbus_proxy_connect() and are
- * linked to the life cycle of @proxy.  You should not create additional
- * references since invalid data may then be accessed.
+ * @name may be NULL for peer-to-peer D-Bus connections.
+ *
+ * Proxied signals are generally bounced to the life cycle of @proxy,
+ * however this is not compulsory.
  **/
 struct nih_dbus_proxy_signal {
-	NihDBusProxy *          proxy;
+	DBusConnection *        connection;
+	char *                  name;
+	char *                  path;
 	const NihDBusInterface *interface;
 	const NihDBusSignal *   signal;
 	NihDBusSignalHandler    handler;
+	void *                  data;
 };
 
 
@@ -128,10 +135,12 @@ NihDBusProxy *      nih_dbus_proxy_new     (const void *parent,
 					    void *data)
 	__attribute__ ((warn_unused_result, malloc));
 
-NihDBusProxySignal *nih_dbus_proxy_connect (NihDBusProxy *proxy,
+NihDBusProxySignal *nih_dbus_proxy_connect (const void *parent,
+					    NihDBusProxy *proxy,
 					    const NihDBusInterface *interface,
 					    const NihDBusSignal *signal,
-					    NihDBusSignalHandler handler)
+					    NihDBusSignalHandler handler,
+					    void *data)
 	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN

@@ -471,30 +471,36 @@ nih_dbus_proxy_name_owner_changed (DBusConnection *connection,
 
 /**
  * nih_dbus_proxy_connect:
+ * @parent: parent object for new object,
  * @proxy: proxy for remote object,
  * @interface: signal interface definition,
  * @signal: signal definition,
- * @handler: signal handler function.
+ * @handler: signal handler function,
+ * @data: data to pass to @handler.
  *
  * Connect the signal @signal on @interface to @proxy so that the @handler
  * function is passed to the filter function defined by @signal when it
  * is received on the proxied D-Bus connection.
  *
- * The returned NihDBusProxySignal structure is allocated with nih_alloc()
- * and is a child of @proxy, this means that should @proxy be freed, the
- * returned structure will also be freed.  Additional references are not
- * supported.
+ * The signal can be disconnected by freeing the returned structure.  It is
+ * common to pass @proxy as @parent so that the signal is disconnected when
+ * the proxy is freed.
  *
- * The signal can be disconnected by freeing the returned structure.
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned proxy.  When all parents
+ * of the returned proxy are freed, the returned proxy will also be
+ * freed.
  *
  * Returns: newly allocated NihDBusProxySignal structure or NULL on raised
  * error.
  **/
 NihDBusProxySignal *
-nih_dbus_proxy_connect (NihDBusProxy *          proxy,
+nih_dbus_proxy_connect (const void *            parent,
+			NihDBusProxy *          proxy,
 			const NihDBusInterface *interface,
 			const NihDBusSignal *   signal,
-			NihDBusSignalHandler    handler)
+			NihDBusSignalHandler    handler,
+			void *                  data)
 {
 	NihDBusProxySignal *proxied;
 	nih_local char *    rule = NULL;
@@ -505,21 +511,26 @@ nih_dbus_proxy_connect (NihDBusProxy *          proxy,
 	nih_assert (signal != NULL);
 	nih_assert (handler != NULL);
 
-	proxied = nih_new (proxy, NihDBusProxySignal);
+	proxied = nih_new (parent, NihDBusProxySignal);
 	if (! proxied)
 		nih_return_no_memory_error (NULL);
 
-	proxied->proxy = proxy;
+	proxied->connection = proxy->connection;
+	proxied->name = proxy->name;
+	proxied->path = proxy->path;
 	proxied->interface = interface;
 	proxied->signal = signal;
 	proxied->handler = handler;
+	proxied->data = data;
 
-	if (! dbus_connection_add_filter (proxied->proxy->connection,
+	if (! dbus_connection_add_filter (proxied->connection,
 					  (DBusHandleMessageFunction)proxied->signal->filter,
-					  proxied, NULL))
+					  proxied, NULL)) {
+		nih_free (proxied);
 		nih_return_no_memory_error (NULL);
+	}
 
-	if (proxied->proxy->name) {
+	if (proxied->name) {
 		rule = nih_dbus_proxy_signal_rule (NULL, proxied);
 		if (! rule) {
 			nih_error_raise_no_memory ();
@@ -528,7 +539,7 @@ nih_dbus_proxy_connect (NihDBusProxy *          proxy,
 
 		dbus_error_init (&dbus_error);
 
-		dbus_bus_add_match (proxied->proxy->connection, rule, &dbus_error);
+		dbus_bus_add_match (proxied->connection, rule, &dbus_error);
 		if (dbus_error_is_set (&dbus_error)) {
 			if (dbus_error_has_name (&dbus_error, DBUS_ERROR_NO_MEMORY)) {
 				nih_error_raise_no_memory ();
@@ -542,14 +553,16 @@ nih_dbus_proxy_connect (NihDBusProxy *          proxy,
 		}
 	}
 
+	dbus_connection_ref (proxied->connection);
 	nih_alloc_set_destructor (proxied, nih_dbus_proxy_signal_destroy);
 
 	return proxied;
 
 error:
-	dbus_connection_remove_filter (proxied->proxy->connection,
+	dbus_connection_remove_filter (proxied->connection,
 				       (DBusHandleMessageFunction)proxied->signal->filter,
 				       proxied);
+	nih_free (proxied);
 
 	return NULL;
 }
@@ -571,18 +584,18 @@ nih_dbus_proxy_signal_destroy (NihDBusProxySignal *proxied)
 
 	nih_assert (proxied != NULL);
 
-	if (proxied->proxy->name) {
+	if (proxied->name) {
 		rule = NIH_MUST (nih_dbus_proxy_signal_rule (NULL, proxied));
 
 		dbus_error_init (&dbus_error);
-		dbus_bus_remove_match (proxied->proxy->connection, rule,
-				       &dbus_error);
+		dbus_bus_remove_match (proxied->connection, rule, &dbus_error);
 		dbus_error_free (&dbus_error);
 	}
 
-	dbus_connection_remove_filter (proxied->proxy->connection,
+	dbus_connection_remove_filter (proxied->connection,
 				       (DBusHandleMessageFunction)proxied->signal->filter,
 				       proxied);
+	dbus_connection_unref (proxied->connection);
 
 	return 0;
 }
@@ -608,13 +621,13 @@ nih_dbus_proxy_signal_rule (const void *        parent,
 	char *rule;
 
 	nih_assert (proxied != NULL);
-	nih_assert (proxied->proxy->name != NULL);
+	nih_assert (proxied->name != NULL);
 
 	rule = nih_sprintf (parent, ("type='%s',sender='%s',path='%s',"
 				     "interface='%s',member='%s'"),
 			    "signal",
-			    proxied->proxy->name,
-			    proxied->proxy->path,
+			    proxied->name,
+			    proxied->path,
 			    proxied->interface->name,
 			    proxied->signal->name);
 

@@ -1,5 +1,17 @@
 2009-06-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_proxy.h (NihDBusProxySignal): Rather than reference
+	the proxy itself, copy the members that we want out of it.
+	* nih-dbus/dbus_proxy.c (nih_dbus_proxy_connect): Accept a parent
+	argument, as well as a separate data argument, copy the members
+	from proxy into the object, taking a reference to the connection
+	as we do so.
+	(nih_dbus_proxy_signal_destroy): Don't forget to unref the connection
+	(nih_dbus_proxy_signal_rule): Take members directly
+	* nih-dbus/tests/test_dbus_proxy.c (test_connect): Call the function
+	with the two new arguments, update tests to check for the new members
+	(test_signal_destroy): Call with the two new arguments.
+
 	* nih-dbus-tool/property.c (property_proxy_set_sync_function): Add
 	a parent argument to the methods, even though we never use it;
 	otherwise it's irritatingly inconsistent with methods and property

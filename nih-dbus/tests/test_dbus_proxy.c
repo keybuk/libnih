@@ -705,8 +705,9 @@ test_connect (void)
 						    NULL, NULL);
 		}
 
-		proxied = nih_dbus_proxy_connect (proxy, &my_interface, &my_signal,
-						  my_signal_handler);
+		proxied = nih_dbus_proxy_connect (NULL, proxy,
+						  &my_interface, &my_signal,
+						  my_signal_handler, NULL);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (proxied, NULL);
@@ -720,11 +721,13 @@ test_connect (void)
 		}
 
 		TEST_ALLOC_SIZE (proxied, sizeof (NihDBusProxySignal));
-		TEST_ALLOC_PARENT (proxied, proxy);
-		TEST_EQ_P (proxied->proxy, proxy);
+		TEST_EQ_P (proxied->connection, proxy->connection);
+		TEST_EQ_P (proxied->name, proxy->name);
+		TEST_EQ_P (proxied->path, proxy->path);
 		TEST_EQ_P (proxied->interface, &my_interface);
 		TEST_EQ_P (proxied->signal, &my_signal);
 		TEST_EQ_P (proxied->handler, my_signal_handler);
+		TEST_EQ_P (proxied->data, NULL);
 
 		my_signal_filter_called = FALSE;
 		last_conn = NULL;
@@ -778,8 +781,9 @@ test_connect (void)
 						    NULL, NULL);
 		}
 
-		proxied = nih_dbus_proxy_connect (proxy, &my_interface, &my_signal,
-						  my_signal_handler);
+		proxied = nih_dbus_proxy_connect (NULL, proxy,
+						  &my_interface, &my_signal,
+						  my_signal_handler, NULL);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (proxied, NULL);
@@ -793,11 +797,13 @@ test_connect (void)
 		}
 
 		TEST_ALLOC_SIZE (proxied, sizeof (NihDBusProxySignal));
-		TEST_ALLOC_PARENT (proxied, proxy);
-		TEST_EQ_P (proxied->proxy, proxy);
+		TEST_EQ_P (proxied->connection, proxy->connection);
+		TEST_EQ_P (proxied->name, proxy->name);
+		TEST_EQ_P (proxied->path, proxy->path);
 		TEST_EQ_P (proxied->interface, &my_interface);
 		TEST_EQ_P (proxied->signal, &my_signal);
 		TEST_EQ_P (proxied->handler, my_signal_handler);
+		TEST_EQ_P (proxied->data, NULL);
 
 		my_signal_filter_called = FALSE;
 		last_conn = NULL;
@@ -876,10 +882,11 @@ test_signal_destroy (void)
 						    NULL,
 						    "/com/netsplit/Nih",
 						    NULL, NULL);
-			proxied = nih_dbus_proxy_connect (proxy,
+			proxied = nih_dbus_proxy_connect (NULL, proxy,
 							  &my_interface,
 							  &my_signal,
-							  my_signal_handler);
+							  my_signal_handler,
+							  NULL);
 		}
 
 		my_signal_filter_called = FALSE;

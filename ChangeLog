@@ -1,5 +1,10 @@
 2009-06-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_proxy.h (NihDBusSignalhandler): Remove the proxy
+	argument.
+	* nih-dbus/tests/test_dbus_proxy.c (my_signal_handler): Remove the
+	argument from here too
+
 	* nih-dbus-tool/signal.c (signal_proxy_function): Don't pass the
 	proxy to the signal handler function; we don't pass it for method
 	or property reply handlers because we don't have it, it's inconsitent

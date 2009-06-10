@@ -664,7 +664,6 @@ my_signal_filter (DBusConnection *    conn,
 
 static void
 my_signal_handler (void *          data,
-		   NihDBusProxy *  proxy,
 		   NihDBusMessage *message,
 		   ...)
 {

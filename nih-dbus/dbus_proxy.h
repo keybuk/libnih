@@ -49,16 +49,15 @@ typedef void (*NihDBusLostHandler) (void *data, NihDBusProxy *proxy);
 /**
  * NihDBusSignalHandler:
  * @data: data pointer passed to nih_dbus_proxy_new(),
- * @proxy: proxy object,
  * @message: NihDBusMessage context for signal arguments.
  *
  * A D-Bus Signal Handler is called when the expected signal is emitted
- * and caught by the @proxy signal filter function, generally they will
- * be called with additional arguments representing the demarshalled
- * data from the signal itself.
+ * and caught by the signal filter function, generally they will be called
+ * with additional arguments representing the demarshalled data from the
+ * signal itself.
  **/
-typedef void (*NihDBusSignalHandler) (void *data, NihDBusProxy *proxy,
-				      NihDBusMessage *message, ...);
+typedef void (*NihDBusSignalHandler) (void *data, NihDBusMessage *message,
+				      ...);
 
 
 /**

@@ -1,5 +1,9 @@
 2009-06-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_signal.c (test_proxy_function): Pass
+	the extra arguments to nih_dbus_proxy_connect(), which means we
+	actually move the data pointer to the connect call now.
+
 	* nih-dbus/dbus_proxy.h (NihDBusProxySignal): Rather than reference
 	the proxy itself, copy the members that we want out of it.
 	* nih-dbus/dbus_proxy.c (nih_dbus_proxy_connect): Accept a parent

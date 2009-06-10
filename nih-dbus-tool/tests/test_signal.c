@@ -1897,12 +1897,13 @@ test_proxy_function (void)
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
 						    dbus_bus_get_unique_name (server_conn),
 						    "/com/netsplit/Nih",
-						    NULL, &my_signal_handler_called);
+						    NULL, NULL);
 
-			proxied = nih_dbus_proxy_connect (proxy,
+			proxied = nih_dbus_proxy_connect (NULL, proxy,
 							  &my_interface,
 							  &my_signal,
-							  (NihDBusSignalHandler)my_signal_handler);
+							  (NihDBusSignalHandler)my_signal_handler,
+							  &my_signal_handler_called);
 		}
 
 		sig = dbus_message_new_signal ("/com/netsplit/Nih",
@@ -1926,6 +1927,7 @@ test_proxy_function (void)
 		TEST_TRUE (my_signal_handler_called);
 
 		TEST_ALLOC_SAFE {
+			nih_free (proxied);
 			nih_free (proxy);
 		}
 	}

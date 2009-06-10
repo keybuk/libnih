@@ -560,7 +560,8 @@ type_func_to_typedef (const void *parent,
 
 	/* Append the arguments */
 	NIH_LIST_FOREACH (&func->args, iter) {
-		TypeVar *arg = (TypeVar *)iter;
+		TypeVar *       arg = (TypeVar *)iter;
+		nih_local char *arg_str = NULL;
 
 		if (iter != func->args.next) {
 			if (! nih_strcat (&str, parent, ", ")) {
@@ -569,18 +570,15 @@ type_func_to_typedef (const void *parent,
 			}
 		}
 
-		if (strchr (arg->type, '*')) {
-			if (! nih_strcat_sprintf (&str, parent, "%s%s",
-						  arg->type, arg->name)) {
-				nih_free (str);
-				return NULL;
-			}
-		} else {
-			if (! nih_strcat_sprintf (&str, parent, "%s %s",
-						  arg->type, arg->name)) {
-				nih_free (str);
-				return NULL;
-			}
+		arg_str = type_var_to_string (NULL, arg);
+		if (! arg_str) {
+			nih_free (str);
+			return NULL;
+		}
+
+		if (! nih_strcat (&str, parent, arg_str)) {
+			nih_free (str);
+			return NULL;
 		}
 	}
 
@@ -684,7 +682,8 @@ type_func_layout (const void *parent,
 
 		/* Append the arguments */
 		NIH_LIST_FOREACH (&func->args, iter) {
-			TypeVar *arg = (TypeVar *)iter;
+			TypeVar *       arg = (TypeVar *)iter;
+			nih_local char *arg_str = NULL;
 
 			if (iter != func->args.next) {
 				if (! nih_strcat (&str, parent, ", ")) {
@@ -693,18 +692,15 @@ type_func_layout (const void *parent,
 				}
 			}
 
-			if (strchr (arg->type, '*')) {
-				if (! nih_strcat_sprintf (&str, parent, "%s%s",
-							  arg->type, arg->name)) {
-					nih_free (str);
-					return NULL;
-				}
-			} else {
-				if (! nih_strcat_sprintf (&str, parent, "%s %s",
-							  arg->type, arg->name)) {
-					nih_free (str);
-					return NULL;
-				}
+			arg_str = type_var_to_string (NULL, arg);
+			if (! arg_str) {
+				nih_free (str);
+				return NULL;
+			}
+
+			if (! nih_strcat (&str, parent, arg_str)) {
+				nih_free (str);
+				return NULL;
 			}
 		}
 

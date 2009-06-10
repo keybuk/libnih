@@ -37,9 +37,6 @@ string table:
 
 
 dbus:
-- accept NULL reply if there are no return arguments for any method, not
-  just property set functions
-
 - NihDBusProxy should have an auto_start member, when TRUE any method calls
   will automatically start the remote end if it's not running
 

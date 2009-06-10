@@ -1,26 +1,3 @@
-dbus:
-- could we do signal connection by nih_dbus_proxy_new?  If it took an
-  interfaces list, that could point to auto-generated filter functions,
-  and these would be automatically hooked up and called when the signal
-  occurs
-- binding tool needs to generate marshal functions for signals
-- what if we want both proxy and object code in one source?  is there a way
-  to just generate the arrays for both?
-
-- properties need to be handled in some way
-
-- async method calls with callback function
-- could pass NULL callback to mean no reply expected
-- need to set timeout and auto start flags somehow?
-
-- binding tool needs to support structs
-- binding tool needs to at least acknowledge variants
-
-- rather than hard-coding the names of method and signal handler functions,
-  it might be nice to have some kind of dispatch table for them.  The only
-  concern is that we'd end up looking up in the interface table to find
-  the marshaller then the dispatch table to get the handler function.
-
 error:
 - we should always push an error context before calling a handler that
   cannot return to indicate an error
@@ -57,3 +34,35 @@ allocator/slab module
 
 string table:
 - as hash, but massively optimised for tables of strings
+
+
+dbus:
+- notify function names are wrong, should be internal style
+
+- signal handler and method/property reply functions are inconsistent, one
+  has the NihDBusProxy passed and the other does not (but both have data)
+
+- set property function takes no parent, it's obvious why but it's annoying
+  to remember that - make it consistent
+
+- accept NULL reply if there are no return arguments for any method, not
+  just property set functions
+
+- NihDBusProxy should have an auto_start member, when TRUE any method calls
+  will automatically start the remote end if it's not running
+
+- structures are not defined anywhere
+- default structure naming is not exactly ideal
+  - should be possible to customise the names of the structures
+  - should be possible to customise the names of the structure members
+
+- missing tests for dict entry handling
+  - dict entry handling could be better anyway (like in a hash?)
+
+- doc strings for methods, signals, arguments, etc.
+  - annotation would be used to set them
+  - auto-generate doc strings for output functions
+
+- what if we want both proxy and object code in one source?
+  - right now, the method names would conflict
+  - arrays would need to be generated for both

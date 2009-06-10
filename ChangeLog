@@ -1,5 +1,10 @@
 2009-06-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/main.c: Generate the source and header paths earlier,
+	using an nih_local string so we don't have to free.  Make sure we
+	close the input file descriptor.  Don't put meaningless content into
+	the errors we output.
+
 	* nih-dbus-tool/main.c (mode_option): Rather than set a random enum,
 	just use TRUE/FALSE as the output and node methods do.
 	* nih-dbus-tool/tests/test_main.c (test_mode_option): Update.

@@ -44,6 +44,7 @@
 #include <nih/main.h>
 #include <nih/option.h>
 #include <nih/logging.h>
+#include <nih/error.h>
 
 #include "node.h"
 #include "parse.h"
@@ -314,10 +315,13 @@ int
 main (int   argc,
       char *argv[])
 {
-	char **args;
-	char * filename;
-	char * path = NULL;
-	Node * node;
+	char **         args;
+	char *          filename;
+	nih_local char *source_path = NULL;
+	nih_local char *header_path = NULL;
+	int             source_fd;
+	int             header_fd;
+	Node *          node;
 
 	nih_main_init (argv[0]);
 
@@ -344,6 +348,19 @@ main (int   argc,
 		exit (1);
 	}
 
+	/* Calculate output paths */
+	source_path = source_file_path (NULL, output_path, filename);
+	if (! source_path) {
+		nih_error ("%s", strerror (ENOMEM));
+		exit (1);
+	}
+
+	header_path = header_file_path (NULL, output_path, filename);
+	if (! header_path) {
+		nih_error ("%s", strerror (ENOMEM));
+		exit (1);
+	}
+
 	/* Set default prefix if not set */
 	if (! prefix)
 		prefix = "dbus";
@@ -355,42 +372,23 @@ main (int   argc,
 
 		fd = open (filename, O_RDONLY);
 		if (fd < 0) {
-			nih_error ("%s: %s: %s", filename,
-				   _("Unable to open"),
-				   strerror (errno));
+			nih_error ("%s: %s", filename, strerror (errno));
 			exit (1);
 		}
 
 		node = parse_xml (NULL, fd, filename);
 		if (! node)
 			exit (1);
+
+		if (close (fd) < 0) {
+			nih_error ("%s: %s", filename, strerror (errno));
+			exit (1);
+		}
 	} else {
 		node = parse_xml (NULL, STDIN_FILENO, "(standard input)");
 		if (! node)
 			exit (1);
 	}
-
-	/* Output source file */
-	path = source_file_path (NULL, output_path, filename);
-	if (! path) {
-		nih_error ("%s", strerror (ENOMEM));
-		exit (1);
-	}
-
-	/* FIXME */
-
-	nih_free (path);
-
-	/* Output header file */
-	path = header_file_path (NULL, output_path, filename);
-	if (! path) {
-		nih_error ("%s", strerror (ENOMEM));
-		exit (1);
-	}
-
-	/* FIXME */
-
-	nih_free (path);
 
 	return 0;
 }

@@ -1,5 +1,7 @@
 2009-06-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/main.c: Actually output the source and header files
+
 	* nih-dbus-tool/main.c: Generate the source and header paths earlier,
 	using an nih_local string so we don't have to free.  Make sure we
 	close the input file descriptor.  Don't put meaningless content into

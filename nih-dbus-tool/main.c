@@ -48,6 +48,7 @@
 
 #include "node.h"
 #include "parse.h"
+#include "output.h"
 
 
 /* Prototypes for option functions */
@@ -388,6 +389,42 @@ main (int   argc,
 		node = parse_xml (NULL, STDIN_FILENO, "(standard input)");
 		if (! node)
 			exit (1);
+	}
+
+	/* Write the output files */
+	source_fd = open (source_path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+	if (source_fd < 0) {
+		nih_error ("%s: %s", source_path, strerror (errno));
+		exit (1);
+	}
+
+	header_fd = open (header_path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+	if (header_fd < 0) {
+		nih_error ("%s: %s", header_path, strerror (errno));
+		exit (1);
+	}
+
+	if (output (source_path, source_fd, header_path, header_fd,
+		    prefix, node, object) < 0) {
+		NihError *err;
+
+		err = nih_error_get ();
+		nih_error ("%s", err->message);
+		nih_free (err);
+
+		exit (1);
+	}
+
+	if ((fsync (source_fd) < 0)
+	    || (close (source_fd) < 0)) {
+		nih_error ("%s: %s", source_path, strerror (errno));
+		exit (1);
+	}
+
+	if ((fsync (header_fd) < 0)
+	    || (close (header_fd) < 0)) {
+		nih_error ("%s: %s", header_path, strerror (errno));
+		exit (1);
 	}
 
 	return 0;

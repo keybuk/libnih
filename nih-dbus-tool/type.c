@@ -524,6 +524,75 @@ type_func_to_string (const void *parent,
 }
 
 /**
+ * type_func_to_typedef:
+ * @parent: parent object for new string,
+ * @func: function to convert.
+ *
+ * Returns a string for the given function typedef @func for use as the
+ * typedef declaration.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the returned string will also be
+ * freed.
+ *
+ * Returns: the newly allocated string or NULL if insufficient memory.
+ **/
+char *
+type_func_to_typedef (const void *parent,
+		      TypeFunc *  func)
+{
+	char *str;
+
+	nih_assert (func != NULL);
+
+	str = nih_sprintf (parent, "%s %s (", func->type, func->name);
+	if (! str)
+		return NULL;
+
+	/* If no arguments, should be just void */
+	if (NIH_LIST_EMPTY (&func->args)) {
+		if (! nih_strcat (&str, parent, "void")) {
+			nih_free (str);
+			return NULL;
+		}
+	}
+
+	/* Append the arguments */
+	NIH_LIST_FOREACH (&func->args, iter) {
+		TypeVar *arg = (TypeVar *)iter;
+
+		if (iter != func->args.next) {
+			if (! nih_strcat (&str, parent, ", ")) {
+				nih_free (str);
+				return NULL;
+			}
+		}
+
+		if (strchr (arg->type, '*')) {
+			if (! nih_strcat_sprintf (&str, parent, "%s%s",
+						  arg->type, arg->name)) {
+				nih_free (str);
+				return NULL;
+			}
+		} else {
+			if (! nih_strcat_sprintf (&str, parent, "%s %s",
+						  arg->type, arg->name)) {
+				nih_free (str);
+				return NULL;
+			}
+		}
+	}
+
+	if (! nih_strcat (&str, parent, ");\n")) {
+		nih_free (str);
+		return NULL;
+	}
+
+	return str;
+}
+
+/**
  * type_func_layout:
  * @parent: parent object for new string,
  * @funcs: list of functions to convert.

@@ -1033,6 +1033,241 @@ test_func_to_string (void)
 }
 
 void
+test_func_to_typedef (void)
+{
+	TypeFunc *    func = NULL;
+	TypeVar *     arg = NULL;
+	NihListEntry *attrib = NULL;
+	char *        str;
+
+	TEST_FUNCTION ("type_func_to_typedef");
+
+
+	/* Make sure that a typedef declaration with a set of non-pointer
+	 * arguments is formatted correctly.
+	 */
+	TEST_FEATURE ("with non-pointer arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			func = type_func_new (NULL, "typedef int",
+					      "(*TypedefName)");
+
+			arg = type_var_new (func, "int", "foo");
+			nih_list_add (&func->args, &arg->entry);;
+
+			arg = type_var_new (func, "struct bar", "bar");
+			nih_list_add (&func->args, &arg->entry);
+
+			arg = type_var_new (func, "uint32_t", "baz");
+			nih_list_add (&func->args, &arg->entry);
+		}
+
+		str = type_func_to_typedef (NULL, func);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (func);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("typedef int (*TypedefName) ("
+				   "int foo, struct bar bar, uint32_t baz);\n"));
+
+		nih_free (str);
+		nih_free (func);
+	}
+
+
+	/* Make sure that a typedef declaration with a set of pointer
+	 * arguments is formatted correctly.
+	 */
+	TEST_FEATURE ("with pointer arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			func = type_func_new (NULL, "typedef int",
+					      "(*TypedefName)");
+
+			arg = type_var_new (func, "int *", "foo");
+			nih_list_add (&func->args, &arg->entry);;
+
+			arg = type_var_new (func, "struct bar *", "bar");
+			nih_list_add (&func->args, &arg->entry);
+
+			arg = type_var_new (func, "uint32_t *", "baz");
+			nih_list_add (&func->args, &arg->entry);
+		}
+
+		str = type_func_to_typedef (NULL, func);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (func);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("typedef int (*TypedefName) ("
+				   "int *foo, struct bar *bar, "
+				   "uint32_t *baz);\n"));
+
+		nih_free (str);
+		nih_free (func);
+	}
+
+
+	/* Make sure that a typedef declaration with a mixed set of
+	 * non-pointer and pointer arguments is formatted correctly.
+	 */
+	TEST_FEATURE ("with mixed arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			func = type_func_new (NULL, "typedef int",
+					      "(*TypedefName)");
+
+			arg = type_var_new (func, "int", "foo");
+			nih_list_add (&func->args, &arg->entry);;
+
+			arg = type_var_new (func, "struct bar *", "bar");
+			nih_list_add (&func->args, &arg->entry);
+
+			arg = type_var_new (func, "uint32_t *", "baz");
+			nih_list_add (&func->args, &arg->entry);
+		}
+
+		str = type_func_to_typedef (NULL, func);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (func);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("typedef int (*TypedefName) ("
+				   "int foo, struct bar *bar, "
+				   "uint32_t *baz);\n"));
+
+		nih_free (str);
+		nih_free (func);
+	}
+
+
+	/* Check that a typedef declaration with a single non-pointer
+	 * argument is formatted correctly.
+	 */
+	TEST_FEATURE ("with single non-pointer argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			func = type_func_new (NULL, "typedef int",
+					      "(*TypedefName)");
+
+			arg = type_var_new (func, "int", "foo");
+			nih_list_add (&func->args, &arg->entry);;
+		}
+
+		str = type_func_to_typedef (NULL, func);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (func);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "typedef int (*TypedefName) (int foo);\n");
+
+		nih_free (str);
+		nih_free (func);
+	}
+
+
+	/* Check that a typedef declaration with a single pointer
+	 * argument is formatted correctly.
+	 */
+	TEST_FEATURE ("with single pointer argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			func = type_func_new (NULL, "typedef int",
+					      "(*TypedefName)");
+
+			arg = type_var_new (func, "int *", "foo");
+			nih_list_add (&func->args, &arg->entry);;
+		}
+
+		str = type_func_to_typedef (NULL, func);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (func);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "typedef int (*TypedefName) (int *foo);\n");
+
+		nih_free (str);
+		nih_free (func);
+	}
+
+
+	/* Check that a typedef declaration with no arguments is
+	 * formatted correctly.
+	 */
+	TEST_FEATURE ("with no arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			func = type_func_new (NULL, "typedef int",
+					      "(*TypedefName)");
+		}
+
+		str = type_func_to_typedef (NULL, func);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (func);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "typedef int (*TypedefName) (void);\n");
+
+		nih_free (str);
+		nih_free (func);
+	}
+
+
+	/* Check that function attributes have no bearing on the typedef
+	 * declaration since they only appear in the prototype.
+	 */
+	TEST_FEATURE ("with attributes");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			func = type_func_new (NULL, "typedef int",
+					      "(*TypedefName)");
+
+			attrib = nih_list_entry_new (func);
+			attrib->str = nih_strdup (attrib, "warn_unused_result");
+			nih_list_add (&func->attribs, &attrib->entry);
+		}
+
+		str = type_func_to_typedef (NULL, func);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (func);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "typedef int (*TypedefName) (void);\n");
+
+		nih_free (str);
+		nih_free (func);
+	}
+}
+
+void
 test_func_layout (void)
 {
 	NihList       funcs;
@@ -1963,6 +2198,7 @@ main (int   argc,
 
 	test_func_new ();
 	test_func_to_string ();
+	test_func_to_typedef ();
 	test_func_layout ();
 
 	test_to_const ();

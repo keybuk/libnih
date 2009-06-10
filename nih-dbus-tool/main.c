@@ -49,19 +49,6 @@
 #include "parse.h"
 
 
-/**
- * OutputMode:
- *
- * The tool can either generate code for a renite object with C access
- * methods (OUTPUT_PROXY) or a local object implementation wrapping
- * existing C functions (OUTPUT_OBJECT).
- **/
-typedef enum output_mode {
-	OUTPUT_PROXY,
-	OUTPUT_OBJECT
-} OutputMode;
-
-
 /* Prototypes for option functions */
 int mode_option (NihOption *option, const char *arg);
 
@@ -80,8 +67,7 @@ char *header_file_path (const void *parent, const char *output_path,
  * @arg: argument to parse.
  *
  * This option setter parses the output mode argument @arg and sets
- * the value member of @option, which must be a pointer to an OutputMode
- * enum.
+ * the value member of @option, which must be a pointer to an integer.
  *
  * The arg_name member of @option must not be NULL.
  **/
@@ -89,18 +75,18 @@ int
 mode_option (NihOption * option,
 	     const char *arg)
 {
-	OutputMode *value;
+	int *value;
 
 	nih_assert (option != NULL);
 	nih_assert (option->value != NULL);
 	nih_assert (arg != NULL);
 
-	value = (OutputMode *)option->value;
+	value = (int *)option->value;
 
 	if (! strcmp (arg, "proxy")) {
-		*value = OUTPUT_PROXY;
+		*value = FALSE;
 	} else if (! strcmp (arg, "object")) {
-		*value = OUTPUT_OBJECT;
+		*value = TRUE;
 	} else {
 		fprintf (stderr, _("%s: illegal output mode: %s\n"),
 			 program_name, arg);
@@ -285,13 +271,12 @@ header_file_path (const void *parent,
 
 #ifndef TEST
 /**
- * output_mode:
+ * object:
  *
- * Output mode; set to OUTPUT_PROXY to output code for a remote object with
- * A access methods or OUTPUT_OBJECT for a local object implementation
- * wrapping existing C functions.
+ * Set to TRUE to output code for a remote object with C access methods or
+ * FALSE for a local object implementation wrapping existing C functions.
  **/
-static OutputMode output_mode = OUTPUT_PROXY;
+static int object = FALSE;
 
 /**
  * prefix:
@@ -315,7 +300,7 @@ static const char *output_path = NULL;
  **/
 static NihOption options[] = {
 	{ 0,   "mode", N_("output mode: object, or proxy [default: proxy]"),
-	  NULL, "MODE", &output_mode, mode_option },
+	  NULL, "MODE", &object, mode_option },
 	{ 0,   "prefix", N_("prefix for C functions [default: dbus]"),
 	  NULL, "PREFIX", &prefix, NULL },
 	{ 'o', "output", N_("write C source to FILENAME, header alongside"),

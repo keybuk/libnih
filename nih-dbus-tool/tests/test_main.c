@@ -34,20 +34,15 @@
 #include <nih/option.h>
 
 
-typedef enum output_mode {
-	OUTPUT_OBJECT,
-	OUTPUT_PROXY
-} OutputMode;
-
 extern int mode_option (NihOption *option, const char *arg);
 
 void
 test_mode_option (void)
 {
-	NihOption  opt;
-	OutputMode value;
-	FILE *     output;
-	int        ret;
+	NihOption opt;
+	int       value;
+	FILE *    output;
+	int       ret;
 
 	TEST_FUNCTION ("mode_option");
 	opt.value = &value;
@@ -56,30 +51,30 @@ test_mode_option (void)
 
 
 	/* Check that the mode_option function takes the argument as a
-	 * string and sets the value to OUTPUT_OBJECT if it is "object".
+	 * string and sets the value to TRUE if it is "object".
 	 */
 	TEST_FEATURE ("with object");
 	TEST_ALLOC_FAIL {
-		value = (OutputMode)-1;
+		value = -1;
 
 		ret = mode_option (&opt, "object");
 
 		TEST_EQ (ret, 0);
-		TEST_EQ (value, OUTPUT_OBJECT);
+		TEST_EQ (value, TRUE);
 	}
 
 
 	/* Check that the mode_option function takes the argument as a
-	 * string and sets the value to OUTPUT_PROXY if it is "proxy".
+	 * string and sets the value to FALSE if it is "proxy".
 	 */
 	TEST_FEATURE ("with proxy");
 	TEST_ALLOC_FAIL {
-		value = (OutputMode)-1;
+		value = -1;
 
 		ret = mode_option (&opt, "proxy");
 
 		TEST_EQ (ret, 0);
-		TEST_EQ (value, OUTPUT_PROXY);
+		TEST_EQ (value, FALSE);
 	}
 
 
@@ -89,7 +84,7 @@ test_mode_option (void)
 	 */
 	TEST_FEATURE ("with unknown argument");
 	TEST_ALLOC_FAIL {
-		value = (OutputMode)-1;
+		value = -1;
 
 		TEST_DIVERT_STDERR (output) {
 			ret = mode_option (&opt, "frodo");

@@ -1,5 +1,9 @@
 2009-06-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/main.c (mode_option): Rather than set a random enum,
+	just use TRUE/FALSE as the output and node methods do.
+	* nih-dbus-tool/tests/test_main.c (test_mode_option): Update.
+
 	* nih-dbus-tool/man/nih-dbus-tool.1: Make a start on a man page for
 	the tool.
 

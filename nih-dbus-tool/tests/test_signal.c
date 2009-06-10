@@ -1463,21 +1463,17 @@ test_object_function (void)
 
 
 static int my_signal_handler_called = FALSE;
-static NihDBusProxy *last_proxy = NULL;
 
 static void
 my_signal_handler (void *          data,
-		   NihDBusProxy *  proxy,
 		   NihDBusMessage *message,
 		   const char *    msg)
 {
 	my_signal_handler_called++;
 	TEST_EQ_P (data, &my_signal_handler_called);
 
-	last_proxy = proxy;
-
 	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
-	TEST_EQ_P (message->connection, proxy->connection);
+	TEST_NE_P (message->connection, NULL);
 	TEST_NE_P (message->message, NULL);
 
 	TEST_ALLOC_PARENT (msg, message);
@@ -1606,7 +1602,7 @@ test_proxy_function (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\t((MySignalHandler)proxied->handler) (proxied->proxy->data, proxied->proxy, message, msg);\n"
+				   "\t((MySignalHandler)proxied->handler) (proxied->proxy->data, message, msg);\n"
 				   "\tnih_error_pop_context ();\n"
 				   "\tnih_free (message);\n"
 				   "\n"
@@ -1682,17 +1678,6 @@ test_proxy_function (void)
 		TEST_EQ_STR (arg->type, "void *");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "data");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusProxy *");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "proxy");
 		TEST_ALLOC_PARENT (arg->name, arg);
 		nih_free (arg);
 
@@ -1800,7 +1785,7 @@ test_proxy_function (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\t((MySignalHandler)proxied->handler) (proxied->proxy->data, proxied->proxy, message);\n"
+				   "\t((MySignalHandler)proxied->handler) (proxied->proxy->data, message);\n"
 				   "\tnih_error_pop_context ();\n"
 				   "\tnih_free (message);\n"
 				   "\n"
@@ -1884,17 +1869,6 @@ test_proxy_function (void)
 		arg = (TypeVar *)func->args.next;
 		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusProxy *");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "proxy");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
 		TEST_EQ_STR (arg->type, "NihDBusMessage *");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "message");
@@ -1946,12 +1920,10 @@ test_proxy_function (void)
 		dbus_message_unref (sig);
 
 		my_signal_handler_called = FALSE;
-		last_proxy = NULL;
 
 		TEST_DBUS_DISPATCH (client_conn);
 
 		TEST_TRUE (my_signal_handler_called);
-		TEST_EQ_P (last_proxy, proxy);
 
 		TEST_ALLOC_SAFE {
 			nih_free (proxy);
@@ -2053,7 +2025,7 @@ test_proxy_function (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\t((MySignalHandler)proxied->handler) (proxied->proxy->data, proxied->proxy, message, msg);\n"
+				   "\t((MySignalHandler)proxied->handler) (proxied->proxy->data, message, msg);\n"
 				   "\tnih_error_pop_context ();\n"
 				   "\tnih_free (message);\n"
 				   "\n"
@@ -2129,17 +2101,6 @@ test_proxy_function (void)
 		TEST_EQ_STR (arg->type, "void *");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "data");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusProxy *");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "proxy");
 		TEST_ALLOC_PARENT (arg->name, arg);
 		nih_free (arg);
 

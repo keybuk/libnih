@@ -34,8 +34,8 @@
 #include <nih-dbus/dbus_object.h>
 
 
-typedef void (*MySignalHandler) (void *data, NihDBusProxy *proxy,
-				 NihDBusMessage *message, const char *msg);
+typedef void (*MySignalHandler) (void *data, NihDBusMessage *message,
+				 const char *msg);
 
 
 NIH_BEGIN_EXTERN

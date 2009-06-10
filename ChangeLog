@@ -1,5 +1,18 @@
 2009-06-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/signal.c (signal_proxy_function): Don't pass the
+	proxy to the signal handler function; we don't pass it for method
+	or property reply handlers because we don't have it, it's inconsitent
+	to pass it here as well - we can always make a new proxy for the origin
+	after all.
+	* nih-dbus-tool/tests/signal_code.h: Update typedef
+	* nih-dbus-tool/tests/test_signal.c (test_proxy_function): Update
+	the tests
+	* nih-dbus-tool/tests/test_node.c (test_proxy_functions): Update
+	expected output
+	* nih-dbus-tool/tests/test_output.c (test_output): Update expected
+	output.
+
 	* nih-dbus-tool/method.c (method_proxy_notify_function): Symbol
 	name for a notify function should be implementation, it's static
 	(method_proxy_function): Call with the implementation name

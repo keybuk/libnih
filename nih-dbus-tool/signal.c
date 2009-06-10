@@ -827,7 +827,7 @@ signal_proxy_function  (const void *parent,
 	if (! nih_strcat_sprintf (&call_block, NULL,
 				  "/* Call the handler function */\n"
 				  "nih_error_push_context ();\n"
-				  "((%s)proxied->handler) (proxied->proxy->data, proxied->proxy, message",
+				  "((%s)proxied->handler) (proxied->proxy->data, message",
 				  handler_type))
 		return NULL;
 
@@ -853,12 +853,6 @@ signal_proxy_function  (const void *parent,
 
 
 	arg = type_var_new (handler_func, "void *", "data");
-	if (! arg)
-		return NULL;
-
-	nih_list_add (&handler_func->args, &arg->entry);
-
-	arg = type_var_new (handler_func, "NihDBusProxy *", "proxy");
 	if (! arg)
 		return NULL;
 

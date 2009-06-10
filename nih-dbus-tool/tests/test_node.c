@@ -9268,7 +9268,7 @@ test_proxy_functions (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\t((MyTestBounceHandler)proxied->handler) (proxied->proxy->data, proxied->proxy, message, height, velocity);\n"
+				   "\t((MyTestBounceHandler)proxied->handler) (proxied->proxy->data, message, height, velocity);\n"
 				   "\tnih_error_pop_context ();\n"
 				   "\tnih_free (message);\n"
 				   "\n"
@@ -9315,7 +9315,7 @@ test_proxy_functions (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\t((MyTestExplodedHandler)proxied->handler) (proxied->proxy->data, proxied->proxy, message);\n"
+				   "\t((MyTestExplodedHandler)proxied->handler) (proxied->proxy->data, message);\n"
 				   "\tnih_error_pop_context ();\n"
 				   "\tnih_free (message);\n"
 				   "\n"
@@ -10585,7 +10585,7 @@ test_proxy_functions (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\t((MyFooNewResultHandler)proxied->handler) (proxied->proxy->data, proxied->proxy, message);\n"
+				   "\t((MyFooNewResultHandler)proxied->handler) (proxied->proxy->data, message);\n"
 				   "\tnih_error_pop_context ();\n"
 				   "\tnih_free (message);\n"
 				   "\n"
@@ -11385,17 +11385,6 @@ test_proxy_functions (void)
 		arg = (TypeVar *)func->args.next;
 		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusProxy *");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "proxy");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
 		TEST_EQ_STR (arg->type, "NihDBusMessage *");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "message");
@@ -11498,17 +11487,6 @@ test_proxy_functions (void)
 		TEST_EQ_STR (arg->type, "void *");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "data");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusProxy *");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "proxy");
 		TEST_ALLOC_PARENT (arg->name, arg);
 		nih_free (arg);
 
@@ -12675,17 +12653,6 @@ test_proxy_functions (void)
 		arg = (TypeVar *)func->args.next;
 		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusProxy *");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "proxy");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
 		TEST_EQ_STR (arg->type, "NihDBusMessage *");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "message");
@@ -12841,7 +12808,7 @@ test_proxy_functions (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\t((MyTestBounceHandler)proxied->handler) (proxied->proxy->data, proxied->proxy, message, height, velocity);\n"
+				   "\t((MyTestBounceHandler)proxied->handler) (proxied->proxy->data, message, height, velocity);\n"
 				   "\tnih_error_pop_context ();\n"
 				   "\tnih_free (message);\n"
 				   "\n"
@@ -12888,7 +12855,7 @@ test_proxy_functions (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\t((MyTestExplodedHandler)proxied->handler) (proxied->proxy->data, proxied->proxy, message);\n"
+				   "\t((MyTestExplodedHandler)proxied->handler) (proxied->proxy->data, message);\n"
 				   "\tnih_error_pop_context ();\n"
 				   "\tnih_free (message);\n"
 				   "\n"
@@ -13971,7 +13938,7 @@ test_proxy_functions (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\t((MyFooNewResultHandler)proxied->handler) (proxied->proxy->data, proxied->proxy, message);\n"
+				   "\t((MyFooNewResultHandler)proxied->handler) (proxied->proxy->data, message);\n"
 				   "\tnih_error_pop_context ();\n"
 				   "\tnih_free (message);\n"
 				   "\n"
@@ -14047,17 +14014,6 @@ test_proxy_functions (void)
 		TEST_EQ_STR (arg->type, "void *");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "data");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusProxy *");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "proxy");
 		TEST_ALLOC_PARENT (arg->name, arg);
 		nih_free (arg);
 
@@ -14168,17 +14124,6 @@ test_proxy_functions (void)
 		TEST_EQ_STR (arg->type, "void *");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "data");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusProxy *");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "proxy");
 		TEST_ALLOC_PARENT (arg->name, arg);
 		nih_free (arg);
 
@@ -15135,17 +15080,6 @@ test_proxy_functions (void)
 		TEST_EQ_STR (arg->type, "void *");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "data");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusProxy *");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "proxy");
 		TEST_ALLOC_PARENT (arg->name, arg);
 		nih_free (arg);
 
@@ -19795,7 +19729,7 @@ test_proxy_functions (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\t((MyTestBounceHandler)proxied->handler) (proxied->proxy->data, proxied->proxy, message, height, velocity);\n"
+				   "\t((MyTestBounceHandler)proxied->handler) (proxied->proxy->data, message, height, velocity);\n"
 				   "\tnih_error_pop_context ();\n"
 				   "\tnih_free (message);\n"
 				   "\n"
@@ -19842,7 +19776,7 @@ test_proxy_functions (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\t((MyTestExplodedHandler)proxied->handler) (proxied->proxy->data, proxied->proxy, message);\n"
+				   "\t((MyTestExplodedHandler)proxied->handler) (proxied->proxy->data, message);\n"
 				   "\tnih_error_pop_context ();\n"
 				   "\tnih_free (message);\n"
 				   "\n"
@@ -20076,7 +20010,7 @@ test_proxy_functions (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\t((MyFooNewResultHandler)proxied->handler) (proxied->proxy->data, proxied->proxy, message);\n"
+				   "\t((MyFooNewResultHandler)proxied->handler) (proxied->proxy->data, message);\n"
 				   "\tnih_error_pop_context ();\n"
 				   "\tnih_free (message);\n"
 				   "\n"
@@ -20876,17 +20810,6 @@ test_proxy_functions (void)
 		arg = (TypeVar *)func->args.next;
 		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusProxy *");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "proxy");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
 		TEST_EQ_STR (arg->type, "NihDBusMessage *");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "message");
@@ -20989,17 +20912,6 @@ test_proxy_functions (void)
 		TEST_EQ_STR (arg->type, "void *");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "data");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusProxy *");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "proxy");
 		TEST_ALLOC_PARENT (arg->name, arg);
 		nih_free (arg);
 
@@ -21290,17 +21202,6 @@ test_proxy_functions (void)
 		TEST_EQ_STR (arg->type, "void *");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "data");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusProxy *");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "proxy");
 		TEST_ALLOC_PARENT (arg->name, arg);
 		nih_free (arg);
 

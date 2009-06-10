@@ -1053,7 +1053,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\n");
 		TEST_FILE_EQ (source, "\t/* Call the handler function */\n");
 		TEST_FILE_EQ (source, "\tnih_error_push_context ();\n");
-		TEST_FILE_EQ (source, "\t((MyTestBounceHandler)proxied->handler) (proxied->proxy->data, proxied->proxy, message, height, velocity);\n");
+		TEST_FILE_EQ (source, "\t((MyTestBounceHandler)proxied->handler) (proxied->proxy->data, message, height, velocity);\n");
 		TEST_FILE_EQ (source, "\tnih_error_pop_context ();\n");
 		TEST_FILE_EQ (source, "\tnih_free (message);\n");
 		TEST_FILE_EQ (source, "\n");
@@ -1100,7 +1100,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\n");
 		TEST_FILE_EQ (source, "\t/* Call the handler function */\n");
 		TEST_FILE_EQ (source, "\tnih_error_push_context ();\n");
-		TEST_FILE_EQ (source, "\t((MyTestExplodedHandler)proxied->handler) (proxied->proxy->data, proxied->proxy, message);\n");
+		TEST_FILE_EQ (source, "\t((MyTestExplodedHandler)proxied->handler) (proxied->proxy->data, message);\n");
 		TEST_FILE_EQ (source, "\tnih_error_pop_context ();\n");
 		TEST_FILE_EQ (source, "\tnih_free (message);\n");
 		TEST_FILE_EQ (source, "\n");
@@ -2370,7 +2370,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\n");
 		TEST_FILE_EQ (source, "\t/* Call the handler function */\n");
 		TEST_FILE_EQ (source, "\tnih_error_push_context ();\n");
-		TEST_FILE_EQ (source, "\t((MyFooNewResultHandler)proxied->handler) (proxied->proxy->data, proxied->proxy, message);\n");
+		TEST_FILE_EQ (source, "\t((MyFooNewResultHandler)proxied->handler) (proxied->proxy->data, message);\n");
 		TEST_FILE_EQ (source, "\tnih_error_pop_context ();\n");
 		TEST_FILE_EQ (source, "\tnih_free (message);\n");
 		TEST_FILE_EQ (source, "\n");
@@ -2406,9 +2406,9 @@ test_output (void)
 		TEST_FILE_EQ (header, "\n");
 		TEST_FILE_EQ (header, "typedef void (*MyTestIsValidAddressReply) (void *data, NihDBusMessage *message);\n");
 		TEST_FILE_EQ (header, "\n");
-		TEST_FILE_EQ (header, "typedef void (*MyTestBounceHandler) (void *data, NihDBusProxy *proxy, NihDBusMessage *message, uint32_t height, int32_t velocity);\n");
+		TEST_FILE_EQ (header, "typedef void (*MyTestBounceHandler) (void *data, NihDBusMessage *message, uint32_t height, int32_t velocity);\n");
 		TEST_FILE_EQ (header, "\n");
-		TEST_FILE_EQ (header, "typedef void (*MyTestExplodedHandler) (void *data, NihDBusProxy *proxy, NihDBusMessage *message);\n");
+		TEST_FILE_EQ (header, "typedef void (*MyTestExplodedHandler) (void *data, NihDBusMessage *message);\n");
 		TEST_FILE_EQ (header, "\n");
 		TEST_FILE_EQ (header, "typedef void (*MyTestGetColourReply) (void *data, NihDBusMessage *message, const char *value);\n");
 		TEST_FILE_EQ (header, "\n");
@@ -2420,7 +2420,7 @@ test_output (void)
 		TEST_FILE_EQ (header, "\n");
 		TEST_FILE_EQ (header, "typedef void (*MyFooBingReply) (void *data, NihDBusMessage *message);\n");
 		TEST_FILE_EQ (header, "\n");
-		TEST_FILE_EQ (header, "typedef void (*MyFooNewResultHandler) (void *data, NihDBusProxy *proxy, NihDBusMessage *message);\n");
+		TEST_FILE_EQ (header, "typedef void (*MyFooNewResultHandler) (void *data, NihDBusMessage *message);\n");
 		TEST_FILE_EQ (header, "\n");
 		TEST_FILE_EQ (header, "\n");
 		TEST_FILE_EQ (header, "NIH_BEGIN_EXTERN\n");

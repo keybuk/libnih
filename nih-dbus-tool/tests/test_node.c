@@ -8600,15 +8600,15 @@ test_proxy_functions (void)
 				   "\n"
 				   "\tdbus_message_unref (method_call);\n"
 				   "\n"
-				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_test_poke_notify,\n"
+				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Test_Poke_notify,\n"
 				   "\t                                        pending_data, (DBusFreeFunction)nih_discard));\n"
 				   "\n"
 				   "\treturn pending_call;\n"
 				   "}\n"
 				   "\n"
 				   "static void\n"
-				   "my_test_poke_notify (DBusPendingCall *   pending_call,\n"
-				   "                     NihDBusPendingData *pending_data)\n"
+				   "my_com_netsplit_Nih_Test_Poke_notify (DBusPendingCall *   pending_call,\n"
+				   "                                      NihDBusPendingData *pending_data)\n"
 				   "{\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tDBusMessageIter iter;\n"
@@ -8809,15 +8809,15 @@ test_proxy_functions (void)
 				   "\n"
 				   "\tdbus_message_unref (method_call);\n"
 				   "\n"
-				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_test_peek_notify,\n"
+				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Test_Peek_notify,\n"
 				   "\t                                        pending_data, (DBusFreeFunction)nih_discard));\n"
 				   "\n"
 				   "\treturn pending_call;\n"
 				   "}\n"
 				   "\n"
 				   "static void\n"
-				   "my_test_peek_notify (DBusPendingCall *   pending_call,\n"
-				   "                     NihDBusPendingData *pending_data)\n"
+				   "my_com_netsplit_Nih_Test_Peek_notify (DBusPendingCall *   pending_call,\n"
+				   "                                      NihDBusPendingData *pending_data)\n"
 				   "{\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tDBusMessageIter iter;\n"
@@ -9066,15 +9066,15 @@ test_proxy_functions (void)
 				   "\n"
 				   "\tdbus_message_unref (method_call);\n"
 				   "\n"
-				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_test_is_valid_address_notify,\n"
+				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Test_IsValidAddress_notify,\n"
 				   "\t                                        pending_data, (DBusFreeFunction)nih_discard));\n"
 				   "\n"
 				   "\treturn pending_call;\n"
 				   "}\n"
 				   "\n"
 				   "static void\n"
-				   "my_test_is_valid_address_notify (DBusPendingCall *   pending_call,\n"
-				   "                                 NihDBusPendingData *pending_data)\n"
+				   "my_com_netsplit_Nih_Test_IsValidAddress_notify (DBusPendingCall *   pending_call,\n"
+				   "                                                NihDBusPendingData *pending_data)\n"
 				   "{\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tDBusMessageIter iter;\n"
@@ -10412,15 +10412,15 @@ test_proxy_functions (void)
 				   "\n"
 				   "\tdbus_message_unref (method_call);\n"
 				   "\n"
-				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_foo_bing_notify,\n"
+				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Foo_Bing_notify,\n"
 				   "\t                                        pending_data, (DBusFreeFunction)nih_discard));\n"
 				   "\n"
 				   "\treturn pending_call;\n"
 				   "}\n"
 				   "\n"
 				   "static void\n"
-				   "my_foo_bing_notify (DBusPendingCall *   pending_call,\n"
-				   "                    NihDBusPendingData *pending_data)\n"
+				   "my_com_netsplit_Nih_Foo_Bing_notify (DBusPendingCall *   pending_call,\n"
+				   "                                     NihDBusPendingData *pending_data)\n"
 				   "{\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tDBusMessageIter iter;\n"
@@ -10701,7 +10701,7 @@ test_proxy_functions (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "static void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_test_poke_notify");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Poke_notify");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -10936,7 +10936,7 @@ test_proxy_functions (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "static void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_test_peek_notify");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Peek_notify");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -11182,7 +11182,7 @@ test_proxy_functions (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "static void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_test_is_valid_address_notify");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_IsValidAddress_notify");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -12483,7 +12483,7 @@ test_proxy_functions (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "static void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_foo_bing_notify");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Foo_Bing_notify");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -15335,15 +15335,15 @@ test_proxy_functions (void)
 				   "\n"
 				   "\tdbus_message_unref (method_call);\n"
 				   "\n"
-				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_test_poke_notify,\n"
+				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Test_Poke_notify,\n"
 				   "\t                                        pending_data, (DBusFreeFunction)nih_discard));\n"
 				   "\n"
 				   "\treturn pending_call;\n"
 				   "}\n"
 				   "\n"
 				   "static void\n"
-				   "my_test_poke_notify (DBusPendingCall *   pending_call,\n"
-				   "                     NihDBusPendingData *pending_data)\n"
+				   "my_com_netsplit_Nih_Test_Poke_notify (DBusPendingCall *   pending_call,\n"
+				   "                                      NihDBusPendingData *pending_data)\n"
 				   "{\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tDBusMessageIter iter;\n"
@@ -15544,15 +15544,15 @@ test_proxy_functions (void)
 				   "\n"
 				   "\tdbus_message_unref (method_call);\n"
 				   "\n"
-				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_test_peek_notify,\n"
+				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Test_Peek_notify,\n"
 				   "\t                                        pending_data, (DBusFreeFunction)nih_discard));\n"
 				   "\n"
 				   "\treturn pending_call;\n"
 				   "}\n"
 				   "\n"
 				   "static void\n"
-				   "my_test_peek_notify (DBusPendingCall *   pending_call,\n"
-				   "                     NihDBusPendingData *pending_data)\n"
+				   "my_com_netsplit_Nih_Test_Peek_notify (DBusPendingCall *   pending_call,\n"
+				   "                                      NihDBusPendingData *pending_data)\n"
 				   "{\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tDBusMessageIter iter;\n"
@@ -15801,15 +15801,15 @@ test_proxy_functions (void)
 				   "\n"
 				   "\tdbus_message_unref (method_call);\n"
 				   "\n"
-				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_test_is_valid_address_notify,\n"
+				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Test_IsValidAddress_notify,\n"
 				   "\t                                        pending_data, (DBusFreeFunction)nih_discard));\n"
 				   "\n"
 				   "\treturn pending_call;\n"
 				   "}\n"
 				   "\n"
 				   "static void\n"
-				   "my_test_is_valid_address_notify (DBusPendingCall *   pending_call,\n"
-				   "                                 NihDBusPendingData *pending_data)\n"
+				   "my_com_netsplit_Nih_Test_IsValidAddress_notify (DBusPendingCall *   pending_call,\n"
+				   "                                                NihDBusPendingData *pending_data)\n"
 				   "{\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tDBusMessageIter iter;\n"
@@ -17031,15 +17031,15 @@ test_proxy_functions (void)
 				   "\n"
 				   "\tdbus_message_unref (method_call);\n"
 				   "\n"
-				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_foo_bing_notify,\n"
+				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Foo_Bing_notify,\n"
 				   "\t                                        pending_data, (DBusFreeFunction)nih_discard));\n"
 				   "\n"
 				   "\treturn pending_call;\n"
 				   "}\n"
 				   "\n"
 				   "static void\n"
-				   "my_foo_bing_notify (DBusPendingCall *   pending_call,\n"
-				   "                    NihDBusPendingData *pending_data)\n"
+				   "my_com_netsplit_Nih_Foo_Bing_notify (DBusPendingCall *   pending_call,\n"
+				   "                                     NihDBusPendingData *pending_data)\n"
 				   "{\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tDBusMessageIter iter;\n"
@@ -17273,7 +17273,7 @@ test_proxy_functions (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "static void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_test_poke_notify");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Poke_notify");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -17508,7 +17508,7 @@ test_proxy_functions (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "static void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_test_peek_notify");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Peek_notify");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -17754,7 +17754,7 @@ test_proxy_functions (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "static void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_test_is_valid_address_notify");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_IsValidAddress_notify");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -18835,7 +18835,7 @@ test_proxy_functions (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "static void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_foo_bing_notify");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Foo_Bing_notify");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -19127,15 +19127,15 @@ test_proxy_functions (void)
 				   "\n"
 				   "\tdbus_message_unref (method_call);\n"
 				   "\n"
-				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_test_poke_notify,\n"
+				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Test_Poke_notify,\n"
 				   "\t                                        pending_data, (DBusFreeFunction)nih_discard));\n"
 				   "\n"
 				   "\treturn pending_call;\n"
 				   "}\n"
 				   "\n"
 				   "static void\n"
-				   "my_test_poke_notify (DBusPendingCall *   pending_call,\n"
-				   "                     NihDBusPendingData *pending_data)\n"
+				   "my_com_netsplit_Nih_Test_Poke_notify (DBusPendingCall *   pending_call,\n"
+				   "                                      NihDBusPendingData *pending_data)\n"
 				   "{\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tDBusMessageIter iter;\n"
@@ -19336,15 +19336,15 @@ test_proxy_functions (void)
 				   "\n"
 				   "\tdbus_message_unref (method_call);\n"
 				   "\n"
-				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_test_peek_notify,\n"
+				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Test_Peek_notify,\n"
 				   "\t                                        pending_data, (DBusFreeFunction)nih_discard));\n"
 				   "\n"
 				   "\treturn pending_call;\n"
 				   "}\n"
 				   "\n"
 				   "static void\n"
-				   "my_test_peek_notify (DBusPendingCall *   pending_call,\n"
-				   "                     NihDBusPendingData *pending_data)\n"
+				   "my_com_netsplit_Nih_Test_Peek_notify (DBusPendingCall *   pending_call,\n"
+				   "                                      NihDBusPendingData *pending_data)\n"
 				   "{\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tDBusMessageIter iter;\n"
@@ -19593,15 +19593,15 @@ test_proxy_functions (void)
 				   "\n"
 				   "\tdbus_message_unref (method_call);\n"
 				   "\n"
-				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_test_is_valid_address_notify,\n"
+				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Test_IsValidAddress_notify,\n"
 				   "\t                                        pending_data, (DBusFreeFunction)nih_discard));\n"
 				   "\n"
 				   "\treturn pending_call;\n"
 				   "}\n"
 				   "\n"
 				   "static void\n"
-				   "my_test_is_valid_address_notify (DBusPendingCall *   pending_call,\n"
-				   "                                 NihDBusPendingData *pending_data)\n"
+				   "my_com_netsplit_Nih_Test_IsValidAddress_notify (DBusPendingCall *   pending_call,\n"
+				   "                                                NihDBusPendingData *pending_data)\n"
 				   "{\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tDBusMessageIter iter;\n"
@@ -19903,15 +19903,15 @@ test_proxy_functions (void)
 				   "\n"
 				   "\tdbus_message_unref (method_call);\n"
 				   "\n"
-				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_foo_bing_notify,\n"
+				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Foo_Bing_notify,\n"
 				   "\t                                        pending_data, (DBusFreeFunction)nih_discard));\n"
 				   "\n"
 				   "\treturn pending_call;\n"
 				   "}\n"
 				   "\n"
 				   "static void\n"
-				   "my_foo_bing_notify (DBusPendingCall *   pending_call,\n"
-				   "                    NihDBusPendingData *pending_data)\n"
+				   "my_com_netsplit_Nih_Foo_Bing_notify (DBusPendingCall *   pending_call,\n"
+				   "                                     NihDBusPendingData *pending_data)\n"
 				   "{\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tDBusMessageIter iter;\n"
@@ -20192,7 +20192,7 @@ test_proxy_functions (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "static void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_test_poke_notify");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Poke_notify");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -20427,7 +20427,7 @@ test_proxy_functions (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "static void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_test_peek_notify");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Peek_notify");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -20673,7 +20673,7 @@ test_proxy_functions (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "static void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_test_is_valid_address_notify");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_IsValidAddress_notify");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
@@ -21106,7 +21106,7 @@ test_proxy_functions (void)
 		TEST_ALLOC_PARENT (func, str);
 		TEST_EQ_STR (func->type, "static void");
 		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_foo_bing_notify");
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Foo_Bing_notify");
 		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);

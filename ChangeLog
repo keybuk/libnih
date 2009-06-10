@@ -1,5 +1,20 @@
 2009-06-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_proxy_notify_function): Symbol
+	name for a notify function should be implementation, it's static
+	(method_proxy_function): Call with the implementation name
+	* nih-dbus-tool/tests/method_code.h: Update name of notify function
+	we expect to be generated
+	* nih-dbus-tool/tests/method_factory.c: Updadate the name of the
+	notify function we'll supply in the test
+	* nih-dbus-tool/tests/test_method.c (test_proxy_notify_function): 
+	Rename notify function in output and when we call it
+	(test_proxy_function): Rename notify function in output
+	* nih-dbus-tool/tests/test_node.c (test_proxy_functions): Update
+	expected output
+	* nih-dbus-tool/tests/test_output.c (test_output): Update expected
+	output
+
 	* NEWS: Update
 	* TODO: Update
 

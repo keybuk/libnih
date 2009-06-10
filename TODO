@@ -37,8 +37,6 @@ string table:
 
 
 dbus:
-- notify function names are wrong, should be internal style
-
 - signal handler and method/property reply functions are inconsistent, one
   has the NihDBusProxy passed and the other does not (but both have data)
 

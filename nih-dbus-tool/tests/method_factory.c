@@ -159,7 +159,7 @@ main (int   argc,
 	code = method_proxy_function (NULL, "my", interface, method,
 				      &prototypes);
 
-	printf ("extern void my_test_method_notify (DBusPendingCall *pending_call, "
+	printf ("extern void my_com_netsplit_Nih_Test_TestMethod_notify (DBusPendingCall *pending_call, "
 		"NihDBusPendingData *pending_data);\n");
 	printf ("\n");
 

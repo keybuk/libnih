@@ -60,8 +60,8 @@ DBusPendingCall * my_test_method        (NihDBusProxy *proxy,
 					 void *data, int timeout)
 	__attribute__ ((warn_unused_result));
 
-void              my_method_notify      (DBusPendingCall *pending_call,
-					 NihDBusPendingData *pending_data);
+void              my_com_netsplit_Nih_Test_Method_notify (DBusPendingCall *pending_call,
+							  NihDBusPendingData *pending_data);
 
 int               my_method_sync        (const void *parent,
 					 NihDBusProxy *proxy,

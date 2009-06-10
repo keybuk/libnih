@@ -1461,8 +1461,8 @@ method_proxy_function (const void *parent,
 	/* Complete the marshalling block by sending the message and
 	 * establishing the pending call.
 	 */
-	notify_name = symbol_extern (NULL, prefix, interface->symbol, NULL,
-				     method->symbol, "notify");
+	notify_name = symbol_impl (NULL, prefix, interface->name,
+				   method->name, "notify");
 	if (! notify_name)
 		return NULL;
 
@@ -1619,8 +1619,8 @@ method_proxy_notify_function (const void *parent,
 	 * since it's used internally, it's enough to mark the method
 	 * call function deprecated.
 	 */
-	name = symbol_extern (NULL, prefix, interface->symbol, NULL,
-			      method->symbol, "notify");
+	name = symbol_impl (NULL, prefix, interface->name,
+			    method->name, "notify");
 	if (! name)
 		return NULL;
 

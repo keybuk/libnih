@@ -1,5 +1,8 @@
 2009-06-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/man/nih-dbus-tool.1: Make a start on a man page for
+	the tool.
+
 	* nih-dbus-tool/output.c (output): Primary function to output C
 	source and header files for a node in either object or proxy mode.
 	(output_preamble): Support function to generate the preamble comment

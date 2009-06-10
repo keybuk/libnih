@@ -1,0 +1,76 @@
+.TH nih-dbus-tool 1 2009-04-11 libnih-dus
+.\"
+.SH NAME
+nih-dbus-tool \- D-Bus binding code generator
+.\"
+.SH SYNOPSIS
+.B nih-dbus-tool
+.RI [ OPTIONS ]...
+.RB [ \-o
+.IR FILE ]
+.RI [ XMLFILE ]
+.br
+.B nih-dbus-tool
+.RI [ OPTIONS ]...
+.B \-o
+.I FILE
+.BR \-\-system | \-\-session
+.BI \-\-dest\fR= NAME
+.I OBJECT-PATH
+.\"
+.SH DESCRIPTION
+.\"
+.SH OVERVIEW
+The D-Bus introspection format is an XML document describing the
+interfaces implemented by a particular object, including the methods
+and signals of that interface along with their arguments and the
+properties of that interface.
+
+A single document describes a single object, represented by the root
+.B <node>
+tag.  Interfaces implemented by that object are specified by
+.B <interface>
+tags within it.  Methods, signals and properties defined by the
+interface are described by
+.BR <method> ", " <signal> " and " <property>
+tags within the interface.  Arguments to methods and signals are
+defined by
+.B <arg>
+tags within them.  Names and other values are specified as attributes
+to the tag.
+
+Additional properties for external tools or software may be given in
+.B <annotation>
+tags.  These may appear within interfaces, methods, signals, properties
+and arguments.
+.B nih-dbus-tool
+makes use of many of these.
+.I Note that argument annotations are an nih-dbus-tool extension to
+.I the format.
+
+.BR nih-dbus-tool 's
+parser is reasonably liberal, to allow for future expansion of the
+D-Bus introspection format.  Any unknown tag, attribute or annotation,
+or any tag not in an expected location, will be ignored with a warning.
+However a missing root node tag, missing attributes, illegal or
+invalid format values for defined attributes or non well-formed XML
+will result in an error.
+
+Character data and comments are not considered part of description, and
+are not parsed.
+.\"
+.SH OPTIONS
+.\"
+.SH AUTHOR
+Written by Scott James Remnant
+.RB < scott@netsplit.com >
+.\"
+.SH BUGS
+Report bugs at 
+.RB < https://launchpad.net/libnih/+bugs >
+.\"
+.SH COPYRIGHT
+Copyright \(co 2009 Scott James Remnant <scott@netsplit.com>.
+.PP
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

@@ -770,7 +770,7 @@ signal_proxy_function  (const void *parent,
 		return NULL;
 
 	if (! nih_strcat (&assert_block, NULL,
-			  "nih_assert (connection == proxied->proxy->connection);\n"))
+			  "nih_assert (connection == proxied->connection);\n"))
 		return NULL;
 
 	/* The function requires a message context to act as the parent of
@@ -797,11 +797,11 @@ signal_proxy_function  (const void *parent,
 				  "if (! dbus_message_is_signal (signal, proxied->interface->name, proxied->signal->name))\n"
 				  "\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
 				  "\n"
-				  "if (! dbus_message_has_path (signal, proxied->proxy->path))\n"
+				  "if (! dbus_message_has_path (signal, proxied->path))\n"
 				  "\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
 				  "\n"
-				  "if (proxied->proxy->name)\n"
-				  "\tif (! dbus_message_has_sender (signal, proxied->proxy->name))\n"
+				  "if (proxied->name)\n"
+				  "\tif (! dbus_message_has_sender (signal, proxied->name))\n"
 				  "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
 				  "\n"
 				  "message = nih_dbus_message_new (NULL, connection, signal);\n"
@@ -827,7 +827,7 @@ signal_proxy_function  (const void *parent,
 	if (! nih_strcat_sprintf (&call_block, NULL,
 				  "/* Call the handler function */\n"
 				  "nih_error_push_context ();\n"
-				  "((%s)proxied->handler) (proxied->proxy->data, message",
+				  "((%s)proxied->handler) (proxied->data, message",
 				  handler_type))
 		return NULL;
 

@@ -1,5 +1,13 @@
 2009-06-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/signal.c (signal_proxy_function): Eliminate the
+	proxy passthrough and use proxied members directly.
+	* nih-dbus-tool/tests/test_signal.c (test_proxy_function): Update
+	expected output of tests to match.
+	* nih-dbus-tool/tests/test_node.c (test_proxy_functions): Update
+	expected output.
+	* nih-dbus-tool/tests/test_output.c (test_output): Update as well
+
 	* nih-dbus-tool/tests/test_signal.c (test_proxy_function): Pass
 	the extra arguments to nih_dbus_proxy_connect(), which means we
 	actually move the data pointer to the connect call now.

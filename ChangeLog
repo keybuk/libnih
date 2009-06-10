@@ -1,5 +1,11 @@
 2009-06-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_type.c (test_func_layout): Noticed that
+	I have no test cases for no arguments or returning void, extend the
+	existing cases.
+	* nih-dbus-tool/type.c (type_func_layout): Glad I did that - I didn't
+	cope with no arguments.
+
 	* nih-dbus-tool/type.c (type_func_to_typedef): We need to be able to
 	lay typedefs out individually, thus add this function.
 	* nih-dbus-tool/type.h: Add prototype

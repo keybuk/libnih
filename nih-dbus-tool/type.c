@@ -674,6 +674,14 @@ type_func_layout (const void *parent,
 
 		str[len] = '\0';
 
+		/* If no arguments, should be just void */
+		if (NIH_LIST_EMPTY (&func->args)) {
+			if (! nih_strcat (&str, parent, "void")) {
+				nih_free (str);
+				return NULL;
+			}
+		}
+
 		/* Append the arguments */
 		NIH_LIST_FOREACH (&func->args, iter) {
 			TypeVar *arg = (TypeVar *)iter;

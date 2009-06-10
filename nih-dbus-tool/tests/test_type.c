@@ -1274,6 +1274,7 @@ test_func_layout (void)
 	TypeFunc *    func1 = NULL;
 	TypeFunc *    func2 = NULL;
 	TypeFunc *    func3 = NULL;
+	TypeFunc *    func4 = NULL;
 	TypeVar *     arg = NULL;
 	NihListEntry *attrib = NULL;
 	char *        str;
@@ -1320,6 +1321,11 @@ test_func_layout (void)
 
 			arg = type_var_new (func3, "char *", "bar");
 			nih_list_add (&func3->args, &arg->entry);
+
+
+			func4 = type_func_new (NULL, "void",
+					       "fourth_function_name");
+			nih_list_add (&funcs, &func4->entry);
 		}
 
 		str = type_func_layout (NULL, &funcs);
@@ -1330,17 +1336,20 @@ test_func_layout (void)
 			nih_free (func1);
 			nih_free (func2);
 			nih_free (func3);
+			nih_free (func4);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("int      first_function_name  (int foo, char *bar);\n"
 				   "double   second_function_name (int foo, char *bar);\n"
-				   "uint32_t third_function_name  (int foo, char *bar);\n"));
+				   "uint32_t third_function_name  (int foo, char *bar);\n"
+				   "void     fourth_function_name (void);\n"));
 
 		nih_free (str);
 		nih_free (func1);
 		nih_free (func2);
 		nih_free (func3);
+		nih_free (func4);
 	}
 
 
@@ -1383,6 +1392,11 @@ test_func_layout (void)
 
 			arg = type_var_new (func3, "char *", "bar");
 			nih_list_add (&func3->args, &arg->entry);
+
+
+			func4 = type_func_new (NULL, "void *",
+					       "fourth_function_name");
+			nih_list_add (&funcs, &func4->entry);
 		}
 
 		str = type_func_layout (NULL, &funcs);
@@ -1393,17 +1407,20 @@ test_func_layout (void)
 			nih_free (func1);
 			nih_free (func2);
 			nih_free (func3);
+			nih_free (func4);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("int *       first_function_name  (int foo, char *bar);\n"
 				   "struct foo *second_function_name (int foo, char *bar);\n"
-				   "uint32_t *  third_function_name  (int foo, char *bar);\n"));
+				   "uint32_t *  third_function_name  (int foo, char *bar);\n"
+				   "void *      fourth_function_name (void);\n"));
 
 		nih_free (str);
 		nih_free (func1);
 		nih_free (func2);
 		nih_free (func3);
+		nih_free (func4);
 	}
 
 
@@ -1446,6 +1463,11 @@ test_func_layout (void)
 
 			arg = type_var_new (func3, "char *", "bar");
 			nih_list_add (&func3->args, &arg->entry);
+
+
+			func4 = type_func_new (NULL, "void",
+					       "fourth_function_name");
+			nih_list_add (&funcs, &func4->entry);
 		}
 
 		str = type_func_layout (NULL, &funcs);
@@ -1456,17 +1478,20 @@ test_func_layout (void)
 			nih_free (func1);
 			nih_free (func2);
 			nih_free (func3);
+			nih_free (func4);
 			continue;
 		}
 
 		TEST_EQ_STR (str, ("int *       first_function_name  (int foo, char *bar);\n"
 				   "struct foo *second_function_name (int foo, char *bar);\n"
-				   "uint32_t    third_function_name  (int foo, char *bar);\n"));
+				   "uint32_t    third_function_name  (int foo, char *bar);\n"
+				   "void        fourth_function_name (void);\n"));
 
 		nih_free (str);
 		nih_free (func1);
 		nih_free (func2);
 		nih_free (func3);
+		nih_free (func4);
 	}
 
 
@@ -1525,6 +1550,11 @@ test_func_layout (void)
 			attrib = nih_list_entry_new (func3);
 			attrib->str = nih_strdup (attrib, "deprecated");
 			nih_list_add (&func3->attribs, &attrib->entry);
+
+
+			func4 = type_func_new (NULL, "void",
+					       "fourth_function_name");
+			nih_list_add (&funcs, &func4->entry);
 		}
 
 		str = type_func_layout (NULL, &funcs);
@@ -1535,6 +1565,7 @@ test_func_layout (void)
 			nih_free (func1);
 			nih_free (func2);
 			nih_free (func3);
+			nih_free (func4);
 			continue;
 		}
 
@@ -1543,12 +1574,14 @@ test_func_layout (void)
 				   "struct foo *second_function_name (int foo, char *bar)\n"
 				   "\t__attribute__ ((warn_unused_result, malloc));\n"
 				   "uint32_t    third_function_name  (int foo, char *bar)\n"
-				   "\t__attribute__ ((deprecated));\n"));
+				   "\t__attribute__ ((deprecated));\n"
+				   "void        fourth_function_name (void);\n"));
 
 		nih_free (str);
 		nih_free (func1);
 		nih_free (func2);
 		nih_free (func3);
+		nih_free (func4);
 	}
 
 

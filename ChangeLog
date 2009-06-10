@@ -1,5 +1,7 @@
 2009-06-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/nih_dbus_tool.py: Drop the python version
+
 	* TODO: Update.
 
 	* nih-dbus-tool/main.c: Actually output the source and header files

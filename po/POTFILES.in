@@ -28,4 +28,4 @@ nih-dbus/dbus_util.c
 
 # More to test the build system than anything else
 nih-dbus-tool/tests/com.netsplit.Nih.Test_object.c
-
+nih-dbus-tool/tests/com.netsplit.Nih.Test_proxy.c

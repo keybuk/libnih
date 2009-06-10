@@ -1,3 +1,7 @@
+2009-06-10  Scott James Remnant  <scott@netsplit.com>
+
+	* POTFILES.in: Add the proxy output too.
+
 2009-01-29  Scott James Remnant  <scott@netsplit.com>
 
 	* POTFILES.in: Update for new libnih-dbus path

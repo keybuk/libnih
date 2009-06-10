@@ -99,8 +99,9 @@ test_type_LDADD = \
 	$(DBUS_LIBS)
 
 test_marshal_SOURCES = \
-	tests/test_marshal.c \
-	tests/marshal_code.c tests/marshal_code.h
+	tests/test_marshal.c tests/marshal_code.h
+nodist_test_marshal_SOURCES = \
+	tests/marshal_code.c
 test_marshal_LDFLAGS = -static
 test_marshal_LDADD = \
 	marshal.o type.o indent.o \
@@ -108,8 +109,9 @@ test_marshal_LDADD = \
 	$(DBUS_LIBS)
 
 test_demarshal_SOURCES = \
-	tests/test_demarshal.c \
-	tests/demarshal_code.c tests/demarshal_code.h
+	tests/test_demarshal.c tests/demarshal_code.h
+nodist_test_demarshal_SOURCES = \
+	tests/demarshal_code.c
 test_demarshal_LDFLAGS = -static
 test_demarshal_LDADD = \
 	demarshal.o type.o indent.o \
@@ -137,8 +139,9 @@ test_interface_LDADD = \
 	$(DBUS_LIBS)
 
 test_method_SOURCES = \
-	tests/test_method.c \
-	tests/method_code.c tests/method_code.h
+	tests/test_method.c tests/method_code.h
+nodist_test_method_SOURCES = \
+	tests/method_code.c
 test_method_LDFLAGS = -static
 test_method_LDADD = \
 	demarshal.o marshal.o type.o indent.o \
@@ -150,8 +153,9 @@ test_method_LDADD = \
 	$(DBUS_LIBS)
 
 test_signal_SOURCES = \
-	tests/test_signal.c \
-	tests/signal_code.c tests/signal_code.h
+	tests/test_signal.c tests/signal_code.h
+nodist_test_signal_SOURCES = \
+	tests/signal_code.c
 test_signal_LDFLAGS = -static
 test_signal_LDADD = \
 	demarshal.o marshal.o type.o indent.o \
@@ -163,8 +167,9 @@ test_signal_LDADD = \
 	$(DBUS_LIBS)
 
 test_property_SOURCES = \
-	tests/test_property.c \
-	tests/property_code.c tests/property_code.h
+	tests/test_property.c tests/property_code.h
+nodist_test_property_SOURCES = \
+	tests/property_code.c
 test_property_LDFLAGS = -static
 test_property_LDADD = \
 	demarshal.o marshal.o type.o indent.o \
@@ -239,9 +244,11 @@ com_netsplit_Nih_Test_object_OUTPUTS = \
 com_netsplit_Nih_Test_object_XML = \
 	tests/com.netsplit.Nih.Test.xml
 
-$(com_netsplit_Nih_Test_object_OUTPUTS): $(com_netsplit_Nih_Test_object_XML) nih_dbus_tool.py
-#	$(MAKE) $(AM_MAKEFLAGS) nih-dbus-tool
-	python $(builddir)/nih_dbus_tool.py --mode=object --prefix=my --output=$@ $<
+$(com_netsplit_Nih_Test_object_OUTPUTS): $(com_netsplit_Nih_Test_object_XML) $(builddir)/nih-dbus-tool
+	$(MKDIR_P) `echo "$@" | \
+		    sed '/\//!d;s,/[^/]*$$,,' | \
+                    sort -u`
+	$(builddir)/nih-dbus-tool --mode=object --prefix=my --output=$@ $<
 
 
 com_netsplit_Nih_Test_proxy_OUTPUTS = \
@@ -251,23 +258,21 @@ com_netsplit_Nih_Test_proxy_OUTPUTS = \
 com_netsplit_Nih_Test_proxy_XML = \
 	tests/com.netsplit.Nih.Test.xml
 
-$(com_netsplit_Nih_Test_proxy_OUTPUTS): $(com_netsplit_Nih_Test_proxy_XML) nih_dbus_tool.py
-#	$(MAKE) $(AM_MAKEFLAGS) nih-dbus-tool
-	python $(builddir)/nih_dbus_tool.py --mode=proxy --prefix=proxy --output=$@ $<
+$(com_netsplit_Nih_Test_proxy_OUTPUTS): $(com_netsplit_Nih_Test_proxy_XML) $(builddir)/nih-dbus-tool
+	$(MKDIR_P) `echo "$@" | \
+		    sed '/\//!d;s,/[^/]*$$,,' | \
+                    sort -u`
+	$(builddir)/nih-dbus-tool --mode=proxy --prefix=your --output=$@ $<
 
 
+# To be able to list them in POTFILES.in, these files must be built by
+# an ordinary "make all" pass
 BUILT_SOURCES = \
 	$(com_netsplit_Nih_Test_object_OUTPUTS) \
 	$(com_netsplit_Nih_Test_proxy_OUTPUTS)
 
-MAINTAINERCLEANFILES = \
-	$(com_netsplit_Nih_Test_object_OUTPUTS) \
-	$(com_netsplit_Nih_Test_proxy_OUTPUTS)
-
 EXTRA_DIST = \
-	$(com_netsplit_Nih_Test_object_OUTPUTS) \
 	$(com_netsplit_Nih_Test_object_XML) \
-	$(com_netsplit_Nih_Test_proxy_OUTPUTS) \
 	$(com_netsplit_Nih_Test_proxy_XML)
 
 
@@ -279,8 +284,7 @@ marshal_factory_LDADD = \
 	$(DBUS_LIBS)
 
 tests/marshal_code.c: $(builddir)/marshal_factory
-	$(builddir)/marshal_factory > $@.tmp
-	mv $@.tmp $@
+	$(builddir)/marshal_factory > $@
 
 
 demarshal_factory_SOURCES = tests/demarshal_factory.c
@@ -291,8 +295,7 @@ demarshal_factory_LDADD = \
 	$(DBUS_LIBS)
 
 tests/demarshal_code.c: $(builddir)/demarshal_factory
-	$(builddir)/demarshal_factory > $@.tmp
-	mv $@.tmp $@
+	$(builddir)/demarshal_factory > $@
 
 
 method_factory_SOURCES = tests/method_factory.c
@@ -306,8 +309,7 @@ method_factory_LDADD = \
 	$(DBUS_LIBS)
 
 tests/method_code.c: $(builddir)/method_factory
-	$(builddir)/method_factory > $@.tmp
-	mv $@.tmp $@
+	$(builddir)/method_factory > $@
 
 
 signal_factory_SOURCES = tests/signal_factory.c
@@ -321,8 +323,7 @@ signal_factory_LDADD = \
 	$(DBUS_LIBS)
 
 tests/signal_code.c: $(builddir)/signal_factory
-	$(builddir)/signal_factory > $@.tmp
-	mv $@.tmp $@
+	$(builddir)/signal_factory > $@
 
 
 property_factory_SOURCES = tests/property_factory.c
@@ -336,16 +337,15 @@ property_factory_LDADD = \
 	$(DBUS_LIBS)
 
 tests/property_code.c: $(builddir)/property_factory
-	$(builddir)/property_factory > $@.tmp
-	mv $@.tmp $@
+	$(builddir)/property_factory > $@
 
 
 CLEANFILES = \
-	tests/marshal_code.c \
-	tests/demarshal_code.c \
-	tests/method_code.c \
-	tests/signal_code.c \
-	tests/property_code.c
+	$(nodist_test_marshal_SOURCES) \
+	$(nodist_test_demarshal_SOURCES) \
+	$(nodist_test_method_SOURCES) \
+	$(nodist_test_signal_SOURCES) \
+	$(nodist_test_property_SOURCES)
 
 
 .PHONY: tests

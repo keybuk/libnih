@@ -1,5 +1,26 @@
 2009-06-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/com.netsplit.Nih.Test.xml: Update to newer
+	XML format, using annotations instead of namespaces.  Add a couple
+	of extra tests cases, and in particular add properties.
+	* nih-dbus-tool/Makefile.am ($(com_netsplit_Nih_Test_object_OUTPUTS)): 
+	($(com_netsplit_Nih_Test_proxy_OUTPUTS)): Use the C version of the
+	nih-dbus-tool to generate the output; currently not compatible with
+	the tests, but should generate good code.  Be sure to make the
+	output directory first (out of tree builds)
+	(nodist_test_marshal_SOURCES, nodist_test_demarshal_SOURCES)
+	(nodist_test_method_SOURCES, nodist_test_signal_SOURCES)
+	(nodist_test_property_SOURCES): We don't want to distribute the
+	*_code.c files so move them into a nodist prefixed
+	(MAINTAINERCLEANFILES): BUILT_SOURCES are always maintainer-clean,
+	so drop this
+	(EXTRA_DIST): Sources are always distributed, so drop the outputs
+	from this leaving only the XML
+	(tests/marshal_code.c, tests/demarshal_code.c)
+	(tests/method_code.c, tests/signal_code.c)
+	(tests/property_code.c): Drop the temporary output, no need for it
+	(CLEANFILES): Specify by expanding the nodist_*_SOURCES variables
+
 	* nih-dbus-tool/nih_dbus_tool.py: Drop the python version
 
 	* TODO: Update.

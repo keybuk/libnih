@@ -1,5 +1,8 @@
 2009-06-10  Scott James Remnant  <scott@netsplit.com>
 
+	* NEWS: Update
+	* TODO: Update
+
 	* nih-dbus-tool/tests/com.netsplit.Nih.Test.xml: Update to newer
 	XML format, using annotations instead of namespaces.  Add a couple
 	of extra tests cases, and in particular add properties.

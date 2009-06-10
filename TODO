@@ -59,6 +59,8 @@ dbus:
 - missing tests for dict entry handling
   - dict entry handling could be better anyway (like in a hash?)
 
+- we're not using the no_reply annotation
+
 - doc strings for methods, signals, arguments, etc.
   - annotation would be used to set them
   - auto-generate doc strings for output functions

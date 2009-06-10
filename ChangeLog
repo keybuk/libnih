@@ -1,5 +1,18 @@
 2009-06-10  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/output.c (output): Primary function to output C
+	source and header files for a node in either object or proxy mode.
+	(output_preamble): Support function to generate the preamble comment
+	(output_sentinel): Support function to generate the header sentinel
+	(output_write): Support file to write out to the file descriptor
+	* nih-dbus-tool/output.h: Headers
+	* nih-dbus-tool/tests/test_output.c: Tests for the code
+	* nih-dbus-tool/Makefile.am (nih_dbus_tool_SOURCES): Compile and link
+	the new source file
+	(TESTS): Run the new tests
+	(test_output_SOURCES, test_output_LDFLAGS, test_output_LDADD): Details
+	for the new tests
+
 	* nih-dbus-tool/type.c (type_func_to_typedef, type_func_layout):
 	Use type_var_to_string instead of doing things by hand.
 

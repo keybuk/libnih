@@ -36,6 +36,7 @@ nih_dbus_tool_SOURCES = \
 	argument.c argument.h \
 	annotation.c annotation.h \
 	parse.c parse.h \
+	output.c output.h \
 	errors.h
 
 nih_dbus_tool_LDADD = \
@@ -61,6 +62,7 @@ TESTS = \
 	test_argument \
 	test_annotation \
 	test_parse \
+	test_output \
 	test_com.netsplit.Nih.Test_object \
 	test_com.netsplit.Nih.Test_proxy
 
@@ -198,6 +200,16 @@ test_parse_LDFLAGS = -static
 test_parse_LDADD = \
 	demarshal.o marshal.o type.o indent.o \
 	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
+
+test_output_SOURCES = tests/test_output.c
+test_output_LDFLAGS = -static
+test_output_LDADD = \
+	demarshal.o marshal.o type.o indent.o \
+	output.o parse.o annotation.o argument.o property.o signal.o method.o \
 	interface.o node.o symbol.o \
 	../nih/libnih.la \
 	$(EXPAT_LIBS) \

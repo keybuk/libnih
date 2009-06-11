@@ -349,8 +349,7 @@ output (const char *source_path,
 	}
 
 	if (! nih_strcat (&header, NULL,
-			  "NIH_BEGIN_EXTERN\n"
-			  "\n")) {
+			  "NIH_BEGIN_EXTERN\n")) {
 		nih_error_raise_no_memory ();
 		return -1;
 	}
@@ -368,6 +367,7 @@ output (const char *source_path,
 		}
 
 		if (! nih_strcat_sprintf (&header, NULL,
+					  "\n"
 					  "%s"
 					  "\n",
 					  block)) {
@@ -389,6 +389,7 @@ output (const char *source_path,
 		}
 
 		if (! nih_strcat_sprintf (&header, NULL,
+					  "\n"
 					  "%s"
 					  "\n",
 					  block)) {

@@ -1,5 +1,10 @@
 2009-06-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_output.c (test_output): We want an extra
+	line between extern variables and functions, but only when there are
+	both.
+	* nih-dbus-tool/output.c (output): Adjust the code to make that so
+
 	* nih/child.h,
 	* nih/io.h,
 	* nih/logging.h,

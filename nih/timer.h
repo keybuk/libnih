@@ -116,7 +116,7 @@ struct nih_timer {
 
 NIH_BEGIN_EXTERN
 
-NihList *nih_timers;
+extern NihList *nih_timers;
 
 
 void      nih_timer_init          (void);

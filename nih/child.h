@@ -99,7 +99,8 @@ typedef struct nih_child_watch {
 
 NIH_BEGIN_EXTERN
 
-NihList *nih_child_watches;
+extern NihList *nih_child_watches;
+
 
 void           nih_child_init      (void);
 

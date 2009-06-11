@@ -1,5 +1,11 @@
 2009-06-11  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/child.h,
+	* nih/io.h,
+	* nih/logging.h,
+	* nih/main.h,
+	* nih/signal.h: Make sure we prefix variables with "extern"
+
 	* nih-dbus-tool/node.c (node_interfaces_array): Make the structure
 	prototypes that we export "extern", since they go in the header
 	file.

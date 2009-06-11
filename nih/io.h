@@ -267,7 +267,7 @@ struct nih_io {
 
 NIH_BEGIN_EXTERN
 
-NihList *nih_io_watches;
+extern NihList *nih_io_watches;
 
 
 void          nih_io_init                (void);

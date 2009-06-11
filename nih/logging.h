@@ -171,7 +171,7 @@ typedef int (*NihLogger) (NihLogLevel priority, const char *message);
 
 NIH_BEGIN_EXTERN
 
-NihLogLevel nih_log_priority;
+extern NihLogLevel nih_log_priority;
 
 
 void nih_log_init         (void);

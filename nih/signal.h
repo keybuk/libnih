@@ -70,7 +70,7 @@ struct nih_signal {
 
 NIH_BEGIN_EXTERN
 
-NihList *nih_signals;
+extern NihList *nih_signals;
 
 
 void        nih_signal_init        (void);

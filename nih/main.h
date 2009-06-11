@@ -108,14 +108,14 @@ struct nih_main_loop_func {
 
 NIH_BEGIN_EXTERN
 
-const char *program_name;
-const char *package_name;
-const char *package_version;
-const char *package_copyright;
-const char *package_bugreport;
-const char *package_string;
+extern const char *program_name;
+extern const char *package_name;
+extern const char *package_version;
+extern const char *package_copyright;
+extern const char *package_bugreport;
+extern const char *package_string;
 
-NihList *nih_main_loop_functions;
+extern NihList *nih_main_loop_functions;
 
 
 void             nih_main_init_full      (const char *argv0,

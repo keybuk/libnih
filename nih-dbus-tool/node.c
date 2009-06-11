@@ -398,6 +398,12 @@ node_interfaces_array (const void *parent,
 		NIH_LIST_FOREACH_SAFE (&struct_prototypes, iter) {
 			var = (TypeVar *)iter;
 
+			if (! type_to_extern (&var->type, var)) {
+				if (code)
+					nih_free (code);
+				return NULL;
+			}
+
 			nih_ref (var, code);
 			nih_list_add (prototypes, &var->entry);
 		}
@@ -437,6 +443,12 @@ node_interfaces_array (const void *parent,
 	}
 
 	var->array = TRUE;
+
+	if (! type_to_extern (&var->type, var)) {
+		if (code)
+			nih_free (code);
+		return NULL;
+	}
 
 	nih_list_add (prototypes, &var->entry);
 

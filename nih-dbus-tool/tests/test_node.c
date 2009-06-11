@@ -854,7 +854,7 @@ test_interfaces_array (void)
 		var = (TypeVar *)prototypes.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (var, str);
-		TEST_EQ_STR (var->type, "const NihDBusInterface");
+		TEST_EQ_STR (var->type, "extern const NihDBusInterface");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -866,7 +866,7 @@ test_interfaces_array (void)
 		var = (TypeVar *)prototypes.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (var, str);
-		TEST_EQ_STR (var->type, "const NihDBusInterface");
+		TEST_EQ_STR (var->type, "extern const NihDBusInterface");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Foo");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -878,7 +878,7 @@ test_interfaces_array (void)
 		var = (TypeVar *)prototypes.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (var, str);
-		TEST_EQ_STR (var->type, "const NihDBusInterface *");
+		TEST_EQ_STR (var->type, "extern const NihDBusInterface *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "my_interfaces");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -1085,7 +1085,7 @@ test_interfaces_array (void)
 		var = (TypeVar *)prototypes.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (var, str);
-		TEST_EQ_STR (var->type, "const NihDBusInterface");
+		TEST_EQ_STR (var->type, "extern const NihDBusInterface");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Test");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -1097,7 +1097,7 @@ test_interfaces_array (void)
 		var = (TypeVar *)prototypes.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (var, str);
-		TEST_EQ_STR (var->type, "const NihDBusInterface");
+		TEST_EQ_STR (var->type, "extern const NihDBusInterface");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "my_com_netsplit_Nih_Foo");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -1109,7 +1109,7 @@ test_interfaces_array (void)
 		var = (TypeVar *)prototypes.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (var, str);
-		TEST_EQ_STR (var->type, "const NihDBusInterface *");
+		TEST_EQ_STR (var->type, "extern const NihDBusInterface *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "my_interfaces");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -1155,7 +1155,7 @@ test_interfaces_array (void)
 		var = (TypeVar *)prototypes.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (var, str);
-		TEST_EQ_STR (var->type, "const NihDBusInterface *");
+		TEST_EQ_STR (var->type, "extern const NihDBusInterface *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "my_interfaces");
 		TEST_ALLOC_PARENT (var->name, var);

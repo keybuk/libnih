@@ -1,3 +1,14 @@
+2009-06-11  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/node.c (node_interfaces_array): Make the structure
+	prototypes that we export "extern", since they go in the header
+	file.
+	* nih-dbus-tool/tests/test_node.c (test_interfaces_array): Make sure
+	that the returned variable types all include "extern" in the lists,
+	but not in the output.
+	* nih-dbus-tool/tests/test_output.c (test_output): Update the output
+	checks of the headers to expect extern in front of variables.
+
 2009-06-10  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/signal.c (signal_proxy_function): Eliminate the

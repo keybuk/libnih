@@ -2427,9 +2427,9 @@ test_output (void)
 		TEST_FILE_EQ (header, "\n");
 		TEST_FILE_EQ (header, "NIH_BEGIN_EXTERN\n");
 		TEST_FILE_EQ (header, "\n");
-		TEST_FILE_EQ (header, "const NihDBusInterface  my_com_netsplit_Nih_Test;\n");
-		TEST_FILE_EQ (header, "const NihDBusInterface  my_com_netsplit_Nih_Foo;\n");
-		TEST_FILE_EQ (header, "const NihDBusInterface *my_interfaces[];\n");
+		TEST_FILE_EQ (header, "extern const NihDBusInterface  my_com_netsplit_Nih_Test;\n");
+		TEST_FILE_EQ (header, "extern const NihDBusInterface  my_com_netsplit_Nih_Foo;\n");
+		TEST_FILE_EQ (header, "extern const NihDBusInterface *my_interfaces[];\n");
 		TEST_FILE_EQ (header, "\n");
 		TEST_FILE_EQ (header, "DBusPendingCall *my_test_poke                  (NihDBusProxy *proxy, uint32_t address, const char *value, MyTestPokeReply handler, NihDBusErrorHandler error_handler, void *data, int timeout)\n");
 		TEST_FILE_EQ (header, "\t__attribute__ ((warn_unused_result));\n");
@@ -2569,7 +2569,7 @@ test_output (void)
 		TEST_FILE_EQ (header, "\n");
 		TEST_FILE_EQ (header, "NIH_BEGIN_EXTERN\n");
 		TEST_FILE_EQ (header, "\n");
-		TEST_FILE_EQ (header, "const NihDBusInterface *my_interfaces[];\n");
+		TEST_FILE_EQ (header, "extern const NihDBusInterface *my_interfaces[];\n");
 		TEST_FILE_EQ (header, "\n");
 		TEST_FILE_EQ (header, "NIH_END_EXTERN\n");
 		TEST_FILE_EQ (header, "\n");
@@ -3749,9 +3749,9 @@ test_output (void)
 		TEST_FILE_EQ (header, "\n");
 		TEST_FILE_EQ (header, "NIH_BEGIN_EXTERN\n");
 		TEST_FILE_EQ (header, "\n");
-		TEST_FILE_EQ (header, "const NihDBusInterface  my_com_netsplit_Nih_Test;\n");
-		TEST_FILE_EQ (header, "const NihDBusInterface  my_com_netsplit_Nih_Foo;\n");
-		TEST_FILE_EQ (header, "const NihDBusInterface *my_interfaces[];\n");
+		TEST_FILE_EQ (header, "extern const NihDBusInterface  my_com_netsplit_Nih_Test;\n");
+		TEST_FILE_EQ (header, "extern const NihDBusInterface  my_com_netsplit_Nih_Foo;\n");
+		TEST_FILE_EQ (header, "extern const NihDBusInterface *my_interfaces[];\n");
 		TEST_FILE_EQ (header, "\n");
 		TEST_FILE_EQ (header, "int my_test_poke_reply             (NihDBusMessage *message)\n");
 		TEST_FILE_EQ (header, "\t__attribute__ ((warn_unused_result));\n");
@@ -3871,7 +3871,7 @@ test_output (void)
 		TEST_FILE_EQ (header, "\n");
 		TEST_FILE_EQ (header, "NIH_BEGIN_EXTERN\n");
 		TEST_FILE_EQ (header, "\n");
-		TEST_FILE_EQ (header, "const NihDBusInterface *my_interfaces[];\n");
+		TEST_FILE_EQ (header, "extern const NihDBusInterface *my_interfaces[];\n");
 		TEST_FILE_EQ (header, "\n");
 		TEST_FILE_EQ (header, "NIH_END_EXTERN\n");
 		TEST_FILE_EQ (header, "\n");

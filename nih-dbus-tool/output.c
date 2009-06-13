@@ -210,6 +210,7 @@ output (const char *source_path,
 		}
 
 		if (! nih_strcat (&header, NULL,
+				  "#include <nih-dbus/dbus_pending_data.h>\n"
 				  "#include <nih-dbus/dbus_proxy.h>\n")) {
 			nih_error_raise_no_memory ();
 			return -1;

@@ -1,3 +1,9 @@
+2009-06-13  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/output.c (output): Need dbus_pending_data.h in the
+	header too for the error handler typedef.
+	* nih-dbus-tool/tests/test_output.c (test_output): Add to tests
+
 2009-06-11  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/tests/test_output.c (test_output): We want an extra

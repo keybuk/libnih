@@ -2399,6 +2399,7 @@ test_output (void)
 		TEST_FILE_EQ (header, "\n");
 		TEST_FILE_EQ (header, "#include <nih-dbus/dbus_interface.h>\n");
 		TEST_FILE_EQ (header, "#include <nih-dbus/dbus_message.h>\n");
+		TEST_FILE_EQ (header, "#include <nih-dbus/dbus_pending_data.h>\n");
 		TEST_FILE_EQ (header, "#include <nih-dbus/dbus_proxy.h>\n");
 		TEST_FILE_EQ (header, "\n");
 		TEST_FILE_EQ (header, "\n");
@@ -2565,6 +2566,7 @@ test_output (void)
 		TEST_FILE_EQ (header, "\n");
 		TEST_FILE_EQ (header, "#include <nih-dbus/dbus_interface.h>\n");
 		TEST_FILE_EQ (header, "#include <nih-dbus/dbus_message.h>\n");
+		TEST_FILE_EQ (header, "#include <nih-dbus/dbus_pending_data.h>\n");
 		TEST_FILE_EQ (header, "#include <nih-dbus/dbus_proxy.h>\n");
 		TEST_FILE_EQ (header, "\n");
 		TEST_FILE_EQ (header, "\n");

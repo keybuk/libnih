@@ -138,7 +138,7 @@ NihDBusProxy *      nih_dbus_proxy_new     (const void *parent,
 NihDBusProxySignal *nih_dbus_proxy_connect (const void *parent,
 					    NihDBusProxy *proxy,
 					    const NihDBusInterface *interface,
-					    const NihDBusSignal *signal,
+					    const char *name,
 					    NihDBusSignalHandler handler,
 					    void *data)
 	__attribute__ ((warn_unused_result, malloc));

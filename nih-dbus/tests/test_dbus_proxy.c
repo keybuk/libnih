@@ -669,8 +669,16 @@ my_signal_handler (void *          data,
 {
 }
 
-const NihDBusSignal    my_signal    = { "MySignal", NULL, my_signal_filter };
-const NihDBusInterface my_interface = { "com.netsplit.Nih", NULL, NULL, NULL };
+const NihDBusSignal my_interface_signals[] = {
+	{ "MySignal", NULL, my_signal_filter },
+	{ NULL }
+};
+const NihDBusInterface my_interface = {
+	"com.netsplit.Nih",
+	NULL,
+	my_interface_signals,
+	NULL
+};
 
 void
 test_connect (void)
@@ -706,7 +714,7 @@ test_connect (void)
 		}
 
 		proxied = nih_dbus_proxy_connect (NULL, proxy,
-						  &my_interface, &my_signal,
+						  &my_interface, "MySignal",
 						  my_signal_handler, NULL);
 
 		if (test_alloc_failed) {
@@ -725,7 +733,7 @@ test_connect (void)
 		TEST_EQ_P (proxied->name, proxy->name);
 		TEST_EQ_P (proxied->path, proxy->path);
 		TEST_EQ_P (proxied->interface, &my_interface);
-		TEST_EQ_P (proxied->signal, &my_signal);
+		TEST_EQ_P (proxied->signal, &my_interface_signals[0]);
 		TEST_EQ_P (proxied->handler, my_signal_handler);
 		TEST_EQ_P (proxied->data, NULL);
 
@@ -782,7 +790,7 @@ test_connect (void)
 		}
 
 		proxied = nih_dbus_proxy_connect (NULL, proxy,
-						  &my_interface, &my_signal,
+						  &my_interface, "MySignal",
 						  my_signal_handler, NULL);
 
 		if (test_alloc_failed) {
@@ -801,7 +809,7 @@ test_connect (void)
 		TEST_EQ_P (proxied->name, proxy->name);
 		TEST_EQ_P (proxied->path, proxy->path);
 		TEST_EQ_P (proxied->interface, &my_interface);
-		TEST_EQ_P (proxied->signal, &my_signal);
+		TEST_EQ_P (proxied->signal, &my_interface_signals[0]);
 		TEST_EQ_P (proxied->handler, my_signal_handler);
 		TEST_EQ_P (proxied->data, NULL);
 
@@ -884,7 +892,7 @@ test_signal_destroy (void)
 						    NULL, NULL);
 			proxied = nih_dbus_proxy_connect (NULL, proxy,
 							  &my_interface,
-							  &my_signal,
+							  "MySignal",
 							  my_signal_handler,
 							  NULL);
 		}

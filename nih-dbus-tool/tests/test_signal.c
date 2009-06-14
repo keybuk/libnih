@@ -1480,8 +1480,16 @@ my_signal_handler (void *          data,
 	TEST_EQ_STR (msg, "this is a test");
 }
 
-const NihDBusSignal    my_signal    = { "Signal", NULL, my_com_netsplit_Nih_Test_Signal_signal };
-const NihDBusInterface my_interface = { "com.netsplit.Nih", NULL, NULL, NULL };
+const NihDBusSignal my_interface_signals[] = {
+	{ "Signal", NULL, my_com_netsplit_Nih_Test_Signal_signal },
+	{ NULL }
+};
+const NihDBusInterface my_interface = {
+	"com.netsplit.Nih",
+	NULL,
+	my_interface_signals,
+	NULL
+};
 
 void
 test_proxy_function (void)
@@ -1901,7 +1909,7 @@ test_proxy_function (void)
 
 			proxied = nih_dbus_proxy_connect (NULL, proxy,
 							  &my_interface,
-							  &my_signal,
+							  "Signal",
 							  (NihDBusSignalHandler)my_signal_handler,
 							  &my_signal_handler_called);
 		}

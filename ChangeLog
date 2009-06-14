@@ -1,3 +1,13 @@
+2009-06-14  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus/dbus_proxy.c (nih_dbus_proxy_connect): Total thinko with
+	the API; I'd expected the signal structures to be public, but we
+	don't generally want that.  Better just to take a signal name.
+	* nih-dbus/dbus_proxy.h: Update prototype.
+	* nih-dbus/tests/test_dbus_proxy.c (test_connect): Update tests
+	(test_signal_destroy): Also update this one
+	* nih-dbus-tool/tests/test_signal.c (test_proxy_function): Also update
+
 2009-06-13  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/output.c (output): Need dbus_pending_data.h in the

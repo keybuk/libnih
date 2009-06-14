@@ -474,11 +474,11 @@ nih_dbus_proxy_name_owner_changed (DBusConnection *connection,
  * @parent: parent object for new object,
  * @proxy: proxy for remote object,
  * @interface: signal interface definition,
- * @signal: signal definition,
+ * @name: name of signal,
  * @handler: signal handler function,
  * @data: data to pass to @handler.
  *
- * Connect the signal @signal on @interface to @proxy so that the @handler
+ * Connect the signal @name on @interface to @proxy so that the @handler
  * function is passed to the filter function defined by @signal when it
  * is received on the proxied D-Bus connection.
  *
@@ -498,7 +498,7 @@ NihDBusProxySignal *
 nih_dbus_proxy_connect (const void *            parent,
 			NihDBusProxy *          proxy,
 			const NihDBusInterface *interface,
-			const NihDBusSignal *   signal,
+			const char *            name,
 			NihDBusSignalHandler    handler,
 			void *                  data)
 {
@@ -508,7 +508,7 @@ nih_dbus_proxy_connect (const void *            parent,
 
 	nih_assert (proxy != NULL);
 	nih_assert (interface != NULL);
-	nih_assert (signal != NULL);
+	nih_assert (name != NULL);
 	nih_assert (handler != NULL);
 
 	proxied = nih_new (parent, NihDBusProxySignal);
@@ -519,9 +519,18 @@ nih_dbus_proxy_connect (const void *            parent,
 	proxied->name = proxy->name;
 	proxied->path = proxy->path;
 	proxied->interface = interface;
-	proxied->signal = signal;
+	proxied->signal = NULL;
 	proxied->handler = handler;
 	proxied->data = data;
+
+	for (const NihDBusSignal *signal = interface->signals;
+	     signal && signal->name; signal++) {
+		if (! strcmp (signal->name, name)) {
+			proxied->signal = signal;
+			break;
+		}
+	}
+	nih_assert (proxied->signal != NULL);
 
 	if (! dbus_connection_add_filter (proxied->connection,
 					  (DBusHandleMessageFunction)proxied->signal->filter,

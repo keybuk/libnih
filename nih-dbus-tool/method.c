@@ -1117,20 +1117,10 @@ method_reply_function (const void *parent,
 			if (! type_to_const (&var->type, var))
 				return NULL;
 
-			if (strchr (var->type, '*')) {
-				if ((_iter.next == &arg_vars)
-				    || strcmp (((TypeVar *)_iter.next)->type, "size_t")) {
-					if (! nih_strcat_sprintf (&assert_block, NULL,
-								  "nih_assert (%s != NULL);\n",
-								  var->name))
-						return NULL;
-				} else {
-					if (! nih_strcat_sprintf (&assert_block, NULL,
-								  "nih_assert ((%s == 0) || (%s != NULL));\n",
-								  ((TypeVar *)_iter.next)->name, var->name))
-						return NULL;
-				}
-			}
+			if (! type_strcat_assert (&assert_block, NULL, var,
+						  iter->prev != &arg_vars ? (TypeVar *)iter->prev : NULL,
+						  _iter.next != &arg_vars ? (TypeVar *)_iter.next : NULL))
+				return NULL;
 
 			nih_list_add (&func->args, &var->entry);
 			nih_ref (var, func);
@@ -1409,20 +1399,10 @@ method_proxy_function (const void *parent,
 			if (! type_to_const (&var->type, var))
 				return NULL;
 
-			if (strchr (var->type, '*')) {
-				if ((_iter.next == &arg_vars)
-				    || strcmp (((TypeVar *)_iter.next)->type, "size_t")) {
-					if (! nih_strcat_sprintf (&assert_block, NULL,
-								  "nih_assert (%s != NULL);\n",
-								  var->name))
-						return NULL;
-				} else {
-					if (! nih_strcat_sprintf (&assert_block, NULL,
-								  "nih_assert ((%s == 0) || (%s != NULL));\n",
-								  ((TypeVar *)_iter.next)->name, var->name))
-						return NULL;
-				}
-			}
+			if (! type_strcat_assert (&assert_block, NULL, var,
+						  iter->prev != &arg_vars ? (TypeVar *)iter->prev : NULL,
+						  _iter.next != &arg_vars ? (TypeVar *)_iter.next : NULL))
+				return NULL;
 
 			nih_list_add (&func->args, &var->entry);
 			nih_ref (var, func);
@@ -2179,20 +2159,10 @@ method_proxy_sync_function (const void *parent,
 				if (! type_to_const (&var->type, var))
 					return NULL;
 
-				if (strchr (var->type, '*')) {
-					if ((_iter.next == &arg_vars)
-					    || strcmp (((TypeVar *)_iter.next)->type, "size_t")) {
-						if (! nih_strcat_sprintf (&assert_block, NULL,
-									  "nih_assert (%s != NULL);\n",
-									  var->name))
-							return NULL;
-					} else {
-						if (! nih_strcat_sprintf (&assert_block, NULL,
-									  "nih_assert ((%s == 0) || (%s != NULL));\n",
-									  ((TypeVar *)_iter.next)->name, var->name))
-							return NULL;
-					}
-				}
+				if (! type_strcat_assert (&assert_block, NULL, var,
+							  iter->prev != &arg_vars ? (TypeVar *)iter->prev : NULL,
+							  _iter.next != &arg_vars ? (TypeVar *)_iter.next : NULL))
+					return NULL;
 
 				nih_list_add (&func->args, &var->entry);
 				nih_ref (var, func);

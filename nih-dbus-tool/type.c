@@ -998,3 +998,63 @@ type_to_extern (char **     type,
 
 	return *type;
 }
+
+
+/**
+ * type_strcat_assert:
+ * @block: code block to append to,
+ * @parent: parent object for @block,
+ * @var: variable to append assert block for,
+ * @prev: prev variable in list or NULL,
+ * @next: next variable in list or NULL.
+ *
+ * If @var is a pointer variable, appends a line of code to @block that
+ * asserts that the variable is not NULL.  If @var is not a pointer variable,
+ * this function has no effect.
+ *
+ * This function handles the case of @var being an array and @next
+ * being its size member, in which case @var may be NULL if its size member
+ * is zero.
+ *
+ * This function also handles the case of @var being an array of size
+ * members and @prev being the array, in which case @var may be NULL if the
+ * first member of @prev is NULL.
+ *
+ * @block is modified directly, the returned string is simply a pointer to
+ * it, thus @parent is actually ignored though it usual to pass the parent
+ * of @block for style reasons.
+ *
+ * Note that @block may be returned unmodified, therefore it is not
+ * permitted to pass NULL for @block as this would be indistinguishable from
+ * insufficient memory.
+ *
+ * Returns: modified @block or NULL if insufficient memory.
+ **/
+char *
+type_strcat_assert (char **     block,
+		    const void *parent,
+		    TypeVar *   var,
+		    TypeVar *   prev,
+		    TypeVar *   next)
+{
+	nih_assert (block != NULL);
+	nih_assert (var != NULL);
+
+	if (! strchr (var->type, '*'))
+		return *block;
+
+	if (next && (! strcmp (next->type, "size_t"))) {
+		if (! nih_strcat_sprintf (block, parent,
+					  "nih_assert ((%s == 0) || (%s != NULL));\n",
+					  next->name, var->name))
+			return NULL;
+	} else {
+		if (! nih_strcat_sprintf (block, parent,
+					  "nih_assert (%s != NULL);\n",
+					  var->name))
+			return NULL;
+	}
+
+	return *block;
+}
+

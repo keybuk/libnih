@@ -110,6 +110,10 @@ char *      type_to_static       (char **type, const void *parent)
 char *      type_to_extern       (char **type, const void *parent)
 	__attribute__ ((warn_unused_result, malloc));
 
+char *      type_strcat_assert   (char **block, const void *parent,
+				  TypeVar *var, TypeVar *prev, TypeVar *next)
+	__attribute__ ((warn_unused_result, malloc));
+
 NIH_END_EXTERN
 
 #endif /* NIH_DBUS_TOOL_TYPE_H */

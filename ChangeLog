@@ -1,5 +1,18 @@
 2009-06-15  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/type.c (type_strcat_assert): We're starting to get
+	a lot of corner cases in that simple assert block, separate it out
+	so we don't have to repeatedly get it wrong.
+	* nih-dbus-tool/type.h: Add prototype
+	* nih-dbus-tool/tests/test_type.c (test_strcat_assert): The all
+	important tests.
+	* nih-dbus-tool/method.c (method_reply_function)
+	(method_proxy_function, method_proxy_sync_function): Use the new
+	function.
+	* nih-dbus-tool/signal.c (signal_object_function): Likewise.
+	* nih-dbus-tool/property.c (property_proxy_set_function)
+	(property_proxy_set_sync_function): Likewise.
+
 	* nih-dbus-tool/method.c (method_reply_function)
 	(method_proxy_function, method_proxy_sync_function): Input array
 	arguments of basic types (those with a size_t argument following)

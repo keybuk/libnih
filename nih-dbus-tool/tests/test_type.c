@@ -2217,6 +2217,141 @@ test_to_extern (void)
 }
 
 
+void
+test_strcat_assert (void)
+{
+	char *   block = NULL;
+	TypeVar *var = NULL;
+	TypeVar *other = NULL;
+	char *   ret;
+
+	TEST_FUNCTION ("type_strcat_assert");
+
+	/* Check that a non-pointer variable has no assert line added. */
+	TEST_FEATURE ("with non-pointer variable");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			block = nih_strdup (NULL, "");
+
+			var = type_var_new (NULL, "int", "foo");
+		}
+
+		ret = type_strcat_assert (&block, NULL, var, NULL, NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+
+			nih_free (var);
+			nih_free (block);
+			continue;
+		}
+
+		TEST_EQ_P (ret, block);
+
+		TEST_EQ_STR (block, "");
+
+		nih_free (var);
+		nih_free (block);
+	}
+
+
+	/* Check that a pointer variable has an assert line added for it. */
+	TEST_FEATURE ("with pointer variable");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			block = nih_strdup (NULL, "");
+
+			var = type_var_new (NULL, "int *", "foo");
+		}
+
+		ret = type_strcat_assert (&block, NULL, var, NULL, NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+
+			nih_free (var);
+			nih_free (block);
+			continue;
+		}
+
+		TEST_EQ_P (ret, block);
+
+		TEST_EQ_STR (block, "nih_assert (foo != NULL);\n");
+
+		nih_free (var);
+		nih_free (block);
+	}
+
+
+	/* Check that a pointer variable with a following size argument's
+	 * assert line is modified so it may be NULL if the size is zero.
+	 */
+	TEST_FEATURE ("with array variable");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			block = nih_strdup (NULL, "");
+
+			var = type_var_new (NULL, "int *", "foo");
+
+			other = type_var_new (NULL, "size_t", "foo_len");
+		}
+
+		ret = type_strcat_assert (&block, NULL, var, NULL, other);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+
+			nih_free (other);
+			nih_free (var);
+			nih_free (block);
+			continue;
+		}
+
+		TEST_EQ_P (ret, block);
+
+		TEST_EQ_STR (block, "nih_assert ((foo_len == 0) || (foo != NULL));\n");
+
+		nih_free (other);
+		nih_free (var);
+		nih_free (block);
+	}
+
+
+	/* Make sure that any other following element doesn't result in the
+	 * pointer being considered an array.
+	 */
+	TEST_FEATURE ("with pointer variable and following argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			block = nih_strdup (NULL, "");
+
+			var = type_var_new (NULL, "int *", "foo");
+
+			other = type_var_new (NULL, "int", "foo_len");
+		}
+
+		ret = type_strcat_assert (&block, NULL, var, NULL, other);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+
+			nih_free (other);
+			nih_free (var);
+			nih_free (block);
+			continue;
+		}
+
+		TEST_EQ_P (ret, block);
+
+		TEST_EQ_STR (block, "nih_assert (foo != NULL);\n");
+
+		nih_free (other);
+		nih_free (var);
+		nih_free (block);
+	}
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -2238,6 +2373,8 @@ main (int   argc,
 	test_to_pointer ();
 	test_to_static ();
 	test_to_extern ();
+
+	test_strcat_assert ();
 
 	return 0;
 }

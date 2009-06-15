@@ -27,2121 +27,20899 @@
  */
 
 #include <nih/test.h>
+#include <nih-dbus/test_dbus.h>
 
 #include <dbus/dbus.h>
 
+#include <sys/types.h>
+
 #include <nih/macros.h>
 #include <nih/alloc.h>
+#include <nih/error.h>
 
+#include <nih-dbus/dbus_object.h>
+
+#include "com.netsplit.Nih.Test_object.h"
 #include "com.netsplit.Nih.Test_impl.h"
 
 
 void
-test_method_marshal (void)
+test_ordinary_method (void)
 {
-	DBusConnection  *conn;
-	DBusMessage     *message, *reply;
-	DBusError        error;
-	const char      *input, *output;
-	dbus_unichar_t   byte_arg;
-	dbus_bool_t      boolean_arg;
-	dbus_int16_t     int16_arg;
-	dbus_uint16_t    uint16_arg;
-	dbus_int32_t     flags, int32_arg;
-	dbus_uint32_t    uint32_arg;
-	dbus_int64_t     int64_arg;
-	dbus_uint64_t    uint64_arg;
-	double           double_arg;
-	dbus_int32_t    *int32_array;
-	const char     **str_array;
-	size_t           array_len;
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
 
-	TEST_GROUP ("method marshalling");
-	dbus_error_init (&error);
+	TEST_GROUP ("ordinary method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
 
 
-	/* Check that we can make a D-Bus method call, passing in the
-	 * expected arguments and receiving an expected reply.
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
 	 */
 	TEST_FEATURE ("with valid argument");
-	conn = my_setup ();
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	input = "test data";
-	flags = 0;
-	output = NULL;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"OrdinaryMethod");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"TestMethod");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INT32, &flags,
-				  DBUS_TYPE_INVALID);
+		dbus_message_iter_init_append (method_call, &iter);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		str_value = "she needs more of ze punishment";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
 
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_STRING, &output,
-					  DBUS_TYPE_INVALID));
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	TEST_EQ_STR (output, "test data");
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_STRING_AS_STRING);
 
-	my_teardown (conn);
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "she needs more of ze punishment");
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
 
 
-	/* Check that if the D-Bus method handler raises a D-Bus error and
-	 * returns non-zero, the error is returned as a real D-Bus error
-	 * with the same name and message.
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
 	 */
-	TEST_FEATURE ("with returned D-Bus error");
-	conn = my_setup ();
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	input = "test data";
-	flags = 1;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"OrdinaryMethod");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"TestMethod");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INT32, &flags,
-				  DBUS_TYPE_INVALID);
+		dbus_message_iter_init_append (method_call, &iter);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		str_value = "";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
 
-	TEST_EQ_P (reply, NULL);
-	TEST_EQ_STR (error.name, "com.netsplit.Nih.IllegalValue");
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	dbus_error_free (&error);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.OrdinaryMethod.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	my_teardown (conn);
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
 
 
-	/* Check that if the D-Bus method handler raises ENOMEM and returns
-	 * non-zero, the D-Bus need more memory condition is returned which
-	 * will make D-Bus repeat the method handler (at which point it
-	 * will work).
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
 	 */
-	TEST_FEATURE ("with out of memory error");
-	conn = my_setup ();
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	input = "test data";
-	flags = 2;
-	output = NULL;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"OrdinaryMethod");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"TestMethod");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INT32, &flags,
-				  DBUS_TYPE_INVALID);
+		dbus_message_iter_init_append (method_call, &iter);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		str_value = "invalid";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
 
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_STRING, &output,
-					  DBUS_TYPE_INVALID));
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	TEST_EQ_STR (output, "test data");
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	my_teardown (conn);
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
 
+		dbus_message_unref (reply);
 
-	/* Check that if the D-Bus method handler raises a different error
-	 * and returns non-zero, the generic D-Bus Failed error is returned.
-	 */
-	TEST_FEATURE ("with unknown error");
-	conn = my_setup ();
-
-	input = "test data";
-	flags = 3;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"TestMethod");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INT32, &flags,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_EQ_P (reply, NULL);
-	TEST_EQ_STR (error.name, DBUS_ERROR_FAILED);
-
-	dbus_error_free (&error);
-
-	dbus_message_unref (message);
-
-	my_teardown (conn);
+		nih_free (object);
+	}
 
 
-	/* Check that if we make the method call with the wrong argument
-	 * type, we get the D-Bus invalid arguments error back.
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
 	 */
 	TEST_FEATURE ("with wrong argument type");
-	conn = my_setup ();
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	input = "test data";
-	output = "not test data";
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"OrdinaryMethod");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"TestMethod");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_STRING, &output,
-				  DBUS_TYPE_INVALID);
+		dbus_message_iter_init_append (method_call, &iter);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		str_value = "/she/needs/more/of/ze/punishment";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
 
-	TEST_EQ_P (reply, NULL);
-	TEST_EQ_STR (error.name, DBUS_ERROR_INVALID_ARGS);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	dbus_error_free (&error);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	my_teardown (conn);
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
 
 
-	/* Check that if we make the method call with too many arguments,
-	 * we also get the D-Bus invalid arguments error back.
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
 	 */
-	TEST_FEATURE ("with too many arguments");
-	conn = my_setup ();
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	input = "test data";
-	flags = 0;
-	output = "not test data";
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"OrdinaryMethod");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"TestMethod");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INT32, &flags,
-				  DBUS_TYPE_STRING, &output,
-				  DBUS_TYPE_INVALID);
+		dbus_message_iter_init_append (method_call, &iter);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		str_value = "she needs more of ze punishment";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
 
-	TEST_EQ_P (reply, NULL);
-	TEST_EQ_STR (error.name, DBUS_ERROR_INVALID_ARGS);
+		str_value = "/com/netsplit/Nih/Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
 
-	dbus_error_free (&error);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	dbus_message_unref (message);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	my_teardown (conn);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
 
 
-	/* Check that if we make the method call without enough arguments,
-	 * we get the D-Bus invalid arguments error back.
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
 	 */
 	TEST_FEATURE ("with missing arguments");
-	conn = my_setup ();
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	input = "test data";
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"OrdinaryMethod");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"TestMethod");
+		dbus_message_iter_init_append (method_call, &iter);
 
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INVALID);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	TEST_EQ_P (reply, NULL);
-	TEST_EQ_STR (error.name, DBUS_ERROR_INVALID_ARGS);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	dbus_message_unref (message);
+		dbus_message_unref (reply);
 
-	dbus_error_free (&error);
-
-	my_teardown (conn);
+		nih_free (object);
+	}
 
 
-	/* Check that if we make the method call without any arguments,
-	 * we get the D-Bus invalid arguments error back.
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_nameless_method (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("nameless method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
 	 */
-	TEST_FEATURE ("with no arguments");
-	conn = my_setup ();
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"TestMethod");
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"NamelessMethod");
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		dbus_message_iter_init_append (method_call, &iter);
 
-	TEST_EQ_P (reply, NULL);
-	TEST_EQ_STR (error.name, DBUS_ERROR_INVALID_ARGS);
+		str_value = "she needs more of ze punishment";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
 
-	dbus_message_unref (message);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	dbus_error_free (&error);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	my_teardown (conn);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_STRING_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "she needs more of ze punishment");
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
 
 
-	/* Check that if we say that we're not expecting a reply, none will
-	 * be generated as allowed by the D-Bus spec.
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
 	 */
-	TEST_FEATURE ("with drive-by call");
-	conn = my_setup ();
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	input = "test data";
-	flags = 0;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"NamelessMethod");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"TestMethod");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INT32, &flags,
-				  DBUS_TYPE_INVALID);
+		dbus_message_iter_init_append (method_call, &iter);
 
-	dbus_message_set_no_reply (message, TRUE);
+		str_value = "";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   500, &error);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	TEST_EQ_P (reply, NULL);
-	TEST_EQ_STR (error.name, DBUS_ERROR_NO_REPLY);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.NamelessMethod.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	dbus_error_free (&error);
+		dbus_message_unref (reply);
 
-	my_teardown (conn);
+		nih_free (object);
+	}
 
 
-	/* Check that we can make an asynchronous D-Bus method call,
-	 * passing in the expected arguments and receiving an expected
-	 * reply even though it's generated by a timer callback.
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
 	 */
-	TEST_FEATURE ("with valid argument to async call");
-	conn = my_setup ();
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	input = "test data";
-	flags = 0;
-	output = NULL;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"NamelessMethod");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"TestAsyncMethod");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INT32, &flags,
-				  DBUS_TYPE_INVALID);
+		dbus_message_iter_init_append (method_call, &iter);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		str_value = "invalid";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
 
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_STRING, &output,
-					  DBUS_TYPE_INVALID));
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	TEST_EQ_STR (output, "test data");
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	my_teardown (conn);
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
 
 
-	/* Check that if the asynchronous D-Bus method handler raises a
-	 * D-Bus error and returns non-zero, the error is returned as a
-	 * real D-Bus error with the same name and message.
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
 	 */
-	TEST_FEATURE ("with returned D-Bus error from async call");
-	conn = my_setup ();
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	input = "test data";
-	flags = 1;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"NamelessMethod");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"TestAsyncMethod");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INT32, &flags,
-				  DBUS_TYPE_INVALID);
+		dbus_message_iter_init_append (method_call, &iter);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		str_value = "/she/needs/more/of/ze/punishment";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
 
-	TEST_EQ_P (reply, NULL);
-	TEST_EQ_STR (error.name, "com.netsplit.Nih.IllegalValue");
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	dbus_error_free (&error);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	my_teardown (conn);
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
 
 
-	/* Check that if the async D-Bus method handler raises ENOMEM and
-	 * returns non-zero, the D-Bus need more memory condition is
-	 * returned which will make D-Bus repeat the method handler (at
-	 * which point it will work).
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
 	 */
-	TEST_FEATURE ("with out of memory error from async call");
-	conn = my_setup ();
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	input = "test data";
-	flags = 2;
-	output = NULL;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"NamelessMethod");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"TestAsyncMethod");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INT32, &flags,
-				  DBUS_TYPE_INVALID);
+		dbus_message_iter_init_append (method_call, &iter);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		str_value = "she needs more of ze punishment";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
 
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_STRING, &output,
-					  DBUS_TYPE_INVALID));
+		str_value = "/com/netsplit/Nih/Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
 
-	TEST_EQ_STR (output, "test data");
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	my_teardown (conn);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
 
 
-	/* Check that if the async D-Bus method handler raises a different
-	 * error and returns non-zero, the generic D-Bus Failed error is
-	 * returned.
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
 	 */
-	TEST_FEATURE ("with unknown error from async call");
-	conn = my_setup ();
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	input = "test data";
-	flags = 3;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"NamelessMethod");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"TestAsyncMethod");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INT32, &flags,
-				  DBUS_TYPE_INVALID);
+		dbus_message_iter_init_append (method_call, &iter);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	TEST_EQ_P (reply, NULL);
-	TEST_EQ_STR (error.name, DBUS_ERROR_FAILED);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_error_free (&error);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	dbus_message_unref (message);
+		dbus_message_unref (reply);
 
-	my_teardown (conn);
+		nih_free (object);
+	}
 
 
-	/* Check that if we make the async method call with the wrong
-	 * argument type, we get the D-Bus invalid arguments error back.
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_async_method (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
+	int             ret;
+
+	TEST_GROUP ("async method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
 	 */
-	TEST_FEATURE ("with wrong argument type from async call");
-	conn = my_setup ();
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	input = "test data";
-	output = "not test data";
+		async_method_input = NULL;
+		async_method_message = NULL;
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"TestAsyncMethod");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_STRING, &output,
-				  DBUS_TYPE_INVALID);
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"AsyncMethod");
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		dbus_message_iter_init_append (method_call, &iter);
 
-	TEST_EQ_P (reply, NULL);
-	TEST_EQ_STR (error.name, DBUS_ERROR_INVALID_ARGS);
+		str_value = "she needs more of ze punishment";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
 
-	dbus_error_free (&error);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	dbus_message_unref (message);
+		TEST_DBUS_DISPATCH (server_conn);
 
-	my_teardown (conn);
+		TEST_EQ_STR (async_method_input, "she needs more of ze punishment");
+		TEST_ALLOC_SIZE (async_method_message, sizeof (NihDBusMessage));
+		TEST_ALLOC_PARENT (async_method_message, async_method_input);
+
+		ret = my_test_async_method_reply (async_method_message,
+						  async_method_input);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			nih_free (async_method_message);
+			nih_free (async_method_input);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		nih_free (async_method_message);
+		nih_free (async_method_input);
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_STRING_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "she needs more of ze punishment");
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
 
 
-	/* Check that if we make the async method call with too many
-	 * arguments, we also get the D-Bus invalid arguments error back.
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
 	 */
-	TEST_FEATURE ("with too many arguments from async call");
-	conn = my_setup ();
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	input = "test data";
-	flags = 0;
-	output = "not test data";
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"AsyncMethod");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"TestAsyncMethod");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INT32, &flags,
-				  DBUS_TYPE_STRING, &output,
-				  DBUS_TYPE_INVALID);
+		dbus_message_iter_init_append (method_call, &iter);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		str_value = "";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
 
-	TEST_EQ_P (reply, NULL);
-	TEST_EQ_STR (error.name, DBUS_ERROR_INVALID_ARGS);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	dbus_error_free (&error);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.AsyncMethod.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	my_teardown (conn);
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
 
 
-	/* Check that if we make the async method call without enough
-	 * arguments, we get the D-Bus invalid arguments error back.
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
 	 */
-	TEST_FEATURE ("with missing arguments from async call");
-	conn = my_setup ();
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	input = "test data";
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"AsyncMethod");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"TestAsyncMethod");
+		dbus_message_iter_init_append (method_call, &iter);
 
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INVALID);
+		str_value = "invalid";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	TEST_EQ_P (reply, NULL);
-	TEST_EQ_STR (error.name, DBUS_ERROR_INVALID_ARGS);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	dbus_error_free (&error);
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
 
-	my_teardown (conn);
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
 
 
-	/* Check that if we make the async method call without any
-	 * arguments, we get the D-Bus invalid arguments error back.
+	/* Check that a D-Bus error may be sent after the function returns
+	 * using nih_dbus_message_error().
 	 */
-	TEST_FEATURE ("with no arguments from async call");
-	conn = my_setup ();
+	TEST_FEATURE ("with error after function return");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"TestAsyncMethod");
+		async_method_input = NULL;
+		async_method_message = NULL;
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"AsyncMethod");
 
-	TEST_EQ_P (reply, NULL);
-	TEST_EQ_STR (error.name, DBUS_ERROR_INVALID_ARGS);
+		dbus_message_iter_init_append (method_call, &iter);
 
-	dbus_message_unref (message);
+		str_value = "she needs more of ze punishment";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
 
-	dbus_error_free (&error);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	my_teardown (conn);
+		TEST_DBUS_DISPATCH (server_conn);
+
+		TEST_EQ_STR (async_method_input, "she needs more of ze punishment");
+		TEST_ALLOC_SIZE (async_method_message, sizeof (NihDBusMessage));
+		TEST_ALLOC_PARENT (async_method_message, async_method_input);
+
+		TEST_ALLOC_SAFE {
+			assert0 (nih_dbus_message_error (async_method_message,
+							 "com.netsplit.Nih.Test.AsyncMethod.Fail",
+							 "The method failed in some way"));
+		}
+
+		nih_free (async_method_message);
+		nih_free (async_method_input);
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.AsyncMethod.Fail"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
 
 
-	/* Check that if we say that we're not expecting a reply, none will
-	 * be generated as allowed by the D-Bus spec; even though the
-	 * timer will be fired.
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
 	 */
-	TEST_FEATURE ("with drive-by async call");
-	conn = my_setup ();
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	input = "test data";
-	flags = 0;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"AsyncMethod");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"TestAsyncMethod");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INT32, &flags,
-				  DBUS_TYPE_INVALID);
+		dbus_message_iter_init_append (method_call, &iter);
 
-	dbus_message_set_no_reply (message, TRUE);
+		str_value = "/she/needs/more/of/ze/punishment";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   2500, &error);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	TEST_EQ_P (reply, NULL);
-	TEST_EQ_STR (error.name, DBUS_ERROR_NO_REPLY);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	dbus_error_free (&error);
+		dbus_message_unref (reply);
 
-	my_teardown (conn);
+		nih_free (object);
+	}
 
 
-	/* Check that an input argument of Byte type is marshalled
-	 * correctly.
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
 	 */
-	TEST_FEATURE ("with Byte input argument");
-	conn = my_setup ();
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	byte_arg = 65;
-	output = NULL;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"AsyncMethod");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"ByteToStr");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_BYTE, &byte_arg,
-				  DBUS_TYPE_INVALID);
+		dbus_message_iter_init_append (method_call, &iter);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		str_value = "she needs more of ze punishment";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
 
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_STRING, &output,
-					  DBUS_TYPE_INVALID));
+		str_value = "/com/netsplit/Nih/Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
 
-	TEST_EQ_STR (output, "65");
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	my_teardown (conn);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
 
 
-	/* Check that an output argument of Byte type is dispatched
-	 * correctly.
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
 	 */
-	TEST_FEATURE ("with Byte output argument");
-	conn = my_setup ();
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	input = "65";
-	byte_arg = 0;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"AsyncMethod");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"StrToByte");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INVALID);
+		dbus_message_iter_init_append (method_call, &iter);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_BYTE, &byte_arg,
-					  DBUS_TYPE_INVALID));
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	TEST_EQ (byte_arg, 65);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		dbus_message_unref (reply);
 
-	my_teardown (conn);
+		nih_free (object);
+	}
 
 
- 	/* Check that an input argument of Boolean type is marshalled
-	 * correctly.
-	 */
-	TEST_FEATURE ("with Boolean input argument");
-	conn = my_setup ();
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
 
-	boolean_arg = 1;
-	output = NULL;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"BooleanToStr");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_BOOLEAN, &boolean_arg,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_STRING, &output,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ_STR (output, "True");
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
-	/* Check that an output argument of Boolean type is dispatched
-	 * correctly.
-	 */
-	TEST_FEATURE ("with Boolean output argument");
-	conn = my_setup ();
-
-	input = "False";
-	boolean_arg = TRUE;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"StrToBoolean");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_BOOLEAN, &boolean_arg,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ (boolean_arg, FALSE);
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
- 	/* Check that an input argument of Int16 type is marshalled
-	 * correctly.
-	 */
-	TEST_FEATURE ("with Int16 input argument");
-	conn = my_setup ();
-
-	int16_arg = 1701;
-	output = NULL;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"Int16ToStr");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_INT16, &int16_arg,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_STRING, &output,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ_STR (output, "1701");
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
-	/* Check that an output argument of Int16 type is dispatched
-	 * correctly.
-	 */
-	TEST_FEATURE ("with Int16 output argument");
-	conn = my_setup ();
-
-	input = "1701";
-	int16_arg = 0;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"StrToInt16");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_INT16, &int16_arg,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ (int16_arg, 1701);
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
-	/* Check that an input argument of UInt16 type is marshalled
-	 * correctly.
-	 */
-	TEST_FEATURE ("with UInt16 input argument");
-	conn = my_setup ();
-
-	uint16_arg = 1701;
-	output = NULL;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"UInt16ToStr");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_UINT16, &uint16_arg,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_STRING, &output,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ_STR (output, "1701");
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
-	/* Check that an output argument of UInt16 type is dispatched
-	 * correctly.
-	 */
-	TEST_FEATURE ("with UInt16 output argument");
-	conn = my_setup ();
-
-	input = "1701";
-	uint16_arg = 0;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"StrToUInt16");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_UINT16, &uint16_arg,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ (uint16_arg, 1701);
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
- 	/* Check that an input argument of Int32 type is marshalled
-	 * correctly.
-	 */
-	TEST_FEATURE ("with Int32 input argument");
-	conn = my_setup ();
-
-	int32_arg = 1701;
-	output = NULL;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"Int32ToStr");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_INT32, &int32_arg,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_STRING, &output,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ_STR (output, "1701");
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
-	/* Check that an output argument of Int32 type is dispatched
-	 * correctly.
-	 */
-	TEST_FEATURE ("with Int32 output argument");
-	conn = my_setup ();
-
-	input = "1701";
-	int32_arg = 0;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"StrToInt32");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_INT32, &int32_arg,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ (int32_arg, 1701);
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
-	/* Check that an input argument of UInt32 type is marshalled
-	 * correctly.
-	 */
-	TEST_FEATURE ("with UInt32 input argument");
-	conn = my_setup ();
-
-	uint32_arg = 1701;
-	output = NULL;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"UInt32ToStr");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_UINT32, &uint32_arg,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_STRING, &output,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ_STR (output, "1701");
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
-	/* Check that an output argument of UInt32 type is dispatched
-	 * correctly.
-	 */
-	TEST_FEATURE ("with UInt32 output argument");
-	conn = my_setup ();
-
-	input = "1701";
-	uint32_arg = 0;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"StrToUInt32");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_UINT32, &uint32_arg,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ (uint32_arg, 1701);
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
- 	/* Check that an input argument of Int64 type is marshalled
-	 * correctly.
-	 */
-	TEST_FEATURE ("with Int64 input argument");
-	conn = my_setup ();
-
-	int64_arg = 1701;
-	output = NULL;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"Int64ToStr");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_INT64, &int64_arg,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_STRING, &output,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ_STR (output, "1701");
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
-	/* Check that an output argument of Int64 type is dispatched
-	 * correctly.
-	 */
-	TEST_FEATURE ("with Int64 output argument");
-	conn = my_setup ();
-
-	input = "1701";
-	int64_arg = 0;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"StrToInt64");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_INT64, &int64_arg,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ (int64_arg, 1701);
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
-	/* Check that an input argument of UInt64 type is marshalled
-	 * correctly.
-	 */
-	TEST_FEATURE ("with UInt64 input argument");
-	conn = my_setup ();
-
-	uint64_arg = 1701;
-	output = NULL;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"UInt64ToStr");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_UINT64, &uint64_arg,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_STRING, &output,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ_STR (output, "1701");
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
-	/* Check that an output argument of UInt64 type is dispatched
-	 * correctly.
-	 */
-	TEST_FEATURE ("with UInt64 output argument");
-	conn = my_setup ();
-
-	input = "1701";
-	uint64_arg = 0;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"StrToUInt64");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_UINT64, &uint64_arg,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ (uint64_arg, 1701);
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
-	/* Check that an input argument of Double type is marshalled
-	 * correctly.
-	 */
-	TEST_FEATURE ("with Double input argument");
-	conn = my_setup ();
-
-	double_arg = 3.141592;
-	output = NULL;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"DoubleToStr");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_DOUBLE, &double_arg,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_STRING, &output,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ_STR (output, "3.141592");
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
-	/* Check that an output argument of Double type is dispatched
-	 * correctly.
-	 */
-	TEST_FEATURE ("with Double output argument");
-	conn = my_setup ();
-
-	input = "3.141";
-	double_arg = 0;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"StrToDouble");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_DOUBLE, &double_arg,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ (double_arg, 3.141);
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
-	/* Check that an input argument of ObjectPatch type is marshalled
-	 * correctly.
-	 */
-	TEST_FEATURE ("with ObjectPath input argument");
-	conn = my_setup ();
-
-	input = "/com/netsplit/Nih";
-	output = NULL;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"ObjectPathToStr");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_OBJECT_PATH, &input,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_STRING, &output,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ_STR (output, "/com/netsplit/Nih");
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
-	/* Check that an output argument of ObjectPath type is dispatched
-	 * correctly.
-	 */
-	TEST_FEATURE ("with ObjectPath output argument");
-	conn = my_setup ();
-
-	input = "/com/netsplit/Nih";
-	output = NULL;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"StrToObjectPath");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_OBJECT_PATH, &output,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ_STR (output, "/com/netsplit/Nih");
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
-	/* Check that an input argument of Signature type is marshalled
-	 * correctly.
-	 */
-	TEST_FEATURE ("with Signature input argument");
-	conn = my_setup ();
-
-	input = "a{sv}";
-	output = NULL;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"SignatureToStr");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_SIGNATURE, &input,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_STRING, &output,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ_STR (output, "a{sv}");
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
-	/* Check that an output argument of Signature type is dispatched
-	 * correctly.
-	 */
-	TEST_FEATURE ("with Signature output argument");
-	conn = my_setup ();
-
-	input = "a{sv}";
-	output = NULL;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"StrToSignature");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_SIGNATURE, &output,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ_STR (output, "a{sv}");
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
-	/* Check that an input argument of Array type with Int32 members
-	 * is marshalled correctly.
-	 */
-	TEST_FEATURE ("with Int32 Array input argument");
-	conn = my_setup ();
-
-	int32_array = nih_alloc (NULL, sizeof (int32_t) * 6);
-	int32_array[0] = 4;
-	int32_array[1] = 8;
-	int32_array[2] = 15;
-	int32_array[3] = 16;
-	int32_array[4] = 23;
-	int32_array[5] = 42;
-	array_len = 6;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"Int32ArrayToStr");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_ARRAY, DBUS_TYPE_INT32,
-				  &int32_array, array_len,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_STRING, &output,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ_STR (output, "4 8 15 16 23 42");
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	nih_free (int32_array);
-
-	my_teardown (conn);
-
-
-	/* Check that an output argument of Array type with Int32 elements
-	 * is dispatched correctly.
-	 */
-	TEST_FEATURE ("with Int32 Array output argument");
-	conn = my_setup ();
-
-	input = "4 8 15 16 23 42";
-	int32_array = NULL;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"StrToInt32Array");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_ARRAY, DBUS_TYPE_INT32,
-					  &int32_array, &array_len,
-					  DBUS_TYPE_INVALID));
-
-	TEST_NE_P (int32_array, NULL);
-	TEST_EQ (array_len, 6);
-	TEST_EQ (int32_array[0], 4);
-	TEST_EQ (int32_array[1], 8);
-	TEST_EQ (int32_array[2], 15);
-	TEST_EQ (int32_array[3], 16);
-	TEST_EQ (int32_array[4], 23);
-	TEST_EQ (int32_array[5], 42);
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
-
-
-	/* Check that an input argument of Array type with String members
-	 * is marshalled correctly.
-	 */
-	TEST_FEATURE ("with String Array input argument");
-	conn = my_setup ();
-
-	str_array = nih_alloc (NULL, sizeof (char *) * 4);
-	str_array[0] = "this";
-	str_array[1] = "is";
-	str_array[2] = "a";
-	str_array[3] = "test";
-	array_len = 4;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"StrArrayToStr");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_ARRAY, DBUS_TYPE_STRING,
-				  &str_array, array_len,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_STRING, &output,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ_STR (output, "this is a test");
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	nih_free (str_array);
-
-	my_teardown (conn);
-
-
-	/* Check that an output argument of Array type with String elements
-	 * is dispatched correctly.
-	 */
-	TEST_FEATURE ("with String Array output argument");
-	conn = my_setup ();
-
-	input = "this is a test";
-	str_array = NULL;
-
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Test",
-						"StrToStrArray");
-	dbus_message_append_args (message,
-				  DBUS_TYPE_STRING, &input,
-				  DBUS_TYPE_INVALID);
-
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
-
-	TEST_NE_P (reply, NULL);
-	TEST_TRUE (dbus_message_get_args (reply, &error,
-					  DBUS_TYPE_ARRAY, DBUS_TYPE_STRING,
-					  &str_array, &array_len,
-					  DBUS_TYPE_INVALID));
-
-	TEST_NE_P (str_array, NULL);
-	TEST_EQ (array_len, 4);
-	TEST_EQ_STR (str_array[0], "this");
-	TEST_EQ_STR (str_array[1], "is");
-	TEST_EQ_STR (str_array[2], "a");
-	TEST_EQ_STR (str_array[3], "test");
-
-	dbus_free_string_array ((char **)str_array);
-
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
-
-	my_teardown (conn);
+	dbus_shutdown ();
 }
 
 
 void
-test_signal_dispatch (void)
+test_byte_to_str (void)
 {
-	DBusConnection  *conn;
-	DBusMessage     *message, *reply;
-	DBusError        error;
-	dbus_int32_t     signum, flags;
-	const char      *str;
-	dbus_unichar_t   byte_arg;
-	dbus_bool_t      boolean_arg;
-	dbus_int16_t     int16_arg;
-	dbus_uint16_t    uint16_arg;
-	dbus_int32_t     int32_arg;
-	dbus_uint32_t    uint32_arg;
-	dbus_int64_t     int64_arg;
-	dbus_uint64_t    uint64_arg;
-	double           double_arg;
-	dbus_int32_t    *int32_array;
-	const char     **str_array;
-	size_t           array_len;
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	uint8_t         byte_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	const char *    str_value;
+	DBusError       dbus_error;
 
-	TEST_GROUP ("signal dispatching");
-	dbus_error_init (&error);
+	TEST_GROUP ("ByteToStr method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
 
-	/* Check that an ordinary signal can be emitted by the server with
-	 * a set of arguments, and that we can catch it with them as we
-	 * expected.  No particular error conditions to check for, since the
-	 * only one is out of memory.
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
 	 */
-	TEST_FEATURE ("with ordinary signal");
-	conn = my_setup ();
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	signum = 0;
-	str = NULL;
-	flags = -1;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"ByteToStr");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Glue",
-						"EmitSignal");
+		dbus_message_iter_init_append (method_call, &iter);
 
-	dbus_message_append_args (message,
-				  DBUS_TYPE_INT32, &signum,
-				  DBUS_TYPE_INVALID);
+		byte_value = 97;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_BYTE,
+						&byte_value);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	TEST_NE_P (reply, NULL);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_STRING_AS_STRING);
 
-	message = dbus_connection_pop_message (conn);
+		dbus_message_iter_init (reply, &iter);
 
-	TEST_NE_P (message, NULL);
-	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
-					   "TestSignal"));
-	TEST_TRUE (dbus_message_get_args (message, &error,
-					  DBUS_TYPE_STRING, &str,
-					  DBUS_TYPE_INT32, &flags,
-					  DBUS_TYPE_INVALID));
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "97");
 
-	TEST_EQ_STR (str, "hello there");
-	TEST_EQ (flags, 0);
+		dbus_message_unref (reply);
 
-	dbus_message_unref (message);
-
-	my_teardown (conn);
+		nih_free (object);
+	}
 
 
-	/* Check that a signal with a Byte argument can be emitted and that
-	 * we can catch it as expected.
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
 	 */
-	TEST_FEATURE ("with Byte argument");
-	conn = my_setup ();
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	signum = 1;
-	byte_arg = 0;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"ByteToStr");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Glue",
-						"EmitSignal");
+		dbus_message_iter_init_append (method_call, &iter);
 
-	dbus_message_append_args (message,
-				  DBUS_TYPE_INT32, &signum,
-				  DBUS_TYPE_INVALID);
+		byte_value = 0;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_BYTE,
+						&byte_value);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	TEST_NE_P (reply, NULL);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.ByteToStr.ZeroInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	message = dbus_connection_pop_message (conn);
+		dbus_message_unref (reply);
 
-	TEST_NE_P (message, NULL);
-	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
-					   "EmitByte"));
-	TEST_TRUE (dbus_message_get_args (message, &error,
-					  DBUS_TYPE_BYTE, &byte_arg,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ (byte_arg, 65);
-
-	dbus_message_unref (message);
-
-	my_teardown (conn);
+		nih_free (object);
+	}
 
 
-	/* Check that a signal with a Boolean argument can be emitted and that
-	 * we can catch it as expected.
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
 	 */
-	TEST_FEATURE ("with Boolean argument");
-	conn = my_setup ();
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	signum = 2;
-	boolean_arg = FALSE;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"ByteToStr");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Glue",
-						"EmitSignal");
+		dbus_message_iter_init_append (method_call, &iter);
 
-	dbus_message_append_args (message,
-				  DBUS_TYPE_INT32, &signum,
-				  DBUS_TYPE_INVALID);
+		byte_value = 4;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_BYTE,
+						&byte_value);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	TEST_NE_P (reply, NULL);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	message = dbus_connection_pop_message (conn);
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
 
-	TEST_NE_P (message, NULL);
-	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
-					   "EmitBoolean"));
-	TEST_TRUE (dbus_message_get_args (message, &error,
-					  DBUS_TYPE_BOOLEAN, &boolean_arg,
-					  DBUS_TYPE_INVALID));
+		dbus_message_unref (reply);
 
-	TEST_EQ (boolean_arg, TRUE);
-
-	dbus_message_unref (message);
-
-	my_teardown (conn);
+		nih_free (object);
+	}
 
 
-	/* Check that a signal with a Int16 argument can be emitted and that
-	 * we can catch it as expected.
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
 	 */
-	TEST_FEATURE ("with Int16 argument");
-	conn = my_setup ();
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	signum = 3;
-	int16_arg = 0;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"ByteToStr");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Glue",
-						"EmitSignal");
+		dbus_message_iter_init_append (method_call, &iter);
 
-	dbus_message_append_args (message,
-				  DBUS_TYPE_INT32, &signum,
-				  DBUS_TYPE_INVALID);
+		str_value = "97";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	TEST_NE_P (reply, NULL);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	message = dbus_connection_pop_message (conn);
+		dbus_message_unref (reply);
 
-	TEST_NE_P (message, NULL);
-	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
-					   "EmitInt16"));
-	TEST_TRUE (dbus_message_get_args (message, &error,
-					  DBUS_TYPE_INT16, &int16_arg,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ (int16_arg, 1701);
-
-	dbus_message_unref (message);
-
-	my_teardown (conn);
+		nih_free (object);
+	}
 
 
-	/* Check that a signal with a UInt16 argument can be emitted and that
-	 * we can catch it as expected.
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
 	 */
-	TEST_FEATURE ("with UInt16 argument");
-	conn = my_setup ();
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	signum = 4;
-	uint16_arg = 0;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"ByteToStr");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Glue",
-						"EmitSignal");
+		dbus_message_iter_init_append (method_call, &iter);
 
-	dbus_message_append_args (message,
-				  DBUS_TYPE_INT32, &signum,
-				  DBUS_TYPE_INVALID);
+		byte_value = 97;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_BYTE,
+						&byte_value);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		str_value = "97";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
 
-	TEST_NE_P (reply, NULL);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	message = dbus_connection_pop_message (conn);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	TEST_NE_P (message, NULL);
-	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
-					   "EmitUInt16"));
-	TEST_TRUE (dbus_message_get_args (message, &error,
-					  DBUS_TYPE_UINT16, &uint16_arg,
-					  DBUS_TYPE_INVALID));
+		dbus_message_unref (reply);
 
-	TEST_EQ (uint16_arg, 1701);
-
-	dbus_message_unref (message);
-
-	my_teardown (conn);
+		nih_free (object);
+	}
 
 
-	/* Check that a signal with a Int32 argument can be emitted and that
-	 * we can catch it as expected.
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
 	 */
-	TEST_FEATURE ("with Int32 argument");
-	conn = my_setup ();
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	signum = 5;
-	int32_arg = 0;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"ByteToStr");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Glue",
-						"EmitSignal");
+		dbus_message_iter_init_append (method_call, &iter);
 
-	dbus_message_append_args (message,
-				  DBUS_TYPE_INT32, &signum,
-				  DBUS_TYPE_INVALID);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	TEST_NE_P (reply, NULL);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		dbus_message_unref (reply);
 
-	message = dbus_connection_pop_message (conn);
-
-	TEST_NE_P (message, NULL);
-	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
-					   "EmitInt32"));
-	TEST_TRUE (dbus_message_get_args (message, &error,
-					  DBUS_TYPE_INT32, &int32_arg,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ (int32_arg, 1701);
-
-	dbus_message_unref (message);
-
-	my_teardown (conn);
+		nih_free (object);
+	}
 
 
-	/* Check that a signal with a UInt32 argument can be emitted and that
-	 * we can catch it as expected.
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_str_to_byte (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	char *          str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	uint8_t         byte_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("StrToByte method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
 	 */
-	TEST_FEATURE ("with UInt32 argument");
-	conn = my_setup ();
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	signum = 6;
-	uint32_arg = 0;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToByte");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Glue",
-						"EmitSignal");
+		dbus_message_iter_init_append (method_call, &iter);
 
-	dbus_message_append_args (message,
-				  DBUS_TYPE_INT32, &signum,
-				  DBUS_TYPE_INVALID);
+		str_value = "97";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	TEST_NE_P (reply, NULL);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_BYTE_AS_STRING);
 
-	message = dbus_connection_pop_message (conn);
+		dbus_message_iter_init (reply, &iter);
 
-	TEST_NE_P (message, NULL);
-	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
-					   "EmitUInt32"));
-	TEST_TRUE (dbus_message_get_args (message, &error,
-					  DBUS_TYPE_UINT32, &uint32_arg,
-					  DBUS_TYPE_INVALID));
+		dbus_message_iter_get_basic (&iter, &byte_value);
+		TEST_EQ (byte_value, 97);
 
-	TEST_EQ (uint32_arg, 1701);
+		dbus_message_unref (reply);
 
-	dbus_message_unref (message);
-
-	my_teardown (conn);
+		nih_free (object);
+	}
 
 
-	/* Check that a signal with a Int64 argument can be emitted and that
-	 * we can catch it as expected.
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
 	 */
-	TEST_FEATURE ("with Int64 argument");
-	conn = my_setup ();
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	signum = 7;
-	int64_arg = 0;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToByte");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Glue",
-						"EmitSignal");
+		dbus_message_iter_init_append (method_call, &iter);
 
-	dbus_message_append_args (message,
-				  DBUS_TYPE_INT32, &signum,
-				  DBUS_TYPE_INVALID);
+		str_value = "";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	TEST_NE_P (reply, NULL);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.StrToByte.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	message = dbus_connection_pop_message (conn);
+		dbus_message_unref (reply);
 
-	TEST_NE_P (message, NULL);
-	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
-					   "EmitInt64"));
-	TEST_TRUE (dbus_message_get_args (message, &error,
-					  DBUS_TYPE_INT64, &int64_arg,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ (int64_arg, 1701);
-
-	dbus_message_unref (message);
-
-	my_teardown (conn);
+		nih_free (object);
+	}
 
 
-	/* Check that a signal with a UInt64 argument can be emitted and that
-	 * we can catch it as expected.
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
 	 */
-	TEST_FEATURE ("with UInt64 argument");
-	conn = my_setup ();
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	signum = 8;
-	uint64_arg = 0;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToByte");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Glue",
-						"EmitSignal");
+		dbus_message_iter_init_append (method_call, &iter);
 
-	dbus_message_append_args (message,
-				  DBUS_TYPE_INT32, &signum,
-				  DBUS_TYPE_INVALID);
+		str_value = "invalid";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	TEST_NE_P (reply, NULL);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	message = dbus_connection_pop_message (conn);
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
 
-	TEST_NE_P (message, NULL);
-	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
-					   "EmitUInt64"));
-	TEST_TRUE (dbus_message_get_args (message, &error,
-					  DBUS_TYPE_UINT64, &uint64_arg,
-					  DBUS_TYPE_INVALID));
+		dbus_message_unref (reply);
 
-	TEST_EQ (uint64_arg, 1701);
-
-	dbus_message_unref (message);
-
-	my_teardown (conn);
+		nih_free (object);
+	}
 
 
-	/* Check that a signal with a Double argument can be emitted and that
-	 * we can catch it as expected.
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
 	 */
-	TEST_FEATURE ("with Double argument");
-	conn = my_setup ();
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	signum = 9;
-	double_arg = 0;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToByte");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Glue",
-						"EmitSignal");
+		dbus_message_iter_init_append (method_call, &iter);
 
-	dbus_message_append_args (message,
-				  DBUS_TYPE_INT32, &signum,
-				  DBUS_TYPE_INVALID);
+		byte_value = 97;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_BYTE,
+						&byte_value);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	TEST_NE_P (reply, NULL);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	message = dbus_connection_pop_message (conn);
+		dbus_message_unref (reply);
 
-	TEST_NE_P (message, NULL);
-	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
-					   "EmitDouble"));
-	TEST_TRUE (dbus_message_get_args (message, &error,
-					  DBUS_TYPE_DOUBLE, &double_arg,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ (double_arg, 3.141);
-
-	dbus_message_unref (message);
-
-	my_teardown (conn);
+		nih_free (object);
+	}
 
 
-	/* Check that a signal with a String argument can be emitted and that
-	 * we can catch it as expected.
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
 	 */
-	TEST_FEATURE ("with String argument");
-	conn = my_setup ();
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	signum = 10;
-	str = NULL;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToByte");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Glue",
-						"EmitSignal");
+		dbus_message_iter_init_append (method_call, &iter);
 
-	dbus_message_append_args (message,
-				  DBUS_TYPE_INT32, &signum,
-				  DBUS_TYPE_INVALID);
+		str_value = "97";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		byte_value = 97;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_BYTE,
+						&byte_value);
 
-	TEST_NE_P (reply, NULL);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	message = dbus_connection_pop_message (conn);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	TEST_NE_P (message, NULL);
-	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
-					   "EmitString"));
-	TEST_TRUE (dbus_message_get_args (message, &error,
-					  DBUS_TYPE_STRING, &str,
-					  DBUS_TYPE_INVALID));
+		dbus_message_unref (reply);
 
-	TEST_EQ_STR (str, "test data");
-
-	dbus_message_unref (message);
-
-	my_teardown (conn);
+		nih_free (object);
+	}
 
 
-	/* Check that a signal with a ObjectPath argument can be emitted and
-	 * that we can catch it as expected.
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
 	 */
-	TEST_FEATURE ("with ObjectPath argument");
-	conn = my_setup ();
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	signum = 11;
-	str = NULL;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToByte");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Glue",
-						"EmitSignal");
+		dbus_message_iter_init_append (method_call, &iter);
 
-	dbus_message_append_args (message,
-				  DBUS_TYPE_INT32, &signum,
-				  DBUS_TYPE_INVALID);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	TEST_NE_P (reply, NULL);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		dbus_message_unref (reply);
 
-	message = dbus_connection_pop_message (conn);
-
-	TEST_NE_P (message, NULL);
-	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
-					   "EmitObjectPath"));
-	TEST_TRUE (dbus_message_get_args (message, &error,
-					  DBUS_TYPE_OBJECT_PATH, &str,
-					  DBUS_TYPE_INVALID));
-
-	TEST_EQ_STR (str, "/com/netsplit/Nih");
-
-	dbus_message_unref (message);
-
-	my_teardown (conn);
+		nih_free (object);
+	}
 
 
-	/* Check that a signal with a Signature argument can be emitted and
-	 * that we can catch it as expected.
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_boolean_to_str (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	int             boolean_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	const char *    str_value;
+
+	TEST_GROUP ("BooleanToStr method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
 	 */
-	TEST_FEATURE ("with Signature argument");
-	conn = my_setup ();
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	signum = 12;
-	str = NULL;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"BooleanToStr");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Glue",
-						"EmitSignal");
+		dbus_message_iter_init_append (method_call, &iter);
 
-	dbus_message_append_args (message,
-				  DBUS_TYPE_INT32, &signum,
-				  DBUS_TYPE_INVALID);
+		boolean_value = TRUE;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_BOOLEAN,
+						&boolean_value);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	TEST_NE_P (reply, NULL);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_STRING_AS_STRING);
 
-	message = dbus_connection_pop_message (conn);
+		dbus_message_iter_init (reply, &iter);
 
-	TEST_NE_P (message, NULL);
-	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
-					   "EmitSignature"));
-	TEST_TRUE (dbus_message_get_args (message, &error,
-					  DBUS_TYPE_SIGNATURE, &str,
-					  DBUS_TYPE_INVALID));
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "True");
 
-	TEST_EQ_STR (str, "a{sv}");
+		dbus_message_unref (reply);
 
-	dbus_message_unref (message);
-
-	my_teardown (conn);
+		nih_free (object);
+	}
 
 
-	/* Check that a signal with a Array argument and Int32 elements
-	 * can be emitted and that we can catch it as expected.
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
 	 */
-	TEST_FEATURE ("with Int32 Array argument");
-	conn = my_setup ();
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	signum = 13;
-	int32_array = NULL;
-	array_len = 0;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"BooleanToStr");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Glue",
-						"EmitSignal");
+		dbus_message_iter_init_append (method_call, &iter);
 
-	dbus_message_append_args (message,
-				  DBUS_TYPE_INT32, &signum,
-				  DBUS_TYPE_INVALID);
+		boolean_value = FALSE;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_BOOLEAN,
+						&boolean_value);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	TEST_NE_P (reply, NULL);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.BooleanToStr.ZeroInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	message = dbus_connection_pop_message (conn);
+		dbus_message_unref (reply);
 
-	TEST_NE_P (message, NULL);
-	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
-					   "EmitInt32Array"));
-	TEST_TRUE (dbus_message_get_args (message, &error,
-					  DBUS_TYPE_ARRAY, DBUS_TYPE_INT32,
-					  &int32_array, &array_len,
-					  DBUS_TYPE_INVALID));
-
-	TEST_NE_P (int32_array, NULL);
-	TEST_EQ (int32_array[0], 4);
-	TEST_EQ (int32_array[1], 8);
-	TEST_EQ (int32_array[2], 15);
-	TEST_EQ (int32_array[3], 16);
-	TEST_EQ (int32_array[4], 23);
-	TEST_EQ (int32_array[5], 42);
-	TEST_EQ (array_len, 6);
-
-	dbus_message_unref (message);
-
-	my_teardown (conn);
+		nih_free (object);
+	}
 
 
-	/* Check that a signal with a Array argument and String elements
-	 * can be emitted and that we can catch it as expected.
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
 	 */
-	TEST_FEATURE ("with String Array argument");
-	conn = my_setup ();
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	signum = 14;
-	str_array = NULL;
-	array_len = 0;
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"BooleanToStr");
 
-	message = dbus_message_new_method_call (NULL, "/com/netsplit/Nih",
-						"com.netsplit.Nih.Glue",
-						"EmitSignal");
+		dbus_message_iter_init_append (method_call, &iter);
 
-	dbus_message_append_args (message,
-				  DBUS_TYPE_INT32, &signum,
-				  DBUS_TYPE_INVALID);
+		str_value = "True";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
 
-	reply = dbus_connection_send_with_reply_and_block (conn, message,
-							   -1, &error);
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
 
-	TEST_NE_P (reply, NULL);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
 
-	dbus_message_unref (reply);
-	dbus_message_unref (message);
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
-	message = dbus_connection_pop_message (conn);
+		dbus_message_unref (reply);
 
-	TEST_NE_P (message, NULL);
-	TEST_TRUE (dbus_message_is_signal (message, "com.netsplit.Nih.Test",
-					   "EmitStrArray"));
-	TEST_TRUE (dbus_message_get_args (message, &error,
-					  DBUS_TYPE_ARRAY, DBUS_TYPE_STRING,
-					  &str_array, &array_len,
-					  DBUS_TYPE_INVALID));
+		nih_free (object);
+	}
 
-	TEST_NE_P (str_array, NULL);
-	TEST_EQ_STR (str_array[0], "this");
-	TEST_EQ_STR (str_array[1], "is");
-	TEST_EQ_STR (str_array[2], "a");
-	TEST_EQ_STR (str_array[3], "test");
-	TEST_EQ (array_len, 4);
 
-	dbus_free_string_array ((char **)str_array);
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
 
-	dbus_message_unref (message);
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"BooleanToStr");
 
-	my_teardown (conn);
+		dbus_message_iter_init_append (method_call, &iter);
+
+		boolean_value = TRUE;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_BOOLEAN,
+						&boolean_value);
+
+		str_value = "True";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"BooleanToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_str_to_boolean (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	char *          str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	int             boolean_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("StrToBoolean method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToBoolean");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "True";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_BOOLEAN_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &boolean_value);
+		TEST_EQ (boolean_value, TRUE);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToBoolean");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.StrToBoolean.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToBoolean");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "invalid";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToBoolean");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		boolean_value = TRUE;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_BOOLEAN,
+						&boolean_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToBoolean");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "97";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		boolean_value = TRUE;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_BOOLEAN,
+						&boolean_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToBoolean");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_int16_to_str (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	int16_t         int16_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	const char *    str_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("Int16ToStr method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int16ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		int16_value = -42;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT16,
+						&int16_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_STRING_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "-42");
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int16ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		int16_value = 0;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT16,
+						&int16_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.Int16ToStr.ZeroInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int16ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		int16_value = 4;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT16,
+						&int16_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int16ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "-42";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int16ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		int16_value = -42;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT16,
+						&int16_value);
+
+		str_value = "-42";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int16ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_str_to_int16 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	char *          str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	int16_t         int16_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("StrToInt16 method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt16");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "-42";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_INT16_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &int16_value);
+		TEST_EQ (int16_value, -42);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt16");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.StrToInt16.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt16");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "invalid";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt16");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		int16_value = -42;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT16,
+						&int16_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt16");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "-42";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		int16_value = -42;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT16,
+						&int16_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt16");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_uint16_to_str (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	uint16_t        uint16_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	const char *    str_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("UInt16ToStr method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"UInt16ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		uint16_value = 42;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_UINT16,
+						&uint16_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_STRING_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "42");
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"UInt16ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		uint16_value = 0;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_UINT16,
+						&uint16_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.UInt16ToStr.ZeroInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"UInt16ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		uint16_value = 4;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_UINT16,
+						&uint16_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"UInt16ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "42";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"UInt16ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		uint16_value = 42;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_UINT16,
+						&uint16_value);
+
+		str_value = "42";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"UInt16ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_str_to_uint16 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	char *          str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	uint16_t        uint16_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("StrToUInt16 method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToUInt16");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "42";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_UINT16_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &uint16_value);
+		TEST_EQ (uint16_value, 42);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToUInt16");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.StrToUInt16.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToUInt16");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "invalid";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToUInt16");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		uint16_value = 42;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_UINT16,
+						&uint16_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToUInt16");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "42";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		uint16_value = 42;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_UINT16,
+						&uint16_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToUInt16");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_int32_to_str (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	int32_t         int32_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	const char *    str_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("Int32ToStr method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		int32_value = -1048576;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_STRING_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "-1048576");
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		int32_value = 0;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.Int32ToStr.ZeroInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		int32_value = 4;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "-1048576";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		int32_value = -1048576;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		str_value = "-1048576";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_str_to_int32 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	char *          str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	int32_t         int32_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("StrToInt32 method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt32");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "-1048576";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_INT32_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &int32_value);
+		TEST_EQ (int32_value, -1048576);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt32");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.StrToInt32.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt32");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "invalid";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt32");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		int32_value = -1048576;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt32");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "-1048576";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		int32_value = -1048576;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt32");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_uint32_to_str (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	uint32_t        uint32_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	const char *    str_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("UInt32ToStr method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"UInt32ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		uint32_value = 1048576;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_UINT32,
+						&uint32_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_STRING_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "1048576");
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"UInt32ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		uint32_value = 0;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_UINT32,
+						&uint32_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.UInt32ToStr.ZeroInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"UInt32ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		uint32_value = 4;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_UINT32,
+						&uint32_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"UInt32ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "1048576";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"UInt32ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		uint32_value = 1048576;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_UINT32,
+						&uint32_value);
+
+		str_value = "1048576";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"UInt32ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_str_to_uint32 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	char *          str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	uint32_t        uint32_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("StrToUInt32 method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToUInt32");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "1048576";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_UINT32_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &uint32_value);
+		TEST_EQ (uint32_value, 1048576);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToUInt32");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.StrToUInt32.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToUInt32");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "invalid";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToUInt32");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		uint32_value = 1048576;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_UINT32,
+						&uint32_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToUInt32");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "1048576";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		uint32_value = 1048576;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_UINT32,
+						&uint32_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToUInt32");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_int64_to_str (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	int64_t         int64_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	const char *    str_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("Int64ToStr method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int64ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		int64_value = -4815162342L;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT64,
+						&int64_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_STRING_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "-4815162342");
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int64ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		int64_value = 0;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT64,
+						&int64_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.Int64ToStr.ZeroInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int64ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		int64_value = 4;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT64,
+						&int64_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int64ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "-4815162342";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int64ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		int64_value = -4815162342L;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT64,
+						&int64_value);
+
+		str_value = "-4815162342";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int64ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_str_to_int64 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	char *          str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	int64_t         int64_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("StrToInt64 method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt64");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "-4815162342";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_INT64_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &int64_value);
+		TEST_EQ (int64_value, -4815162342L);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt64");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.StrToInt64.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt64");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "invalid";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt64");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		int64_value = -4815162342L;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT64,
+						&int64_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt64");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "-4815162342";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		int64_value = -4815162342L;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT64,
+						&int64_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt64");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_uint64_to_str (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	uint64_t        uint64_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	const char *    str_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("UInt64ToStr method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"UInt64ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		uint64_value = 4815162342L;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_UINT64,
+						&uint64_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_STRING_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "4815162342");
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"UInt64ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		uint64_value = 0;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_UINT64,
+						&uint64_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.UInt64ToStr.ZeroInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"UInt64ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		uint64_value = 4;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_UINT64,
+						&uint64_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"UInt64ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "4815162342";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"UInt64ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		uint64_value = 4815162342;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_UINT64,
+						&uint64_value);
+
+		str_value = "4815162342";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"UInt64ToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_str_to_uint64 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	char *          str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	uint64_t        uint64_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("StrToUInt64 method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToUInt64");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "4815162342";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_UINT64_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &uint64_value);
+		TEST_EQ (uint64_value, 4815162342);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToUInt64");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.StrToUInt64.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToUInt64");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "invalid";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToUInt64");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		uint64_value = 4815162342;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_UINT64,
+						&uint64_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToUInt64");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "4815162342";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		uint64_value = 4815162342L;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_UINT64,
+						&uint64_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToUInt64");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_double_to_str (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	double          double_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	const char *    str_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("DoubleToStr method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"DoubleToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		double_value = 3.141597;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_DOUBLE,
+						&double_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_STRING_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "3.141597");
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"DoubleToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		double_value = 0;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_DOUBLE,
+						&double_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.DoubleToStr.ZeroInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"DoubleToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		double_value = 4;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_DOUBLE,
+						&double_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"DoubleToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "3.141597";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"DoubleToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		double_value = 3.141597;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_DOUBLE,
+						&double_value);
+
+		str_value = "3.141597";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"DoubleToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_str_to_double (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	char *          str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	double          double_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("StrToDouble method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToDouble");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "3.141597";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_DOUBLE_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &double_value);
+		TEST_EQ (double_value, 3.141597);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToDouble");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.StrToDouble.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToDouble");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "invalid";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToDouble");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		double_value = 3.141597;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_DOUBLE,
+						&double_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToDouble");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "3.141597";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		double_value = 3.141597;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_DOUBLE,
+						&double_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToDouble");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_object_path_to_str (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("ObjectPathToStr method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"ObjectPathToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "/com/netsplit/Nih/Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_STRING_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "/com/netsplit/Nih/Test");
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"ObjectPathToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "/";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.ObjectPathToStr.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"ObjectPathToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "/invalid";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"ObjectPathToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "/com/netsplit/Nih/Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"ObjectPathToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "/com/netsplit/Nih/Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		str_value = "/com/netsplit/Nih/Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"ObjectPathToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_str_to_object_path (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	char *          str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("StrToObjectPath method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToObjectPath");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "/com/netsplit/Nih/Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_OBJECT_PATH_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "/com/netsplit/Nih/Test");
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToObjectPath");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.StrToObjectPath.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToObjectPath");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "invalid";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToObjectPath");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "/com/netsplit/Nih/Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToObjectPath");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "/com/netsplit/Nih/Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "/com/netsplit/Nih/Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToObjectPath");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_signature_to_str (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("SignatureToStr method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"SignatureToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "a(ib)";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_SIGNATURE,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_STRING_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "a(ib)");
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"SignatureToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_SIGNATURE,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.SignatureToStr.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"SignatureToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "inva(x)id";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_SIGNATURE,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"SignatureToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "a(ib)";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"SignatureToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "a(ib)";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_SIGNATURE,
+						&str_value);
+
+		str_value = "a(ib)";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"SignatureToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_str_to_signature (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	char *          str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("StrToSignature method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToSignature");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "a(ib)";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_SIGNATURE_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "a(ib)");
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToSignature");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.StrToSignature.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToSignature");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "invalid";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToSignature");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "a(ib)";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_SIGNATURE,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToSignature");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "a(ib)";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "a(ib)";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_SIGNATURE,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToSignature");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_int32_array_to_str (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	DBusMessageIter subiter;
+	int32_t         int32_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	const char *    str_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("Int32ArrayToStr method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subiter);
+
+		int32_value = 4;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 15;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 16;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 23;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 42;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_STRING_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "4 8 15 16 23 42");
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.Int32ArrayToStr.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subiter);
+
+		int32_value = 4;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 15;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 16;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if array elements of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "4";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "8";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "15";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "16";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "23";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "42";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "4 8 15 16 23 42";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subiter);
+
+		int32_value = 4;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 15;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 16;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 23;
+
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 42;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		str_value = "4 8 15 16 23 42";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_str_to_int32_array (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	char *          str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusMessageIter subiter;
+	int32_t         int32_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("StrToInt32Array method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt32Array");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "4 8 15 16 23 42";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     (DBUS_TYPE_ARRAY_AS_STRING
+			      DBUS_TYPE_INT32_AS_STRING));
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subiter, &int32_value);
+		TEST_EQ (int32_value, 4);
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subiter, &int32_value);
+		TEST_EQ (int32_value, 8);
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subiter, &int32_value);
+		TEST_EQ (int32_value, 15);
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subiter, &int32_value);
+		TEST_EQ (int32_value, 16);
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subiter, &int32_value);
+		TEST_EQ (int32_value, 23);
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subiter, &int32_value);
+		TEST_EQ (int32_value, 42);
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt32Array");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.StrToInt32Array.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt32Array");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "invalid";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt32Array");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subiter);
+
+		int32_value = 4;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 15;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 16;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 23;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 42;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt32Array");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "4 8 15 16 23 42";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subiter);
+
+		int32_value = 4;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 15;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 16;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 23;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 42;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt32Array");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_str_array_to_str (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	DBusMessageIter subiter;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	const char *    str_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("StrArrayToStr method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "she";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "needs";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "more";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "of";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "ze";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "punishment";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_STRING_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "she needs more of ze punishment");
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.StrArrayToStr.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "this";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "is";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "a";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "test";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if array elements of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_OBJECT_PATH_AS_STRING,
+						  &subiter);
+
+		str_value = "/she";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		str_value = "/needs";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		str_value = "/more";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		str_value = "/of";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		str_value = "/ze";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		str_value = "/punishment";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "she needs more of ze punishment";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "she";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "needs";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "more";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "of";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "ze";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "punishment";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		str_value = "she needs more of ze punishment";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_str_to_str_array (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	char *          str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusMessageIter subiter;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("StrToStrArray method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToStrArray");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "she needs more of ze punishment";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     (DBUS_TYPE_ARRAY_AS_STRING
+			      DBUS_TYPE_STRING_AS_STRING));
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+		dbus_message_iter_get_basic (&subiter, &str_value);
+		TEST_EQ_STR (str_value, "she");
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+		dbus_message_iter_get_basic (&subiter, &str_value);
+		TEST_EQ_STR (str_value, "needs");
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+		dbus_message_iter_get_basic (&subiter, &str_value);
+		TEST_EQ_STR (str_value, "more");
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+		dbus_message_iter_get_basic (&subiter, &str_value);
+		TEST_EQ_STR (str_value, "of");
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+		dbus_message_iter_get_basic (&subiter, &str_value);
+		TEST_EQ_STR (str_value, "ze");
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+		dbus_message_iter_get_basic (&subiter, &str_value);
+		TEST_EQ_STR (str_value, "punishment");
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToStrArray");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.StrToStrArray.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToStrArray");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "invalid";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToStrArray");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "she";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "needs";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "more";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "of";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "ze";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "punishment";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToStrArray");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "she needs more of ze punishment";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "she";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "needs";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "more";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "of";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "ze";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "punishment";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToStrArray");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_int32_array_array_to_str (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	DBusMessageIter subiter;
+	DBusMessageIter subsubiter;
+	int32_t         int32_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	const char *    str_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("Int32ArrayArrayToStr method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ArrayArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubiter);
+
+		int32_value = 4;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 15;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 16;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 23;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 42;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubiter);
+
+		int32_value = 1;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 1;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 2;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 3;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 5;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     DBUS_TYPE_STRING_AS_STRING);
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "4 8 15 16 23 42\n1 1 2 3 5 8");
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ArrayArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.Int32ArrayArrayToStr.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ArrayArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubiter);
+
+		int32_value = 4;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 15;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 16;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 23;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 42;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if first-level array elements of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong first-level element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ArrayArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "4";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "8";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "15";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "16";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "23";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "42";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if second-level array elements of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong second-level element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ArrayArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_STRING_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subsubiter);
+
+		str_value = "4";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "8";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "15";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "16";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "23";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "42";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ArrayArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "4 8 15 16 23 42\n1 1 2 3 5 8";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ArrayArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubiter);
+
+		int32_value = 4;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 15;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 16;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 23;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 42;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubiter);
+
+		int32_value = 1;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 1;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 2;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 3;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 5;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		str_value = "4 8 15 16 23 42\n1 1 2 3 5 8";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"Int32ArrayArrayToStr");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_str_to_int32_array_array (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	char *          str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusMessageIter subiter;
+	DBusMessageIter subsubiter;
+	int32_t         int32_value;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("StrToInt32ArrayArray method");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the function works as we expect when we give the
+	 * expected argument type.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt32ArrayArray");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "4 8 15 16 23 42\n1 1 2 3 5 8";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply),
+			     (DBUS_TYPE_ARRAY_AS_STRING
+			      DBUS_TYPE_ARRAY_AS_STRING
+			      DBUS_TYPE_INT32_AS_STRING));
+
+		dbus_message_iter_init (reply, &iter);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		dbus_message_iter_recurse (&subiter, &subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 4);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 8);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 15);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 16);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 23);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 42);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INVALID);
+		dbus_message_iter_next (&subiter);
+
+
+		dbus_message_iter_recurse (&subiter, &subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 1);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 1);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 2);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 3);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 5);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 8);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INVALID);
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt32ArrayArray");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.StrToInt32ArrayArray.EmptyInput"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt32ArrayArray");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "invalid";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt32ArrayArray");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubiter);
+
+		int32_value = 4;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 15;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 16;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 23;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 42;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubiter);
+
+		int32_value = 1;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 1;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 2;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 3;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 5;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt32ArrayArray");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "4 8 15 16 23 42\n1 1 2 3 5 8";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubiter);
+
+		int32_value = 4;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 15;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 16;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 23;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 42;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubiter);
+
+		int32_value = 1;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 1;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 2;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 3;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 5;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			"com.netsplit.Nih.Test",
+			"StrToInt32ArrayArray");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+
+void
+test_new_byte (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	DBusError       dbus_error;
+	int             ret;
+	DBusMessage *   signal;
+	DBusMessageIter iter;
+	uint8_t         byte_value;
+
+	/* Check that the generated function emits the expected signal,
+	 * with the arguments we give.
+	 */
+	TEST_GROUP ("NewByte signal");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+	TEST_ALLOC_FAIL {
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (client_conn, "type='signal'", &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		ret = my_test_emit_new_byte (server_conn,
+					     "/com/netsplit/Nih/Test",
+					     97);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_error_init (&dbus_error);
+			dbus_bus_remove_match (client_conn, "type='signal'",
+					       &dbus_error);
+			assert (! dbus_error_is_set (&dbus_error));
+			dbus_error_free (&dbus_error);
+			continue;
+		}
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, signal);
+		TEST_TRUE (dbus_message_is_signal (
+				   signal, "com.netsplit.Nih.Test", "NewByte"));
+		TEST_EQ_STR (dbus_message_get_signature (signal),
+			     DBUS_TYPE_BYTE_AS_STRING);
+
+		dbus_message_iter_init (signal, &iter);
+
+		dbus_message_iter_get_basic (&iter, &byte_value);
+		TEST_EQ (byte_value, 97);
+
+		dbus_message_unref (signal);
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (client_conn, "type='signal'",
+				       &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+	}
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_new_boolean (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	DBusError       dbus_error;
+	int             ret;
+	DBusMessage *   signal;
+	DBusMessageIter iter;
+	int             boolean_value;
+
+	/* Check that the generated function emits the expected signal,
+	 * with the arguments we give.
+	 */
+	TEST_GROUP ("NewBoolean signal");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+	TEST_ALLOC_FAIL {
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (client_conn, "type='signal'", &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		ret = my_test_emit_new_boolean (server_conn,
+						"/com/netsplit/Nih/Test",
+						TRUE);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_error_init (&dbus_error);
+			dbus_bus_remove_match (client_conn, "type='signal'",
+					       &dbus_error);
+			assert (! dbus_error_is_set (&dbus_error));
+			dbus_error_free (&dbus_error);
+			continue;
+		}
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, signal);
+		TEST_TRUE (dbus_message_is_signal (
+				   signal, "com.netsplit.Nih.Test", "NewBoolean"));
+		TEST_EQ_STR (dbus_message_get_signature (signal),
+			     DBUS_TYPE_BOOLEAN_AS_STRING);
+
+		dbus_message_iter_init (signal, &iter);
+
+		dbus_message_iter_get_basic (&iter, &boolean_value);
+		TEST_EQ (boolean_value, TRUE);
+
+		dbus_message_unref (signal);
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (client_conn, "type='signal'",
+				       &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+	}
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_new_int16 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	DBusError       dbus_error;
+	int             ret;
+	DBusMessage *   signal;
+	DBusMessageIter iter;
+	int16_t         int16_value;
+
+	/* Check that the generated function emits the expected signal,
+	 * with the arguments we give.
+	 */
+	TEST_GROUP ("NewInt16 signal");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+	TEST_ALLOC_FAIL {
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (client_conn, "type='signal'", &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		ret = my_test_emit_new_int16 (server_conn,
+					      "/com/netsplit/Nih/Test",
+					      -42);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_error_init (&dbus_error);
+			dbus_bus_remove_match (client_conn, "type='signal'",
+					       &dbus_error);
+			assert (! dbus_error_is_set (&dbus_error));
+			dbus_error_free (&dbus_error);
+			continue;
+		}
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, signal);
+		TEST_TRUE (dbus_message_is_signal (
+				   signal, "com.netsplit.Nih.Test", "NewInt16"));
+		TEST_EQ_STR (dbus_message_get_signature (signal),
+			     DBUS_TYPE_INT16_AS_STRING);
+
+		dbus_message_iter_init (signal, &iter);
+
+		dbus_message_iter_get_basic (&iter, &int16_value);
+		TEST_EQ (int16_value, -42);
+
+		dbus_message_unref (signal);
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (client_conn, "type='signal'",
+				       &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+	}
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_new_uint16 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	DBusError       dbus_error;
+	int             ret;
+	DBusMessage *   signal;
+	DBusMessageIter iter;
+	uint16_t        uint16_value;
+
+	/* Check that the generated function emits the expected signal,
+	 * with the arguments we give.
+	 */
+	TEST_GROUP ("NewUInt16 signal");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+	TEST_ALLOC_FAIL {
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (client_conn, "type='signal'", &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		ret = my_test_emit_new_uint16 (server_conn,
+					       "/com/netsplit/Nih/Test",
+					       42);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_error_init (&dbus_error);
+			dbus_bus_remove_match (client_conn, "type='signal'",
+					       &dbus_error);
+			assert (! dbus_error_is_set (&dbus_error));
+			dbus_error_free (&dbus_error);
+			continue;
+		}
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, signal);
+		TEST_TRUE (dbus_message_is_signal (
+				   signal, "com.netsplit.Nih.Test", "NewUInt16"));
+		TEST_EQ_STR (dbus_message_get_signature (signal),
+			     DBUS_TYPE_UINT16_AS_STRING);
+
+		dbus_message_iter_init (signal, &iter);
+
+		dbus_message_iter_get_basic (&iter, &uint16_value);
+		TEST_EQ (uint16_value, 42);
+
+		dbus_message_unref (signal);
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (client_conn, "type='signal'",
+				       &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+	}
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_new_int32 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	DBusError       dbus_error;
+	int             ret;
+	DBusMessage *   signal;
+	DBusMessageIter iter;
+	int32_t         int32_value;
+
+	/* Check that the generated function emits the expected signal,
+	 * with the arguments we give.
+	 */
+	TEST_GROUP ("NewInt32 signal");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+	TEST_ALLOC_FAIL {
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (client_conn, "type='signal'", &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		ret = my_test_emit_new_int32 (server_conn,
+					      "/com/netsplit/Nih/Test",
+					      -1048576);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_error_init (&dbus_error);
+			dbus_bus_remove_match (client_conn, "type='signal'",
+					       &dbus_error);
+			assert (! dbus_error_is_set (&dbus_error));
+			dbus_error_free (&dbus_error);
+			continue;
+		}
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, signal);
+		TEST_TRUE (dbus_message_is_signal (
+				   signal, "com.netsplit.Nih.Test", "NewInt32"));
+		TEST_EQ_STR (dbus_message_get_signature (signal),
+			     DBUS_TYPE_INT32_AS_STRING);
+
+		dbus_message_iter_init (signal, &iter);
+
+		dbus_message_iter_get_basic (&iter, &int32_value);
+		TEST_EQ (int32_value, -1048576);
+
+		dbus_message_unref (signal);
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (client_conn, "type='signal'",
+				       &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+	}
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_new_uint32 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	DBusError       dbus_error;
+	int             ret;
+	DBusMessage *   signal;
+	DBusMessageIter iter;
+	uint32_t        uint32_value;
+
+	/* Check that the generated function emits the expected signal,
+	 * with the arguments we give.
+	 */
+	TEST_GROUP ("NewUInt32 signal");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+	TEST_ALLOC_FAIL {
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (client_conn, "type='signal'", &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		ret = my_test_emit_new_uint32 (server_conn,
+					       "/com/netsplit/Nih/Test",
+					       1048576);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_error_init (&dbus_error);
+			dbus_bus_remove_match (client_conn, "type='signal'",
+					       &dbus_error);
+			assert (! dbus_error_is_set (&dbus_error));
+			dbus_error_free (&dbus_error);
+			continue;
+		}
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, signal);
+		TEST_TRUE (dbus_message_is_signal (
+				   signal, "com.netsplit.Nih.Test", "NewUInt32"));
+		TEST_EQ_STR (dbus_message_get_signature (signal),
+			     DBUS_TYPE_UINT32_AS_STRING);
+
+		dbus_message_iter_init (signal, &iter);
+
+		dbus_message_iter_get_basic (&iter, &uint32_value);
+		TEST_EQ (uint32_value, 1048576);
+
+		dbus_message_unref (signal);
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (client_conn, "type='signal'",
+				       &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+	}
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_new_int64 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	DBusError       dbus_error;
+	int             ret;
+	DBusMessage *   signal;
+	DBusMessageIter iter;
+	int64_t         int64_value;
+
+	/* Check that the generated function emits the expected signal,
+	 * with the arguments we give.
+	 */
+	TEST_GROUP ("NewInt64 signal");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+	TEST_ALLOC_FAIL {
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (client_conn, "type='signal'", &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		ret = my_test_emit_new_int64 (server_conn,
+					      "/com/netsplit/Nih/Test",
+					      -4815162342L);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_error_init (&dbus_error);
+			dbus_bus_remove_match (client_conn, "type='signal'",
+					       &dbus_error);
+			assert (! dbus_error_is_set (&dbus_error));
+			dbus_error_free (&dbus_error);
+			continue;
+		}
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, signal);
+		TEST_TRUE (dbus_message_is_signal (
+				   signal, "com.netsplit.Nih.Test", "NewInt64"));
+		TEST_EQ_STR (dbus_message_get_signature (signal),
+			     DBUS_TYPE_INT64_AS_STRING);
+
+		dbus_message_iter_init (signal, &iter);
+
+		dbus_message_iter_get_basic (&iter, &int64_value);
+		TEST_EQ (int64_value, -4815162342L);
+
+		dbus_message_unref (signal);
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (client_conn, "type='signal'",
+				       &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+	}
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_new_uint64 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	DBusError       dbus_error;
+	int             ret;
+	DBusMessage *   signal;
+	DBusMessageIter iter;
+	uint64_t        uint64_value;
+
+	/* Check that the generated function emits the expected signal,
+	 * with the arguments we give.
+	 */
+	TEST_GROUP ("NewUInt64 signal");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+	TEST_ALLOC_FAIL {
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (client_conn, "type='signal'", &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		ret = my_test_emit_new_uint64 (server_conn,
+					       "/com/netsplit/Nih/Test",
+					       4815162342L);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_error_init (&dbus_error);
+			dbus_bus_remove_match (client_conn, "type='signal'",
+					       &dbus_error);
+			assert (! dbus_error_is_set (&dbus_error));
+			dbus_error_free (&dbus_error);
+			continue;
+		}
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, signal);
+		TEST_TRUE (dbus_message_is_signal (
+				   signal, "com.netsplit.Nih.Test", "NewUInt64"));
+		TEST_EQ_STR (dbus_message_get_signature (signal),
+			     DBUS_TYPE_UINT64_AS_STRING);
+
+		dbus_message_iter_init (signal, &iter);
+
+		dbus_message_iter_get_basic (&iter, &uint64_value);
+		TEST_EQ (uint64_value, 4815162342L);
+
+		dbus_message_unref (signal);
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (client_conn, "type='signal'",
+				       &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+	}
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_new_double (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	DBusError       dbus_error;
+	int             ret;
+	DBusMessage *   signal;
+	DBusMessageIter iter;
+	double          double_value;
+
+	/* Check that the generated function emits the expected signal,
+	 * with the arguments we give.
+	 */
+	TEST_GROUP ("NewDouble signal");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+	TEST_ALLOC_FAIL {
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (client_conn, "type='signal'", &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		ret = my_test_emit_new_double (server_conn,
+					       "/com/netsplit/Nih/Test",
+					       3.141597);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_error_init (&dbus_error);
+			dbus_bus_remove_match (client_conn, "type='signal'",
+					       &dbus_error);
+			assert (! dbus_error_is_set (&dbus_error));
+			dbus_error_free (&dbus_error);
+			continue;
+		}
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, signal);
+		TEST_TRUE (dbus_message_is_signal (
+				   signal, "com.netsplit.Nih.Test", "NewDouble"));
+		TEST_EQ_STR (dbus_message_get_signature (signal),
+			     DBUS_TYPE_DOUBLE_AS_STRING);
+
+		dbus_message_iter_init (signal, &iter);
+
+		dbus_message_iter_get_basic (&iter, &double_value);
+		TEST_EQ (double_value, 3.141597);
+
+		dbus_message_unref (signal);
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (client_conn, "type='signal'",
+				       &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+	}
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_new_string (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	DBusError       dbus_error;
+	int             ret;
+	DBusMessage *   signal;
+	DBusMessageIter iter;
+	const char *    str_value;
+
+	/* Check that the generated function emits the expected signal,
+	 * with the arguments we give.
+	 */
+	TEST_GROUP ("NewString signal");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+	TEST_ALLOC_FAIL {
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (client_conn, "type='signal'", &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		ret = my_test_emit_new_string (server_conn,
+					       "/com/netsplit/Nih/Test",
+					       "she needs more of ze punishment");
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_error_init (&dbus_error);
+			dbus_bus_remove_match (client_conn, "type='signal'",
+					       &dbus_error);
+			assert (! dbus_error_is_set (&dbus_error));
+			dbus_error_free (&dbus_error);
+			continue;
+		}
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, signal);
+		TEST_TRUE (dbus_message_is_signal (
+				   signal, "com.netsplit.Nih.Test", "NewString"));
+		TEST_EQ_STR (dbus_message_get_signature (signal),
+			     DBUS_TYPE_STRING_AS_STRING);
+
+		dbus_message_iter_init (signal, &iter);
+
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "she needs more of ze punishment");
+
+		dbus_message_unref (signal);
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (client_conn, "type='signal'",
+				       &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+	}
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_new_object_path (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	DBusError       dbus_error;
+	int             ret;
+	DBusMessage *   signal;
+	DBusMessageIter iter;
+	const char *    str_value;
+
+	/* Check that the generated function emits the expected signal,
+	 * with the arguments we give.
+	 */
+	TEST_GROUP ("NewObjectPath signal");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+	TEST_ALLOC_FAIL {
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (client_conn, "type='signal'", &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		ret = my_test_emit_new_object_path (server_conn,
+						    "/com/netsplit/Nih/Test",
+						    "/com/netsplit/Nih/Test");
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_error_init (&dbus_error);
+			dbus_bus_remove_match (client_conn, "type='signal'",
+					       &dbus_error);
+			assert (! dbus_error_is_set (&dbus_error));
+			dbus_error_free (&dbus_error);
+			continue;
+		}
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, signal);
+		TEST_TRUE (dbus_message_is_signal (
+				   signal, "com.netsplit.Nih.Test", "NewObjectPath"));
+		TEST_EQ_STR (dbus_message_get_signature (signal),
+			     DBUS_TYPE_OBJECT_PATH_AS_STRING);
+
+		dbus_message_iter_init (signal, &iter);
+
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "/com/netsplit/Nih/Test");
+
+		dbus_message_unref (signal);
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (client_conn, "type='signal'",
+				       &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+	}
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_new_signature (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	DBusError       dbus_error;
+	int             ret;
+	DBusMessage *   signal;
+	DBusMessageIter iter;
+	const char *    str_value;
+
+	/* Check that the generated function emits the expected signal,
+	 * with the arguments we give.
+	 */
+	TEST_GROUP ("NewSignature signal");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+	TEST_ALLOC_FAIL {
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (client_conn, "type='signal'", &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		ret = my_test_emit_new_signature (server_conn,
+						  "/com/netsplit/Nih/Test",
+						  "a(ib)");
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_error_init (&dbus_error);
+			dbus_bus_remove_match (client_conn, "type='signal'",
+					       &dbus_error);
+			assert (! dbus_error_is_set (&dbus_error));
+			dbus_error_free (&dbus_error);
+			continue;
+		}
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, signal);
+		TEST_TRUE (dbus_message_is_signal (
+				   signal, "com.netsplit.Nih.Test", "NewSignature"));
+		TEST_EQ_STR (dbus_message_get_signature (signal),
+			     DBUS_TYPE_SIGNATURE_AS_STRING);
+
+		dbus_message_iter_init (signal, &iter);
+
+		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_EQ_STR (str_value, "a(ib)");
+
+		dbus_message_unref (signal);
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (client_conn, "type='signal'",
+				       &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+	}
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_new_int32_array (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	DBusError       dbus_error;
+	int             ret;
+	DBusMessage *   signal;
+	DBusMessageIter iter;
+	int32_t *       int32_array;
+	size_t          int32_array_len;
+	DBusMessageIter subiter;
+	int32_t         int32_value;
+
+	TEST_GROUP ("NewInt32Array signal");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that the generated function emits the expected signal,
+	 * with the arguments we give.
+	 */
+	TEST_FEATURE ("with array");
+	TEST_ALLOC_FAIL {
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (client_conn, "type='signal'", &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		TEST_ALLOC_SAFE {
+			int32_array = nih_alloc (NULL, sizeof (int32_t) * 6);
+			int32_array[0] = 4;
+			int32_array[1] = 8;
+			int32_array[2] = 15;
+			int32_array[3] = 16;
+			int32_array[4] = 23;
+			int32_array[5] = 42;
+			int32_array_len = 6;
+		}
+
+		ret = my_test_emit_new_int32_array (server_conn,
+						    "/com/netsplit/Nih/Test",
+						    int32_array,
+						    int32_array_len);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_error_init (&dbus_error);
+			dbus_bus_remove_match (client_conn, "type='signal'",
+					       &dbus_error);
+			assert (! dbus_error_is_set (&dbus_error));
+			dbus_error_free (&dbus_error);
+
+			nih_free (int32_array);
+			continue;
+		}
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, signal);
+		TEST_TRUE (dbus_message_is_signal (
+				   signal, "com.netsplit.Nih.Test", "NewInt32Array"));
+		TEST_EQ_STR (dbus_message_get_signature (signal),
+			     (DBUS_TYPE_ARRAY_AS_STRING
+			      DBUS_TYPE_INT32_AS_STRING));
+
+		dbus_message_iter_init (signal, &iter);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subiter, &int32_value);
+		TEST_EQ (int32_value, 4);
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subiter, &int32_value);
+		TEST_EQ (int32_value, 8);
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subiter, &int32_value);
+		TEST_EQ (int32_value, 15);
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subiter, &int32_value);
+		TEST_EQ (int32_value, 16);
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subiter, &int32_value);
+		TEST_EQ (int32_value, 23);
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subiter, &int32_value);
+		TEST_EQ (int32_value, 42);
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_unref (signal);
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (client_conn, "type='signal'",
+				       &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		nih_free (int32_array);
+	}
+
+
+	/* Check that we can also given an empty array, which is actually
+	 * the NULL pointer.
+	 */
+	TEST_FEATURE ("with empty array");
+	TEST_ALLOC_FAIL {
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (client_conn, "type='signal'", &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		ret = my_test_emit_new_int32_array (server_conn,
+						    "/com/netsplit/Nih/Test",
+						    NULL, 0);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_error_init (&dbus_error);
+			dbus_bus_remove_match (client_conn, "type='signal'",
+					       &dbus_error);
+			assert (! dbus_error_is_set (&dbus_error));
+			dbus_error_free (&dbus_error);
+
+			nih_free (int32_array);
+			continue;
+		}
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, signal);
+		TEST_TRUE (dbus_message_is_signal (
+				   signal, "com.netsplit.Nih.Test", "NewInt32Array"));
+		TEST_EQ_STR (dbus_message_get_signature (signal),
+			     (DBUS_TYPE_ARRAY_AS_STRING
+			      DBUS_TYPE_INT32_AS_STRING));
+
+		dbus_message_iter_init (signal, &iter);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_unref (signal);
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (client_conn, "type='signal'",
+				       &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_new_str_array (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	DBusError       dbus_error;
+	int             ret;
+	DBusMessage *   signal;
+	DBusMessageIter iter;
+	char **         str_array;
+	DBusMessageIter subiter;
+	const char *    str_value;
+
+	TEST_GROUP ("NewStrArray signal");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+	/* Check that the generated function emits the expected signal,
+	 * with the arguments we give.
+	 */
+	TEST_FEATURE ("with array");
+	TEST_ALLOC_FAIL {
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (client_conn, "type='signal'", &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		TEST_ALLOC_SAFE {
+			str_array = nih_alloc (NULL, sizeof (char *) * 7);
+			str_array[0] = "she";
+			str_array[1] = "needs";
+			str_array[2] = "more";
+			str_array[3] = "of";
+			str_array[4] = "ze";
+			str_array[5] = "punishment";
+			str_array[6] = NULL;
+		}
+
+		ret = my_test_emit_new_str_array (server_conn,
+						  "/com/netsplit/Nih/Test",
+						  str_array);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_error_init (&dbus_error);
+			dbus_bus_remove_match (client_conn, "type='signal'",
+					       &dbus_error);
+			assert (! dbus_error_is_set (&dbus_error));
+			dbus_error_free (&dbus_error);
+
+			nih_free (str_array);
+			continue;
+		}
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, signal);
+		TEST_TRUE (dbus_message_is_signal (
+				   signal, "com.netsplit.Nih.Test", "NewStrArray"));
+		TEST_EQ_STR (dbus_message_get_signature (signal),
+			     (DBUS_TYPE_ARRAY_AS_STRING
+			      DBUS_TYPE_STRING_AS_STRING));
+
+		dbus_message_iter_init (signal, &iter);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+		dbus_message_iter_get_basic (&subiter, &str_value);
+		TEST_EQ_STR (str_value, "she");
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+		dbus_message_iter_get_basic (&subiter, &str_value);
+		TEST_EQ_STR (str_value, "needs");
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+		dbus_message_iter_get_basic (&subiter, &str_value);
+		TEST_EQ_STR (str_value, "more");
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+		dbus_message_iter_get_basic (&subiter, &str_value);
+		TEST_EQ_STR (str_value, "of");
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+		dbus_message_iter_get_basic (&subiter, &str_value);
+		TEST_EQ_STR (str_value, "ze");
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+		dbus_message_iter_get_basic (&subiter, &str_value);
+		TEST_EQ_STR (str_value, "punishment");
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_unref (signal);
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (client_conn, "type='signal'",
+				       &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		nih_free (str_array);
+	}
+
+
+	/* Check that we can give an empty array consisting of just the
+	 * NULL pointer.
+	 */
+	TEST_FEATURE ("with empty array");
+	TEST_ALLOC_FAIL {
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (client_conn, "type='signal'", &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		TEST_ALLOC_SAFE {
+			str_array = nih_alloc (NULL, sizeof (char *) * 1);
+			str_array[0] = NULL;
+		}
+
+		ret = my_test_emit_new_str_array (server_conn,
+						  "/com/netsplit/Nih/Test",
+						  str_array);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_error_init (&dbus_error);
+			dbus_bus_remove_match (client_conn, "type='signal'",
+					       &dbus_error);
+			assert (! dbus_error_is_set (&dbus_error));
+			dbus_error_free (&dbus_error);
+
+			nih_free (str_array);
+			continue;
+		}
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, signal);
+		TEST_TRUE (dbus_message_is_signal (
+				   signal, "com.netsplit.Nih.Test", "NewStrArray"));
+		TEST_EQ_STR (dbus_message_get_signature (signal),
+			     (DBUS_TYPE_ARRAY_AS_STRING
+			      DBUS_TYPE_STRING_AS_STRING));
+
+		dbus_message_iter_init (signal, &iter);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_unref (signal);
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (client_conn, "type='signal'",
+				       &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		nih_free (str_array);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_new_int32_array_array (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	DBusError       dbus_error;
+	int             ret;
+	DBusMessage *   signal;
+	DBusMessageIter iter;
+	int32_t **      int32_array_array;
+	size_t *        int32_array_array_len;
+	DBusMessageIter subiter;
+	DBusMessageIter subsubiter;
+	int32_t         int32_value;
+
+	TEST_GROUP ("NewInt32ArrayArray signal");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+	/* Check that the generated function emits the expected signal,
+	 * with the arguments we give.
+	 */
+	TEST_FEATURE ("with array");
+	TEST_ALLOC_FAIL {
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (client_conn, "type='signal'", &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		TEST_ALLOC_SAFE {
+			int32_array_array = nih_alloc (NULL,
+						       sizeof (int32_t *) * 3);
+			int32_array_array_len = nih_alloc (NULL,
+							   sizeof (size_t) * 2);
+
+			int32_array_array[0] = nih_alloc (int32_array_array,
+							  sizeof (int32_t) * 6);
+			int32_array_array[0][0] = 4;
+			int32_array_array[0][1] = 8;
+			int32_array_array[0][2] = 15;
+			int32_array_array[0][3] = 16;
+			int32_array_array[0][4] = 23;
+			int32_array_array[0][5] = 42;
+			int32_array_array_len[0] = 6;
+
+			int32_array_array[1] = nih_alloc (int32_array_array,
+							  sizeof (int32_t) * 6);
+			int32_array_array[1][0] = 1;
+			int32_array_array[1][1] = 1;
+			int32_array_array[1][2] = 2;
+			int32_array_array[1][3] = 3;
+			int32_array_array[1][4] = 5;
+			int32_array_array[1][5] = 8;
+			int32_array_array_len[1] = 6;
+
+			int32_array_array[2] = NULL;
+		}
+
+		ret = my_test_emit_new_int32_array_array (server_conn,
+							  "/com/netsplit/Nih/Test",
+							  int32_array_array,
+							  int32_array_array_len);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_error_init (&dbus_error);
+			dbus_bus_remove_match (client_conn, "type='signal'",
+					       &dbus_error);
+			assert (! dbus_error_is_set (&dbus_error));
+			dbus_error_free (&dbus_error);
+
+			nih_free (int32_array_array);
+			nih_free (int32_array_array_len);
+			continue;
+		}
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, signal);
+		TEST_TRUE (dbus_message_is_signal (
+				   signal, "com.netsplit.Nih.Test", "NewInt32ArrayArray"));
+		TEST_EQ_STR (dbus_message_get_signature (signal),
+			     (DBUS_TYPE_ARRAY_AS_STRING
+			      DBUS_TYPE_ARRAY_AS_STRING
+			      DBUS_TYPE_INT32_AS_STRING));
+
+		dbus_message_iter_init (signal, &iter);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_ARRAY);
+
+		dbus_message_iter_recurse (&subiter, &subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 4);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 8);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 15);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 16);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 23);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 42);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_iter_next (&subiter);
+
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_ARRAY);
+
+		dbus_message_iter_recurse (&subiter, &subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 1);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 1);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 2);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 3);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 5);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 8);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_iter_next (&subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_unref (signal);
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (client_conn, "type='signal'",
+				       &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		nih_free (int32_array_array);
+		nih_free (int32_array_array_len);
+	}
+
+
+	/* Check that we can also give an empty array, which actually has
+	 * NULL for its size array.
+	 */
+	TEST_FEATURE ("with empty array");
+	TEST_ALLOC_FAIL {
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (client_conn, "type='signal'", &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		TEST_ALLOC_SAFE {
+			int32_array_array = nih_alloc (NULL,
+						       sizeof (int32_t *) * 1);
+			int32_array_array_len = NULL;
+
+			int32_array_array[0] = NULL;
+		}
+
+		ret = my_test_emit_new_int32_array_array (server_conn,
+							  "/com/netsplit/Nih/Test",
+							  int32_array_array,
+							  int32_array_array_len);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_error_init (&dbus_error);
+			dbus_bus_remove_match (client_conn, "type='signal'",
+					       &dbus_error);
+			assert (! dbus_error_is_set (&dbus_error));
+			dbus_error_free (&dbus_error);
+
+			nih_free (int32_array_array);
+			nih_free (int32_array_array_len);
+			continue;
+		}
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, signal);
+		TEST_TRUE (dbus_message_is_signal (
+				   signal, "com.netsplit.Nih.Test", "NewInt32ArrayArray"));
+		TEST_EQ_STR (dbus_message_get_signature (signal),
+			     (DBUS_TYPE_ARRAY_AS_STRING
+			      DBUS_TYPE_ARRAY_AS_STRING
+			      DBUS_TYPE_INT32_AS_STRING));
+
+		dbus_message_iter_init (signal, &iter);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_unref (signal);
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (client_conn, "type='signal'",
+				       &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		nih_free (int32_array_array);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_get_byte (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusMessageIter subiter;
+	uint8_t         byte_value;
+
+	TEST_GROUP ("get byte property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can obtain the current value of a property,
+	 * marshalled through the Get call, and that it's returned inside
+	 * a variant.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		byte_property = 97;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "byte";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_iter_init (reply, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_VARIANT);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_BYTE);
+
+		dbus_message_iter_get_basic (&subiter, &byte_value);
+		TEST_EQ (byte_value, 97);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "byte";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_BYTE_AS_STRING,
+						  &subiter);
+
+		byte_value = 97;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_BYTE,
+						&byte_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_set_byte (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	DBusMessageIter subiter;
+	uint8_t         byte_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("set byte property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can set a new value of a property, marshalled
+	 * through the Set call, and that an empty reply is returned.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		byte_property = 0;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "byte";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_BYTE_AS_STRING,
+						  &subiter);
+
+		byte_value = 97;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_BYTE,
+						&byte_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply), "");
+
+		dbus_message_unref (reply);
+
+		TEST_EQ (byte_property, 97);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "byte";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_BYTE_AS_STRING,
+						  &subiter);
+
+		byte_value = 0;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_BYTE,
+						&byte_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.Byte.Zero"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "byte";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_BYTE_AS_STRING,
+						  &subiter);
+
+		byte_value = 4;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_BYTE,
+						&byte_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if a variant element of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "byte";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "97";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "byte";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "97";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "byte";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_BYTE_AS_STRING,
+						  &subiter);
+
+		byte_value = 97;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_BYTE,
+						&byte_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		str_value = "97";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "byte";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_get_boolean (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusMessageIter subiter;
+	int             boolean_value;
+
+	TEST_GROUP ("get boolean property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can obtain the current value of a property,
+	 * marshalled through the Get call, and that it's returned inside
+	 * a variant.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		boolean_property = TRUE;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "boolean";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_iter_init (reply, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_VARIANT);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_BOOLEAN);
+
+		dbus_message_iter_get_basic (&subiter, &boolean_value);
+		TEST_EQ (boolean_value, TRUE);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "boolean";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_BOOLEAN_AS_STRING,
+						  &subiter);
+
+		boolean_value = TRUE;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_BOOLEAN,
+						&boolean_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_set_boolean (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	DBusMessageIter subiter;
+	int             boolean_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+
+	TEST_GROUP ("set boolean property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can set a new value of a property, marshalled
+	 * through the Set call, and that an empty reply is returned.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		boolean_property = FALSE;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "boolean";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_BOOLEAN_AS_STRING,
+						  &subiter);
+
+		boolean_value = TRUE;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_BOOLEAN,
+						&boolean_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply), "");
+
+		dbus_message_unref (reply);
+
+		TEST_EQ (boolean_property, TRUE);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "boolean";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_BOOLEAN_AS_STRING,
+						  &subiter);
+
+		boolean_value = FALSE;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_BOOLEAN,
+						&boolean_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.Boolean.Zero"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if a variant element of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "boolean";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "True";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "boolean";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "True";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "boolean";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_BOOLEAN_AS_STRING,
+						  &subiter);
+
+		boolean_value = TRUE;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_BOOLEAN,
+						&boolean_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		str_value = "True";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "boolean";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_get_int16 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusMessageIter subiter;
+	int16_t         int16_value;
+
+	TEST_GROUP ("get int16 property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can obtain the current value of a property,
+	 * marshalled through the Get call, and that it's returned inside
+	 * a variant.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		int16_property = -42;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int16";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_iter_init (reply, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_VARIANT);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INT16);
+
+		dbus_message_iter_get_basic (&subiter, &int16_value);
+		TEST_EQ (int16_value, -42);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int16";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_INT16_AS_STRING,
+						  &subiter);
+
+		int16_value = -42;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT16,
+						&int16_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_set_int16 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	DBusMessageIter subiter;
+	int16_t         int16_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("set int16 property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can set a new value of a property, marshalled
+	 * through the Set call, and that an empty reply is returned.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		int16_property = 0;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int16";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_INT16_AS_STRING,
+						  &subiter);
+
+		int16_value = -42;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT16,
+						&int16_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply), "");
+
+		dbus_message_unref (reply);
+
+		TEST_EQ (int16_property, -42);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int16";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_INT16_AS_STRING,
+						  &subiter);
+
+		int16_value = 0;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT16,
+						&int16_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.Int16.Zero"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int16";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_INT16_AS_STRING,
+						  &subiter);
+
+		int16_value = 4;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT16,
+						&int16_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if a variant element of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int16";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "-42";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int16";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "-42";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int16";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_INT16_AS_STRING,
+						  &subiter);
+
+		int16_value = -42;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT16,
+						&int16_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		str_value = "-42";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int16";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_get_uint16 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusMessageIter subiter;
+	uint16_t        uint16_value;
+
+	TEST_GROUP ("get uint16 property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can obtain the current value of a property,
+	 * marshalled through the Get call, and that it's returned inside
+	 * a variant.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		uint16_property = 42;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint16";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_iter_init (reply, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_VARIANT);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_UINT16);
+
+		dbus_message_iter_get_basic (&subiter, &uint16_value);
+		TEST_EQ (uint16_value, 42);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint16";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_UINT16_AS_STRING,
+						  &subiter);
+
+		uint16_value = 42;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_UINT16,
+						&uint16_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_set_uint16 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	DBusMessageIter subiter;
+	uint16_t        uint16_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("set uint16 property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can set a new value of a property, marshalled
+	 * through the Set call, and that an empty reply is returned.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		uint16_property = 0;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint16";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_UINT16_AS_STRING,
+						  &subiter);
+
+		uint16_value = 42;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_UINT16,
+						&uint16_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply), "");
+
+		dbus_message_unref (reply);
+
+		TEST_EQ (uint16_property, 42);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint16";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_UINT16_AS_STRING,
+						  &subiter);
+
+		uint16_value = 0;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_UINT16,
+						&uint16_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.UInt16.Zero"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint16";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_UINT16_AS_STRING,
+						  &subiter);
+
+		uint16_value = 4;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_UINT16,
+						&uint16_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if a variant element of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint16";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "42";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint16";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "42";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint16";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_UINT16_AS_STRING,
+						  &subiter);
+
+		uint16_value = 42;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_UINT16,
+						&uint16_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		str_value = "42";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint16";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_get_int32 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusMessageIter subiter;
+	int32_t         int32_value;
+
+	TEST_GROUP ("get int32 property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can obtain the current value of a property,
+	 * marshalled through the Get call, and that it's returned inside
+	 * a variant.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		int32_property = -1048576;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_iter_init (reply, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_VARIANT);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INT32);
+
+		dbus_message_iter_get_basic (&subiter, &int32_value);
+		TEST_EQ (int32_value, -1048576);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subiter);
+
+		int32_value = -1048576;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_set_int32 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	DBusMessageIter subiter;
+	int32_t         int32_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("set int32 property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can set a new value of a property, marshalled
+	 * through the Set call, and that an empty reply is returned.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		int32_property = 0;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subiter);
+
+		int32_value = -1048576;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply), "");
+
+		dbus_message_unref (reply);
+
+		TEST_EQ (int32_property, -1048576);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subiter);
+
+		int32_value = 0;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.Int32.Zero"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subiter);
+
+		int32_value = 4;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if a variant element of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "-1048576";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "-1048576";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subiter);
+
+		int32_value = -1048576;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		str_value = "-1048576";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_get_uint32 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusMessageIter subiter;
+	uint32_t        uint32_value;
+
+	TEST_GROUP ("get uint32 property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can obtain the current value of a property,
+	 * marshalled through the Get call, and that it's returned inside
+	 * a variant.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		uint32_property = 1048576;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint32";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_iter_init (reply, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_VARIANT);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_UINT32);
+
+		dbus_message_iter_get_basic (&subiter, &uint32_value);
+		TEST_EQ (uint32_value, 1048576);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint32";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_UINT32_AS_STRING,
+						  &subiter);
+
+		uint32_value = 1048576;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_UINT32,
+						&uint32_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_set_uint32 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	DBusMessageIter subiter;
+	uint32_t        uint32_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("set uint32 property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can set a new value of a property, marshalled
+	 * through the Set call, and that an empty reply is returned.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		uint32_property = 0;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint32";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_UINT32_AS_STRING,
+						  &subiter);
+
+		uint32_value = 1048576;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_UINT32,
+						&uint32_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply), "");
+
+		dbus_message_unref (reply);
+
+		TEST_EQ (uint32_property, 1048576);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint32";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_UINT32_AS_STRING,
+						  &subiter);
+
+		uint32_value = 0;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_UINT32,
+						&uint32_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.UInt32.Zero"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint32";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_UINT32_AS_STRING,
+						  &subiter);
+
+		uint32_value = 4;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_UINT32,
+						&uint32_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if a variant element of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint32";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "1048576";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint32";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "1048576";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint32";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_UINT32_AS_STRING,
+						  &subiter);
+
+		uint32_value = 1048576;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_UINT32,
+						&uint32_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		str_value = "1048576";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint32";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_get_int64 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusMessageIter subiter;
+	int64_t         int64_value;
+
+	TEST_GROUP ("get int64 property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can obtain the current value of a property,
+	 * marshalled through the Get call, and that it's returned inside
+	 * a variant.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		int64_property = -4815162342L;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int64";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_iter_init (reply, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_VARIANT);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INT64);
+
+		dbus_message_iter_get_basic (&subiter, &int64_value);
+		TEST_EQ (int64_value, -4815162342L);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int64";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_INT64_AS_STRING,
+						  &subiter);
+
+		int64_value = -4815162342L;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT64,
+						&int64_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_set_int64 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	DBusMessageIter subiter;
+	int64_t         int64_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("set int64 property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can set a new value of a property, marshalled
+	 * through the Set call, and that an empty reply is returned.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		int64_property = 0;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int64";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_INT64_AS_STRING,
+						  &subiter);
+
+		int64_value = -4815162342L;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT64,
+						&int64_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply), "");
+
+		dbus_message_unref (reply);
+
+		TEST_EQ (int64_property, -4815162342L);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int64";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_INT64_AS_STRING,
+						  &subiter);
+
+		int64_value = 0;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT64,
+						&int64_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.Int64.Zero"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int64";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_INT64_AS_STRING,
+						  &subiter);
+
+		int64_value = 4;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT64,
+						&int64_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if a variant element of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int64";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "-4815162342";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int64";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "-4815162342";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int64";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_INT64_AS_STRING,
+						  &subiter);
+
+		int64_value = -4815162342L;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_INT64,
+						&int64_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		str_value = "-4815162342";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int64";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_get_uint64 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusMessageIter subiter;
+	uint64_t        uint64_value;
+
+	TEST_GROUP ("get uint64 property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can obtain the current value of a property,
+	 * marshalled through the Get call, and that it's returned inside
+	 * a variant.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		uint64_property = 4815162342L;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint64";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_iter_init (reply, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_VARIANT);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_UINT64);
+
+		dbus_message_iter_get_basic (&subiter, &uint64_value);
+		TEST_EQ (uint64_value, 4815162342L);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint64";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_UINT64_AS_STRING,
+						  &subiter);
+
+		uint64_value = 4815162342L;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_UINT64,
+						&uint64_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_set_uint64 (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	DBusMessageIter subiter;
+	uint64_t        uint64_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("set uint64 property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can set a new value of a property, marshalled
+	 * through the Set call, and that an empty reply is returned.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		uint64_property = 0;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint64";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_UINT64_AS_STRING,
+						  &subiter);
+
+		uint64_value = 4815162342L;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_UINT64,
+						&uint64_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply), "");
+
+		dbus_message_unref (reply);
+
+		TEST_EQ (uint64_property, 4815162342L);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint64";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_UINT64_AS_STRING,
+						  &subiter);
+
+		uint64_value = 0;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_UINT64,
+						&uint64_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.UInt64.Zero"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint64";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_UINT64_AS_STRING,
+						  &subiter);
+
+		uint64_value = 4;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_UINT64,
+						&uint64_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if a variant element of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint64";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "4815162342";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint64";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "4815162342";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint64";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_UINT64_AS_STRING,
+						  &subiter);
+
+		uint64_value = 4815162342L;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_UINT64,
+						&uint64_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		str_value = "4815162342";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "uint64";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_get_double (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusMessageIter subiter;
+	double          double_value;
+
+	TEST_GROUP ("get double property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can obtain the current value of a property,
+	 * marshalled through the Get call, and that it's returned inside
+	 * a variant.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		double_property = 3.141597;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "double";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_iter_init (reply, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_VARIANT);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_DOUBLE);
+
+		dbus_message_iter_get_basic (&subiter, &double_value);
+		TEST_EQ (double_value, 3.141597);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "double";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_DOUBLE_AS_STRING,
+						  &subiter);
+
+		double_value = 3.141597;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_DOUBLE,
+						&double_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_set_double (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	DBusMessageIter subiter;
+	double          double_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("set double property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can set a new value of a property, marshalled
+	 * through the Set call, and that an empty reply is returned.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		double_property = 0;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "double";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_DOUBLE_AS_STRING,
+						  &subiter);
+
+		double_value = 3.141597;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_DOUBLE,
+						&double_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply), "");
+
+		dbus_message_unref (reply);
+
+		TEST_EQ (double_property, 3.141597);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "double";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_DOUBLE_AS_STRING,
+						  &subiter);
+
+		double_value = 0;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_DOUBLE,
+						&double_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.Double.Zero"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "double";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_DOUBLE_AS_STRING,
+						  &subiter);
+
+		double_value = 4;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_DOUBLE,
+						&double_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if a variant element of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "double";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "97";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "boolean";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "3.141597";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "double";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_DOUBLE_AS_STRING,
+						  &subiter);
+
+		double_value = 3.141597;
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_DOUBLE,
+						&double_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		str_value = "3.141597";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "double";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_get_string (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusMessageIter subiter;
+
+	TEST_GROUP ("get string property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can obtain the current value of a property,
+	 * marshalled through the Get call, and that it's returned inside
+	 * a variant.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		str_property = "she needs more of ze punishment";
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "string";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_iter_init (reply, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_VARIANT);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_STRING);
+
+		dbus_message_iter_get_basic (&subiter, &str_value);
+		TEST_EQ_STR (str_value, "she needs more of ze punishment");
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "string";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "she needs more of ze punishment";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_set_string (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	DBusMessageIter subiter;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("set string property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can set a new value of a property, marshalled
+	 * through the Set call, and that an empty reply is returned.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		str_property = NULL;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "string";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "she needs more of ze punishment";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply), "");
+
+		dbus_message_unref (reply);
+
+		TEST_EQ_STR (str_property, "she needs more of ze punishment");
+		nih_free (str_property);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "string";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.String.Empty"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "string";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "invalid";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if a variant element of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "string";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_OBJECT_PATH_AS_STRING,
+						  &subiter);
+
+		str_value = "/she/needs/more/of/ze/punishment";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "string";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "she needs more of ze punishment";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "string";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "she needs more of ze punishment";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		str_value = "/she/needs/more/of/ze/punishment";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "string";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_get_object_path (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusMessageIter subiter;
+
+	TEST_GROUP ("get object_path property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can obtain the current value of a property,
+	 * marshalled through the Get call, and that it's returned inside
+	 * a variant.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		object_path_property = "/com/netsplit/Nih/Test";
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "object_path";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_iter_init (reply, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_VARIANT);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_OBJECT_PATH);
+
+		dbus_message_iter_get_basic (&subiter, &str_value);
+		TEST_EQ_STR (str_value, "/com/netsplit/Nih/Test");
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "object_path";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_OBJECT_PATH_AS_STRING,
+						  &subiter);
+
+		str_value = "/com/netsplit/Nih/Test";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_set_object_path (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	DBusMessageIter subiter;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("set object_path property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can set a new value of a property, marshalled
+	 * through the Set call, and that an empty reply is returned.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		object_path_property = NULL;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "object_path";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_OBJECT_PATH_AS_STRING,
+						  &subiter);
+
+		str_value = "/com/netsplit/Nih/Test";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply), "");
+
+		dbus_message_unref (reply);
+
+		TEST_EQ_STR (object_path_property, "/com/netsplit/Nih/Test");
+		nih_free (object_path_property);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "object_path";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_OBJECT_PATH_AS_STRING,
+						  &subiter);
+
+		str_value = "/";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.ObjectPath.Empty"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "object_path";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_OBJECT_PATH_AS_STRING,
+						  &subiter);
+
+		str_value = "/invalid";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if a variant element of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "object_path";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "/com/netsplit/Nih/Test";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "object_path";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "/com/netsplit/Nih/Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "object_path";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_OBJECT_PATH_AS_STRING,
+						  &subiter);
+
+		str_value = "/com/netsplit/Nih/Test";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		str_value = "she needs more of ze punishment";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "object_path";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_get_signature (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusMessageIter subiter;
+
+	TEST_GROUP ("get signature property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can obtain the current value of a property,
+	 * marshalled through the Get call, and that it's returned inside
+	 * a variant.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		signature_property = "a(ib)";
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "signature";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_iter_init (reply, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_VARIANT);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_SIGNATURE);
+
+		dbus_message_iter_get_basic (&subiter, &str_value);
+		TEST_EQ_STR (str_value, "a(ib)");
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "signature";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_SIGNATURE_AS_STRING,
+						  &subiter);
+
+		str_value = "a(ib)";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_SIGNATURE,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_set_signature (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	DBusMessageIter subiter;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("set signature property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can set a new value of a property, marshalled
+	 * through the Set call, and that an empty reply is returned.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		signature_property = NULL;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "signature";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_SIGNATURE_AS_STRING,
+						  &subiter);
+
+		str_value = "a(ib)";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_SIGNATURE,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply), "");
+
+		dbus_message_unref (reply);
+
+		TEST_EQ_STR (signature_property, "a(ib)");
+		nih_free (signature_property);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "signature";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_SIGNATURE_AS_STRING,
+						  &subiter);
+
+		str_value = "";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_SIGNATURE,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.Signature.Empty"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "signature";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_SIGNATURE_AS_STRING,
+						  &subiter);
+
+		str_value = "inva(x)id";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_SIGNATURE,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if a variant element of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "signature";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "a(ib)";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "signature";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "a(ib)";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "signature";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_SIGNATURE_AS_STRING,
+						  &subiter);
+
+		str_value = "a(ib)";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_SIGNATURE,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		str_value = "she needs more of ze punishment";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "signature";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_get_int32_array (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusMessageIter subiter;
+	DBusMessageIter subsubiter;
+	int32_t         int32_value;
+
+	TEST_GROUP ("get int32_array property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can obtain the current value of a property,
+	 * marshalled through the Get call, and that it's returned inside
+	 * a variant.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			int32_array_property = nih_alloc (NULL, sizeof (int32_t) * 6);
+			int32_array_property[0] = 4;
+			int32_array_property[1] = 8;
+			int32_array_property[2] = 15;
+			int32_array_property[3] = 16;
+			int32_array_property[4] = 23;
+			int32_array_property[5] = 42;
+			int32_array_property_len = 6;
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_iter_init (reply, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_VARIANT);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_ARRAY);
+
+		dbus_message_iter_recurse (&subiter, &subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 4);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 8);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 15);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 16);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 23);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubiter, &int32_value);
+		TEST_EQ (int32_value, 42);
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_iter_next (&iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+		nih_free (int32_array_property);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubiter);
+
+		int32_value = 4;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 15;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 16;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 23;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 42;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_set_int32_array (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	DBusMessageIter subiter;
+	DBusMessageIter subsubiter;
+	int32_t         int32_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("set int32_array property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can set a new value of a property, marshalled
+	 * through the Set call, and that an empty reply is returned.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		int32_array_property = NULL;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubiter);
+
+		int32_value = 4;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 15;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 16;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 23;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 42;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply), "");
+
+		dbus_message_unref (reply);
+
+		TEST_EQ (int32_array_property_len, 6);
+		TEST_ALLOC_SIZE (int32_array_property, sizeof (int32_t) * 6);
+		TEST_EQ (int32_array_property[0], 4);
+		TEST_EQ (int32_array_property[1], 8);
+		TEST_EQ (int32_array_property[2], 15);
+		TEST_EQ (int32_array_property[3], 16);
+		TEST_EQ (int32_array_property[4], 23);
+		TEST_EQ (int32_array_property[5], 42);
+		nih_free (int32_array_property);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubiter);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.Int32Array.Empty"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubiter);
+
+		int32_value = 4;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 15;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 16;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an array element of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong array element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_STRING_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subsubiter);
+
+		str_value = "4";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "8";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "15";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "16";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "23";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "42";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if a variant element of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong variant element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "4 8 15 16 32 42";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "4 8 15 16 23 42";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubiter);
+
+		int32_value = 4;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 15;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 16;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 23;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 42;
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		str_value = "4 8 15 16 23 42";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_get_str_array (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusMessageIter subiter;
+	DBusMessageIter subsubiter;
+
+	TEST_GROUP ("get str_array property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can obtain the current value of a property,
+	 * marshalled through the Get call, and that it's returned inside
+	 * a variant.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			str_array_property = nih_alloc (NULL, sizeof (char *) * 7);
+			str_array_property[0] = "she";
+			str_array_property[1] = "needs";
+			str_array_property[2] = "more";
+			str_array_property[3] = "of";
+			str_array_property[4] = "ze";
+			str_array_property[5] = "punishment";
+			str_array_property[6] = NULL;
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "str_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_iter_init (reply, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_VARIANT);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_ARRAY);
+
+		dbus_message_iter_recurse (&subiter, &subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_STRING);
+		dbus_message_iter_get_basic (&subsubiter, &str_value);
+		TEST_EQ_STR (str_value, "she");
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_STRING);
+		dbus_message_iter_get_basic (&subsubiter, &str_value);
+		TEST_EQ_STR (str_value, "needs");
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_STRING);
+		dbus_message_iter_get_basic (&subsubiter, &str_value);
+		TEST_EQ_STR (str_value, "more");
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_STRING);
+		dbus_message_iter_get_basic (&subsubiter, &str_value);
+		TEST_EQ_STR (str_value, "of");
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_STRING);
+		dbus_message_iter_get_basic (&subsubiter, &str_value);
+		TEST_EQ_STR (str_value, "ze");
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_STRING);
+		dbus_message_iter_get_basic (&subsubiter, &str_value);
+		TEST_EQ_STR (str_value, "punishment");
+		dbus_message_iter_next (&subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_iter_next (&iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+		nih_free (str_array_property);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "str_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_STRING_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subsubiter);
+
+		str_value = "she";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "needs";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "more";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "of";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "the";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "punishment";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_set_str_array (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	DBusMessageIter subiter;
+	DBusMessageIter subsubiter;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("set str_array property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can set a new value of a property, marshalled
+	 * through the Set call, and that an empty reply is returned.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		str_array_property = NULL;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "str_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_STRING_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubiter);
+
+		str_value = "she";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "needs";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "more";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "of";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "ze";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "punishment";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply), "");
+
+		dbus_message_unref (reply);
+
+		TEST_ALLOC_SIZE (str_array_property, sizeof (char *) * 7);
+		TEST_EQ_STR (str_array_property[0], "she");
+		TEST_EQ_STR (str_array_property[1], "needs");
+		TEST_EQ_STR (str_array_property[2], "more");
+		TEST_EQ_STR (str_array_property[3], "of");
+		TEST_EQ_STR (str_array_property[4], "ze");
+		TEST_EQ_STR (str_array_property[5], "punishment");
+		TEST_EQ_P (str_array_property[6], NULL);
+
+		nih_free (str_array_property);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "str_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_STRING_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subsubiter);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.StrArray.Empty"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "str_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_STRING_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subsubiter);
+
+		str_value = "this";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "is";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "a";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "test";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an array element of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong array element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "str_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_OBJECT_PATH_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_OBJECT_PATH_AS_STRING,
+						  &subsubiter);
+
+		str_value = "/she";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		str_value = "/needs";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		str_value = "/more";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		str_value = "/of";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		str_value = "/ze";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		str_value = "/punishment";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_OBJECT_PATH,
+						&str_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if a variant element of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong variant element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "str_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "she needs more of ze punishment";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "str_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "she needs more of ze punishment";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "str_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_STRING_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubiter);
+
+		str_value = "she";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "needs";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "more";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "of";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "ze";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "punishment";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		str_value = "she needs more of ze punishment";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "str_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
+void
+test_get_int32_array_array (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusMessageIter subiter;
+	DBusMessageIter subsubiter;
+	DBusMessageIter subsubsubiter;
+	int32_t         int32_value;
+
+	TEST_GROUP ("get int32_array_array property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can obtain the current value of a property,
+	 * marshalled through the Get call, and that it's returned inside
+	 * a variant.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			int32_array_array_property = nih_alloc (
+				NULL, sizeof (int32_t *) * 3);
+			int32_array_array_property_len = nih_alloc (
+				NULL, sizeof (size_t) * 2);
+
+			int32_array_array_property[0] = nih_alloc (
+				int32_array_array_property,
+				sizeof (int32_t) * 6);
+			int32_array_array_property[0][0] = 4;
+			int32_array_array_property[0][1] = 8;
+			int32_array_array_property[0][2] = 15;
+			int32_array_array_property[0][3] = 16;
+			int32_array_array_property[0][4] = 23;
+			int32_array_array_property[0][5] = 42;
+			int32_array_array_property_len[0] = 6;
+
+			int32_array_array_property[1] = nih_alloc (
+				int32_array_array_property,
+				sizeof (int32_t) * 6);
+			int32_array_array_property[1][0] = 1;
+			int32_array_array_property[1][1] = 1;
+			int32_array_array_property[1][2] = 2;
+			int32_array_array_property[1][3] = 3;
+			int32_array_array_property[1][4] = 5;
+			int32_array_array_property[1][5] = 8;
+			int32_array_array_property_len[1] = 6;
+
+			int32_array_array_property[2] = NULL;
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_iter_init (reply, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_VARIANT);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_ARRAY);
+
+		dbus_message_iter_recurse (&subiter, &subsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_ARRAY);
+
+		dbus_message_iter_recurse (&subsubiter, &subsubsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubsubiter, &int32_value);
+		TEST_EQ (int32_value, 4);
+		dbus_message_iter_next (&subsubsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubsubiter, &int32_value);
+		TEST_EQ (int32_value, 8);
+		dbus_message_iter_next (&subsubsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubsubiter, &int32_value);
+		TEST_EQ (int32_value, 15);
+		dbus_message_iter_next (&subsubsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubsubiter, &int32_value);
+		TEST_EQ (int32_value, 16);
+		dbus_message_iter_next (&subsubsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubsubiter, &int32_value);
+		TEST_EQ (int32_value, 23);
+		dbus_message_iter_next (&subsubsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubsubiter, &int32_value);
+		TEST_EQ (int32_value, 42);
+		dbus_message_iter_next (&subsubsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubsubiter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_iter_next (&subsubiter);
+
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_ARRAY);
+
+		dbus_message_iter_recurse (&subsubiter, &subsubsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubsubiter, &int32_value);
+		TEST_EQ (int32_value, 1);
+		dbus_message_iter_next (&subsubsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubsubiter, &int32_value);
+		TEST_EQ (int32_value, 1);
+		dbus_message_iter_next (&subsubsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubsubiter, &int32_value);
+		TEST_EQ (int32_value, 2);
+		dbus_message_iter_next (&subsubsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubsubiter, &int32_value);
+		TEST_EQ (int32_value, 3);
+		dbus_message_iter_next (&subsubsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubsubiter, &int32_value);
+		TEST_EQ (int32_value, 5);
+		dbus_message_iter_next (&subsubsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubsubiter),
+			 DBUS_TYPE_INT32);
+		dbus_message_iter_get_basic (&subsubsubiter, &int32_value);
+		TEST_EQ (int32_value, 8);
+		dbus_message_iter_next (&subsubsubiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubsubiter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_iter_next (&subsubiter);
+
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subsubiter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_iter_next (&iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+		nih_free (int32_array_array_property);
+		nih_free (int32_array_array_property_len);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subsubiter);
+
+		dbus_message_iter_open_container (&subsubiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubsubiter);
+
+		int32_value = 4;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 15;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 16;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 23;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 42;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&subsubiter, &subsubsubiter);
+
+		dbus_message_iter_open_container (&subsubiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubsubiter);
+
+		int32_value = 1;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 1;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 2;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 3;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 5;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&subsubiter, &subsubsubiter);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_set_int32_array_array (void)
+{
+	pid_t           dbus_pid;
+	DBusConnection *client_conn;
+	DBusConnection *server_conn;
+	NihDBusObject * object;
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	const char *    str_value;
+	DBusMessageIter subiter;
+	DBusMessageIter subsubiter;
+	DBusMessageIter subsubsubiter;
+	int32_t         int32_value;
+	dbus_uint32_t   serial;
+	DBusMessage *   reply;
+	DBusError       dbus_error;
+
+	TEST_GROUP ("set int32_array_array property");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we can set a new value of a property, marshalled
+	 * through the Set call, and that an empty reply is returned.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		int32_array_array_property = NULL;
+		int32_array_array_property_len = 0;
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subsubiter);
+
+		dbus_message_iter_open_container (&subsubiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubsubiter);
+
+		int32_value = 4;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 15;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 16;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 23;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 42;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&subsubiter, &subsubsubiter);
+
+		dbus_message_iter_open_container (&subsubiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubsubiter);
+
+		int32_value = 1;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 1;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 2;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 3;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 5;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&subsubiter, &subsubsubiter);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+		TEST_EQ_STR (dbus_message_get_signature (reply), "");
+
+		dbus_message_unref (reply);
+
+		TEST_ALLOC_SIZE (int32_array_array_property_len, sizeof (size_t) * 2);
+		TEST_ALLOC_SIZE (int32_array_array_property, sizeof (int32_t *) * 3);
+
+		TEST_EQ (int32_array_array_property_len[0], 6);
+		TEST_ALLOC_SIZE (int32_array_array_property[0], sizeof (int32_t) * 6);
+		TEST_ALLOC_PARENT (int32_array_array_property[0],
+				   int32_array_array_property);
+		TEST_EQ (int32_array_array_property[0][0], 4);
+		TEST_EQ (int32_array_array_property[0][1], 8);
+		TEST_EQ (int32_array_array_property[0][2], 15);
+		TEST_EQ (int32_array_array_property[0][3], 16);
+		TEST_EQ (int32_array_array_property[0][4], 23);
+		TEST_EQ (int32_array_array_property[0][5], 42);
+
+		TEST_EQ (int32_array_array_property_len[1], 6);
+		TEST_ALLOC_SIZE (int32_array_array_property[1], sizeof (int32_t) * 6);
+		TEST_ALLOC_PARENT (int32_array_array_property[0],
+				   int32_array_array_property);
+		TEST_EQ (int32_array_array_property[1][0], 1);
+		TEST_EQ (int32_array_array_property[1][1], 1);
+		TEST_EQ (int32_array_array_property[1][2], 2);
+		TEST_EQ (int32_array_array_property[1][3], 3);
+		TEST_EQ (int32_array_array_property[1][4], 5);
+		TEST_EQ (int32_array_array_property[1][5], 8);
+
+		TEST_EQ_P (int32_array_array_property[2], NULL);
+
+		nih_free (int32_array_array_property);
+		nih_free (int32_array_array_property_len);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error raised from the function is returned
+	 * as an error return of the same name and message.
+	 */
+	TEST_FEATURE ("with invalid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subsubiter);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, "com.netsplit.Nih.Test.Int32ArrayArray.Empty"));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that a non-D-Bus error raised from the function is
+	 * returned as the generic D-Bus "failed" error to the user,
+	 * with the message copied across.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subsubiter);
+
+		dbus_message_iter_open_container (&subsubiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubsubiter);
+
+		int32_value = 4;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 15;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 16;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 23;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 42;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&subsubiter, &subsubsubiter);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_FAILED));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_error_init (&dbus_error);
+		dbus_set_error_from_message (&dbus_error, reply);
+		TEST_EQ_STR (dbus_error.message, "Invalid argument");
+		dbus_error_free (&dbus_error);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if a nested array element of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong nested array element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_STRING_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_STRING_AS_STRING),
+						  &subsubiter);
+
+
+		dbus_message_iter_open_container (&subsubiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subsubsubiter);
+
+		str_value = "4";
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "8";
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "15";
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "16";
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "23";
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "42";
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&subsubiter, &subsubsubiter);
+
+
+		dbus_message_iter_open_container (&subsubiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subsubsubiter);
+
+		str_value = "1";
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "1";
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "2";
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "3";
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "5";
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "6";
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&subsubiter, &subsubsubiter);
+
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if a top array element of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong top array element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_STRING_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subsubiter);
+
+		str_value = "4";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "8";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "15";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "16";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "23";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "42";
+		dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if a variant element of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong variant element type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  DBUS_TYPE_STRING_AS_STRING,
+						  &subiter);
+
+		str_value = "4 8 15 16 32 42\n1 1 2 3 5 8";
+		dbus_message_iter_append_basic (&subiter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an argument of the wrong type is given.
+	 */
+	TEST_FEATURE ("with wrong argument type");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "4 8 15 16 23 42\n1 1 2 3 5 8";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if an extra argument is given.
+	 */
+	TEST_FEATURE ("with extra argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subiter);
+
+		dbus_message_iter_open_container (&subiter, DBUS_TYPE_ARRAY,
+						  (DBUS_TYPE_ARRAY_AS_STRING
+						   DBUS_TYPE_INT32_AS_STRING),
+						  &subsubiter);
+
+		dbus_message_iter_open_container (&subsubiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubsubiter);
+
+		int32_value = 4;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 15;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 16;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 23;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 42;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&subsubiter, &subsubsubiter);
+
+		dbus_message_iter_open_container (&subsubiter, DBUS_TYPE_ARRAY,
+						  DBUS_TYPE_INT32_AS_STRING,
+						  &subsubsubiter);
+
+		int32_value = 1;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 1;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 2;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 3;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 5;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		int32_value = 8;
+		dbus_message_iter_append_basic (&subsubsubiter, DBUS_TYPE_INT32,
+						&int32_value);
+
+		dbus_message_iter_close_container (&subsubiter, &subsubsubiter);
+
+		dbus_message_iter_close_container (&subiter, &subsubiter);
+
+		dbus_message_iter_close_container (&iter, &subiter);
+
+		str_value = "4 8 15 16 23 42\n1 1 2 3 5 8";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	/* Check that the function returns an invalid arguments error
+	 * if no arguments are given.
+	 */
+	TEST_FEATURE ("with missing arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+		}
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih/Test",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		str_value = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		str_value = "int32_array_array";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str_value);
+
+		dbus_connection_send (client_conn, method_call, &serial);
+		dbus_connection_flush (client_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_INVALID_ARGS));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		dbus_message_unref (reply);
+
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
 }
 
 
@@ -2149,8 +20927,114 @@ int
 main (int   argc,
       char *argv[])
 {
-	test_method_marshal ();
-	test_signal_dispatch ();
+	nih_error_init ();
+
+	test_ordinary_method ();
+	test_nameless_method ();
+	test_async_method ();
+
+	test_byte_to_str ();
+	test_str_to_byte ();
+
+	test_boolean_to_str ();
+	test_str_to_boolean ();
+
+	test_int16_to_str ();
+	test_str_to_int16 ();
+
+	test_uint16_to_str ();
+	test_str_to_uint16 ();
+
+	test_int32_to_str ();
+	test_str_to_int32 ();
+
+	test_uint32_to_str ();
+	test_str_to_uint32 ();
+
+	test_int64_to_str ();
+	test_str_to_int64 ();
+
+	test_uint64_to_str ();
+	test_str_to_uint64 ();
+
+	test_double_to_str ();
+	test_str_to_double ();
+
+	test_object_path_to_str ();
+	test_str_to_object_path ();
+
+	test_signature_to_str ();
+	test_str_to_signature ();
+
+	test_int32_array_to_str ();
+	test_str_to_int32_array ();
+
+	test_str_array_to_str ();
+	test_str_to_str_array ();
+
+	test_int32_array_array_to_str ();
+	test_str_to_int32_array_array ();
+
+	test_new_byte ();
+	test_new_boolean ();
+	test_new_int16 ();
+	test_new_uint16 ();
+	test_new_int32 ();
+	test_new_uint32 ();
+	test_new_int64 ();
+	test_new_uint64 ();
+	test_new_double ();
+	test_new_string ();
+	test_new_object_path ();
+	test_new_signature ();
+	test_new_int32_array ();
+	test_new_str_array ();
+	test_new_int32_array_array ();
+
+	test_get_byte ();
+	test_set_byte ();
+
+	test_get_boolean ();
+	test_set_boolean ();
+
+	test_get_int16 ();
+	test_set_int16 ();
+
+	test_get_uint16 ();
+	test_set_uint16 ();
+
+	test_get_int32 ();
+	test_set_int32 ();
+
+	test_get_uint32 ();
+	test_set_uint32 ();
+
+	test_get_int64 ();
+	test_set_int64 ();
+
+	test_get_uint64 ();
+	test_set_uint64 ();
+
+	test_get_double ();
+	test_set_double ();
+
+	test_get_string ();
+	test_set_string ();
+
+	test_get_object_path ();
+	test_set_object_path ();
+
+	test_get_signature ();
+	test_set_signature ();
+
+	test_get_int32_array ();
+	test_set_int32_array ();
+
+	test_get_str_array ();
+	test_set_str_array ();
+
+	test_get_int32_array_array ();
+	test_set_int32_array_array ();
 
 	return 0;
 }

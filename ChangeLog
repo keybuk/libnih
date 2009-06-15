@@ -1,5 +1,12 @@
 2009-06-15  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/com.netsplit.Nih.Test_impl.h,
+	* nih-dbus-tool/tests/com.netsplit.Nih.Test_impl.c, 
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_object.c,
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c: Completely
+	rewrite these tests using TEST_DBUS, making sure we test as much of the
+	newly generated code as possible.
+
 	* nih-dbus-tool/tests/com.netsplit.Nih.Test.xml: Various slight
 	updates to better test the newer code; add arrays of arrays to the
 	tests; rename "data" to "value" to avoid clash with data argument;

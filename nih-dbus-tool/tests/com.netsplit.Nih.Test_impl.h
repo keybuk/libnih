@@ -30,11 +30,32 @@
 
 #include <nih/macros.h>
 
+#include <nih-dbus/dbus_message.h>
+
 
 NIH_BEGIN_EXTERN
 
-DBusConnection *my_setup    (void);
-void            my_teardown (DBusConnection *conn);
+extern int             async_method_main_loop;
+extern char *          async_method_input;
+extern NihDBusMessage *async_method_message;
+
+extern uint8_t   byte_property;
+extern int       boolean_property;
+extern int16_t   int16_property;
+extern uint16_t  uint16_property;
+extern int32_t   int32_property;
+extern uint32_t  uint32_property;
+extern int64_t   int64_property;
+extern uint64_t  uint64_property;
+extern double    double_property;
+extern char *    str_property;
+extern char *    object_path_property;
+extern char *    signature_property;
+extern int32_t * int32_array_property;
+extern size_t    int32_array_property_len;
+extern char **   str_array_property;
+extern int32_t **int32_array_array_property;
+extern size_t *  int32_array_array_property_len;
 
 NIH_END_EXTERN
 

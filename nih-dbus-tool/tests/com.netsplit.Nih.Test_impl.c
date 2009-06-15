@@ -27,11 +27,7 @@
 
 #include <nih/test.h>
 
-#include <sys/types.h>
-#include <sys/wait.h>
-
 #include <errno.h>
-#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
@@ -39,36 +35,22 @@
 #include <nih/macros.h>
 #include <nih/alloc.h>
 #include <nih/string.h>
-#include <nih/timer.h>
-#include <nih/signal.h>
 #include <nih/main.h>
+#include <nih/logging.h>
 #include <nih/error.h>
-#include <nih/errors.h>
 
 #include <nih-dbus/dbus_error.h>
-#include <nih-dbus/dbus_connection.h>
 #include <nih-dbus/dbus_message.h>
-#include <nih-dbus/dbus_object.h>
 
 #include "com.netsplit.Nih.Test_object.h"
 
 
-static const NihDBusInterface *my_interfaces[] = {
-	&com_netsplit_Nih_Test,
-	&com_netsplit_Nih_Glue,
-	NULL
-};
-
-
 int
-my_test_method (void            *data,
-		NihDBusMessage  *message,
-		const char      *input,
-		int32_t          flags,
-		const char     **output)
+my_test_ordinary_method (void *          data,
+			 NihDBusMessage *message,
+			 const char *    input,
+			 char **         output)
 {
-	static int32_t last_flags = -1;
-
 	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
 	TEST_NE_P (message->connection, NULL);
 	TEST_NE_P (message->message, NULL);
@@ -76,493 +58,772 @@ my_test_method (void            *data,
 	TEST_NE_P (input, NULL);
 	TEST_NE_P (output, NULL);
 
-	if ((flags == 1) && (last_flags != 1)) {
-		last_flags = flags;
-
-		nih_dbus_error_raise ("com.netsplit.Nih.IllegalValue",
-				      "The value given was not legal");
-
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.OrdinaryMethod.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
 		return -1;
 	}
 
-	if ((flags == 2) && (last_flags != 2)) {
-		last_flags = flags;
-
-		errno = ENOMEM;
-		nih_error_raise_system ();
-		return -1;
-	}
-
-	if ((flags == 3) && (last_flags != 3)) {
-		last_flags = flags;
-
-		errno = EBADF;
-		nih_error_raise_system ();
-		return -1;
-	}
-
-	last_flags = flags;
 	*output = nih_strdup (message, input);
+	if (! *output)
+		nih_return_no_memory_error (-1);
 
 	return 0;
 }
 
+int
+my_test_nameless_method (void *          data,
+			 NihDBusMessage *message,
+			 const char *    arg1,
+			 char **         arg2)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
 
-typedef struct async_method {
-	NihDBusMessage *message;
-	char           *input;
-	int32_t         flags;
-} AsyncMethod;
+	TEST_NE_P (arg1, NULL);
+	TEST_NE_P (arg2, NULL);
+
+	if (! strlen (arg1)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.NamelessMethod.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (arg1, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	*arg2 = nih_strdup (message, arg1);
+	if (! *arg2)
+		nih_return_no_memory_error (-1);
+
+	return 0;
+}
+
+int             async_method_main_loop;
+char *          async_method_input;
+NihDBusMessage *async_method_message;
 
 static void
-async_method_reply (AsyncMethod *method,
-		    NihTimer    *timer)
+my_test_async_method_send_reply (void *           data,
+				 NihMainLoopFunc *loop)
 {
-	int ret;
+	NIH_ZERO (my_test_async_method_reply (async_method_message,
+					      async_method_input));
 
-	assert (method != NULL);
-	assert (timer != NULL);
+	nih_free (async_method_message);
+	nih_free (async_method_input);
 
-	TEST_NOT_FREE (method->message);
+	async_method_input = NULL;
+	async_method_message = NULL;
 
-	if (method->flags == 4) {
-		DBusMessage *reply;
-
-		reply = dbus_message_new_method_return (method->message->message);
-		assert (reply != NULL);
-
-		dbus_message_append_args (reply,
-					  DBUS_TYPE_INT32, &method->flags,
-					  DBUS_TYPE_INVALID);
-
-		ret = dbus_connection_send (method->message->connection, reply, NULL);
-		assert (ret);
-
-		dbus_message_unref (reply);
-		nih_free (method->message);
-
-	} else if (method->flags == 5) {
-		DBusMessage *reply;
-
-		reply = dbus_message_new_method_return (method->message->message);
-		assert (reply != NULL);
-
-		dbus_message_append_args (reply,
-					  DBUS_TYPE_STRING, &method->input,
-					  DBUS_TYPE_INT32, &method->flags,
-					  DBUS_TYPE_INVALID);
-
-		ret = dbus_connection_send (method->message->connection, reply, NULL);
-		assert (ret);
-
-		dbus_message_unref (reply);
-		nih_free (method->message);
-
-	} else if (method->flags == 6) {
-		DBusMessage *reply;
-
-		reply = dbus_message_new_method_return (method->message->message);
-		assert (reply != NULL);
-
-		ret = dbus_connection_send (method->message->connection, reply, NULL);
-		assert (ret);
-
-		dbus_message_unref (reply);
-		nih_free (method->message);
-
-	} else {
-		ret = my_test_async_method_reply (method->message,
-						  method->input);
-		TEST_EQ (ret, 0);
-
-		TEST_NOT_FREE (method->message);
-	}
-
-	nih_free (method);
+	nih_free (loop);
 }
 
 int
-my_test_async_method (void           *data,
+my_test_async_method (void *          data,
 		      NihDBusMessage *message,
-		      const char     *input,
-		      int32_t         flags)
+		      const char *    input)
 {
-	static int32_t last_flags = -1;
-
-	AsyncMethod *method;
-
 	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
 	TEST_NE_P (message->connection, NULL);
 	TEST_NE_P (message->message, NULL);
 
 	TEST_NE_P (input, NULL);
 
-	if ((flags == 1) && (last_flags != 1)) {
-		last_flags = flags;
-
-		nih_dbus_error_raise ("com.netsplit.Nih.IllegalValue",
-				      "The value given was not legal");
-
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.AsyncMethod.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
 		return -1;
 	}
 
-	if ((flags == 2) && (last_flags != 2)) {
-		last_flags = flags;
+	if (async_method_input)
+		nih_free (async_method_input);
 
-		errno = ENOMEM;
-		nih_error_raise_system ();
-		return -1;
-	}
+	async_method_input = nih_strdup (NULL, input);
+	if (! async_method_input)
+		nih_return_no_memory_error (-1);
 
-	if ((flags == 3) && (last_flags != 3)) {
-		last_flags = flags;
+	async_method_message = message;
+	nih_ref (async_method_message, async_method_input);
 
-		errno = EBADF;
-		nih_error_raise_system ();
-		return -1;
-	}
-
-	method = NIH_MUST (nih_new (NULL, AsyncMethod));
-
-	nih_ref (message, method);
-	method->message = message;
-	TEST_FREE_TAG (method->message);
-
-	method->input = NIH_MUST (nih_strdup (method, input));
-
-	method->flags = flags;
-
-	NIH_MUST (nih_timer_add_timeout (NULL, 1,
-					 (NihTimerCb)async_method_reply,
-					 method));
-
-	last_flags = flags;
+	if (async_method_main_loop)
+		NIH_MUST (nih_main_loop_add_func (NULL, my_test_async_method_send_reply,
+						  NULL));
 
 	return 0;
 }
 
 
 int
-my_byte_to_str (void            *data,
-		NihDBusMessage  *message,
-		uint8_t          input,
-		const char     **output)
+my_test_byte_to_str (void *          data,
+		     NihDBusMessage *message,
+		     uint8_t         input,
+		     char **         output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (output, NULL);
+
+	if (! input) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.ByteToStr.ZeroInput",
+				      "The input argument was zero");
+		return -1;
+	} else if (input == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
 
 	*output = nih_sprintf (message, "%hhu", (unsigned char)input);
+	if (! *output)
+		nih_return_no_memory_error (-1);
 
 	return 0;
 }
 
 int
-my_str_to_byte (void           *data,
-		NihDBusMessage *message,
-		const char     *input,
-		uint8_t        *output)
+my_test_str_to_byte (void *          data,
+		     NihDBusMessage *message,
+		     const char *    input,
+		     uint8_t *       output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (input, NULL);
 	TEST_NE_P (output, NULL);
 
-	*output = (uint8_t)strtoimax (input, NULL, 10);
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrToByte.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	*output = (uint8_t)strtoumax (input, NULL, 10);
 
 	return 0;
 }
 
+
 int
-my_boolean_to_str (void            *data,
-		   NihDBusMessage  *message,
-		   int              input,
-		   const char     **output)
+my_test_boolean_to_str (void *          data,
+			NihDBusMessage *message,
+			int             input,
+			char **         output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (output, NULL);
+
+	/* Yes, this is just wrong, but D-Bus sanitises booleans for us over
+	 * the wire so we can only receive TRUE or FALSE.
+	 */
+	if (! input) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.BooleanToStr.ZeroInput",
+				      "The input argument was zero");
+		return -1;
+	}
 
 	*output = nih_strdup (message, input ? "True" : "False");
+	if (! *output)
+		nih_return_no_memory_error (-1);
 
 	return 0;
 }
 
 int
-my_str_to_boolean (void           *data,
-		   NihDBusMessage *message,
-		   const char     *input,
-		   int            *output)
+my_test_str_to_boolean (void *          data,
+			NihDBusMessage *message,
+			const char *    input,
+			int *           output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (input, NULL);
 	TEST_NE_P (output, NULL);
 
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrToBoolean.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
 	if (! strcmp (input, "False")) {
-		*output = 0;
+		*output = FALSE;
 	} else {
-		*output = 1;
+		*output = TRUE;
 	}
 
 	return 0;
 }
 
+
 int
-my_int16_to_str (void            *data,
-		 NihDBusMessage  *message,
-		 int16_t          input,
-		 const char     **output)
+my_test_int16_to_str (void *          data,
+		      NihDBusMessage *message,
+		      int16_t         input,
+		      char **         output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (output, NULL);
 
+	if (! input) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Int16ToStr.ZeroInput",
+				      "The input argument was zero");
+		return -1;
+	} else if (input == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
 	*output = nih_sprintf (message, "%hd", (short)input);
+	if (! *output)
+		nih_return_no_memory_error (-1);
 
 	return 0;
 }
 
 int
-my_str_to_int16 (void           *data,
-		 NihDBusMessage *message,
-		 const char     *input,
-		 int16_t        *output)
+my_test_str_to_int16 (void *          data,
+		      NihDBusMessage *message,
+		      const char *    input,
+		      int16_t *       output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (input, NULL);
 	TEST_NE_P (output, NULL);
+
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrToInt16.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
 
 	*output = (int16_t)strtoimax (input, NULL, 10);
 
 	return 0;
 }
 
+
 int
-my_uint16_to_str (void            *data,
-		  NihDBusMessage  *message,
-		  uint16_t         input,
-		  const char     **output)
+my_test_uint16_to_str (void *          data,
+		       NihDBusMessage *message,
+		       uint16_t        input,
+		       char **         output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (output, NULL);
+
+	if (! input) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.UInt16ToStr.ZeroInput",
+				      "The input argument was zero");
+		return -1;
+	} else if (input == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
 
 	*output = nih_sprintf (message, "%hu", (unsigned short)input);
+	if (! *output)
+		nih_return_no_memory_error (-1);
 
 	return 0;
 }
 
 int
-my_str_to_uint16 (void           *data,
-		  NihDBusMessage *message,
-		  const char     *input,
-		  uint16_t       *output)
+my_test_str_to_uint16 (void *          data,
+		       NihDBusMessage *message,
+		       const char *    input,
+		       uint16_t *      output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (input, NULL);
 	TEST_NE_P (output, NULL);
 
-	*output = (uint16_t)strtoimax (input, NULL, 10);
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrToUInt16.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	*output = (uint16_t)strtoumax (input, NULL, 10);
 
 	return 0;
 }
 
+
 int
-my_int32_to_str (void            *data,
-		 NihDBusMessage  *message,
-		 int32_t          input,
-		 const char     **output)
+my_test_int32_to_str (void *          data,
+		      NihDBusMessage *message,
+		      int32_t         input,
+		      char **         output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (output, NULL);
 
-	*output = nih_sprintf (message, "%d", (int)input);
+	if (! input) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Int32ToStr.ZeroInput",
+				      "The input argument was zero");
+		return -1;
+	} else if (input == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	*output = NIH_MUST (nih_sprintf (message, "%d", (int)input));
+	if (! *output)
+		nih_return_no_memory_error (-1);
 
 	return 0;
 }
 
 int
-my_str_to_int32 (void           *data,
-		 NihDBusMessage *message,
-		 const char     *input,
-		 int32_t        *output)
+my_test_str_to_int32 (void *          data,
+		      NihDBusMessage *message,
+		      const char *    input,
+		      int32_t *       output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (input, NULL);
 	TEST_NE_P (output, NULL);
+
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrToInt32.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
 
 	*output = (int32_t)strtoimax (input, NULL, 10);
 
 	return 0;
 }
 
+
 int
-my_uint32_to_str (void            *data,
-		  NihDBusMessage  *message,
-		  uint32_t         input,
-		  const char     **output)
+my_test_uint32_to_str (void *          data,
+		       NihDBusMessage *message,
+		       uint32_t        input,
+		       char **         output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (output, NULL);
+
+	if (! input) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.UInt32ToStr.ZeroInput",
+				      "The input argument was zero");
+		return -1;
+	} else if (input == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
 
 	*output = nih_sprintf (message, "%u", (unsigned int)input);
+	if (! *output)
+		nih_return_no_memory_error (-1);
 
 	return 0;
 }
 
 int
-my_str_to_uint32 (void           *data,
-		  NihDBusMessage *message,
-		  const char     *input,
-		  uint32_t       *output)
+my_test_str_to_uint32 (void *          data,
+		       NihDBusMessage *message,
+		       const char *    input,
+		       uint32_t *      output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (input, NULL);
 	TEST_NE_P (output, NULL);
 
-	*output = (uint32_t)strtoimax (input, NULL, 10);
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrToUInt32.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	*output = (uint32_t)strtoumax (input, NULL, 10);
 
 	return 0;
 }
 
+
 int
-my_int64_to_str (void            *data,
-		 NihDBusMessage  *message,
-		 int64_t          input,
-		 const char     **output)
+my_test_int64_to_str (void *          data,
+		      NihDBusMessage *message,
+		      int64_t         input,
+		      char **         output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (output, NULL);
+
+	if (! input) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Int64ToStr.ZeroInput",
+				      "The input argument was zero");
+		return -1;
+	} else if (input == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
 
 	*output = nih_sprintf (message, "%lld", (long long)input);
+	if (! *output)
+		nih_return_no_memory_error (-1);
 
 	return 0;
 }
 
 int
-my_str_to_int64 (void           *data,
-		 NihDBusMessage *message,
-		 const char     *input,
-		 int64_t        *output)
+my_test_str_to_int64 (void *          data,
+		      NihDBusMessage *message,
+		      const char *    input,
+		      int64_t *       output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (input, NULL);
 	TEST_NE_P (output, NULL);
+
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrToInt64.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
 
 	*output = (int64_t)strtoimax (input, NULL, 10);
 
 	return 0;
 }
 
+
 int
-my_uint64_to_str (void            *data,
-		  NihDBusMessage  *message,
-		  uint64_t         input,
-		  const char     **output)
+my_test_uint64_to_str (void *          data,
+		       NihDBusMessage *message,
+		       uint64_t        input,
+		       char **         output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (output, NULL);
+
+	if (! input) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.UInt64ToStr.ZeroInput",
+				      "The input argument was zero");
+		return -1;
+	} else if (input == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
 
 	*output = nih_sprintf (message, "%llu", (unsigned long long)input);
+	if (! *output)
+		nih_return_no_memory_error (-1);
 
 	return 0;
 }
 
 int
-my_str_to_uint64 (void           *data,
-		  NihDBusMessage *message,
-		  const char     *input,
-		  uint64_t       *output)
+my_test_str_to_uint64 (void *          data,
+		       NihDBusMessage *message,
+		       const char *    input,
+		       uint64_t *      output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (input, NULL);
 	TEST_NE_P (output, NULL);
 
-	*output = (uint64_t)strtoimax (input, NULL, 10);
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrToUInt64.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	*output = (uint64_t)strtoumax (input, NULL, 10);
 
 	return 0;
 }
 
+
 int
-my_double_to_str (void            *data,
-		  NihDBusMessage  *message,
-		  double           input,
-		  const char     **output)
+my_test_double_to_str (void *          data,
+		       NihDBusMessage *message,
+		       double          input,
+		       char **         output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (output, NULL);
+
+	if (! input) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.DoubleToStr.ZeroInput",
+				      "The input argument was zero");
+		return -1;
+	} else if (input == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
 
 	*output = nih_sprintf (message, "%f", input);
+	if (! *output)
+		nih_return_no_memory_error (-1);
 
 	return 0;
 }
 
 int
-my_str_to_double (void           *data,
-		  NihDBusMessage *message,
-		  const char     *input,
-		  double         *output)
+my_test_str_to_double (void *          data,
+		       NihDBusMessage *message,
+		       const char *    input,
+		       double *        output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (input, NULL);
 	TEST_NE_P (output, NULL);
+
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrToDouble.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
 
 	*output = strtod (input, NULL);
 
 	return 0;
 }
 
+
 int
-my_object_path_to_str (void            *data,
-		       NihDBusMessage  *message,
-		       const char      *input,
-		       const char     **output)
+my_test_object_path_to_str (void *          data,
+			    NihDBusMessage *message,
+			    const char *    input,
+			    char **         output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (input, NULL);
 	TEST_NE_P (output, NULL);
 
+	if (! strcmp (input, "/")) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.ObjectPathToStr.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "/invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
 	*output = nih_strdup (message, input);
+	if (! *output)
+		nih_return_no_memory_error (-1);
 
 	return 0;
 }
 
 int
-my_str_to_object_path (void            *data,
-		       NihDBusMessage  *message,
-		       const char      *input,
-		       const char     **output)
+my_test_str_to_object_path (void *          data,
+			    NihDBusMessage *message,
+			    const char *    input,
+			    char **         output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (input, NULL);
 	TEST_NE_P (output, NULL);
 
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrToObjectPath.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
 	*output = nih_strdup (message, input);
+	if (! *output)
+		nih_return_no_memory_error (-1);
+
+	return 0;
+}
+
+
+int
+my_test_signature_to_str (void *          data,
+			  NihDBusMessage *message,
+			  const char *    input,
+			  char **         output)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (input, NULL);
+	TEST_NE_P (output, NULL);
+
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.SignatureToStr.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "inva(x)id")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	*output = nih_strdup (message, input);
+	if (! *output)
+		nih_return_no_memory_error (-1);
 
 	return 0;
 }
 
 int
-my_signature_to_str (void            *data,
-		     NihDBusMessage  *message,
-		     const char      *input,
-		     const char     **output)
+my_test_str_to_signature (void *          data,
+			  NihDBusMessage *message,
+			  const char *    input,
+			  char **         output)
 {
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
 	TEST_NE_P (input, NULL);
 	TEST_NE_P (output, NULL);
 
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrToSignature.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
 	*output = nih_strdup (message, input);
+	if (! *output)
+		nih_return_no_memory_error (-1);
 
 	return 0;
 }
 
-int
-my_str_to_signature (void            *data,
-		     NihDBusMessage  *message,
-		     const char      *input,
-		     const char     **output)
-{
-	TEST_NE_P (input, NULL);
-	TEST_NE_P (output, NULL);
-
-	*output = nih_strdup (message, input);
-
-	return 0;
-}
 
 int
-my_int32_array_to_str (void            *data,
-		       NihDBusMessage  *message,
-		       int32_t         *array,
-		       size_t           array_len,
-		       const char     **output)
+my_test_int32_array_to_str (void *          data,
+			    NihDBusMessage *message,
+			    int32_t *       input,
+			    size_t          input_len,
+			    char **         output)
 {
 	char *str;
 
-	TEST_NE_P (array, NULL);
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	if (input_len)
+		TEST_NE_P (input, NULL);
 	TEST_NE_P (output, NULL);
+
+	if (! input_len) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Int32ArrayToStr.EmptyInput",
+				      "The input array was empty");
+		return -1;
+	} else if (input_len == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
 
 	str = NULL;
 
-	for (size_t i = 0; i < array_len; i++)
-		NIH_MUST (nih_strcat_sprintf (&str, message,
-					      str ? " %d" : "%d",
-					      (int)array[i]));
+	for (size_t i = 0; i < input_len; i++) {
+		if (! nih_strcat_sprintf (&str, message, i ? " %d" : "%d",
+					  (int)input[i])) {
+			nih_error_raise_no_memory ();
+			if (str)
+				nih_free (str);
+			return -1;
+		}
+	}
 
 	*output = str;
 
@@ -570,55 +831,95 @@ my_int32_array_to_str (void            *data,
 }
 
 int
-my_str_to_int32_array (void            *data,
-		       NihDBusMessage  *message,
-		       const char      *input,
-		       int32_t        **array,
-		       size_t          *array_len)
+my_test_str_to_int32_array (void *          data,
+			    NihDBusMessage *message,
+			    const char *    input,
+			    int32_t **      output,
+			    size_t *        output_len)
 {
-	char **parts, **p;
+	nih_local char **parts = NULL;
+
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
 
 	TEST_NE_P (input, NULL);
-	TEST_NE_P (array, NULL);
-	TEST_NE_P (array_len, NULL);
+	TEST_NE_P (output, NULL);
 
-	*array = NULL;
-	*array_len = 0;
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrToInt32Array.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	*output = NULL;
+	*output_len = 0;
 
 	parts = nih_str_split (NULL, input, " ", FALSE);
-	for (p = parts; p && *p; p++) {
-		int i;
+	if (! parts)
+		nih_return_no_memory_error (-1);
 
-		sscanf (*p, "%d", &i);
+	for (char **part = parts; part && *part; part++) {
+		int32_t *tmp;
 
-		*array = NIH_MUST (nih_realloc (
-				  *array, message,
-				  sizeof (int32_t) * (*array_len + 1)));
-		(*array)[(*array_len)++] = i;
+		tmp = nih_realloc (*output, message,
+				   sizeof (int32_t) * (*output_len + 1));
+		if (! tmp) {
+			nih_error_raise_no_memory ();
+			if (*output) {
+				nih_free (*output);
+				*output = NULL;
+			}
+			return -1;
+		}
+
+		*output = tmp;
+		(*output)[(*output_len)++] = (int32_t)strtoimax (*part, NULL, 10);
 	}
-
-	nih_free (parts);
 
 	return 0;
 }
 
-int
-my_str_array_to_str (void            *data,
-		     NihDBusMessage  *message,
-		     const char     **array,
-		     const char     **output)
-{
-	char       *str;
-	const char **a;
 
-	TEST_NE_P (array, NULL);
+int
+my_test_str_array_to_str (void *          data,
+			  NihDBusMessage *message,
+			  char * const *  input,
+			  char **         output)
+{
+	char *str;
+
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (input, NULL);
 	TEST_NE_P (output, NULL);
+
+	if (! *input) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrArrayToStr.EmptyInput",
+				      "The input array was empty");
+		return -1;
+	} else if (input[0] && input[1] && input[2] && input[3]
+		   && (! input[4])) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
 
 	str = NULL;
 
-	for (a = array; a && *a; a++)
-		NIH_MUST (nih_strcat_sprintf (&str, message,
-					      str ? " %s" : "%s", *a));
+	for (char * const *s = input; s && *s; s++) {
+		if (! nih_strcat_sprintf (&str, message, str ? " %s" : "%s",
+					  *s)) {
+			nih_error_raise_no_memory ();
+			if (str)
+				nih_free (str);
+			return -1;
+		}
+	}
 
 	*output = str;
 
@@ -626,191 +927,963 @@ my_str_array_to_str (void            *data,
 }
 
 int
-my_str_to_str_array (void             *data,
-		     NihDBusMessage   *message,
-		     const char       *input,
-		     const char     ***array)
+my_test_str_to_str_array (void *          data,
+			  NihDBusMessage *message,
+			  const char *    input,
+			  char ***        output)
 {
-	TEST_NE_P (input, NULL);
-	TEST_NE_P (array, NULL);
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
 
-	*array = (const char **)nih_str_split (message, input, " ", FALSE);
+	TEST_NE_P (input, NULL);
+	TEST_NE_P (output, NULL);
+
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrToStrArray.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	*output = nih_str_split (message, input, " ", FALSE);
+	if (! *output)
+		nih_return_no_memory_error (-1);
 
 	return 0;
 }
 
 
 int
-my_emit_signal (void           *data,
-		NihDBusMessage *message,
-		int32_t         signum)
+my_test_int32_array_array_to_str (void *          data,
+				  NihDBusMessage *message,
+				  int32_t **      input,
+				  size_t *        input_len,
+				  char **         output)
 {
-	int ret = -1;
+	char   *str;
+	size_t *array_len;
 
-	switch (signum) {
-	case 0:
-		ret = my_test_signal (message->connection,
-				      dbus_message_get_path (message->message),
-				      "hello there", 0);
-		break;
-	case 1:
-		ret = my_emit_byte (message->connection,
-				    dbus_message_get_path (message->message),
-				    65);
-		break;
-	case 2:
-		ret = my_emit_boolean (message->connection,
-				       dbus_message_get_path (message->message),
-				       TRUE);
-		break;
-	case 3:
-		ret = my_emit_int16 (message->connection,
-				     dbus_message_get_path (message->message),
-				     1701);
-		break;
-	case 4:
-		ret = my_emit_uint16 (message->connection,
-				      dbus_message_get_path (message->message),
-				      1701);
-		break;
-	case 5:
-		ret = my_emit_int32 (message->connection,
-				     dbus_message_get_path (message->message),
-				     1701);
-		break;
-	case 6:
-		ret = my_emit_uint32 (message->connection,
-				      dbus_message_get_path (message->message),
-				      1701);
-		break;
-	case 7:
-		ret = my_emit_int64 (message->connection,
-				     dbus_message_get_path (message->message),
-				     1701);
-		break;
-	case 8:
-		ret = my_emit_uint64 (message->connection,
-				      dbus_message_get_path (message->message),
-				      1701);
-		break;
-	case 9:
-		ret = my_emit_double (message->connection,
-				      dbus_message_get_path (message->message),
-				      3.141);
-		break;
-	case 10:
-		ret = my_emit_string (message->connection,
-				      dbus_message_get_path (message->message),
-				      "test data");
-		break;
-	case 11:
-		ret = my_emit_object_path (message->connection,
-					   dbus_message_get_path (message->message),
-					   "/com/netsplit/Nih");
-		break;
-	case 12:
-		ret = my_emit_signature (message->connection,
-					 dbus_message_get_path (message->message),
-					 "a{sv}");
-		break;
-	case 13: {
-		int32_t array[] = { 4, 8, 15, 16, 23, 42 };
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
 
-		ret = my_emit_int32_array (message->connection,
-					   dbus_message_get_path (message->message),
-					   array, 6);
-		break;
-	}
-	case 14: {
-		char *array[] = { "this", "is", "a", "test", NULL };
+	TEST_NE_P (input, NULL);
+	TEST_NE_P (output, NULL);
 
-		ret = my_emit_str_array (message->connection,
-					 dbus_message_get_path (message->message),
-					 array);
-		break;
-	}
+	if (! *input) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Int32ArrayArrayToStr.EmptyInput",
+				      "The input array was empty");
+		return -1;
+	} else if (input[0] && (! input[1])) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
 	}
 
-	TEST_EQ (ret, 0);
+	str = NULL;
+
+	array_len = input_len;
+	for (int32_t **array = input; array && *array; array++) {
+		for (size_t i = 0; i < *array_len; i++) {
+			if (! nih_strcat_sprintf (&str, message,
+						  i ? " %d" : (str ? "\n%d" : "%d"),
+						  (int)(*array)[i])) {
+				nih_error_raise_no_memory ();
+				if (str)
+					nih_free (str);
+				return -1;
+			}
+		}
+	}
+
+	*output = str;
+
+	return 0;
+}
+
+int
+my_test_str_to_int32_array_array (void *          data,
+				  NihDBusMessage *message,
+				  const char *    input,
+				  int32_t ***     output,
+				  size_t **       output_len)
+{
+	nih_local char **lines = NULL;
+	size_t           output_size = 0;
+	int32_t **       tmp;
+	size_t *         tmp_len;
+
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (input, NULL);
+	TEST_NE_P (output, NULL);
+
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrToInt32ArrayArray.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	*output = NULL;
+	*output_len = NULL;
+	output_size = 0;
+
+	lines = nih_str_split (NULL, input, "\n", FALSE);
+	if (! lines)
+		nih_return_no_memory_error (-1);
+
+	for (char **line = lines; line && *line; line++) {
+		nih_local char **parts = NULL;
+		size_t           array_size;
+
+		tmp = nih_realloc (*output, message,
+				   sizeof (int32_t *) * (output_size + 1));
+		if (! tmp)
+			goto error;
+
+		*output = tmp;
+		(*output)[output_size] = NULL;
+
+		tmp_len = nih_realloc (*output_len, message,
+				       sizeof (size_t) * (output_size + 1));
+		if (! tmp_len)
+			goto error;
+
+		*output_len = tmp_len;
+
+		parts = nih_str_split (NULL, *line, " ", FALSE);
+		if (! parts)
+			goto error;
+
+		array_size = 0;
+		for (char **part = parts; part && *part; part++) {
+			int32_t *tmp;
+
+			tmp = nih_realloc ((*output)[output_size], message,
+					   sizeof (int32_t) * (array_size + 1));
+			if (! tmp)
+				goto error;
+
+			(*output)[output_size] = tmp;
+			(*output)[output_size][array_size++] \
+				= (int32_t)strtoimax (*part, NULL, 10);
+		}
+
+		(*output_len)[output_size++] = array_size;
+	}
+
+	tmp = nih_realloc (*output, message,
+			   sizeof (int32_t *) * (output_size + 1));
+	if (! tmp)
+		goto error;
+
+	*output = tmp;
+	(*output)[output_size] = NULL;
+
+	tmp_len = nih_realloc (*output_len, message,
+			       sizeof (size_t) * (output_size + 1));
+	if (! tmp_len)
+		goto error;
+
+	*output_len = tmp_len;
+	(*output_len)[output_size] = 0;
+
+	return 0;
+error:
+	nih_error_raise_no_memory ();
+	if (*output) {
+		nih_free (*output);
+		*output = NULL;
+	}
+	if (*output_len) {
+		nih_free (*output_len);
+		*output_len = NULL;
+	}
+	return -1;
+}
+
+
+uint8_t byte_property;
+
+int
+my_test_get_byte (void *          data,
+		  NihDBusMessage *message,
+		  uint8_t *       value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	*value = byte_property;
+
+	return 0;
+}
+
+int
+my_test_set_byte (void *          data,
+		  NihDBusMessage *message,
+		  uint8_t         value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	if (! value) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Byte.Zero",
+				      "The property value was zero");
+		return -1;
+	} else if (value == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	byte_property = value;
 
 	return 0;
 }
 
 
-static DBusConnection *server_conn = NULL;
+int boolean_property;
 
-static int
-my_connect_handler (DBusServer     *server,
-		    DBusConnection *conn)
+int
+my_test_get_boolean (void *          data,
+		     NihDBusMessage *message,
+		     int *           value)
 {
-	NihDBusObject *object;
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
 
-	assert (server_conn == NULL);
-	server_conn = conn;
+	TEST_NE_P (value, NULL);
 
-	object = nih_dbus_object_new (NULL, conn, "/com/netsplit/Nih",
-				      my_interfaces, NULL);
-	assert (object != NULL);
+	*value = boolean_property;
 
-	return TRUE;
+	return 0;
 }
 
-static pid_t server_pid;
-
-DBusConnection *
-my_setup (void)
+int
+my_test_set_boolean (void *          data,
+		     NihDBusMessage *message,
+		     int             value)
 {
-	DBusConnection *conn;
-	int             wait_fd = -1;
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
 
-	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		DBusServer *server;
-
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
-		server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test",
-					  my_connect_handler, NULL);
-		assert (server != NULL);
-
-		TEST_CHILD_RELEASE (wait_fd);
-
-		nih_main_loop ();
-
-		if (server_conn) {
-			dbus_connection_close (server_conn);
-			dbus_connection_unref (server_conn);
-		}
-
-		dbus_server_disconnect (server);
-		dbus_server_unref (server);
-
-		dbus_shutdown ();
-
-		exit (0);
+	/* Yes, this is just wrong, but D-Bus sanitises booleans for us over
+	 * the wire so we can only receive TRUE or FALSE.
+	 */
+	if (! value) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Boolean.Zero",
+				      "The property value was zero");
+		return -1;
 	}
 
-	conn = dbus_connection_open ("unix:abstract=/com/netsplit/nih/test",
-				     NULL);
-	assert (conn != NULL);
+	boolean_property = value;
 
-	return conn;
+	return 0;
 }
 
-void
-my_teardown (DBusConnection *conn)
+
+int16_t int16_property;
+
+int
+my_test_get_int16 (void *          data,
+		   NihDBusMessage *message,
+		   int16_t *       value)
 {
-	int status;
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
 
-	kill (server_pid, SIGTERM);
+	TEST_NE_P (value, NULL);
 
-	waitpid (server_pid, &status, 0);
-	TEST_TRUE (WIFEXITED (status));
-	TEST_EQ (WEXITSTATUS (status), 0);
+	*value = int16_property;
 
-	dbus_connection_unref (conn);
-
-	dbus_shutdown ();
+	return 0;
 }
 
+int
+my_test_set_int16 (void *          data,
+		   NihDBusMessage *message,
+		   int16_t         value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	if (! value) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Int16.Zero",
+				      "The property value was zero");
+		return -1;
+	} else if (value == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	int16_property = value;
+
+	return 0;
+}
+
+
+uint16_t uint16_property;
+
+int
+my_test_get_uint16 (void *          data,
+		    NihDBusMessage *message,
+		    uint16_t *      value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	*value = uint16_property;
+
+	return 0;
+}
+
+int
+my_test_set_uint16 (void *          data,
+		    NihDBusMessage *message,
+		    uint16_t        value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	if (! value) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.UInt16.Zero",
+				      "The property value was zero");
+		return -1;
+	} else if (value == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	uint16_property = value;
+
+	return 0;
+}
+
+
+int32_t int32_property;
+
+int
+my_test_get_int32 (void *          data,
+		   NihDBusMessage *message,
+		   int32_t *       value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	*value = int32_property;
+
+	return 0;
+}
+
+int
+my_test_set_int32 (void *          data,
+		   NihDBusMessage *message,
+		   int32_t         value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	if (! value) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Int32.Zero",
+				      "The property value was zero");
+		return -1;
+	} else if (value == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	int32_property = value;
+
+	return 0;
+}
+
+
+uint32_t uint32_property;
+
+int
+my_test_get_uint32 (void *          data,
+		    NihDBusMessage *message,
+		    uint32_t *      value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	*value = uint32_property;
+
+	return 0;
+}
+
+int
+my_test_set_uint32 (void *          data,
+		    NihDBusMessage *message,
+		    uint32_t        value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	if (! value) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.UInt32.Zero",
+				      "The property value was zero");
+		return -1;
+	} else if (value == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	uint32_property = value;
+
+	return 0;
+}
+
+
+int64_t int64_property;
+
+int
+my_test_get_int64 (void *          data,
+		   NihDBusMessage *message,
+		   int64_t *       value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	*value = int64_property;
+
+	return 0;
+}
+
+int
+my_test_set_int64 (void *          data,
+		   NihDBusMessage *message,
+		   int64_t         value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	if (! value) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Int64.Zero",
+				      "The property value was zero");
+		return -1;
+	} else if (value == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	int64_property = value;
+
+	return 0;
+}
+
+
+uint64_t uint64_property;
+
+int
+my_test_get_uint64 (void *          data,
+		    NihDBusMessage *message,
+		    uint64_t *      value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	*value = uint64_property;
+
+	return 0;
+}
+
+int
+my_test_set_uint64 (void *          data,
+		    NihDBusMessage *message,
+		    uint64_t        value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	if (! value) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.UInt64.Zero",
+				      "The property value was zero");
+		return -1;
+	} else if (value == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	uint64_property = value;
+
+	return 0;
+}
+
+
+double double_property;
+
+int
+my_test_get_double (void *          data,
+		    NihDBusMessage *message,
+		    double *        value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	*value = double_property;
+
+	return 0;
+}
+
+int
+my_test_set_double (void *          data,
+		    NihDBusMessage *message,
+		    double          value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	if (! value) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Double.Zero",
+				      "The property value was zero");
+		return -1;
+	} else if (value == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	double_property = value;
+
+	return 0;
+}
+
+
+char *str_property;
+
+int
+my_test_get_string (void *          data,
+		    NihDBusMessage *message,
+		    char **         value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	*value = nih_strdup (message, str_property);
+	if (! *value)
+		return -1;
+
+	return 0;
+}
+
+int
+my_test_set_string (void *          data,
+		    NihDBusMessage *message,
+		    const char *    value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	if (! strlen (value)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.String.Empty",
+				      "The property value was empty");
+		return -1;
+	} else if (! strcmp (value, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	if (str_property)
+		nih_free (str_property);
+
+	str_property = nih_strdup (NULL, value);
+	if (! str_property)
+		nih_return_no_memory_error (-1);
+
+	return 0;
+}
+
+
+char *object_path_property;
+
+int
+my_test_get_object_path (void *          data,
+			 NihDBusMessage *message,
+			 char **         value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	*value = nih_strdup (message, object_path_property);
+	if (! *value)
+		return -1;
+
+	return 0;
+}
+
+int
+my_test_set_object_path (void *          data,
+			 NihDBusMessage *message,
+			 const char *    value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	if (! strcmp (value, "/")) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.ObjectPath.Empty",
+				      "The property value was empty");
+		return -1;
+	} else if (! strcmp (value, "/invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	if (object_path_property)
+		nih_free (object_path_property);
+
+	object_path_property = nih_strdup (NULL, value);
+	if (! object_path_property)
+		nih_return_no_memory_error (-1);
+
+	return 0;
+}
+
+
+char *signature_property;
+
+int
+my_test_get_signature (void *          data,
+		       NihDBusMessage *message,
+		       char **         value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	*value = nih_strdup (message, signature_property);
+	if (! *value)
+		return -1;
+
+	return 0;
+}
+
+int
+my_test_set_signature (void *          data,
+		       NihDBusMessage *message,
+		       const char *    value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	if (! strlen (value)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Signature.Empty",
+				      "The property value was empty");
+		return -1;
+	} else if (! strcmp (value, "inva(x)id")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	if (signature_property)
+		nih_free (signature_property);
+
+	signature_property = nih_strdup (NULL, value);
+	if (! signature_property)
+		nih_return_no_memory_error (-1);
+
+	return 0;
+}
+
+
+int32_t *int32_array_property;
+size_t   int32_array_property_len;
+
+int
+my_test_get_int32_array (void *          data,
+			 NihDBusMessage *message,
+			 int32_t **      value,
+			 size_t *        value_len)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+	TEST_NE_P (value_len, NULL);
+
+	*value = nih_alloc (message,
+			    sizeof (int32_t) * int32_array_property_len);
+	if (! *value)
+		return -1;
+
+	memcpy (*value, int32_array_property,
+		sizeof (int32_t) * int32_array_property_len);
+	*value_len = int32_array_property_len;
+
+	return 0;
+}
+
+int
+my_test_set_int32_array (void *          data,
+			 NihDBusMessage *message,
+			 const int32_t * value,
+			 size_t          value_len)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	if (value_len)
+		TEST_NE_P (value, NULL);
+
+	if (! value_len) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Int32Array.Empty",
+				      "The property value was empty");
+		return -1;
+	} else if (value_len == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	if (int32_array_property)
+		nih_free (int32_array_property);
+
+	int32_array_property = nih_alloc (NULL, sizeof (int32_t) * value_len);
+	if (! int32_array_property)
+		nih_return_no_memory_error (-1);
+
+	memcpy (int32_array_property, value, sizeof (int32_t) * value_len);
+	int32_array_property_len = value_len;
+
+	return 0;
+}
+
+
+char **str_array_property;
+
+int
+my_test_get_str_array (void *          data,
+		       NihDBusMessage *message,
+		       char ***        value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	*value = nih_str_array_copy (message, NULL, str_array_property);
+	if (! *value)
+		return -1;
+
+	return 0;
+}
+
+int
+my_test_set_str_array (void *          data,
+		       NihDBusMessage *message,
+		       char * const *  value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	if (! *value) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrArray.Empty",
+				      "The property array was empty");
+		return -1;
+	} else if (value[0] && value[1] && value[2] && value[3]
+		   && (! value[4])) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	if (str_array_property)
+		nih_free (str_array_property);
+
+	str_array_property = nih_str_array_copy (NULL, NULL, value);
+	if (! str_array_property)
+		nih_return_no_memory_error (-1);
+
+	return 0;
+}
+
+
+int32_t **int32_array_array_property;
+size_t *  int32_array_array_property_len;
+
+int
+my_test_get_int32_array_array (void *          data,
+			       NihDBusMessage *message,
+			       int32_t ***     value,
+			       size_t **       value_len)
+{
+	size_t array_size;
+
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+	TEST_NE_P (value_len, NULL);
+
+	array_size = 0;
+	for (int32_t **array = int32_array_array_property; array && *array; array++)
+		array_size++;
+
+	*value = nih_alloc (message, sizeof (int32_t *) * (array_size + 1));
+	if (! *value)
+		return -1;
+
+	*value_len = nih_alloc (message, sizeof (size_t) * array_size);
+	if (! *value_len) {
+		nih_free (*value);
+		*value = NULL;
+		return -1;
+	}
+
+	array_size = 0;
+	for (int32_t **array = int32_array_array_property; array && *array; array++) {
+		(*value)[array_size] = nih_alloc (*value,
+						  sizeof (int32_t) * int32_array_array_property_len[array_size]);
+		if (! (*value)[array_size]) {
+			nih_free (*value);
+			*value = NULL;
+
+			nih_free (*value_len);
+			*value_len = NULL;
+
+			return -1;
+		}
+
+		memcpy ((*value)[array_size], int32_array_array_property[array_size],
+			sizeof (int32_t) * int32_array_array_property_len[array_size]);
+		(*value_len)[array_size] = int32_array_array_property_len[array_size];
+
+		array_size++;
+	}
+
+	(*value)[array_size] = NULL;
+
+	return 0;
+}
+
+int
+my_test_set_int32_array_array (void *           data,
+			       NihDBusMessage * message,
+			       int32_t * const *value,
+			       size_t *         value_len)
+{
+	size_t value_size;
+
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	if (! *value) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Int32ArrayArray.Empty",
+				      "The property array was empty");
+		return -1;
+	} else if (value[0] && (! value[1])) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	if (int32_array_array_property)
+		nih_free (int32_array_array_property);
+	if (int32_array_array_property_len)
+		nih_free (int32_array_array_property_len);
+
+	int32_array_array_property = NULL;
+	int32_array_array_property_len = NULL;
+
+	value_size = 0;
+	for (int32_t * const *array = value; array && *array; array++)
+		value_size++;
+
+	int32_array_array_property = nih_alloc (NULL, sizeof (int32_t *) * (value_size + 1));
+	if (! int32_array_array_property)
+		nih_return_no_memory_error (-1);
+
+	int32_array_array_property_len = nih_alloc (NULL, sizeof (size_t) * value_size);
+	if (! int32_array_array_property_len) {
+		nih_free (int32_array_array_property);
+		int32_array_array_property = NULL;
+		nih_return_no_memory_error (-1);
+	}
+
+	value_size = 0;
+	for (int32_t * const *array = value; array && *array; array++) {
+		int32_array_array_property[value_size] = nih_alloc (int32_array_array_property,
+								    sizeof (int32_t) * value_len[value_size]);
+		if (! int32_array_array_property[value_size]) {
+			nih_free (int32_array_array_property);
+			int32_array_array_property = NULL;
+
+			nih_free (int32_array_array_property_len);
+			int32_array_array_property_len = NULL;
+
+			nih_return_no_memory_error (-1);
+		}
+
+		memcpy (int32_array_array_property[value_size], value[value_size],
+			sizeof (int32_t) * value_len[value_size]);
+		int32_array_array_property_len[value_size] = value_len[value_size];
+
+		value_size++;
+	}
+
+	int32_array_array_property[value_size] = NULL;
+
+	return 0;
+}

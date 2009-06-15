@@ -1109,7 +1109,7 @@ method_reply_function (const void *parent,
 
 		/* We take a parameter of the expected type and name of
 		 * the marshal input variable; if it's a pointer, we
-		 * assert that it's not NULL and make sure it's const.
+		 * make sure it's const.
 		 */
 		NIH_LIST_FOREACH_SAFE (&arg_vars, iter) {
 			TypeVar *var = (TypeVar *)iter;
@@ -1117,11 +1117,20 @@ method_reply_function (const void *parent,
 			if (! type_to_const (&var->type, var))
 				return NULL;
 
-			if (strchr (var->type, '*'))
-				if (! nih_strcat_sprintf (&assert_block, NULL,
-							  "nih_assert (%s != NULL);\n",
-							  var->name))
-					return NULL;
+			if (strchr (var->type, '*')) {
+				if ((_iter.next == &arg_vars)
+				    || strcmp (((TypeVar *)_iter.next)->type, "size_t")) {
+					if (! nih_strcat_sprintf (&assert_block, NULL,
+								  "nih_assert (%s != NULL);\n",
+								  var->name))
+						return NULL;
+				} else {
+					if (! nih_strcat_sprintf (&assert_block, NULL,
+								  "nih_assert ((%s == 0) || (%s != NULL));\n",
+								  ((TypeVar *)_iter.next)->name, var->name))
+						return NULL;
+				}
+			}
 
 			nih_list_add (&func->args, &var->entry);
 			nih_ref (var, func);
@@ -1400,11 +1409,20 @@ method_proxy_function (const void *parent,
 			if (! type_to_const (&var->type, var))
 				return NULL;
 
-			if (strchr (var->type, '*'))
-				if (! nih_strcat_sprintf (&assert_block, NULL,
-							  "nih_assert (%s != NULL);\n",
-							  var->name))
-					return NULL;
+			if (strchr (var->type, '*')) {
+				if ((_iter.next == &arg_vars)
+				    || strcmp (((TypeVar *)_iter.next)->type, "size_t")) {
+					if (! nih_strcat_sprintf (&assert_block, NULL,
+								  "nih_assert (%s != NULL);\n",
+								  var->name))
+						return NULL;
+				} else {
+					if (! nih_strcat_sprintf (&assert_block, NULL,
+								  "nih_assert ((%s == 0) || (%s != NULL));\n",
+								  ((TypeVar *)_iter.next)->name, var->name))
+						return NULL;
+				}
+			}
 
 			nih_list_add (&func->args, &var->entry);
 			nih_ref (var, func);
@@ -2161,11 +2179,20 @@ method_proxy_sync_function (const void *parent,
 				if (! type_to_const (&var->type, var))
 					return NULL;
 
-				if (strchr (var->type, '*'))
-					if (! nih_strcat_sprintf (&assert_block, NULL,
-								  "nih_assert (%s != NULL);\n",
-								  var->name))
-						return NULL;
+				if (strchr (var->type, '*')) {
+					if ((_iter.next == &arg_vars)
+					    || strcmp (((TypeVar *)_iter.next)->type, "size_t")) {
+						if (! nih_strcat_sprintf (&assert_block, NULL,
+									  "nih_assert (%s != NULL);\n",
+									  var->name))
+							return NULL;
+					} else {
+						if (! nih_strcat_sprintf (&assert_block, NULL,
+									  "nih_assert ((%s == 0) || (%s != NULL));\n",
+									  ((TypeVar *)_iter.next)->name, var->name))
+							return NULL;
+					}
+				}
 
 				nih_list_add (&func->args, &var->entry);
 				nih_ref (var, func);

@@ -1279,6 +1279,171 @@ test_object_function (void)
 	}
 
 
+	/* Check that a signal with an array argument can have that argument
+	 * as NULL if length is zero.
+	 */
+	TEST_FEATURE ("with array argument");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			signal = signal_new (NULL, "Signal");
+			signal->symbol = nih_strdup (signal, "signal");
+
+			argument = argument_new (signal, "Value",
+						 "ai", NIH_DBUS_ARG_OUT);
+			argument->symbol = nih_strdup (argument, "value");
+			nih_list_add (&signal->arguments, &argument->entry);
+		}
+
+		str = signal_object_function (NULL, "my", interface, signal,
+					      &prototypes);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+
+			nih_free (signal);
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "my_emit_signal (DBusConnection *connection,\n"
+				   "                const char *    origin_path,\n"
+				   "                const int32_t * value,\n"
+				   "                size_t          value_len)\n"
+				   "{\n"
+				   "\tDBusMessage *   signal;\n"
+				   "\tDBusMessageIter iter;\n"
+				   "\tDBusMessageIter value_iter;\n"
+				   "\n"
+				   "\tnih_assert (connection != NULL);\n"
+				   "\tnih_assert (origin_path != NULL);\n"
+				   "\tnih_assert ((value_len == 0) || (value != NULL));\n"
+				   "\n"
+				   "\t/* Construct the message. */\n"
+				   "\tsignal = dbus_message_new_signal (origin_path, \"com.netsplit.Nih.Test\", \"Signal\");\n"
+				   "\tif (! signal)\n"
+				   "\t\treturn -1;\n"
+				   "\n"
+				   "\tdbus_message_iter_init_append (signal, &iter);\n"
+				   "\n"
+				   "\t/* Marshal an array onto the message */\n"
+				   "\tif (! dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, \"i\", &value_iter)) {\n"
+				   "\t\tdbus_message_unref (signal);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tfor (size_t value_i = 0; value_i < value_len; value_i++) {\n"
+				   "\t\tint32_t value_element;\n"
+				   "\n"
+				   "\t\tvalue_element = value[value_i];\n"
+				   "\n"
+				   "\t\t/* Marshal a int32_t onto the message */\n"
+				   "\t\tif (! dbus_message_iter_append_basic (&value_iter, DBUS_TYPE_INT32, &value_element)) {\n"
+				   "\t\t\tdbus_message_iter_close_container (&iter, &value_iter);\n"
+				   "\t\t\tdbus_message_unref (signal);\n"
+				   "\t\t\treturn -1;\n"
+				   "\t\t}\n"
+				   "\t}\n"
+				   "\n"
+				   "\tif (! dbus_message_iter_close_container (&iter, &value_iter)) {\n"
+				   "\t\tdbus_message_unref (signal);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Send the signal, appending it to the outgoing queue. */\n"
+				   "\tif (! dbus_connection_send (connection, signal, NULL)) {\n"
+				   "\t\tdbus_message_unref (signal);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_unref (signal);\n"
+				   "\n"
+				   "\treturn 0;\n"
+				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_emit_signal");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "DBusConnection *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "connection");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const char *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "origin_path");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const int32_t *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "value");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "size_t");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "value_len");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+		nih_free (str);
+		nih_free (signal);
+		nih_free (interface);
+	}
+
+
 	/* Check that we can use the generated code to emit a signal and
 	 * that we can receive it.
 	 */

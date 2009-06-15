@@ -1,3 +1,23 @@
+2009-06-15  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/method.c (method_reply_function)
+	(method_proxy_function, method_proxy_sync_function): Input array
+	arguments of basic types (those with a size_t argument following)
+	may be NULL if that size_t argument is zero.  Check for this when
+	adding asserts.
+	* nih-dbus-tool/tests/test_method.c (test_reply_function)
+	(test_proxy_function, test_proxy_sync_function): Add test cases for
+	an array input argument to make sure we generate the right assert
+	* nih-dbus-tool/signal.c (signal_object_function): Needs exactly
+	the same patch
+	* nih-dbus-tool/tests/test_signal.c (test_object_function): Add
+	the test case for this one too.
+	* nih-dbus-tool/property.c (property_proxy_set_function)
+	(property_proxy_set_sync_function): We also need the same patch
+	for this one too.
+	* nih-dbus-tool/tests/test_property.c (test_proxy_set_function)
+	(test_proxy_set_sync_function): And test as well
+
 2009-06-14  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus/dbus_proxy.c (nih_dbus_proxy_connect): Total thinko with

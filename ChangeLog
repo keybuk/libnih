@@ -1,5 +1,10 @@
 2009-06-15  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/com.netsplit.Nih.Test.xml: Various slight
+	updates to better test the newer code; add arrays of arrays to the
+	tests; rename "data" to "value" to avoid clash with data argument;
+	remove the glue we won't use it anymore.
+
 	* nih-dbus-tool/Makefile.am ($(com_netsplit_Nih_Test_proxy_OUTPUTS)):
 	Use "proxy" as the prefix again, "your" just looks silly.
 

@@ -2,19 +2,16 @@
   <interface name="com.netsplit.Nih.Test">
     <method name="OrdinaryMethod">
       <arg name="input" type="s" direction="in" />
-      <arg name="flags" type="i" direction="in" />
-      <arg name="output" type="s" direction="out" />
-    </method>
-    <method name="AsyncMethod">
-      <annotation name="com.netsplit.Nih.Method.Async" value="true" />
-      <arg name="input" type="s" direction="in" />
-      <arg name="flags" type="i" direction="in" />
       <arg name="output" type="s" direction="out" />
     </method>
     <method name="NamelessMethod">
       <arg type="s" direction="in" />
-      <arg type="i" direction="in" />
       <arg type="s" direction="out" />
+    </method>
+    <method name="AsyncMethod">
+      <annotation name="com.netsplit.Nih.Method.Async" value="true" />
+      <arg name="input" type="s" direction="in" />
+      <arg name="output" type="s" direction="out" />
     </method>
 
     <method name="ByteToStr">
@@ -121,52 +118,59 @@
       <arg name="input" type="s" direction="in" />
       <arg name="output" type="as" direction="out" />
     </method> 
+    <method name="Int32ArrayArrayToStr">
+      <arg name="input" type="aai" direction="in" />
+      <arg name="output" type="s" direction="out" />
+    </method> 
+    <method name="StrToInt32ArrayArray">
+      <arg name="input" type="s" direction="in" />
+      <arg name="output" type="aai" direction="out" />
+    </method> 
 
-    <signal name="OrdinarySignal">
-      <arg name="text" type="s" />
-      <arg name="flags" type="i" />
-    </signal>
     <signal name="NewByte">
-      <arg name="data" type="y" />
+      <arg name="value" type="y" />
     </signal>
     <signal name="NewBoolean">
-      <arg name="data" type="b" />
+      <arg name="value" type="b" />
     </signal>
     <signal name="NewInt16">
-      <arg name="data" type="n" />
+      <arg name="value" type="n" />
     </signal>
     <signal name="NewUInt16">
-      <arg name="data" type="q" />
+      <arg name="value" type="q" />
     </signal>
     <signal name="NewInt32">
-      <arg name="data" type="i" />
+      <arg name="value" type="i" />
     </signal>
     <signal name="NewUInt32">
-      <arg name="data" type="u" />
+      <arg name="value" type="u" />
     </signal>
     <signal name="NewInt64">
-      <arg name="data" type="x" />
+      <arg name="value" type="x" />
     </signal>
     <signal name="NewUInt64">
-      <arg name="data" type="t" />
+      <arg name="value" type="t" />
     </signal>
     <signal name="NewDouble">
-      <arg name="data" type="d" />
+      <arg name="value" type="d" />
     </signal>
     <signal name="NewString">
-      <arg name="data" type="s" />
+      <arg name="value" type="s" />
     </signal>
     <signal name="NewObjectPath">
-      <arg name="data" type="o" />
+      <arg name="value" type="o" />
     </signal>
     <signal name="NewSignature">
-      <arg name="data" type="g" />
+      <arg name="value" type="g" />
     </signal>
     <signal name="NewInt32Array">
-      <arg name="data" type="ai" />
+      <arg name="value" type="ai" />
     </signal>
     <signal name="NewStrArray">
-      <arg name="data" type="as" />
+      <arg name="value" type="as" />
+    </signal>
+    <signal name="NewInt32ArrayArray">
+      <arg name="value" type="aai" />
     </signal>
 
     <property name="byte" type="y" access="readwrite" />
@@ -183,11 +187,6 @@
     <property name="signature" type="g" access="readwrite" />
     <property name="int32_array" type="ai" access="readwrite" />
     <property name="str_array" type="as" access="readwrite" />
-  </interface>
-
-  <interface name="com.netsplit.Nih.Glue">
-    <method name="EmitSignal">
-      <arg name="signum" type="i" direction="in" />
-    </method>
+    <property name="int32_array_array" type="aai" access="readwrite" />
   </interface>
 </node>

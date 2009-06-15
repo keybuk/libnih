@@ -1,5 +1,16 @@
 2009-06-15  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/type.c (type_strcat_assert): And now the other
+	corner case we found, size arrays can be NULL if the first element
+	of the array is NULL.
+	* nih-dbus-tool/tests/test_type.c (test_strcat_assert): Add tests
+	* nih-dbus-tool/method.c (method_reply_function)
+	(method_proxy_function, method_proxy_sync_function),
+	* nih-dbus-tool/signal.c (signal_object_function),
+	* nih-dbus-tool/property.c (property_proxy_set_function)
+	(property_proxy_set_sync_function): Think-o, we can't look at the
+	previous iterated we have to look at the last function argument
+
 	* nih-dbus-tool/type.c (type_strcat_assert): We're starting to get
 	a lot of corner cases in that simple assert block, separate it out
 	so we don't have to repeatedly get it wrong.

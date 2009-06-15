@@ -599,7 +599,7 @@ signal_object_function (const void *parent,
 				return NULL;
 
 			if (! type_strcat_assert (&assert_block, NULL, var,
-						  iter->prev != &arg_vars ? (TypeVar *)iter->prev : NULL,
+						  func->args.prev != &func->args ? (TypeVar *)func->args.prev : NULL,
 						  _iter.next != &arg_vars ? (TypeVar *)_iter.next : NULL))
 				return NULL;
 

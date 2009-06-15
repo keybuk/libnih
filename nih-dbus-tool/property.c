@@ -1940,7 +1940,7 @@ property_proxy_set_function (const void *parent,
 			return NULL;
 
 		if (! type_strcat_assert (&assert_block, NULL, var,
-					  iter->prev != &inputs ? (TypeVar *)iter->prev : NULL,
+					  func->args.prev != &func->args ? (TypeVar *)func->args.prev : NULL,
 					  _iter.next != &inputs ? (TypeVar *)_iter.next : NULL))
 			return NULL;
 
@@ -2995,7 +2995,7 @@ property_proxy_set_sync_function (const void *parent,
 			return NULL;
 
 		if (! type_strcat_assert (&assert_block, NULL, var,
-					  iter->prev != &inputs ? (TypeVar *)iter->prev : NULL,
+					  func->args.prev != &func->args ? (TypeVar *)func->args.prev : NULL,
 					  _iter.next != &inputs ? (TypeVar *)_iter.next : NULL))
 			return NULL;
 

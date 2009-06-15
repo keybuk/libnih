@@ -2349,6 +2349,74 @@ test_strcat_assert (void)
 		nih_free (var);
 		nih_free (block);
 	}
+
+
+	/* Check that an array of size variables may be NULL if the first
+	 * element of the array is NULL.
+	 */
+	TEST_FEATURE ("with size array variable");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			block = nih_strdup (NULL, "");
+
+			var = type_var_new (NULL, "size_t *", "foo_len");
+
+			other = type_var_new (NULL, "int32_t **", "foo");
+		}
+
+		ret = type_strcat_assert (&block, NULL, var, other, NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+
+			nih_free (other);
+			nih_free (var);
+			nih_free (block);
+			continue;
+		}
+
+		TEST_EQ_P (ret, block);
+
+		TEST_EQ_STR (block, "nih_assert ((*foo == NULL) || (foo_len != NULL));\n");
+
+		nih_free (other);
+		nih_free (var);
+		nih_free (block);
+	}
+
+
+	/* Make sure that any other preceeding element doesn't result in the
+	 * pointer being considered an array.
+	 */
+	TEST_FEATURE ("with pointer variable and preceeding argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			block = nih_strdup (NULL, "");
+
+			var = type_var_new (NULL, "int32 *", "foo_len");
+
+			other = type_var_new (NULL, "int32_t **", "foo");
+		}
+
+		ret = type_strcat_assert (&block, NULL, var, other, NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (ret, NULL);
+
+			nih_free (other);
+			nih_free (var);
+			nih_free (block);
+			continue;
+		}
+
+		TEST_EQ_P (ret, block);
+
+		TEST_EQ_STR (block, "nih_assert (foo_len != NULL);\n");
+
+		nih_free (other);
+		nih_free (var);
+		nih_free (block);
+	}
 }
 
 

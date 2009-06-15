@@ -1048,6 +1048,13 @@ type_strcat_assert (char **     block,
 					  "nih_assert ((%s == 0) || (%s != NULL));\n",
 					  next->name, var->name))
 			return NULL;
+
+	} else if (prev && strstr (var->type, "size_t")) {
+		if (! nih_strcat_sprintf (block, parent,
+					  "nih_assert ((*%s == NULL) || (%s != NULL));\n",
+					  prev->name, var->name))
+			return NULL;
+
 	} else {
 		if (! nih_strcat_sprintf (block, parent,
 					  "nih_assert (%s != NULL);\n",

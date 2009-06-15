@@ -262,7 +262,7 @@ $(com_netsplit_Nih_Test_proxy_OUTPUTS): $(com_netsplit_Nih_Test_proxy_XML) $(bui
 	$(MKDIR_P) `echo "$@" | \
 		    sed '/\//!d;s,/[^/]*$$,,' | \
                     sort -u`
-	$(builddir)/nih-dbus-tool --mode=proxy --prefix=your --output=$@ $<
+	$(builddir)/nih-dbus-tool --mode=proxy --prefix=proxy --output=$@ $<
 
 
 # To be able to list them in POTFILES.in, these files must be built by

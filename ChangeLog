@@ -1,5 +1,8 @@
 2009-06-15  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/Makefile.am ($(com_netsplit_Nih_Test_proxy_OUTPUTS)):
+	Use "proxy" as the prefix again, "your" just looks silly.
+
 	* nih-dbus-tool/type.c (type_strcat_assert): And now the other
 	corner case we found, size arrays can be NULL if the first element
 	of the array is NULL.

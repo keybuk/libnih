@@ -19095,7 +19095,7 @@ test_str_to_int32_array_array_sync (void)
 static int new_byte_handled;
 
 static void
-my_new_byte_handler (void           *data,
+my_new_byte_handler (void *          data,
 		     NihDBusMessage *message,
 		     uint8_t         value)
 {
@@ -19173,7 +19173,7 @@ test_new_byte (void)
 static int new_boolean_handled;
 
 static void
-my_new_boolean_handler (void           *data,
+my_new_boolean_handler (void *          data,
 			NihDBusMessage *message,
 			int             value)
 {
@@ -19251,7 +19251,7 @@ test_new_boolean (void)
 static int new_int16_handled;
 
 static void
-my_new_int16_handler (void           *data,
+my_new_int16_handler (void *          data,
 		      NihDBusMessage *message,
 		      int16_t         value)
 {
@@ -19329,7 +19329,7 @@ test_new_int16 (void)
 static int new_uint16_handled;
 
 static void
-my_new_uint16_handler (void           *data,
+my_new_uint16_handler (void *          data,
 		       NihDBusMessage *message,
 		       uint16_t        value)
 {
@@ -19407,7 +19407,7 @@ test_new_uint16 (void)
 static int new_int32_handled;
 
 static void
-my_new_int32_handler (void           *data,
+my_new_int32_handler (void *          data,
 		      NihDBusMessage *message,
 		      int32_t         value)
 {
@@ -19485,7 +19485,7 @@ test_new_int32 (void)
 static int new_uint32_handled;
 
 static void
-my_new_uint32_handler (void           *data,
+my_new_uint32_handler (void *          data,
 		       NihDBusMessage *message,
 		       uint32_t        value)
 {
@@ -19563,7 +19563,7 @@ test_new_uint32 (void)
 static int new_int64_handled;
 
 static void
-my_new_int64_handler (void           *data,
+my_new_int64_handler (void *          data,
 		      NihDBusMessage *message,
 		      int64_t         value)
 {
@@ -19641,7 +19641,7 @@ test_new_int64 (void)
 static int new_uint64_handled;
 
 static void
-my_new_uint64_handler (void           *data,
+my_new_uint64_handler (void *          data,
 		       NihDBusMessage *message,
 		       uint64_t        value)
 {
@@ -19719,7 +19719,7 @@ test_new_uint64 (void)
 static int new_double_handled;
 
 static void
-my_new_double_handler (void           *data,
+my_new_double_handler (void *          data,
 		       NihDBusMessage *message,
 		       double          value)
 {
@@ -19797,7 +19797,7 @@ test_new_double (void)
 static int new_string_handled;
 
 static void
-my_new_string_handler (void           *data,
+my_new_string_handler (void *          data,
 		       NihDBusMessage *message,
 		       const char *    value)
 {
@@ -19880,7 +19880,7 @@ test_new_string (void)
 static int new_object_path_handled;
 
 static void
-my_new_object_path_handler (void           *data,
+my_new_object_path_handler (void *          data,
 			    NihDBusMessage *message,
 			    const char *    value)
 {
@@ -19963,7 +19963,7 @@ test_new_object_path (void)
 static int new_signature_handled;
 
 static void
-my_new_signature_handler (void           *data,
+my_new_signature_handler (void *          data,
 			  NihDBusMessage *message,
 			  const char *    value)
 {
@@ -20046,7 +20046,7 @@ test_new_signature (void)
 static int new_int32_array_handled;
 
 static void
-my_new_int32_array_handler (void           *data,
+my_new_int32_array_handler (void *          data,
 			    NihDBusMessage *message,
 			    int32_t *       value,
 			    size_t          value_len)
@@ -20205,7 +20205,7 @@ test_new_int32_array (void)
 static int new_str_array_handled;
 
 static void
-my_new_str_array_handler (void           *data,
+my_new_str_array_handler (void *          data,
 			  NihDBusMessage *message,
 			  char * const *  value)
 {
@@ -20360,7 +20360,7 @@ test_new_str_array (void)
 static int new_int32_array_array_handled;
 
 static void
-my_new_int32_array_array_handler (void           *  data,
+my_new_int32_array_array_handler (void *            data,
 				  NihDBusMessage *  message,
 				  int32_t * const *value,
 				  size_t *         value_len)
@@ -33186,7 +33186,7 @@ static int get_str_array_replied;
 static void
 my_get_str_array_reply (void *          data,
 			NihDBusMessage *message,
-			char * const  * value)
+			char * const *  value)
 {
 	get_str_array_replied++;
 

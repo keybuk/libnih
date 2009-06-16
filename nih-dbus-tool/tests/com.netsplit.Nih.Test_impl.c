@@ -963,7 +963,7 @@ my_test_int32_array_array_to_str (void *          data,
 				  size_t *        input_len,
 				  char **         output)
 {
-	char   *str;
+	char *  str;
 	size_t *array_len;
 
 	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));

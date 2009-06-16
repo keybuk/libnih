@@ -704,7 +704,7 @@ signal_proxy_function  (const void *parent,
 	NihList             locals;
 	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
-	TypeVar  *          arg;
+	TypeVar *           arg;
 	nih_local char *    assert_block = NULL;
 	nih_local TypeVar * iter_var = NULL;
 	nih_local TypeVar * parent_var = NULL;

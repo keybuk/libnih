@@ -528,30 +528,35 @@ node_object_functions (const void *parent,
 			nih_list_init (&method_handlers);
 			nih_list_init (&method_externs);
 
+			if (! first)
+				if (! nih_strcat (&code, parent, "\n\n"))
+					goto error;
+			first = FALSE;
+
 			object_func = method_object_function (
 				NULL, prefix, interface, method,
 				&method_prototypes, &method_handlers);
 			if (! object_func)
 				goto error;
 
-			reply_func = method_reply_function (
-				NULL, prefix, interface, method,
-				&method_externs);
-			if (! reply_func)
-				goto error;
-
-			if (! first)
-				if (! nih_strcat (&code, parent, "\n\n"))
-					goto error;
-			first = FALSE;
-
 			if (! nih_strcat_sprintf (&code, parent,
-						  "static %s"
-						  "\n"
-						  "%s",
-						  object_func,
-						  reply_func))
+						  "static %s",
+						  object_func))
 				goto error;
+
+			if (method->async) {
+				reply_func = method_reply_function (
+					NULL, prefix, interface, method,
+					&method_externs);
+				if (! reply_func)
+					goto error;
+
+				if (! nih_strcat_sprintf (&code, parent,
+							  "\n"
+							  "%s",
+							  reply_func))
+					goto error;
+			}
 
 			NIH_LIST_FOREACH_SAFE (&method_prototypes, iter) {
 				TypeFunc *func = (TypeFunc *)iter;

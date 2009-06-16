@@ -1226,6 +1226,7 @@ test_object_functions (void)
 
 			method = method_new (interface, "Peek");
 			method->symbol = "peek";
+			method->async = TRUE;
 			nih_list_add (&interface->methods, &method->entry);
 
 			argument = argument_new (method, "address",
@@ -1245,6 +1246,11 @@ test_object_functions (void)
 			argument = argument_new (method, "address",
 						 "u", NIH_DBUS_ARG_IN);
 			argument->symbol = "address";
+			nih_list_add (&method->arguments, &argument->entry);
+
+			argument = argument_new (method, "is_valid",
+						 "b", NIH_DBUS_ARG_OUT);
+			argument->symbol = "is_valid";
 			nih_list_add (&method->arguments, &argument->entry);
 
 
@@ -1448,38 +1454,6 @@ test_object_functions (void)
 				   "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
 				   "}\n"
 				   "\n"
-				   "int\n"
-				   "my_test_poke_reply (NihDBusMessage *message)\n"
-				   "{\n"
-				   "\tDBusMessage *   reply;\n"
-				   "\tDBusMessageIter iter;\n"
-				   "\n"
-				   "\tnih_assert (message != NULL);\n"
-				   "\n"
-				   "\t/* If the sender doesn't care about a reply, don't bother wasting\n"
-				   "\t * effort constructing and sending one.\n"
-				   "\t */\n"
-				   "\tif (dbus_message_get_no_reply (message->message))\n"
-				   "\t\treturn 0;\n"
-				   "\n"
-				   "\t/* Construct the reply message. */\n"
-				   "\treply = dbus_message_new_method_return (message->message);\n"
-				   "\tif (! reply)\n"
-				   "\t\treturn -1;\n"
-				   "\n"
-				   "\tdbus_message_iter_init_append (reply, &iter);\n"
-				   "\n"
-				   "\t/* Send the reply, appending it to the outgoing queue. */\n"
-				   "\tif (! dbus_connection_send (message->connection, reply, NULL)) {\n"
-				   "\t\tdbus_message_unref (reply);\n"
-				   "\t\treturn -1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\tdbus_message_unref (reply);\n"
-				   "\n"
-				   "\treturn 0;\n"
-				   "}\n"
-				   "\n"
 				   "\n"
 				   "static DBusHandlerResult\n"
 				   "my_com_netsplit_Nih_Test_Peek_method (NihDBusObject * object,\n"
@@ -1488,7 +1462,6 @@ test_object_functions (void)
 				   "\tDBusMessageIter iter;\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tuint32_t        address;\n"
-				   "\tchar *          value;\n"
 				   "\n"
 				   "\tnih_assert (object != NULL);\n"
 				   "\tnih_assert (message != NULL);\n"
@@ -1535,7 +1508,7 @@ test_object_functions (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\tif (my_test_peek (object->data, message, address, &value) < 0) {\n"
+				   "\tif (my_test_peek (object->data, message, address) < 0) {\n"
 				   "\t\tNihError *err;\n"
 				   "\n"
 				   "\t\terr = nih_error_get ();\n"
@@ -1567,36 +1540,6 @@ test_object_functions (void)
 				   "\t\t}\n"
 				   "\t}\n"
 				   "\tnih_error_pop_context ();\n"
-				   "\n"
-				   "\t/* If the sender doesn't care about a reply, don't bother wasting\n"
-				   "\t * effort constructing and sending one.\n"
-				   "\t */\n"
-				   "\tif (dbus_message_get_no_reply (message->message))\n"
-				   "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
-				   "\n"
-				   "\tdo {\n"
-				   "\t\t__label__ enomem;\n"
-				   "\n"
-				   "\t\t/* Construct the reply message. */\n"
-				   "\t\treply = dbus_message_new_method_return (message->message);\n"
-				   "\t\tif (! reply)\n"
-				   "\t\t\tgoto enomem;\n"
-				   "\n"
-				   "\t\tdbus_message_iter_init_append (reply, &iter);\n"
-				   "\n"
-				   "\t\t/* Marshal a char * onto the message */\n"
-				   "\t\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &value)) {\n"
-				   "\t\t\tdbus_message_unref (reply);\n"
-				   "\t\t\treply = NULL;\n"
-				   "\t\t\tgoto enomem;\n"
-				   "\t\t}\n"
-				   "\tenomem: __attribute__ ((unused));\n"
-				   "\t} while (! reply);\n"
-				   "\n"
-				   "\t/* Send the reply, appending it to the outgoing queue. */\n"
-				   "\tNIH_MUST (dbus_connection_send (message->connection, reply, NULL));\n"
-				   "\n"
-				   "\tdbus_message_unref (reply);\n"
 				   "\n"
 				   "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
 				   "}\n"
@@ -1649,6 +1592,7 @@ test_object_functions (void)
 				   "\tDBusMessageIter iter;\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tuint32_t        address;\n"
+				   "\tint             is_valid;\n"
 				   "\n"
 				   "\tnih_assert (object != NULL);\n"
 				   "\tnih_assert (message != NULL);\n"
@@ -1695,7 +1639,7 @@ test_object_functions (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\tif (my_test_is_valid_address (object->data, message, address) < 0) {\n"
+				   "\tif (my_test_is_valid_address (object->data, message, address, &is_valid) < 0) {\n"
 				   "\t\tNihError *err;\n"
 				   "\n"
 				   "\t\terr = nih_error_get ();\n"
@@ -1743,6 +1687,13 @@ test_object_functions (void)
 				   "\t\t\tgoto enomem;\n"
 				   "\n"
 				   "\t\tdbus_message_iter_init_append (reply, &iter);\n"
+				   "\n"
+				   "\t\t/* Marshal a int onto the message */\n"
+				   "\t\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_BOOLEAN, &is_valid)) {\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treply = NULL;\n"
+				   "\t\t\tgoto enomem;\n"
+				   "\t\t}\n"
 				   "\tenomem: __attribute__ ((unused));\n"
 				   "\t} while (! reply);\n"
 				   "\n"
@@ -1752,38 +1703,6 @@ test_object_functions (void)
 				   "\tdbus_message_unref (reply);\n"
 				   "\n"
 				   "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
-				   "}\n"
-				   "\n"
-				   "int\n"
-				   "my_test_is_valid_address_reply (NihDBusMessage *message)\n"
-				   "{\n"
-				   "\tDBusMessage *   reply;\n"
-				   "\tDBusMessageIter iter;\n"
-				   "\n"
-				   "\tnih_assert (message != NULL);\n"
-				   "\n"
-				   "\t/* If the sender doesn't care about a reply, don't bother wasting\n"
-				   "\t * effort constructing and sending one.\n"
-				   "\t */\n"
-				   "\tif (dbus_message_get_no_reply (message->message))\n"
-				   "\t\treturn 0;\n"
-				   "\n"
-				   "\t/* Construct the reply message. */\n"
-				   "\treply = dbus_message_new_method_return (message->message);\n"
-				   "\tif (! reply)\n"
-				   "\t\treturn -1;\n"
-				   "\n"
-				   "\tdbus_message_iter_init_append (reply, &iter);\n"
-				   "\n"
-				   "\t/* Send the reply, appending it to the outgoing queue. */\n"
-				   "\tif (! dbus_connection_send (message->connection, reply, NULL)) {\n"
-				   "\t\tdbus_message_unref (reply);\n"
-				   "\t\treturn -1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\tdbus_message_unref (reply);\n"
-				   "\n"
-				   "\treturn 0;\n"
 				   "}\n"
 				   "\n"
 				   "\n"
@@ -2120,38 +2039,6 @@ test_object_functions (void)
 				   "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
 				   "}\n"
 				   "\n"
-				   "int\n"
-				   "my_foo_bing_reply (NihDBusMessage *message)\n"
-				   "{\n"
-				   "\tDBusMessage *   reply;\n"
-				   "\tDBusMessageIter iter;\n"
-				   "\n"
-				   "\tnih_assert (message != NULL);\n"
-				   "\n"
-				   "\t/* If the sender doesn't care about a reply, don't bother wasting\n"
-				   "\t * effort constructing and sending one.\n"
-				   "\t */\n"
-				   "\tif (dbus_message_get_no_reply (message->message))\n"
-				   "\t\treturn 0;\n"
-				   "\n"
-				   "\t/* Construct the reply message. */\n"
-				   "\treply = dbus_message_new_method_return (message->message);\n"
-				   "\tif (! reply)\n"
-				   "\t\treturn -1;\n"
-				   "\n"
-				   "\tdbus_message_iter_init_append (reply, &iter);\n"
-				   "\n"
-				   "\t/* Send the reply, appending it to the outgoing queue. */\n"
-				   "\tif (! dbus_connection_send (message->connection, reply, NULL)) {\n"
-				   "\t\tdbus_message_unref (reply);\n"
-				   "\t\treturn -1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\tdbus_message_unref (reply);\n"
-				   "\n"
-				   "\treturn 0;\n"
-				   "}\n"
-				   "\n"
 				   "\n"
 				   "int\n"
 				   "my_foo_emit_new_result (DBusConnection *connection,\n"
@@ -2288,42 +2175,6 @@ test_object_functions (void)
 		nih_free (func);
 
 
-		TEST_LIST_NOT_EMPTY (&externs);
-
-		func = (TypeFunc *)externs.next;
-		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
-		TEST_ALLOC_PARENT (func, str);
-		TEST_EQ_STR (func->type, "int");
-		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_test_poke_reply");
-		TEST_ALLOC_PARENT (func->name, func);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusMessage *");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "message");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_EMPTY (&func->args);
-
-		TEST_LIST_NOT_EMPTY (&func->attribs);
-
-		attrib = (NihListEntry *)func->attribs.next;
-		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
-		TEST_ALLOC_PARENT (attrib, func);
-		TEST_EQ_STR (attrib->str, "warn_unused_result");
-		TEST_ALLOC_PARENT (attrib->str, attrib);
-		nih_free (attrib);
-
-		TEST_LIST_EMPTY (&func->attribs);
-		nih_free (func);
-
-
 		/* Peek */
 		TEST_LIST_NOT_EMPTY (&prototypes);
 
@@ -2402,17 +2253,6 @@ test_object_functions (void)
 		TEST_EQ_STR (arg->type, "uint32_t");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "address");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "char **");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "value");
 		TEST_ALLOC_PARENT (arg->name, arg);
 		nih_free (arg);
 
@@ -2558,39 +2398,14 @@ test_object_functions (void)
 		TEST_ALLOC_PARENT (arg->name, arg);
 		nih_free (arg);
 
-		TEST_LIST_EMPTY (&func->args);
-
-		TEST_LIST_NOT_EMPTY (&func->attribs);
-
-		attrib = (NihListEntry *)func->attribs.next;
-		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
-		TEST_ALLOC_PARENT (attrib, func);
-		TEST_EQ_STR (attrib->str, "warn_unused_result");
-		TEST_ALLOC_PARENT (attrib->str, attrib);
-		nih_free (attrib);
-
-		TEST_LIST_EMPTY (&func->attribs);
-		nih_free (func);
-
-
-		TEST_LIST_NOT_EMPTY (&externs);
-
-		func = (TypeFunc *)externs.next;
-		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
-		TEST_ALLOC_PARENT (func, str);
-		TEST_EQ_STR (func->type, "int");
-		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_test_is_valid_address_reply");
-		TEST_ALLOC_PARENT (func->name, func);
-
 		TEST_LIST_NOT_EMPTY (&func->args);
 
 		arg = (TypeVar *)func->args.next;
 		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_EQ_STR (arg->type, "int *");
 		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "message");
+		TEST_EQ_STR (arg->name, "is_valid");
 		TEST_ALLOC_PARENT (arg->name, arg);
 		nih_free (arg);
 
@@ -3214,42 +3029,6 @@ test_object_functions (void)
 		TEST_EQ_STR (arg->name, "data");
 		TEST_ALLOC_PARENT (arg->name, arg);
 		nih_free (arg);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusMessage *");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "message");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_EMPTY (&func->args);
-
-		TEST_LIST_NOT_EMPTY (&func->attribs);
-
-		attrib = (NihListEntry *)func->attribs.next;
-		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
-		TEST_ALLOC_PARENT (attrib, func);
-		TEST_EQ_STR (attrib->str, "warn_unused_result");
-		TEST_ALLOC_PARENT (attrib->str, attrib);
-		nih_free (attrib);
-
-		TEST_LIST_EMPTY (&func->attribs);
-		nih_free (func);
-
-
-		TEST_LIST_NOT_EMPTY (&externs);
-
-		func = (TypeFunc *)externs.next;
-		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
-		TEST_ALLOC_PARENT (func, str);
-		TEST_EQ_STR (func->type, "int");
-		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_foo_bing_reply");
-		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
 
@@ -4313,6 +4092,7 @@ test_object_functions (void)
 
 			method = method_new (interface, "Peek");
 			method->symbol = "peek";
+			method->async = TRUE;
 			nih_list_add (&interface->methods, &method->entry);
 
 			argument = argument_new (method, "address",
@@ -4332,6 +4112,11 @@ test_object_functions (void)
 			argument = argument_new (method, "address",
 						 "u", NIH_DBUS_ARG_IN);
 			argument->symbol = "address";
+			nih_list_add (&method->arguments, &argument->entry);
+
+			argument = argument_new (method, "is_valid",
+						 "b", NIH_DBUS_ARG_OUT);
+			argument->symbol = "is_valid";
 			nih_list_add (&method->arguments, &argument->entry);
 
 
@@ -4512,38 +4297,6 @@ test_object_functions (void)
 				   "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
 				   "}\n"
 				   "\n"
-				   "int\n"
-				   "my_test_poke_reply (NihDBusMessage *message)\n"
-				   "{\n"
-				   "\tDBusMessage *   reply;\n"
-				   "\tDBusMessageIter iter;\n"
-				   "\n"
-				   "\tnih_assert (message != NULL);\n"
-				   "\n"
-				   "\t/* If the sender doesn't care about a reply, don't bother wasting\n"
-				   "\t * effort constructing and sending one.\n"
-				   "\t */\n"
-				   "\tif (dbus_message_get_no_reply (message->message))\n"
-				   "\t\treturn 0;\n"
-				   "\n"
-				   "\t/* Construct the reply message. */\n"
-				   "\treply = dbus_message_new_method_return (message->message);\n"
-				   "\tif (! reply)\n"
-				   "\t\treturn -1;\n"
-				   "\n"
-				   "\tdbus_message_iter_init_append (reply, &iter);\n"
-				   "\n"
-				   "\t/* Send the reply, appending it to the outgoing queue. */\n"
-				   "\tif (! dbus_connection_send (message->connection, reply, NULL)) {\n"
-				   "\t\tdbus_message_unref (reply);\n"
-				   "\t\treturn -1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\tdbus_message_unref (reply);\n"
-				   "\n"
-				   "\treturn 0;\n"
-				   "}\n"
-				   "\n"
 				   "\n"
 				   "static DBusHandlerResult\n"
 				   "my_com_netsplit_Nih_Test_Peek_method (NihDBusObject * object,\n"
@@ -4552,7 +4305,6 @@ test_object_functions (void)
 				   "\tDBusMessageIter iter;\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tuint32_t        address;\n"
-				   "\tchar *          value;\n"
 				   "\n"
 				   "\tnih_assert (object != NULL);\n"
 				   "\tnih_assert (message != NULL);\n"
@@ -4599,7 +4351,7 @@ test_object_functions (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\tif (my_test_peek (object->data, message, address, &value) < 0) {\n"
+				   "\tif (my_test_peek (object->data, message, address) < 0) {\n"
 				   "\t\tNihError *err;\n"
 				   "\n"
 				   "\t\terr = nih_error_get ();\n"
@@ -4631,36 +4383,6 @@ test_object_functions (void)
 				   "\t\t}\n"
 				   "\t}\n"
 				   "\tnih_error_pop_context ();\n"
-				   "\n"
-				   "\t/* If the sender doesn't care about a reply, don't bother wasting\n"
-				   "\t * effort constructing and sending one.\n"
-				   "\t */\n"
-				   "\tif (dbus_message_get_no_reply (message->message))\n"
-				   "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
-				   "\n"
-				   "\tdo {\n"
-				   "\t\t__label__ enomem;\n"
-				   "\n"
-				   "\t\t/* Construct the reply message. */\n"
-				   "\t\treply = dbus_message_new_method_return (message->message);\n"
-				   "\t\tif (! reply)\n"
-				   "\t\t\tgoto enomem;\n"
-				   "\n"
-				   "\t\tdbus_message_iter_init_append (reply, &iter);\n"
-				   "\n"
-				   "\t\t/* Marshal a char * onto the message */\n"
-				   "\t\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &value)) {\n"
-				   "\t\t\tdbus_message_unref (reply);\n"
-				   "\t\t\treply = NULL;\n"
-				   "\t\t\tgoto enomem;\n"
-				   "\t\t}\n"
-				   "\tenomem: __attribute__ ((unused));\n"
-				   "\t} while (! reply);\n"
-				   "\n"
-				   "\t/* Send the reply, appending it to the outgoing queue. */\n"
-				   "\tNIH_MUST (dbus_connection_send (message->connection, reply, NULL));\n"
-				   "\n"
-				   "\tdbus_message_unref (reply);\n"
 				   "\n"
 				   "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
 				   "}\n"
@@ -4713,6 +4435,7 @@ test_object_functions (void)
 				   "\tDBusMessageIter iter;\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tuint32_t        address;\n"
+				   "\tint             is_valid;\n"
 				   "\n"
 				   "\tnih_assert (object != NULL);\n"
 				   "\tnih_assert (message != NULL);\n"
@@ -4759,7 +4482,7 @@ test_object_functions (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\tif (my_test_is_valid_address (object->data, message, address) < 0) {\n"
+				   "\tif (my_test_is_valid_address (object->data, message, address, &is_valid) < 0) {\n"
 				   "\t\tNihError *err;\n"
 				   "\n"
 				   "\t\terr = nih_error_get ();\n"
@@ -4807,6 +4530,13 @@ test_object_functions (void)
 				   "\t\t\tgoto enomem;\n"
 				   "\n"
 				   "\t\tdbus_message_iter_init_append (reply, &iter);\n"
+				   "\n"
+				   "\t\t/* Marshal a int onto the message */\n"
+				   "\t\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_BOOLEAN, &is_valid)) {\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treply = NULL;\n"
+				   "\t\t\tgoto enomem;\n"
+				   "\t\t}\n"
 				   "\tenomem: __attribute__ ((unused));\n"
 				   "\t} while (! reply);\n"
 				   "\n"
@@ -4816,38 +4546,6 @@ test_object_functions (void)
 				   "\tdbus_message_unref (reply);\n"
 				   "\n"
 				   "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
-				   "}\n"
-				   "\n"
-				   "int\n"
-				   "my_test_is_valid_address_reply (NihDBusMessage *message)\n"
-				   "{\n"
-				   "\tDBusMessage *   reply;\n"
-				   "\tDBusMessageIter iter;\n"
-				   "\n"
-				   "\tnih_assert (message != NULL);\n"
-				   "\n"
-				   "\t/* If the sender doesn't care about a reply, don't bother wasting\n"
-				   "\t * effort constructing and sending one.\n"
-				   "\t */\n"
-				   "\tif (dbus_message_get_no_reply (message->message))\n"
-				   "\t\treturn 0;\n"
-				   "\n"
-				   "\t/* Construct the reply message. */\n"
-				   "\treply = dbus_message_new_method_return (message->message);\n"
-				   "\tif (! reply)\n"
-				   "\t\treturn -1;\n"
-				   "\n"
-				   "\tdbus_message_iter_init_append (reply, &iter);\n"
-				   "\n"
-				   "\t/* Send the reply, appending it to the outgoing queue. */\n"
-				   "\tif (! dbus_connection_send (message->connection, reply, NULL)) {\n"
-				   "\t\tdbus_message_unref (reply);\n"
-				   "\t\treturn -1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\tdbus_message_unref (reply);\n"
-				   "\n"
-				   "\treturn 0;\n"
 				   "}\n"
 				   "\n"
 				   "\n"
@@ -5110,38 +4808,6 @@ test_object_functions (void)
 				   "\tdbus_message_unref (reply);\n"
 				   "\n"
 				   "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
-				   "}\n"
-				   "\n"
-				   "int\n"
-				   "my_foo_bing_reply (NihDBusMessage *message)\n"
-				   "{\n"
-				   "\tDBusMessage *   reply;\n"
-				   "\tDBusMessageIter iter;\n"
-				   "\n"
-				   "\tnih_assert (message != NULL);\n"
-				   "\n"
-				   "\t/* If the sender doesn't care about a reply, don't bother wasting\n"
-				   "\t * effort constructing and sending one.\n"
-				   "\t */\n"
-				   "\tif (dbus_message_get_no_reply (message->message))\n"
-				   "\t\treturn 0;\n"
-				   "\n"
-				   "\t/* Construct the reply message. */\n"
-				   "\treply = dbus_message_new_method_return (message->message);\n"
-				   "\tif (! reply)\n"
-				   "\t\treturn -1;\n"
-				   "\n"
-				   "\tdbus_message_iter_init_append (reply, &iter);\n"
-				   "\n"
-				   "\t/* Send the reply, appending it to the outgoing queue. */\n"
-				   "\tif (! dbus_connection_send (message->connection, reply, NULL)) {\n"
-				   "\t\tdbus_message_unref (reply);\n"
-				   "\t\treturn -1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\tdbus_message_unref (reply);\n"
-				   "\n"
-				   "\treturn 0;\n"
 				   "}\n"));
 
 		/* Poke */
@@ -5251,42 +4917,6 @@ test_object_functions (void)
 		nih_free (func);
 
 
-		TEST_LIST_NOT_EMPTY (&externs);
-
-		func = (TypeFunc *)externs.next;
-		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
-		TEST_ALLOC_PARENT (func, str);
-		TEST_EQ_STR (func->type, "int");
-		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_test_poke_reply");
-		TEST_ALLOC_PARENT (func->name, func);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusMessage *");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "message");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_EMPTY (&func->args);
-
-		TEST_LIST_NOT_EMPTY (&func->attribs);
-
-		attrib = (NihListEntry *)func->attribs.next;
-		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
-		TEST_ALLOC_PARENT (attrib, func);
-		TEST_EQ_STR (attrib->str, "warn_unused_result");
-		TEST_ALLOC_PARENT (attrib->str, attrib);
-		nih_free (attrib);
-
-		TEST_LIST_EMPTY (&func->attribs);
-		nih_free (func);
-
-
 		/* Peek */
 		TEST_LIST_NOT_EMPTY (&prototypes);
 
@@ -5365,17 +4995,6 @@ test_object_functions (void)
 		TEST_EQ_STR (arg->type, "uint32_t");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "address");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "char **");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "value");
 		TEST_ALLOC_PARENT (arg->name, arg);
 		nih_free (arg);
 
@@ -5521,39 +5140,14 @@ test_object_functions (void)
 		TEST_ALLOC_PARENT (arg->name, arg);
 		nih_free (arg);
 
-		TEST_LIST_EMPTY (&func->args);
-
-		TEST_LIST_NOT_EMPTY (&func->attribs);
-
-		attrib = (NihListEntry *)func->attribs.next;
-		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
-		TEST_ALLOC_PARENT (attrib, func);
-		TEST_EQ_STR (attrib->str, "warn_unused_result");
-		TEST_ALLOC_PARENT (attrib->str, attrib);
-		nih_free (attrib);
-
-		TEST_LIST_EMPTY (&func->attribs);
-		nih_free (func);
-
-
-		TEST_LIST_NOT_EMPTY (&externs);
-
-		func = (TypeFunc *)externs.next;
-		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
-		TEST_ALLOC_PARENT (func, str);
-		TEST_EQ_STR (func->type, "int");
-		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_test_is_valid_address_reply");
-		TEST_ALLOC_PARENT (func->name, func);
-
 		TEST_LIST_NOT_EMPTY (&func->args);
 
 		arg = (TypeVar *)func->args.next;
 		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_EQ_STR (arg->type, "int *");
 		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "message");
+		TEST_EQ_STR (arg->name, "is_valid");
 		TEST_ALLOC_PARENT (arg->name, arg);
 		nih_free (arg);
 
@@ -6085,42 +5679,6 @@ test_object_functions (void)
 		nih_free (func);
 
 
-		TEST_LIST_NOT_EMPTY (&externs);
-
-		func = (TypeFunc *)externs.next;
-		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
-		TEST_ALLOC_PARENT (func, str);
-		TEST_EQ_STR (func->type, "int");
-		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_foo_bing_reply");
-		TEST_ALLOC_PARENT (func->name, func);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusMessage *");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "message");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_EMPTY (&func->args);
-
-		TEST_LIST_NOT_EMPTY (&func->attribs);
-
-		attrib = (NihListEntry *)func->attribs.next;
-		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
-		TEST_ALLOC_PARENT (attrib, func);
-		TEST_EQ_STR (attrib->str, "warn_unused_result");
-		TEST_ALLOC_PARENT (attrib->str, attrib);
-		nih_free (attrib);
-
-		TEST_LIST_EMPTY (&func->attribs);
-		nih_free (func);
-
-
 		TEST_LIST_EMPTY (&prototypes);
 		TEST_LIST_EMPTY (&handlers);
 		TEST_LIST_EMPTY (&externs);
@@ -6162,6 +5720,7 @@ test_object_functions (void)
 
 			method = method_new (interface, "Peek");
 			method->symbol = "peek";
+			method->async = TRUE;
 			nih_list_add (&interface->methods, &method->entry);
 
 			argument = argument_new (method, "address",
@@ -6181,6 +5740,11 @@ test_object_functions (void)
 			argument = argument_new (method, "address",
 						 "u", NIH_DBUS_ARG_IN);
 			argument->symbol = "address";
+			nih_list_add (&method->arguments, &argument->entry);
+
+			argument = argument_new (method, "is_valid",
+						 "b", NIH_DBUS_ARG_OUT);
+			argument->symbol = "is_valid";
 			nih_list_add (&method->arguments, &argument->entry);
 
 
@@ -6368,38 +5932,6 @@ test_object_functions (void)
 				   "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
 				   "}\n"
 				   "\n"
-				   "int\n"
-				   "my_test_poke_reply (NihDBusMessage *message)\n"
-				   "{\n"
-				   "\tDBusMessage *   reply;\n"
-				   "\tDBusMessageIter iter;\n"
-				   "\n"
-				   "\tnih_assert (message != NULL);\n"
-				   "\n"
-				   "\t/* If the sender doesn't care about a reply, don't bother wasting\n"
-				   "\t * effort constructing and sending one.\n"
-				   "\t */\n"
-				   "\tif (dbus_message_get_no_reply (message->message))\n"
-				   "\t\treturn 0;\n"
-				   "\n"
-				   "\t/* Construct the reply message. */\n"
-				   "\treply = dbus_message_new_method_return (message->message);\n"
-				   "\tif (! reply)\n"
-				   "\t\treturn -1;\n"
-				   "\n"
-				   "\tdbus_message_iter_init_append (reply, &iter);\n"
-				   "\n"
-				   "\t/* Send the reply, appending it to the outgoing queue. */\n"
-				   "\tif (! dbus_connection_send (message->connection, reply, NULL)) {\n"
-				   "\t\tdbus_message_unref (reply);\n"
-				   "\t\treturn -1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\tdbus_message_unref (reply);\n"
-				   "\n"
-				   "\treturn 0;\n"
-				   "}\n"
-				   "\n"
 				   "\n"
 				   "static DBusHandlerResult\n"
 				   "my_com_netsplit_Nih_Test_Peek_method (NihDBusObject * object,\n"
@@ -6408,7 +5940,6 @@ test_object_functions (void)
 				   "\tDBusMessageIter iter;\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tuint32_t        address;\n"
-				   "\tchar *          value;\n"
 				   "\n"
 				   "\tnih_assert (object != NULL);\n"
 				   "\tnih_assert (message != NULL);\n"
@@ -6455,7 +5986,7 @@ test_object_functions (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\tif (my_test_peek (object->data, message, address, &value) < 0) {\n"
+				   "\tif (my_test_peek (object->data, message, address) < 0) {\n"
 				   "\t\tNihError *err;\n"
 				   "\n"
 				   "\t\terr = nih_error_get ();\n"
@@ -6487,36 +6018,6 @@ test_object_functions (void)
 				   "\t\t}\n"
 				   "\t}\n"
 				   "\tnih_error_pop_context ();\n"
-				   "\n"
-				   "\t/* If the sender doesn't care about a reply, don't bother wasting\n"
-				   "\t * effort constructing and sending one.\n"
-				   "\t */\n"
-				   "\tif (dbus_message_get_no_reply (message->message))\n"
-				   "\t\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
-				   "\n"
-				   "\tdo {\n"
-				   "\t\t__label__ enomem;\n"
-				   "\n"
-				   "\t\t/* Construct the reply message. */\n"
-				   "\t\treply = dbus_message_new_method_return (message->message);\n"
-				   "\t\tif (! reply)\n"
-				   "\t\t\tgoto enomem;\n"
-				   "\n"
-				   "\t\tdbus_message_iter_init_append (reply, &iter);\n"
-				   "\n"
-				   "\t\t/* Marshal a char * onto the message */\n"
-				   "\t\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &value)) {\n"
-				   "\t\t\tdbus_message_unref (reply);\n"
-				   "\t\t\treply = NULL;\n"
-				   "\t\t\tgoto enomem;\n"
-				   "\t\t}\n"
-				   "\tenomem: __attribute__ ((unused));\n"
-				   "\t} while (! reply);\n"
-				   "\n"
-				   "\t/* Send the reply, appending it to the outgoing queue. */\n"
-				   "\tNIH_MUST (dbus_connection_send (message->connection, reply, NULL));\n"
-				   "\n"
-				   "\tdbus_message_unref (reply);\n"
 				   "\n"
 				   "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
 				   "}\n"
@@ -6569,6 +6070,7 @@ test_object_functions (void)
 				   "\tDBusMessageIter iter;\n"
 				   "\tDBusMessage *   reply;\n"
 				   "\tuint32_t        address;\n"
+				   "\tint             is_valid;\n"
 				   "\n"
 				   "\tnih_assert (object != NULL);\n"
 				   "\tnih_assert (message != NULL);\n"
@@ -6615,7 +6117,7 @@ test_object_functions (void)
 				   "\n"
 				   "\t/* Call the handler function */\n"
 				   "\tnih_error_push_context ();\n"
-				   "\tif (my_test_is_valid_address (object->data, message, address) < 0) {\n"
+				   "\tif (my_test_is_valid_address (object->data, message, address, &is_valid) < 0) {\n"
 				   "\t\tNihError *err;\n"
 				   "\n"
 				   "\t\terr = nih_error_get ();\n"
@@ -6663,6 +6165,13 @@ test_object_functions (void)
 				   "\t\t\tgoto enomem;\n"
 				   "\n"
 				   "\t\tdbus_message_iter_init_append (reply, &iter);\n"
+				   "\n"
+				   "\t\t/* Marshal a int onto the message */\n"
+				   "\t\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_BOOLEAN, &is_valid)) {\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treply = NULL;\n"
+				   "\t\t\tgoto enomem;\n"
+				   "\t\t}\n"
 				   "\tenomem: __attribute__ ((unused));\n"
 				   "\t} while (! reply);\n"
 				   "\n"
@@ -6672,38 +6181,6 @@ test_object_functions (void)
 				   "\tdbus_message_unref (reply);\n"
 				   "\n"
 				   "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
-				   "}\n"
-				   "\n"
-				   "int\n"
-				   "my_test_is_valid_address_reply (NihDBusMessage *message)\n"
-				   "{\n"
-				   "\tDBusMessage *   reply;\n"
-				   "\tDBusMessageIter iter;\n"
-				   "\n"
-				   "\tnih_assert (message != NULL);\n"
-				   "\n"
-				   "\t/* If the sender doesn't care about a reply, don't bother wasting\n"
-				   "\t * effort constructing and sending one.\n"
-				   "\t */\n"
-				   "\tif (dbus_message_get_no_reply (message->message))\n"
-				   "\t\treturn 0;\n"
-				   "\n"
-				   "\t/* Construct the reply message. */\n"
-				   "\treply = dbus_message_new_method_return (message->message);\n"
-				   "\tif (! reply)\n"
-				   "\t\treturn -1;\n"
-				   "\n"
-				   "\tdbus_message_iter_init_append (reply, &iter);\n"
-				   "\n"
-				   "\t/* Send the reply, appending it to the outgoing queue. */\n"
-				   "\tif (! dbus_connection_send (message->connection, reply, NULL)) {\n"
-				   "\t\tdbus_message_unref (reply);\n"
-				   "\t\treturn -1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\tdbus_message_unref (reply);\n"
-				   "\n"
-				   "\treturn 0;\n"
 				   "}\n"
 				   "\n"
 				   "\n"
@@ -6870,38 +6347,6 @@ test_object_functions (void)
 				   "\treturn DBUS_HANDLER_RESULT_HANDLED;\n"
 				   "}\n"
 				   "\n"
-				   "int\n"
-				   "my_foo_bing_reply (NihDBusMessage *message)\n"
-				   "{\n"
-				   "\tDBusMessage *   reply;\n"
-				   "\tDBusMessageIter iter;\n"
-				   "\n"
-				   "\tnih_assert (message != NULL);\n"
-				   "\n"
-				   "\t/* If the sender doesn't care about a reply, don't bother wasting\n"
-				   "\t * effort constructing and sending one.\n"
-				   "\t */\n"
-				   "\tif (dbus_message_get_no_reply (message->message))\n"
-				   "\t\treturn 0;\n"
-				   "\n"
-				   "\t/* Construct the reply message. */\n"
-				   "\treply = dbus_message_new_method_return (message->message);\n"
-				   "\tif (! reply)\n"
-				   "\t\treturn -1;\n"
-				   "\n"
-				   "\tdbus_message_iter_init_append (reply, &iter);\n"
-				   "\n"
-				   "\t/* Send the reply, appending it to the outgoing queue. */\n"
-				   "\tif (! dbus_connection_send (message->connection, reply, NULL)) {\n"
-				   "\t\tdbus_message_unref (reply);\n"
-				   "\t\treturn -1;\n"
-				   "\t}\n"
-				   "\n"
-				   "\tdbus_message_unref (reply);\n"
-				   "\n"
-				   "\treturn 0;\n"
-				   "}\n"
-				   "\n"
 				   "\n"
 				   "int\n"
 				   "my_foo_emit_new_result (DBusConnection *connection,\n"
@@ -7038,42 +6483,6 @@ test_object_functions (void)
 		nih_free (func);
 
 
-		TEST_LIST_NOT_EMPTY (&externs);
-
-		func = (TypeFunc *)externs.next;
-		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
-		TEST_ALLOC_PARENT (func, str);
-		TEST_EQ_STR (func->type, "int");
-		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_test_poke_reply");
-		TEST_ALLOC_PARENT (func->name, func);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusMessage *");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "message");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_EMPTY (&func->args);
-
-		TEST_LIST_NOT_EMPTY (&func->attribs);
-
-		attrib = (NihListEntry *)func->attribs.next;
-		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
-		TEST_ALLOC_PARENT (attrib, func);
-		TEST_EQ_STR (attrib->str, "warn_unused_result");
-		TEST_ALLOC_PARENT (attrib->str, attrib);
-		nih_free (attrib);
-
-		TEST_LIST_EMPTY (&func->attribs);
-		nih_free (func);
-
-
 		/* Peek */
 		TEST_LIST_NOT_EMPTY (&prototypes);
 
@@ -7152,17 +6561,6 @@ test_object_functions (void)
 		TEST_EQ_STR (arg->type, "uint32_t");
 		TEST_ALLOC_PARENT (arg->type, arg);
 		TEST_EQ_STR (arg->name, "address");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "char **");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "value");
 		TEST_ALLOC_PARENT (arg->name, arg);
 		nih_free (arg);
 
@@ -7308,39 +6706,14 @@ test_object_functions (void)
 		TEST_ALLOC_PARENT (arg->name, arg);
 		nih_free (arg);
 
-		TEST_LIST_EMPTY (&func->args);
-
-		TEST_LIST_NOT_EMPTY (&func->attribs);
-
-		attrib = (NihListEntry *)func->attribs.next;
-		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
-		TEST_ALLOC_PARENT (attrib, func);
-		TEST_EQ_STR (attrib->str, "warn_unused_result");
-		TEST_ALLOC_PARENT (attrib->str, attrib);
-		nih_free (attrib);
-
-		TEST_LIST_EMPTY (&func->attribs);
-		nih_free (func);
-
-
-		TEST_LIST_NOT_EMPTY (&externs);
-
-		func = (TypeFunc *)externs.next;
-		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
-		TEST_ALLOC_PARENT (func, str);
-		TEST_EQ_STR (func->type, "int");
-		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_test_is_valid_address_reply");
-		TEST_ALLOC_PARENT (func->name, func);
-
 		TEST_LIST_NOT_EMPTY (&func->args);
 
 		arg = (TypeVar *)func->args.next;
 		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_EQ_STR (arg->type, "int *");
 		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "message");
+		TEST_EQ_STR (arg->name, "is_valid");
 		TEST_ALLOC_PARENT (arg->name, arg);
 		nih_free (arg);
 
@@ -7536,42 +6909,6 @@ test_object_functions (void)
 		TEST_EQ_STR (arg->name, "data");
 		TEST_ALLOC_PARENT (arg->name, arg);
 		nih_free (arg);
-
-		TEST_LIST_NOT_EMPTY (&func->args);
-
-		arg = (TypeVar *)func->args.next;
-		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (arg, func);
-		TEST_EQ_STR (arg->type, "NihDBusMessage *");
-		TEST_ALLOC_PARENT (arg->type, arg);
-		TEST_EQ_STR (arg->name, "message");
-		TEST_ALLOC_PARENT (arg->name, arg);
-		nih_free (arg);
-
-		TEST_LIST_EMPTY (&func->args);
-
-		TEST_LIST_NOT_EMPTY (&func->attribs);
-
-		attrib = (NihListEntry *)func->attribs.next;
-		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
-		TEST_ALLOC_PARENT (attrib, func);
-		TEST_EQ_STR (attrib->str, "warn_unused_result");
-		TEST_ALLOC_PARENT (attrib->str, attrib);
-		nih_free (attrib);
-
-		TEST_LIST_EMPTY (&func->attribs);
-		nih_free (func);
-
-
-		TEST_LIST_NOT_EMPTY (&externs);
-
-		func = (TypeFunc *)externs.next;
-		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
-		TEST_ALLOC_PARENT (func, str);
-		TEST_EQ_STR (func->type, "int");
-		TEST_ALLOC_PARENT (func->type, func);
-		TEST_EQ_STR (func->name, "my_foo_bing_reply");
-		TEST_ALLOC_PARENT (func->name, func);
 
 		TEST_LIST_NOT_EMPTY (&func->args);
 

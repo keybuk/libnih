@@ -1,5 +1,14 @@
 2009-06-16  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/node.c (node_object_functions): Don't generate reply
+	functions for non-async method implementations
+	* nih-dbus-tool/tests/test_node.c (test_object_functions): Make the
+	peek method async so that's the only one that should have a reply
+	function.  Also add an output value to another method to check
+	ordinary return values.
+	* nih-dbus-tool/tests/test_output.c (test_output): Apply the same
+	changes to this test as well.
+
 	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c: Turns out
 	I was using the wrong timeout value everywhere, this is why macros are
 	useful -- replace the wrong "0" with NIH_DBUS_TIMEOUT_DEFAULT

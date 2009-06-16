@@ -1,5 +1,11 @@
 2009-06-16  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_end_tag): Ignore the NoReply
+	annotation if the method has output arguments; ignore the Async
+	annotation if the method is NoReply.
+	* nih-dbus-tool/tests/test_method.c (test_end_tag): Make sure the
+	annotations are amended and warnings emitted as appropriate.
+
 	* nih-dbus-tool/node.c (node_object_functions): Don't generate reply
 	functions for non-async method implementations
 	* nih-dbus-tool/tests/test_node.c (test_object_functions): Make the

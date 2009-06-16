@@ -293,6 +293,34 @@ method_end_tag (XML_Parser  xmlp,
 		return -1;
 	}
 
+	/* Ignore the no_reply annoitation is the method has output
+	 * arguments.
+	 */
+	NIH_LIST_FOREACH (&method->arguments, iter) {
+		Argument *argument = (Argument *)iter;
+
+		if ((argument->direction == NIH_DBUS_ARG_OUT)
+		    && method->no_reply) {
+			method->no_reply = FALSE;
+
+			nih_warn ("%s:%zu:%zu: %s", context->filename,
+				  (size_t)XML_GetCurrentLineNumber (xmlp),
+				  (size_t)XML_GetCurrentColumnNumber (xmlp),
+				  _("Ignored NoReply annotation for method with output arguments"));
+			break;
+		}
+	}
+
+	/* Ignore the async annotation if the method is no_reply */
+	if (method->no_reply && method->async) {
+		method->async = FALSE;
+
+		nih_warn ("%s:%zu:%zu: %s", context->filename,
+			  (size_t)XML_GetCurrentLineNumber (xmlp),
+			  (size_t)XML_GetCurrentColumnNumber (xmlp),
+			  _("Ignored Async annotation for NoReply method"));
+	}
+
 	nih_debug ("Add %s method to %s interface",
 		   method->name, interface->name);
 	nih_list_add (&interface->methods, &method->entry);

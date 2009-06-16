@@ -493,8 +493,10 @@ test_end_tag (void)
 	Interface *  interface = NULL;
 	Method *     method = NULL;
 	Method *     other = NULL;
+	Argument *   argument = NULL;
 	int          ret;
 	NihError *   err;
+	FILE *       output;
 
 	TEST_FUNCTION ("method_end_tag");
 	context.parent = NULL;
@@ -504,6 +506,8 @@ test_end_tag (void)
 
 	assert (xmlp = XML_ParserCreate ("UTF-8"));
 	XML_SetUserData (xmlp, &context);
+
+	output = tmpfile ();
 
 
 	/* Check that when we parse the end tag for a method, we pop
@@ -645,7 +649,331 @@ test_end_tag (void)
 	}
 
 
+	/* Check that a method with the NoReply annotation and only
+	 * input arguments is accepted.
+	 */
+	TEST_FEATURE ("with no reply expected");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_INTERFACE, interface);
+
+			method = method_new (NULL, "TestMethod");
+			method->no_reply = TRUE;
+			entry = parse_stack_push (NULL, &context.stack,
+						  PARSE_METHOD, method);
+
+			argument = argument_new (method, NULL, "i",
+						 NIH_DBUS_ARG_IN);
+			nih_list_add (&method->arguments, &argument->entry);
+
+			argument = argument_new (method, NULL, "i",
+						 NIH_DBUS_ARG_IN);
+			nih_list_add (&method->arguments, &argument->entry);
+		}
+
+		TEST_FREE_TAG (entry);
+
+		TEST_DIVERT_STDERR (output) {
+			ret = method_end_tag (xmlp, "method");
+		}
+		rewind (output);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			TEST_NOT_FREE (entry);
+			TEST_LIST_EMPTY (&interface->methods);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (entry);
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		TEST_FREE (entry);
+		TEST_ALLOC_PARENT (method, interface);
+
+		TEST_LIST_NOT_EMPTY (&interface->methods);
+		TEST_EQ_P (interface->methods.next, &method->entry);
+
+		TEST_EQ_STR (method->symbol, "test_method");
+		TEST_ALLOC_PARENT (method->symbol, method);
+		TEST_TRUE (method->no_reply);
+
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (parent);
+	}
+
+
+	/* Check that a method with the NoReply annotation and output
+	 * arguments has the annotation removed and a warning emitted.
+	 */
+	TEST_FEATURE ("with no reply expected and output arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_INTERFACE, interface);
+
+			method = method_new (NULL, "TestMethod");
+			method->no_reply = TRUE;
+			entry = parse_stack_push (NULL, &context.stack,
+						  PARSE_METHOD, method);
+
+			argument = argument_new (method, NULL, "i",
+						 NIH_DBUS_ARG_OUT);
+			nih_list_add (&method->arguments, &argument->entry);
+
+			argument = argument_new (method, NULL, "i",
+						 NIH_DBUS_ARG_OUT);
+			nih_list_add (&method->arguments, &argument->entry);
+		}
+
+		TEST_FREE_TAG (entry);
+
+		TEST_DIVERT_STDERR (output) {
+			ret = method_end_tag (xmlp, "method");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			TEST_NOT_FREE (entry);
+			TEST_LIST_EMPTY (&interface->methods);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (entry);
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		TEST_FREE (entry);
+		TEST_ALLOC_PARENT (method, interface);
+
+		TEST_LIST_NOT_EMPTY (&interface->methods);
+		TEST_EQ_P (interface->methods.next, &method->entry);
+
+		TEST_EQ_STR (method->symbol, "test_method");
+		TEST_ALLOC_PARENT (method->symbol, method);
+		TEST_FALSE (method->no_reply);
+
+		TEST_FILE_EQ (output, "test:foo:1:0: Ignored NoReply annotation for method with output arguments\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (parent);
+	}
+
+
+	/* Check that a method with the Async annotation is accepted.
+	 */
+	TEST_FEATURE ("with async implementation");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_INTERFACE, interface);
+
+			method = method_new (NULL, "TestMethod");
+			method->async = TRUE;
+			entry = parse_stack_push (NULL, &context.stack,
+						  PARSE_METHOD, method);
+		}
+
+		TEST_FREE_TAG (entry);
+
+		TEST_DIVERT_STDERR (output) {
+			ret = method_end_tag (xmlp, "method");
+		}
+		rewind (output);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			TEST_NOT_FREE (entry);
+			TEST_LIST_EMPTY (&interface->methods);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (entry);
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		TEST_FREE (entry);
+		TEST_ALLOC_PARENT (method, interface);
+
+		TEST_LIST_NOT_EMPTY (&interface->methods);
+		TEST_EQ_P (interface->methods.next, &method->entry);
+
+		TEST_EQ_STR (method->symbol, "test_method");
+		TEST_ALLOC_PARENT (method->symbol, method);
+		TEST_TRUE (method->async);
+
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (parent);
+	}
+
+
+	/* Check that a method that is both Async and NoReply has the
+	 * async annotation removed and a warning emitted.
+	 */
+	TEST_FEATURE ("with async but no reply expected");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_INTERFACE, interface);
+
+			method = method_new (NULL, "TestMethod");
+			method->async = TRUE;
+			method->no_reply = TRUE;
+			entry = parse_stack_push (NULL, &context.stack,
+						  PARSE_METHOD, method);
+		}
+
+		TEST_FREE_TAG (entry);
+
+		TEST_DIVERT_STDERR (output) {
+			ret = method_end_tag (xmlp, "method");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			TEST_NOT_FREE (entry);
+			TEST_LIST_EMPTY (&interface->methods);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (entry);
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		TEST_FREE (entry);
+		TEST_ALLOC_PARENT (method, interface);
+
+		TEST_LIST_NOT_EMPTY (&interface->methods);
+		TEST_EQ_P (interface->methods.next, &method->entry);
+
+		TEST_EQ_STR (method->symbol, "test_method");
+		TEST_ALLOC_PARENT (method->symbol, method);
+		TEST_FALSE (method->async);
+		TEST_TRUE (method->no_reply);
+
+		TEST_FILE_EQ (output, "test:foo:1:0: Ignored Async annotation for NoReply method\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (parent);
+	}
+
+
+	/* Check that an Async method with the NoReply annotation but
+	 * output arguments only has the NoReply annotation removed and
+	 * a warning emitted about that, but remains async.
+	 */
+	TEST_FEATURE ("with async, no reply expected and output arguments");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_INTERFACE, interface);
+
+			method = method_new (NULL, "TestMethod");
+			method->async = TRUE;
+			method->no_reply = TRUE;
+			entry = parse_stack_push (NULL, &context.stack,
+						  PARSE_METHOD, method);
+
+			argument = argument_new (method, NULL, "i",
+						 NIH_DBUS_ARG_OUT);
+			nih_list_add (&method->arguments, &argument->entry);
+
+			argument = argument_new (method, NULL, "i",
+						 NIH_DBUS_ARG_OUT);
+			nih_list_add (&method->arguments, &argument->entry);
+		}
+
+		TEST_FREE_TAG (entry);
+
+		TEST_DIVERT_STDERR (output) {
+			ret = method_end_tag (xmlp, "method");
+		}
+		rewind (output);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			TEST_NOT_FREE (entry);
+			TEST_LIST_EMPTY (&interface->methods);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_FILE_RESET (output);
+
+			nih_free (entry);
+			nih_free (parent);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		TEST_FREE (entry);
+		TEST_ALLOC_PARENT (method, interface);
+
+		TEST_LIST_NOT_EMPTY (&interface->methods);
+		TEST_EQ_P (interface->methods.next, &method->entry);
+
+		TEST_EQ_STR (method->symbol, "test_method");
+		TEST_ALLOC_PARENT (method->symbol, method);
+		TEST_TRUE (method->async);
+		TEST_FALSE (method->no_reply);
+
+		TEST_FILE_EQ (output, "test:foo:1:0: Ignored NoReply annotation for method with output arguments\n");
+		TEST_FILE_END (output);
+		TEST_FILE_RESET (output);
+
+		nih_free (parent);
+	}
+
+
 	XML_ParserFree (xmlp);
+	fclose (output);
 }
 
 

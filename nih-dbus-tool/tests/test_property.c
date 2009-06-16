@@ -1151,6 +1151,7 @@ test_lookup (void)
 
 
 static int my_get_property_called = 0;
+static const char *property_value;
 
 int
 my_get_property (void *          data,
@@ -1167,9 +1168,20 @@ my_get_property (void *          data,
 
 	TEST_NE_P (str, NULL);
 
-	*str = nih_strdup (message, "dog and doughnut");
-	if (! *str)
+	if (! strcmp (property_value, "felch and firkin")) {
+		nih_dbus_error_raise ("com.netsplit.Nih.MyProperty.Fail",
+				      "Bad value for property");
 		return -1;
+
+	} else if (! strcmp (property_value, "fruitbat and ball")) {
+		nih_error_raise (EBADF, strerror (EBADF));
+		return -1;
+
+	} else {
+		*str = nih_strdup (message, property_value);
+		if (! *str)
+			nih_return_no_memory_error (-1);
+	}
 
 	return 0;
 }
@@ -1198,6 +1210,8 @@ test_object_get_function (void)
 	NihDBusObject *   object;
 	dbus_uint32_t     serial;
 	int               ret;
+	NihError *        err;
+	NihDBusError *    dbus_err;
 
 	TEST_FUNCTION ("property_object_get_function");
 	TEST_DBUS (dbus_pid);
@@ -1254,18 +1268,23 @@ test_object_get_function (void)
 				   "\t\treturn -1;\n"
 				   "\n"
 				   "\t/* Append a variant onto the message to contain the property value. */\n"
-				   "\tif (! dbus_message_iter_open_container (iter, DBUS_TYPE_VARIANT, \"s\", &variter))\n"
+				   "\tif (! dbus_message_iter_open_container (iter, DBUS_TYPE_VARIANT, \"s\", &variter)) {\n"
+				   "\t\tnih_error_raise_no_memory ();\n"
 				   "\t\treturn -1;\n"
+				   "\t}\n"
 				   "\n"
 				   "\t/* Marshal a char * onto the message */\n"
 				   "\tif (! dbus_message_iter_append_basic (&variter, DBUS_TYPE_STRING, &value)) {\n"
 				   "\t\tdbus_message_iter_close_container (iter, &variter);\n"
+				   "\t\tnih_error_raise_no_memory ();\n"
 				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\t/* Finish the variant */\n"
-				   "\tif (! dbus_message_iter_close_container (iter, &variter))\n"
+				   "\tif (! dbus_message_iter_close_container (iter, &variter)) {\n"
+				   "\t\tnih_error_raise_no_memory ();\n"
 				   "\t\treturn -1;\n"
+				   "\t}\n"
 				   "\n"
 				   "\treturn 0;\n"
 				   "}\n"));
@@ -1392,6 +1411,8 @@ test_object_get_function (void)
 	 */
 	TEST_FEATURE ("with property (generated code)");
 	TEST_ALLOC_FAIL {
+		property_value = "dog and doughnut";
+
 		method_call = dbus_message_new_method_call (
 			dbus_bus_get_unique_name (client_conn),
 			"/com/netsplit/Nih",
@@ -1438,6 +1459,10 @@ test_object_get_function (void)
 
 		if (test_alloc_failed
 		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
 			dbus_message_unref (reply);
 			nih_free (object);
 			nih_free (message);
@@ -1470,6 +1495,167 @@ test_object_get_function (void)
 
 		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
 			 DBUS_TYPE_INVALID);
+
+		nih_free (object);
+		nih_free (message);
+		dbus_message_unref (reply);
+		dbus_message_unref (method_call);
+	}
+
+
+	/* Check that our function can return a D-Bus error and the
+	 * generated code simply returns that upwards.
+	 */
+	TEST_FEATURE ("with D-Bus error from handler (generated code)");
+	TEST_ALLOC_FAIL {
+		property_value = "felch and firkin";
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (client_conn),
+			"/com/netsplit/Nih",
+			"org.freedesktop.DBus.Properties",
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		iface = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&iface);
+
+		name = "property";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&name);
+
+		dbus_connection_send (server_conn, method_call, &serial);
+		dbus_connection_flush (server_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_MESSAGE (client_conn, method_call);
+		assert (dbus_message_get_serial (method_call) == serial);
+
+		TEST_ALLOC_SAFE {
+			message = nih_new (NULL, NihDBusMessage);
+			message->connection = client_conn;
+			message->message = method_call;
+
+			object = nih_new (NULL, NihDBusObject);
+			object->path = "/com/netsplit/Nih";
+			object->connection = client_conn;
+			object->data = NULL;
+			object->interfaces = NULL;
+			object->registered = TRUE;
+		}
+
+		reply = dbus_message_new_method_return (method_call);
+
+		dbus_message_iter_init_append (reply, &iter);
+
+		my_get_property_called = 0;
+
+		ret = my_com_netsplit_Nih_Test_property_get (object, message, &iter);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			dbus_message_unref (reply);
+			nih_free (object);
+			nih_free (message);
+			dbus_message_unref (method_call);
+			continue;
+		}
+
+		TEST_TRUE (my_get_property_called);
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.MyProperty.Fail");
+		TEST_EQ_STR (err->message, "Bad value for property");
+		nih_free (err);
+
+		nih_free (object);
+		nih_free (message);
+		dbus_message_unref (reply);
+		dbus_message_unref (method_call);
+	}
+
+
+	/* Check that our function can return a generic error and the
+	 * generated code simply returns that upwards.
+	 */
+	TEST_FEATURE ("with generic error from handler (generated code)");
+	TEST_ALLOC_FAIL {
+		property_value = "fruitbat and ball";
+
+		method_call = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (client_conn),
+			"/com/netsplit/Nih",
+			"org.freedesktop.DBus.Properties",
+			"Get");
+
+		dbus_message_iter_init_append (method_call, &iter);
+
+		iface = "com.netsplit.Nih.Test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&iface);
+
+		name = "property";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&name);
+
+		dbus_connection_send (server_conn, method_call, &serial);
+		dbus_connection_flush (server_conn);
+		dbus_message_unref (method_call);
+
+		TEST_DBUS_MESSAGE (client_conn, method_call);
+		assert (dbus_message_get_serial (method_call) == serial);
+
+		TEST_ALLOC_SAFE {
+			message = nih_new (NULL, NihDBusMessage);
+			message->connection = client_conn;
+			message->message = method_call;
+
+			object = nih_new (NULL, NihDBusObject);
+			object->path = "/com/netsplit/Nih";
+			object->connection = client_conn;
+			object->data = NULL;
+			object->interfaces = NULL;
+			object->registered = TRUE;
+		}
+
+		reply = dbus_message_new_method_return (method_call);
+
+		dbus_message_iter_init_append (reply, &iter);
+
+		my_get_property_called = 0;
+
+		ret = my_com_netsplit_Nih_Test_property_get (object, message, &iter);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			dbus_message_unref (reply);
+			nih_free (object);
+			nih_free (message);
+			dbus_message_unref (method_call);
+			continue;
+		}
+
+		TEST_TRUE (my_get_property_called);
+
+		TEST_EQ (err->number, EBADF);
+		TEST_EQ_STR (err->message, strerror (EBADF));
+		nih_free (err);
 
 		nih_free (object);
 		nih_free (message);
@@ -1528,18 +1714,23 @@ test_object_get_function (void)
 				   "\t\treturn -1;\n"
 				   "\n"
 				   "\t/* Append a variant onto the message to contain the property value. */\n"
-				   "\tif (! dbus_message_iter_open_container (iter, DBUS_TYPE_VARIANT, \"s\", &variter))\n"
+				   "\tif (! dbus_message_iter_open_container (iter, DBUS_TYPE_VARIANT, \"s\", &variter)) {\n"
+				   "\t\tnih_error_raise_no_memory ();\n"
 				   "\t\treturn -1;\n"
+				   "\t}\n"
 				   "\n"
 				   "\t/* Marshal a char * onto the message */\n"
 				   "\tif (! dbus_message_iter_append_basic (&variter, DBUS_TYPE_STRING, &value)) {\n"
 				   "\t\tdbus_message_iter_close_container (iter, &variter);\n"
+				   "\t\tnih_error_raise_no_memory ();\n"
 				   "\t\treturn -1;\n"
 				   "\t}\n"
 				   "\n"
 				   "\t/* Finish the variant */\n"
-				   "\tif (! dbus_message_iter_close_container (iter, &variter))\n"
+				   "\tif (! dbus_message_iter_close_container (iter, &variter)) {\n"
+				   "\t\tnih_error_raise_no_memory ();\n"
 				   "\t\treturn -1;\n"
+				   "\t}\n"
 				   "\n"
 				   "\treturn 0;\n"
 				   "}\n"));

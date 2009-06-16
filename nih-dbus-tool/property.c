@@ -560,6 +560,7 @@ property_object_get_function (const void *parent,
 	 */
 	oom_error_code = nih_strdup (NULL,
 				     "dbus_message_iter_close_container (iter, &variter);\n"
+				     "nih_error_raise_no_memory ();\n"
 				     "return -1;\n");
 	if (! oom_error_code)
 		return NULL;
@@ -646,14 +647,18 @@ property_object_get_function (const void *parent,
 	 */
 	if (! nih_strcat_sprintf (&code_block, NULL,
 				  "/* Append a variant onto the message to contain the property value. */\n"
-				  "if (! dbus_message_iter_open_container (iter, DBUS_TYPE_VARIANT, \"%s\", &variter))\n"
+				  "if (! dbus_message_iter_open_container (iter, DBUS_TYPE_VARIANT, \"%s\", &variter)) {\n"
+				  "\tnih_error_raise_no_memory ();\n"
 				  "\treturn -1;\n"
+				  "}\n"
 				  "\n"
 				  "%s"
 				  "\n"
 				  "/* Finish the variant */\n"
-				  "if (! dbus_message_iter_close_container (iter, &variter))\n"
-				  "\treturn -1;\n",
+				  "if (! dbus_message_iter_close_container (iter, &variter)) {\n"
+				  "\tnih_error_raise_no_memory ();\n"
+				  "\treturn -1;\n"
+				  "}\n",
 				  property->type,
 				  block))
 		return NULL;

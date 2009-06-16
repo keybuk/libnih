@@ -1,5 +1,11 @@
 2009-06-16  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/property.c (property_object_get_function): Raise the
+	no memory error when we return.
+	* nih-dbus-tool/tests/test_property.c (test_object_get_function): Make
+	sure that the output matches, and test the generated function with
+	normal output, out of memory, dbus error and generic error returns.
+
 	* nih-dbus/dbus_object.c (nih_dbus_object_property_get): It makes
 	sense to be able to return an error when getting a property, at the
 	very least it might be a PolicyKit authorisation error.

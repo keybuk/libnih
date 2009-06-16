@@ -34,6 +34,23 @@
 
 
 /**
+ * NIH_DBUS_TIMEOUT_DEFAULT:
+ *
+ * This macro expands to the timeout value used by D-Bus to mean the
+ * default timeout (25s).
+ **/
+#define NIH_DBUS_TIMEOUT_DEFAULT -1
+
+/**
+ * NIH_DBUS_TIMEOUT_NEVER:
+ *
+ * This macro expands to the timeout value used by D-Bus to mean that
+ * the call should never timeout.
+ **/
+#define NIH_DBUS_TIMEOUT_NEVER INT_MAX
+
+
+/**
  * NihDBusLostHandler:
  * @data: data pointer passed to nih_dbus_proxy_new(),
  * @proxy: proxy object.

@@ -1,5 +1,9 @@
 2009-06-16  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_proxy.h (NIH_DBUS_TIMEOUT_DEFAULT)
+	(NIH_DBUS_TIMEOUT_NEVER): Add macros so we don't have to remember
+	what the timeout magic numbers are
+
 	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_object.c: Use
 	TEST_FUNCTION with proper function names instead of TEST_GROUP
 

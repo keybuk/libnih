@@ -57,7 +57,7 @@ test_ordinary_method (void)
 	DBusMessage *   reply;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("ordinary method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_OrdinaryMethod_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -344,7 +344,7 @@ test_nameless_method (void)
 	DBusMessage *   reply;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("nameless method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_NamelessMethod_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -632,7 +632,7 @@ test_async_method (void)
 	DBusError       dbus_error;
 	int             ret;
 
-	TEST_GROUP ("async method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_AsyncMethod_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -1003,7 +1003,7 @@ test_byte_to_str (void)
 	const char *    str_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("ByteToStr method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_ByteToStr_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -1291,7 +1291,7 @@ test_str_to_byte (void)
 	uint8_t         byte_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("StrToByte method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_StrToByte_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -1579,7 +1579,7 @@ test_boolean_to_str (void)
 	DBusMessage *   reply;
 	const char *    str_value;
 
-	TEST_GROUP ("BooleanToStr method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_BooleanToStr_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -1820,7 +1820,7 @@ test_str_to_boolean (void)
 	int             boolean_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("StrToBoolean method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_StrToBoolean_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -2109,7 +2109,7 @@ test_int16_to_str (void)
 	const char *    str_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("Int16ToStr method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_Int16ToStr_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -2397,7 +2397,7 @@ test_str_to_int16 (void)
 	int16_t         int16_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("StrToInt16 method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_StrToInt16_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -2686,7 +2686,7 @@ test_uint16_to_str (void)
 	const char *    str_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("UInt16ToStr method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_UInt16ToStr_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -2974,7 +2974,7 @@ test_str_to_uint16 (void)
 	uint16_t        uint16_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("StrToUInt16 method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_StrToUInt16_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -3263,7 +3263,7 @@ test_int32_to_str (void)
 	const char *    str_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("Int32ToStr method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_Int32ToStr_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -3551,7 +3551,7 @@ test_str_to_int32 (void)
 	int32_t         int32_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("StrToInt32 method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_StrToInt32_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -3840,7 +3840,7 @@ test_uint32_to_str (void)
 	const char *    str_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("UInt32ToStr method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_UInt32ToStr_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -4128,7 +4128,7 @@ test_str_to_uint32 (void)
 	uint32_t        uint32_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("StrToUInt32 method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_StrToUInt32_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -4417,7 +4417,7 @@ test_int64_to_str (void)
 	const char *    str_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("Int64ToStr method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_Int64ToStr_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -4705,7 +4705,7 @@ test_str_to_int64 (void)
 	int64_t         int64_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("StrToInt64 method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_StrToInt64_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -4994,7 +4994,7 @@ test_uint64_to_str (void)
 	const char *    str_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("UInt64ToStr method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_UInt64ToStr_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -5282,7 +5282,7 @@ test_str_to_uint64 (void)
 	uint64_t        uint64_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("StrToUInt64 method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_StrToUInt64_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -5571,7 +5571,7 @@ test_double_to_str (void)
 	const char *    str_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("DoubleToStr method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_DoubleToStr_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -5859,7 +5859,7 @@ test_str_to_double (void)
 	double          double_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("StrToDouble method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_StrToDouble_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -6147,7 +6147,7 @@ test_object_path_to_str (void)
 	DBusMessage *   reply;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("ObjectPathToStr method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_ObjectPathToStr_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -6434,7 +6434,7 @@ test_str_to_object_path (void)
 	DBusMessage *   reply;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("StrToObjectPath method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_StrToObjectPath_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -6722,7 +6722,7 @@ test_signature_to_str (void)
 	DBusMessage *   reply;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("SignatureToStr method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_SignatureToStr_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -7009,7 +7009,7 @@ test_str_to_signature (void)
 	DBusMessage *   reply;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("StrToSignature method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_StrToSignature_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -7299,7 +7299,7 @@ test_int32_array_to_str (void)
 	const char *    str_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("Int32ArrayToStr method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_Int32ArrayToStr_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -7730,7 +7730,7 @@ test_str_to_int32_array (void)
 	int32_t         int32_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("StrToInt32Array method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_StrToInt32Array_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -8110,7 +8110,7 @@ test_str_array_to_str (void)
 	const char *    str_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("StrArrayToStr method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_StrArrayToStr_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -8537,7 +8537,7 @@ test_str_to_str_array (void)
 	DBusMessageIter subiter;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("StrToStrArray method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_StrToStrArray_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -8919,7 +8919,7 @@ test_int32_array_array_to_str (void)
 	const char *    str_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("Int32ArrayArrayToStr method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_Int32ArrayArrayToStr_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -9516,7 +9516,7 @@ test_str_to_int32_array_array (void)
 	int32_t         int32_value;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("StrToInt32ArrayArray method");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_StrToInt32ArrayArray_method");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -10021,7 +10021,7 @@ test_new_byte (void)
 	/* Check that the generated function emits the expected signal,
 	 * with the arguments we give.
 	 */
-	TEST_GROUP ("NewByte signal");
+	TEST_FUNCTION ("my_test_emit_new_bytw");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -10091,7 +10091,7 @@ test_new_boolean (void)
 	/* Check that the generated function emits the expected signal,
 	 * with the arguments we give.
 	 */
-	TEST_GROUP ("NewBoolean signal");
+	TEST_FUNCTION ("my_test_emit_new_boolean");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -10161,7 +10161,7 @@ test_new_int16 (void)
 	/* Check that the generated function emits the expected signal,
 	 * with the arguments we give.
 	 */
-	TEST_GROUP ("NewInt16 signal");
+	TEST_FUNCTION ("my_test_emit_new_int16");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -10231,7 +10231,7 @@ test_new_uint16 (void)
 	/* Check that the generated function emits the expected signal,
 	 * with the arguments we give.
 	 */
-	TEST_GROUP ("NewUInt16 signal");
+	TEST_FUNCTION ("my_test_emit_new_uint16");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -10301,7 +10301,7 @@ test_new_int32 (void)
 	/* Check that the generated function emits the expected signal,
 	 * with the arguments we give.
 	 */
-	TEST_GROUP ("NewInt32 signal");
+	TEST_FUNCTION ("my_test_emit_new_int32");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -10371,7 +10371,7 @@ test_new_uint32 (void)
 	/* Check that the generated function emits the expected signal,
 	 * with the arguments we give.
 	 */
-	TEST_GROUP ("NewUInt32 signal");
+	TEST_FUNCTION ("my_test_emit_new_uint32");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -10441,7 +10441,7 @@ test_new_int64 (void)
 	/* Check that the generated function emits the expected signal,
 	 * with the arguments we give.
 	 */
-	TEST_GROUP ("NewInt64 signal");
+	TEST_FUNCTION ("my_test_emit_new_int64");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -10511,7 +10511,7 @@ test_new_uint64 (void)
 	/* Check that the generated function emits the expected signal,
 	 * with the arguments we give.
 	 */
-	TEST_GROUP ("NewUInt64 signal");
+	TEST_FUNCTION ("my_test_emit_new_uint64");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -10581,7 +10581,7 @@ test_new_double (void)
 	/* Check that the generated function emits the expected signal,
 	 * with the arguments we give.
 	 */
-	TEST_GROUP ("NewDouble signal");
+	TEST_FUNCTION ("my_test_emit_new_double");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -10651,7 +10651,7 @@ test_new_string (void)
 	/* Check that the generated function emits the expected signal,
 	 * with the arguments we give.
 	 */
-	TEST_GROUP ("NewString signal");
+	TEST_FUNCTION ("my_test_emit_new_string");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -10721,7 +10721,7 @@ test_new_object_path (void)
 	/* Check that the generated function emits the expected signal,
 	 * with the arguments we give.
 	 */
-	TEST_GROUP ("NewObjectPath signal");
+	TEST_FUNCTION ("my_test_emit_new_object_path");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -10791,7 +10791,7 @@ test_new_signature (void)
 	/* Check that the generated function emits the expected signal,
 	 * with the arguments we give.
 	 */
-	TEST_GROUP ("NewSignature signal");
+	TEST_FUNCTION ("my_test_emit_new_signature");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -10861,7 +10861,7 @@ test_new_int32_array (void)
 	DBusMessageIter subiter;
 	int32_t         int32_value;
 
-	TEST_GROUP ("NewInt32Array signal");
+	TEST_FUNCTION ("my_test_emit_new_int32_array");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -11044,7 +11044,7 @@ test_new_str_array (void)
 	DBusMessageIter subiter;
 	const char *    str_value;
 
-	TEST_GROUP ("NewStrArray signal");
+	TEST_FUNCTION ("my_test_emit_new_str_array");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -11234,7 +11234,7 @@ test_new_int32_array_array (void)
 	DBusMessageIter subsubiter;
 	int32_t         int32_value;
 
-	TEST_GROUP ("NewInt32ArrayArray signal");
+	TEST_FUNCTION ("my_test_emit_new_int32_array_array");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -11509,7 +11509,7 @@ test_get_byte (void)
 	DBusMessageIter subiter;
 	uint8_t         byte_value;
 
-	TEST_GROUP ("get byte property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_byte_get");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -11655,7 +11655,7 @@ test_set_byte (void)
 	DBusMessage *   reply;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("set byte property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_byte_set");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -12069,7 +12069,7 @@ test_get_boolean (void)
 	DBusMessageIter subiter;
 	int             boolean_value;
 
-	TEST_GROUP ("get boolean property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_boolean_get");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -12214,7 +12214,7 @@ test_set_boolean (void)
 	dbus_uint32_t   serial;
 	DBusMessage *   reply;
 
-	TEST_GROUP ("set boolean property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_boolean_set");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -12567,7 +12567,7 @@ test_get_int16 (void)
 	DBusMessageIter subiter;
 	int16_t         int16_value;
 
-	TEST_GROUP ("get int16 property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_int16_get");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -12713,7 +12713,7 @@ test_set_int16 (void)
 	DBusMessage *   reply;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("set int16 property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_int16_set");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -13127,7 +13127,7 @@ test_get_uint16 (void)
 	DBusMessageIter subiter;
 	uint16_t        uint16_value;
 
-	TEST_GROUP ("get uint16 property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_uint16_get");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -13273,7 +13273,7 @@ test_set_uint16 (void)
 	DBusMessage *   reply;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("set uint16 property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_uint16_set");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -13687,7 +13687,7 @@ test_get_int32 (void)
 	DBusMessageIter subiter;
 	int32_t         int32_value;
 
-	TEST_GROUP ("get int32 property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_int32_get");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -13833,7 +13833,7 @@ test_set_int32 (void)
 	DBusMessage *   reply;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("set int32 property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_int32_set");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -14247,7 +14247,7 @@ test_get_uint32 (void)
 	DBusMessageIter subiter;
 	uint32_t        uint32_value;
 
-	TEST_GROUP ("get uint32 property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_uint32_get");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -14393,7 +14393,7 @@ test_set_uint32 (void)
 	DBusMessage *   reply;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("set uint32 property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_uint32_set");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -14807,7 +14807,7 @@ test_get_int64 (void)
 	DBusMessageIter subiter;
 	int64_t         int64_value;
 
-	TEST_GROUP ("get int64 property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_int16_get");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -14953,7 +14953,7 @@ test_set_int64 (void)
 	DBusMessage *   reply;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("set int64 property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_int64_set");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -15367,7 +15367,7 @@ test_get_uint64 (void)
 	DBusMessageIter subiter;
 	uint64_t        uint64_value;
 
-	TEST_GROUP ("get uint64 property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_uint64_get");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -15513,7 +15513,7 @@ test_set_uint64 (void)
 	DBusMessage *   reply;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("set uint64 property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_uint64_set");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -15927,7 +15927,7 @@ test_get_double (void)
 	DBusMessageIter subiter;
 	double          double_value;
 
-	TEST_GROUP ("get double property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_double_get");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -16073,7 +16073,7 @@ test_set_double (void)
 	DBusMessage *   reply;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("set double property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_double_set");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -16486,7 +16486,7 @@ test_get_string (void)
 	DBusMessage *   reply;
 	DBusMessageIter subiter;
 
-	TEST_GROUP ("get string property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_string_get");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -16631,7 +16631,7 @@ test_set_string (void)
 	DBusMessage *   reply;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("set string property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_string_set");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -17045,7 +17045,7 @@ test_get_object_path (void)
 	DBusMessage *   reply;
 	DBusMessageIter subiter;
 
-	TEST_GROUP ("get object_path property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_object_path_get");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -17190,7 +17190,7 @@ test_set_object_path (void)
 	DBusMessage *   reply;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("set object_path property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_object_path_set");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -17604,7 +17604,7 @@ test_get_signature (void)
 	DBusMessage *   reply;
 	DBusMessageIter subiter;
 
-	TEST_GROUP ("get signature property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_signature_get");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -17749,7 +17749,7 @@ test_set_signature (void)
 	DBusMessage *   reply;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("set signature property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_signature_set");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -18165,7 +18165,7 @@ test_get_int32_array (void)
 	DBusMessageIter subsubiter;
 	int32_t         int32_value;
 
-	TEST_GROUP ("get int32_array property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_int32_array_get");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -18390,7 +18390,7 @@ test_set_int32_array (void)
 	DBusMessage *   reply;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("set int32_array property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_int32_array_set");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -18970,7 +18970,7 @@ test_get_str_array (void)
 	DBusMessageIter subiter;
 	DBusMessageIter subsubiter;
 
-	TEST_GROUP ("get str_array property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_str_array_get");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -19194,7 +19194,7 @@ test_set_str_array (void)
 	DBusMessage *   reply;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("set str_array property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_str_array_set");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -19777,7 +19777,7 @@ test_get_int32_array_array (void)
 	DBusMessageIter subsubsubiter;
 	int32_t         int32_value;
 
-	TEST_GROUP ("get int32_array_array property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_int32_array_array_get");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
@@ -20120,7 +20120,7 @@ test_set_int32_array_array (void)
 	DBusMessage *   reply;
 	DBusError       dbus_error;
 
-	TEST_GROUP ("set int32_array_array property");
+	TEST_FUNCTION ("my_com_netsplit_Nih_Test_int32_array_array_set");
 	TEST_DBUS (dbus_pid);
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);

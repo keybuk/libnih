@@ -20667,6 +20667,158 @@ test_get_byte (void)
 	}
 
 
+	/* Check that a D-Bus error returned from the handler function
+	 * results in the error handler being called with the error
+	 * raised.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_ALLOC_FAIL {
+		byte_property = 0;
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_byte_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_byte (proxy,
+						    my_get_byte_reply,
+						    my_error_handler,
+						    parent,
+						    0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_byte_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Byte.Zero");
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
+	/* Check that a generic error returned from the handler function
+	 * results in the error handler being called with a D-Bus failed
+	 * error raised.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		byte_property = 4;
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_byte_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_byte (proxy,
+						    my_get_byte_reply,
+						    my_error_handler,
+						    parent,
+						    0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_byte_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
 	/* Check that a timeout (along with other D-Bus generated errors)
 	 * also results in the error handler being called with the D-Bus
 	 * error raised.
@@ -20836,6 +20988,7 @@ test_get_byte_sync (void)
 	uint8_t         byte_value;
 	int             ret;
 	NihError *      err;
+	NihDBusError *  dbus_err;
 	int             status;
 
 	TEST_FUNCTION ("proxy_test_get_byte_sync");
@@ -20843,6 +20996,11 @@ test_get_byte_sync (void)
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
 
+
+	/* Check that when we give a valid input, we receive a valid
+	 * output in our pointer, allocated as a child of the parent.
+	 */
+	TEST_FEATURE ("with valid argument");
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		byte_property = 97;
 
@@ -20871,11 +21029,6 @@ test_get_byte_sync (void)
 		exit (0);
 	}
 
-
-	/* Check that when we give a valid input, we receive a valid
-	 * output in our pointer, allocated as a child of the parent.
-	 */
-	TEST_FEATURE ("with valid argument");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
@@ -20909,11 +21062,170 @@ test_get_byte_sync (void)
 		nih_free (proxy);
 	}
 
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a D-Bus error,
+	 * that error is raised on the returning side and the function
+	 * returns -1.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		byte_property = 0;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		byte_value = 0;
+
+		ret = proxy_test_get_byte_sync (parent, proxy,
+						&byte_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Byte.Zero");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
 
 	kill (server_pid, SIGTERM);
 	waitpid (server_pid, &status, 0);
 	TEST_TRUE (WIFEXITED (status));
 	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a generic error,
+	 * the D-Bus "failed" error is raised on the returning side and the
+	 * function returns -1.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		byte_property = 4;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		byte_value = 0;
+
+		ret = proxy_test_get_byte_sync (parent, proxy,
+						&byte_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+		TEST_EQ_STR (err->message, "Invalid argument");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
+
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
 
 	TEST_DBUS_CLOSE (client_conn);
 	TEST_DBUS_CLOSE (server_conn);
@@ -21633,6 +21945,82 @@ test_get_boolean (void)
 	}
 
 
+	/* Check that a D-Bus error returned from the handler function
+	 * results in the error handler being called with the error
+	 * raised.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_ALLOC_FAIL {
+		boolean_property = FALSE;
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_boolean_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_boolean (proxy,
+						       my_get_boolean_reply,
+						       my_error_handler,
+						       parent,
+						       0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_boolean_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Boolean.Zero");
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
 	/* Check that a timeout (along with other D-Bus generated errors)
 	 * also results in the error handler being called with the D-Bus
 	 * error raised.
@@ -21802,6 +22190,7 @@ test_get_boolean_sync (void)
 	int             boolean_value;
 	int             ret;
 	NihError *      err;
+	NihDBusError *  dbus_err;
 	int             status;
 
 	TEST_FUNCTION ("proxy_test_get_boolean_sync");
@@ -21809,6 +22198,10 @@ test_get_boolean_sync (void)
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
 
+	/* Check that when we give a valid input, we receive a valid
+	 * output in our pointer, allocated as a child of the parent.
+	 */
+	TEST_FEATURE ("with valid argument");
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		boolean_property = TRUE;
 
@@ -21837,11 +22230,6 @@ test_get_boolean_sync (void)
 		exit (0);
 	}
 
-
-	/* Check that when we give a valid input, we receive a valid
-	 * output in our pointer, allocated as a child of the parent.
-	 */
-	TEST_FEATURE ("with valid argument");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
@@ -21852,7 +22240,7 @@ test_get_boolean_sync (void)
 			parent = nih_alloc (NULL, 0);
 		}
 
-		boolean_value = FALSE;
+		boolean_value = 0;
 
 		ret = proxy_test_get_boolean_sync (parent, proxy,
 						   &boolean_value);
@@ -21875,11 +22263,90 @@ test_get_boolean_sync (void)
 		nih_free (proxy);
 	}
 
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a D-Bus error,
+	 * that error is raised on the returning side and the function
+	 * returns -1.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		boolean_property = FALSE;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		boolean_value = 0;
+
+		ret = proxy_test_get_boolean_sync (parent, proxy,
+						   &boolean_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Boolean.Zero");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
 
 	kill (server_pid, SIGTERM);
 	waitpid (server_pid, &status, 0);
 	TEST_TRUE (WIFEXITED (status));
 	TEST_EQ (WEXITSTATUS (status), 0);
+
 
 	TEST_DBUS_CLOSE (client_conn);
 	TEST_DBUS_CLOSE (server_conn);
@@ -22484,6 +22951,158 @@ test_get_int16 (void)
 	}
 
 
+	/* Check that a D-Bus error returned from the handler function
+	 * results in the error handler being called with the error
+	 * raised.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_ALLOC_FAIL {
+		int16_property = 0;
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_int16_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_int16 (proxy,
+						     my_get_int16_reply,
+						     my_error_handler,
+						     parent,
+						     0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_int16_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Int16.Zero");
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
+	/* Check that a generic error returned from the handler function
+	 * results in the error handler being called with a D-Bus failed
+	 * error raised.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		int16_property = 4;
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_int16_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_int16 (proxy,
+						     my_get_int16_reply,
+						     my_error_handler,
+						     parent,
+						     0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_int16_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
 	/* Check that a timeout (along with other D-Bus generated errors)
 	 * also results in the error handler being called with the D-Bus
 	 * error raised.
@@ -22653,6 +23272,7 @@ test_get_int16_sync (void)
 	int16_t         int16_value;
 	int             ret;
 	NihError *      err;
+	NihDBusError *  dbus_err;
 	int             status;
 
 	TEST_FUNCTION ("proxy_test_get_int16_sync");
@@ -22660,6 +23280,10 @@ test_get_int16_sync (void)
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
 
+	/* Check that when we give a valid input, we receive a valid
+	 * output in our pointer, allocated as a child of the parent.
+	 */
+	TEST_FEATURE ("with valid argument");
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		int16_property = -42;
 
@@ -22688,11 +23312,6 @@ test_get_int16_sync (void)
 		exit (0);
 	}
 
-
-	/* Check that when we give a valid input, we receive a valid
-	 * output in our pointer, allocated as a child of the parent.
-	 */
-	TEST_FEATURE ("with valid argument");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
@@ -22726,11 +23345,170 @@ test_get_int16_sync (void)
 		nih_free (proxy);
 	}
 
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a D-Bus error,
+	 * that error is raised on the returning side and the function
+	 * returns -1.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		int16_property = 0;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		int16_value = 0;
+
+		ret = proxy_test_get_int16_sync (parent, proxy,
+						 &int16_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Int16.Zero");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
 
 	kill (server_pid, SIGTERM);
 	waitpid (server_pid, &status, 0);
 	TEST_TRUE (WIFEXITED (status));
 	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a generic error,
+	 * the D-Bus "failed" error is raised on the returning side and the
+	 * function returns -1.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		int16_property = 4;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		int16_value = 0;
+
+		ret = proxy_test_get_int16_sync (parent, proxy,
+						 &int16_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+		TEST_EQ_STR (err->message, "Invalid argument");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
+
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
 
 	TEST_DBUS_CLOSE (client_conn);
 	TEST_DBUS_CLOSE (server_conn);
@@ -23450,6 +24228,158 @@ test_get_uint16 (void)
 	}
 
 
+	/* Check that a D-Bus error returned from the handler function
+	 * results in the error handler being called with the error
+	 * raised.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_ALLOC_FAIL {
+		uint16_property = 0;
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_uint16_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_uint16 (proxy,
+						      my_get_uint16_reply,
+						      my_error_handler,
+						      parent,
+						      0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_uint16_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.UInt16.Zero");
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
+	/* Check that a generic error returned from the handler function
+	 * results in the error handler being called with a D-Bus failed
+	 * error raised.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		uint16_property = 4;
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_uint16_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_uint16 (proxy,
+						      my_get_uint16_reply,
+						      my_error_handler,
+						      parent,
+						      0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_uint16_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
 	/* Check that a timeout (along with other D-Bus generated errors)
 	 * also results in the error handler being called with the D-Bus
 	 * error raised.
@@ -23619,6 +24549,7 @@ test_get_uint16_sync (void)
 	uint16_t        uint16_value;
 	int             ret;
 	NihError *      err;
+	NihDBusError *  dbus_err;
 	int             status;
 
 	TEST_FUNCTION ("proxy_test_get_uint16_sync");
@@ -23626,6 +24557,10 @@ test_get_uint16_sync (void)
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
 
+	/* Check that when we give a valid input, we receive a valid
+	 * output in our pointer, allocated as a child of the parent.
+	 */
+	TEST_FEATURE ("with valid argument");
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		uint16_property = 42;
 
@@ -23654,11 +24589,6 @@ test_get_uint16_sync (void)
 		exit (0);
 	}
 
-
-	/* Check that when we give a valid input, we receive a valid
-	 * output in our pointer, allocated as a child of the parent.
-	 */
-	TEST_FEATURE ("with valid argument");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
@@ -23672,7 +24602,7 @@ test_get_uint16_sync (void)
 		uint16_value = 0;
 
 		ret = proxy_test_get_uint16_sync (parent, proxy,
-						 &uint16_value);
+						  &uint16_value);
 
 		if (test_alloc_failed
 		    && (ret < 0)) {
@@ -23692,11 +24622,170 @@ test_get_uint16_sync (void)
 		nih_free (proxy);
 	}
 
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a D-Bus error,
+	 * that error is raised on the returning side and the function
+	 * returns -1.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		uint16_property = 0;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		uint16_value = 0;
+
+		ret = proxy_test_get_uint16_sync (parent, proxy,
+						  &uint16_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.UInt16.Zero");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
 
 	kill (server_pid, SIGTERM);
 	waitpid (server_pid, &status, 0);
 	TEST_TRUE (WIFEXITED (status));
 	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a generic error,
+	 * the D-Bus "failed" error is raised on the returning side and the
+	 * function returns -1.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		uint16_property = 4;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		uint16_value = 0;
+
+		ret = proxy_test_get_uint16_sync (parent, proxy,
+						  &uint16_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+		TEST_EQ_STR (err->message, "Invalid argument");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
+
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
 
 	TEST_DBUS_CLOSE (client_conn);
 	TEST_DBUS_CLOSE (server_conn);
@@ -24416,6 +25505,158 @@ test_get_int32 (void)
 	}
 
 
+	/* Check that a D-Bus error returned from the handler function
+	 * results in the error handler being called with the error
+	 * raised.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_ALLOC_FAIL {
+		int32_property = 0;
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_int32_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_int32 (proxy,
+						     my_get_int32_reply,
+						     my_error_handler,
+						     parent,
+						     0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_int32_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Int32.Zero");
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
+	/* Check that a generic error returned from the handler function
+	 * results in the error handler being called with a D-Bus failed
+	 * error raised.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		int32_property = 4;
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_int32_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_int32 (proxy,
+						     my_get_int32_reply,
+						     my_error_handler,
+						     parent,
+						     0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_int32_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
 	/* Check that a timeout (along with other D-Bus generated errors)
 	 * also results in the error handler being called with the D-Bus
 	 * error raised.
@@ -24585,6 +25826,7 @@ test_get_int32_sync (void)
 	int32_t         int32_value;
 	int             ret;
 	NihError *      err;
+	NihDBusError *  dbus_err;
 	int             status;
 
 	TEST_FUNCTION ("proxy_test_get_int32_sync");
@@ -24592,6 +25834,10 @@ test_get_int32_sync (void)
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
 
+	/* Check that when we give a valid input, we receive a valid
+	 * output in our pointer, allocated as a child of the parent.
+	 */
+	TEST_FEATURE ("with valid argument");
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		int32_property = -1048576;
 
@@ -24620,11 +25866,6 @@ test_get_int32_sync (void)
 		exit (0);
 	}
 
-
-	/* Check that when we give a valid input, we receive a valid
-	 * output in our pointer, allocated as a child of the parent.
-	 */
-	TEST_FEATURE ("with valid argument");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
@@ -24658,11 +25899,170 @@ test_get_int32_sync (void)
 		nih_free (proxy);
 	}
 
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a D-Bus error,
+	 * that error is raised on the returning side and the function
+	 * returns -1.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		int32_property = 0;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		int32_value = 0;
+
+		ret = proxy_test_get_int32_sync (parent, proxy,
+						 &int32_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Int32.Zero");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
 
 	kill (server_pid, SIGTERM);
 	waitpid (server_pid, &status, 0);
 	TEST_TRUE (WIFEXITED (status));
 	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a generic error,
+	 * the D-Bus "failed" error is raised on the returning side and the
+	 * function returns -1.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		int32_property = 4;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		int32_value = 0;
+
+		ret = proxy_test_get_int32_sync (parent, proxy,
+						 &int32_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+		TEST_EQ_STR (err->message, "Invalid argument");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
+
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
 
 	TEST_DBUS_CLOSE (client_conn);
 	TEST_DBUS_CLOSE (server_conn);
@@ -25382,6 +26782,158 @@ test_get_uint32 (void)
 	}
 
 
+	/* Check that a D-Bus error returned from the handler function
+	 * results in the error handler being called with the error
+	 * raised.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_ALLOC_FAIL {
+		uint32_property = 0;
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_uint32_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_uint32 (proxy,
+						      my_get_uint32_reply,
+						      my_error_handler,
+						      parent,
+						      0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_uint32_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.UInt32.Zero");
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
+	/* Check that a generic error returned from the handler function
+	 * results in the error handler being called with a D-Bus failed
+	 * error raised.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		uint32_property = 4;
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_uint32_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_uint32 (proxy,
+						      my_get_uint32_reply,
+						      my_error_handler,
+						      parent,
+						      0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_uint32_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
 	/* Check that a timeout (along with other D-Bus generated errors)
 	 * also results in the error handler being called with the D-Bus
 	 * error raised.
@@ -25551,6 +27103,7 @@ test_get_uint32_sync (void)
 	uint32_t        uint32_value;
 	int             ret;
 	NihError *      err;
+	NihDBusError *  dbus_err;
 	int             status;
 
 	TEST_FUNCTION ("proxy_test_get_uint32_sync");
@@ -25558,6 +27111,10 @@ test_get_uint32_sync (void)
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
 
+	/* Check that when we give a valid input, we receive a valid
+	 * output in our pointer, allocated as a child of the parent.
+	 */
+	TEST_FEATURE ("with valid argument");
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		uint32_property = 1048576;
 
@@ -25586,11 +27143,6 @@ test_get_uint32_sync (void)
 		exit (0);
 	}
 
-
-	/* Check that when we give a valid input, we receive a valid
-	 * output in our pointer, allocated as a child of the parent.
-	 */
-	TEST_FEATURE ("with valid argument");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
@@ -25604,7 +27156,7 @@ test_get_uint32_sync (void)
 		uint32_value = 0;
 
 		ret = proxy_test_get_uint32_sync (parent, proxy,
-						 &uint32_value);
+						  &uint32_value);
 
 		if (test_alloc_failed
 		    && (ret < 0)) {
@@ -25624,11 +27176,170 @@ test_get_uint32_sync (void)
 		nih_free (proxy);
 	}
 
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a D-Bus error,
+	 * that error is raised on the returning side and the function
+	 * returns -1.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		uint32_property = 0;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		uint32_value = 0;
+
+		ret = proxy_test_get_uint32_sync (parent, proxy,
+						  &uint32_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.UInt32.Zero");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
 
 	kill (server_pid, SIGTERM);
 	waitpid (server_pid, &status, 0);
 	TEST_TRUE (WIFEXITED (status));
 	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a generic error,
+	 * the D-Bus "failed" error is raised on the returning side and the
+	 * function returns -1.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		uint32_property = 4;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		uint32_value = 0;
+
+		ret = proxy_test_get_uint32_sync (parent, proxy,
+						  &uint32_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+		TEST_EQ_STR (err->message, "Invalid argument");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
+
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
 
 	TEST_DBUS_CLOSE (client_conn);
 	TEST_DBUS_CLOSE (server_conn);
@@ -26348,6 +28059,158 @@ test_get_int64 (void)
 	}
 
 
+	/* Check that a D-Bus error returned from the handler function
+	 * results in the error handler being called with the error
+	 * raised.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_ALLOC_FAIL {
+		int64_property = 0;
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_int64_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_int64 (proxy,
+						     my_get_int64_reply,
+						     my_error_handler,
+						     parent,
+						     0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_int64_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Int64.Zero");
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
+	/* Check that a generic error returned from the handler function
+	 * results in the error handler being called with a D-Bus failed
+	 * error raised.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		int64_property = 4;
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_int64_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_int64 (proxy,
+						     my_get_int64_reply,
+						     my_error_handler,
+						     parent,
+						     0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_int64_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
 	/* Check that a timeout (along with other D-Bus generated errors)
 	 * also results in the error handler being called with the D-Bus
 	 * error raised.
@@ -26517,6 +28380,7 @@ test_get_int64_sync (void)
 	int64_t         int64_value;
 	int             ret;
 	NihError *      err;
+	NihDBusError *  dbus_err;
 	int             status;
 
 	TEST_FUNCTION ("proxy_test_get_int64_sync");
@@ -26524,6 +28388,10 @@ test_get_int64_sync (void)
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
 
+	/* Check that when we give a valid input, we receive a valid
+	 * output in our pointer, allocated as a child of the parent.
+	 */
+	TEST_FEATURE ("with valid argument");
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		int64_property = -4815162342;
 
@@ -26552,11 +28420,6 @@ test_get_int64_sync (void)
 		exit (0);
 	}
 
-
-	/* Check that when we give a valid input, we receive a valid
-	 * output in our pointer, allocated as a child of the parent.
-	 */
-	TEST_FEATURE ("with valid argument");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
@@ -26590,11 +28453,170 @@ test_get_int64_sync (void)
 		nih_free (proxy);
 	}
 
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a D-Bus error,
+	 * that error is raised on the returning side and the function
+	 * returns -1.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		int64_property = 0;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		int64_value = 0;
+
+		ret = proxy_test_get_int64_sync (parent, proxy,
+						 &int64_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Int64.Zero");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
 
 	kill (server_pid, SIGTERM);
 	waitpid (server_pid, &status, 0);
 	TEST_TRUE (WIFEXITED (status));
 	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a generic error,
+	 * the D-Bus "failed" error is raised on the returning side and the
+	 * function returns -1.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		int64_property = 4;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		int64_value = 0;
+
+		ret = proxy_test_get_int64_sync (parent, proxy,
+						 &int64_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+		TEST_EQ_STR (err->message, "Invalid argument");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
+
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
 
 	TEST_DBUS_CLOSE (client_conn);
 	TEST_DBUS_CLOSE (server_conn);
@@ -27314,6 +29336,158 @@ test_get_uint64 (void)
 	}
 
 
+	/* Check that a D-Bus error returned from the handler function
+	 * results in the error handler being called with the error
+	 * raised.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_ALLOC_FAIL {
+		uint64_property = 0;
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_uint64_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_uint64 (proxy,
+						      my_get_uint64_reply,
+						      my_error_handler,
+						      parent,
+						      0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_uint64_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.UInt64.Zero");
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
+	/* Check that a generic error returned from the handler function
+	 * results in the error handler being called with a D-Bus failed
+	 * error raised.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		uint64_property = 4;
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_uint64_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_uint64 (proxy,
+						      my_get_uint64_reply,
+						      my_error_handler,
+						      parent,
+						      0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_uint64_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
 	/* Check that a timeout (along with other D-Bus generated errors)
 	 * also results in the error handler being called with the D-Bus
 	 * error raised.
@@ -27483,6 +29657,7 @@ test_get_uint64_sync (void)
 	uint64_t        uint64_value;
 	int             ret;
 	NihError *      err;
+	NihDBusError *  dbus_err;
 	int             status;
 
 	TEST_FUNCTION ("proxy_test_get_uint64_sync");
@@ -27490,6 +29665,10 @@ test_get_uint64_sync (void)
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
 
+	/* Check that when we give a valid input, we receive a valid
+	 * output in our pointer, allocated as a child of the parent.
+	 */
+	TEST_FEATURE ("with valid argument");
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		uint64_property = 4815162342;
 
@@ -27518,11 +29697,6 @@ test_get_uint64_sync (void)
 		exit (0);
 	}
 
-
-	/* Check that when we give a valid input, we receive a valid
-	 * output in our pointer, allocated as a child of the parent.
-	 */
-	TEST_FEATURE ("with valid argument");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
@@ -27536,7 +29710,7 @@ test_get_uint64_sync (void)
 		uint64_value = 0;
 
 		ret = proxy_test_get_uint64_sync (parent, proxy,
-						 &uint64_value);
+						  &uint64_value);
 
 		if (test_alloc_failed
 		    && (ret < 0)) {
@@ -27556,11 +29730,170 @@ test_get_uint64_sync (void)
 		nih_free (proxy);
 	}
 
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a D-Bus error,
+	 * that error is raised on the returning side and the function
+	 * returns -1.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		uint64_property = 0;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		uint64_value = 0;
+
+		ret = proxy_test_get_uint64_sync (parent, proxy,
+						  &uint64_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.UInt64.Zero");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
 
 	kill (server_pid, SIGTERM);
 	waitpid (server_pid, &status, 0);
 	TEST_TRUE (WIFEXITED (status));
 	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a generic error,
+	 * the D-Bus "failed" error is raised on the returning side and the
+	 * function returns -1.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		uint64_property = 4;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		uint64_value = 0;
+
+		ret = proxy_test_get_uint64_sync (parent, proxy,
+						  &uint64_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+		TEST_EQ_STR (err->message, "Invalid argument");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
+
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
 
 	TEST_DBUS_CLOSE (client_conn);
 	TEST_DBUS_CLOSE (server_conn);
@@ -28280,6 +30613,158 @@ test_get_double (void)
 	}
 
 
+	/* Check that a D-Bus error returned from the handler function
+	 * results in the error handler being called with the error
+	 * raised.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_ALLOC_FAIL {
+		double_property = 0;
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_double_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_double (proxy,
+						      my_get_double_reply,
+						      my_error_handler,
+						      parent,
+						      0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_double_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Double.Zero");
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
+	/* Check that a generic error returned from the handler function
+	 * results in the error handler being called with a D-Bus failed
+	 * error raised.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		double_property = 4;
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_double_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_double (proxy,
+						      my_get_double_reply,
+						      my_error_handler,
+						      parent,
+						      0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_double_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
 	/* Check that a timeout (along with other D-Bus generated errors)
 	 * also results in the error handler being called with the D-Bus
 	 * error raised.
@@ -28449,6 +30934,7 @@ test_get_double_sync (void)
 	double          double_value;
 	int             ret;
 	NihError *      err;
+	NihDBusError *  dbus_err;
 	int             status;
 
 	TEST_FUNCTION ("proxy_test_get_double_sync");
@@ -28456,6 +30942,10 @@ test_get_double_sync (void)
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
 
+	/* Check that when we give a valid input, we receive a valid
+	 * output in our pointer, allocated as a child of the parent.
+	 */
+	TEST_FEATURE ("with valid argument");
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		double_property = 3.141597;
 
@@ -28484,11 +30974,6 @@ test_get_double_sync (void)
 		exit (0);
 	}
 
-
-	/* Check that when we give a valid input, we receive a valid
-	 * output in our pointer, allocated as a child of the parent.
-	 */
-	TEST_FEATURE ("with valid argument");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
@@ -28522,11 +31007,170 @@ test_get_double_sync (void)
 		nih_free (proxy);
 	}
 
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a D-Bus error,
+	 * that error is raised on the returning side and the function
+	 * returns -1.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		double_property = 0;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		double_value = 0;
+
+		ret = proxy_test_get_double_sync (parent, proxy,
+						  &double_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Double.Zero");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
 
 	kill (server_pid, SIGTERM);
 	waitpid (server_pid, &status, 0);
 	TEST_TRUE (WIFEXITED (status));
 	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a generic error,
+	 * the D-Bus "failed" error is raised on the returning side and the
+	 * function returns -1.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		double_property = 4;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		double_value = 0;
+
+		ret = proxy_test_get_double_sync (parent, proxy,
+						  &double_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+		TEST_EQ_STR (err->message, "Invalid argument");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
+
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
 
 	TEST_DBUS_CLOSE (client_conn);
 	TEST_DBUS_CLOSE (server_conn);
@@ -29251,6 +31895,158 @@ test_get_string (void)
 	}
 
 
+	/* Check that a D-Bus error returned from the handler function
+	 * results in the error handler being called with the error
+	 * raised.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_ALLOC_FAIL {
+		str_property = "";
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_string_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_string (proxy,
+						      my_get_string_reply,
+						      my_error_handler,
+						      parent,
+						      0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_string_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.String.Empty");
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
+	/* Check that a generic error returned from the handler function
+	 * results in the error handler being called with a D-Bus failed
+	 * error raised.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		str_property = "invalid";
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_string_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_string (proxy,
+						      my_get_string_reply,
+						      my_error_handler,
+						      parent,
+						      0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_string_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
 	/* Check that a timeout (along with other D-Bus generated errors)
 	 * also results in the error handler being called with the D-Bus
 	 * error raised.
@@ -29420,6 +32216,7 @@ test_get_string_sync (void)
 	char *          str_value;
 	int             ret;
 	NihError *      err;
+	NihDBusError *  dbus_err;
 	int             status;
 
 	TEST_FUNCTION ("proxy_test_get_string_sync");
@@ -29427,6 +32224,10 @@ test_get_string_sync (void)
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
 
+	/* Check that when we give a valid input, we receive a valid
+	 * output in our pointer, allocated as a child of the parent.
+	 */
+	TEST_FEATURE ("with valid argument");
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		str_property = "she needs more of ze punishment";
 
@@ -29455,11 +32256,6 @@ test_get_string_sync (void)
 		exit (0);
 	}
 
-
-	/* Check that when we give a valid input, we receive a valid
-	 * output in our pointer, allocated as a child of the parent.
-	 */
-	TEST_FEATURE ("with valid argument");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
@@ -29470,7 +32266,7 @@ test_get_string_sync (void)
 			parent = nih_alloc (NULL, 0);
 		}
 
-		str_value = NULL;
+		str_value = 0;
 
 		ret = proxy_test_get_string_sync (parent, proxy,
 						  &str_value);
@@ -29494,11 +32290,170 @@ test_get_string_sync (void)
 		nih_free (proxy);
 	}
 
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a D-Bus error,
+	 * that error is raised on the returning side and the function
+	 * returns -1.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		str_property = "";
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		str_value = 0;
+
+		ret = proxy_test_get_string_sync (parent, proxy,
+						  &str_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.String.Empty");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
 
 	kill (server_pid, SIGTERM);
 	waitpid (server_pid, &status, 0);
 	TEST_TRUE (WIFEXITED (status));
 	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a generic error,
+	 * the D-Bus "failed" error is raised on the returning side and the
+	 * function returns -1.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		str_property = "invalid";
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		str_value = 0;
+
+		ret = proxy_test_get_string_sync (parent, proxy,
+						  &str_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+		TEST_EQ_STR (err->message, "Invalid argument");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
+
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
 
 	TEST_DBUS_CLOSE (client_conn);
 	TEST_DBUS_CLOSE (server_conn);
@@ -30229,6 +33184,158 @@ test_get_object_path (void)
 	}
 
 
+	/* Check that a D-Bus error returned from the handler function
+	 * results in the error handler being called with the error
+	 * raised.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_ALLOC_FAIL {
+		object_path_property = "/";
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_object_path_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_object_path (proxy,
+							   my_get_object_path_reply,
+							   my_error_handler,
+							   parent,
+							   0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_object_path_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.ObjectPath.Empty");
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
+	/* Check that a generic error returned from the handler function
+	 * results in the error handler being called with a D-Bus failed
+	 * error raised.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		object_path_property = "/invalid";
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_object_path_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_object_path (proxy,
+							   my_get_object_path_reply,
+							   my_error_handler,
+							   parent,
+							   0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_object_path_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
 	/* Check that a timeout (along with other D-Bus generated errors)
 	 * also results in the error handler being called with the D-Bus
 	 * error raised.
@@ -30398,6 +33505,7 @@ test_get_object_path_sync (void)
 	char *          str_value;
 	int             ret;
 	NihError *      err;
+	NihDBusError *  dbus_err;
 	int             status;
 
 	TEST_FUNCTION ("proxy_test_get_object_path_sync");
@@ -30405,6 +33513,10 @@ test_get_object_path_sync (void)
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
 
+	/* Check that when we give a valid input, we receive a valid
+	 * output in our pointer, allocated as a child of the parent.
+	 */
+	TEST_FEATURE ("with valid argument");
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		object_path_property = "/com/netsplit/Nih/Test";
 
@@ -30433,11 +33545,6 @@ test_get_object_path_sync (void)
 		exit (0);
 	}
 
-
-	/* Check that when we give a valid input, we receive a valid
-	 * output in our pointer, allocated as a child of the parent.
-	 */
-	TEST_FEATURE ("with valid argument");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
@@ -30448,7 +33555,7 @@ test_get_object_path_sync (void)
 			parent = nih_alloc (NULL, 0);
 		}
 
-		str_value = NULL;
+		str_value = 0;
 
 		ret = proxy_test_get_object_path_sync (parent, proxy,
 						       &str_value);
@@ -30472,11 +33579,170 @@ test_get_object_path_sync (void)
 		nih_free (proxy);
 	}
 
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a D-Bus error,
+	 * that error is raised on the returning side and the function
+	 * returns -1.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		object_path_property = "/";
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		str_value = 0;
+
+		ret = proxy_test_get_object_path_sync (parent, proxy,
+						&str_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.ObjectPath.Empty");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
 
 	kill (server_pid, SIGTERM);
 	waitpid (server_pid, &status, 0);
 	TEST_TRUE (WIFEXITED (status));
 	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a generic error,
+	 * the D-Bus "failed" error is raised on the returning side and the
+	 * function returns -1.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		object_path_property = "/invalid";
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		str_value = 0;
+
+		ret = proxy_test_get_object_path_sync (parent, proxy,
+						       &str_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+		TEST_EQ_STR (err->message, "Invalid argument");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
+
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
 
 	TEST_DBUS_CLOSE (client_conn);
 	TEST_DBUS_CLOSE (server_conn);
@@ -31208,6 +34474,158 @@ test_get_signature (void)
 	}
 
 
+	/* Check that a D-Bus error returned from the handler function
+	 * results in the error handler being called with the error
+	 * raised.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_ALLOC_FAIL {
+		signature_property = "";
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_signature_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_signature (proxy,
+							 my_get_signature_reply,
+							 my_error_handler,
+							 parent,
+							 0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_signature_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Signature.Empty");
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
+	/* Check that a generic error returned from the handler function
+	 * results in the error handler being called with a D-Bus failed
+	 * error raised.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		signature_property = "inva(x)id";
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_signature_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_signature (proxy,
+							 my_get_signature_reply,
+							 my_error_handler,
+							 parent,
+							 0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_signature_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
 	/* Check that a timeout (along with other D-Bus generated errors)
 	 * also results in the error handler being called with the D-Bus
 	 * error raised.
@@ -31377,6 +34795,7 @@ test_get_signature_sync (void)
 	char *          str_value;
 	int             ret;
 	NihError *      err;
+	NihDBusError *  dbus_err;
 	int             status;
 
 	TEST_FUNCTION ("proxy_test_get_signature_sync");
@@ -31384,6 +34803,10 @@ test_get_signature_sync (void)
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
 
+	/* Check that when we give a valid input, we receive a valid
+	 * output in our pointer, allocated as a child of the parent.
+	 */
+	TEST_FEATURE ("with valid argument");
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		signature_property = "a(ib)";
 
@@ -31412,11 +34835,6 @@ test_get_signature_sync (void)
 		exit (0);
 	}
 
-
-	/* Check that when we give a valid input, we receive a valid
-	 * output in our pointer, allocated as a child of the parent.
-	 */
-	TEST_FEATURE ("with valid argument");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
@@ -31427,7 +34845,7 @@ test_get_signature_sync (void)
 			parent = nih_alloc (NULL, 0);
 		}
 
-		str_value = NULL;
+		str_value = 0;
 
 		ret = proxy_test_get_signature_sync (parent, proxy,
 						     &str_value);
@@ -31451,11 +34869,170 @@ test_get_signature_sync (void)
 		nih_free (proxy);
 	}
 
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a D-Bus error,
+	 * that error is raised on the returning side and the function
+	 * returns -1.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		signature_property = "";
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		str_value = 0;
+
+		ret = proxy_test_get_signature_sync (parent, proxy,
+						     &str_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Signature.Empty");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
 
 	kill (server_pid, SIGTERM);
 	waitpid (server_pid, &status, 0);
 	TEST_TRUE (WIFEXITED (status));
 	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a generic error,
+	 * the D-Bus "failed" error is raised on the returning side and the
+	 * function returns -1.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		signature_property = "inva(x)id";
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		str_value = 0;
+
+		ret = proxy_test_get_signature_sync (parent, proxy,
+						     &str_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+		TEST_EQ_STR (err->message, "Invalid argument");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
+
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
 
 	TEST_DBUS_CLOSE (client_conn);
 	TEST_DBUS_CLOSE (server_conn);
@@ -32211,6 +35788,169 @@ test_get_int32_array (void)
 	}
 
 
+	/* Check that a D-Bus error returned from the handler function
+	 * results in the error handler being called with the error
+	 * raised.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_ALLOC_FAIL {
+		int32_array_property = NULL;
+		int32_array_property_len = 0;
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_int32_array_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_int32_array (
+			proxy,
+			my_get_int32_array_reply,
+			my_error_handler,
+			parent,
+			0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_int32_array_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Int32Array.Empty");
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
+	/* Check that a generic error returned from the handler function
+	 * results in the error handler being called with a D-Bus failed
+	 * error raised.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			int32_array_property = nih_alloc (NULL, sizeof (int32_t) * 4);
+			int32_array_property[0] = 4;
+			int32_array_property[1] = 8;
+			int32_array_property[2] = 15;
+			int32_array_property[3] = 16;
+
+			int32_array_property_len = 4;
+
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_int32_array_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_int32_array (
+			proxy,
+			my_get_int32_array_reply,
+			my_error_handler,
+			parent,
+			0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			nih_free (int32_array_property);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_int32_array_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+		nih_free (int32_array_property);
+	}
+
+
 	/* Check that a timeout (along with other D-Bus generated errors)
 	 * also results in the error handler being called with the D-Bus
 	 * error raised.
@@ -32383,6 +36123,7 @@ test_get_int32_array_sync (void)
 	size_t          int32_array_len;
 	int             ret;
 	NihError *      err;
+	NihDBusError *  dbus_err;
 	int             status;
 
 	TEST_FUNCTION ("proxy_test_get_int32_array_sync");
@@ -32390,6 +36131,10 @@ test_get_int32_array_sync (void)
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
 
+	/* Check that when we give a valid input, we receive a valid
+	 * output in our pointer, allocated as a child of the parent.
+	 */
+	TEST_FEATURE ("with valid argument");
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		int32_array_property = nih_alloc (NULL, sizeof (int32_t) * 6);
 		int32_array_property[0] = 4;
@@ -32400,6 +36145,7 @@ test_get_int32_array_sync (void)
 		int32_array_property[5] = 42;
 
 		int32_array_property_len = 6;
+
 
 		nih_signal_set_handler (SIGTERM, nih_signal_handler);
 		assert (nih_signal_add_handler (NULL, SIGTERM,
@@ -32428,11 +36174,6 @@ test_get_int32_array_sync (void)
 		exit (0);
 	}
 
-
-	/* Check that when we give a valid input, we receive a valid
-	 * output in our pointer, allocated as a child of the parent.
-	 */
-	TEST_FEATURE ("with valid argument");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
@@ -32476,11 +36217,183 @@ test_get_int32_array_sync (void)
 		nih_free (proxy);
 	}
 
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a D-Bus error,
+	 * that error is raised on the returning side and the function
+	 * returns -1.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		int32_array_property = NULL;
+		int32_array_property_len = 0;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		int32_array = NULL;
+		int32_array_len = 0;
+
+		ret = proxy_test_get_int32_array_sync (parent, proxy,
+						       &int32_array,
+						       &int32_array_len);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Int32Array.Empty");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
 
 	kill (server_pid, SIGTERM);
 	waitpid (server_pid, &status, 0);
 	TEST_TRUE (WIFEXITED (status));
 	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a generic error,
+	 * the D-Bus "failed" error is raised on the returning side and the
+	 * function returns -1.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		int32_array_property = nih_alloc (NULL, sizeof (int32_t) * 4);
+		int32_array_property[0] = 4;
+		int32_array_property[1] = 8;
+		int32_array_property[2] = 15;
+		int32_array_property[3] = 16;
+
+		int32_array_property_len = 4;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		nih_free (int32_array_property);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		int32_array = NULL;
+		int32_array_len = 0;
+
+		ret = proxy_test_get_int32_array_sync (parent, proxy,
+						       &int32_array,
+						       &int32_array_len);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+		TEST_EQ_STR (err->message, "Invalid argument");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
+
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
 
 	TEST_DBUS_CLOSE (client_conn);
 	TEST_DBUS_CLOSE (server_conn);
@@ -33317,6 +37230,170 @@ test_get_str_array (void)
 	}
 
 
+	/* Check that a D-Bus error returned from the handler function
+	 * results in the error handler being called with the error
+	 * raised.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			str_array_property = nih_alloc (NULL, sizeof (char *) * 1);
+			str_array_property[0] = NULL;
+
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_str_array_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_str_array (
+			proxy,
+			my_get_str_array_reply,
+			my_error_handler,
+			parent,
+			0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			nih_free (str_array_property);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_str_array_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.StrArray.Empty");
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+		nih_free (str_array_property);
+	}
+
+
+	/* Check that a generic error returned from the handler function
+	 * results in the error handler being called with a D-Bus failed
+	 * error raised.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			str_array_property = nih_alloc (NULL, sizeof (char *) * 5);
+			str_array_property[0] = "this";
+			str_array_property[1] = "is";
+			str_array_property[2] = "a";
+			str_array_property[3] = "test";
+			str_array_property[4] = NULL;
+
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_str_array_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_str_array (
+			proxy,
+			my_get_str_array_reply,
+			my_error_handler,
+			parent,
+			0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			nih_free (str_array_property);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_str_array_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+		nih_free (str_array_property);
+	}
+
+
 	/* Check that a timeout (along with other D-Bus generated errors)
 	 * also results in the error handler being called with the D-Bus
 	 * error raised.
@@ -33488,6 +37565,7 @@ test_get_str_array_sync (void)
 	char **         str_array;
 	int             ret;
 	NihError *      err;
+	NihDBusError *  dbus_err;
 	int             status;
 
 	TEST_FUNCTION ("proxy_test_get_str_array_sync");
@@ -33495,6 +37573,11 @@ test_get_str_array_sync (void)
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
 
+
+	/* Check that when we give a valid input, we receive a valid
+	 * output in our pointer, allocated as a child of the parent.
+	 */
+	TEST_FEATURE ("with valid argument");
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		str_array_property = nih_alloc (NULL, sizeof (char *) * 7);
 		str_array_property[0] = "she";
@@ -33504,6 +37587,7 @@ test_get_str_array_sync (void)
 		str_array_property[4] = "ze";
 		str_array_property[5] = "punishment";
 		str_array_property[6] = NULL;
+
 
 		nih_signal_set_handler (SIGTERM, nih_signal_handler);
 		assert (nih_signal_add_handler (NULL, SIGTERM,
@@ -33532,11 +37616,6 @@ test_get_str_array_sync (void)
 		exit (0);
 	}
 
-
-	/* Check that when we give a valid input, we receive a valid
-	 * output in our pointer, allocated as a child of the parent.
-	 */
-	TEST_FEATURE ("with valid argument");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
@@ -33584,11 +37663,182 @@ test_get_str_array_sync (void)
 		nih_free (proxy);
 	}
 
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a D-Bus error,
+	 * that error is raised on the returning side and the function
+	 * returns -1.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		str_array_property = nih_alloc (NULL, sizeof (char *) * 1);
+		str_array_property[0] = NULL;
+
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		nih_free (str_array_property);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		str_array = NULL;
+
+		ret = proxy_test_get_str_array_sync (parent, proxy,
+						     &str_array);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.StrArray.Empty");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
 
 	kill (server_pid, SIGTERM);
 	waitpid (server_pid, &status, 0);
 	TEST_TRUE (WIFEXITED (status));
 	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a generic error,
+	 * the D-Bus "failed" error is raised on the returning side and the
+	 * function returns -1.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		str_array_property = nih_alloc (NULL, sizeof (char *) * 5);
+		str_array_property[0] = "this";
+		str_array_property[1] = "is";
+		str_array_property[2] = "a";
+		str_array_property[3] = "test";
+		str_array_property[4] = NULL;
+
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		nih_free (str_array_property);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		str_array = NULL;
+
+		ret = proxy_test_get_str_array_sync (parent, proxy,
+						     &str_array);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+		TEST_EQ_STR (err->message, "Invalid argument");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
+
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
 
 	TEST_DBUS_CLOSE (client_conn);
 	TEST_DBUS_CLOSE (server_conn);
@@ -34477,6 +38727,184 @@ test_get_int32_array_array (void)
 	}
 
 
+	/* Check that a D-Bus error returned from the handler function
+	 * results in the error handler being called with the error
+	 * raised.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			int32_array_array_property = nih_alloc (NULL, sizeof (int32_t *) * 1);
+			int32_array_array_property_len = NULL;
+
+			int32_array_array_property[0] = NULL;
+
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_int32_array_array_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_int32_array_array (
+			proxy,
+			my_get_int32_array_array_reply,
+			my_error_handler,
+			parent,
+			0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			nih_free (int32_array_array_property);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_int32_array_array_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Int32ArrayArray.Empty");
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+		nih_free (int32_array_array_property);
+	}
+
+
+	/* Check that a generic error returned from the handler function
+	 * results in the error handler being called with a D-Bus failed
+	 * error raised.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			int32_array_array_property = nih_alloc (NULL, sizeof (int32_t *) * 2);
+			int32_array_array_property_len = nih_alloc (int32_array_array_property,
+								    sizeof (size_t) * 1);
+
+			int32_array_array_property[0] = nih_alloc (int32_array_array_property,
+								   sizeof (int32_t) * 6);
+			int32_array_array_property[0][0] = 4;
+			int32_array_array_property[0][1] = 8;
+			int32_array_array_property[0][2] = 15;
+			int32_array_array_property[0][3] = 16;
+			int32_array_array_property[0][4] = 23;
+			int32_array_array_property[0][5] = 42;
+
+			int32_array_array_property_len[0] = 6;
+
+			int32_array_array_property[1] = NULL;
+
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_int32_array_array_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_int32_array_array (
+			proxy,
+			my_get_int32_array_array_reply,
+			my_error_handler,
+			parent,
+			0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			nih_free (int32_array_array_property_len);
+			nih_free (int32_array_array_property);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_int32_array_array_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+		nih_free (int32_array_array_property_len);
+		nih_free (int32_array_array_property);
+	}
+
+
 	/* Check that a timeout (along with other D-Bus generated errors)
 	 * also results in the error handler being called with the D-Bus
 	 * error raised.
@@ -34649,6 +39077,7 @@ test_get_int32_array_array_sync (void)
 	size_t *        int32_array_array_len;
 	int             ret;
 	NihError *      err;
+	NihDBusError *  dbus_err;
 	int             status;
 
 	TEST_FUNCTION ("proxy_test_get_int32_array_array_sync");
@@ -34656,6 +39085,11 @@ test_get_int32_array_array_sync (void)
 	TEST_DBUS_OPEN (client_conn);
 	TEST_DBUS_OPEN (server_conn);
 
+
+	/* Check that when we give a valid input, we receive a valid
+	 * output in our pointer, allocated as a child of the parent.
+	 */
+	TEST_FEATURE ("with valid argument");
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		int32_array_array_property = nih_alloc (NULL, sizeof (int32_t *) * 3);
 		int32_array_array_property_len = nih_alloc (int32_array_array_property,
@@ -34685,7 +39119,6 @@ test_get_int32_array_array_sync (void)
 
 		int32_array_array_property[2] = NULL;
 
-
 		nih_signal_set_handler (SIGTERM, nih_signal_handler);
 		assert (nih_signal_add_handler (NULL, SIGTERM,
 						nih_main_term_signal, NULL));
@@ -34703,6 +39136,7 @@ test_get_int32_array_array_sync (void)
 
 		nih_free (object);
 
+		nih_free (int32_array_array_property_len);
 		nih_free (int32_array_array_property);
 
 		TEST_DBUS_CLOSE (client_conn);
@@ -34713,11 +39147,6 @@ test_get_int32_array_array_sync (void)
 		exit (0);
 	}
 
-
-	/* Check that when we give a valid input, we receive a valid
-	 * output in our pointer, allocated as a child of the parent.
-	 */
-	TEST_FEATURE ("with valid argument");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
@@ -34731,10 +39160,9 @@ test_get_int32_array_array_sync (void)
 		int32_array_array = NULL;
 		int32_array_array_len = NULL;
 
-		ret = proxy_test_get_int32_array_array_sync (
-			parent, proxy,
-			&int32_array_array,
-			&int32_array_array_len);
+		ret = proxy_test_get_int32_array_array_sync (parent, proxy,
+							     &int32_array_array,
+							     &int32_array_array_len);
 
 		if (test_alloc_failed
 		    && (ret < 0)) {
@@ -34779,11 +39207,197 @@ test_get_int32_array_array_sync (void)
 		nih_free (proxy);
 	}
 
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a D-Bus error,
+	 * that error is raised on the returning side and the function
+	 * returns -1.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		int32_array_array_property = nih_alloc (NULL, sizeof (int32_t *) * 1);
+		int32_array_array_property_len = NULL;
+
+		int32_array_array_property[0] = NULL;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		nih_free (int32_array_array_property);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		int32_array_array = NULL;
+		int32_array_array_len = NULL;
+
+		ret = proxy_test_get_int32_array_array_sync (parent, proxy,
+							     &int32_array_array,
+							     &int32_array_array_len);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Int32ArrayArray.Empty");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
 
 	kill (server_pid, SIGTERM);
 	waitpid (server_pid, &status, 0);
 	TEST_TRUE (WIFEXITED (status));
 	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a generic error,
+	 * the D-Bus "failed" error is raised on the returning side and the
+	 * function returns -1.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		int32_array_array_property = nih_alloc (NULL, sizeof (int32_t *) * 2);
+		int32_array_array_property_len = nih_alloc (int32_array_array_property,
+							    sizeof (size_t) * 1);
+
+		int32_array_array_property[0] = nih_alloc (int32_array_array_property,
+							   sizeof (int32_t) * 6);
+		int32_array_array_property[0][0] = 4;
+		int32_array_array_property[0][1] = 8;
+		int32_array_array_property[0][2] = 15;
+		int32_array_array_property[0][3] = 16;
+		int32_array_array_property[0][4] = 23;
+		int32_array_array_property[0][5] = 42;
+
+		int32_array_array_property_len[0] = 6;
+
+		int32_array_array_property[1] = NULL;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		nih_free (int32_array_array_property_len);
+		nih_free (int32_array_array_property);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		int32_array_array = NULL;
+		int32_array_array_len = NULL;
+
+		ret = proxy_test_get_int32_array_array_sync (parent, proxy,
+							     &int32_array_array,
+							     &int32_array_array_len);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+		TEST_EQ_STR (err->message, "Invalid argument");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
+
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
 
 	TEST_DBUS_CLOSE (client_conn);
 	TEST_DBUS_CLOSE (server_conn);

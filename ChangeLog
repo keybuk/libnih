@@ -1,5 +1,33 @@
 2009-06-16  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/com.netsplit.Nih.Test_impl.c: Update the
+	property functions to raise the no memory error where appropriate,
+	also include code to return D-Bus and generic errors for testing.
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_object.c (test_get_byte)
+	(test_get_boolean, test_get_int16, test_get_uint16)
+	(test_get_int32, test_get_uint32, test_get_int64)
+	(test_get_uint64, test_get_string, test_get_object_path)
+	(test_get_signature, test_get_int32_array, test_get_str_array)
+	(test_get_int32_array_array): Add tests for the get function returning
+	an D-Bus error and a generic error.
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c (test_get_byte)
+	(test_get_boolean, test_get_int16, test_get_uint16, test_get_int32)
+	(test_get_uint32, test_get_int64, test_get_uint64, test_get_double)
+	(test_get_string, test_get_object_path, test_get_signature)
+	(test_get_int32_array, test_get_int32_array_array): Add D-Bus error
+	and generic error test cases to the async functions, making sure that
+	the error handler is raised.
+	(test_get_byte_sync, test_get_boolean_sync, test_get_int16_sync)
+	(test_get_uint16_sync, test_get_int32_sync)
+	(test_get_uint32_sync, test_get_int64_sync)
+	(test_get_uint64_sync, test_get_double_sync, test_get_string_sync)
+	(test_get_object_path_sync, test_get_signature_sync)
+	(test_get_int32_array_sync, test_get_str_array_sync)
+	(test_get_int32_array_array_sync): Also add D-Bus and generic error
+	test cases to the sync functions, which are slightly harder to test
+	because of the need for a separate server process; still, this tests
+	the error return code.
+
 	* nih-dbus-tool/tests/test_node.c (test_object_functions): Update the
 	output tests to expect the error raises.
 	* nih-dbus-tool/tests/test_output.c (test_output): Update the output

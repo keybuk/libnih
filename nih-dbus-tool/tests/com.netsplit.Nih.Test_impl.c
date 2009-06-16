@@ -1123,6 +1123,15 @@ my_test_get_byte (void *          data,
 
 	TEST_NE_P (value, NULL);
 
+	if (! byte_property) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Byte.Zero",
+				      "The property value was zero");
+		return -1;
+	} else if (byte_property == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
 	*value = byte_property;
 
 	return 0;
@@ -1164,6 +1173,15 @@ my_test_get_boolean (void *          data,
 	TEST_NE_P (message->message, NULL);
 
 	TEST_NE_P (value, NULL);
+
+	/* Yes, this is just wrong, but D-Bus sanitises booleans for us over
+	 * the wire so we can only receive TRUE or FALSE.
+	 */
+	if (! boolean_property) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Boolean.Zero",
+				      "The property value was zero");
+		return -1;
+	}
 
 	*value = boolean_property;
 
@@ -1207,6 +1225,15 @@ my_test_get_int16 (void *          data,
 
 	TEST_NE_P (value, NULL);
 
+	if (! int16_property) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Int16.Zero",
+				      "The property value was zero");
+		return -1;
+	} else if (int16_property == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
 	*value = int16_property;
 
 	return 0;
@@ -1248,6 +1275,15 @@ my_test_get_uint16 (void *          data,
 	TEST_NE_P (message->message, NULL);
 
 	TEST_NE_P (value, NULL);
+
+	if (! uint16_property) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.UInt16.Zero",
+				      "The property value was zero");
+		return -1;
+	} else if (uint16_property == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
 
 	*value = uint16_property;
 
@@ -1291,6 +1327,15 @@ my_test_get_int32 (void *          data,
 
 	TEST_NE_P (value, NULL);
 
+	if (! int32_property) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Int32.Zero",
+				      "The property value was zero");
+		return -1;
+	} else if (int32_property == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
 	*value = int32_property;
 
 	return 0;
@@ -1332,6 +1377,15 @@ my_test_get_uint32 (void *          data,
 	TEST_NE_P (message->message, NULL);
 
 	TEST_NE_P (value, NULL);
+
+	if (! uint32_property) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.UInt32.Zero",
+				      "The property value was zero");
+		return -1;
+	} else if (uint32_property == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
 
 	*value = uint32_property;
 
@@ -1375,6 +1429,15 @@ my_test_get_int64 (void *          data,
 
 	TEST_NE_P (value, NULL);
 
+	if (! int64_property) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Int64.Zero",
+				      "The property value was zero");
+		return -1;
+	} else if (int64_property == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
 	*value = int64_property;
 
 	return 0;
@@ -1416,6 +1479,15 @@ my_test_get_uint64 (void *          data,
 	TEST_NE_P (message->message, NULL);
 
 	TEST_NE_P (value, NULL);
+
+	if (! uint64_property) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.UInt64.Zero",
+				      "The property value was zero");
+		return -1;
+	} else if (uint64_property == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
 
 	*value = uint64_property;
 
@@ -1459,6 +1531,15 @@ my_test_get_double (void *          data,
 
 	TEST_NE_P (value, NULL);
 
+	if (! double_property) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Double.Zero",
+				      "The property value was zero");
+		return -1;
+	} else if (double_property == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
 	*value = double_property;
 
 	return 0;
@@ -1501,9 +1582,18 @@ my_test_get_string (void *          data,
 
 	TEST_NE_P (value, NULL);
 
+	if (! strlen (str_property)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.String.Empty",
+				      "The property value was empty");
+		return -1;
+	} else if (! strcmp (str_property, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
 	*value = nih_strdup (message, str_property);
 	if (! *value)
-		return -1;
+		nih_return_no_memory_error (-1);
 
 	return 0;
 }
@@ -1552,9 +1642,18 @@ my_test_get_object_path (void *          data,
 
 	TEST_NE_P (value, NULL);
 
+	if (! strcmp (object_path_property, "/")) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.ObjectPath.Empty",
+				      "The property value was empty");
+		return -1;
+	} else if (! strcmp (object_path_property, "/invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
 	*value = nih_strdup (message, object_path_property);
 	if (! *value)
-		return -1;
+		nih_return_no_memory_error (-1);
 
 	return 0;
 }
@@ -1603,9 +1702,18 @@ my_test_get_signature (void *          data,
 
 	TEST_NE_P (value, NULL);
 
+	if (! strlen (signature_property)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Signature.Empty",
+				      "The property value was empty");
+		return -1;
+	} else if (! strcmp (signature_property, "inva(x)id")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
 	*value = nih_strdup (message, signature_property);
 	if (! *value)
-		return -1;
+		nih_return_no_memory_error (-1);
 
 	return 0;
 }
@@ -1657,10 +1765,19 @@ my_test_get_int32_array (void *          data,
 	TEST_NE_P (value, NULL);
 	TEST_NE_P (value_len, NULL);
 
+	if (! int32_array_property_len) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Int32Array.Empty",
+				      "The property value was empty");
+		return -1;
+	} else if (int32_array_property_len == 4) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
 	*value = nih_alloc (message,
 			    sizeof (int32_t) * int32_array_property_len);
 	if (! *value)
-		return -1;
+		nih_return_no_memory_error (-1);
 
 	memcpy (*value, int32_array_property,
 		sizeof (int32_t) * int32_array_property_len);
@@ -1718,9 +1835,20 @@ my_test_get_str_array (void *          data,
 
 	TEST_NE_P (value, NULL);
 
+	if (! *str_array_property) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrArray.Empty",
+				      "The property array was empty");
+		return -1;
+	} else if (str_array_property[0] && str_array_property[1]
+		   && str_array_property[2] && str_array_property[3]
+		   && (! str_array_property[4])) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
 	*value = nih_str_array_copy (message, NULL, str_array_property);
 	if (! *value)
-		return -1;
+		nih_return_no_memory_error (-1);
 
 	return 0;
 }
@@ -1775,19 +1903,29 @@ my_test_get_int32_array_array (void *          data,
 	TEST_NE_P (value, NULL);
 	TEST_NE_P (value_len, NULL);
 
+	if (! *int32_array_array_property) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Int32ArrayArray.Empty",
+				      "The property array was empty");
+		return -1;
+	} else if (int32_array_array_property[0]
+		   && (! int32_array_array_property[1])) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
 	array_size = 0;
 	for (int32_t **array = int32_array_array_property; array && *array; array++)
 		array_size++;
 
 	*value = nih_alloc (message, sizeof (int32_t *) * (array_size + 1));
 	if (! *value)
-		return -1;
+		nih_return_no_memory_error (-1);
 
 	*value_len = nih_alloc (message, sizeof (size_t) * array_size);
 	if (! *value_len) {
 		nih_free (*value);
 		*value = NULL;
-		return -1;
+		nih_return_no_memory_error (-1);
 	}
 
 	array_size = 0;
@@ -1801,7 +1939,7 @@ my_test_get_int32_array_array (void *          data,
 			nih_free (*value_len);
 			*value_len = NULL;
 
-			return -1;
+			nih_return_no_memory_error (-1);
 		}
 
 		memcpy ((*value)[array_size], int32_array_array_property[array_size],

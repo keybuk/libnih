@@ -559,7 +559,7 @@ property_object_get_function (const void *parent,
 	 * decide what to do.
 	 */
 	oom_error_code = nih_strdup (NULL,
-				     "dbus_message_iter_close_container (iter, &variter);\n"
+				     "dbus_message_iter_abandon_container (iter, &variter);\n"
 				     "nih_error_raise_no_memory ();\n"
 				     "return -1;\n");
 	if (! oom_error_code)
@@ -1917,7 +1917,7 @@ property_proxy_set_function (const void *parent,
 	 * since we haven't made the method call yet.
 	 */
 	oom_error_code = nih_sprintf (NULL,
-				      "dbus_message_iter_close_container (&iter, &variter);\n"
+				      "dbus_message_iter_abandon_container (&iter, &variter);\n"
 				      "dbus_message_unref (method_call);\n"
 				      "nih_return_no_memory_error (NULL);\n");
 	if (! oom_error_code)
@@ -2972,7 +2972,7 @@ property_proxy_set_sync_function (const void *parent,
 	 * since we haven't made the method call yet.
 	 */
 	oom_error_code = nih_sprintf (NULL,
-				      "dbus_message_iter_close_container (&iter, &variter);\n"
+				      "dbus_message_iter_abandon_container (&iter, &variter);\n"
 				      "dbus_message_unref (method_call);\n"
 				      "nih_return_no_memory_error (-1);\n");
 	if (! oom_error_code)

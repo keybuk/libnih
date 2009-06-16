@@ -333,7 +333,7 @@ marshal_array (const void *       parent,
 	if (! indent (&oom_error_block, NULL, 1))
 		return NULL;
 
-	child_oom_error_code = nih_sprintf (NULL, ("dbus_message_iter_close_container (&%s, &%s);\n"
+	child_oom_error_code = nih_sprintf (NULL, ("dbus_message_iter_abandon_container (&%s, &%s);\n"
 						   "%s"),
 					    iter_name, array_iter_name, oom_error_code);
 	if (! child_oom_error_code)
@@ -614,7 +614,7 @@ marshal_struct (const void *       parent,
 	if (! indent (&oom_error_block, NULL, 1))
 		return NULL;
 
-	child_oom_error_code = nih_sprintf (NULL, ("dbus_message_iter_close_container (&%s, &%s);\n"
+	child_oom_error_code = nih_sprintf (NULL, ("dbus_message_iter_abandon_container (&%s, &%s);\n"
 						   "%s"),
 					    iter_name, struct_iter_name, oom_error_code);
 	if (! child_oom_error_code)

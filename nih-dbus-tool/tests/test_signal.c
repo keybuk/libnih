@@ -1346,7 +1346,7 @@ test_object_function (void)
 				   "\n"
 				   "\t\t/* Marshal a int32_t onto the message */\n"
 				   "\t\tif (! dbus_message_iter_append_basic (&value_iter, DBUS_TYPE_INT32, &value_element)) {\n"
-				   "\t\t\tdbus_message_iter_close_container (&iter, &value_iter);\n"
+				   "\t\t\tdbus_message_iter_abandon_container (&iter, &value_iter);\n"
 				   "\t\t\tdbus_message_unref (signal);\n"
 				   "\t\t\treturn -1;\n"
 				   "\t\t}\n"

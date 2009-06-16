@@ -1,5 +1,26 @@
 2009-06-16  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/marshal.c (marshal_array, marshal_struct): In the
+	array of structures situation, we can't just close the container
+	because it's not been completed - instead we use the new abandon
+	function to free the resources while hosing the message.
+	* nih-dbus-tool/property.c (property_object_get_function)
+	(property_proxy_set_function, property_proxy_set_sync_function):
+	Likewise abandon the variant container, strictly speaking probably
+	not required but worthwhile for consistenc
+	* nih-dbus-tool/tests/test_marshal.c (test_marshal): Update the
+	output checks to match
+	* nih-dbus-tool/tests/test_method.c (test_object_function)
+	(test_proxy_function, test_proxy_sync_function): More output updates
+	* nih-dbus-tool/tests/test_signal.c (test_object_function): Update
+	the output check
+	* nih-dbus-tool/tests/test_property.c (test_object_get_function)
+	(test_proxy_set_function, test_proxy_set_sync_function): Yet more
+	* nih-dbus-tool/tests/test_node.c (test_object_functions)
+	(test_proxy_functions): More output updates.
+	* nih-dbus-tool/tests/test_output.c (test_output): Also update the
+	top-level output
+
 	* nih-dbus-tool/tests/com.netsplit.Nih.Test_impl.c: Update the
 	property functions to raise the no memory error where appropriate,
 	also include code to return D-Bus and generic errors for testing.

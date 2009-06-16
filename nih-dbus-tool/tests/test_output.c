@@ -1436,7 +1436,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\n");
 		TEST_FILE_EQ (source, "\t/* Marshal a char * onto the message */\n");
 		TEST_FILE_EQ (source, "\tif (! dbus_message_iter_append_basic (&variter, DBUS_TYPE_STRING, &value)) {\n");
-		TEST_FILE_EQ (source, "\t\tdbus_message_iter_close_container (&iter, &variter);\n");
+		TEST_FILE_EQ (source, "\t\tdbus_message_iter_abandon_container (&iter, &variter);\n");
 		TEST_FILE_EQ (source, "\t\tdbus_message_unref (method_call);\n");
 		TEST_FILE_EQ (source, "\t\tnih_return_no_memory_error (NULL);\n");
 		TEST_FILE_EQ (source, "\t}\n");
@@ -1592,7 +1592,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\n");
 		TEST_FILE_EQ (source, "\t/* Marshal a char * onto the message */\n");
 		TEST_FILE_EQ (source, "\tif (! dbus_message_iter_append_basic (&variter, DBUS_TYPE_STRING, &value)) {\n");
-		TEST_FILE_EQ (source, "\t\tdbus_message_iter_close_container (&iter, &variter);\n");
+		TEST_FILE_EQ (source, "\t\tdbus_message_iter_abandon_container (&iter, &variter);\n");
 		TEST_FILE_EQ (source, "\t\tdbus_message_unref (method_call);\n");
 		TEST_FILE_EQ (source, "\t\tnih_return_no_memory_error (-1);\n");
 		TEST_FILE_EQ (source, "\t}\n");
@@ -1948,7 +1948,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\n");
 		TEST_FILE_EQ (source, "\t/* Marshal a int onto the message */\n");
 		TEST_FILE_EQ (source, "\tif (! dbus_message_iter_append_basic (&variter, DBUS_TYPE_BOOLEAN, &value)) {\n");
-		TEST_FILE_EQ (source, "\t\tdbus_message_iter_close_container (&iter, &variter);\n");
+		TEST_FILE_EQ (source, "\t\tdbus_message_iter_abandon_container (&iter, &variter);\n");
 		TEST_FILE_EQ (source, "\t\tdbus_message_unref (method_call);\n");
 		TEST_FILE_EQ (source, "\t\tnih_return_no_memory_error (NULL);\n");
 		TEST_FILE_EQ (source, "\t}\n");
@@ -2103,7 +2103,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\n");
 		TEST_FILE_EQ (source, "\t/* Marshal a int onto the message */\n");
 		TEST_FILE_EQ (source, "\tif (! dbus_message_iter_append_basic (&variter, DBUS_TYPE_BOOLEAN, &value)) {\n");
-		TEST_FILE_EQ (source, "\t\tdbus_message_iter_close_container (&iter, &variter);\n");
+		TEST_FILE_EQ (source, "\t\tdbus_message_iter_abandon_container (&iter, &variter);\n");
 		TEST_FILE_EQ (source, "\t\tdbus_message_unref (method_call);\n");
 		TEST_FILE_EQ (source, "\t\tnih_return_no_memory_error (-1);\n");
 		TEST_FILE_EQ (source, "\t}\n");
@@ -3350,7 +3350,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\n");
 		TEST_FILE_EQ (source, "\t/* Marshal a char * onto the message */\n");
 		TEST_FILE_EQ (source, "\tif (! dbus_message_iter_append_basic (&variter, DBUS_TYPE_STRING, &value)) {\n");
-		TEST_FILE_EQ (source, "\t\tdbus_message_iter_close_container (iter, &variter);\n");
+		TEST_FILE_EQ (source, "\t\tdbus_message_iter_abandon_container (iter, &variter);\n");
 		TEST_FILE_EQ (source, "\t\tnih_error_raise_no_memory ();\n");
 		TEST_FILE_EQ (source, "\t\treturn -1;\n");
 		TEST_FILE_EQ (source, "\t}\n");
@@ -3443,7 +3443,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\n");
 		TEST_FILE_EQ (source, "\t/* Marshal a uint32_t onto the message */\n");
 		TEST_FILE_EQ (source, "\tif (! dbus_message_iter_append_basic (&variter, DBUS_TYPE_UINT32, &value)) {\n");
-		TEST_FILE_EQ (source, "\t\tdbus_message_iter_close_container (iter, &variter);\n");
+		TEST_FILE_EQ (source, "\t\tdbus_message_iter_abandon_container (iter, &variter);\n");
 		TEST_FILE_EQ (source, "\t\tnih_error_raise_no_memory ();\n");
 		TEST_FILE_EQ (source, "\t\treturn -1;\n");
 		TEST_FILE_EQ (source, "\t}\n");

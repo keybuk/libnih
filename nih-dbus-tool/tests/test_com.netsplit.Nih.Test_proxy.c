@@ -1362,7 +1362,7 @@ test_async_method (void)
 							my_async_method_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -1446,7 +1446,7 @@ test_async_method (void)
 							my_async_method_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -1521,7 +1521,7 @@ test_async_method (void)
 							my_async_method_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -4283,7 +4283,7 @@ test_int16_to_str (void)
 							my_int16_to_str_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -4351,7 +4351,7 @@ test_int16_to_str (void)
 							my_int16_to_str_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -4426,7 +4426,7 @@ test_int16_to_str (void)
 							my_int16_to_str_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -4886,7 +4886,7 @@ test_str_to_int16 (void)
 							my_str_to_int16_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -4953,7 +4953,7 @@ test_str_to_int16 (void)
 							my_str_to_int16_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -5028,7 +5028,7 @@ test_str_to_int16 (void)
 							my_str_to_int16_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -6695,7 +6695,7 @@ test_int32_to_str (void)
 							my_int32_to_str_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -6763,7 +6763,7 @@ test_int32_to_str (void)
 							my_int32_to_str_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -6838,7 +6838,7 @@ test_int32_to_str (void)
 							my_int32_to_str_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -7298,7 +7298,7 @@ test_str_to_int32 (void)
 							my_str_to_int32_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -7365,7 +7365,7 @@ test_str_to_int32 (void)
 							my_str_to_int32_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -7440,7 +7440,7 @@ test_str_to_int32 (void)
 							my_str_to_int32_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -9107,7 +9107,7 @@ test_int64_to_str (void)
 							my_int64_to_str_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -9175,7 +9175,7 @@ test_int64_to_str (void)
 							my_int64_to_str_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -9250,7 +9250,7 @@ test_int64_to_str (void)
 							my_int64_to_str_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -9710,7 +9710,7 @@ test_str_to_int64 (void)
 							my_str_to_int64_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -9777,7 +9777,7 @@ test_str_to_int64 (void)
 							my_str_to_int64_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -9852,7 +9852,7 @@ test_str_to_int64 (void)
 							my_str_to_int64_reply,
 							my_error_handler,
 							parent,
-							0);
+							NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -15159,7 +15159,7 @@ test_int32_array_to_str (void)
 			my_int32_array_to_str_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -15228,7 +15228,7 @@ test_int32_array_to_str (void)
 			my_int32_array_to_str_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -15310,7 +15310,7 @@ test_int32_array_to_str (void)
 			my_int32_array_to_str_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -16452,7 +16452,7 @@ test_str_array_to_str (void)
 			my_str_array_to_str_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -16524,7 +16524,7 @@ test_str_array_to_str (void)
 			my_str_array_to_str_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -16607,7 +16607,7 @@ test_str_array_to_str (void)
 			my_str_array_to_str_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -17760,7 +17760,7 @@ test_int32_array_array_to_str (void)
 			my_int32_array_array_to_str_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -17834,7 +17834,7 @@ test_int32_array_array_to_str (void)
 			my_int32_array_array_to_str_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -17924,7 +17924,7 @@ test_int32_array_array_to_str (void)
 			my_int32_array_array_to_str_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -18493,7 +18493,7 @@ test_str_to_int32_array_array (void)
 			my_str_to_int32_array_array_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -18585,7 +18585,7 @@ test_str_to_int32_array_array (void)
 			my_str_to_int32_array_array_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -18661,7 +18661,7 @@ test_str_to_int32_array_array (void)
 			my_str_to_int32_array_array_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -32163,7 +32163,7 @@ test_get_int32_array (void)
 			my_get_int32_array_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -32574,7 +32574,7 @@ test_set_int32_array (void)
 			my_set_int32_array_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -32651,7 +32651,7 @@ test_set_int32_array (void)
 			my_set_int32_array_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -32735,7 +32735,7 @@ test_set_int32_array (void)
 			my_set_int32_array_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -33263,7 +33263,7 @@ test_get_str_array (void)
 			my_get_str_array_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -33678,7 +33678,7 @@ test_set_str_array (void)
 			my_set_str_array_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -33764,7 +33764,7 @@ test_set_str_array (void)
 			my_set_str_array_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -33847,7 +33847,7 @@ test_set_str_array (void)
 			my_set_str_array_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -34407,7 +34407,7 @@ test_get_int32_array_array (void)
 			my_get_int32_array_array_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -34895,7 +34895,7 @@ test_set_int32_array_array (void)
 			my_set_int32_array_array_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -35000,7 +35000,7 @@ test_set_int32_array_array (void)
 			my_set_int32_array_array_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {
@@ -35093,7 +35093,7 @@ test_set_int32_array_array (void)
 			my_set_int32_array_array_reply,
 			my_error_handler,
 			parent,
-			0);
+			NIH_DBUS_TIMEOUT_DEFAULT);
 
 		if (test_alloc_failed
 		    && (pending_call == NULL)) {

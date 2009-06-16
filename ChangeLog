@@ -1,5 +1,9 @@
 2009-06-16  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c: Turns out
+	I was using the wrong timeout value everywhere, this is why macros are
+	useful -- replace the wrong "0" with NIH_DBUS_TIMEOUT_DEFAULT
+
 	* nih-dbus/dbus_proxy.h (NIH_DBUS_TIMEOUT_DEFAULT)
 	(NIH_DBUS_TIMEOUT_NEVER): Add macros so we don't have to remember
 	what the timeout magic numbers are

@@ -1300,7 +1300,7 @@ static int             drop_connection = FALSE;
 static DBusConnection *last_connection = NULL;
 
 static int
-my_connect_handler (DBusServer     *server,
+my_connect_handler (DBusServer *    server,
 		    DBusConnection *connection)
 {
 	connected = TRUE;

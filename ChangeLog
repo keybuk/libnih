@@ -1,5 +1,17 @@
 2009-06-16  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_object.c (nih_dbus_object_property_get): It makes
+	sense to be able to return an error when getting a property, at the
+	very least it might be a PolicyKit authorisation error.
+	(nih_dbus_object_property_get_all): If we get an error while getting
+	any property, we have to return that error to the user, such is the
+	manner in which D-Bus messages have to be built.
+	* nih-dbus/tests/test_dbus_object.c (test_object_property_get):
+	Update function to test for property getter functions returning
+	errors.
+	(test_object_property_get_all): Include a couple of test cases
+	here too.
+
 	* TODO (dbus): Update on no_reply, still not completely clear what
 	we should do with this annotation as the results are surprising
 

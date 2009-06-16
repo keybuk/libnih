@@ -599,11 +599,36 @@ nih_dbus_object_property_get (DBusConnection *connection,
 
 				nih_error_push_context ();
 				ret = property->getter (object, msg, &iter);
-				nih_error_pop_context ();
-
 				if (ret < 0) {
+					NihError *err;
+
 					dbus_message_unref (reply);
-					return DBUS_HANDLER_RESULT_NEED_MEMORY;
+
+					err = nih_error_get ();
+					if (err->number == ENOMEM) {
+						nih_free (err);
+						nih_error_pop_context ();
+
+						return DBUS_HANDLER_RESULT_NEED_MEMORY;
+					} else if (err->number == NIH_DBUS_ERROR) {
+						NihDBusError *dbus_err = (NihDBusError *)err;
+
+						reply = NIH_MUST (dbus_message_new_error (
+									  message,
+									  dbus_err->name,
+									  err->message));
+						nih_free (err);
+						nih_error_pop_context ();
+					} else {
+						reply = NIH_MUST (dbus_message_new_error (
+									  message,
+									  DBUS_ERROR_FAILED,
+									  err->message));
+						nih_free (err);
+						nih_error_pop_context ();
+					}
+				} else {
+					nih_error_pop_context ();
 				}
 
 				if (! dbus_connection_send (connection, reply, NULL)) {
@@ -729,7 +754,7 @@ nih_dbus_object_property_get_all (DBusConnection *connection,
 
 				entry = nih_list_entry_new (name_hash);
 				if (! entry) {
-					dbus_message_iter_close_container (&iter, &arrayiter);
+					dbus_message_iter_abandon_container (&iter, &arrayiter);
 					dbus_message_unref (reply);
 					return DBUS_HANDLER_RESULT_NEED_MEMORY;
 				}
@@ -740,7 +765,7 @@ nih_dbus_object_property_get_all (DBusConnection *connection,
 				if (! dbus_message_iter_open_container (
 					    &arrayiter, DBUS_TYPE_DICT_ENTRY,
 					    NULL, &dictiter)) {
-					dbus_message_iter_close_container (&iter, &arrayiter);
+					dbus_message_iter_abandon_container (&iter, &arrayiter);
 					dbus_message_unref (reply);
 					return DBUS_HANDLER_RESULT_NEED_MEMORY;
 				}
@@ -748,29 +773,58 @@ nih_dbus_object_property_get_all (DBusConnection *connection,
 				if (! dbus_message_iter_append_basic (
 					    &dictiter, DBUS_TYPE_STRING,
 					    &(property->name))) {
-					dbus_message_iter_close_container (&arrayiter, &dictiter);
-					dbus_message_iter_close_container (&iter, &arrayiter);
+					dbus_message_iter_abandon_container (&arrayiter, &dictiter);
+					dbus_message_iter_abandon_container (&iter, &arrayiter);
 					dbus_message_unref (reply);
 					return DBUS_HANDLER_RESULT_NEED_MEMORY;
 				}
 
 				nih_error_push_context ();
 				ret = property->getter (object, msg, &dictiter);
-				nih_error_pop_context ();
-
 				if (ret < 0) {
-					dbus_message_iter_close_container (&arrayiter, &dictiter);
-					dbus_message_iter_close_container (&iter, &arrayiter);
+					NihError *err;
+
+					dbus_message_iter_abandon_container (&arrayiter, &dictiter);
+					dbus_message_iter_abandon_container (&iter, &arrayiter);
 					dbus_message_unref (reply);
-					return DBUS_HANDLER_RESULT_NEED_MEMORY;
+
+					err = nih_error_get ();
+					if (err->number == ENOMEM) {
+						nih_free (err);
+						nih_error_pop_context ();
+
+						return DBUS_HANDLER_RESULT_NEED_MEMORY;
+					} else if (err->number == NIH_DBUS_ERROR) {
+						NihDBusError *dbus_err = (NihDBusError *)err;
+
+						reply = NIH_MUST (dbus_message_new_error (
+									  message,
+									  dbus_err->name,
+									  err->message));
+						nih_free (err);
+						nih_error_pop_context ();
+					} else {
+						reply = NIH_MUST (dbus_message_new_error (
+									  message,
+									  DBUS_ERROR_FAILED,
+									  err->message));
+						nih_free (err);
+						nih_error_pop_context ();
+					}
+
+					goto reply;
+				} else {
+					nih_error_pop_context ();
+
+					if (! dbus_message_iter_close_container (
+						    &arrayiter, &dictiter)) {
+						dbus_message_iter_abandon_container (&iter, &arrayiter);
+						dbus_message_unref (reply);
+						return DBUS_HANDLER_RESULT_NEED_MEMORY;
+					}
 				}
 
-				if (! dbus_message_iter_close_container (
-					    &arrayiter, &dictiter)) {
-					dbus_message_iter_close_container (&iter, &arrayiter);
-					dbus_message_unref (reply);
-					return DBUS_HANDLER_RESULT_NEED_MEMORY;
-				}
+
 			}
 		}
 	}
@@ -781,6 +835,7 @@ nih_dbus_object_property_get_all (DBusConnection *connection,
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 	}
 
+reply:
 	if (! dbus_connection_send (connection, reply, NULL)) {
 		dbus_message_unref (reply);
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;

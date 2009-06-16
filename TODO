@@ -49,6 +49,12 @@ dbus:
   - dict entry handling could be better anyway (like in a hash?)
 
 - we're not using the no_reply annotation
+  - object implementation probably shouldn't - the client is free to ignore
+    the annotation so might be waiting for a reply, so we should send one
+    anyway
+  - proxy implementation is interesting, because we need to wait for a reply
+    to get an error return; we wouldn't want a sync function or even a notify
+    function or even a pending call :-/
 
 - doc strings for methods, signals, arguments, etc.
   - annotation would be used to set them

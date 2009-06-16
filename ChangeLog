@@ -1,5 +1,8 @@
 2009-06-16  Scott James Remnant  <scott@netsplit.com>
 
+	* TODO (dbus): Update on no_reply, still not completely clear what
+	we should do with this annotation as the results are surprising
+
 	* nih-dbus-tool/method.c (method_end_tag): Ignore the NoReply
 	annotation if the method has output arguments; ignore the Async
 	annotation if the method is NoReply.

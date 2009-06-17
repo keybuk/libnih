@@ -1,5 +1,8 @@
 2009-06-17  Scott James Remnant  <scott@netsplit.com>
 
+	* configure.ac: Bump version up to 0.3.0, I think the nih-dbus-tool
+	changes are enough to warrant it
+
 	* nih/tests/test_error.c (test_pop_context): Initialise pid to avoid
 	gcc issue where it believes the value can be uninitialised
 	(test_raise_error): Initialise errors and pid.

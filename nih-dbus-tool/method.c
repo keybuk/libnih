@@ -698,7 +698,7 @@ method_object_function (const void *parent,
 
 			type_error_code = nih_sprintf (NULL,
 						       "reply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-						       "                                _(\"Invalid arguments to %s method\"));\n"
+						       "                                \"Invalid arguments to %s method\");\n"
 						       "if (! reply)\n"
 						       "\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
 						       "\n"
@@ -832,7 +832,7 @@ method_object_function (const void *parent,
 	if (! nih_strcat_sprintf (&demarshal_block, NULL,
 				  "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
 				  "\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n"
-				  "\t                                _(\"Invalid arguments to %s method\"));\n"
+				  "\t                                \"Invalid arguments to %s method\");\n"
 				  "\tif (! reply)\n"
 				  "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
 				  "\n"

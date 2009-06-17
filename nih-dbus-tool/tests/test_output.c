@@ -2884,7 +2884,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\t/* Demarshal a uint32_t from the message */\n");
 		TEST_FILE_EQ (source, "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_UINT32) {\n");
 		TEST_FILE_EQ (source, "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n");
-		TEST_FILE_EQ (source, "\t\t                                _(\"Invalid arguments to Poke method\"));\n");
+		TEST_FILE_EQ (source, "\t\t                                \"Invalid arguments to Poke method\");\n");
 		TEST_FILE_EQ (source, "\t\tif (! reply)\n");
 		TEST_FILE_EQ (source, "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n");
 		TEST_FILE_EQ (source, "\n");
@@ -2904,7 +2904,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\t/* Demarshal a char * from the message */\n");
 		TEST_FILE_EQ (source, "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING) {\n");
 		TEST_FILE_EQ (source, "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n");
-		TEST_FILE_EQ (source, "\t\t                                _(\"Invalid arguments to Poke method\"));\n");
+		TEST_FILE_EQ (source, "\t\t                                \"Invalid arguments to Poke method\");\n");
 		TEST_FILE_EQ (source, "\t\tif (! reply)\n");
 		TEST_FILE_EQ (source, "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n");
 		TEST_FILE_EQ (source, "\n");
@@ -2928,7 +2928,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\n");
 		TEST_FILE_EQ (source, "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n");
 		TEST_FILE_EQ (source, "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n");
-		TEST_FILE_EQ (source, "\t\t                                _(\"Invalid arguments to Poke method\"));\n");
+		TEST_FILE_EQ (source, "\t\t                                \"Invalid arguments to Poke method\");\n");
 		TEST_FILE_EQ (source, "\t\tif (! reply)\n");
 		TEST_FILE_EQ (source, "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n");
 		TEST_FILE_EQ (source, "\n");
@@ -3022,7 +3022,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\t/* Demarshal a uint32_t from the message */\n");
 		TEST_FILE_EQ (source, "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_UINT32) {\n");
 		TEST_FILE_EQ (source, "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n");
-		TEST_FILE_EQ (source, "\t\t                                _(\"Invalid arguments to Peek method\"));\n");
+		TEST_FILE_EQ (source, "\t\t                                \"Invalid arguments to Peek method\");\n");
 		TEST_FILE_EQ (source, "\t\tif (! reply)\n");
 		TEST_FILE_EQ (source, "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n");
 		TEST_FILE_EQ (source, "\n");
@@ -3041,7 +3041,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\n");
 		TEST_FILE_EQ (source, "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n");
 		TEST_FILE_EQ (source, "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n");
-		TEST_FILE_EQ (source, "\t\t                                _(\"Invalid arguments to Peek method\"));\n");
+		TEST_FILE_EQ (source, "\t\t                                \"Invalid arguments to Peek method\");\n");
 		TEST_FILE_EQ (source, "\t\tif (! reply)\n");
 		TEST_FILE_EQ (source, "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n");
 		TEST_FILE_EQ (source, "\n");
@@ -3153,7 +3153,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\t/* Demarshal a uint32_t from the message */\n");
 		TEST_FILE_EQ (source, "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_UINT32) {\n");
 		TEST_FILE_EQ (source, "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n");
-		TEST_FILE_EQ (source, "\t\t                                _(\"Invalid arguments to IsValidAddress method\"));\n");
+		TEST_FILE_EQ (source, "\t\t                                \"Invalid arguments to IsValidAddress method\");\n");
 		TEST_FILE_EQ (source, "\t\tif (! reply)\n");
 		TEST_FILE_EQ (source, "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n");
 		TEST_FILE_EQ (source, "\n");
@@ -3172,7 +3172,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\n");
 		TEST_FILE_EQ (source, "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n");
 		TEST_FILE_EQ (source, "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n");
-		TEST_FILE_EQ (source, "\t\t                                _(\"Invalid arguments to IsValidAddress method\"));\n");
+		TEST_FILE_EQ (source, "\t\t                                \"Invalid arguments to IsValidAddress method\");\n");
 		TEST_FILE_EQ (source, "\t\tif (! reply)\n");
 		TEST_FILE_EQ (source, "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n");
 		TEST_FILE_EQ (source, "\n");
@@ -3380,7 +3380,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\t/* Recurse into the variant */\n");
 		TEST_FILE_EQ (source, "\tif (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_VARIANT) {\n");
 		TEST_FILE_EQ (source, "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n");
-		TEST_FILE_EQ (source, "\t\t                             _(\"Invalid arguments to colour property\"));\n");
+		TEST_FILE_EQ (source, "\t\t                             \"Invalid arguments to colour property\");\n");
 		TEST_FILE_EQ (source, "\t\treturn -1;\n");
 		TEST_FILE_EQ (source, "\t}\n");
 		TEST_FILE_EQ (source, "\n");
@@ -3389,7 +3389,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\t/* Demarshal a char * from the message */\n");
 		TEST_FILE_EQ (source, "\tif (dbus_message_iter_get_arg_type (&variter) != DBUS_TYPE_STRING) {\n");
 		TEST_FILE_EQ (source, "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n");
-		TEST_FILE_EQ (source, "\t\t                             _(\"Invalid arguments to colour property\"));\n");
+		TEST_FILE_EQ (source, "\t\t                             \"Invalid arguments to colour property\");\n");
 		TEST_FILE_EQ (source, "\t\treturn -1;\n");
 		TEST_FILE_EQ (source, "\t}\n");
 		TEST_FILE_EQ (source, "\n");
@@ -3407,7 +3407,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\n");
 		TEST_FILE_EQ (source, "\tif (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_INVALID) {\n");
 		TEST_FILE_EQ (source, "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n");
-		TEST_FILE_EQ (source, "\t\t                             _(\"Invalid arguments to colour property\"));\n");
+		TEST_FILE_EQ (source, "\t\t                             \"Invalid arguments to colour property\");\n");
 		TEST_FILE_EQ (source, "\t\treturn -1;\n");
 		TEST_FILE_EQ (source, "\t}\n");
 		TEST_FILE_EQ (source, "\n");
@@ -3473,7 +3473,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\t/* Recurse into the variant */\n");
 		TEST_FILE_EQ (source, "\tif (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_VARIANT) {\n");
 		TEST_FILE_EQ (source, "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n");
-		TEST_FILE_EQ (source, "\t\t                             _(\"Invalid arguments to touch property\"));\n");
+		TEST_FILE_EQ (source, "\t\t                             \"Invalid arguments to touch property\");\n");
 		TEST_FILE_EQ (source, "\t\treturn -1;\n");
 		TEST_FILE_EQ (source, "\t}\n");
 		TEST_FILE_EQ (source, "\n");
@@ -3482,7 +3482,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\t/* Demarshal a int from the message */\n");
 		TEST_FILE_EQ (source, "\tif (dbus_message_iter_get_arg_type (&variter) != DBUS_TYPE_BOOLEAN) {\n");
 		TEST_FILE_EQ (source, "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n");
-		TEST_FILE_EQ (source, "\t\t                             _(\"Invalid arguments to touch property\"));\n");
+		TEST_FILE_EQ (source, "\t\t                             \"Invalid arguments to touch property\");\n");
 		TEST_FILE_EQ (source, "\t\treturn -1;\n");
 		TEST_FILE_EQ (source, "\t}\n");
 		TEST_FILE_EQ (source, "\n");
@@ -3494,7 +3494,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\n");
 		TEST_FILE_EQ (source, "\tif (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_INVALID) {\n");
 		TEST_FILE_EQ (source, "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n");
-		TEST_FILE_EQ (source, "\t\t                             _(\"Invalid arguments to touch property\"));\n");
+		TEST_FILE_EQ (source, "\t\t                             \"Invalid arguments to touch property\");\n");
 		TEST_FILE_EQ (source, "\t\treturn -1;\n");
 		TEST_FILE_EQ (source, "\t}\n");
 		TEST_FILE_EQ (source, "\n");
@@ -3523,7 +3523,7 @@ test_output (void)
 		TEST_FILE_EQ (source, "\n");
 		TEST_FILE_EQ (source, "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n");
 		TEST_FILE_EQ (source, "\t\treply = dbus_message_new_error (message->message, DBUS_ERROR_INVALID_ARGS,\n");
-		TEST_FILE_EQ (source, "\t\t                                _(\"Invalid arguments to Bing method\"));\n");
+		TEST_FILE_EQ (source, "\t\t                                \"Invalid arguments to Bing method\");\n");
 		TEST_FILE_EQ (source, "\t\tif (! reply)\n");
 		TEST_FILE_EQ (source, "\t\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n");
 		TEST_FILE_EQ (source, "\n");

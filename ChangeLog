@@ -1,5 +1,16 @@
 2009-06-17  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/method.c (method_object_function): Don't translate
+	the string we return to the caller.
+	* nih-dbus-tool/property.c (property_object_set_function): Likewise
+	don't translate.
+	* nih-dbus-tool/tests/test_method.c (test_object_function): Update
+	expected output in tests.
+	* nih-dbus-tool/tests/test_property.c (test_object_set_function):
+	Likewise
+	* nih-dbus-tool/tests/test_node.c (test_object_functions): Likewise
+	* nih-dbus-tool/tests/test_output.c (test_output): Likewise.
+
 	* nih-dbus-tool/Makefile.am (test_com_netsplit_Nih_Test_object_SOURCES)
 	(test_com_netsplit_Nih_Test_proxy_SOURCES): Finally decided that we're
 	not going to ship these built sources, we'd just regenerate them every

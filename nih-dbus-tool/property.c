@@ -829,7 +829,7 @@ property_object_set_function (const void *parent,
 				  "/* Recurse into the variant */\n"
 				  "if (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_VARIANT) {\n"
 				  "\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
-				  "\t                             _(\"Invalid arguments to %s property\"));\n"
+				  "\t                             \"Invalid arguments to %s property\");\n"
 				  "\treturn -1;\n"
 				  "}\n"
 				  "\n"
@@ -849,7 +849,7 @@ property_object_set_function (const void *parent,
 
 	type_error_code = nih_sprintf (NULL,
 				       "nih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
-				       "                             _(\"Invalid arguments to %s property\"));\n"
+				       "                             \"Invalid arguments to %s property\");\n"
 				       "return -1;\n",
 				       property->name);
 	if (! type_error_code)
@@ -876,7 +876,7 @@ property_object_set_function (const void *parent,
 				  "\n"
 				  "if (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_INVALID) {\n"
 				  "\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
-				  "\t                             _(\"Invalid arguments to %s property\"));\n"
+				  "\t                             \"Invalid arguments to %s property\");\n"
 				  "\treturn -1;\n"
 				  "}\n"
 				  "\n"

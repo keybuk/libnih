@@ -1,5 +1,8 @@
 2009-06-17  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_error.c (test_raise_error, test_pop_context): Unlink
+	the core file after the assert tests.
+
 	* nih-dbus-tool/tests/com.netsplit.Nih.Test_impl.c,
 	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_object.c,
 	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c: #include

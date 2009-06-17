@@ -210,6 +210,8 @@ test_raise_error (void)
 
 		TEST_FILE_RESET (output);
 
+		unlink ("core");
+
 		nih_free (error1);
 		nih_free (error2);
 	}
@@ -460,6 +462,8 @@ test_pop_context (void)
 		TEST_FILE_END (output);
 
 		TEST_FILE_RESET (output);
+
+		unlink ("core");
 	}
 
 

@@ -1,5 +1,10 @@
 2009-06-17  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_interface.c (test_annotation): Add test
+	case for an empty symbol annotation
+	* nih-dbus-tool/interface.c (interface_annotation): Explicitly allow
+	the symbol to be empty
+
 	* configure.ac: Bump version up to 0.3.0, I think the nih-dbus-tool
 	changes are enough to warrant it
 

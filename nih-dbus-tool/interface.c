@@ -380,7 +380,7 @@ interface_annotation (Interface * interface,
 		}
 
 	} else if (! strcmp (name, "com.netsplit.Nih.Symbol")) {
-		if (symbol_valid (value)) {
+		if ((strlen (value) == 0) || symbol_valid (value)) {
 			if (interface->symbol)
 				nih_unref (interface->symbol, interface);
 

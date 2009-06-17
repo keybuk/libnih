@@ -863,6 +863,39 @@ test_annotation (void)
 	}
 
 
+	/* Check that an annotation to request no symbol for the interface
+	 * is handled.
+	 */
+	TEST_FEATURE ("with empty symbol annotation");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+		}
+
+		ret = interface_annotation (interface,
+					    "com.netsplit.Nih.Symbol",
+					    "");
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		TEST_EQ_STR (interface->symbol, "");
+		TEST_ALLOC_PARENT (interface->symbol, interface);
+
+		nih_free (interface);
+	}
+
+
 	/* Check that an invalid value for the deprecated annotation results
 	 * in an error being raised.
 	 */

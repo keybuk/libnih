@@ -1,5 +1,15 @@
 2009-06-17  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/Makefile.am (test_com_netsplit_Nih_Test_object_SOURCES)
+	(test_com_netsplit_Nih_Test_proxy_SOURCES): Finally decided that we're
+	not going to ship these built sources, we'd just regenerate them every
+	build anyway because nih-dbus-tool will have changed.  Make them
+	nodist.
+	(AM_CPPFLAGS): Which means we also need to include files from the
+	build directory, as well as the source directory
+	(BUILT_SOURCES): Change explanation of why it's in built sources
+	(CLEANFILES): Clean after build.
+
 	* nih/tests/test_error.c (test_raise_error, test_pop_context): Unlink
 	the core file after the assert tests.
 

@@ -5,7 +5,7 @@ AM_CFLAGS = \
 
 AM_CPPFLAGS = \
 	-DLOCALEDIR="\"$(localedir)\"" \
-	-I$(top_builddir) -I$(top_srcdir) -iquote$(srcdir) \
+	-I$(top_builddir) -I$(top_srcdir) -iquote$(builddir) -iquote$(srcdir) \
 	-I$(top_srcdir)/intl
 
 
@@ -223,16 +223,18 @@ test_output_LDADD = \
 
 test_com_netsplit_Nih_Test_object_SOURCES = \
 	tests/test_com.netsplit.Nih.Test_object.c \
-	$(com_netsplit_Nih_Test_object_OUTPUTS) \
 	tests/com.netsplit.Nih.Test_impl.c tests/com.netsplit.Nih.Test_impl.h
+nodist_test_com_netsplit_Nih_Test_object_SOURCES = \
+	$(com_netsplit_Nih_Test_object_OUTPUTS)
 test_com_netsplit_Nih_Test_object_LDFLAGS = -static
 test_com_netsplit_Nih_Test_object_LDADD = ../nih-dbus/libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS)
 
 test_com_netsplit_Nih_Test_proxy_SOURCES = \
 	tests/test_com.netsplit.Nih.Test_proxy.c \
-	$(com_netsplit_Nih_Test_object_OUTPUTS) \
-	$(com_netsplit_Nih_Test_proxy_OUTPUTS) \
 	tests/com.netsplit.Nih.Test_impl.c tests/com.netsplit.Nih.Test_impl.h
+nodist_test_com_netsplit_Nih_Test_proxy_SOURCES = \
+	$(com_netsplit_Nih_Test_object_OUTPUTS) \
+	$(com_netsplit_Nih_Test_proxy_OUTPUTS)
 test_com_netsplit_Nih_Test_proxy_LDFLAGS = -static
 test_com_netsplit_Nih_Test_proxy_LDADD = ../nih-dbus/libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS)
 
@@ -265,8 +267,8 @@ $(com_netsplit_Nih_Test_proxy_OUTPUTS): $(com_netsplit_Nih_Test_proxy_XML) $(bui
 	$(builddir)/nih-dbus-tool --mode=proxy --prefix=proxy --output=$@ $<
 
 
-# To be able to list them in POTFILES.in, these files must be built by
-# an ordinary "make all" pass
+# These have to be built sources because we can't compile test_*.o without
+# the header file existing first.
 BUILT_SOURCES = \
 	$(com_netsplit_Nih_Test_object_OUTPUTS) \
 	$(com_netsplit_Nih_Test_proxy_OUTPUTS)
@@ -341,6 +343,8 @@ tests/property_code.c: $(builddir)/property_factory
 
 
 CLEANFILES = \
+	$(com_netsplit_Nih_Test_object_OUTPUTS) \
+	$(com_netsplit_Nih_Test_proxy_OUTPUTS) \
 	$(nodist_test_marshal_SOURCES) \
 	$(nodist_test_demarshal_SOURCES) \
 	$(nodist_test_method_SOURCES) \

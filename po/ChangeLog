@@ -1,3 +1,7 @@
+2009-06-17  Scott James Remnant  <scott@netsplit.com>
+
+	* POTFILES.in: Drop the auto-generated test output
+
 2009-06-10  Scott James Remnant  <scott@netsplit.com>
 
 	* POTFILES.in: Add the proxy output too.

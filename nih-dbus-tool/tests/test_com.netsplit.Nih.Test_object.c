@@ -49,7 +49,7 @@ test_ordinary_method (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -336,7 +336,7 @@ test_nameless_method (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -623,7 +623,7 @@ test_async_method (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -994,7 +994,7 @@ test_byte_to_str (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	uint8_t         byte_value;
@@ -1282,7 +1282,7 @@ test_str_to_byte (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	char *          str_value;
@@ -1571,7 +1571,7 @@ test_boolean_to_str (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	int             boolean_value;
@@ -1811,7 +1811,7 @@ test_str_to_boolean (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	char *          str_value;
@@ -2100,7 +2100,7 @@ test_int16_to_str (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	int16_t         int16_value;
@@ -2388,7 +2388,7 @@ test_str_to_int16 (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	char *          str_value;
@@ -2677,7 +2677,7 @@ test_uint16_to_str (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	uint16_t        uint16_value;
@@ -2965,7 +2965,7 @@ test_str_to_uint16 (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	char *          str_value;
@@ -3254,7 +3254,7 @@ test_int32_to_str (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	int32_t         int32_value;
@@ -3542,7 +3542,7 @@ test_str_to_int32 (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	char *          str_value;
@@ -3831,7 +3831,7 @@ test_uint32_to_str (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	uint32_t        uint32_value;
@@ -4119,7 +4119,7 @@ test_str_to_uint32 (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	char *          str_value;
@@ -4408,7 +4408,7 @@ test_int64_to_str (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	int64_t         int64_value;
@@ -4696,7 +4696,7 @@ test_str_to_int64 (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	char *          str_value;
@@ -4985,7 +4985,7 @@ test_uint64_to_str (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	uint64_t        uint64_value;
@@ -5273,7 +5273,7 @@ test_str_to_uint64 (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	char *          str_value;
@@ -5562,7 +5562,7 @@ test_double_to_str (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	double          double_value;
@@ -5850,7 +5850,7 @@ test_str_to_double (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	char *          str_value;
@@ -6139,7 +6139,7 @@ test_object_path_to_str (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -6426,7 +6426,7 @@ test_str_to_object_path (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	char *          str_value;
@@ -6714,7 +6714,7 @@ test_signature_to_str (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -7001,7 +7001,7 @@ test_str_to_signature (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	char *          str_value;
@@ -7289,7 +7289,7 @@ test_int32_array_to_str (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	DBusMessageIter subiter;
@@ -7720,7 +7720,7 @@ test_str_to_int32_array (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	char *          str_value;
@@ -8101,7 +8101,7 @@ test_str_array_to_str (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	DBusMessageIter subiter;
@@ -8528,7 +8528,7 @@ test_str_to_str_array (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	char *          str_value;
@@ -8908,7 +8908,7 @@ test_int32_array_array_to_str (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	DBusMessageIter subiter;
@@ -9505,7 +9505,7 @@ test_str_to_int32_array_array (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	char *          str_value;
@@ -10856,7 +10856,7 @@ test_new_int32_array (void)
 	int             ret;
 	DBusMessage *   signal;
 	DBusMessageIter iter;
-	int32_t *       int32_array;
+	int32_t *       int32_array = NULL;
 	size_t          int32_array_len;
 	DBusMessageIter subiter;
 	int32_t         int32_value;
@@ -11040,7 +11040,7 @@ test_new_str_array (void)
 	int             ret;
 	DBusMessage *   signal;
 	DBusMessageIter iter;
-	char **         str_array;
+	char **         str_array = NULL;
 	DBusMessageIter subiter;
 	const char *    str_value;
 
@@ -11228,8 +11228,8 @@ test_new_int32_array_array (void)
 	int             ret;
 	DBusMessage *   signal;
 	DBusMessageIter iter;
-	int32_t **      int32_array_array;
-	size_t *        int32_array_array_len;
+	int32_t **      int32_array_array = NULL;
+	size_t *        int32_array_array_len = NULL;
 	DBusMessageIter subiter;
 	DBusMessageIter subsubiter;
 	int32_t         int32_value;
@@ -11500,7 +11500,7 @@ test_get_byte (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -11746,7 +11746,7 @@ test_set_byte (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -12161,7 +12161,7 @@ test_get_boolean (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -12353,7 +12353,7 @@ test_set_boolean (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -12706,7 +12706,7 @@ test_get_int16 (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -12952,7 +12952,7 @@ test_set_int16 (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -13367,7 +13367,7 @@ test_get_uint16 (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -13613,7 +13613,7 @@ test_set_uint16 (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -14028,7 +14028,7 @@ test_get_int32 (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -14274,7 +14274,7 @@ test_set_int32 (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -14689,7 +14689,7 @@ test_get_uint32 (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -14935,7 +14935,7 @@ test_set_uint32 (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -15350,7 +15350,7 @@ test_get_int64 (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -15596,7 +15596,7 @@ test_set_int64 (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -16011,7 +16011,7 @@ test_get_uint64 (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -16257,7 +16257,7 @@ test_set_uint64 (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -16672,7 +16672,7 @@ test_get_double (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -16918,7 +16918,7 @@ test_set_double (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -17333,7 +17333,7 @@ test_get_string (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -17578,7 +17578,7 @@ test_set_string (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -17993,7 +17993,7 @@ test_get_object_path (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -18238,7 +18238,7 @@ test_set_object_path (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -18653,7 +18653,7 @@ test_get_signature (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -18898,7 +18898,7 @@ test_set_signature (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -19313,7 +19313,7 @@ test_get_int32_array (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -19646,7 +19646,7 @@ test_set_int32_array (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -20228,7 +20228,7 @@ test_get_str_array (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -20560,7 +20560,7 @@ test_set_str_array (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -21142,7 +21142,7 @@ test_get_int32_array_array (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;
@@ -21608,7 +21608,7 @@ test_set_int32_array_array (void)
 	pid_t           dbus_pid;
 	DBusConnection *client_conn;
 	DBusConnection *server_conn;
-	NihDBusObject * object;
+	NihDBusObject * object = NULL;
 	DBusMessage *   method_call;
 	DBusMessageIter iter;
 	const char *    str_value;

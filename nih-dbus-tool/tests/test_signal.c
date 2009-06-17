@@ -178,7 +178,7 @@ test_start_tag (void)
 	Interface *  interface = NULL;
 	Signal *     signal;
 	char *       attr[5];
-	int          ret;
+	int          ret = 0;
 	NihError *   err;
 	FILE *       output;
 

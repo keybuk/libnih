@@ -185,7 +185,7 @@ test_start_tag (void)
 	Signal *     signal = NULL;
 	Argument *   argument;
 	char *       attr[7];
-	int          ret;
+	int          ret = 0;
 	NihError *   err;
 	FILE *       output;
 

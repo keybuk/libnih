@@ -137,9 +137,9 @@ test_raise_no_memory (void)
 void
 test_raise_error (void)
 {
-	NihError *error1;
-	NihError *error2;
-	pid_t     pid;
+	NihError *error1 = NULL;
+	NihError *error2 = NULL;
+	pid_t     pid = 0; 
 	int       status;
 	FILE *    output;
 
@@ -426,7 +426,7 @@ test_pop_context (void)
 {
 	NihError *error;
 	FILE *    output;
-	pid_t     pid;
+	pid_t     pid = 0;
 	int       status;
 
 	TEST_FUNCTION ("nih_error_pop_context");

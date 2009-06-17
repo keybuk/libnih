@@ -171,13 +171,13 @@ my_notify_function (DBusPendingCall *pending_call,
 void
 test_connect (void)
 {
-	pid_t            dbus_pid;
+	pid_t            dbus_pid = 0;
 	int              wait_fd;
 	DBusServer *     server;
-	DBusConnection * conn;
+	DBusConnection * conn = NULL;
 	DBusConnection * last_conn;
-	NihIoWatch *     io_watch;
-	NihMainLoopFunc *loop_func;
+	NihIoWatch *     io_watch = NULL;
+	NihMainLoopFunc *loop_func = NULL;
 	NihError *       err;
 	int              fd;
 	int              status;
@@ -886,8 +886,8 @@ test_bus (void)
 	DBusServer *     server;
 	DBusConnection * conn;
 	DBusConnection * last_conn;
-	NihIoWatch *     io_watch;
-	NihMainLoopFunc *loop_func;
+	NihIoWatch *     io_watch = NULL;
+	NihMainLoopFunc *loop_func = NULL;
 	NihError *       err;
 	pid_t            pid1;
 	pid_t            pid2;
@@ -1142,9 +1142,9 @@ test_setup (void)
 	pid_t            dbus_pid;
 	int              wait_fd;
 	DBusServer *     server;
-	DBusConnection * conn;
-	NihIoWatch *     io_watch;
-	NihMainLoopFunc *loop_func;
+	DBusConnection * conn = NULL;
+	NihIoWatch *     io_watch = NULL;
+	NihMainLoopFunc *loop_func = NULL;
 	int              ret;
 	int              fd;
 	int              status;
@@ -1316,10 +1316,10 @@ my_connect_handler (DBusServer *    server,
 void
 test_server (void)
 {
-	DBusServer *    other_server;
-	DBusServer *    server;
-	DBusConnection *conn;
-	DBusConnection *server_conn;
+	DBusServer *    other_server = NULL;
+	DBusServer *    server = NULL;
+	DBusConnection *conn = NULL;
+	DBusConnection *server_conn = NULL;
 	NihIoWatch *    io_watch;
 	NihError *      err;
 

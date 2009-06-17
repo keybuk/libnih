@@ -64,7 +64,7 @@ test_start_tag (void)
 	Property *   property = NULL;
 	Argument *   argument = NULL;
 	char *       attr[7];
-	int          ret;
+	int          ret = 0;
 	NihError *   err;
 	FILE *       output;
 

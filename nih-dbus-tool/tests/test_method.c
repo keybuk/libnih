@@ -186,7 +186,7 @@ test_start_tag (void)
 	Interface *  interface = NULL;
 	Method *     method;
 	char *       attr[5];
-	int          ret;
+	int          ret = 0;
 	NihError *   err;
 	FILE *       output;
 
@@ -494,7 +494,7 @@ test_end_tag (void)
 	Method *     method = NULL;
 	Method *     other = NULL;
 	Argument *   argument = NULL;
-	int          ret;
+	int          ret = 0;
 	NihError *   err;
 	FILE *       output;
 
@@ -982,7 +982,7 @@ test_annotation (void)
 {
 	Method *  method = NULL;
 	char *    symbol;
-	int       ret;
+	int       ret = 0;
 	NihError *err;
 
 	TEST_FUNCTION ("method_annotation");
@@ -1636,8 +1636,8 @@ test_object_function (void)
 	DBusMessageIter   iter;
 	DBusMessageIter   subiter;
 	DBusMessage *     reply;
-	NihDBusMessage *  message;
-	NihDBusObject *   object;
+	NihDBusMessage *  message = NULL;
+	NihDBusObject *   object = NULL;
 	dbus_uint32_t     serial;
 	dbus_uint32_t     next_serial;
 	DBusHandlerResult result;
@@ -4371,7 +4371,7 @@ test_reply_function (void)
 	Argument *        argument3 = NULL;
 	char *            str;
 	int32_t           flags;
-	char **           output;
+	char **           output = NULL;
 	TypeFunc *        func;
 	TypeVar *         arg;
 	NihListEntry *    attrib;
@@ -4380,8 +4380,8 @@ test_reply_function (void)
 	DBusMessageIter   iter;
 	DBusMessageIter   subiter;
 	DBusMessage *     reply;
-	NihDBusMessage *  message;
-	NihDBusObject *   object;
+	NihDBusMessage *  message = NULL;
+	NihDBusObject *   object = NULL;
 	dbus_uint32_t     serial;
 	dbus_uint32_t     next_serial;
 	int               ret;
@@ -5220,7 +5220,7 @@ test_proxy_function (void)
 	TypeFunc *        func;
 	TypeVar *         arg;
 	NihListEntry *    attrib;
-	DBusConnection *  flakey_conn;
+	DBusConnection *  flakey_conn = NULL;
 	NihDBusProxy *    proxy = NULL;
 	DBusPendingCall * pending_call;
 	DBusMessage *     method_call;
@@ -6969,7 +6969,7 @@ test_proxy_notify_function (void)
 	TypeVar *           arg;
 	dbus_uint32_t       serial;
 	DBusPendingCall *   pending_call;
-	NihDBusPendingData *pending_data;
+	NihDBusPendingData *pending_data = NULL;
 	DBusMessage *       method_call;
 	DBusMessage *       reply;
 	DBusMessageIter     iter;

@@ -184,7 +184,7 @@ test_start_tag (void)
 	Node *       node = NULL;
 	Interface *  interface;
 	char *       attr[5];
-	int          ret;
+	int          ret = 0;
 	NihError *   err;
 	FILE *       output;
 

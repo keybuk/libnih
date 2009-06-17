@@ -167,7 +167,7 @@ test_start_tag (void)
 	XML_Parser   xmlp;
 	Node *       node;
 	char *       attr[5];
-	int          ret;
+	int          ret = 0;
 	NihError *   err;
 	FILE *       output;
 

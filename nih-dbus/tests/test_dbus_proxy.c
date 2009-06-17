@@ -260,7 +260,7 @@ test_name_owner_changed (void)
 	DBusConnection *conn;
 	DBusConnection *first_conn;
 	DBusConnection *second_conn;
-	NihDBusProxy *  proxy;
+	NihDBusProxy *  proxy = NULL;
 	char *          last_owner;
 
 	TEST_FUNCTION ("nih_dbus_proxy_name_owner_changed");

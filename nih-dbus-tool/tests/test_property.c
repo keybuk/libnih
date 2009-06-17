@@ -1206,8 +1206,8 @@ test_object_get_function (void)
 	DBusMessageIter   iter;
 	DBusMessageIter   subiter;
 	DBusMessage *     reply;
-	NihDBusMessage *  message;
-	NihDBusObject *   object;
+	NihDBusMessage *  message = NULL;
+	NihDBusObject *   object = NULL;
 	dbus_uint32_t     serial;
 	int               ret;
 	NihError *        err;
@@ -1917,8 +1917,8 @@ test_object_set_function (void)
 	DBusMessage *     method_call;
 	DBusMessageIter   iter;
 	DBusMessageIter   subiter;
-	NihDBusMessage *  message;
-	NihDBusObject *   object;
+	NihDBusMessage *  message = NULL;
+	NihDBusObject *   object = NULL;
 	dbus_uint32_t     serial;
 	int               ret;
 	NihError *        err;
@@ -3990,7 +3990,7 @@ test_proxy_get_notify_function (void)
 	DBusConnection *    flakey_conn;
 	dbus_uint32_t       serial;
 	DBusPendingCall *   pending_call;
-	NihDBusPendingData *pending_data;
+	NihDBusPendingData *pending_data = NULL;
 	DBusMessage *       method_call;
 	DBusMessage *       reply;
 	DBusMessageIter     iter;
@@ -6763,7 +6763,7 @@ test_proxy_set_notify_function (void)
 	DBusConnection *    flakey_conn;
 	dbus_uint32_t       serial;
 	DBusPendingCall *   pending_call;
-	NihDBusPendingData *pending_data;
+	NihDBusPendingData *pending_data = NULL;
 	DBusMessage *       method_call;
 	DBusMessage *       reply;
 	DBusMessageIter     iter;

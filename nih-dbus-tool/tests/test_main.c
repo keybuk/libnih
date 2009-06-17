@@ -42,7 +42,7 @@ test_mode_option (void)
 	NihOption opt;
 	int       value;
 	FILE *    output;
-	int       ret;
+	int       ret = 0;
 
 	TEST_FUNCTION ("mode_option");
 	opt.value = &value;

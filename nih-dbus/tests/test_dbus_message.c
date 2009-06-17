@@ -99,7 +99,7 @@ test_message_error (void)
 	DBusMessage *   method_call;
 	DBusMessage *   reply;
 	dbus_uint32_t   serial;
-	NihDBusMessage *message;
+	NihDBusMessage *message = NULL;
 	int             ret;
 	DBusError       error;
 

@@ -1,5 +1,31 @@
 2009-06-17  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_error.c (test_pop_context): Initialise pid to avoid
+	gcc issue where it believes the value can be uninitialised
+	(test_raise_error): Initialise errors and pid.
+	* nih-dbus/tests/test_dbus_connection.c (test_connect): Initialise
+	variables allocated inside test constructs.
+	* nih-dbus/tests/test_dbus_message.c (test_message_error): Initialise
+	variables
+	* nih-dbus/tests/test_dbus_proxy.c (test_name_owner_changed): More
+	initialisation
+	* nih-dbus-tool/tests/test_main.c (test_mode_option): Have to
+	initialise ret.
+	* nih-dbus-tool/tests/test_node.c (test_start_tag): And another
+	* nih-dbus-tool/tests/test_interface.c (test_start_tag): One more
+	* nih-dbus-tool/tests/test_method.c (test_start_tag)
+	(test_end_tag, test_annotation): Bunch more ret initialises.
+	(test_object_function, test_reply_function, test_proxy_function)
+	(test_proxy_notify_function): Various other variables
+	* nih-dbus-tool/tests/test_signal.c (test_start_tag): Another ret
+	* nih-dbus-tool/tests/test_property.c (test_object_get_function)
+	(test_object_set_function, test_proxy_get_notify_function)
+	(test_proxy_set_notify_function): More miscellaneous ones
+	* nih-dbus-tool/tests/test_argument.c (test_start_tag): Another ret
+	* nih-dbus-tool/tests/test_annotation.c (test_start_tag): Yet another
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c: Even more
+	in this one.
+
 	* nih-dbus-tool/method.c (method_object_function): Don't translate
 	the string we return to the caller.
 	* nih-dbus-tool/property.c (property_object_set_function): Likewise
@@ -10,6 +36,8 @@
 	Likewise
 	* nih-dbus-tool/tests/test_node.c (test_object_functions): Likewise
 	* nih-dbus-tool/tests/test_output.c (test_output): Likewise.
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_object.c: Too many
+	to count in this source file
 
 	* nih-dbus-tool/Makefile.am (test_com_netsplit_Nih_Test_object_SOURCES)
 	(test_com_netsplit_Nih_Test_proxy_SOURCES): Finally decided that we're

@@ -42,7 +42,7 @@
 #include <nih-dbus/dbus_error.h>
 #include <nih-dbus/dbus_message.h>
 
-#include "com.netsplit.Nih.Test_object.h"
+#include "tests/com.netsplit.Nih.Test_object.h"
 
 
 int

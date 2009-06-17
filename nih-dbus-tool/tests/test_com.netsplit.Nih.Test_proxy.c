@@ -50,9 +50,9 @@
 #include <nih-dbus/dbus_error.h>
 #include <nih-dbus/errors.h>
 
-#include "com.netsplit.Nih.Test_proxy.h"
-#include "com.netsplit.Nih.Test_object.h"
-#include "com.netsplit.Nih.Test_impl.h"
+#include "tests/com.netsplit.Nih.Test_proxy.h"
+#include "tests/com.netsplit.Nih.Test_object.h"
+#include "tests/com.netsplit.Nih.Test_impl.h"
 
 
 static int       error_handler_called;

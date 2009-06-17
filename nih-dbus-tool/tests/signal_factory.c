@@ -67,7 +67,7 @@ main (int   argc,
 		"#include <nih-dbus/dbus_proxy.h>\n"
 		"#include <nih-dbus/errors.h>\n"
 		"\n"
-		"#include \"signal_code.h\"\n"
+		"#include \"tests/signal_code.h\"\n"
 		"\n");
 
 	interface = interface_new (NULL, "com.netsplit.Nih.Test");

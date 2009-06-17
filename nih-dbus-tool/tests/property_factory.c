@@ -68,7 +68,7 @@ main (int   argc,
 		"#include <nih-dbus/dbus_proxy.h>\n"
 		"#include <nih-dbus/errors.h>\n"
 		"\n"
-		"#include \"property_code.h\"\n"
+		"#include \"tests/property_code.h\"\n"
 		"\n"
 		"\n");
 

@@ -113,7 +113,7 @@ main (int   argc,
 		"#include <nih/logging.h>\n"
 		"#include <nih/error.h>\n"
 		"\n"
-		"#include \"marshal_code.h\"\n"
+		"#include \"tests/marshal_code.h\"\n"
 		"\n");
 
 	marshal_function ("byte", DBUS_TYPE_BYTE_AS_STRING);

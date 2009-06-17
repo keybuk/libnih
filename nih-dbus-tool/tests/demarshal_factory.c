@@ -133,7 +133,7 @@ main (int   argc,
 		"#include <nih/logging.h>\n"
 		"#include <nih/error.h>\n"
 		"\n"
-		"#include \"demarshal_code.h\"\n"
+		"#include \"tests/demarshal_code.h\"\n"
 		"\n");
 
 	demarshal_function ("byte", DBUS_TYPE_BYTE_AS_STRING);

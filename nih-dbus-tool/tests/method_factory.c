@@ -70,7 +70,7 @@ main (int   argc,
 		"#include <nih-dbus/dbus_proxy.h>\n"
 		"#include <nih-dbus/errors.h>\n"
 		"\n"
-		"#include \"method_code.h\"\n"
+		"#include \"tests/method_code.h\"\n"
 		"\n"
 		"\n");
 

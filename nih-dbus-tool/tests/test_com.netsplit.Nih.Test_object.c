@@ -39,8 +39,8 @@
 
 #include <nih-dbus/dbus_object.h>
 
-#include "com.netsplit.Nih.Test_object.h"
-#include "com.netsplit.Nih.Test_impl.h"
+#include "tests/com.netsplit.Nih.Test_object.h"
+#include "tests/com.netsplit.Nih.Test_impl.h"
 
 
 void

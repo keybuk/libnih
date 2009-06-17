@@ -1,5 +1,19 @@
 2009-06-17  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/com.netsplit.Nih.Test_impl.c,
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_object.c,
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c: #include
+	quoted paths will only look in the source directory or current
+	working directory, for out of tree builds the current working
+	directory won't contain the header so we need to prefix with tests/
+	so we can lookup from the source directory
+	* nih-dbus-tool/tests/marshal_factory.c,
+	* nih-dbus-tool/tests/demarshal_factory.c,
+	* nih-dbus-tool/tests/method_factory.c,
+	* nih-dbus-tool/tests/signal_factory.c,
+	* nih-dbus-tool/tests/property_factory.c: Update generated code to
+	prefix includes with tests/
+
 	* nih/tests/test_error.c (test_raise_error, test_pop_context):
 	Make sure we don't expect the filename to be always relative,
 	e.g. out-of-tree builds.

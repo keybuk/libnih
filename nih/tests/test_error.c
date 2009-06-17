@@ -203,7 +203,7 @@ test_raise_error (void)
 
 		rewind (output);
 
-		TEST_FILE_MATCH (output, ("test:tests/test_error.c:[0-9]*: "
+		TEST_FILE_MATCH (output, ("test:*tests/test_error.c:[0-9]*: "
 					  "Unhandled error from test_raise_error: "
 					  "No such file or directory\n"));
 		TEST_FILE_END (output);
@@ -454,7 +454,7 @@ test_pop_context (void)
 
 		rewind (output);
 
-		TEST_FILE_MATCH (output, ("test:tests/test_error.c:[0-9]*: "
+		TEST_FILE_MATCH (output, ("test:*tests/test_error.c:[0-9]*: "
 					  "Unhandled error from test_pop_context: "
 					  "Error in new context\n"));
 		TEST_FILE_END (output);

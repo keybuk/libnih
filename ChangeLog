@@ -1,3 +1,9 @@
+2009-06-17  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/tests/test_error.c (test_raise_error, test_pop_context):
+	Make sure we don't expect the filename to be always relative,
+	e.g. out-of-tree builds.
+
 2009-06-16  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/marshal.c (marshal_array, marshal_struct): In the

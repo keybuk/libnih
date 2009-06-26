@@ -1,5 +1,19 @@
 2009-06-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/signal.c (signal_object_function)
+	(signal_proxy_function): Call marshal() and demarshal() with the
+	extra arguments, obtaining most of them from our arguments including
+	the Interface and Signal structures.  Copy back the list of
+	structures returned into a new structs argument that these functions
+	accept.
+	* nih-dbus-tool/signal.h: Update prototypes to add new argument
+	* nih-dbus-tool/tests/test_signal.c (test_object_function)
+	(test_proxy_function): Pass in the structs array, add tests to
+	make sure that members of this array are passed back when the signal
+	has structure arguments
+	* nih-dbus-tool/tests/signal_factory.c: Pass expected structs list
+	when generating the code.
+
 	* nih-dbus-tool/method.c (method_object_function)
 	(method_reply_function, method_proxy_function)
 	(method_proxy_notify_function, method_proxy_sync_function): Call

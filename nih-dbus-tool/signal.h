@@ -75,12 +75,13 @@ Argument *signal_lookup_argument (Signal *signal, const char *symbol);
 
 char *    signal_object_function (const void *parent, const char *prefix,
 				  Interface *interface, Signal *signal,
-				  NihList *prototypes)
+				  NihList *prototypes, NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 
 char *    signal_proxy_function  (const void *parent, const char *prefix,
 				  Interface *interface, Signal *signal,
-				  NihList *prototypes, NihList *typedefs)
+				  NihList *prototypes, NihList *typedefs,
+				  NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 
 char *    signal_args_array      (const void *parent, const char *prefix,

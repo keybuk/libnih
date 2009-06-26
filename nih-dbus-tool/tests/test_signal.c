@@ -1011,12 +1011,15 @@ test_object_function (void)
 	DBusConnection *  server_conn;
 	DBusConnection *  client_conn;
 	NihList           prototypes;
+	NihList           structs;
 	Interface *       interface = NULL;
 	Signal *          signal = NULL;
 	Argument *        argument = NULL;
 	char *            str;
 	TypeFunc *        func;
 	TypeVar *         arg;
+	TypeStruct *      structure;
+	TypeVar *         var;
 	NihListEntry *    attrib;
 	DBusMessageIter   iter;
 	DBusMessage *     sig;
@@ -1035,6 +1038,7 @@ test_object_function (void)
 	TEST_FEATURE ("with signal");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -1050,12 +1054,13 @@ test_object_function (void)
 		}
 
 		str = signal_object_function (NULL, "my", interface, signal,
-					      &prototypes);
+					      &prototypes, &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (signal);
 			nih_free (interface);
@@ -1157,6 +1162,8 @@ test_object_function (void)
 
 		TEST_LIST_EMPTY (&prototypes);
 
+		TEST_LIST_EMPTY (&structs);
+
 		nih_free (str);
 		nih_free (signal);
 		nih_free (interface);
@@ -1169,6 +1176,7 @@ test_object_function (void)
 	TEST_FEATURE ("with no arguments");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -1179,12 +1187,13 @@ test_object_function (void)
 		}
 
 		str = signal_object_function (NULL, "my", interface, signal,
-					      &prototypes);
+					      &prototypes, &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (signal);
 			nih_free (interface);
@@ -1267,6 +1276,207 @@ test_object_function (void)
 
 		TEST_LIST_EMPTY (&prototypes);
 
+		TEST_LIST_EMPTY (&structs);
+
+		nih_free (str);
+		nih_free (signal);
+		nih_free (interface);
+	}
+
+
+	/* Check that a signal with a structure argument is correctly
+	 * generated, with the structure type passed back in the
+	 * structs array.
+	 */
+	TEST_FEATURE ("with structure argument");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&structs);
+
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			signal = signal_new (NULL, "Signal");
+			signal->symbol = nih_strdup (signal, "signal");
+
+			argument = argument_new (signal, "structure",
+						 "(su)", NIH_DBUS_ARG_OUT);
+			argument->symbol = nih_strdup (argument, "structure");
+			nih_list_add (&signal->arguments, &argument->entry);
+		}
+
+		str = signal_object_function (NULL, "my", interface, signal,
+					      &prototypes, &structs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&structs);
+
+			nih_free (signal);
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "my_emit_signal (DBusConnection *         connection,\n"
+				   "                const char *             origin_path,\n"
+				   "                const MySignalStructure *structure)\n"
+				   "{\n"
+				   "\tDBusMessage *   signal;\n"
+				   "\tDBusMessageIter iter;\n"
+				   "\tDBusMessageIter structure_iter;\n"
+				   "\tconst char *    structure_item0;\n"
+				   "\tuint32_t        structure_item1;\n"
+				   "\n"
+				   "\tnih_assert (connection != NULL);\n"
+				   "\tnih_assert (origin_path != NULL);\n"
+				   "\tnih_assert (structure != NULL);\n"
+				   "\n"
+				   "\t/* Construct the message. */\n"
+				   "\tsignal = dbus_message_new_signal (origin_path, \"com.netsplit.Nih.Test\", \"Signal\");\n"
+				   "\tif (! signal)\n"
+				   "\t\treturn -1;\n"
+				   "\n"
+				   "\tdbus_message_iter_init_append (signal, &iter);\n"
+				   "\n"
+				   "\t/* Marshal a structure onto the message */\n"
+				   "\tif (! dbus_message_iter_open_container (&iter, DBUS_TYPE_STRUCT, NULL, &structure_iter)) {\n"
+				   "\t\tdbus_message_unref (signal);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tstructure_item0 = structure->item0;\n"
+				   "\n"
+				   "\t/* Marshal a char * onto the message */\n"
+				   "\tif (! dbus_message_iter_append_basic (&structure_iter, DBUS_TYPE_STRING, &structure_item0)) {\n"
+				   "\t\tdbus_message_iter_abandon_container (&iter, &structure_iter);\n"
+				   "\t\tdbus_message_unref (signal);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tstructure_item1 = structure->item1;\n"
+				   "\n"
+				   "\t/* Marshal a uint32_t onto the message */\n"
+				   "\tif (! dbus_message_iter_append_basic (&structure_iter, DBUS_TYPE_UINT32, &structure_item1)) {\n"
+				   "\t\tdbus_message_iter_abandon_container (&iter, &structure_iter);\n"
+				   "\t\tdbus_message_unref (signal);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tif (! dbus_message_iter_close_container (&iter, &structure_iter)) {\n"
+				   "\t\tdbus_message_unref (signal);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Send the signal, appending it to the outgoing queue. */\n"
+				   "\tif (! dbus_connection_send (connection, signal, NULL)) {\n"
+				   "\t\tdbus_message_unref (signal);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_unref (signal);\n"
+				   "\n"
+				   "\treturn 0;\n"
+				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_emit_signal");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "DBusConnection *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "connection");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const char *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "origin_path");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const MySignalStructure *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "structure");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_NOT_EMPTY (&structs);
+
+		structure = (TypeStruct *)structs.next;
+		TEST_ALLOC_SIZE (structure, sizeof (TypeStruct));
+		TEST_ALLOC_PARENT (structure, str);
+		TEST_EQ_STR (structure->name, "MySignalStructure");
+		TEST_ALLOC_PARENT (structure->name, structure);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "char *");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item0");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "uint32_t");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item1");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&structure->members);
+		nih_free (structure);
+
+		TEST_LIST_EMPTY (&structs);
+
 		nih_free (str);
 		nih_free (signal);
 		nih_free (interface);
@@ -1279,6 +1489,7 @@ test_object_function (void)
 	TEST_FEATURE ("with array argument");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -1294,12 +1505,13 @@ test_object_function (void)
 		}
 
 		str = signal_object_function (NULL, "my", interface, signal,
-					      &prototypes);
+					      &prototypes, &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (signal);
 			nih_free (interface);
@@ -1432,6 +1644,8 @@ test_object_function (void)
 
 		TEST_LIST_EMPTY (&prototypes);
 
+		TEST_LIST_EMPTY (&structs);
+
 		nih_free (str);
 		nih_free (signal);
 		nih_free (interface);
@@ -1484,6 +1698,7 @@ test_object_function (void)
 	TEST_FEATURE ("with deprecated signal");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -1500,12 +1715,13 @@ test_object_function (void)
 		}
 
 		str = signal_object_function (NULL, "my", interface, signal,
-					      &prototypes);
+					      &prototypes, &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (signal);
 			nih_free (interface);
@@ -1607,6 +1823,8 @@ test_object_function (void)
 
 		TEST_LIST_EMPTY (&prototypes);
 
+		TEST_LIST_EMPTY (&structs);
+
 		nih_free (str);
 		nih_free (signal);
 		nih_free (interface);
@@ -1658,12 +1876,15 @@ test_proxy_function (void)
 	DBusConnection *    client_conn;
 	NihList             prototypes;
 	NihList             typedefs;
+	NihList             structs;
 	Interface *         interface = NULL;
 	Signal *            signal = NULL;
 	Argument *          argument = NULL;
 	char *              str;
 	TypeFunc *          func;
 	TypeVar *           arg;
+	TypeStruct *        structure;
+	TypeVar *           var;
 	NihListEntry *      attrib;
 	NihDBusProxy *      proxy = NULL;
 	NihDBusProxySignal *proxied = NULL;
@@ -1684,6 +1905,7 @@ test_proxy_function (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
 		nih_list_init (&typedefs);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -1699,13 +1921,15 @@ test_proxy_function (void)
 		}
 
 		str = signal_proxy_function (NULL, "my", interface, signal,
-					     &prototypes, &typedefs);
+					     &prototypes, &typedefs,
+					     &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
 			TEST_LIST_EMPTY (&typedefs);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (signal);
 			nih_free (interface);
@@ -1877,6 +2101,8 @@ test_proxy_function (void)
 
 		TEST_LIST_EMPTY (&typedefs);
 
+		TEST_LIST_EMPTY (&structs);
+
 		nih_free (str);
 		nih_free (signal);
 		nih_free (interface);
@@ -1890,6 +2116,7 @@ test_proxy_function (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
 		nih_list_init (&typedefs);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -1900,13 +2127,15 @@ test_proxy_function (void)
 		}
 
 		str = signal_proxy_function (NULL, "my", interface, signal,
-					     &prototypes, &typedefs);
+					     &prototypes, &typedefs,
+					     &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
 			TEST_LIST_EMPTY (&typedefs);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (signal);
 			nih_free (interface);
@@ -2049,6 +2278,296 @@ test_proxy_function (void)
 
 		TEST_LIST_EMPTY (&typedefs);
 
+		TEST_LIST_EMPTY (&structs);
+
+		nih_free (str);
+		nih_free (signal);
+		nih_free (interface);
+	}
+
+
+	/* Check that a signal with a structure argument is correctly
+	 * generated, with the structure type passed back in the structs
+	 * array.
+	 */
+	TEST_FEATURE ("with structure argument");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&typedefs);
+		nih_list_init (&structs);
+
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			signal = signal_new (NULL, "Signal");
+			signal->symbol = nih_strdup (signal, "signal");
+
+			argument = argument_new (signal, "structure",
+						 "(su)", NIH_DBUS_ARG_OUT);
+			argument->symbol = nih_strdup (argument, "structure");
+			nih_list_add (&signal->arguments, &argument->entry);
+		}
+
+		str = signal_proxy_function (NULL, "my", interface, signal,
+					     &prototypes, &typedefs,
+					     &structs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&typedefs);
+			TEST_LIST_EMPTY (&structs);
+
+			nih_free (signal);
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("DBusHandlerResult\n"
+				   "my_com_netsplit_Nih_Test_Signal_signal (DBusConnection *    connection,\n"
+				   "                                        DBusMessage *       signal,\n"
+				   "                                        NihDBusProxySignal *proxied)\n"
+				   "{\n"
+				   "\tDBusMessageIter    iter;\n"
+				   "\tNihDBusMessage *   message;\n"
+				   "\tMySignalStructure *structure;\n"
+				   "\tDBusMessageIter    structure_iter;\n"
+				   "\tconst char *       structure_item0_dbus;\n"
+				   "\tchar *             structure_item0;\n"
+				   "\tuint32_t           structure_item1;\n"
+				   "\n"
+				   "\tnih_assert (connection != NULL);\n"
+				   "\tnih_assert (signal != NULL);\n"
+				   "\tnih_assert (proxied != NULL);\n"
+				   "\tnih_assert (connection == proxied->connection);\n"
+				   "\n"
+				   "\tif (! dbus_message_is_signal (signal, proxied->interface->name, proxied->signal->name))\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\n"
+				   "\tif (! dbus_message_has_path (signal, proxied->path))\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\n"
+				   "\tif (proxied->name)\n"
+				   "\t\tif (! dbus_message_has_sender (signal, proxied->name))\n"
+				   "\t\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\n"
+				   "\tmessage = nih_dbus_message_new (NULL, connection, signal);\n"
+				   "\tif (! message)\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\n"
+				   "\t/* Iterate the arguments to the signal and demarshal into arguments\n"
+				   "\t * for our own function call.\n"
+				   "\t */\n"
+				   "\tdbus_message_iter_init (message->message, &iter);\n"
+				   "\n"
+				   "\t/* Demarshal a structure from the message */\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRUCT) {\n"
+				   "\t\tnih_free (message);\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_recurse (&iter, &structure_iter);\n"
+				   "\n"
+				   "\tstructure = nih_new (message, MySignalStructure);\n"
+				   "\tif (! structure) {\n"
+				   "\t\tnih_free (message);\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Demarshal a char * from the message */\n"
+				   "\tif (dbus_message_iter_get_arg_type (&structure_iter) != DBUS_TYPE_STRING) {\n"
+				   "\t\tnih_free (structure);\n"
+				   "\t\tnih_free (message);\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_get_basic (&structure_iter, &structure_item0_dbus);\n"
+				   "\n"
+				   "\tstructure_item0 = nih_strdup (structure, structure_item0_dbus);\n"
+				   "\tif (! structure_item0) {\n"
+				   "\t\tnih_free (structure);\n"
+				   "\t\tnih_free (message);\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NEED_MEMORY;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_next (&structure_iter);\n"
+				   "\n"
+				   "\tstructure->item0 = structure_item0;\n"
+				   "\n"
+				   "\t/* Demarshal a uint32_t from the message */\n"
+				   "\tif (dbus_message_iter_get_arg_type (&structure_iter) != DBUS_TYPE_UINT32) {\n"
+				   "\t\tnih_free (structure);\n"
+				   "\t\tnih_free (message);\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_get_basic (&structure_iter, &structure_item1);\n"
+				   "\n"
+				   "\tdbus_message_iter_next (&structure_iter);\n"
+				   "\n"
+				   "\tstructure->item1 = structure_item1;\n"
+				   "\n"
+				   "\tif (dbus_message_iter_get_arg_type (&structure_iter) != DBUS_TYPE_INVALID) {\n"
+				   "\t\tnih_free (structure);\n"
+				   "\t\tnih_free (message);\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_next (&iter);\n"
+				   "\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
+				   "\t\tnih_free (message);\n"
+				   "\t\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Call the handler function */\n"
+				   "\tnih_error_push_context ();\n"
+				   "\t((MySignalHandler)proxied->handler) (proxied->data, message, structure);\n"
+				   "\tnih_error_pop_context ();\n"
+				   "\tnih_free (message);\n"
+				   "\n"
+				   "\treturn DBUS_HANDLER_RESULT_NOT_YET_HANDLED;\n"
+				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "DBusHandlerResult");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_Signal_signal");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "DBusConnection *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "connection");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "DBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "signal");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusProxySignal *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "proxied");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_NOT_EMPTY (&typedefs);
+
+		func = (TypeFunc *)typedefs.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "typedef void");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "(*MySignalHandler)");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "void *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "data");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const MySignalStructure *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "structure");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&typedefs);
+
+
+		TEST_LIST_NOT_EMPTY (&structs);
+
+		structure = (TypeStruct *)structs.next;
+		TEST_ALLOC_SIZE (structure, sizeof (TypeStruct));
+		TEST_ALLOC_PARENT (structure, str);
+		TEST_EQ_STR (structure->name, "MySignalStructure");
+		TEST_ALLOC_PARENT (structure->name, structure);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "char *");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item0");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "uint32_t");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item1");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&structure->members);
+		nih_free (structure);
+
+		TEST_LIST_EMPTY (&structs);
+
 		nih_free (str);
 		nih_free (signal);
 		nih_free (interface);
@@ -2108,6 +2627,7 @@ test_proxy_function (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
 		nih_list_init (&typedefs);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -2124,13 +2644,15 @@ test_proxy_function (void)
 		}
 
 		str = signal_proxy_function (NULL, "my", interface, signal,
-					     &prototypes, &typedefs);
+					     &prototypes, &typedefs,
+					     &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
 			TEST_LIST_EMPTY (&typedefs);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (signal);
 			nih_free (interface);
@@ -2310,6 +2832,8 @@ test_proxy_function (void)
 		nih_free (func);
 
 		TEST_LIST_EMPTY (&typedefs);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 		nih_free (signal);

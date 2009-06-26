@@ -1,5 +1,30 @@
 2009-06-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/demarshal.c (demarshal_struct): Generate the structure
+	name using symbol_typedef() rather than expecting type_of() to do
+	it for us.  To do this we need extra arguments giving us the
+	interface, member and variable symbol names.  Create a TypeStruct
+	for it, adding members as we go, and return it via the extra structs
+	list.
+	(demarshal_array): Take the same extra arguments as demarshal_struct()
+	so we can support arrays of structures, pass them to our recursive
+	demarshal() call and make sure we pass structs back up.  Create a
+	custom symbol for the structure array, so that it becomes
+	"PrefixInterfaceMemberArgElement".
+	(demarshal_basic): Take the extra arguments for consistency, though
+	we don't do anything with them.
+	(demarshal): Take the extra arguments, pass down to the static
+	functions.
+	* nih-dbus-tool/demarshal.h: Update prototypes.
+	* nih-dbus-tool/tests/test_demarshal.c (test_demarshal): Pass in
+	strings and structs list, check the structs list contents on the
+	way out
+	* nih-dbus-tool/tests/demarshal_factory.c (demarshal_function): Pass
+	expected structs and structs list when generating the code.
+	* nih-dbus-tool/tests/demarshal_code.h: Changes required in the name
+	of the expected structures
+	* nih-dbus-tool/Makefile.am (demarshal_factory_LDADD): Link to symbol
+
 	* nih-dbus-tool/marshal.c (marshal_struct): Generate the structure
 	name using symbol_typedef() rather than expecting type_of() to do
 	it for us.  To do this we need extra arguments giving us the

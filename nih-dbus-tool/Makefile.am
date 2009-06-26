@@ -292,7 +292,7 @@ tests/marshal_code.c: $(builddir)/marshal_factory
 demarshal_factory_SOURCES = tests/demarshal_factory.c
 demarshal_factory_LDFLAGS = -static
 demarshal_factory_LDADD = \
-	demarshal.o type.o indent.o \
+	demarshal.o type.o indent.o symbol.o \
 	../nih/libnih.la \
 	$(DBUS_LIBS)
 

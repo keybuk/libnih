@@ -48,9 +48,11 @@ demarshal_function (const char *name,
 	nih_local char *  code = NULL;
 	NihList           outputs;
 	NihList           locals;
+	NihList           structs;
 
 	nih_list_init (&outputs);
 	nih_list_init (&locals);
+	nih_list_init (&structs);
 
 	dbus_signature_iter_init (&iter, signature);
 
@@ -58,7 +60,9 @@ demarshal_function (const char *name,
 			  "parent", "iter", "local",
 			  "return -1;\n",
 			  "return 1;\n",
-			  &outputs, &locals);
+			  &outputs, &locals,
+			  "my", NULL, name, "value",
+			  &structs);
 
 	printf ("int\n"
 		"my_%s_demarshal (const void *parent, DBusMessage *message",

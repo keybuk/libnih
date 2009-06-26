@@ -33,7 +33,10 @@ char *demarshal (const void *parent, DBusSignatureIter *iter,
 		 const char *name,
 		 const char *oom_error_code,
 		 const char *type_error_code,
-		 NihList *outputs, NihList *locals)
+		 NihList *outputs, NihList *locals,
+		 const char *prefix, const char *interface_symbol,
+		 const char *member_symbol, const char *symbol,
+		 NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN

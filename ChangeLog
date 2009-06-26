@@ -1,3 +1,8 @@
+2009-06-26  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus/dbus_proxy.h: Since we use INT_MAX in a macro, we need
+	to include limits.h
+
 2009-06-23  Scott James Remnant  <scott@netsplit.com>
 
 	* COPYING: Change licence to version 2 of the GNU GPL.

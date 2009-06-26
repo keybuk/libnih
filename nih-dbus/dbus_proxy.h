@@ -22,6 +22,8 @@
 
 #include <nih/macros.h>
 
+#include <limits.h>
+
 #include <dbus/dbus.h>
 
 #include <nih-dbus/dbus_interface.h>

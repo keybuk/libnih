@@ -1,5 +1,30 @@
 2009-06-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/property.c (property_object_get_function)
+	(property_object_set_function)
+	(property_proxy_get_notify_function)
+	(property_proxy_set_function, property_proxy_get_sync_function)
+	(property_proxy_set_sync_function):  Call marshal() and demarshal()
+	with the extra arguments, obtaining most of them from our arguments
+	including the Interface and Property structures.  Copy back the list
+	of structures returned into a new structs argument that these
+	functions accept.
+	(property_proxy_get_function)
+	(property_proxy_set_notify_function): Add the extra structs argument
+	for consistency, though we don't do anything with it
+	* nih-dbus-tool/property.h: Update prototypes to add new argument
+	* nih-dbus-tool/tests/test_property.c (test_object_get_function)
+	(test_object_set_function, test_proxy_get_notify_function)
+	(test_proxy_set_function, test_proxy_get_sync_function)
+	(test_proxy_set_sync_function): Pass in the structs array, add tests
+	to make sure that members of this array are passed back when the
+	property is a structure
+	(test_proxy_get_function, test_proxy_set_notify_function): Pass in
+	the structs array, no need to tests passing back because none ever
+	will be,
+	* nih-dbus-tool/tests/property_factory.c: Pass expected structs
+	list when generating the code.
+
 	* nih-dbus-tool/symbol.c (symbol_typedef): Allow the postfix to
 	be NULL (property structures)
 	* nih-dbus-tool/tests/test_symbol.c (test_typedef): Add tests for

@@ -1188,6 +1188,7 @@ test_object_get_function (void)
 	DBusConnection *  client_conn;
 	NihList           prototypes;
 	NihList           handlers;
+	NihList           structs;
 	Interface *       interface = NULL;
 	Property *        property = NULL;
 	char *            iface;
@@ -1195,6 +1196,8 @@ test_object_get_function (void)
 	char *            str;
 	TypeFunc *        func;
 	TypeVar *         arg;
+	TypeStruct *      structure;
+	TypeVar *         var;
 	NihListEntry *    attrib;
 	DBusMessage *     method_call;
 	DBusMessageIter   iter;
@@ -1221,6 +1224,7 @@ test_object_get_function (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
 		nih_list_init (&handlers);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -1232,13 +1236,15 @@ test_object_get_function (void)
 		}
 
 		str = property_object_get_function (NULL, "my", interface, property,
-						    &prototypes, &handlers);
+						    &prototypes, &handlers,
+						    &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
 			TEST_LIST_EMPTY (&handlers);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (property);
 			nih_free (interface);
@@ -1391,6 +1397,261 @@ test_object_get_function (void)
 		nih_free (func);
 
 		TEST_LIST_EMPTY (&handlers);
+
+		TEST_LIST_EMPTY (&structs);
+
+		nih_free (str);
+		nih_free (property);
+		nih_free (interface);
+	}
+
+
+	/* Check that we can generate a function that marshals a structure
+	 * value obtained by calling a property handler function, with
+	 * the structure type passed back in the structs array.
+	 */
+	TEST_FEATURE ("with structure property");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&handlers);
+		nih_list_init (&structs);
+
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "property",
+						 "(su)", NIH_DBUS_READWRITE);
+			property->symbol = nih_strdup (property, "property");
+		}
+
+		str = property_object_get_function (NULL, "my", interface, property,
+						    &prototypes, &handlers,
+						    &structs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&handlers);
+			TEST_LIST_EMPTY (&structs);
+
+			nih_free (property);
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "my_com_netsplit_Nih_Test_property_get (NihDBusObject *  object,\n"
+				   "                                       NihDBusMessage * message,\n"
+				   "                                       DBusMessageIter *iter)\n"
+				   "{\n"
+				   "\tDBusMessageIter variter;\n"
+				   "\tDBusMessageIter value_iter;\n"
+				   "\tconst char *    value_item0;\n"
+				   "\tuint32_t        value_item1;\n"
+				   "\tMyProperty *    value;\n"
+				   "\n"
+				   "\tnih_assert (object != NULL);\n"
+				   "\tnih_assert (message != NULL);\n"
+				   "\tnih_assert (iter != NULL);\n"
+				   "\n"
+				   "\t/* Call the handler function */\n"
+				   "\tif (my_get_property (object->data, message, &value) < 0)\n"
+				   "\t\treturn -1;\n"
+				   "\n"
+				   "\t/* Append a variant onto the message to contain the property value. */\n"
+				   "\tif (! dbus_message_iter_open_container (iter, DBUS_TYPE_VARIANT, \"(su)\", &variter)) {\n"
+				   "\t\tnih_error_raise_no_memory ();\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Marshal a structure onto the message */\n"
+				   "\tif (! dbus_message_iter_open_container (&variter, DBUS_TYPE_STRUCT, NULL, &value_iter)) {\n"
+				   "\t\tdbus_message_iter_abandon_container (iter, &variter);\n"
+				   "\t\tnih_error_raise_no_memory ();\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue_item0 = value->item0;\n"
+				   "\n"
+				   "\t/* Marshal a char * onto the message */\n"
+				   "\tif (! dbus_message_iter_append_basic (&value_iter, DBUS_TYPE_STRING, &value_item0)) {\n"
+				   "\t\tdbus_message_iter_abandon_container (&variter, &value_iter);\n"
+				   "\t\tdbus_message_iter_abandon_container (iter, &variter);\n"
+				   "\t\tnih_error_raise_no_memory ();\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue_item1 = value->item1;\n"
+				   "\n"
+				   "\t/* Marshal a uint32_t onto the message */\n"
+				   "\tif (! dbus_message_iter_append_basic (&value_iter, DBUS_TYPE_UINT32, &value_item1)) {\n"
+				   "\t\tdbus_message_iter_abandon_container (&variter, &value_iter);\n"
+				   "\t\tdbus_message_iter_abandon_container (iter, &variter);\n"
+				   "\t\tnih_error_raise_no_memory ();\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tif (! dbus_message_iter_close_container (&variter, &value_iter)) {\n"
+				   "\t\tdbus_message_iter_abandon_container (iter, &variter);\n"
+				   "\t\tnih_error_raise_no_memory ();\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Finish the variant */\n"
+				   "\tif (! dbus_message_iter_close_container (iter, &variter)) {\n"
+				   "\t\tnih_error_raise_no_memory ();\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\treturn 0;\n"
+				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_property_get");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusObject *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "object");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "DBusMessageIter *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "iter");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_NOT_EMPTY (&handlers);
+
+		func = (TypeFunc *)handlers.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_get_property");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "void *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "data");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "MyProperty **");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "value");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&handlers);
+
+
+		TEST_LIST_NOT_EMPTY (&structs);
+
+		structure = (TypeStruct *)structs.next;
+		TEST_ALLOC_SIZE (structure, sizeof (TypeStruct));
+		TEST_ALLOC_PARENT (structure, str);
+		TEST_EQ_STR (structure->name, "MyProperty");
+		TEST_ALLOC_PARENT (structure->name, structure);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "char *");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item0");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "uint32_t");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item1");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&structure->members);
+		nih_free (structure);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 		nih_free (property);
@@ -1666,6 +1927,7 @@ test_object_get_function (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
 		nih_list_init (&handlers);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -1678,13 +1940,15 @@ test_object_get_function (void)
 		}
 
 		str = property_object_get_function (NULL, "my", interface, property,
-						    &prototypes, &handlers);
+						    &prototypes, &handlers,
+						    &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
 			TEST_LIST_EMPTY (&handlers);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (property);
 			nih_free (interface);
@@ -1838,6 +2102,8 @@ test_object_get_function (void)
 
 		TEST_LIST_EMPTY (&handlers);
 
+		TEST_LIST_EMPTY (&structs);
+
 		nih_free (str);
 		nih_free (property);
 		nih_free (interface);
@@ -1899,6 +2165,7 @@ test_object_set_function (void)
 	DBusConnection *  client_conn;
 	NihList           prototypes;
 	NihList           handlers;
+	NihList           structs;
 	Interface *       interface = NULL;
 	Property *        property = NULL;
 	char *            iface;
@@ -1906,6 +2173,8 @@ test_object_set_function (void)
 	char *            str;
 	TypeFunc *        func;
 	TypeVar *         arg;
+	TypeStruct *      structure;
+	TypeVar *         var;
 	NihListEntry *    attrib;
 	double            double_arg;
 	DBusMessage *     method_call;
@@ -1933,6 +2202,7 @@ test_object_set_function (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
 		nih_list_init (&handlers);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -1944,13 +2214,15 @@ test_object_set_function (void)
 		}
 
 		str = property_object_set_function (NULL, "my", interface, property,
-						    &prototypes, &handlers);
+						    &prototypes, &handlers,
+						    &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
 			TEST_LIST_EMPTY (&handlers);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (property);
 			nih_free (interface);
@@ -2120,6 +2392,8 @@ test_object_set_function (void)
 
 		TEST_LIST_EMPTY (&handlers);
 
+		TEST_LIST_EMPTY (&structs);
+
 		nih_free (str);
 		nih_free (property);
 		nih_free (interface);
@@ -2209,6 +2483,292 @@ test_object_set_function (void)
 		nih_free (object);
 		nih_free (message);
 		dbus_message_unref (method_call);
+	}
+
+
+	/* Check that we can generate a function that demarshals a
+	 * structure value from a variant in the passed message iterator,
+	 * calling a handler function to set that property, with the
+	 * structure type passed back in the structs array.
+	 */
+	TEST_FEATURE ("with structure property");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&handlers);
+		nih_list_init (&structs);
+
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "property",
+						 "(su)", NIH_DBUS_READWRITE);
+			property->symbol = nih_strdup (property, "property");
+		}
+
+		str = property_object_set_function (NULL, "my", interface, property,
+						    &prototypes, &handlers,
+						    &structs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&handlers);
+			TEST_LIST_EMPTY (&structs);
+
+			nih_free (property);
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "my_com_netsplit_Nih_Test_property_set (NihDBusObject *  object,\n"
+				   "                                       NihDBusMessage * message,\n"
+				   "                                       DBusMessageIter *iter)\n"
+				   "{\n"
+				   "\tDBusMessageIter variter;\n"
+				   "\tDBusMessageIter value_iter;\n"
+				   "\tconst char *    value_item0_dbus;\n"
+				   "\tchar *          value_item0;\n"
+				   "\tuint32_t        value_item1;\n"
+				   "\tMyProperty *    value;\n"
+				   "\n"
+				   "\tnih_assert (object != NULL);\n"
+				   "\tnih_assert (message != NULL);\n"
+				   "\tnih_assert (iter != NULL);\n"
+				   "\n"
+				   "\t/* Recurse into the variant */\n"
+				   "\tif (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_VARIANT) {\n"
+				   "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
+				   "\t\t                             \"Invalid arguments to property property\");\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_recurse (iter, &variter);\n"
+				   "\n"
+				   "\t/* Demarshal a structure from the message */\n"
+				   "\tif (dbus_message_iter_get_arg_type (&variter) != DBUS_TYPE_STRUCT) {\n"
+				   "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
+				   "\t\t                             \"Invalid arguments to property property\");\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_recurse (&variter, &value_iter);\n"
+				   "\n"
+				   "\tvalue = nih_new (message, MyProperty);\n"
+				   "\tif (! value) {\n"
+				   "\t\tnih_error_raise_no_memory ();\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Demarshal a char * from the message */\n"
+				   "\tif (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_STRING) {\n"
+				   "\t\tnih_free (value);\n"
+				   "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
+				   "\t\t                             \"Invalid arguments to property property\");\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_get_basic (&value_iter, &value_item0_dbus);\n"
+				   "\n"
+				   "\tvalue_item0 = nih_strdup (value, value_item0_dbus);\n"
+				   "\tif (! value_item0) {\n"
+				   "\t\tnih_free (value);\n"
+				   "\t\tnih_error_raise_no_memory ();\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_next (&value_iter);\n"
+				   "\n"
+				   "\tvalue->item0 = value_item0;\n"
+				   "\n"
+				   "\t/* Demarshal a uint32_t from the message */\n"
+				   "\tif (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_UINT32) {\n"
+				   "\t\tnih_free (value);\n"
+				   "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
+				   "\t\t                             \"Invalid arguments to property property\");\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_get_basic (&value_iter, &value_item1);\n"
+				   "\n"
+				   "\tdbus_message_iter_next (&value_iter);\n"
+				   "\n"
+				   "\tvalue->item1 = value_item1;\n"
+				   "\n"
+				   "\tif (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_INVALID) {\n"
+				   "\t\tnih_free (value);\n"
+				   "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
+				   "\t\t                             \"Invalid arguments to property property\");\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_next (&variter);\n"
+				   "\n"
+				   "\tdbus_message_iter_next (iter);\n"
+				   "\n"
+				   "\tif (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_INVALID) {\n"
+				   "\t\tnih_dbus_error_raise_printf (DBUS_ERROR_INVALID_ARGS,\n"
+				   "\t\t                             \"Invalid arguments to property property\");\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Call the handler function */\n"
+				   "\tif (my_set_property (object->data, message, value) < 0)\n"
+				   "\t\treturn -1;\n"
+				   "\n"
+				   "\treturn 0;\n"
+				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_property_set");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusObject *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "object");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "DBusMessageIter *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "iter");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_NOT_EMPTY (&handlers);
+
+		func = (TypeFunc *)handlers.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_set_property");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "void *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "data");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const MyProperty *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "value");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&handlers);
+
+
+		TEST_LIST_NOT_EMPTY (&structs);
+
+		structure = (TypeStruct *)structs.next;
+		TEST_ALLOC_SIZE (structure, sizeof (TypeStruct));
+		TEST_ALLOC_PARENT (structure, str);
+		TEST_EQ_STR (structure->name, "MyProperty");
+		TEST_ALLOC_PARENT (structure->name, structure);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "char *");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item0");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "uint32_t");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item1");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&structure->members);
+		nih_free (structure);
+
+		TEST_LIST_EMPTY (&structs);
+
+		nih_free (str);
+		nih_free (property);
+		nih_free (interface);
 	}
 
 
@@ -2751,6 +3311,7 @@ test_object_set_function (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
 		nih_list_init (&handlers);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -2763,13 +3324,15 @@ test_object_set_function (void)
 		}
 
 		str = property_object_set_function (NULL, "my", interface, property,
-						    &prototypes, &handlers);
+						    &prototypes, &handlers,
+						    &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
 			TEST_LIST_EMPTY (&handlers);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (property);
 			nih_free (interface);
@@ -2939,6 +3502,8 @@ test_object_set_function (void)
 
 		TEST_LIST_EMPTY (&handlers);
 
+		TEST_LIST_EMPTY (&structs);
+
 		nih_free (str);
 		nih_free (property);
 		nih_free (interface);
@@ -2986,6 +3551,7 @@ test_proxy_get_function (void)
 	DBusConnection *  server_conn;
 	DBusConnection *  client_conn;
 	NihList           prototypes;
+	NihList           structs;
 	Interface *       interface = NULL;
 	Property *        property = NULL;
 	char *            str;
@@ -3015,6 +3581,7 @@ test_proxy_get_function (void)
 	TEST_FEATURE ("with property");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -3026,12 +3593,13 @@ test_proxy_get_function (void)
 		}
 
 		str = property_proxy_get_function (NULL, "my", interface, property,
-						   &prototypes);
+						   &prototypes, &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (property);
 			nih_free (interface);
@@ -3177,6 +3745,8 @@ test_proxy_get_function (void)
 		nih_free (func);
 
 		TEST_LIST_EMPTY (&prototypes);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 		nih_free (property);
@@ -3721,6 +4291,7 @@ test_proxy_get_function (void)
 	TEST_FEATURE ("with deprecated property");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -3733,12 +4304,13 @@ test_proxy_get_function (void)
 		}
 
 		str = property_proxy_get_function (NULL, "my", interface, property,
-						   &prototypes);
+						   &prototypes, &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (property);
 			nih_free (interface);
@@ -3894,6 +4466,8 @@ test_proxy_get_function (void)
 
 		TEST_LIST_EMPTY (&prototypes);
 
+		TEST_LIST_EMPTY (&structs);
+
 		nih_free (str);
 		nih_free (property);
 		nih_free (interface);
@@ -3974,11 +4548,14 @@ test_proxy_get_notify_function (void)
 	pid_t               dbus_pid;
 	NihList             prototypes;
 	NihList             typedefs;
+	NihList             structs;
 	Interface *         interface = NULL;
 	Property *          property = NULL;
 	char *              str;
 	TypeFunc *          func;
 	TypeVar *           arg;
+	TypeStruct *        structure;
+	TypeVar *           var;
 	DBusConnection *    server_conn;
 	DBusConnection *    client_conn;
 	DBusConnection *    flakey_conn;
@@ -4010,6 +4587,7 @@ test_proxy_get_notify_function (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
 		nih_list_init (&typedefs);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -4022,13 +4600,15 @@ test_proxy_get_notify_function (void)
 
 		str = property_proxy_get_notify_function (NULL, "my", interface,
 							  property,
-							  &prototypes, &typedefs);
+							  &prototypes, &typedefs,
+							  &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
 			TEST_LIST_EMPTY (&typedefs);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (property);
 			nih_free (interface);
@@ -4241,6 +4821,357 @@ test_proxy_get_notify_function (void)
 		nih_free (func);
 
 		TEST_LIST_EMPTY (&typedefs);
+
+		TEST_LIST_EMPTY (&structs);
+
+		nih_free (str);
+		nih_free (property);
+		nih_free (interface);
+	}
+
+
+	/* Check that we can generate a notify function for a structure
+	 * property, with the structure type passed back in the structs
+	 * array.
+	 */
+	TEST_FEATURE ("with structure property");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&typedefs);
+		nih_list_init (&structs);
+
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "property",
+						 "(su)", NIH_DBUS_READWRITE);
+			property->symbol = nih_strdup (property, "property");
+		}
+
+		str = property_proxy_get_notify_function (NULL, "my", interface,
+							  property,
+							  &prototypes, &typedefs,
+							  &structs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&typedefs);
+			TEST_LIST_EMPTY (&structs);
+
+			nih_free (property);
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("void\n"
+				   "my_com_netsplit_Nih_Test_property_get_notify (DBusPendingCall *   pending_call,\n"
+				   "                                              NihDBusPendingData *pending_data)\n"
+				   "{\n"
+				   "\tDBusMessage *   reply;\n"
+				   "\tDBusMessageIter iter;\n"
+				   "\tDBusMessageIter variter;\n"
+				   "\tNihDBusMessage *message;\n"
+				   "\tDBusError       error;\n"
+				   "\tDBusMessageIter value_iter;\n"
+				   "\tconst char *    value_item0_dbus;\n"
+				   "\tchar *          value_item0;\n"
+				   "\tuint32_t        value_item1;\n"
+				   "\tMyProperty *    value;\n"
+				   "\n"
+				   "\tnih_assert (pending_call != NULL);\n"
+				   "\tnih_assert (pending_data != NULL);\n"
+				   "\n"
+				   "\tnih_assert (dbus_pending_call_get_completed (pending_call));\n"
+				   "\n"
+				   "\t/* Steal the reply from the pending call. */\n"
+				   "\treply = dbus_pending_call_steal_reply (pending_call);\n"
+				   "\tnih_assert (reply != NULL);\n"
+				   "\n"
+				   "\t/* Handle error replies */\n"
+				   "\tif (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR) {\n"
+				   "\t\tmessage = NIH_MUST (nih_dbus_message_new (pending_data, pending_data->connection, reply));\n"
+				   "\n"
+				   "\t\tdbus_error_init (&error);\n"
+				   "\t\tdbus_set_error_from_message (&error, message->message);\n"
+				   "\n"
+				   "\t\tnih_error_push_context ();\n"
+				   "\t\tnih_dbus_error_raise (error.name, error.message);\n"
+				   "\t\tpending_data->error_handler (pending_data->data, message);\n"
+				   "\t\tnih_error_pop_context ();\n"
+				   "\n"
+				   "\t\tdbus_error_free (&error);\n"
+				   "\t\tnih_free (message);\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\treturn;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tnih_assert (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_METHOD_RETURN);\n"
+				   "\n"
+				   "\tdo {\n"
+				   "\t\t__label__ enomem;\n"
+				   "\n"
+				   "\t\t/* Create a message context for the reply, and iterate\n"
+				   "\t\t * over and recurse into the arguments.\n"
+				   "\t\t */\n"
+				   "\t\tmessage = nih_dbus_message_new (pending_data, pending_data->connection, reply);\n"
+				   "\t\tif (! message)\n"
+				   "\t\t\tgoto enomem;\n"
+				   "\n"
+				   "\t\tdbus_message_iter_init (message->message, &iter);\n"
+				   "\n"
+				   "\t\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_VARIANT) {\n"
+				   "\t\t\tnih_error_push_context ();\n"
+				   "\t\t\tnih_error_raise (NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t\t                 _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t\t\tpending_data->error_handler (pending_data->data, message);\n"
+				   "\t\t\tnih_error_pop_context ();\n"
+				   "\n"
+				   "\t\t\tnih_free (message);\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treturn;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_iter_recurse (&iter, &variter);\n"
+				   "\n"
+				   "\t\t/* Demarshal a structure from the message */\n"
+				   "\t\tif (dbus_message_iter_get_arg_type (&variter) != DBUS_TYPE_STRUCT) {\n"
+				   "\t\t\tnih_error_push_context ();\n"
+				   "\t\t\tnih_error_raise (NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t\t                 _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t\t\tpending_data->error_handler (pending_data->data, message);\n"
+				   "\t\t\tnih_error_pop_context ();\n"
+				   "\n"
+				   "\t\t\tnih_free (message);\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treturn;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_iter_recurse (&variter, &value_iter);\n"
+				   "\n"
+				   "\t\tvalue = nih_new (message, MyProperty);\n"
+				   "\t\tif (! value) {\n"
+				   "\t\t\tnih_free (message);\n"
+				   "\t\t\tmessage = NULL;\n"
+				   "\t\t\tgoto enomem;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\t/* Demarshal a char * from the message */\n"
+				   "\t\tif (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_STRING) {\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\t\tnih_error_push_context ();\n"
+				   "\t\t\tnih_error_raise (NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t\t                 _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t\t\tpending_data->error_handler (pending_data->data, message);\n"
+				   "\t\t\tnih_error_pop_context ();\n"
+				   "\n"
+				   "\t\t\tnih_free (message);\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treturn;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_iter_get_basic (&value_iter, &value_item0_dbus);\n"
+				   "\n"
+				   "\t\tvalue_item0 = nih_strdup (value, value_item0_dbus);\n"
+				   "\t\tif (! value_item0) {\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\t\tnih_free (message);\n"
+				   "\t\t\tmessage = NULL;\n"
+				   "\t\t\tgoto enomem;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_iter_next (&value_iter);\n"
+				   "\n"
+				   "\t\tvalue->item0 = value_item0;\n"
+				   "\n"
+				   "\t\t/* Demarshal a uint32_t from the message */\n"
+				   "\t\tif (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_UINT32) {\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\t\tnih_error_push_context ();\n"
+				   "\t\t\tnih_error_raise (NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t\t                 _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t\t\tpending_data->error_handler (pending_data->data, message);\n"
+				   "\t\t\tnih_error_pop_context ();\n"
+				   "\n"
+				   "\t\t\tnih_free (message);\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treturn;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_iter_get_basic (&value_iter, &value_item1);\n"
+				   "\n"
+				   "\t\tdbus_message_iter_next (&value_iter);\n"
+				   "\n"
+				   "\t\tvalue->item1 = value_item1;\n"
+				   "\n"
+				   "\t\tif (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_INVALID) {\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\t\tnih_error_push_context ();\n"
+				   "\t\t\tnih_error_raise (NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t\t                 _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t\t\tpending_data->error_handler (pending_data->data, message);\n"
+				   "\t\t\tnih_error_pop_context ();\n"
+				   "\n"
+				   "\t\t\tnih_free (message);\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treturn;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_iter_next (&variter);\n"
+				   "\n"
+				   "\t\tdbus_message_iter_next (&iter);\n"
+				   "\n"
+				   "\t\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
+				   "\t\t\tnih_error_push_context ();\n"
+				   "\t\t\tnih_error_raise (NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t\t                 _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t\t\tpending_data->error_handler (pending_data->data, message);\n"
+				   "\t\t\tnih_error_pop_context ();\n"
+				   "\n"
+				   "\t\t\tnih_free (message);\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\treturn;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\tenomem: __attribute__ ((unused));\n"
+				   "\t} while (! message);\n"
+				   "\n"
+				   "\t/* Call the handler function */\n"
+				   "\tnih_error_push_context ();\n"
+				   "\t((MyGetPropertyReply)pending_data->handler) (pending_data->data, message, value);\n"
+				   "\tnih_error_pop_context ();\n"
+				   "\n"
+				   "\tnih_free (message);\n"
+				   "\tdbus_message_unref (reply);\n"
+				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "void");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_com_netsplit_Nih_Test_property_get_notify");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "DBusPendingCall *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "pending_call");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusPendingData *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "pending_data");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_NOT_EMPTY (&typedefs);
+
+		func = (TypeFunc *)typedefs.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "typedef void");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "(*MyGetPropertyReply)");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "void *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "data");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusMessage *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "message");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const MyProperty *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "value");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&typedefs);
+
+
+		TEST_LIST_NOT_EMPTY (&structs);
+
+		structure = (TypeStruct *)structs.next;
+		TEST_ALLOC_SIZE (structure, sizeof (TypeStruct));
+		TEST_ALLOC_PARENT (structure, str);
+		TEST_EQ_STR (structure->name, "MyProperty");
+		TEST_ALLOC_PARENT (structure->name, structure);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "char *");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item0");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "uint32_t");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item1");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&structure->members);
+		nih_free (structure);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 		nih_free (property);
@@ -4916,6 +5847,7 @@ test_proxy_get_notify_function (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
 		nih_list_init (&typedefs);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -4929,13 +5861,15 @@ test_proxy_get_notify_function (void)
 
 		str = property_proxy_get_notify_function (NULL, "my", interface,
 							  property,
-							  &prototypes, &typedefs);
+							  &prototypes, &typedefs,
+							  &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
 			TEST_LIST_EMPTY (&typedefs);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (property);
 			nih_free (interface);
@@ -5149,6 +6083,8 @@ test_proxy_get_notify_function (void)
 
 		TEST_LIST_EMPTY (&typedefs);
 
+		TEST_LIST_EMPTY (&structs);
+
 		nih_free (str);
 		nih_free (property);
 		nih_free (interface);
@@ -5187,11 +6123,14 @@ test_proxy_set_function (void)
 	DBusConnection *  server_conn;
 	DBusConnection *  client_conn;
 	NihList           prototypes;
+	NihList           structs;
 	Interface *       interface = NULL;
 	Property *        property = NULL;
 	char *            str;
 	TypeFunc *        func;
 	TypeVar *         arg;
+	TypeStruct *      structure;
+	TypeVar *         var;
 	NihListEntry *    attrib;
 	DBusConnection *  flakey_conn;
 	NihDBusProxy *    proxy = NULL;
@@ -5216,6 +6155,7 @@ test_proxy_set_function (void)
 	TEST_FEATURE ("with property");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -5227,12 +6167,13 @@ test_proxy_set_function (void)
 		}
 
 		str = property_proxy_set_function (NULL, "my", interface, property,
-						   &prototypes);
+						   &prototypes, &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (property);
 			nih_free (interface);
@@ -5422,6 +6363,293 @@ test_proxy_set_function (void)
 
 		TEST_LIST_EMPTY (&prototypes);
 
+		TEST_LIST_EMPTY (&structs);
+
+		nih_free (str);
+		nih_free (property);
+		nih_free (interface);
+	}
+
+
+	/* Check that we can generate a function for a structure property,
+	 * with the structure type passed back in the structs array.
+	 */
+	TEST_FEATURE ("with structure property");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&structs);
+
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "test_property",
+						 "(su)", NIH_DBUS_READWRITE);
+			property->symbol = nih_strdup (property, "test_property");
+		}
+
+		str = property_proxy_set_function (NULL, "my", interface, property,
+						   &prototypes, &structs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&structs);
+
+			nih_free (property);
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("DBusPendingCall *\n"
+				   "my_set_test_property (NihDBusProxy *         proxy,\n"
+				   "                      const MyTestProperty * value,\n"
+				   "                      MySetTestPropertyReply handler,\n"
+				   "                      NihDBusErrorHandler    error_handler,\n"
+				   "                      void *                 data,\n"
+				   "                      int                    timeout)\n"
+				   "{\n"
+				   "\tDBusMessage *       method_call;\n"
+				   "\tDBusMessageIter     iter;\n"
+				   "\tDBusMessageIter     variter;\n"
+				   "\tDBusPendingCall *   pending_call;\n"
+				   "\tNihDBusPendingData *pending_data;\n"
+				   "\tconst char *        interface;\n"
+				   "\tconst char *        property;\n"
+				   "\tDBusMessageIter     value_iter;\n"
+				   "\tconst char *        value_item0;\n"
+				   "\tuint32_t            value_item1;\n"
+				   "\n"
+				   "\tnih_assert (proxy != NULL);\n"
+				   "\tnih_assert (value != NULL);\n"
+				   "\tnih_assert ((handler == NULL) || (error_handler != NULL));\n"
+				   "\n"
+				   "\t/* Construct the method call message. */\n"
+				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"org.freedesktop.DBus.Properties\", \"Set\");\n"
+				   "\tif (! method_call)\n"
+				   "\t\tnih_return_no_memory_error (NULL);\n"
+				   "\n"
+				   "\tdbus_message_iter_init_append (method_call, &iter);\n"
+				   "\n"
+				   "\tinterface = \"com.netsplit.Nih.Test\";\n"
+				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &interface)) {\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (NULL);\n"
+				   "\t}\n"
+				   "\n"
+				   "\tproperty = \"test_property\";\n"
+				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property)) {\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (NULL);\n"
+				   "\t}\n"
+				   "\n"
+				   "\tif (! dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT, \"(su)\", &variter)) {\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (NULL);\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Marshal a structure onto the message */\n"
+				   "\tif (! dbus_message_iter_open_container (&variter, DBUS_TYPE_STRUCT, NULL, &value_iter)) {\n"
+				   "\t\tdbus_message_iter_abandon_container (&iter, &variter);\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (NULL);\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue_item0 = value->item0;\n"
+				   "\n"
+				   "\t/* Marshal a char * onto the message */\n"
+				   "\tif (! dbus_message_iter_append_basic (&value_iter, DBUS_TYPE_STRING, &value_item0)) {\n"
+				   "\t\tdbus_message_iter_abandon_container (&variter, &value_iter);\n"
+				   "\t\tdbus_message_iter_abandon_container (&iter, &variter);\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (NULL);\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue_item1 = value->item1;\n"
+				   "\n"
+				   "\t/* Marshal a uint32_t onto the message */\n"
+				   "\tif (! dbus_message_iter_append_basic (&value_iter, DBUS_TYPE_UINT32, &value_item1)) {\n"
+				   "\t\tdbus_message_iter_abandon_container (&variter, &value_iter);\n"
+				   "\t\tdbus_message_iter_abandon_container (&iter, &variter);\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (NULL);\n"
+				   "\t}\n"
+				   "\n"
+				   "\tif (! dbus_message_iter_close_container (&variter, &value_iter)) {\n"
+				   "\t\tdbus_message_iter_abandon_container (&iter, &variter);\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (NULL);\n"
+				   "\t}\n"
+				   "\n"
+				   "\tif (! dbus_message_iter_close_container (&iter, &variter)) {\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (NULL);\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Handle a fire-and-forget message */\n"
+				   "\tif (! error_handler) {\n"
+				   "\t\tdbus_message_set_no_reply (method_call, TRUE);\n"
+				   "\t\tif (! dbus_connection_send (proxy->connection, method_call, NULL)) {\n"
+				   "\t\t\tdbus_message_unref (method_call);\n"
+				   "\t\t\tnih_return_no_memory_error (NULL);\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\treturn (DBusPendingCall *)TRUE;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Send the message and set up the reply notification. */\n"
+				   "\tpending_data = nih_dbus_pending_data_new (NULL, proxy->connection,\n"
+				   "\t                                          (NihDBusReplyHandler)handler,\n"
+				   "\t                                          error_handler, data);\n"
+				   "\tif (! pending_data) {\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (NULL);\n"
+				   "\t}\n"
+				   "\n"
+				   "\tpending_call = NULL;\n"
+				   "\tif (! dbus_connection_send_with_reply (proxy->connection, method_call,\n"
+				   "\t                                       &pending_call, timeout)) {\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_free (pending_data);\n"
+				   "\t\tnih_return_no_memory_error (NULL);\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_unref (method_call);\n"
+				   "\n"
+				   "\tNIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Test_test_property_set_notify,\n"
+				   "\t                                        pending_data, (DBusFreeFunction)nih_discard));\n"
+				   "\n"
+				   "\treturn pending_call;\n"
+				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "DBusPendingCall *");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_set_test_property");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusProxy *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "proxy");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const MyTestProperty *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "value");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "MySetTestPropertyReply");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "handler");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusErrorHandler");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "error_handler");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "void *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "data");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "int");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "timeout");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_NOT_EMPTY (&structs);
+
+		structure = (TypeStruct *)structs.next;
+		TEST_ALLOC_SIZE (structure, sizeof (TypeStruct));
+		TEST_ALLOC_PARENT (structure, str);
+		TEST_EQ_STR (structure->name, "MyTestProperty");
+		TEST_ALLOC_PARENT (structure->name, structure);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "char *");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item0");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "uint32_t");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item1");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&structure->members);
+		nih_free (structure);
+
+		TEST_LIST_EMPTY (&structs);
+
 		nih_free (str);
 		nih_free (property);
 		nih_free (interface);
@@ -5434,6 +6662,7 @@ test_proxy_set_function (void)
 	TEST_FEATURE ("with array property");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -5445,12 +6674,13 @@ test_proxy_set_function (void)
 		}
 
 		str = property_proxy_set_function (NULL, "my", interface, property,
-						   &prototypes);
+						   &prototypes, &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (property);
 			nih_free (interface);
@@ -5672,6 +6902,8 @@ test_proxy_set_function (void)
 		nih_free (func);
 
 		TEST_LIST_EMPTY (&prototypes);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 		nih_free (property);
@@ -6488,6 +7720,7 @@ test_proxy_set_function (void)
 	TEST_FEATURE ("with deprecated property");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -6500,12 +7733,13 @@ test_proxy_set_function (void)
 		}
 
 		str = property_proxy_set_function (NULL, "my", interface, property,
-						   &prototypes);
+						   &prototypes, &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (property);
 			nih_free (interface);
@@ -6704,6 +7938,8 @@ test_proxy_set_function (void)
 
 		TEST_LIST_EMPTY (&prototypes);
 
+		TEST_LIST_EMPTY (&structs);
+
 		nih_free (str);
 		nih_free (property);
 		nih_free (interface);
@@ -6747,6 +7983,7 @@ test_proxy_set_notify_function (void)
 	pid_t               dbus_pid;
 	NihList             prototypes;
 	NihList             typedefs;
+	NihList             structs;
 	Interface *         interface = NULL;
 	Property *          property = NULL;
 	char *              str;
@@ -6780,6 +8017,7 @@ test_proxy_set_notify_function (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
 		nih_list_init (&typedefs);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -6792,13 +8030,15 @@ test_proxy_set_notify_function (void)
 
 		str = property_proxy_set_notify_function (NULL, "my", interface,
 							  property,
-							  &prototypes, &typedefs);
+							  &prototypes, &typedefs,
+							  &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
 			TEST_LIST_EMPTY (&typedefs);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (property);
 			nih_free (interface);
@@ -6950,6 +8190,8 @@ test_proxy_set_notify_function (void)
 		nih_free (func);
 
 		TEST_LIST_EMPTY (&typedefs);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 		nih_free (property);
@@ -7498,6 +8740,7 @@ test_proxy_set_notify_function (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
 		nih_list_init (&typedefs);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -7511,13 +8754,15 @@ test_proxy_set_notify_function (void)
 
 		str = property_proxy_set_notify_function (NULL, "my", interface,
 							  property,
-							  &prototypes, &typedefs);
+							  &prototypes, &typedefs,
+							  &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
 			TEST_LIST_EMPTY (&typedefs);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (property);
 			nih_free (interface);
@@ -7670,6 +8915,8 @@ test_proxy_set_notify_function (void)
 
 		TEST_LIST_EMPTY (&typedefs);
 
+		TEST_LIST_EMPTY (&structs);
+
 		nih_free (str);
 		nih_free (property);
 		nih_free (interface);
@@ -7691,11 +8938,14 @@ test_proxy_get_sync_function (void)
 	DBusConnection *server_conn;
 	DBusConnection *client_conn;
 	NihList         prototypes;
+	NihList         structs;
 	Interface *     interface = NULL;
 	Property *      property = NULL;
 	char *          str;
 	TypeFunc *      func;
 	TypeVar *       arg;
+	TypeStruct *    structure;
+	TypeVar *       var;
 	NihListEntry *  attrib;
 	NihDBusProxy *  proxy = NULL;
 	void *          parent = NULL;
@@ -7725,6 +8975,7 @@ test_proxy_get_sync_function (void)
 	TEST_FEATURE ("with property");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -7737,12 +8988,13 @@ test_proxy_get_sync_function (void)
 
 		str = property_proxy_get_sync_function (NULL, "my", interface,
 							property,
-							&prototypes);
+							&prototypes, &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (property);
 			nih_free (interface);
@@ -7911,6 +9163,291 @@ test_proxy_get_sync_function (void)
 
 		TEST_LIST_EMPTY (&prototypes);
 
+
+		TEST_LIST_EMPTY (&structs);
+
+		nih_free (str);
+		nih_free (property);
+		nih_free (interface);
+	}
+
+
+	/* Check that we can generate a function that will make a method
+	 * call to obtain the value of a property and return it in the
+	 * pointer argument supplied.  The function returns an integer
+	 * to indicate success.
+	 */
+	TEST_FEATURE ("with structure property");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&structs);
+
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "property",
+						 "(su)", NIH_DBUS_READWRITE);
+			property->symbol = nih_strdup (property, "property");
+		}
+
+		str = property_proxy_get_sync_function (NULL, "my", interface,
+							property,
+							&prototypes, &structs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&structs);
+
+			nih_free (property);
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "my_get_property_sync (const void *  parent,\n"
+				   "                      NihDBusProxy *proxy,\n"
+				   "                      MyProperty ** value)\n"
+				   "{\n"
+				   "\tDBusMessage *   method_call;\n"
+				   "\tDBusMessageIter iter;\n"
+				   "\tDBusMessageIter variter;\n"
+				   "\tDBusError       error;\n"
+				   "\tDBusMessage *   reply;\n"
+				   "\tconst char *    interface;\n"
+				   "\tconst char *    property;\n"
+				   "\tDBusMessageIter local_iter;\n"
+				   "\tconst char *    local_item0_dbus;\n"
+				   "\tchar *          local_item0;\n"
+				   "\tuint32_t        local_item1;\n"
+				   "\tMyProperty *    local;\n"
+				   "\n"
+				   "\tnih_assert (proxy != NULL);\n"
+				   "\tnih_assert (value != NULL);\n"
+				   "\n"
+				   "\t/* Construct the method call message. */\n"
+				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"org.freedesktop.DBus.Properties\", \"Get\");\n"
+				   "\tif (! method_call)\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\n"
+				   "\tdbus_message_iter_init_append (method_call, &iter);\n"
+				   "\n"
+				   "\tinterface = \"com.netsplit.Nih.Test\";\n"
+				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &interface)) {\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\t}\n"
+				   "\n"
+				   "\tproperty = \"property\";\n"
+				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property)) {\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Send the message, and wait for the reply. */\n"
+				   "\tdbus_error_init (&error);\n"
+				   "\n"
+				   "\treply = dbus_connection_send_with_reply_and_block (proxy->connection, method_call, -1, &error);\n"
+				   "\tif (! reply) {\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\n"
+				   "\t\tif (dbus_error_has_name (&error, DBUS_ERROR_NO_MEMORY)) {\n"
+				   "\t\t\tnih_error_raise_no_memory ();\n"
+				   "\t\t} else {\n"
+				   "\t\t\tnih_dbus_error_raise (error.name, error.message);\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_error_free (&error);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_unref (method_call);\n"
+				   "\n"
+				   "\t/* Iterate the method arguments, recursing into the variant */\n"
+				   "\tdbus_message_iter_init (reply, &iter);\n"
+				   "\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_VARIANT) {\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\tnih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_recurse (&iter, &variter);\n"
+				   "\n"
+				   "\tdbus_message_iter_next (&iter);\n"
+				   "\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\tnih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdo {\n"
+				   "\t\t__label__ enomem;\n"
+				   "\n"
+				   "\t\t/* Demarshal a structure from the message */\n"
+				   "\t\tif (dbus_message_iter_get_arg_type (&variter) != DBUS_TYPE_STRUCT) {\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\tnih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_iter_recurse (&variter, &local_iter);\n"
+				   "\n"
+				   "\t\tlocal = nih_new (parent, MyProperty);\n"
+				   "\t\tif (! local) {\n"
+				   "\t\t\t*value = NULL;\n"
+				   "\t\t\tgoto enomem;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\t/* Demarshal a char * from the message */\n"
+				   "\t\tif (dbus_message_iter_get_arg_type (&local_iter) != DBUS_TYPE_STRING) {\n"
+				   "\t\t\tnih_free (local);\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\tnih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_iter_get_basic (&local_iter, &local_item0_dbus);\n"
+				   "\n"
+				   "\t\tlocal_item0 = nih_strdup (local, local_item0_dbus);\n"
+				   "\t\tif (! local_item0) {\n"
+				   "\t\t\tnih_free (local);\n"
+				   "\t\t\t*value = NULL;\n"
+				   "\t\t\tgoto enomem;\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_iter_next (&local_iter);\n"
+				   "\n"
+				   "\t\tlocal->item0 = local_item0;\n"
+				   "\n"
+				   "\t\t/* Demarshal a uint32_t from the message */\n"
+				   "\t\tif (dbus_message_iter_get_arg_type (&local_iter) != DBUS_TYPE_UINT32) {\n"
+				   "\t\t\tnih_free (local);\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\tnih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_iter_get_basic (&local_iter, &local_item1);\n"
+				   "\n"
+				   "\t\tdbus_message_iter_next (&local_iter);\n"
+				   "\n"
+				   "\t\tlocal->item1 = local_item1;\n"
+				   "\n"
+				   "\t\tif (dbus_message_iter_get_arg_type (&local_iter) != DBUS_TYPE_INVALID) {\n"
+				   "\t\t\tnih_free (local);\n"
+				   "\t\t\tdbus_message_unref (reply);\n"
+				   "\t\t\tnih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_message_iter_next (&variter);\n"
+				   "\n"
+				   "\t\t*value = local;\n"
+				   "\tenomem: __attribute__ ((unused));\n"
+				   "\t} while (! *value);\n"
+				   "\n"
+				   "\tdbus_message_unref (reply);\n"
+				   "\n"
+				   "\treturn 0;\n"
+				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_get_property_sync");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const void *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "parent");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusProxy *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "proxy");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "MyProperty **");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "value");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_NOT_EMPTY (&structs);
+
+		structure = (TypeStruct *)structs.next;
+		TEST_ALLOC_SIZE (structure, sizeof (TypeStruct));
+		TEST_ALLOC_PARENT (structure, str);
+		TEST_EQ_STR (structure->name, "MyProperty");
+		TEST_ALLOC_PARENT (structure->name, structure);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "char *");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item0");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "uint32_t");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item1");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&structure->members);
+		nih_free (structure);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 		nih_free (property);
@@ -8558,6 +10095,7 @@ test_proxy_get_sync_function (void)
 	TEST_FEATURE ("with deprecated property");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -8571,12 +10109,13 @@ test_proxy_get_sync_function (void)
 
 		str = property_proxy_get_sync_function (NULL, "my", interface,
 							property,
-							&prototypes);
+							&prototypes, &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (property);
 			nih_free (interface);
@@ -8755,6 +10294,8 @@ test_proxy_get_sync_function (void)
 		TEST_LIST_EMPTY (&prototypes);
 
 
+		TEST_LIST_EMPTY (&structs);
+
 		nih_free (str);
 		nih_free (property);
 		nih_free (interface);
@@ -8775,11 +10316,14 @@ test_proxy_set_sync_function (void)
 	DBusConnection *server_conn;
 	DBusConnection *client_conn;
 	NihList         prototypes;
+	NihList         structs;
 	Interface *     interface = NULL;
 	Property *      property = NULL;
 	char *          str;
 	TypeFunc *      func;
 	TypeVar *       arg;
+	TypeStruct *    structure;
+	TypeVar *       var;
 	NihListEntry *  attrib;
 	NihDBusProxy *  proxy = NULL;
 	void *          parent = NULL;
@@ -8808,6 +10352,7 @@ test_proxy_set_sync_function (void)
 	TEST_FEATURE ("with property");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -8820,12 +10365,13 @@ test_proxy_set_sync_function (void)
 
 		str = property_proxy_set_sync_function (NULL, "my", interface,
 							property,
-							&prototypes);
+							&prototypes, &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (property);
 			nih_free (interface);
@@ -8976,6 +10522,254 @@ test_proxy_set_sync_function (void)
 		TEST_LIST_EMPTY (&prototypes);
 
 
+		TEST_LIST_EMPTY (&structs);
+
+		nih_free (str);
+		nih_free (property);
+		nih_free (interface);
+	}
+
+
+	/* Check that we can generate a function for a structure property,
+	 * with the structure type passed back in the structs array.
+	 */
+	TEST_FEATURE ("with structure property");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&prototypes);
+		nih_list_init (&structs);
+
+		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
+			interface->symbol = NULL;
+
+			property = property_new (NULL, "property",
+						 "(su)", NIH_DBUS_READWRITE);
+			property->symbol = nih_strdup (property, "property");
+		}
+
+		str = property_proxy_set_sync_function (NULL, "my", interface,
+							property,
+							&prototypes, &structs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&structs);
+
+			nih_free (property);
+			nih_free (interface);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("int\n"
+				   "my_set_property_sync (const void *      parent,\n"
+				   "                      NihDBusProxy *    proxy,\n"
+				   "                      const MyProperty *value)\n"
+				   "{\n"
+				   "\tDBusMessage *   method_call;\n"
+				   "\tDBusMessageIter iter;\n"
+				   "\tDBusMessageIter variter;\n"
+				   "\tDBusError       error;\n"
+				   "\tDBusMessage *   reply;\n"
+				   "\tconst char *    interface;\n"
+				   "\tconst char *    property;\n"
+				   "\tDBusMessageIter value_iter;\n"
+				   "\tconst char *    value_item0;\n"
+				   "\tuint32_t        value_item1;\n"
+				   "\n"
+				   "\tnih_assert (proxy != NULL);\n"
+				   "\tnih_assert (value != NULL);\n"
+				   "\n"
+				   "\t/* Construct the method call message. */\n"
+				   "\tmethod_call = dbus_message_new_method_call (proxy->name, proxy->path, \"org.freedesktop.DBus.Properties\", \"Set\");\n"
+				   "\tif (! method_call)\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\n"
+				   "\tdbus_message_iter_init_append (method_call, &iter);\n"
+				   "\n"
+				   "\tinterface = \"com.netsplit.Nih.Test\";\n"
+				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &interface)) {\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\t}\n"
+				   "\n"
+				   "\tproperty = \"property\";\n"
+				   "\tif (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &property)) {\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\t}\n"
+				   "\n"
+				   "\tif (! dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT, \"(su)\", &variter)) {\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Marshal a structure onto the message */\n"
+				   "\tif (! dbus_message_iter_open_container (&variter, DBUS_TYPE_STRUCT, NULL, &value_iter)) {\n"
+				   "\t\tdbus_message_iter_abandon_container (&iter, &variter);\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue_item0 = value->item0;\n"
+				   "\n"
+				   "\t/* Marshal a char * onto the message */\n"
+				   "\tif (! dbus_message_iter_append_basic (&value_iter, DBUS_TYPE_STRING, &value_item0)) {\n"
+				   "\t\tdbus_message_iter_abandon_container (&variter, &value_iter);\n"
+				   "\t\tdbus_message_iter_abandon_container (&iter, &variter);\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue_item1 = value->item1;\n"
+				   "\n"
+				   "\t/* Marshal a uint32_t onto the message */\n"
+				   "\tif (! dbus_message_iter_append_basic (&value_iter, DBUS_TYPE_UINT32, &value_item1)) {\n"
+				   "\t\tdbus_message_iter_abandon_container (&variter, &value_iter);\n"
+				   "\t\tdbus_message_iter_abandon_container (&iter, &variter);\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\t}\n"
+				   "\n"
+				   "\tif (! dbus_message_iter_close_container (&variter, &value_iter)) {\n"
+				   "\t\tdbus_message_iter_abandon_container (&iter, &variter);\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\t}\n"
+				   "\n"
+				   "\tif (! dbus_message_iter_close_container (&iter, &variter)) {\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\t\tnih_return_no_memory_error (-1);\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Send the message, and wait for the reply. */\n"
+				   "\tdbus_error_init (&error);\n"
+				   "\n"
+				   "\treply = dbus_connection_send_with_reply_and_block (proxy->connection, method_call, -1, &error);\n"
+				   "\tif (! reply) {\n"
+				   "\t\tdbus_message_unref (method_call);\n"
+				   "\n"
+				   "\t\tif (dbus_error_has_name (&error, DBUS_ERROR_NO_MEMORY)) {\n"
+				   "\t\t\tnih_error_raise_no_memory ();\n"
+				   "\t\t} else {\n"
+				   "\t\t\tnih_dbus_error_raise (error.name, error.message);\n"
+				   "\t\t}\n"
+				   "\n"
+				   "\t\tdbus_error_free (&error);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\t/* Check the reply has no arguments */\n"
+				   "\tdbus_message_unref (method_call);\n"
+				   "\tdbus_message_iter_init (reply, &iter);\n"
+				   "\n"
+				   "\tif (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {\n"
+				   "\t\tdbus_message_unref (reply);\n"
+				   "\t\tnih_return_error (-1, NIH_DBUS_INVALID_ARGS,\n"
+				   "\t\t                  _(NIH_DBUS_INVALID_ARGS_STR));\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_unref (reply);\n"
+				   "\n"
+				   "\treturn 0;\n"
+ 				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&prototypes);
+
+		func = (TypeFunc *)prototypes.next;
+		TEST_ALLOC_SIZE (func, sizeof (TypeFunc));
+		TEST_ALLOC_PARENT (func, str);
+		TEST_EQ_STR (func->type, "int");
+		TEST_ALLOC_PARENT (func->type, func);
+		TEST_EQ_STR (func->name, "my_set_property_sync");
+		TEST_ALLOC_PARENT (func->name, func);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const void *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "parent");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "NihDBusProxy *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "proxy");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_NOT_EMPTY (&func->args);
+
+		arg = (TypeVar *)func->args.next;
+		TEST_ALLOC_SIZE (arg, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (arg, func);
+		TEST_EQ_STR (arg->type, "const MyProperty *");
+		TEST_ALLOC_PARENT (arg->type, arg);
+		TEST_EQ_STR (arg->name, "value");
+		TEST_ALLOC_PARENT (arg->name, arg);
+		nih_free (arg);
+
+		TEST_LIST_EMPTY (&func->args);
+
+		TEST_LIST_NOT_EMPTY (&func->attribs);
+
+		attrib = (NihListEntry *)func->attribs.next;
+		TEST_ALLOC_SIZE (attrib, sizeof (NihListEntry *));
+		TEST_ALLOC_PARENT (attrib, func);
+		TEST_EQ_STR (attrib->str, "warn_unused_result");
+		TEST_ALLOC_PARENT (attrib->str, attrib);
+		nih_free (attrib);
+
+		TEST_LIST_EMPTY (&func->attribs);
+		nih_free (func);
+
+		TEST_LIST_EMPTY (&prototypes);
+
+
+		TEST_LIST_NOT_EMPTY (&structs);
+
+		structure = (TypeStruct *)structs.next;
+		TEST_ALLOC_SIZE (structure, sizeof (TypeStruct));
+		TEST_ALLOC_PARENT (structure, str);
+		TEST_EQ_STR (structure->name, "MyProperty");
+		TEST_ALLOC_PARENT (structure->name, structure);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "char *");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item0");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "uint32_t");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item1");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&structure->members);
+		nih_free (structure);
+
+		TEST_LIST_EMPTY (&structs);
+
 		nih_free (str);
 		nih_free (property);
 		nih_free (interface);
@@ -8988,6 +10782,7 @@ test_proxy_set_sync_function (void)
 	TEST_FEATURE ("with array property");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -9000,12 +10795,13 @@ test_proxy_set_sync_function (void)
 
 		str = property_proxy_set_sync_function (NULL, "my", interface,
 							property,
-							&prototypes);
+							&prototypes, &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (property);
 			nih_free (interface);
@@ -9188,6 +10984,8 @@ test_proxy_set_sync_function (void)
 
 		TEST_LIST_EMPTY (&prototypes);
 
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 		nih_free (property);
@@ -9542,6 +11340,7 @@ test_proxy_set_sync_function (void)
 	TEST_FEATURE ("with deprecated property");
 	TEST_ALLOC_FAIL {
 		nih_list_init (&prototypes);
+		nih_list_init (&structs);
 
 		TEST_ALLOC_SAFE {
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
@@ -9555,12 +11354,13 @@ test_proxy_set_sync_function (void)
 
 		str = property_proxy_set_sync_function (NULL, "my", interface,
 							property,
-							&prototypes);
+							&prototypes, &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 
 			TEST_LIST_EMPTY (&prototypes);
+			TEST_LIST_EMPTY (&structs);
 
 			nih_free (property);
 			nih_free (interface);
@@ -9718,6 +11518,8 @@ test_proxy_set_sync_function (void)
 
 		TEST_LIST_EMPTY (&prototypes);
 
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 		nih_free (property);

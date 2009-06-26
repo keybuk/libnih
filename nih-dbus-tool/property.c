@@ -479,11 +479,13 @@ property_object_get_function (const void *parent,
 			      Interface * interface,
 			      Property *  property,
 			      NihList *   prototypes,
-			      NihList *   handlers)
+			      NihList *   handlers,
+			      NihList *   structs)
 {
 	DBusSignatureIter   iter;
 	NihList             inputs;
 	NihList             locals;
+	NihList             property_structs;
 	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
@@ -503,11 +505,13 @@ property_object_get_function (const void *parent,
 	nih_assert (property != NULL);
 	nih_assert (prototypes != NULL);
 	nih_assert (handlers != NULL);
+	nih_assert (structs != NULL);
 
 	dbus_signature_iter_init (&iter, property->type);
 
 	nih_list_init (&inputs);
 	nih_list_init (&locals);
+	nih_list_init (&property_structs);
 
 	/* The function returns an integer, and accepts an arguments for
 	 * the D-Bus object, message and a message iterator.
@@ -561,7 +565,10 @@ property_object_get_function (const void *parent,
 
 	block = marshal (NULL, &iter, "variter", "value",
 			 oom_error_code,
-			 &inputs, &locals);
+			 &inputs, &locals,
+			 prefix, interface->symbol,
+			 property->symbol, NULL,
+			 &property_structs);
 	if (! block)
 		return NULL;
 
@@ -702,6 +709,13 @@ property_object_get_function (const void *parent,
 	nih_list_add (handlers, &handler_func->entry);
 	nih_ref (handler_func, code);
 
+	NIH_LIST_FOREACH_SAFE (&property_structs, iter) {
+		TypeStruct *structure = (TypeStruct *)iter;
+
+		nih_ref (structure, code);
+		nih_list_add (structs, &structure->entry);
+	}
+
 	return code;
 }
 
@@ -742,11 +756,13 @@ property_object_set_function (const void *parent,
 			      Interface * interface,
 			      Property *  property,
 			      NihList *   prototypes,
-			      NihList *   handlers)
+			      NihList *   handlers,
+			      NihList *   structs)
 {
 	DBusSignatureIter   iter;
 	NihList             outputs;
 	NihList             locals;
+	NihList             property_structs;
 	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
@@ -769,11 +785,13 @@ property_object_set_function (const void *parent,
 	nih_assert (property != NULL);
 	nih_assert (prototypes != NULL);
 	nih_assert (handlers != NULL);
+	nih_assert (structs != NULL);
 
 	dbus_signature_iter_init (&iter, property->type);
 
 	nih_list_init (&outputs);
 	nih_list_init (&locals);
+	nih_list_init (&property_structs);
 
 	/* The function returns an integer, which means success when zero
 	 * or a raised error when non-zero and accepts arguments for the
@@ -852,7 +870,10 @@ property_object_set_function (const void *parent,
 	block = demarshal (NULL, &iter, "message", "variter", "value",
 			   oom_error_code,
 			   type_error_code,
-			   &outputs, &locals);
+			   &outputs, &locals,
+			   prefix, interface->symbol,
+			   property->symbol, NULL,
+			   &property_structs);
 	if (! block)
 		return NULL;
 
@@ -989,6 +1010,13 @@ property_object_set_function (const void *parent,
 	nih_list_add (handlers, &handler_func->entry);
 	nih_ref (handler_func, code);
 
+	NIH_LIST_FOREACH_SAFE (&property_structs, iter) {
+		TypeStruct *structure = (TypeStruct *)iter;
+
+		nih_ref (structure, code);
+		nih_list_add (structs, &structure->entry);
+	}
+
 	return code;
 }
 
@@ -1028,7 +1056,8 @@ property_proxy_get_function (const void *parent,
 			     const char *prefix,
 			     Interface * interface,
 			     Property *  property,
-			     NihList *   prototypes)
+			     NihList *   prototypes,
+			     NihList *   structs)
 {
 	NihList             locals;
 	nih_local char *    name = NULL;
@@ -1054,6 +1083,7 @@ property_proxy_get_function (const void *parent,
 	nih_assert (interface != NULL);
 	nih_assert (property != NULL);
 	nih_assert (prototypes != NULL);
+	nih_assert (structs != NULL);
 
 	nih_list_init (&locals);
 
@@ -1338,11 +1368,13 @@ property_proxy_get_notify_function (const void *parent,
 				    Interface * interface,
 				    Property *  property,
 				    NihList *   prototypes,
-				    NihList *   typedefs)
+				    NihList *   typedefs,
+				    NihList *   structs)
 {
 	DBusSignatureIter   iter;
 	NihList             outputs;
 	NihList             locals;
+	NihList             property_structs;
 	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
@@ -1370,11 +1402,13 @@ property_proxy_get_notify_function (const void *parent,
 	nih_assert (property != NULL);
 	nih_assert (prototypes != NULL);
 	nih_assert (typedefs != NULL);
+	nih_assert (structs != NULL);
 
 	dbus_signature_iter_init (&iter, property->type);
 
 	nih_list_init (&outputs);
 	nih_list_init (&locals);
+	nih_list_init (&property_structs);
 
 	/* The function takes the pending call being notified and the
 	 * associated data structure.  We don't mark the function deprecated
@@ -1573,7 +1607,10 @@ property_proxy_get_notify_function (const void *parent,
 	block = demarshal (NULL, &iter, "message", "variter", "value",
 			   oom_error_code,
 			   type_error_code,
-			   &outputs, &locals);
+			   &outputs, &locals,
+			   prefix, interface->symbol,
+			   property->symbol, NULL,
+			   &property_structs);
 	if (! block)
 		return NULL;
 
@@ -1693,6 +1730,13 @@ property_proxy_get_notify_function (const void *parent,
 	nih_list_add (typedefs, &handler_func->entry);
 	nih_ref (handler_func, code);
 
+	NIH_LIST_FOREACH_SAFE (&property_structs, iter) {
+		TypeStruct *structure = (TypeStruct *)iter;
+
+		nih_ref (structure, code);
+		nih_list_add (structs, &structure->entry);
+	}
+
 	return code;
 }
 
@@ -1732,11 +1776,13 @@ property_proxy_set_function (const void *parent,
 			     const char *prefix,
 			     Interface * interface,
 			     Property *  property,
-			     NihList *   prototypes)
+			     NihList *   prototypes,
+			     NihList *   structs)
 {
 	DBusSignatureIter   iter;
 	NihList             inputs;
 	NihList             locals;
+	NihList             property_structs;
 	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
@@ -1763,11 +1809,13 @@ property_proxy_set_function (const void *parent,
 	nih_assert (interface != NULL);
 	nih_assert (property != NULL);
 	nih_assert (prototypes != NULL);
+	nih_assert (structs != NULL);
 
 	dbus_signature_iter_init (&iter, property->type);
 
 	nih_list_init (&inputs);
 	nih_list_init (&locals);
+	nih_list_init (&property_structs);
 
 	/* The function returns a pending call, and takes the proxy object
 	 * as argument along with the new property value.  The pending call
@@ -1919,7 +1967,10 @@ property_proxy_set_function (const void *parent,
 
 	block = marshal (NULL, &iter, "variter", "value",
 			 oom_error_code,
-			 &inputs, &locals);
+			 &inputs, &locals,
+			 prefix, interface->symbol,
+			 property->symbol, NULL,
+			 &property_structs);
 	if (! block)
 		return NULL;
 
@@ -2083,6 +2134,13 @@ property_proxy_set_function (const void *parent,
 	nih_list_add (prototypes, &func->entry);
 	nih_ref (func, code);
 
+	NIH_LIST_FOREACH_SAFE (&property_structs, iter) {
+		TypeStruct *structure = (TypeStruct *)iter;
+
+		nih_ref (structure, code);
+		nih_list_add (structs, &structure->entry);
+	}
+
 	return code;
 }
 
@@ -2124,7 +2182,8 @@ property_proxy_set_notify_function (const void *parent,
 				    Interface * interface,
 				    Property *  property,
 				    NihList *   prototypes,
-				    NihList *   typedefs)
+				    NihList *   typedefs,
+				    NihList *   structs)
 {
 	DBusSignatureIter   iter;
 	NihList             outputs;
@@ -2154,6 +2213,7 @@ property_proxy_set_notify_function (const void *parent,
 	nih_assert (property != NULL);
 	nih_assert (prototypes != NULL);
 	nih_assert (typedefs != NULL);
+	nih_assert (structs != NULL);
 
 	dbus_signature_iter_init (&iter, property->type);
 
@@ -2391,11 +2451,13 @@ property_proxy_get_sync_function (const void *parent,
 				  const char *prefix,
 				  Interface * interface,
 				  Property *  property,
-				  NihList *   prototypes)
+				  NihList *   prototypes,
+				  NihList *   structs)
 {
 	DBusSignatureIter   iter;
 	NihList             outputs;
 	NihList             locals;
+	NihList             property_structs;
 	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
@@ -2421,11 +2483,13 @@ property_proxy_get_sync_function (const void *parent,
 	nih_assert (interface != NULL);
 	nih_assert (property != NULL);
 	nih_assert (prototypes != NULL);
+	nih_assert (structs != NULL);
 
 	dbus_signature_iter_init (&iter, property->type);
 
 	nih_list_init (&outputs);
 	nih_list_init (&locals);
+	nih_list_init (&property_structs);
 
 	/* The function returns an integer, and takes a parent object and
 	 * the proxy object as the argument along with an output argument
@@ -2639,7 +2703,10 @@ property_proxy_get_sync_function (const void *parent,
 	block = demarshal (NULL, &iter, "parent", "variter", "local",
 			   oom_error_code,
 			   type_error_code,
-			   &outputs, &locals);
+			   &outputs, &locals,
+			   prefix, interface->symbol,
+			   property->symbol, NULL,
+			   &property_structs);
 	if (! block)
 		return NULL;
 
@@ -2752,6 +2819,13 @@ property_proxy_get_sync_function (const void *parent,
 	nih_list_add (prototypes, &func->entry);
 	nih_ref (func, code);
 
+	NIH_LIST_FOREACH_SAFE (&property_structs, iter) {
+		TypeStruct *structure = (TypeStruct *)iter;
+
+		nih_ref (structure, code);
+		nih_list_add (structs, &structure->entry);
+	}
+
 	return code;
 }
 
@@ -2781,11 +2855,13 @@ property_proxy_set_sync_function (const void *parent,
 				  const char *prefix,
 				  Interface * interface,
 				  Property *  property,
-				  NihList *   prototypes)
+				  NihList *   prototypes,
+				  NihList *   structs)
 {
 	DBusSignatureIter   iter;
 	NihList             inputs;
 	NihList             locals;
+	NihList             property_structs;
 	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
@@ -2810,11 +2886,13 @@ property_proxy_set_sync_function (const void *parent,
 	nih_assert (interface != NULL);
 	nih_assert (property != NULL);
 	nih_assert (prototypes != NULL);
+	nih_assert (structs != NULL);
 
 	dbus_signature_iter_init (&iter, property->type);
 
 	nih_list_init (&inputs);
 	nih_list_init (&locals);
+	nih_list_init (&property_structs);
 
 	/* The function returns an integer, and takes the proxy object
 	 * as the argument along with an input argument for the property
@@ -2974,7 +3052,10 @@ property_proxy_set_sync_function (const void *parent,
 
 	block = marshal (NULL, &iter, "variter", "value",
 			 oom_error_code,
-			 &inputs, &locals);
+			 &inputs, &locals,
+			 prefix, interface->symbol,
+			 property->symbol, NULL,
+			 &property_structs);
 	if (! block)
 		return NULL;
 
@@ -3087,6 +3168,13 @@ property_proxy_set_sync_function (const void *parent,
 	/* Append the function to the prototypes list */
 	nih_list_add (prototypes, &func->entry);
 	nih_ref (func, code);
+
+	NIH_LIST_FOREACH_SAFE (&property_structs, iter) {
+		TypeStruct *structure = (TypeStruct *)iter;
+
+		nih_ref (structure, code);
+		nih_list_add (structs, &structure->entry);
+	}
 
 	return code;
 }

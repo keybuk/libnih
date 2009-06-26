@@ -86,55 +86,63 @@ char *    property_object_get_function       (const void *parent,
 					      Interface *interface,
 					      Property *property,
 					      NihList *prototypes,
-					      NihList *handlers)
+					      NihList *handlers,
+					      NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 char *    property_object_set_function       (const void *parent,
 					      const char *prefix,
 					      Interface *interface,
 					      Property *property,
 					      NihList *prototypes,
-					      NihList *handlers)
+					      NihList *handlers,
+					      NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 
 char *    property_proxy_get_function        (const void *parent,
 					      const char *prefix,
 					      Interface *interface,
 					      Property *property,
-					      NihList *prototypes)
+					      NihList *prototypes,
+					      NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 char *    property_proxy_get_notify_function (const void *parent,
 					      const char *prefix,
 					      Interface *interface,
 					      Property *property,
 					      NihList *prototypes,
-					      NihList *typedefs)
+					      NihList *typedefs,
+					      NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 
 char *    property_proxy_set_function        (const void *parent,
 					      const char *prefix,
 					      Interface *interface,
 					      Property *property,
-					      NihList *prototypes)
+					      NihList *prototypes,
+					      NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 char *    property_proxy_set_notify_function (const void *parent,
 					      const char *prefix,
 					      Interface *interface,
 					      Property *property,
 					      NihList *prototypes,
-					      NihList *typedefs)
+					      NihList *typedefs,
+					      NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 
 char *    property_proxy_get_sync_function   (const void *parent,
 					      const char *prefix,
 					      Interface *interface,
 					      Property *property,
-					      NihList *prototypes)
+					      NihList *prototypes,
+					      NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 char *    property_proxy_set_sync_function   (const void *parent,
 					      const char *prefix,
 					      Interface *interface,
 					      Property *property,
-					      NihList *prototypes)
+					      NihList *prototypes,
+					      NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN

@@ -1,5 +1,10 @@
 2009-06-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/symbol.c (symbol_typedef): Allow the postfix to
+	be NULL (property structures)
+	* nih-dbus-tool/tests/test_symbol.c (test_typedef): Add tests for
+	without postfix with/without other arguments.
+
 	* nih-dbus-tool/signal.c (signal_object_function)
 	(signal_proxy_function): Call marshal() and demarshal() with the
 	extra arguments, obtaining most of them from our arguments including

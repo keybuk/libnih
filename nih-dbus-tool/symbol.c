@@ -447,7 +447,6 @@ symbol_typedef (const void *parent,
 
 	nih_assert (prefix != NULL);
 	nih_assert (symbol != NULL);
-	nih_assert (postfix != NULL);
 
 	str = NULL;
 	if (! symbol_strcat_title (&str, parent, "%s_", prefix))
@@ -473,9 +472,11 @@ symbol_typedef (const void *parent,
 		return NULL;
 	}
 
-	if (! symbol_strcat_title (&str, parent, "_%s", postfix)) {
-		nih_free (str);
-		return NULL;
+	if (postfix) {
+		if (! symbol_strcat_title (&str, parent, "_%s", postfix)) {
+			nih_free (str);
+			return NULL;
+		}
 	}
 
 	return str;

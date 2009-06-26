@@ -656,8 +656,25 @@ test_typedef (void)
 	}
 
 
+	/* Check that we don't need to supply the postfix component */
+	TEST_FEATURE ("without postfix");
+	TEST_ALLOC_FAIL {
+		str = symbol_typedef (NULL, "my", "test", NULL,
+				      "property_value", NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "MyTestPropertyValue");
+
+		nih_free (str);
+	}
+
+
 	/* Check that we can omit both the interface symbol and the midfix */
-	TEST_FEATURE ("without optional arguments");
+	TEST_FEATURE ("without interface or midfix");
 	TEST_ALLOC_FAIL {
 		str = symbol_typedef (NULL, "my", NULL, NULL, "my_method",
 				     "Reply");
@@ -668,6 +685,39 @@ test_typedef (void)
 		}
 
 		TEST_EQ_STR (str, "MyMyMethodReply");
+
+		nih_free (str);
+	}
+
+
+	TEST_FEATURE ("without interface or postfix");
+	TEST_ALLOC_FAIL {
+		str = symbol_typedef (NULL, "my", NULL, "test",
+				      "property_value", NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "MyTestPropertyValue");
+
+		nih_free (str);
+	}
+
+
+	/* Check we can omit all of the optional components */
+	TEST_FEATURE ("without optional components");
+	TEST_ALLOC_FAIL {
+		str = symbol_typedef (NULL, "my", NULL, NULL,
+				      "property_value", NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_EQ_STR (str, "MyPropertyValue");
 
 		nih_free (str);
 	}

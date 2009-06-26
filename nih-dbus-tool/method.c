@@ -515,9 +515,11 @@ method_object_function (const void *parent,
 			Interface * interface,
 			Method *    method,
 			NihList *   prototypes,
-			NihList *   handlers)
+			NihList *   handlers,
+			NihList *   structs)
 {
 	NihList             locals;
+	NihList             method_structs;
 	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
@@ -539,8 +541,10 @@ method_object_function (const void *parent,
 	nih_assert (method != NULL);
 	nih_assert (prototypes != NULL);
 	nih_assert (handlers != NULL);
+	nih_assert (structs != NULL);
 
 	nih_list_init (&locals);
+	nih_list_init (&method_structs);
 
 	/* The function returns a DBusHandlerResult since it's a handling
 	 * function, and accepts arguments for the object and message.
@@ -669,6 +673,7 @@ method_object_function (const void *parent,
 		Argument *        argument = (Argument *)iter;
 		NihList           arg_vars;
 		NihList           arg_locals;
+		NihList           arg_structs;
 		DBusSignatureIter iter;
 		nih_local char *  oom_error_code = NULL;
 		nih_local char *  type_error_code = NULL;
@@ -676,6 +681,7 @@ method_object_function (const void *parent,
 
 		nih_list_init (&arg_vars);
 		nih_list_init (&arg_locals);
+		nih_list_init (&arg_structs);
 
 		dbus_signature_iter_init (&iter, argument->type);
 
@@ -711,7 +717,10 @@ method_object_function (const void *parent,
 					   argument->symbol,
 					   oom_error_code,
 					   type_error_code,
-					   &arg_vars, &arg_locals);
+					   &arg_vars, &arg_locals,
+					   prefix, interface->symbol,
+					   method->symbol, argument->symbol,
+					   &arg_structs);
 			if (! block)
 				return NULL;
 
@@ -752,6 +761,13 @@ method_object_function (const void *parent,
 				nih_ref (var, call_block);
 			}
 
+			NIH_LIST_FOREACH_SAFE (&arg_structs, iter) {
+				TypeStruct *structure = (TypeStruct *)iter;
+
+				nih_list_add (&method_structs, &structure->entry);
+				nih_ref (structure, call_block);
+			}
+
 			break;
 		case NIH_DBUS_ARG_OUT:
 			/* Asynchronous methods don't have output arguments */
@@ -772,7 +788,10 @@ method_object_function (const void *parent,
 
 			block = marshal (NULL, &iter, "iter", argument->symbol,
 					 oom_error_code,
-					 &arg_vars, &arg_locals);
+					 &arg_vars, &arg_locals,
+					 prefix, interface->symbol,
+					 method->symbol, argument->symbol,
+					 &arg_structs);
 			if (! block)
 				return NULL;
 
@@ -812,6 +831,13 @@ method_object_function (const void *parent,
 
 				nih_list_add (&locals, &var->entry);
 				nih_ref (var, call_block);
+			}
+
+			NIH_LIST_FOREACH_SAFE (&arg_structs, iter) {
+				TypeStruct *structure = (TypeStruct *)iter;
+
+				nih_list_add (&method_structs, &structure->entry);
+				nih_ref (structure, call_block);
 			}
 
 			break;
@@ -964,6 +990,13 @@ method_object_function (const void *parent,
 	nih_list_add (handlers, &handler_func->entry);
 	nih_ref (handler_func, code);
 
+	NIH_LIST_FOREACH_SAFE (&method_structs, iter) {
+		TypeStruct *structure = (TypeStruct *)iter;
+
+		nih_list_add (structs, &structure->entry);
+		nih_ref (structure, code);
+	}
+
 	return code;
 }
 
@@ -996,9 +1029,11 @@ method_reply_function (const void *parent,
 		       const char *prefix,
 		       Interface * interface,
 		       Method *    method,
-		       NihList *   prototypes)
+		       NihList *   prototypes,
+		       NihList *   structs)
 {
 	NihList             locals;
+	NihList             method_structs;
 	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
@@ -1015,8 +1050,10 @@ method_reply_function (const void *parent,
 	nih_assert (interface != NULL);
 	nih_assert (method != NULL);
 	nih_assert (prototypes != NULL);
+	nih_assert (structs != NULL);
 
 	nih_list_init (&locals);
+	nih_list_init (&method_structs);
 
 	/* The function returns an integer, and accepts an argument for
 	 * the original message.  The integer indicates whether an error
@@ -1095,6 +1132,7 @@ method_reply_function (const void *parent,
 		Argument *        argument = (Argument *)iter;
 		NihList           arg_vars;
 		NihList           arg_locals;
+		NihList           arg_structs;
 		DBusSignatureIter iter;
 		nih_local char *  oom_error_code = NULL;
 		nih_local char *  type_error_code = NULL;
@@ -1105,6 +1143,7 @@ method_reply_function (const void *parent,
 
 		nih_list_init (&arg_vars);
 		nih_list_init (&arg_locals);
+		nih_list_init (&arg_structs);
 
 		dbus_signature_iter_init (&iter, argument->type);
 
@@ -1119,7 +1158,10 @@ method_reply_function (const void *parent,
 
 		block = marshal (NULL, &iter, "iter", argument->symbol,
 				 oom_error_code,
-				 &arg_vars, &arg_locals);
+				 &arg_vars, &arg_locals,
+				 prefix, interface->symbol,
+				 method->symbol, argument->symbol,
+				 &arg_structs);
 		if (! block)
 			return NULL;
 
@@ -1153,6 +1195,13 @@ method_reply_function (const void *parent,
 
 			nih_list_add (&locals, &var->entry);
 			nih_ref (var, marshal_block);
+		}
+
+		NIH_LIST_FOREACH_SAFE (&arg_structs, iter) {
+			TypeStruct *structure = (TypeStruct *)iter;
+
+			nih_list_add (&method_structs, &structure->entry);
+			nih_ref (structure, marshal_block);
 		}
 	}
 
@@ -1204,6 +1253,13 @@ method_reply_function (const void *parent,
 	nih_list_add (prototypes, &func->entry);
 	nih_ref (func, code);
 
+	NIH_LIST_FOREACH_SAFE (&method_structs, iter) {
+		TypeStruct *structure = (TypeStruct *)iter;
+
+		nih_ref (structure, code);
+		nih_list_add (structs, &structure->entry);
+	}
+
 	return code;
 }
 
@@ -1246,9 +1302,11 @@ method_proxy_function (const void *parent,
 		       const char *prefix,
 		       Interface * interface,
 		       Method *    method,
-		       NihList *   prototypes)
+		       NihList *   prototypes,
+		       NihList *   structs)
 {
 	NihList             locals;
+	NihList             method_structs;
 	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
@@ -1269,8 +1327,10 @@ method_proxy_function (const void *parent,
 	nih_assert (interface != NULL);
 	nih_assert (method != NULL);
 	nih_assert (prototypes != NULL);
+	nih_assert (structs != NULL);
 
 	nih_list_init (&locals);
+	nih_list_init (&method_structs);
 
 	/* The function returns a pending call, and takes the proxy object
 	 * as the argument along with the input arguments of the method call.
@@ -1376,6 +1436,7 @@ method_proxy_function (const void *parent,
 		Argument *        argument = (Argument *)iter;
 		NihList           arg_vars;
 		NihList           arg_locals;
+		NihList           arg_structs;
 		DBusSignatureIter iter;
 		nih_local char *  local_name = NULL;
 		nih_local char *  oom_error_code = NULL;
@@ -1387,6 +1448,7 @@ method_proxy_function (const void *parent,
 
 		nih_list_init (&arg_vars);
 		nih_list_init (&arg_locals);
+		nih_list_init (&arg_structs);
 
 		dbus_signature_iter_init (&iter, argument->type);
 
@@ -1401,7 +1463,10 @@ method_proxy_function (const void *parent,
 
 		block = marshal (NULL, &iter, "iter", argument->symbol,
 				 oom_error_code,
-				 &arg_vars, &arg_locals);
+				 &arg_vars, &arg_locals,
+				 prefix, interface->symbol,
+				 method->symbol, argument->symbol,
+				 &arg_structs);
 		if (! block)
 			return NULL;
 
@@ -1435,6 +1500,13 @@ method_proxy_function (const void *parent,
 
 			nih_list_add (&locals, &var->entry);
 			nih_ref (var, marshal_block);
+		}
+
+		NIH_LIST_FOREACH_SAFE (&arg_structs, iter) {
+			TypeStruct *structure = (TypeStruct *)iter;
+
+			nih_list_add (&method_structs, &structure->entry);
+			nih_ref (structure, marshal_block);
 		}
 	}
 
@@ -1564,6 +1636,13 @@ method_proxy_function (const void *parent,
 	nih_list_add (prototypes, &func->entry);
 	nih_ref (func, code);
 
+	NIH_LIST_FOREACH_SAFE (&method_structs, iter) {
+		TypeStruct *structure = (TypeStruct *)iter;
+
+		nih_ref (structure, code);
+		nih_list_add (structs, &structure->entry);
+	}
+
 	return code;
 }
 
@@ -1605,9 +1684,11 @@ method_proxy_notify_function (const void *parent,
 			      Interface * interface,
 			      Method *    method,
 			      NihList *   prototypes,
-			      NihList *   typedefs)
+			      NihList *   typedefs,
+			      NihList *   structs)
 {
 	NihList             locals;
+	NihList             method_structs;
 	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
@@ -1631,8 +1712,10 @@ method_proxy_notify_function (const void *parent,
 	nih_assert (method != NULL);
 	nih_assert (prototypes != NULL);
 	nih_assert (typedefs != NULL);
+	nih_assert (structs != NULL);
 
 	nih_list_init (&locals);
+	nih_list_init (&method_structs);
 
 	/* The function takes the pending call being notified and the
 	 * associated data structure.  We don't mark the function deprecated
@@ -1794,6 +1877,7 @@ method_proxy_notify_function (const void *parent,
 		Argument *        argument = (Argument *)iter;
 		NihList           arg_vars;
 		NihList           arg_locals;
+		NihList           arg_structs;
 		DBusSignatureIter iter;
 		nih_local char *  local_name = NULL;
 		nih_local char *  oom_error_code = NULL;
@@ -1805,6 +1889,7 @@ method_proxy_notify_function (const void *parent,
 
 		nih_list_init (&arg_vars);
 		nih_list_init (&arg_locals);
+		nih_list_init (&arg_structs);
 
 		dbus_signature_iter_init (&iter, argument->type);
 
@@ -1837,7 +1922,10 @@ method_proxy_notify_function (const void *parent,
 				   argument->symbol,
 				   oom_error_code,
 				   type_error_code,
-				   &arg_vars, &arg_locals);
+				   &arg_vars, &arg_locals,
+				   prefix, interface->symbol,
+				   method->symbol, argument->symbol,
+				   &arg_structs);
 		if (! block)
 			return NULL;
 
@@ -1874,6 +1962,13 @@ method_proxy_notify_function (const void *parent,
 
 			nih_list_add (&locals, &var->entry);
 			nih_ref (var, demarshal_block);
+		}
+
+		NIH_LIST_FOREACH_SAFE (&arg_structs, iter) {
+			TypeStruct *structure = (TypeStruct *)iter;
+
+			nih_list_add (&method_structs, &structure->entry);
+			nih_ref (structure, demarshal_block);
 		}
 
 		if (! nih_strcat (&demarshal_block, NULL, block))
@@ -1963,6 +2058,13 @@ method_proxy_notify_function (const void *parent,
 	nih_list_add (typedefs, &handler_func->entry);
 	nih_ref (handler_func, code);
 
+	NIH_LIST_FOREACH_SAFE (&method_structs, iter) {
+		TypeStruct *structure = (TypeStruct *)iter;
+
+		nih_ref (structure, code);
+		nih_list_add (structs, &structure->entry);
+	}
+
 	return code;
 }
 
@@ -1994,9 +2096,11 @@ method_proxy_sync_function (const void *parent,
 			    const char *prefix,
 			    Interface * interface,
 			    Method *    method,
-			    NihList *   prototypes)
+			    NihList *   prototypes,
+			    NihList *   structs)
 {
 	NihList             locals;
+	NihList             method_structs;
 	nih_local char *    name = NULL;
 	nih_local TypeFunc *func = NULL;
 	TypeVar *           arg;
@@ -2017,8 +2121,10 @@ method_proxy_sync_function (const void *parent,
 	nih_assert (interface != NULL);
 	nih_assert (method != NULL);
 	nih_assert (prototypes != NULL);
+	nih_assert (structs != NULL);
 
 	nih_list_init (&locals);
+	nih_list_init (&method_structs);
 
 	/* The function returns an integer, and takes a parent object and
 	 * the proxy object as the arguments along with the input and
@@ -2137,6 +2243,7 @@ method_proxy_sync_function (const void *parent,
 		Argument *        argument = (Argument *)iter;
 		NihList           arg_vars;
 		NihList           arg_locals;
+		NihList           arg_structs;
 		DBusSignatureIter iter;
 		nih_local char *  local_name = NULL;
 		nih_local char *  oom_error_code = NULL;
@@ -2145,6 +2252,7 @@ method_proxy_sync_function (const void *parent,
 
 		nih_list_init (&arg_vars);
 		nih_list_init (&arg_locals);
+		nih_list_init (&arg_structs);
 
 		dbus_signature_iter_init (&iter, argument->type);
 
@@ -2161,7 +2269,10 @@ method_proxy_sync_function (const void *parent,
 
 			block = marshal (NULL, &iter, "iter", argument->symbol,
 					 oom_error_code,
-					 &arg_vars, &arg_locals);
+					 &arg_vars, &arg_locals,
+					 prefix, interface->symbol,
+					 method->symbol, argument->symbol,
+					 &arg_structs);
 			if (! block)
 				return NULL;
 
@@ -2195,6 +2306,13 @@ method_proxy_sync_function (const void *parent,
 
 				nih_list_add (&locals, &var->entry);
 				nih_ref (var, marshal_block);
+			}
+
+			NIH_LIST_FOREACH_SAFE (&arg_structs, iter) {
+				TypeStruct *structure = (TypeStruct *)iter;
+
+				nih_list_add (&method_structs, &structure->entry);
+				nih_ref (structure, marshal_block);
 			}
 
 			break;
@@ -2234,7 +2352,10 @@ method_proxy_sync_function (const void *parent,
 					   local_name,
 					   oom_error_code,
 					   type_error_code,
-					   &arg_vars, &arg_locals);
+					   &arg_vars, &arg_locals,
+					   prefix, interface->symbol,
+					   method->symbol, argument->symbol,
+					   &arg_structs);
 			if (! block)
 				return NULL;
 
@@ -2313,6 +2434,13 @@ method_proxy_sync_function (const void *parent,
 
 				nih_list_add (&locals, &var->entry);
 				nih_ref (var, demarshal_block);
+			}
+
+			NIH_LIST_FOREACH_SAFE (&arg_structs, iter) {
+				TypeStruct *structure = (TypeStruct *)iter;
+
+				nih_list_add (&method_structs, &structure->entry);
+				nih_ref (structure, demarshal_block);
 			}
 
 			if (! indent (&block, NULL, 1))
@@ -2419,6 +2547,13 @@ method_proxy_sync_function (const void *parent,
 	/* Append the function to the prototypes list */
 	nih_list_add (prototypes, &func->entry);
 	nih_ref (func, code);
+
+	NIH_LIST_FOREACH_SAFE (&method_structs, iter) {
+		TypeStruct *structure = (TypeStruct *)iter;
+
+		nih_list_add (structs, &structure->entry);
+		nih_ref (structure, code);
+	}
 
 	return code;
 }

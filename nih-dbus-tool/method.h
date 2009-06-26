@@ -80,27 +80,29 @@ Argument *method_lookup_argument       (Method *method, const char *symbol);
 
 char *    method_object_function       (const void *parent, const char *prefix,
 					Interface *interface, Method *method,
-					NihList *prototypes, NihList *handlers)
+					NihList *prototypes, NihList *handlers,
+					NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 
 char *    method_reply_function        (const void *parent, const char *prefix,
 					Interface *interface, Method *method,
-					NihList *prototypes)
+					NihList *prototypes, NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 
 char *    method_proxy_function        (const void *parent, const char *prefix,
 					Interface *interface, Method *method,
-					NihList *prototypes)
+					NihList *prototypes, NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 
 char *    method_proxy_notify_function (const void *parent, const char *prefix,
 					Interface *interface, Method *method,
-					NihList *prototypes, NihList *typedefs)
+					NihList *prototypes, NihList *typedefs,
+					NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 
 char *    method_proxy_sync_function   (const void *parent, const char *prefix,
 					Interface *interface, Method *method,
-					NihList *prototypes)
+					NihList *prototypes, NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 
 char *    method_args_array            (const void *parent, const char *prefix,

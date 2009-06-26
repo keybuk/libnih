@@ -35,6 +35,7 @@
 #include <nih/logging.h>
 
 #include "indent.h"
+#include "symbol.h"
 #include "type.h"
 #include "marshal.h"
 
@@ -44,19 +45,28 @@ static char *marshal_basic  (const void *parent,
 			     DBusSignatureIter *iter,
 			     const char *iter_name, const char *name,
 			     const char *oom_error_code,
-			     NihList *inputs, NihList *locals)
+			     NihList *inputs, NihList *locals,
+			     const char *prefix, const char *interface_symbol,
+			     const char *member_symbol, const char *symbol,
+			     NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 static char *marshal_array  (const void *parent,
 			     DBusSignatureIter *iter,
 			     const char *iter_name, const char *name,
 			     const char *oom_error_code,
-			     NihList *inputs, NihList *locals)
+			     NihList *inputs, NihList *locals,
+			     const char *prefix, const char *interface_symbol,
+			     const char *member_symbol, const char *symbol,
+			     NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 static char *marshal_struct (const void *parent,
 			     DBusSignatureIter *iter,
 			     const char *iter_name, const char *name,
 			     const char *oom_error_code,
-			     NihList *inputs, NihList *locals)
+			     NihList *inputs, NihList *locals,
+			     const char *prefix, const char *interface_symbol,
+			     const char *member_symbol, const char *symbol,
+			     NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 
 
@@ -103,7 +113,12 @@ marshal (const void *       parent,
 	 const char *       name,
 	 const char *       oom_error_code,
 	 NihList *          inputs,
-	 NihList *          locals)
+	 NihList *          locals,
+	 const char *       prefix,
+	 const char *       interface_symbol,
+	 const char *       member_symbol,
+	 const char *       symbol,
+	 NihList *          structs)
 {
 	int dbus_type;
 
@@ -113,6 +128,9 @@ marshal (const void *       parent,
 	nih_assert (oom_error_code != NULL);
 	nih_assert (inputs != NULL);
 	nih_assert (locals != NULL);
+	nih_assert (prefix != NULL);
+	nih_assert (member_symbol != NULL);
+	nih_assert (structs != NULL);
 
 	dbus_type = dbus_signature_iter_get_current_type (iter);
 
@@ -120,18 +138,27 @@ marshal (const void *       parent,
 		return marshal_basic (parent, iter,
 				      iter_name, name,
 				      oom_error_code,
-				      inputs, locals);
+				      inputs, locals,
+				      prefix, interface_symbol,
+				      member_symbol, symbol,
+				      structs);
 	} else if (dbus_type == DBUS_TYPE_ARRAY) {
 		return marshal_array (parent, iter,
 				      iter_name, name,
 				      oom_error_code,
-				      inputs, locals);
+				      inputs, locals,
+				      prefix, interface_symbol,
+				      member_symbol, symbol,
+				      structs);
 	} else if ((dbus_type == DBUS_TYPE_STRUCT)
 		   || (dbus_type == DBUS_TYPE_DICT_ENTRY)) {
 		return marshal_struct (parent, iter,
 				       iter_name, name,
 				       oom_error_code,
-				       inputs, locals);
+				       inputs, locals,
+				       prefix, interface_symbol,
+				       member_symbol, symbol,
+				       structs);
 	} else {
 		nih_assert_not_reached ();
 	}
@@ -179,7 +206,12 @@ marshal_basic (const void *       parent,
 	       const char *       name,
 	       const char *       oom_error_code,
 	       NihList *          inputs,
-	       NihList *          locals)
+	       NihList *          locals,
+	       const char *       prefix,
+	       const char *       interface_symbol,
+	       const char *       member_symbol,
+	       const char *       symbol,
+	       NihList *          structs)
 {
 	int             dbus_type;
 	const char *    dbus_const;
@@ -194,6 +226,9 @@ marshal_basic (const void *       parent,
 	nih_assert (oom_error_code != NULL);
 	nih_assert (inputs != NULL);
 	nih_assert (locals != NULL);
+	nih_assert (prefix != NULL);
+	nih_assert (member_symbol != NULL);
+	nih_assert (structs != NULL);
 
 	dbus_type = dbus_signature_iter_get_current_type (iter);
 	dbus_const = type_const (dbus_type);
@@ -275,11 +310,17 @@ marshal_array (const void *       parent,
 	       const char *       name,
 	       const char *       oom_error_code,
 	       NihList *          inputs,
-	       NihList *          locals)
+	       NihList *          locals,
+	       const char *       prefix,
+	       const char *       interface_symbol,
+	       const char *       member_symbol,
+	       const char *       symbol,
+	       NihList *          structs)
 {
 	nih_local char *   array_iter_name = NULL;
 	nih_local char *   loop_name = NULL;
 	nih_local char *   element_name = NULL;
+	nih_local char *   element_symbol = NULL;
 	nih_local char *   len_name = NULL;
 	nih_local char *   oom_error_block = NULL;
 	nih_local char *   child_oom_error_code = NULL;
@@ -291,6 +332,7 @@ marshal_array (const void *       parent,
 	TypeVar *          array_iter_var;
 	NihList            element_inputs;
 	NihList            element_locals;
+	NihList            element_structs;
 	nih_local char *   element_block = NULL;
 	nih_local char *   element_c_type = NULL;
 	nih_local TypeVar *element_var = NULL;
@@ -304,6 +346,9 @@ marshal_array (const void *       parent,
 	nih_assert (oom_error_code != NULL);
 	nih_assert (inputs != NULL);
 	nih_assert (locals != NULL);
+	nih_assert (prefix != NULL);
+	nih_assert (member_symbol != NULL);
+	nih_assert (structs != NULL);
 
 	array_iter_name = nih_sprintf (NULL, "%s_iter", name);
 	if (! array_iter_name)
@@ -315,6 +360,12 @@ marshal_array (const void *       parent,
 
 	element_name = nih_sprintf (NULL, "%s_element", name);
 	if (! element_name)
+		return NULL;
+
+	element_symbol = (symbol
+			  ? nih_sprintf (NULL, "%s_element", symbol)
+			  : nih_strdup (NULL, "element"));
+	if (! element_symbol)
 		return NULL;
 
 	len_name = nih_sprintf (NULL, "%s_len", name);
@@ -393,11 +444,15 @@ marshal_array (const void *       parent,
 	 */
 	nih_list_init (&element_inputs);
 	nih_list_init (&element_locals);
+	nih_list_init (&element_structs);
 	element_block = marshal (NULL, &subiter,
 				 array_iter_name, element_name,
 				 child_oom_error_code,
 				 &element_inputs,
-				 &element_locals);
+				 &element_locals,
+				 prefix, interface_symbol,
+				 member_symbol, element_symbol,
+				 &element_structs);
 	if (! element_block) {
 		nih_free (code);
 		return NULL;
@@ -467,6 +522,13 @@ marshal_array (const void *       parent,
 	if (! vars_block) {
 		nih_free (code);
 		return NULL;
+	}
+
+	NIH_LIST_FOREACH_SAFE (&element_structs, iter) {
+		TypeStruct *structure = (TypeStruct *)iter;
+
+		nih_ref (structure, code);
+		nih_list_add (structs, &structure->entry);
 	}
 
 	/* Lay all that out in an indented block inside the for loop.
@@ -573,7 +635,12 @@ marshal_struct (const void *       parent,
 		const char *       name,
 		const char *       oom_error_code,
 		NihList *          inputs,
-		NihList *          locals)
+		NihList *          locals,
+		const char *       prefix,
+		const char *       interface_symbol,
+		const char *       member_symbol,
+		const char *       symbol,
+		NihList *          structs)
 {
 	int               dbus_type;
 	const char *      dbus_const;
@@ -582,6 +649,7 @@ marshal_struct (const void *       parent,
 	nih_local char *  child_oom_error_code = NULL;
 	nih_local char *  child_oom_error_block = NULL;
 	nih_local char *  c_type = NULL;
+	TypeStruct *      structure;
 	DBusSignatureIter subiter;
 	char *            code = NULL;
 	TypeVar *         struct_iter_var;
@@ -594,6 +662,9 @@ marshal_struct (const void *       parent,
 	nih_assert (oom_error_code != NULL);
 	nih_assert (inputs != NULL);
 	nih_assert (locals != NULL);
+	nih_assert (prefix != NULL);
+	nih_assert (member_symbol != NULL);
+	nih_assert (structs != NULL);
 
 	dbus_type = dbus_signature_iter_get_current_type (iter);
 	dbus_const = type_const (dbus_type);
@@ -618,10 +689,6 @@ marshal_struct (const void *       parent,
 	if (! child_oom_error_block)
 		return NULL;
 	if (! indent (&child_oom_error_block, NULL, 1))
-		return NULL;
-
-	c_type = type_of (NULL, iter);
-	if (! c_type)
 		return NULL;
 
 	/* Open the struct container, for that we need to know whether this
@@ -650,22 +717,62 @@ marshal_struct (const void *       parent,
 
 	nih_list_add (locals, &struct_iter_var->entry);
 
+	/* FIXME there should be a way to override this to a different type
+	 * name by annotation.
+	 */
+	c_type = symbol_typedef (NULL, prefix, interface_symbol, NULL,
+				 member_symbol, symbol);
+	if (! c_type) {
+		nih_free (code);
+		return NULL;
+	}
+
+	structure = type_struct_new (code, c_type);
+	if (! structure) {
+		nih_free (code);
+		return NULL;
+	}
+
+	nih_list_add (structs, &structure->entry);
+
+	if (! type_to_pointer (&c_type, NULL)) {
+		nih_free (code);
+		return NULL;
+	}
+
 	/* Deal with each structure element individually, however we have
 	 * to end up with just one set of locals and one block so we
 	 * append directly onto our locals.
 	 */
 	do {
+		nih_local char *item_member = NULL;
 		nih_local char *item_name = NULL;
+		nih_local char *item_symbol = NULL;
 		NihList         item_inputs;
 		NihList         item_locals;
+		NihList         item_structs;
 		nih_local char *item_code = NULL;
 
 		/* FIXME there should be a way to override the item names
 		 * via an annotation, which would also show up in the
 		 * structure definition itself.
 		 */
-		item_name = nih_sprintf (NULL, "%s_item%zu", name, count);
+		item_member = nih_sprintf (NULL, "item%zu", count);
+		if (! item_member) {
+			nih_free (code);
+			return NULL;
+		}
+
+		item_name = nih_sprintf (NULL, "%s_%s", name, item_member);
 		if (! item_name) {
+			nih_free (code);
+			return NULL;
+		}
+
+		item_symbol = (symbol
+			       ? nih_sprintf (NULL, "%s_%s", symbol, item_member)
+			       : nih_strdup (NULL, item_member));
+		if (! item_symbol) {
 			nih_free (code);
 			return NULL;
 		}
@@ -673,11 +780,15 @@ marshal_struct (const void *       parent,
 		/* Get the code to do the marshalling of this item */
 		nih_list_init (&item_inputs);
 		nih_list_init (&item_locals);
+		nih_list_init (&item_structs);
 		item_code = marshal (NULL, &subiter,
 				     struct_iter_name, item_name,
 				     child_oom_error_code,
 				     &item_inputs,
-				     &item_locals);
+				     &item_locals,
+				     prefix, interface_symbol,
+				     member_symbol, item_symbol,
+				     structs);
 		if (! item_code) {
 			nih_free (code);
 			return NULL;
@@ -699,9 +810,43 @@ marshal_struct (const void *       parent,
 		 * value from the array into this variable.
 		 */
 		NIH_LIST_FOREACH_SAFE (&item_inputs, iter) {
-			TypeVar *input_var = (TypeVar *)iter;
-			char *   suffix;
+			TypeVar *       input_var = (TypeVar *)iter;
+			char *          suffix;
+			nih_local char *member_name = NULL;
+			TypeVar *       member_var;
 
+			nih_assert (! strncmp (input_var->name, item_name,
+					       strlen (item_name)));
+			suffix = input_var->name + strlen (item_name);
+
+			/* Create the structure member entry */
+			member_name = nih_sprintf (NULL, "%s%s",
+						   item_member, suffix);
+			if (! member_name) {
+				nih_free (code);
+				return NULL;
+			}
+
+			member_var = type_var_new (structure,
+						   input_var->type,
+						   member_name);
+			if (! member_var) {
+				nih_free (code);
+				return NULL;
+			}
+
+			nih_list_add (&structure->members, &member_var->entry);
+
+			/* Add code to copy into local variable */
+			if (! nih_strcat_sprintf (&code, parent,
+						  "%s = %s->%s;\n",
+						  input_var->name, name,
+						  member_name)) {
+				nih_free (code);
+				return NULL;
+			}
+
+			/* Make the input variable const and add to locals */
 			if (! type_to_const (&input_var->type, input_var)) {
 				nih_free (code);
 				return NULL;
@@ -709,18 +854,13 @@ marshal_struct (const void *       parent,
 
 			nih_list_add (locals, &input_var->entry);
 			nih_ref (input_var, code);
+		}
 
-			nih_assert (! strncmp (input_var->name, item_name,
-					       strlen (item_name)));
-			suffix = input_var->name + strlen (item_name);
+		NIH_LIST_FOREACH_SAFE (&item_structs, iter) {
+			TypeStruct *structure = (TypeStruct *)iter;
 
-			if (! nih_strcat_sprintf (&code, parent,
-						  "%s = %s->item%zu%s;\n",
-						  input_var->name, name,
-						  count, suffix)) {
-				nih_free (code);
-				return NULL;
-			}
+			nih_ref (structure, code);
+			nih_list_add (structs, &structure->entry);
 		}
 
 		/* Append item marshalling code block */

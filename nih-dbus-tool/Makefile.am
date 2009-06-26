@@ -281,7 +281,7 @@ EXTRA_DIST = \
 marshal_factory_SOURCES = tests/marshal_factory.c
 marshal_factory_LDFLAGS = -static
 marshal_factory_LDADD = \
-	marshal.o type.o indent.o \
+	marshal.o type.o indent.o symbol.o \
 	../nih/libnih.la \
 	$(DBUS_LIBS)
 

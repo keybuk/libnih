@@ -26,18 +26,18 @@
 
 #include <stdint.h>
 
-struct dbus_struct_suasan {
+typedef struct my_struct_value {
 	char *    item0;
 	uint32_t  item1;
 	char **   item2;
 	int16_t * item3;
 	size_t    item3_len;
-};
+} MyStructValue;
 
-struct dbus_struct_su {
+typedef struct my_struct_array_value_element {
 	char *    item0;
 	uint32_t  item1;
-};
+} MyStructArrayValueElement;
 
 
 NIH_BEGIN_EXTERN
@@ -64,9 +64,9 @@ int my_string_array_marshal       (DBusMessage *message,
 int my_string_array_array_marshal (DBusMessage *message,
 				   char ** const * value);
 int my_struct_marshal             (DBusMessage *message,
-				   const struct dbus_struct_suasan * value);
+				   const MyStructValue * value);
 int my_struct_array_marshal       (DBusMessage *message,
-				   struct dbus_struct_su * const * value);
+				   MyStructArrayValueElement * const * value);
 
 NIH_END_EXTERN
 

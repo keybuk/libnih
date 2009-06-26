@@ -31,7 +31,10 @@ NIH_BEGIN_EXTERN
 char *marshal (const void *parent, DBusSignatureIter *iter,
 	       const char *iter_name, const char *name,
 	       const char *oom_error_code,
-	       NihList *inputs, NihList *locals)
+	       NihList *inputs, NihList *locals,
+	       const char *prefix, const char *interface_symbol,
+	       const char *member_symbol, const char *symbol,
+	       NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN

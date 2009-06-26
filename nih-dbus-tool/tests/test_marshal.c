@@ -38,7 +38,9 @@ test_marshal (void)
 {
 	NihList           inputs;
 	NihList           locals;
+	NihList           structs;
 	TypeVar *         var;
+	TypeStruct *      structure;
 	DBusSignatureIter signature;
 	DBusMessage *     message = NULL;
 	DBusMessageIter   iter;
@@ -62,8 +64,8 @@ test_marshal (void)
 	size_t *          int16_array_array_len = NULL;
 	char **           str_array = NULL;
 	char ***          str_array_array = NULL;
-	struct dbus_struct_suasan *  struct_value = NULL;
-	struct dbus_struct_su ** struct_array = NULL;
+	MyStructValue *   struct_value = NULL;
+	MyStructArrayValueElement **struct_array = NULL;
 
 	TEST_FUNCTION ("marshal");
 
@@ -75,6 +77,7 @@ test_marshal (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&inputs);
 		nih_list_init (&locals);
+		nih_list_init (&structs);
 
 		dbus_signature_iter_init (&signature,
 					  DBUS_TYPE_BYTE_AS_STRING);
@@ -82,12 +85,15 @@ test_marshal (void)
 		str = marshal (NULL, &signature,
 			       "iter", "value",
 			       "return -1;\n",
-			       &inputs, &locals);
+			       &inputs, &locals,
+			       "my", NULL, "byte", "value",
+			       &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 			TEST_LIST_EMPTY (&inputs);
 			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
 			continue;
 		}
 
@@ -110,6 +116,8 @@ test_marshal (void)
 		TEST_LIST_EMPTY (&inputs);
 
 		TEST_LIST_EMPTY (&locals);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 	}
@@ -166,6 +174,7 @@ test_marshal (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&inputs);
 		nih_list_init (&locals);
+		nih_list_init (&structs);
 
 		dbus_signature_iter_init (&signature,
 					  DBUS_TYPE_BOOLEAN_AS_STRING);
@@ -173,12 +182,15 @@ test_marshal (void)
 		str = marshal (NULL, &signature,
 			       "iter", "value",
 			       "return -1;\n",
-			       &inputs, &locals);
+			       &inputs, &locals,
+			       "my", NULL, "boolean", "value",
+			       &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 			TEST_LIST_EMPTY (&inputs);
 			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
 			continue;
 		}
 
@@ -201,6 +213,8 @@ test_marshal (void)
 		TEST_LIST_EMPTY (&inputs);
 
 		TEST_LIST_EMPTY (&locals);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 	}
@@ -257,6 +271,7 @@ test_marshal (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&inputs);
 		nih_list_init (&locals);
+		nih_list_init (&structs);
 
 		dbus_signature_iter_init (&signature,
 					  DBUS_TYPE_INT16_AS_STRING);
@@ -264,12 +279,15 @@ test_marshal (void)
 		str = marshal (NULL, &signature,
 			       "iter", "value",
 			       "return -1;\n",
-			       &inputs, &locals);
+			       &inputs, &locals,
+			       "my", NULL, "int16", "value",
+			       &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 			TEST_LIST_EMPTY (&inputs);
 			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
 			continue;
 		}
 
@@ -292,6 +310,8 @@ test_marshal (void)
 		TEST_LIST_EMPTY (&inputs);
 
 		TEST_LIST_EMPTY (&locals);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 	}
@@ -348,6 +368,7 @@ test_marshal (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&inputs);
 		nih_list_init (&locals);
+		nih_list_init (&structs);
 
 		dbus_signature_iter_init (&signature,
 					  DBUS_TYPE_UINT16_AS_STRING);
@@ -355,12 +376,15 @@ test_marshal (void)
 		str = marshal (NULL, &signature,
 			       "iter", "value",
 			       "return -1;\n",
-			       &inputs, &locals);
+			       &inputs, &locals,
+			       "my", NULL, "uint16", "value",
+			       &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 			TEST_LIST_EMPTY (&inputs);
 			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
 			continue;
 		}
 
@@ -383,6 +407,8 @@ test_marshal (void)
 		TEST_LIST_EMPTY (&inputs);
 
 		TEST_LIST_EMPTY (&locals);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 	}
@@ -439,6 +465,7 @@ test_marshal (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&inputs);
 		nih_list_init (&locals);
+		nih_list_init (&structs);
 
 		dbus_signature_iter_init (&signature,
 					  DBUS_TYPE_INT32_AS_STRING);
@@ -446,12 +473,15 @@ test_marshal (void)
 		str = marshal (NULL, &signature,
 			       "iter", "value",
 			       "return -1;\n",
-			       &inputs, &locals);
+			       &inputs, &locals,
+			       "my", NULL, "int32", "value",
+			       &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 			TEST_LIST_EMPTY (&inputs);
 			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
 			continue;
 		}
 
@@ -474,6 +504,8 @@ test_marshal (void)
 		TEST_LIST_EMPTY (&inputs);
 
 		TEST_LIST_EMPTY (&locals);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 	}
@@ -530,6 +562,7 @@ test_marshal (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&inputs);
 		nih_list_init (&locals);
+		nih_list_init (&structs);
 
 		dbus_signature_iter_init (&signature,
 					  DBUS_TYPE_UINT32_AS_STRING);
@@ -537,12 +570,15 @@ test_marshal (void)
 		str = marshal (NULL, &signature,
 			       "iter", "value",
 			       "return -1;\n",
-			       &inputs, &locals);
+			       &inputs, &locals,
+			       "my", NULL, "uint32", "value",
+			       &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 			TEST_LIST_EMPTY (&inputs);
 			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
 			continue;
 		}
 
@@ -565,6 +601,8 @@ test_marshal (void)
 		TEST_LIST_EMPTY (&inputs);
 
 		TEST_LIST_EMPTY (&locals);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 	}
@@ -621,6 +659,7 @@ test_marshal (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&inputs);
 		nih_list_init (&locals);
+		nih_list_init (&structs);
 
 		dbus_signature_iter_init (&signature,
 					  DBUS_TYPE_INT64_AS_STRING);
@@ -628,12 +667,15 @@ test_marshal (void)
 		str = marshal (NULL, &signature,
 			       "iter", "value",
 			       "return -1;\n",
-			       &inputs, &locals);
+			       &inputs, &locals,
+			       "my", NULL, "int64", "value",
+			       &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 			TEST_LIST_EMPTY (&inputs);
 			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
 			continue;
 		}
 
@@ -656,6 +698,8 @@ test_marshal (void)
 		TEST_LIST_EMPTY (&inputs);
 
 		TEST_LIST_EMPTY (&locals);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 	}
@@ -712,6 +756,7 @@ test_marshal (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&inputs);
 		nih_list_init (&locals);
+		nih_list_init (&structs);
 
 		dbus_signature_iter_init (&signature,
 					  DBUS_TYPE_UINT64_AS_STRING);
@@ -719,12 +764,15 @@ test_marshal (void)
 		str = marshal (NULL, &signature,
 			       "iter", "value",
 			       "return -1;\n",
-			       &inputs, &locals);
+			       &inputs, &locals,
+			       "my", NULL, "uint64", "value",
+			       &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 			TEST_LIST_EMPTY (&inputs);
 			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
 			continue;
 		}
 
@@ -747,6 +795,8 @@ test_marshal (void)
 		TEST_LIST_EMPTY (&inputs);
 
 		TEST_LIST_EMPTY (&locals);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 	}
@@ -803,6 +853,7 @@ test_marshal (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&inputs);
 		nih_list_init (&locals);
+		nih_list_init (&structs);
 
 		dbus_signature_iter_init (&signature,
 					  DBUS_TYPE_DOUBLE_AS_STRING);
@@ -810,12 +861,15 @@ test_marshal (void)
 		str = marshal (NULL, &signature,
 			       "iter", "value",
 			       "return -1;\n",
-			       &inputs, &locals);
+			       &inputs, &locals,
+			       "my", NULL, "double", "value",
+			       &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 			TEST_LIST_EMPTY (&inputs);
 			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
 			continue;
 		}
 
@@ -838,6 +892,8 @@ test_marshal (void)
 		TEST_LIST_EMPTY (&inputs);
 
 		TEST_LIST_EMPTY (&locals);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 	}
@@ -894,6 +950,7 @@ test_marshal (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&inputs);
 		nih_list_init (&locals);
+		nih_list_init (&structs);
 
 		dbus_signature_iter_init (&signature,
 					  DBUS_TYPE_STRING_AS_STRING);
@@ -901,12 +958,15 @@ test_marshal (void)
 		str = marshal (NULL, &signature,
 			       "iter", "value",
 			       "return -1;\n",
-			       &inputs, &locals);
+			       &inputs, &locals,
+			       "my", NULL, "string", "value",
+			       &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 			TEST_LIST_EMPTY (&inputs);
 			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
 			continue;
 		}
 
@@ -929,6 +989,8 @@ test_marshal (void)
 		TEST_LIST_EMPTY (&inputs);
 
 		TEST_LIST_EMPTY (&locals);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 	}
@@ -985,6 +1047,7 @@ test_marshal (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&inputs);
 		nih_list_init (&locals);
+		nih_list_init (&structs);
 
 		dbus_signature_iter_init (&signature,
 					  DBUS_TYPE_OBJECT_PATH_AS_STRING);
@@ -992,12 +1055,15 @@ test_marshal (void)
 		str = marshal (NULL, &signature,
 			       "iter", "value",
 			       "return -1;\n",
-			       &inputs, &locals);
+			       &inputs, &locals,
+			       "my", NULL, "object_path", "value",
+			       &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 			TEST_LIST_EMPTY (&inputs);
 			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
 			continue;
 		}
 
@@ -1020,6 +1086,8 @@ test_marshal (void)
 		TEST_LIST_EMPTY (&inputs);
 
 		TEST_LIST_EMPTY (&locals);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 	}
@@ -1076,6 +1144,7 @@ test_marshal (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&inputs);
 		nih_list_init (&locals);
+		nih_list_init (&structs);
 
 		dbus_signature_iter_init (&signature,
 					  DBUS_TYPE_SIGNATURE_AS_STRING);
@@ -1083,12 +1152,15 @@ test_marshal (void)
 		str = marshal (NULL, &signature,
 			       "iter", "value",
 			       "return -1;\n",
-			       &inputs, &locals);
+			       &inputs, &locals,
+			       "my", NULL, "signature", "value",
+			       &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 			TEST_LIST_EMPTY (&inputs);
 			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
 			continue;
 		}
 
@@ -1111,6 +1183,8 @@ test_marshal (void)
 		TEST_LIST_EMPTY (&inputs);
 
 		TEST_LIST_EMPTY (&locals);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 	}
@@ -1168,6 +1242,7 @@ test_marshal (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&inputs);
 		nih_list_init (&locals);
+		nih_list_init (&structs);
 
 		dbus_signature_iter_init (&signature,
 					  (DBUS_TYPE_ARRAY_AS_STRING
@@ -1176,12 +1251,15 @@ test_marshal (void)
 		str = marshal (NULL, &signature,
 			       "iter", "value",
 			       "return -1;\n",
-			       &inputs, &locals);
+			       &inputs, &locals,
+			       "my", NULL, "int16_array", "value",
+			       &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 			TEST_LIST_EMPTY (&inputs);
 			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
 			continue;
 		}
 
@@ -1242,6 +1320,8 @@ test_marshal (void)
 		nih_free (var);
 
 		TEST_LIST_EMPTY (&locals);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 	}
@@ -1370,6 +1450,7 @@ test_marshal (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&inputs);
 		nih_list_init (&locals);
+		nih_list_init (&structs);
 
 		dbus_signature_iter_init (&signature,
 					  (DBUS_TYPE_ARRAY_AS_STRING
@@ -1379,12 +1460,15 @@ test_marshal (void)
 		str = marshal (NULL, &signature,
 			       "iter", "value",
 			       "return -1;\n",
-			       &inputs, &locals);
+			       &inputs, &locals,
+			       "my", NULL, "int16_array_array", "value",
+			       &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 			TEST_LIST_EMPTY (&inputs);
 			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
 			continue;
 		}
 
@@ -1468,6 +1552,8 @@ test_marshal (void)
 		nih_free (var);
 
 		TEST_LIST_EMPTY (&locals);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 	}
@@ -1652,6 +1738,7 @@ test_marshal (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&inputs);
 		nih_list_init (&locals);
+		nih_list_init (&structs);
 
 		dbus_signature_iter_init (&signature,
 					  (DBUS_TYPE_ARRAY_AS_STRING
@@ -1660,12 +1747,15 @@ test_marshal (void)
 		str = marshal (NULL, &signature,
 			       "iter", "value",
 			       "return -1;\n",
-			       &inputs, &locals);
+			       &inputs, &locals,
+			       "my", NULL, "string_array", "value",
+			       &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 			TEST_LIST_EMPTY (&inputs);
 			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
 			continue;
 		}
 
@@ -1715,6 +1805,8 @@ test_marshal (void)
 		nih_free (var);
 
 		TEST_LIST_EMPTY (&locals);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 	}
@@ -1812,6 +1904,7 @@ test_marshal (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&inputs);
 		nih_list_init (&locals);
+		nih_list_init (&structs);
 
 		dbus_signature_iter_init (&signature,
 					  (DBUS_TYPE_ARRAY_AS_STRING
@@ -1821,12 +1914,15 @@ test_marshal (void)
 		str = marshal (NULL, &signature,
 			       "iter", "value",
 			       "return -1;\n",
-			       &inputs, &locals);
+			       &inputs, &locals,
+			       "my", NULL, "string_array_array", "value",
+			       &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 			TEST_LIST_EMPTY (&inputs);
 			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
 			continue;
 		}
 
@@ -1895,6 +1991,8 @@ test_marshal (void)
 		nih_free (var);
 
 		TEST_LIST_EMPTY (&locals);
+
+		TEST_LIST_EMPTY (&structs);
 
 		nih_free (str);
 	}
@@ -2038,6 +2136,7 @@ test_marshal (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&inputs);
 		nih_list_init (&locals);
+		nih_list_init (&structs);
 
 		dbus_signature_iter_init (&signature,
 					  (DBUS_STRUCT_BEGIN_CHAR_AS_STRING
@@ -2052,12 +2151,15 @@ test_marshal (void)
 		str = marshal (NULL, &signature,
 			       "iter", "value",
 			       "return -1;\n",
-			       &inputs, &locals);
+			       &inputs, &locals,
+			       "my", NULL, "struct", "value",
+			       &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 			TEST_LIST_EMPTY (&inputs);
 			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
 			continue;
 		}
 
@@ -2144,7 +2246,7 @@ test_marshal (void)
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (var, str);
-		TEST_EQ_STR (var->type, "struct dbus_struct_suasan *");
+		TEST_EQ_STR (var->type, "MyStructValue *");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -2242,6 +2344,75 @@ test_marshal (void)
 
 		TEST_LIST_EMPTY (&locals);
 
+
+		TEST_LIST_NOT_EMPTY (&structs);
+
+		structure = (TypeStruct *)structs.next;
+		TEST_ALLOC_SIZE (structure, sizeof (TypeStruct));
+		TEST_ALLOC_PARENT (structure, str);
+		TEST_EQ_STR (structure->name, "MyStructValue");
+		TEST_ALLOC_PARENT (structure->name, structure);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "char *");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item0");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "uint32_t");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item1");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "char **");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item2");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "int16_t *");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item3");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "size_t");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item3_len");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&structure->members);
+		nih_free (structure);
+
+		TEST_LIST_EMPTY (&structs);
+
 		nih_free (str);
 	}
 
@@ -2257,7 +2428,7 @@ test_marshal (void)
 		TEST_ALLOC_SAFE {
 			message = dbus_message_new (DBUS_MESSAGE_TYPE_METHOD_CALL);
 
-			struct_value = nih_new (NULL, struct dbus_struct_suasan);
+			struct_value = nih_new (NULL, MyStructValue);
 			struct_value->item0 = "hello there";
 			struct_value->item1 = 1818118181;
 			struct_value->item2 = nih_alloc (struct_value, sizeof (char *) * 3);
@@ -2440,6 +2611,7 @@ test_marshal (void)
 	TEST_ALLOC_FAIL {
 		nih_list_init (&inputs);
 		nih_list_init (&locals);
+		nih_list_init (&structs);
 
 		dbus_signature_iter_init (&signature,
 					  (DBUS_TYPE_ARRAY_AS_STRING
@@ -2451,12 +2623,15 @@ test_marshal (void)
 		str = marshal (NULL, &signature,
 			       "iter", "value",
 			       "return -1;\n",
-			       &inputs, &locals);
+			       &inputs, &locals,
+			       "my", NULL, "struct_array", "value",
+			       &structs);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (str, NULL);
 			TEST_LIST_EMPTY (&inputs);
 			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
 			continue;
 		}
 
@@ -2466,10 +2641,10 @@ test_marshal (void)
 				   "}\n"
 				   "\n"
 				   "for (size_t value_i = 0; value[value_i]; value_i++) {\n"
-				   "\tDBusMessageIter              value_element_iter;\n"
-				   "\tconst char *                 value_element_item0;\n"
-				   "\tuint32_t                     value_element_item1;\n"
-				   "\tconst struct dbus_struct_su *value_element;\n"
+				   "\tDBusMessageIter                  value_element_iter;\n"
+				   "\tconst char *                     value_element_item0;\n"
+				   "\tuint32_t                         value_element_item1;\n"
+				   "\tconst MyStructArrayValueElement *value_element;\n"
 				   "\n"
 				   "\tvalue_element = value[value_i];\n"
 				   "\n"
@@ -2512,7 +2687,7 @@ test_marshal (void)
 		var = (TypeVar *)inputs.next;
 		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
 		TEST_ALLOC_PARENT (var, str);
-		TEST_EQ_STR (var->type, "struct dbus_struct_su **");
+		TEST_EQ_STR (var->type, "MyStructArrayValueElement **");
 		TEST_ALLOC_PARENT (var->type, var);
 		TEST_EQ_STR (var->name, "value");
 		TEST_ALLOC_PARENT (var->name, var);
@@ -2533,6 +2708,42 @@ test_marshal (void)
 
 		TEST_LIST_EMPTY (&locals);
 
+
+		TEST_LIST_NOT_EMPTY (&structs);
+
+		structure = (TypeStruct *)structs.next;
+		TEST_ALLOC_SIZE (structure, sizeof (TypeStruct));
+		TEST_ALLOC_PARENT (structure, str);
+		TEST_EQ_STR (structure->name, "MyStructArrayValueElement");
+		TEST_ALLOC_PARENT (structure->name, structure);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "char *");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item0");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "uint32_t");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item1");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&structure->members);
+		nih_free (structure);
+
+		TEST_LIST_EMPTY (&structs);
+
 		nih_free (str);
 	}
 
@@ -2548,13 +2759,13 @@ test_marshal (void)
 		TEST_ALLOC_SAFE {
 			message = dbus_message_new (DBUS_MESSAGE_TYPE_METHOD_CALL);
 
-			struct_array = nih_alloc (NULL, sizeof (struct dbus_struct_su *) * 3);
+			struct_array = nih_alloc (NULL, sizeof (MyStructArrayValueElement *) * 3);
 
-			struct_array[0] = nih_new (struct_array, struct dbus_struct_su);
+			struct_array[0] = nih_new (struct_array, MyStructArrayValueElement);
 			struct_array[0]->item0 = "hello there";
 			struct_array[0]->item1 = 1818118181;
 
-			struct_array[1] = nih_new (struct_array, struct dbus_struct_su);
+			struct_array[1] = nih_new (struct_array, MyStructArrayValueElement);
 			struct_array[1]->item0 = "goodbye world";
 			struct_array[1]->item1 = 12345;
 

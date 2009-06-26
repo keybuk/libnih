@@ -1,5 +1,9 @@
 2009-06-26  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/type.c (type_of): Simplify type_of() so that it
+	only works for basic types.
+	* nih-dbus-tool/tests/test_type.c (test_of): Remove complex types
+
 	* nih-dbus-tool/type.h (TypeStruct): Add another type for structure
 	definitions, we need to know the name and a list of members.
 	* nih-dbus-tool/type.c (type_struct_new, type_struct_to_string):

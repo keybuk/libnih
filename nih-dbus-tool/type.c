@@ -93,8 +93,8 @@ type_const (int dbus_type)
  * @parent: parent object for new string,
  * @iter: D-Bus signature iterator.
  *
- * Converts the D-Bus type at the current element of the iterator @iter into
- * an appropriate C type to hold it.
+ * Converts the D-Bus basic type at the current element of the iterator
+ * @iter into an appropriate C type to hold it.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -107,10 +107,7 @@ char *
 type_of (const void *       parent,
 	 DBusSignatureIter *iter)
 {
-	int               dbus_type;
-	DBusSignatureIter subiter;
-	char *            c_type;
-	char *            signature;
+	int dbus_type;
 
 	nih_assert (iter != NULL);
 
@@ -119,7 +116,6 @@ type_of (const void *       parent,
 	switch (dbus_type) {
 	case DBUS_TYPE_BYTE:
 		return nih_strdup (parent, "uint8_t");
-		break;
 	case DBUS_TYPE_BOOLEAN:
 		return nih_strdup (parent, "int");
 	case DBUS_TYPE_INT16:
@@ -142,36 +138,6 @@ type_of (const void *       parent,
 		return nih_strdup (parent, "char *");
 	case DBUS_TYPE_SIGNATURE:
 		return nih_strdup (parent, "char *");
-	case DBUS_TYPE_ARRAY:
-		dbus_signature_iter_recurse (iter, &subiter);
-
-		c_type = type_of (parent, &subiter);
-		if (! c_type)
-			return NULL;
-
-		if (! type_to_pointer (&c_type, parent)) {
-			nih_free (c_type);
-			return NULL;
-		}
-
-		return c_type;
-	case DBUS_TYPE_STRUCT:
-	case DBUS_TYPE_DICT_ENTRY:
-		signature = dbus_signature_iter_get_signature (iter);
-		if (! signature)
-			return NULL;
-
-		nih_assert (signature[0] == DBUS_STRUCT_BEGIN_CHAR);
-		nih_assert (signature[strlen (signature) - 1] == DBUS_STRUCT_END_CHAR);
-
-		signature[strlen (signature) - 1] = '\0';
-
-		c_type = nih_sprintf (parent, "struct dbus_struct_%s *",
-				      signature + 1);
-
-		dbus_free (signature);
-
-		return c_type;
 	default:
 		nih_assert_not_reached ();
 	}

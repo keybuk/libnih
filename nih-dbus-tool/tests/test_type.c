@@ -1600,6 +1600,111 @@ test_func_layout (void)
 
 
 void
+test_struct_new (void)
+{
+	TypeStruct *structure;
+
+	/* Check to make sure that a TypeStruct structure is allocated
+	 * correctly and returned.
+	 */
+	TEST_FUNCTION ("type_struct_new");
+	TEST_ALLOC_FAIL {
+		structure = type_struct_new (NULL, "MyStructure");
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (structure, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (structure, sizeof (TypeStruct));
+		TEST_LIST_EMPTY (&structure->entry);
+		TEST_EQ_STR (structure->name, "MyStructure");
+		TEST_ALLOC_PARENT (structure->name, structure);
+		TEST_LIST_EMPTY (&structure->members);
+
+		nih_free (structure);
+	}
+}
+
+void
+test_struct_to_string (void)
+{
+	TypeStruct *structure = NULL;
+	TypeVar *   var = NULL;
+	char *      str;
+
+	TEST_FUNCTION ("test_struct_to_string");
+
+
+	/* Check that we can lay out a structure definition with a mixed
+	 * set of members.  The structure name should be as given, with the
+	 * C name converted from that into symbol-style.
+	 */
+	TEST_FEATURE ("with members");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			structure = type_struct_new (NULL, "MyTestStructure");
+
+			var = type_var_new (structure, "int *", "foo");
+			nih_list_add (&structure->members, &var->entry);
+
+			var = type_var_new (structure, "struct bar", "bar");
+			var->array = TRUE;
+			nih_list_add (&structure->members, &var->entry);
+
+			var = type_var_new (structure, "uint32_t *", "baz");
+			nih_list_add (&structure->members, &var->entry);
+		}
+
+		str = type_struct_to_string (NULL, structure);
+
+ 		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (structure);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("typedef struct my_test_structure {\n"
+				   "\tint *      foo;\n"
+				   "\tstruct bar bar[];\n"
+				   "\tuint32_t * baz;\n"
+				   "} MyTestStructure;\n"));
+
+		nih_free (structure);
+
+		nih_free (str);
+	}
+
+
+	/* Check that we can also lay out a structure with no members.
+	 */
+	TEST_FEATURE ("with no members");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			structure = type_struct_new (NULL, "MyTestStructure");
+		}
+
+		str = type_struct_to_string (NULL, structure);
+
+ 		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+
+			nih_free (structure);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("typedef struct my_test_structure {\n"
+				   "} MyTestStructure;\n"));
+
+		nih_free (structure);
+
+		nih_free (str);
+	}
+}
+
+
+void
 test_to_const (void)
 {
 	char *str = NULL;
@@ -2430,6 +2535,9 @@ main (int   argc,
 	test_func_to_string ();
 	test_func_to_typedef ();
 	test_func_layout ();
+
+	test_struct_new ();
+	test_struct_to_string ();
 
 	test_to_const ();
 	test_to_pointer ();

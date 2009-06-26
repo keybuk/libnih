@@ -94,7 +94,7 @@ test_indent_LDADD = \
 test_type_SOURCES = tests/test_type.c
 test_type_LDFLAGS = -static
 test_type_LDADD = \
-	type.o \
+	type.o indent.o symbol.o \
 	../nih/libnih.la \
 	$(DBUS_LIBS)
 
@@ -104,7 +104,7 @@ nodist_test_marshal_SOURCES = \
 	tests/marshal_code.c
 test_marshal_LDFLAGS = -static
 test_marshal_LDADD = \
-	marshal.o type.o indent.o \
+	marshal.o type.o indent.o symbol.o \
 	../nih/libnih.la \
 	$(DBUS_LIBS)
 
@@ -114,7 +114,7 @@ nodist_test_demarshal_SOURCES = \
 	tests/demarshal_code.c
 test_demarshal_LDFLAGS = -static
 test_demarshal_LDADD = \
-	demarshal.o type.o indent.o \
+	demarshal.o type.o indent.o symbol.o \
 	../nih/libnih.la \
 	$(DBUS_LIBS)
 

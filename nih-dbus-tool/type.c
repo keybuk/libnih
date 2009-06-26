@@ -34,6 +34,8 @@
 #include <nih/string.h>
 #include <nih/logging.h>
 
+#include "symbol.h"
+#include "indent.h"
 #include "type.h"
 
 
@@ -735,6 +737,101 @@ type_func_layout (const void *parent,
 			return NULL;
 		}
 	}
+
+	return str;
+}
+
+
+/**
+ * type_struct_new:
+ * @parent: parent object for new structure,
+ * @name: structure name.
+ *
+ * Allocates and returns a new TypeStruct structure with the structure
+ * name @name, the structure is not placed into any linked list but will
+ * be removed from its containing list when freed.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned structure.  When all parents
+ * of the returned structure are freed, the returned structure will also be
+ * freed.
+ *
+ * Returns: the new TypeStruct structure or NULL if insufficient memory.
+ **/
+TypeStruct *
+type_struct_new (const void *parent,
+		 const char *name)
+{
+	TypeStruct *structure;
+
+	nih_assert (name != NULL);
+
+	structure = nih_new (parent, TypeStruct);
+	if (! structure)
+		return NULL;
+
+	nih_list_init (&structure->entry);
+
+	structure->name = nih_strdup (structure, name);
+	if (! structure->name) {
+		nih_free (structure);
+		return NULL;
+	}
+
+	nih_list_init (&structure->members);
+
+	nih_alloc_set_destructor (structure, nih_list_destroy);
+
+	return structure;
+}
+
+/**
+ * type_struct_to_string:
+ * @parent: parent object for new string,
+ * @structure: structure to convert.
+ *
+ * Returns a string for the given @structure declaring it both as a C
+ * structure and as a shorter typedef.
+ *
+ * If @parent is not NULL, it should be a pointer to another object which
+ * will be used as a parent for the returned string.  When all parents
+ * of the returned string are freed, the returned string will also be
+ * freed.
+ *
+ * Returns: the newly allocated string or NULL if insufficient memory.
+ **/
+char *
+type_struct_to_string (const void *parent,
+		       TypeStruct *structure)
+{
+	nih_local char *symbol = NULL;
+	nih_local char *block = NULL;
+	char *          str;
+
+	nih_assert (structure != NULL);
+
+	/* Generate a lowercase structure symbol */
+	symbol = symbol_from_name (NULL, structure->name);
+	if (! symbol)
+		return NULL;
+
+	/* Line up the members and indent */
+	block = type_var_layout (NULL, &structure->members);
+	if (! block)
+		return NULL;
+
+	if (! NIH_LIST_EMPTY (&structure->members))
+		if (! indent (&block, NULL, 1))
+			return NULL;
+
+	/* Output */
+	str = nih_sprintf (parent,
+			   "typedef struct %s {\n"
+			   "%s"
+			   "} %s;\n",
+			   symbol,
+			   block,
+			   structure->name);
 
 	return str;
 }

@@ -83,6 +83,7 @@ output (const char *source_path,
 {
 	NihList         prototypes;
 	NihList         handlers;
+	NihList         structs;
 	NihList         typedefs;
 	NihList         vars;
 	NihList         externs;
@@ -101,6 +102,7 @@ output (const char *source_path,
 
 	nih_list_init (&prototypes);
 	nih_list_init (&handlers);
+	nih_list_init (&structs);
 	nih_list_init (&typedefs);
 	nih_list_init (&vars);
 	nih_list_init (&externs);
@@ -190,7 +192,7 @@ output (const char *source_path,
 
 		code = node_object_functions (NULL, prefix, node,
 					      &prototypes, &handlers,
-					      &externs);
+					      &structs, &externs);
 		if (! code) {
 			nih_error_raise_no_memory ();
 			return -1;
@@ -211,8 +213,8 @@ output (const char *source_path,
 		}
 
 		code = node_proxy_functions (NULL, prefix, node,
-					     &prototypes, &typedefs,
-					     &externs);
+					     &prototypes,
+					     &structs, &typedefs, &externs);
 		if (! code) {
 			nih_error_raise_no_memory ();
 			return -1;
@@ -312,6 +314,35 @@ output (const char *source_path,
 	if (output_write (source_fd, source) < 0)
 		return -1;
 
+
+	/* Define each of the structures in the header file, each is
+	 * a typdef so gets its own line.
+	 */
+	if (! NIH_LIST_EMPTY (&structs)) {
+		NIH_LIST_FOREACH (&structs, iter) {
+			TypeStruct *    structure = (TypeStruct *)iter;
+			nih_local char *block = NULL;
+
+			block = type_struct_to_string (NULL, structure);
+			if (! block) {
+				nih_error_raise_no_memory ();
+				return -1;
+			}
+
+			if (! nih_strcat_sprintf (&header, NULL,
+						  "%s"
+						  "\n",
+						  block)) {
+				nih_error_raise_no_memory ();
+				return -1;
+			}
+		}
+
+		if (! nih_strcat (&header, NULL, "\n")) {
+			nih_error_raise_no_memory ();
+			return -1;
+		}
+	}
 
 	/* Define each of the typedefs in the header file, some of these
 	 * are actually required in the prototypes while others serve as

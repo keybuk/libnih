@@ -352,6 +352,95 @@ CLEANFILES = \
 	$(nodist_test_property_SOURCES)
 
 
+EXTRA_DIST += \
+	tests/expected/test_method_object_function_standard.c \
+	tests/expected/test_method_object_function_no_input.c \
+	tests/expected/test_method_object_function_no_output.c \
+	tests/expected/test_method_object_function_structure_input.c \
+	tests/expected/test_method_object_function_structure_output.c \
+	tests/expected/test_method_object_function_no_args.c \
+	tests/expected/test_method_object_function_async.c \
+	tests/expected/test_method_object_function_deprecated.c \
+	tests/expected/test_method_reply_function_standard.c \
+	tests/expected/test_method_reply_function_no_args.c \
+	tests/expected/test_method_reply_function_structure.c \
+	tests/expected/test_method_reply_function_array.c \
+	tests/expected/test_method_reply_function_deprecated.c \
+	tests/expected/test_method_proxy_function_standard.c \
+	tests/expected/test_method_proxy_function_no_args.c \
+	tests/expected/test_method_proxy_function_structure.c \
+	tests/expected/test_method_proxy_function_array.c \
+	tests/expected/test_method_proxy_function_deprecated.c \
+	tests/expected/test_method_proxy_notify_function_standard.c \
+	tests/expected/test_method_proxy_notify_function_no_args.c \
+	tests/expected/test_method_proxy_notify_function_structure.c \
+	tests/expected/test_method_proxy_notify_function_array.c \
+	tests/expected/test_method_proxy_sync_function_standard.c \
+	tests/expected/test_method_proxy_sync_function_no_input.c \
+	tests/expected/test_method_proxy_sync_function_no_output.c \
+	tests/expected/test_method_proxy_sync_function_no_args.c \
+	tests/expected/test_method_proxy_sync_function_structure_input.c \
+	tests/expected/test_method_proxy_sync_function_structure_output.c \
+	tests/expected/test_method_proxy_sync_function_array_input.c \
+	tests/expected/test_method_proxy_sync_function_deprecated.c \
+	tests/expected/test_signal_object_function_standard.c \
+	tests/expected/test_signal_object_function_no_args.c \
+	tests/expected/test_signal_object_function_structure.c \
+	tests/expected/test_signal_object_function_array.c \
+	tests/expected/test_signal_object_function_deprecated.c \
+	tests/expected/test_signal_proxy_function_standard.c \
+	tests/expected/test_signal_proxy_function_no_args.c \
+	tests/expected/test_signal_proxy_function_structure.c \
+	tests/expected/test_signal_proxy_function_deprecated.c \
+	tests/expected/test_property_object_get_function_standard.c \
+	tests/expected/test_property_object_get_function_structure.c \
+	tests/expected/test_property_object_get_function_deprecated.c \
+	tests/expected/test_property_object_set_function_standard.c \
+	tests/expected/test_property_object_set_function_structure.c \
+	tests/expected/test_property_object_set_function_deprecated.c \
+	tests/expected/test_property_proxy_get_function_standard.c \
+	tests/expected/test_property_proxy_get_function_deprecated.c \
+	tests/expected/test_property_proxy_get_notify_function_standard.c \
+	tests/expected/test_property_proxy_get_notify_function_structure.c \
+	tests/expected/test_property_proxy_get_notify_function_deprecated.c \
+	tests/expected/test_property_proxy_set_function_standard.c \
+	tests/expected/test_property_proxy_set_function_structure.c \
+	tests/expected/test_property_proxy_set_function_array.c \
+	tests/expected/test_property_proxy_set_function_deprecated.c \
+	tests/expected/test_property_proxy_set_notify_function_standard.c \
+	tests/expected/test_property_proxy_set_notify_function_deprecated.c \
+	tests/expected/test_property_proxy_get_sync_function_standard.c \
+	tests/expected/test_property_proxy_get_sync_function_structure.c \
+	tests/expected/test_property_proxy_get_sync_function_deprecated.c \
+	tests/expected/test_property_proxy_set_sync_function_standard.c \
+	tests/expected/test_property_proxy_set_sync_function_structure.c \
+	tests/expected/test_property_proxy_set_sync_function_array.c \
+	tests/expected/test_property_proxy_set_sync_function_deprecated.c \
+	tests/expected/test_node_interfaces_array_object.c \
+	tests/expected/test_node_interfaces_array_proxy.c \
+	tests/expected/test_node_interfaces_array_none.c \
+	tests/expected/test_node_object_functions_standard.c \
+	tests/expected/test_node_object_functions_no_methods.c \
+	tests/expected/test_node_object_functions_no_signals.c \
+	tests/expected/test_node_object_functions_no_properties.c \
+	tests/expected/test_node_object_functions_only_properties.c \
+	tests/expected/test_node_object_functions_structure.c \
+	tests/expected/test_node_proxy_functions_standard.c \
+	tests/expected/test_node_proxy_functions_no_methods.c \
+	tests/expected/test_node_proxy_functions_no_signals.c \
+	tests/expected/test_node_proxy_functions_no_properties.c \
+	tests/expected/test_node_proxy_functions_only_properties.c \
+	tests/expected/test_node_proxy_functions_structure.c \
+	tests/expected/test_output_proxy_standard.c \
+	tests/expected/test_output_proxy_standard.h \
+	tests/expected/test_output_proxy_no_interfaces.c \
+	tests/expected/test_output_proxy_no_interfaces.h \
+	tests/expected/test_output_object_standard.c \
+	tests/expected/test_output_object_standard.h \
+	tests/expected/test_output_object_no_interfaces.c \
+	tests/expected/test_output_object_no_interfaces.h
+
+
 .PHONY: tests
 tests: $(BUILT_SOURCES) $(check_PROGRAMS)
 

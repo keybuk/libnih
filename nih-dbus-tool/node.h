@@ -64,12 +64,12 @@ char *     node_interfaces_array (const void *parent, const char *prefix,
 char *     node_object_functions (const void *parent, const char *prefix,
 				  Node *node,
 				  NihList *prototypes, NihList *handlers,
-				  NihList *externs)
+				  NihList *structs, NihList *externs)
 	__attribute__ ((warn_unused_result, malloc));
 char *     node_proxy_functions  (const void *parent, const char *prefix,
 				  Node *node,
-				  NihList *prototypes, NihList *typedefs,
-				  NihList *externs)
+				  NihList *prototypes, NihList *structs,
+				  NihList *typedefs, NihList *externs)
 	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN

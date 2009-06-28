@@ -492,6 +492,7 @@ node_object_functions (const void *parent,
 		       Node *      node,
 		       NihList *   prototypes,
 		       NihList *   handlers,
+		       NihList *   structs,
 		       NihList *   externs)
 {
 	char *code = NULL;
@@ -501,6 +502,7 @@ node_object_functions (const void *parent,
 	nih_assert (node != NULL);
 	nih_assert (prototypes != NULL);
 	nih_assert (handlers != NULL);
+	nih_assert (structs != NULL);
 	nih_assert (externs != NULL);
 
 	code = nih_strdup (parent, "");
@@ -514,12 +516,14 @@ node_object_functions (const void *parent,
 			Method *        method = (Method *)method_iter;
 			NihList         method_prototypes;
 			NihList         method_handlers;
+			NihList         method_structs;
 			NihList         method_externs;
 			nih_local char *object_func = NULL;
 			nih_local char *reply_func = NULL;
 
 			nih_list_init (&method_prototypes);
 			nih_list_init (&method_handlers);
+			nih_list_init (&method_structs);
 			nih_list_init (&method_externs);
 
 			if (! first)
@@ -529,7 +533,8 @@ node_object_functions (const void *parent,
 
 			object_func = method_object_function (
 				NULL, prefix, interface, method,
-				&method_prototypes, &method_handlers);
+				&method_prototypes, &method_handlers,
+				&method_structs);
 			if (! object_func)
 				goto error;
 
@@ -541,7 +546,7 @@ node_object_functions (const void *parent,
 			if (method->async) {
 				reply_func = method_reply_function (
 					NULL, prefix, interface, method,
-					&method_externs);
+					&method_externs, &method_structs);
 				if (! reply_func)
 					goto error;
 
@@ -572,6 +577,13 @@ node_object_functions (const void *parent,
 				nih_list_add (handlers, &func->entry);
 			}
 
+			NIH_LIST_FOREACH_SAFE (&method_structs, iter) {
+				TypeStruct *structure = (TypeStruct *)iter;
+
+				nih_ref (structure, code);
+				nih_list_add (structs, &structure->entry);
+			}
+
 			NIH_LIST_FOREACH_SAFE (&method_externs, iter) {
 				TypeFunc *func = (TypeFunc *)iter;
 
@@ -582,14 +594,16 @@ node_object_functions (const void *parent,
 
 		NIH_LIST_FOREACH (&interface->signals, signal_iter) {
 			Signal *        signal = (Signal *)signal_iter;
+			NihList         signal_structs;
 			NihList         signal_externs;
 			nih_local char *object_func = NULL;
 
+			nih_list_init (&signal_structs);
 			nih_list_init (&signal_externs);
 
 			object_func = signal_object_function (
 				NULL, prefix, interface, signal,
-				&signal_externs);
+				&signal_externs, &signal_structs);
 			if (! object_func)
 				goto error;
 
@@ -600,6 +614,13 @@ node_object_functions (const void *parent,
 
 			if (! nih_strcat (&code, parent, object_func))
 				goto error;
+
+			NIH_LIST_FOREACH_SAFE (&signal_structs, iter) {
+				TypeStruct *structure = (TypeStruct *)iter;
+
+				nih_ref (structure, code);
+				nih_list_add (structs, &structure->entry);
+			}
 
 			NIH_LIST_FOREACH_SAFE (&signal_externs, iter) {
 				TypeFunc *func = (TypeFunc *)iter;
@@ -613,11 +634,13 @@ node_object_functions (const void *parent,
 			Property *      property = (Property *)property_iter;
 			NihList         property_prototypes;
 			NihList         property_handlers;
+			NihList         property_structs;
 			nih_local char *get_func = NULL;
 			nih_local char *set_func = NULL;
 
 			nih_list_init (&property_prototypes);
 			nih_list_init (&property_handlers);
+			nih_list_init (&property_structs);
 
 			if (! first)
 				if (! nih_strcat (&code, parent, "\n\n"))
@@ -627,7 +650,8 @@ node_object_functions (const void *parent,
 			if (property->access != NIH_DBUS_WRITE) {
 				get_func = property_object_get_function (
 					NULL, prefix, interface, property,
-					&property_prototypes, &property_handlers);
+					&property_prototypes, &property_handlers,
+					&property_structs);
 				if (! get_func)
 					goto error;
 
@@ -637,14 +661,21 @@ node_object_functions (const void *parent,
 					goto error;
 			}
 
-			if (property->access == NIH_DBUS_READWRITE)
+			if (property->access == NIH_DBUS_READWRITE) {
 				if (! nih_strcat (&code, parent, "\n"))
 					goto error;
+
+				/* Don't duplicate structures; these will
+				 * get freed automatically.
+				 */
+				nih_list_init (&property_structs);
+			}
 
 			if (property->access != NIH_DBUS_READ) {
 				set_func = property_object_set_function (
 					NULL, prefix, interface, property,
-					&property_prototypes, &property_handlers);
+					&property_prototypes, &property_handlers,
+					&property_structs);
 				if (! set_func)
 					goto error;
 
@@ -672,6 +703,13 @@ node_object_functions (const void *parent,
 
 				nih_ref (func, code);
 				nih_list_add (handlers, &func->entry);
+			}
+
+			NIH_LIST_FOREACH_SAFE (&property_structs, iter) {
+				TypeStruct *structure = (TypeStruct *)iter;
+
+				nih_ref (structure, code);
+				nih_list_add (structs, &structure->entry);
 			}
 		}
 	}
@@ -724,6 +762,7 @@ node_proxy_functions (const void *parent,
 		      const char *prefix,
 		      Node *      node,
 		      NihList *   prototypes,
+		      NihList *   structs,
 		      NihList *   typedefs,
 		      NihList *   externs)
 {
@@ -733,6 +772,7 @@ node_proxy_functions (const void *parent,
 	nih_assert (prefix != NULL);
 	nih_assert (node != NULL);
 	nih_assert (prototypes != NULL);
+	nih_assert (structs != NULL);
 	nih_assert (typedefs != NULL);
 	nih_assert (externs != NULL);
 
@@ -742,10 +782,14 @@ node_proxy_functions (const void *parent,
 
 	NIH_LIST_FOREACH (&node->interfaces, interface_iter) {
 		Interface *interface = (Interface *)interface_iter;
+		NihList    discard;
+
+		nih_list_init (&discard);
 
 		NIH_LIST_FOREACH (&interface->methods, method_iter) {
 			Method *        method = (Method *)method_iter;
 			NihList         method_prototypes;
+			NihList         method_structs;
 			NihList         method_typedefs;
 			NihList         method_externs;
 			nih_local char *proxy_func = NULL;
@@ -753,6 +797,7 @@ node_proxy_functions (const void *parent,
 			nih_local char *sync_func = NULL;
 
 			nih_list_init (&method_prototypes);
+			nih_list_init (&method_structs);
 			nih_list_init (&method_typedefs);
 			nih_list_init (&method_externs);
 
@@ -763,19 +808,20 @@ node_proxy_functions (const void *parent,
 
 			proxy_func = method_proxy_function (
 				NULL, prefix, interface, method,
-				&method_externs);
+				&method_externs, &discard);
 			if (! proxy_func)
 				goto error;
 
 			notify_func = method_proxy_notify_function (
 				NULL, prefix, interface, method,
-				&method_prototypes, &method_typedefs);
+				&method_prototypes, &method_typedefs,
+				&discard);
 			if (! notify_func)
 				goto error;
 
 			sync_func = method_proxy_sync_function (
 				NULL, prefix, interface, method,
-				&method_externs);
+				&method_externs, &method_structs);
 			if (! sync_func)
 				goto error;
 
@@ -800,6 +846,13 @@ node_proxy_functions (const void *parent,
 				nih_list_add (prototypes, &func->entry);
 			}
 
+			NIH_LIST_FOREACH_SAFE (&method_structs, iter) {
+				TypeStruct *structure = (TypeStruct *)iter;
+
+				nih_ref (structure, code);
+				nih_list_add (structs, &structure->entry);
+			}
+
 			NIH_LIST_FOREACH_SAFE (&method_typedefs, iter) {
 				TypeFunc *func = (TypeFunc *)iter;
 
@@ -818,10 +871,12 @@ node_proxy_functions (const void *parent,
 		NIH_LIST_FOREACH (&interface->signals, signal_iter) {
 			Signal *        signal = (Signal *)signal_iter;
 			NihList         signal_prototypes;
+			NihList         signal_structs;
 			NihList         signal_typedefs;
 			nih_local char *proxy_func = NULL;
 
 			nih_list_init (&signal_prototypes);
+			nih_list_init (&signal_structs);
 			nih_list_init (&signal_typedefs);
 
 			if (! first)
@@ -831,7 +886,8 @@ node_proxy_functions (const void *parent,
 
 			proxy_func = signal_proxy_function (
 				NULL, prefix, interface, signal,
-				&signal_prototypes, &signal_typedefs);
+				&signal_prototypes, &signal_typedefs,
+				&signal_structs);
 			if (! proxy_func)
 				goto error;
 
@@ -850,6 +906,13 @@ node_proxy_functions (const void *parent,
 				nih_list_add (prototypes, &func->entry);
 			}
 
+			NIH_LIST_FOREACH_SAFE (&signal_structs, iter) {
+				TypeStruct *structure = (TypeStruct *)iter;
+
+				nih_ref (structure, code);
+				nih_list_add (structs, &structure->entry);
+			}
+
 			NIH_LIST_FOREACH_SAFE (&signal_typedefs, iter) {
 				TypeFunc *func = (TypeFunc *)iter;
 
@@ -861,6 +924,7 @@ node_proxy_functions (const void *parent,
 		NIH_LIST_FOREACH (&interface->properties, property_iter) {
 			Property *      property = (Property *)property_iter;
 			NihList         property_prototypes;
+			NihList         property_structs;
 			NihList         property_typedefs;
 			NihList         property_externs;
 			nih_local char *get_func = NULL;
@@ -871,6 +935,7 @@ node_proxy_functions (const void *parent,
 			nih_local char *set_sync_func = NULL;
 
 			nih_list_init (&property_prototypes);
+			nih_list_init (&property_structs);
 			nih_list_init (&property_typedefs);
 			nih_list_init (&property_externs);
 
@@ -882,19 +947,20 @@ node_proxy_functions (const void *parent,
 			if (property->access != NIH_DBUS_WRITE) {
 				get_func = property_proxy_get_function (
 					NULL, prefix, interface, property,
-					&property_externs);
+					&property_externs, &discard);
 				if (! get_func)
 					goto error;
 
 				get_notify_func = property_proxy_get_notify_function (
 					NULL, prefix, interface, property,
-					&property_prototypes, &property_typedefs);
+					&property_prototypes, &property_typedefs,
+					&discard);
 				if (! get_notify_func)
 					goto error;
 
 				get_sync_func = property_proxy_get_sync_function (
 					NULL, prefix, interface, property,
-					&property_externs);
+					&property_externs, &property_structs);
 				if (! get_sync_func)
 					goto error;
 
@@ -910,26 +976,33 @@ node_proxy_functions (const void *parent,
 					goto error;
 			}
 
-			if (property->access == NIH_DBUS_READWRITE)
+			if (property->access == NIH_DBUS_READWRITE) {
 				if (! nih_strcat (&code, parent, "\n"))
 					goto error;
+
+				/* Don't duplicate structures; these will
+				 * get freed automatically.
+				 */
+				nih_list_init (&property_structs);
+			}
 
 			if (property->access != NIH_DBUS_READ) {
 				set_func = property_proxy_set_function (
 					NULL, prefix, interface, property,
-					&property_externs);
+					&property_externs, &discard);
 				if (! set_func)
 					goto error;
 
 				set_notify_func = property_proxy_set_notify_function (
 					NULL, prefix, interface, property,
-					&property_prototypes, &property_typedefs);
+					&property_prototypes, &property_typedefs,
+					&discard);
 				if (! set_notify_func)
 					goto error;
 
 				set_sync_func = property_proxy_set_sync_function (
 					NULL, prefix, interface, property,
-					&property_externs);
+					&property_externs, &property_structs);
 				if (! set_sync_func)
 					goto error;
 
@@ -953,6 +1026,13 @@ node_proxy_functions (const void *parent,
 
 				nih_ref (func, code);
 				nih_list_add (prototypes, &func->entry);
+			}
+
+			NIH_LIST_FOREACH_SAFE (&property_structs, iter) {
+				TypeStruct *structure = (TypeStruct *)iter;
+
+				nih_ref (structure, code);
+				nih_list_add (structs, &structure->entry);
 			}
 
 			NIH_LIST_FOREACH_SAFE (&property_typedefs, iter) {

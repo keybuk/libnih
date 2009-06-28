@@ -1,3 +1,14 @@
+2009-06-28  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/node.c (node_object_functions)
+	(node_proxy_functions): Call the various function generators with
+	a structs list, which we copy up into our own new structs argument.
+	* nih-dbus-tool/node.h: Add structs arguments to prototypes
+	* nih-dbus-tool/tests/test_node.c (test_object_functions)
+	(test_proxy_functions): Pass the structs argument in; make sure the
+	structures are passed back as well without duplicating the definitions
+	when we have multiple functions that declare them.
+
 2009-06-26  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/property.c (property_object_get_function)

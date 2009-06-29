@@ -57,37 +57,72 @@ typedef struct interface {
 
 NIH_BEGIN_EXTERN
 
-int        interface_name_valid       (const char *name);
+int        interface_name_valid                    (const char *name);
 
-Interface *interface_new              (const void *parent, const char *name)
+Interface *interface_new                           (const void *parent,
+						    const char *name)
 	__attribute__ ((warn_unused_result, malloc));
 
-int        interface_start_tag        (XML_Parser xmlp, const char *tag,
-				       char * const *attr)
+int        interface_start_tag                     (XML_Parser xmlp,
+						    const char *tag,
+						    char * const *attr)
 	__attribute__ ((warn_unused_result));
-int        interface_end_tag          (XML_Parser xmlp, const char *tag)
+int        interface_end_tag                       (XML_Parser xmlp,
+						    const char *tag)
 	__attribute__ ((warn_unused_result));
 
-int        interface_annotation       (Interface *interface,
-				       const char *name, const char *value)
+int        interface_annotation                    (Interface *interface,
+						    const char *name,
+						    const char *value)
 	__attribute__ ((warn_unused_result));
 
-char *     interface_methods_array    (const void *parent, const char *prefix,
-				       Interface *interface, int with_handlers,
-				       NihList *prototypes)
+char *     interface_methods_array                 (const void *parent,
+						    const char *prefix,
+						    Interface *interface,
+						    int with_handlers,
+						    NihList *prototypes)
 	__attribute__ ((warn_unused_result, malloc));
-char *     interface_signals_array    (const void *parent, const char *prefix,
-				       Interface *interface, int with_filters,
-				       NihList *prototypes)
+char *     interface_signals_array                 (const void *parent,
+						    const char *prefix,
+						    Interface *interface,
+						    int with_filters,
+						    NihList *prototypes)
 	__attribute__ ((warn_unused_result, malloc));
-char *     interface_properties_array (const void *parent, const char *prefix,
-				       Interface *interface, int with_handlers,
-				       NihList *prototypes)
+char *     interface_properties_array              (const void *parent,
+						    const char *prefix,
+						    Interface *interface,
+						    int with_handlers,
+						    NihList *prototypes)
 	__attribute__ ((warn_unused_result, malloc));
 
-char *     interface_struct           (const void *parent, const char *prefix,
-				       Interface *interface, int object,
-				       NihList *prototypes)
+char *     interface_struct                        (const void *parent,
+						    const char *prefix,
+						    Interface *interface,
+						    int object,
+						    NihList *prototypes)
+	__attribute__ ((warn_unused_result, malloc));
+
+
+char *     interface_proxy_get_all_function        (const void *parent,
+						    const char *prefix,
+						    Interface *interface,
+						    NihList *prototypes,
+						    NihList *structs)
+	__attribute__ ((warn_unused_result, malloc));
+
+char *     interface_proxy_get_all_notify_function (const void *parent,
+						    const char *prefix,
+						    Interface *interface,
+						    NihList *prototypes,
+						    NihList *typedefs,
+						    NihList *structs)
+	__attribute__ ((warn_unused_result, malloc));
+
+char *     interface_proxy_get_all_sync_function   (const void *parent,
+						    const char *prefix,
+						    Interface *interface,
+						    NihList *prototypes,
+						    NihList *structs)
 	__attribute__ ((warn_unused_result, malloc));
 
 NIH_END_EXTERN

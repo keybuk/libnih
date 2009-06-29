@@ -70,6 +70,7 @@ check_PROGRAMS = \
 	$(TESTS) \
 	marshal_factory \
 	demarshal_factory \
+	interface_factory \
 	method_factory \
 	signal_factory \
 	property_factory
@@ -128,12 +129,16 @@ test_node_LDADD = \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
 
-test_interface_SOURCES = tests/test_interface.c
+test_interface_SOURCES = \
+	tests/test_interface.c tests/interface_code.h
+nodist_test_interface_SOURCES = \
+	tests/interface_code.c
 test_interface_LDFLAGS = -static
 test_interface_LDADD = \
 	demarshal.o marshal.o type.o indent.o \
 	parse.o annotation.o argument.o property.o signal.o method.o \
 	interface.o node.o symbol.o \
+	../nih-dbus/libnih-dbus.la \
 	../nih/libnih.la \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
@@ -300,6 +305,20 @@ tests/demarshal_code.c: $(builddir)/demarshal_factory
 	$(builddir)/demarshal_factory > $@
 
 
+interface_factory_SOURCES = tests/interface_factory.c
+interface_factory_LDFLAGS = -static
+interface_factory_LDADD = \
+	demarshal.o marshal.o type.o indent.o \
+	parse.o annotation.o argument.o property.o signal.o method.o \
+	interface.o node.o symbol.o \
+	../nih/libnih.la \
+	$(EXPAT_LIBS) \
+	$(DBUS_LIBS)
+
+tests/interface_code.c: $(builddir)/interface_factory
+	$(builddir)/interface_factory > $@
+
+
 method_factory_SOURCES = tests/method_factory.c
 method_factory_LDFLAGS = -static
 method_factory_LDADD = \
@@ -347,12 +366,18 @@ CLEANFILES = \
 	$(com_netsplit_Nih_Test_proxy_OUTPUTS) \
 	$(nodist_test_marshal_SOURCES) \
 	$(nodist_test_demarshal_SOURCES) \
+	$(nodist_test_interface_SOURCES) \
 	$(nodist_test_method_SOURCES) \
 	$(nodist_test_signal_SOURCES) \
 	$(nodist_test_property_SOURCES)
 
 
 EXTRA_DIST += \
+	tests/expected/test_interface_proxy_get_all_function_standard.c \
+	tests/expected/test_interface_proxy_get_all_notify_function_standard.c \
+	tests/expected/test_interface_proxy_get_all_notify_function_structure.c \
+	tests/expected/test_interface_proxy_get_all_sync_function_standard.c \
+	tests/expected/test_interface_proxy_get_all_sync_function_structure.c \
 	tests/expected/test_method_object_function_standard.c \
 	tests/expected/test_method_object_function_no_input.c \
 	tests/expected/test_method_object_function_no_output.c \

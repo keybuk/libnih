@@ -1,3 +1,36 @@
+2009-06-29  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/interface.c (interface_proxy_get_all_function)
+	(interface_proxy_get_all_notify_function)
+	(interface_proxy_get_all_sync_function): Add functions to generate
+	proxy methods that get all of the properties of the given interface,
+	returned as members of a structure.
+	* nih-dbus-tool/interface.h: Add prototypes.
+	* nih-dbus-tool/tests/interface_factory.c: Call the new functions
+	to generate other functions that we can test
+	* nih-dbus-tool/tests/interface_code.h: Expected structure definitions,
+	typedefs and prototypes for generated code.
+	* nih-dbus-tool/tests/test_interface.c (test_proxy_get_all_function)
+	(test_proxy_get_all_notify_function)
+	(test_proxy_get_all_sync_function): Test both the generator functions
+	themselves and the code that they generate.
+	* nih-dbus-tool/tests/expected/test_interface_proxy_get_all_function_standard.c,
+	* nih-dbus-tool/tests/expected/test_interface_proxy_get_all_notify_function_standard.c,
+	* nih-dbus-tool/tests/expected/test_interface_proxy_get_all_notify_function_structure.c,
+	* nih-dbus-tool/tests/expected/test_interface_proxy_get_all_sync_function_standard.c,
+	* nih-dbus-tool/tests/expected/test_interface_proxy_get_all_sync_function_structure.c:
+	Expected output from generators
+	* nih-dbus-tool/Makefile.am (check_PROGRAMS): Build the interface
+	factory binary
+	(test_interface_SOURCES): Depend on the header file
+	(nodist_test_interface_SOURCES): Build and link the generated source
+	(test_interface_LDADD): Need to link to libnih-dbus.la
+	(interface_factory_SOURCES, interface_factory_LDFLAGS)
+	(interface_factory_LDADD, tests/interface_code.c): Details to build
+	interface factory binary
+	(CLEANFILES): Make sure we clean up
+	(EXTRA_DIST): Distribute expected files
+
 2009-06-28  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/test_files.h (TEST_EXPECTED_STR, TEST_EXPECTED_FILE): It's

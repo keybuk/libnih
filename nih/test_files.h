@@ -211,9 +211,9 @@
 			TEST_FAILED ("wrong value for %s, expected '%.*s' got NULL", \
 				     #_str, (int)_test_stat.st_size, _test_buf); \
 		} else if (strncmp ((_str), _test_buf, _test_stat.st_size)) \
-			TEST_FAILED ("wrong value for %s, expected '%.*s' got '%.*s'", \
+			TEST_FAILED ("wrong value for %s, expected '%.*s' got '%s'", \
 				     #_str, (int)_test_stat.st_size, _test_buf, \
-				     (int)_test_stat.st_size, (_str));	\
+				     (_str));	\
 									\
 		assert (munmap (_test_buf, _test_stat.st_size) == 0);	\
 		assert (close (_test_fd) == 0);				\

@@ -1,5 +1,8 @@
 2009-06-29  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/test_files.h (TEST_EXPECTED_STR): Display the full original
+	string, not just the first part.
+
 	* nih-dbus-tool/interface.c (interface_proxy_get_all_function)
 	(interface_proxy_get_all_notify_function)
 	(interface_proxy_get_all_sync_function): Add functions to generate

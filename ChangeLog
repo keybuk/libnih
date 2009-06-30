@@ -1,5 +1,16 @@
 2009-06-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_marshal.c (test_marshal): Add missing test
+	cases for arrays of dictionary entries.
+	* nih-dbus-tool/tests/marshal_factory.c: Generate a dict entry test
+	* nih-dbus-tool/tests/marshal_code.h: Add the expected structure type
+	and prototypes.
+	* nih-dbus-tool/tests/test_demarshal.c (test_demarshal): Add missing
+	test cases for arrays of dictionary entries.
+	* nih-dbus-tool/tests/demarshal_code.h: Add the expected structure
+	type and prototypes.
+	* nih-dbus-tool/tests/demarshal_factory.c: Generate a dict entry test
+
 	* nih-dbus-tool/marshal.c, nih-dbus-tool/demarshal.c,
 	* nih-dbus-tool/node.c, nih-dbus-tool/method.c, nih-dbus-tool/signal.c,
 	* nih-dbus-tool/property.c: Add missing mention of @structs in

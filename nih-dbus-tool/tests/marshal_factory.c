@@ -149,6 +149,11 @@ main (int   argc,
 					   DBUS_TYPE_STRING_AS_STRING
 					   DBUS_TYPE_UINT32_AS_STRING
 					   DBUS_STRUCT_END_CHAR_AS_STRING));
+	marshal_function ("dict_entry_array", (DBUS_TYPE_ARRAY_AS_STRING
+					       DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
+					       DBUS_TYPE_STRING_AS_STRING
+					       DBUS_TYPE_UINT32_AS_STRING
+					       DBUS_DICT_ENTRY_END_CHAR_AS_STRING));
 
 	return 0;
 }

@@ -39,6 +39,11 @@ typedef struct my_struct_array_value_element {
 	uint32_t  item1;
 } MyStructArrayValueElement;
 
+typedef struct my_dict_entry_array_value_element {
+	char *    item0;
+	uint32_t  item1;
+} MyDictEntryArrayValueElement;
+
 
 NIH_BEGIN_EXTERN
 
@@ -80,6 +85,8 @@ int my_struct_demarshal             (const void *parent, DBusMessage *message,
 				     MyStructValue **value);
 int my_struct_array_demarshal       (const void *parent, DBusMessage *message,
 				     MyStructArrayValueElement ***value);
+int my_dict_entry_array_demarshal   (const void *parent, DBusMessage *message,
+				     MyDictEntryArrayValueElement ***value);
 
 NIH_END_EXTERN
 

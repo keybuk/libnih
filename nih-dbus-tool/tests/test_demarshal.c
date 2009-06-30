@@ -65,7 +65,8 @@ test_demarshal (void)
 	char **           str_array;
 	char ***          str_array_array;
 	MyStructValue *   struct_value;
-	MyStructArrayValueElement ** struct_array;
+	MyStructArrayValueElement **struct_array;
+	MyDictEntryArrayValueElement **dict_entry_array;
 
 	TEST_FUNCTION ("demarshal");
 
@@ -4322,6 +4323,453 @@ test_demarshal (void)
 
 		TEST_GT (ret, 0);
 		TEST_EQ_P (struct_array, NULL);
+
+		dbus_message_unref (message);
+
+		dbus_shutdown ();
+	}
+
+
+	/* Check that the code to demarshal a D-Bus DictEntry Array into
+	 * a newly allocated dict entry array pointer is correctly generated
+	 * and returned as an allocated string.  All of the struct locals
+	 * should be internalised and just the array iterator and length
+	 * as locals.
+	 */
+	TEST_FEATURE ("with dict entry array");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&outputs);
+		nih_list_init (&locals);
+		nih_list_init (&structs);
+
+		dbus_signature_iter_init (&signature,
+					  (DBUS_TYPE_ARRAY_AS_STRING
+					   DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
+					   DBUS_TYPE_STRING_AS_STRING
+					   DBUS_TYPE_UINT32_AS_STRING
+					   DBUS_DICT_ENTRY_END_CHAR_AS_STRING));
+
+		str = demarshal (NULL, &signature,
+				 "parent", "iter", "value",
+				 "return -1;\n",
+				 "return 1;\n",
+				 &outputs, &locals,
+				 "my", NULL, "dict_entry_array", "value",
+				 &structs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&outputs);
+			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("/* Demarshal an array from the message */\n"
+				   "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_ARRAY) {\n"
+				   "\treturn 1;\n"
+				   "}\n"
+				   "\n"
+				   "dbus_message_iter_recurse (&iter, &value_iter);\n"
+				   "\n"
+				   "value_size = 0;\n"
+				   "\n"
+				   "value = nih_alloc (parent, sizeof (MyDictEntryArrayValueElement *));\n"
+				   "if (! value) {\n"
+				   "\treturn -1;\n"
+				   "}\n"
+				   "\n"
+				   "value[value_size] = NULL;\n"
+				   "\n"
+				   "while (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_INVALID) {\n"
+				   "\tDBusMessageIter                value_element_iter;\n"
+				   "\tconst char *                   value_element_item0_dbus;\n"
+				   "\tchar *                         value_element_item0;\n"
+				   "\tuint32_t                       value_element_item1;\n"
+				   "\tMyDictEntryArrayValueElement **value_tmp;\n"
+				   "\tMyDictEntryArrayValueElement * value_element;\n"
+				   "\n"
+
+				   "\t/* Demarshal a structure from the message */\n"
+				   "\tif (dbus_message_iter_get_arg_type (&value_iter) != DBUS_TYPE_DICT_ENTRY) {\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\treturn 1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_recurse (&value_iter, &value_element_iter);\n"
+				   "\n"
+				   "\tvalue_element = nih_new (value, MyDictEntryArrayValueElement);\n"
+				   "\tif (! value_element) {\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+
+				   "\t/* Demarshal a char * from the message */\n"
+				   "\tif (dbus_message_iter_get_arg_type (&value_element_iter) != DBUS_TYPE_STRING) {\n"
+				   "\t\tnih_free (value_element);\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\treturn 1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_get_basic (&value_element_iter, &value_element_item0_dbus);\n"
+				   "\n"
+				   "\tvalue_element_item0 = nih_strdup (value_element, value_element_item0_dbus);\n"
+				   "\tif (! value_element_item0) {\n"
+				   "\t\tnih_free (value_element);\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_next (&value_element_iter);\n"
+				   "\n"
+				   "\tvalue_element->item0 = value_element_item0;\n"
+				   "\n"
+
+				   "\t/* Demarshal a uint32_t from the message */\n"
+				   "\tif (dbus_message_iter_get_arg_type (&value_element_iter) != DBUS_TYPE_UINT32) {\n"
+				   "\t\tnih_free (value_element);\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\treturn 1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_get_basic (&value_element_iter, &value_element_item1);\n"
+				   "\n"
+				   "\tdbus_message_iter_next (&value_element_iter);\n"
+				   "\n"
+				   "\tvalue_element->item1 = value_element_item1;\n"
+				   "\n"
+
+				   "\tif (dbus_message_iter_get_arg_type (&value_element_iter) != DBUS_TYPE_INVALID) {\n"
+				   "\t\tnih_free (value_element);\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\treturn 1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tdbus_message_iter_next (&value_iter);\n"
+				   "\n"
+				   "\tif (value_size + 2 > SIZE_MAX / sizeof (MyDictEntryArrayValueElement *)) {\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\treturn 1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue_tmp = nih_realloc (value, parent, sizeof (MyDictEntryArrayValueElement *) * (value_size + 2));\n"
+				   "\tif (! value_tmp) {\n"
+				   "\t\tif (value)\n"
+				   "\t\t\tnih_free (value);\n"
+				   "\t\treturn -1;\n"
+				   "\t}\n"
+				   "\n"
+				   "\tvalue = value_tmp;\n"
+				   "\tvalue[value_size] = value_element;\n"
+				   "\tvalue[value_size + 1] = NULL;\n"
+				   "\n"
+				   "\tvalue_size++;\n"
+				   "}\n"
+				   "\n"
+				   "dbus_message_iter_next (&iter);\n"));
+
+		TEST_LIST_NOT_EMPTY (&outputs);
+
+		var = (TypeVar *)outputs.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "MyDictEntryArrayValueElement **");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "value");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&outputs);
+
+		TEST_LIST_NOT_EMPTY (&locals);
+
+		var = (TypeVar *)locals.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "DBusMessageIter");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "value_iter");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_NOT_EMPTY (&locals);
+
+		var = (TypeVar *)locals.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "size_t");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "value_size");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&locals);
+
+
+		TEST_LIST_NOT_EMPTY (&structs);
+
+		structure = (TypeStruct *)structs.next;
+		TEST_ALLOC_SIZE (structure, sizeof (TypeStruct));
+		TEST_ALLOC_PARENT (structure, str);
+		TEST_EQ_STR (structure->name, "MyDictEntryArrayValueElement");
+		TEST_ALLOC_PARENT (structure->name, structure);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "char *");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item0");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "uint32_t");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item1");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&structure->members);
+		nih_free (structure);
+
+		TEST_LIST_EMPTY (&structs);
+
+		nih_free (str);
+	}
+
+
+	/* Check that the generated code takes each of the members of the
+	 * D-Bus DictEntry Array in the message we pass and stores them in a
+	 * newly allocated dict entry array in the pointer we provide.
+	 */
+	TEST_FEATURE ("with dict entry array (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			message = dbus_message_new (DBUS_MESSAGE_TYPE_METHOD_CALL);
+
+			dbus_message_iter_init_append (message, &iter);
+
+			dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+							  (DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
+							   DBUS_TYPE_STRING_AS_STRING
+							   DBUS_TYPE_UINT32_AS_STRING
+							   DBUS_DICT_ENTRY_END_CHAR_AS_STRING),
+							  &subiter);
+
+			dbus_message_iter_open_container (&subiter, DBUS_TYPE_DICT_ENTRY,
+							  NULL, &subsubiter);
+
+			str_value = "hello there";
+			dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+							&str_value);
+
+			uint32_value = 1818118181;
+			dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_UINT32,
+							&uint32_value);
+
+			dbus_message_iter_close_container (&subiter, &subsubiter);
+
+			dbus_message_iter_open_container (&subiter, DBUS_TYPE_DICT_ENTRY,
+							  NULL, &subsubiter);
+
+			str_value = "goodbye world";
+			dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+							&str_value);
+
+			uint32_value = 12345;
+			dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_UINT32,
+							&uint32_value);
+
+			dbus_message_iter_close_container (&subiter, &subsubiter);
+
+			dbus_message_iter_close_container (&iter, &subiter);
+		}
+
+		dict_entry_array = NULL;
+
+		ret = my_dict_entry_array_demarshal (NULL, message,
+						     &dict_entry_array);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_message_unref (message);
+			dbus_shutdown ();
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+		TEST_ALLOC_ORPHAN (dict_entry_array);
+		TEST_ALLOC_SIZE (dict_entry_array, sizeof (MyDictEntryArrayValueElement *) * 3);
+
+		TEST_ALLOC_PARENT (dict_entry_array[0], dict_entry_array);
+		TEST_ALLOC_SIZE (dict_entry_array[0], sizeof (MyDictEntryArrayValueElement));
+		TEST_EQ_STR (dict_entry_array[0]->item0, "hello there");
+		TEST_ALLOC_PARENT (dict_entry_array[0]->item0, dict_entry_array[0]);
+		TEST_EQ (dict_entry_array[0]->item1, 1818118181);
+
+		TEST_ALLOC_PARENT (dict_entry_array[1], dict_entry_array);
+		TEST_ALLOC_SIZE (dict_entry_array[1], sizeof (MyDictEntryArrayValueElement));
+		TEST_EQ_STR (dict_entry_array[1]->item0, "goodbye world");
+		TEST_ALLOC_PARENT (dict_entry_array[1]->item0, dict_entry_array[1]);
+		TEST_EQ (dict_entry_array[1]->item1, 12345);
+
+		TEST_EQ_P (dict_entry_array[2], NULL);
+
+		nih_free (dict_entry_array);
+
+		dbus_message_unref (message);
+
+		dbus_shutdown ();
+	}
+
+
+	/* Check that when a dict entry array is expected, but a different
+	 * type is found, the type error code is run and the function returns
+	 * without modifying the pointer.
+	 */
+	TEST_FEATURE ("with wrong type for dict entry array (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			message = dbus_message_new (DBUS_MESSAGE_TYPE_METHOD_CALL);
+
+			dbus_message_iter_init_append (message, &iter);
+
+			double_value = 3.14;
+			dbus_message_iter_append_basic (&iter, DBUS_TYPE_DOUBLE,
+							&double_value);
+		}
+
+		dict_entry_array = NULL;
+
+		ret = my_dict_entry_array_demarshal (NULL, message,
+						     &dict_entry_array);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_message_unref (message);
+			dbus_shutdown ();
+			continue;
+		}
+
+		TEST_GT (ret, 0);
+		TEST_EQ_P (dict_entry_array, NULL);
+
+		dbus_message_unref (message);
+
+		dbus_shutdown ();
+	}
+
+
+	/* Check that when a dict entry array is expected, but a different
+	 * type is found in the array, the type error code is run and
+	 * the function returns without modifying the pointer.
+	 */
+	TEST_FEATURE ("with wrong array member type for dict entry array (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			message = dbus_message_new (DBUS_MESSAGE_TYPE_METHOD_CALL);
+
+			dbus_message_iter_init_append (message, &iter);
+
+			dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+							  DBUS_TYPE_DOUBLE_AS_STRING,
+							  &subiter);
+
+			double_value = 3.14;
+			dbus_message_iter_append_basic (&subiter, DBUS_TYPE_DOUBLE,
+							&double_value);
+
+			dbus_message_iter_close_container (&iter, &subiter);
+		}
+
+		dict_entry_array = NULL;
+
+		ret = my_dict_entry_array_demarshal (NULL, message,
+						     &dict_entry_array);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_message_unref (message);
+			dbus_shutdown ();
+			continue;
+		}
+
+		TEST_GT (ret, 0);
+		TEST_EQ_P (dict_entry_array, NULL);
+
+		dbus_message_unref (message);
+
+		dbus_shutdown ();
+	}
+
+
+	/* Check that when a dict entry array member is expected, but a
+	 * different member type is found, the type error code is run
+	 * and the function returns without modifying the pointer.
+	 */
+	TEST_FEATURE ("with wrong type for dict entry member (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			message = dbus_message_new (DBUS_MESSAGE_TYPE_METHOD_CALL);
+
+			dbus_message_iter_init_append (message, &iter);
+
+			dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY,
+							  (DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
+							   DBUS_TYPE_STRING_AS_STRING
+							   DBUS_TYPE_DOUBLE_AS_STRING
+							   DBUS_DICT_ENTRY_END_CHAR_AS_STRING),
+							  &subiter);
+
+			dbus_message_iter_open_container (&subiter, DBUS_TYPE_DICT_ENTRY,
+							  NULL, &subsubiter);
+
+			str_value = "hello there";
+			dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_STRING,
+							&str_value);
+
+			double_value = 3.14;
+			dbus_message_iter_append_basic (&subsubiter, DBUS_TYPE_DOUBLE,
+							&double_value);
+
+			dbus_message_iter_close_container (&subiter, &subsubiter);
+
+			dbus_message_iter_close_container (&iter, &subiter);
+		}
+
+		dict_entry_array = NULL;
+
+		ret = my_dict_entry_array_demarshal (NULL, message,
+						     &dict_entry_array);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_message_unref (message);
+			dbus_shutdown ();
+			continue;
+		}
+
+		TEST_GT (ret, 0);
+		TEST_EQ_P (dict_entry_array, NULL);
 
 		dbus_message_unref (message);
 

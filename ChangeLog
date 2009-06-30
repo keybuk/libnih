@@ -1,5 +1,10 @@
 2009-06-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/test_files.h (TEST_EXPECTED_STR): Don't just compare the start
+	of the string, make sure we compare the whole string - easiest way
+	is to check the length first
+	(TEST_EXPECTED_FILE): Make sure the files are the same length
+
 	* nih-dbus-tool/node.c (node_proxy_functions): If there are
 	properties, include the async and sync versions of the get_all
 	function.  These define all the property structs, so the only ones

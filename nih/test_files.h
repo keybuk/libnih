@@ -210,7 +210,8 @@
 		if ((_str) == NULL) {					\
 			TEST_FAILED ("wrong value for %s, expected '%.*s' got NULL", \
 				     #_str, (int)_test_stat.st_size, _test_buf); \
-		} else if (strncmp ((_str), _test_buf, _test_stat.st_size)) \
+		} else if ((strlen (_str) != (size_t)_test_stat.st_size)	\
+			   || strncmp ((_str), _test_buf, _test_stat.st_size)) \
 			TEST_FAILED ("wrong value for %s, expected '%.*s' got '%s'", \
 				     #_str, (int)_test_stat.st_size, _test_buf, \
 				     (_str));	\
@@ -256,8 +257,9 @@
 				    MAP_SHARED, fileno (_file), 0);	\
 		assert (_test_buf_b != MAP_FAILED);			\
 									\
-		if (strncmp (_test_buf_a, _test_buf_b,			\
-			     nih_min (_test_stat_a.st_size, _test_stat_b.st_size))) \
+		if ((_test_stat_a.st_size != _test_stat_b.st_size)	\
+		    || strncmp (_test_buf_a, _test_buf_b,			\
+				_test_stat_a.st_size)) \
 			TEST_FAILED ("wrong value for %s, expected '%.*s' got '%.*s'", \
 				     #_file, (int)_test_stat_a.st_size, _test_buf_a, \
 				     (int)_test_stat_b.st_size, _test_buf_b); \

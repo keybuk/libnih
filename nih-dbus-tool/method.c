@@ -485,7 +485,8 @@ method_lookup_argument (Method *    method,
  * @interface: interface of @method,
  * @method: method to generate function for,
  * @prototypes: list to append function prototypes to,
- * @handlers: list to append definitions of required handlers to.
+ * @handlers: list to append definitions of required handlers to,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code for a function to handle the method @method on @interface,
  * demarshalling the incoming arguments, calling a handler function
@@ -501,6 +502,10 @@ method_lookup_argument (Method *    method,
  * The names of both the returned function and handled function prototype
  * will be generated using information in @interface and @method, prefixed
  * with @prefix.
+ *
+ * If any of the arguments require a structure to be defined, the
+ * definition is returned as a TypeStruct object appended to the @structs
+ * list.  The name is generated from @prefix, @interface and @method.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -1006,7 +1011,8 @@ method_object_function (const void *parent,
  * @prefix: prefix for function name,
  * @interface: interface of @method,
  * @method: method to generate function for,
- * @prototypes: list to append function prototypes to.
+ * @prototypes: list to append function prototypes to,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code for a function to send a reply for the method @method
  * on @interface by marshalling the arguments.
@@ -1016,6 +1022,10 @@ method_object_function (const void *parent,
  *
  * The name of the returned function will be generated using information
  * in @interface and @method, prefixed with @prefix.
+ *
+ * If any of the arguments require a structure to be defined, the
+ * definition is returned as a TypeStruct object appended to the @structs
+ * list.  The name is generated from @prefix, @interface and @method.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -1270,7 +1280,8 @@ method_reply_function (const void *parent,
  * @prefix: prefix for function name,
  * @interface: interface of @method,
  * @method: method to generate function for,
- * @prototypes: list to append function prototypes to.
+ * @prototypes: list to append function prototypes to,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code for a function to make an asynchronous method call for
  * the method @method on interface @interface by marshalling the arguments,
@@ -1289,6 +1300,10 @@ method_reply_function (const void *parent,
  * The notify function will call a handler function passed in if the
  * reply is valid.  The name and type for this can be obtained from
  * method_proxy_notify_function().
+ *
+ * If any of the arguments require a structure to be defined, the
+ * definition is returned as a TypeStruct object appended to the @structs
+ * list.  The name is generated from @prefix, @interface and @method.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -1653,7 +1668,8 @@ method_proxy_function (const void *parent,
  * @interface: interface of @method,
  * @method: method to generate function for,
  * @prototypes: list to append function prototypes to,
- * @typedefs: list to append function pointer typedef definitions to.
+ * @typedefs: list to append function pointer typedef definitions to,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code for a function to handle the notification of a
  * complete pending call for the method @method on @interface by
@@ -1670,6 +1686,10 @@ method_proxy_function (const void *parent,
  *
  * The typedef for the handler function is returned as a TypeFunc object
  * added to the @typedefs list.
+ *
+ * If any of the arguments require a structure to be defined, the
+ * definition is returned as a TypeStruct object appended to the @structs
+ * list.  The name is generated from @prefix, @interface and @method.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -2075,7 +2095,8 @@ method_proxy_notify_function (const void *parent,
  * @prefix: prefix for function name,
  * @interface: interface of @method,
  * @method: method to generate function for,
- * @prototypes: list to append function prototypes to.
+ * @prototypes: list to append function prototypes to,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code for a function to make a synchronous method call for
  * the method @method on @interface by marshalling the arguments, wiating
@@ -2083,6 +2104,10 @@ method_proxy_notify_function (const void *parent,
  *
  * The prototype of the returned function is returned as a TypeFunc object
  * appended to the @prototypes list.
+ *
+ * If any of the arguments require a structure to be defined, the
+ * definition is returned as a TypeStruct object appended to the @structs
+ * list.  The name is generated from @prefix, @interface and @method.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -2367,7 +2392,7 @@ method_proxy_sync_function (const void *parent,
 			 * asserting that it's not NULL.  We actually
 			 * demarshal to a local variable though, to avoid
 			 * dealing with that extra level of pointers.
-,			 */
+			 */
 			NIH_LIST_FOREACH_SAFE (&arg_vars, iter) {
 				TypeVar *       var = (TypeVar *)iter;
 				nih_local char *arg_type = NULL;

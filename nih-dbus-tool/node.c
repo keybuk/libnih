@@ -457,6 +457,7 @@ node_interfaces_array (const void *parent,
  * @node: node to generate functions for,
  * @prototypes: list to append prototypes to,
  * @handlers: list to append handler prototypes to,
+ * @structs: list to append structure definitions to,
  * @externs: list to append prototypes of extern functions to.
  *
  * Generates C code for all of the functions that @node would require to
@@ -478,6 +479,11 @@ node_interfaces_array (const void *parent,
  * a public API that your own code may call.  The names and prototypes are
  * returned as TypeFunc objects appended to the @externs list, you would
  * normally place these in a header file.
+ *
+ * If any of the function arguments require a structure to be defined, the
+ * definition is returned as a TypeStruct object appended to the @structs
+ * list.  The name is generated from @prefix, @interface and the method,
+ * signal or property the function is for.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -727,6 +733,7 @@ error:
  * @prefix: prefix for function names,
  * @node: node to generate functions for,
  * @prototypes: list to append prototypes to,
+ * @structs: list to append structure definitions to,
  * @typedefs: list to append callback typedefs to,
  * @externs: list to append prototypes of extern functions to.
  *
@@ -749,6 +756,11 @@ error:
  * nih_dbus_proxy_connect() (for signal functions).  The typedef for those
  * functions are returned as TypeFunc objects appended to the @typedefs list.
  * You would normally place these in a header file.
+ *
+ * If any of the function arguments require a structure to be defined, the
+ * definition is returned as a TypeStruct object appended to the @structs
+ * list.  The name is generated from @prefix, @interface and the method,
+ * signal or property the function is for.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents

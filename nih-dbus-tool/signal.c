@@ -425,13 +425,18 @@ signal_lookup_argument (Signal *    signal,
  * @prefix: prefix for function name,
  * @interface: interface of @signal,
  * @signal: signal to generate function for,
- * @prototypes: list to append function prototypes to.
+ * @prototypes: list to append function prototypes to,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code for a function to emit a signal @signal on @interface by
  * marshalling the arguments.
  *
  * The prototype of the returned function is returned as a TypeFunc object
  * appended to the @prototypes list.
+ *
+ * If any of the arguments require a structure to be defined, the
+ * definition is returned as a TypeStruct object appended to the @structs
+ * list.  The name is generated from @prefix, @interface and @signal.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -691,7 +696,8 @@ signal_object_function (const void *parent,
  * @interface: interface of @signal,
  * @signal: signal to generate function for,
  * @prototypes: list to append function prototypes to,
- * @typedefs: list to append function pointer typedef definitions to.
+ * @typedefs: list to append function pointer typedef definitions to,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code for a function that acts as a D-Bus connection filter
  * function checking that the incoming message matches @signal on @itnerface
@@ -702,6 +708,10 @@ signal_object_function (const void *parent,
  *
  * The typedef of the handler function is returned as a TypeFunc object
  * appended to the @typedefs list.
+ *
+ * If any of the arguments require a structure to be defined, the
+ * definition is returned as a TypeStruct object appended to the @structs
+ * list.  The name is generated from @prefix, @interface and @signal.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents

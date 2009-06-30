@@ -86,7 +86,11 @@ static char *demarshal_struct (const void *parent,
  * @oom_error_code: code to execute on OOM Error,
  * @type_error_code: code to exectute on type error,
  * @outputs: list to append output variables to,
- * @locals: list to append local variables to.
+ * @locals: list to append local variables to,
+ * @interface_symbol: symbol of interface for structure names,
+ * @member_symbol: symbol of interface member for structure names,
+ * @symbol: symbol of argument or variable for structure names,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code to demarshal any D-Bus type from the D-Bus iterator
  * variable named @iter_name into an appropriately typed variable named
@@ -110,6 +114,10 @@ static char *demarshal_struct (const void *parent,
  * and the first member will always be @name itself.  Should the C code
  * require local variables, similar TypeVar objects will be appended to
  * the @locals list.
+ *
+ * If the variable requires a structure to be defined, the definition is
+ * returned as a TypeStruct object appended to the @structs list.  The name
+ * is generated from @prefix, @interface_symbol, @member_symbol and @symbol.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -197,7 +205,11 @@ demarshal (const void *       parent,
  * @oom_error_code: code to execute on OOM Error,
  * @type_error_code: code to exectute on type error,
  * @outputs: list to append output variables to,
- * @locals: list to append local variables to.
+ * @locals: list to append local variables to,
+ * @interface_symbol: symbol of interface for structure names,
+ * @member_symbol: symbol of interface member for structure names,
+ * @symbol: symbol of argument or variable for structure names,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code to demarshal a D-Bus basic type (ie. numerics and
  * strings) from the D-Bus iterator variable named @iter_name into an
@@ -218,6 +230,10 @@ demarshal (const void *       parent,
  * and the first member will always be @name itself.  Should the C code
  * require local variables, similar TypeVar objects will be appended to
  * the @locals list.
+ *
+ * If the variable requires a structure to be defined, the definition is
+ * returned as a TypeStruct object appended to the @structs list.  The name
+ * is generated from @prefix, @interface_symbol, @member_symbol and @symbol.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -381,7 +397,11 @@ demarshal_basic (const void *       parent,
  * @oom_error_code: code to execute on OOM Error,
  * @type_error_code: code to exectute on type error,
  * @outputs: list to append output variables to,
- * @locals: list to append local variables to.
+ * @locals: list to append local variables to,
+ * @interface_symbol: symbol of interface for structure names,
+ * @member_symbol: symbol of interface member for structure names,
+ * @symbol: symbol of argument or variable for structure names,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code to demarshal a D-Bus array type from the D-Bus
  * iterator variable named @iter_name into an appropriately typed,
@@ -405,6 +425,10 @@ demarshal_basic (const void *       parent,
  * and the first member will always be @name itself.  Should the C code
  * require local variables, similar TypeVar objects will be appended to
  * the @locals list.
+ *
+ * If the variable requires a structure to be defined, the definition is
+ * returned as a TypeStruct object appended to the @structs list.  The name
+ * is generated from @prefix, @interface_symbol, @member_symbol and @symbol.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -838,7 +862,11 @@ demarshal_array (const void *       parent,
  * @oom_error_code: code to execute on OOM Error,
  * @type_error_code: code to exectute on type error,
  * @outputs: list to append output variables to,
- * @locals: list to append local variables to.
+ * @locals: list to append local variables to,
+ * @interface_symbol: symbol of interface for structure names,
+ * @member_symbol: symbol of interface member for structure names,
+ * @symbol: symbol of argument or variable for structure names,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code to demarshal a D-Bus structure type, and its members,
  * from the D-Bus iterator variable named @iter_name into an appropriately
@@ -859,6 +887,10 @@ demarshal_array (const void *       parent,
  * and the first member will always be @name itself.  Should the C code
  * require local variables, similar TypeVar objects will be appended to
  * the @locals list.
+ *
+ * If the variable requires a structure to be defined, the definition is
+ * returned as a TypeStruct object appended to the @structs list.  The name
+ * is generated from @prefix, @interface_symbol, @member_symbol and @symbol.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents

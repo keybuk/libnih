@@ -1,5 +1,10 @@
 2009-06-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/marshal.c, nih-dbus-tool/demarshal.c,
+	* nih-dbus-tool/node.c, nih-dbus-tool/method.c, nih-dbus-tool/signal.c,
+	* nih-dbus-tool/property.c: Add missing mention of @structs in
+	function documentation.
+
 	* nih-dbus-tool/tests/test_interface.c (test_proxy_get_all_function)
 	(test_proxy_get_all_notify_function)
 	(test_proxy_get_all_sync_function): Include a mix of readwrite, read

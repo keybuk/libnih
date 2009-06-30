@@ -450,7 +450,8 @@ property_lookup (Interface * interface,
  * @interface: interface of @property,
  * @property: property to generate function for,
  * @prototypes: list to append function prototypes to,
- * @handlers: list to append definitions of required handlers to.
+ * @handlers: list to append definitions of required handlers to,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code for a function that will append a variant containing
  * the value of property @property on @interface to a D-Bus message iterator,
@@ -465,6 +466,10 @@ property_lookup (Interface * interface,
  * The names of both the returned function and handled function prototype
  * will be generated using information in @interface and @property, prefixed
  * with @prefix.
+ *
+ * If the property type requires a structure to be defined, the
+ * definition is returned as a TypeStruct object appended to the @structs
+ * list.  The name is generated from @prefix, @interface and @property.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -726,7 +731,8 @@ property_object_get_function (const void *parent,
  * @interface: interface of @property,
  * @property: property to generate function for,
  * @prototypes: list to append function prototypes to,
- * @handlers: list to append definitions of required handlers to.
+ * @handlers: list to append definitions of required handlers to,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code for a function that will extract the new value of
  * property @property on @interface from a variant at the D-Bus message
@@ -742,6 +748,10 @@ property_object_get_function (const void *parent,
  * The names of both the returned function and handled function prototype
  * will be generated using information in @interface and @property, prefixed
  * with @prefix.
+ *
+ * If the property type requires a structure to be defined, the
+ * definition is returned as a TypeStruct object appended to the @structs
+ * list.  The name is generated from @prefix, @interface and @property.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -1027,7 +1037,8 @@ property_object_set_function (const void *parent,
  * @prefix: prefix for function name,
  * @interface: interface of @property,
  * @property: property to generate function for,
- * @prototypes: list to append function prototypes to.
+ * @prototypes: list to append function prototypes to,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code for a function that will make an asynchronous method
  * call to obtain the value of the property @property on @interface,
@@ -1043,6 +1054,10 @@ property_object_set_function (const void *parent,
  * The notify function will call a handler function passed in if the
  * reply is valid.  The name and type for this can be obtained from
  * property_proxy_get_notify_function().
+ *
+ * If the property type requires a structure to be defined, the
+ * definition is returned as a TypeStruct object appended to the @structs
+ * list.  The name is generated from @prefix, @interface and @property.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -1337,7 +1352,8 @@ property_proxy_get_function (const void *parent,
  * @interface: interface of @property,
  * @property: property to generate function for,
  * @prototypes: list to append function prototypes to,
- * @typedefs: list to append function pointer typedef definitions to.
+ * @typedefs: list to append function pointer typedef definitions to,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code for a function to handle the notification of
  * a complete pending call to obtain the value of the property @property
@@ -1354,6 +1370,10 @@ property_proxy_get_function (const void *parent,
  *
  * The typedef for the handler function is returned as a TypeFunc object
  * added to the @typedefs list.
+ *
+ * If the property type requires a structure to be defined, the
+ * definition is returned as a TypeStruct object appended to the @structs
+ * list.  The name is generated from @prefix, @interface and @property.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -1747,7 +1767,8 @@ property_proxy_get_notify_function (const void *parent,
  * @prefix: prefix for function name,
  * @interface: interface of @property,
  * @property: property to generate function for,
- * @prototypes: list to append function prototypes to.
+ * @prototypes: list to append function prototypes to,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code for a function that will make an asynchronous method
  * call to set the value of the property @property on @interface,
@@ -1763,6 +1784,10 @@ property_proxy_get_notify_function (const void *parent,
  * The notify function will call a handler function passed in if the
  * reply is valid.  The name and type for this can be obtained from
  * property_proxy_set_notify_function().
+ *
+ * If the property type requires a structure to be defined, the
+ * definition is returned as a TypeStruct object appended to the @structs
+ * list.  The name is generated from @prefix, @interface and @property.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -2151,7 +2176,8 @@ property_proxy_set_function (const void *parent,
  * @interface: interface of @property,
  * @property: property to generate function for,
  * @prototypes: list to append function prototypes to,
- * @typedefs: list to append function pointer typedef definitions to.
+ * @typedefs: list to append function pointer typedef definitions to,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code for a function to handle the notification of
  * a complete pending call to set the value of the property @property
@@ -2168,6 +2194,10 @@ property_proxy_set_function (const void *parent,
  *
  * The typedef for the handler function is returned as a TypeFunc object
  * added to the @typedefs list.
+ *
+ * If the property type requires a structure to be defined, the
+ * definition is returned as a TypeStruct object appended to the @structs
+ * list.  The name is generated from @prefix, @interface and @property.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -2431,13 +2461,18 @@ property_proxy_set_notify_function (const void *parent,
  * @prefix: prefix for function name,
  * @interface: interface of @property,
  * @property: property to generate function for,
- * @prototypes: list to append function prototypes to.
+ * @prototypes: list to append function prototypes to,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code for a function that will make a synchronous method
  * call to obtain the value of the property @property on @interface.
  *
  * The prototype of the returned function is returned as a TypeFunc object
  * appended to the @prototypes list, with the name as @name itself.
+ *
+ * If the property type requires a structure to be defined, the
+ * definition is returned as a TypeStruct object appended to the @structs
+ * list.  The name is generated from @prefix, @interface and @property.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -2835,13 +2870,18 @@ property_proxy_get_sync_function (const void *parent,
  * @prefix: prefix for function name,
  * @interface: interface of @property,
  * @property: property to generate function for,
- * @prototypes: list to append function prototypes to.
+ * @prototypes: list to append function prototypes to,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code for a function that will make a synchronous method
  * call to set the value of the property @property on @interface.
  *
  * The prototype of the returned function is returned as a TypeFunc object
  * appended to the @prototypes list, with the name as @name itself.
+ *
+ * If the property type requires a structure to be defined, the
+ * definition is returned as a TypeStruct object appended to the @structs
+ * list.  The name is generated from @prefix, @interface and @property.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents

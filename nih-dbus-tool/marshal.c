@@ -78,7 +78,12 @@ static char *marshal_struct (const void *parent,
  * @name: name of variable,
  * @oom_error_code: code to execute on OOM Error,
  * @inputs: list to append input variables to,
- * @locals: list to append local variables to.
+ * @locals: list to append local variables to,
+ * @prefix: prefix for structure names,
+ * @interface_symbol: symbol of interface for structure names,
+ * @member_symbol: symbol of interface member for structure names,
+ * @symbol: symbol of argument or variable for structure names,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code to marshal any D-Bus type from an appropriately typed
  * variable named @name into the D-Bus iterator variable named @iter_name.
@@ -98,6 +103,10 @@ static char *marshal_struct (const void *parent,
  * and the first member will always be @name itself.  Should the C code
  * require local variables, similar TypeVar objects will be appended to
  * the @locals list.
+ *
+ * If the variable requires a structure to be defined, the definition is
+ * returned as a TypeStruct object appended to the @structs list.  The name
+ * is generated from @prefix, @interface_symbol, @member_symbol and @symbol.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -173,7 +182,11 @@ marshal (const void *       parent,
  * @name: name of variable,
  * @oom_error_code: code to execute on OOM Error,
  * @inputs: list to append input variables to,
- * @locals: list to append local variables to.
+ * @locals: list to append local variables to,
+ * @interface_symbol: symbol of interface for structure names,
+ * @member_symbol: symbol of interface member for structure names,
+ * @symbol: symbol of argument or variable for structure names,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code to marshal a D-Bus basic type (ie. numerics and strings)
  * from an appropriately typed variable named @name into the D-Bus iterator
@@ -191,6 +204,10 @@ marshal (const void *       parent,
  * and the first member will always be @name itself.  Should the C code
  * require local variables, similar TypeVar objects will be appended to
  * the @locals list.
+ *
+ * If the variable requires a structure to be defined, the definition is
+ * returned as a TypeStruct object appended to the @structs list.  The name
+ * is generated from @prefix, @interface_symbol, @member_symbol and @symbol.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -274,7 +291,11 @@ marshal_basic (const void *       parent,
  * @name: name of variable,
  * @oom_error_code: code to execute on OOM Error,
  * @inputs: list to append input variables to,
- * @locals: list to append local variables to.
+ * @locals: list to append local variables to,
+ * @interface_symbol: symbol of interface for structure names,
+ * @member_symbol: symbol of interface member for structure names,
+ * @symbol: symbol of argument or variable for structure names,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code to marshal a D-Bus array type from an appropriately
  * typed, NULL-terminated, array variable named @name into the D-Bus
@@ -295,6 +316,10 @@ marshal_basic (const void *       parent,
  * and the first member will always be @name itself.  Should the C code
  * require local variables, similar TypeVar objects will be appended to
  * the @locals list.
+ *
+ * If the variable requires a structure to be defined, the definition is
+ * returned as a TypeStruct object appended to the @structs list.  The name
+ * is generated from @prefix, @interface_symbol, @member_symbol and @symbol.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents
@@ -602,7 +627,11 @@ marshal_array (const void *       parent,
  * @name: name of variable,
  * @oom_error_code: code to execute on OOM Error,
  * @inputs: list to append input variables to,
- * @locals: list to append local variables to.
+ * @locals: list to append local variables to,
+ * @interface_symbol: symbol of interface for structure names,
+ * @member_symbol: symbol of interface member for structure names,
+ * @symbol: symbol of argument or variable for structure names,
+ * @structs: list to append structure definitions to.
  *
  * Generates C code to marshal a D-Bus structure type, and its members,
  * from an appropriately typed variable named @name into the D-Bus iterator
@@ -620,6 +649,10 @@ marshal_array (const void *       parent,
  * and the first member will always be @name itself.  Should the C code
  * require local variables, similar TypeVar objects will be appended to
  * the @locals list.
+ *
+ * If the variable requires a structure to be defined, the definition is
+ * returned as a TypeStruct object appended to the @structs list.  The name
+ * is generated from @prefix, @interface_symbol, @member_symbol and @symbol.
  *
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned string.  When all parents

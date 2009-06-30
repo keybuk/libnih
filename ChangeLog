@@ -1,5 +1,11 @@
 2009-06-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_interface.c (test_proxy_get_all_function)
+	(test_proxy_get_all_notify_function)
+	(test_proxy_get_all_sync_function): Include a mix of readwrite, read
+	and writable properties in the test - only the first two should
+	appear in the output.
+
 	* nih-dbus-tool/output.c (output): Source should include string.h and
 	stdint.h for the following code, header should include stdint.h
 	* nih-dbus-tool/tests/expected/test_output_proxy_standard.c:

@@ -2535,7 +2535,7 @@ test_proxy_get_all_function (void)
 
 
 	/* Check that we can generate a function that makes a method call
-	 * to obtain the value of all D-Bus properties for the given
+	 * to obtain the value of all readable D-Bus properties for the given
 	 * interface, returning the pending call structure.
 	 */
 	TEST_FEATURE ("with interface");
@@ -2553,8 +2553,13 @@ test_proxy_get_all_function (void)
 			nih_list_add (&interface->properties, &property->entry);
 
 			property = property_new (interface, "size",
-						 "u", NIH_DBUS_READWRITE);
+						 "u", NIH_DBUS_READ);
 			property->symbol = "size";
+			nih_list_add (&interface->properties, &property->entry);
+
+			property = property_new (interface, "touch",
+						 "b", NIH_DBUS_WRITE);
+			property->symbol = "touch";
 			nih_list_add (&interface->properties, &property->entry);
 		}
 
@@ -3326,8 +3331,13 @@ test_proxy_get_all_notify_function (void)
 			nih_list_add (&interface->properties, &property->entry);
 
 			property = property_new (interface, "size",
-						 "u", NIH_DBUS_READWRITE);
+						 "u", NIH_DBUS_READ);
 			property->symbol = "size";
+			nih_list_add (&interface->properties, &property->entry);
+
+			property = property_new (interface, "touch",
+						 "b", NIH_DBUS_WRITE);
+			property->symbol = "touch";
 			nih_list_add (&interface->properties, &property->entry);
 		}
 
@@ -3501,9 +3511,15 @@ test_proxy_get_all_notify_function (void)
 			property->symbol = "name";
 			nih_list_add (&interface->properties, &property->entry);
 
+
 			property = property_new (interface, "size",
-						 "u", NIH_DBUS_READWRITE);
+						 "u", NIH_DBUS_READ);
 			property->symbol = "size";
+			nih_list_add (&interface->properties, &property->entry);
+
+			property = property_new (interface, "touch",
+						 "b", NIH_DBUS_WRITE);
+			property->symbol = "touch";
 			nih_list_add (&interface->properties, &property->entry);
 
 			property = property_new (NULL, "birthday",
@@ -5168,8 +5184,13 @@ test_proxy_get_all_sync_function (void)
 			nih_list_add (&interface->properties, &property->entry);
 
 			property = property_new (interface, "size",
-						 "u", NIH_DBUS_READWRITE);
+						 "u", NIH_DBUS_READ);
 			property->symbol = "size";
+			nih_list_add (&interface->properties, &property->entry);
+
+			property = property_new (interface, "touch",
+						 "b", NIH_DBUS_WRITE);
+			property->symbol = "touch";
 			nih_list_add (&interface->properties, &property->entry);
 		}
 
@@ -5309,8 +5330,13 @@ test_proxy_get_all_sync_function (void)
 			nih_list_add (&interface->properties, &property->entry);
 
 			property = property_new (interface, "size",
-						 "u", NIH_DBUS_READWRITE);
+						 "u", NIH_DBUS_READ);
 			property->symbol = "size";
+			nih_list_add (&interface->properties, &property->entry);
+
+			property = property_new (interface, "touch",
+						 "b", NIH_DBUS_WRITE);
+			property->symbol = "touch";
 			nih_list_add (&interface->properties, &property->entry);
 
 			property = property_new (interface, "birthday",

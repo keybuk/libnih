@@ -30565,7 +30565,7 @@ test_get_double (void)
 		last_data = NULL;
 		last_double_value = 0;
 
-		pending_call = proxy_test_get_double (proxy,
+		pending_call = proxy_test_get_dubble (proxy,
 						      my_get_double_reply,
 						      my_error_handler,
 						      parent,
@@ -30633,7 +30633,7 @@ test_get_double (void)
 		get_double_replied = FALSE;
 		last_data = NULL;
 
-		pending_call = proxy_test_get_double (proxy,
+		pending_call = proxy_test_get_dubble (proxy,
 						      my_get_double_reply,
 						      my_error_handler,
 						      parent,
@@ -30709,7 +30709,7 @@ test_get_double (void)
 		get_double_replied = FALSE;
 		last_data = NULL;
 
-		pending_call = proxy_test_get_double (proxy,
+		pending_call = proxy_test_get_dubble (proxy,
 						      my_get_double_reply,
 						      my_error_handler,
 						      parent,
@@ -30784,7 +30784,7 @@ test_get_double (void)
 		last_data = NULL;
 		last_error = NULL;
 
-		pending_call = proxy_test_get_double (proxy,
+		pending_call = proxy_test_get_dubble (proxy,
 						      my_get_double_reply,
 						      my_error_handler,
 						      parent,
@@ -30858,7 +30858,7 @@ test_get_double (void)
 		last_data = NULL;
 		last_error = NULL;
 
-		pending_call = proxy_test_get_double (proxy,
+		pending_call = proxy_test_get_dubble (proxy,
 						      my_get_double_reply,
 						      my_error_handler,
 						      parent,
@@ -30980,7 +30980,7 @@ test_get_double_sync (void)
 
 		double_value = 0;
 
-		ret = proxy_test_get_double_sync (parent, proxy,
+		ret = proxy_test_get_dubble_sync (parent, proxy,
 						  &double_value);
 
 		if (test_alloc_failed
@@ -31052,7 +31052,7 @@ test_get_double_sync (void)
 
 		double_value = 0;
 
-		ret = proxy_test_get_double_sync (parent, proxy,
+		ret = proxy_test_get_dubble_sync (parent, proxy,
 						  &double_value);
 
 		TEST_LT (ret, 0);
@@ -31131,7 +31131,7 @@ test_get_double_sync (void)
 
 		double_value = 0;
 
-		ret = proxy_test_get_double_sync (parent, proxy,
+		ret = proxy_test_get_dubble_sync (parent, proxy,
 						  &double_value);
 
 		TEST_LT (ret, 0);
@@ -31238,7 +31238,7 @@ test_set_double (void)
 		last_data = NULL;
 		last_double_value = 0;
 
-		pending_call = proxy_test_set_double (proxy,
+		pending_call = proxy_test_set_dubble (proxy,
 						      3.141597,
 						      my_set_double_reply,
 						      my_error_handler,
@@ -31306,7 +31306,7 @@ test_set_double (void)
 		last_data = NULL;
 		last_error = NULL;
 
-		pending_call = proxy_test_set_double (proxy,
+		pending_call = proxy_test_set_dubble (proxy,
 						      0,
 						      my_set_double_reply,
 						      my_error_handler,
@@ -31381,7 +31381,7 @@ test_set_double (void)
 		last_data = NULL;
 		last_error = NULL;
 
-		pending_call = proxy_test_set_double (proxy,
+		pending_call = proxy_test_set_dubble (proxy,
 						      4,
 						      my_set_double_reply,
 						      my_error_handler,
@@ -31457,7 +31457,7 @@ test_set_double (void)
 		last_data = NULL;
 		last_error = NULL;
 
-		pending_call = proxy_test_set_double (proxy,
+		pending_call = proxy_test_set_dubble (proxy,
 						      3.141597,
 						      my_set_double_reply,
 						      my_error_handler,
@@ -31532,7 +31532,7 @@ test_set_double (void)
 		last_data = NULL;
 		last_error = NULL;
 
-		pending_call = proxy_test_set_double (proxy,
+		pending_call = proxy_test_set_dubble (proxy,
 						      3.141597,
 						      my_set_double_reply,
 						      my_error_handler,
@@ -31656,7 +31656,7 @@ test_set_double_sync (void)
 
 		double_value = 0;
 
-		ret = proxy_test_set_double_sync (parent, proxy, 3.141597);
+		ret = proxy_test_set_dubble_sync (parent, proxy, 3.141597);
 
 		if (test_alloc_failed
 		    && (ret < 0)) {
@@ -31672,7 +31672,7 @@ test_set_double_sync (void)
 		TEST_EQ (ret, 0);
 
 		TEST_ALLOC_SAFE {
-			assert0 (proxy_test_get_double_sync (parent, proxy,
+			assert0 (proxy_test_get_dubble_sync (parent, proxy,
 							     &double_value));
 		}
 
@@ -31697,7 +31697,7 @@ test_set_double_sync (void)
 			parent = nih_alloc (NULL, 0);
 		}
 
-		ret = proxy_test_set_double_sync (parent, proxy, 0);
+		ret = proxy_test_set_dubble_sync (parent, proxy, 0);
 
 		TEST_LT (ret, 0);
 
@@ -31737,7 +31737,7 @@ test_set_double_sync (void)
 			parent = nih_alloc (NULL, 0);
 		}
 
-		ret = proxy_test_set_double_sync (parent, proxy, 4);
+		ret = proxy_test_set_dubble_sync (parent, proxy, 4);
 
 		TEST_LT (ret, 0);
 

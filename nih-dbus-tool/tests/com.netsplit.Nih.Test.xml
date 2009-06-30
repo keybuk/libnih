@@ -181,7 +181,9 @@
     <property name="uint32" type="u" access="readwrite" />
     <property name="int64" type="x" access="readwrite" />
     <property name="uint64" type="t" access="readwrite" />
-    <property name="double" type="d" access="readwrite" />
+    <property name="double" type="d" access="readwrite">
+      <annotation name="com.netsplit.Nih.Symbol" value="dubble" />
+    </property>
     <property name="string" type="s" access="readwrite" />
     <property name="object_path" type="o" access="readwrite" />
     <property name="signature" type="g" access="readwrite" />

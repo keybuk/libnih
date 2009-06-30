@@ -1515,7 +1515,7 @@ my_test_set_uint64 (void *          data,
 double double_property;
 
 int
-my_test_get_double (void *          data,
+my_test_get_dubble (void *          data,
 		    NihDBusMessage *message,
 		    double *        value)
 {
@@ -1540,7 +1540,7 @@ my_test_get_double (void *          data,
 }
 
 int
-my_test_set_double (void *          data,
+my_test_set_dubble (void *          data,
 		    NihDBusMessage *message,
 		    double          value)
 {

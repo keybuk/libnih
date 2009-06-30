@@ -1,5 +1,14 @@
 2009-06-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/com.netsplit.Nih.Test.xml: Can't just call the
+	property "double" now it ends up in a structure, apply an annotation
+	to change the symbol.
+	* nih-dbus-tool/tests/com.netsplit.Nih.Test_impl.c (my_test_get_double)
+	(my_test_set_double): Rename
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c (test_get_double)
+	(test_get_double_sync, test_set_double, test_set_double_sync): Call
+	the renamed functions.
+
 	* nih-dbus-tool/tests/test_marshal.c (test_marshal): Add missing test
 	cases for arrays of dictionary entries.
 	* nih-dbus-tool/tests/marshal_factory.c: Generate a dict entry test

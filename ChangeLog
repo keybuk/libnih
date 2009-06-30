@@ -1,5 +1,20 @@
 2009-06-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/output.c (output): Source should include string.h and
+	stdint.h for the following code, header should include stdint.h
+	* nih-dbus-tool/tests/expected/test_output_proxy_standard.c:
+	Add the headers and the get_all functions to the expected output
+	* nih-dbus-tool/tests/expected/test_output_proxy_standard.h: 
+	Add the headers, properties structure and get_all function prototypes
+	to the expected output
+	* nih-dbus-tool/tests/expected/test_output_object_standard.c,
+	* nih-dbus-tool/tests/expected/test_output_object_standard.h,
+	* nih-dbus-tool/tests/expected/test_output_object_no_interfaces.c,
+	* nih-dbus-tool/tests/expected/test_output_object_no_interfaces.h,
+	* nih-dbus-tool/tests/expected/test_output_proxy_no_interfaces.c: 
+	* nih-dbus-tool/tests/expected/test_output_proxy_no_interfaces.h: 
+	Add the headers to the expected output
+
 	* nih/test_files.h (TEST_EXPECTED_STR): Don't just compare the start
 	of the string, make sure we compare the whole string - easiest way
 	is to check the length first

@@ -11,6 +11,8 @@
 
 #include <dbus/dbus.h>
 
+#include <stdint.h>
+
 #include <nih/macros.h>
 
 #include <nih-dbus/dbus_interface.h>
@@ -19,10 +21,19 @@
 #include <nih-dbus/dbus_proxy.h>
 
 
+typedef struct my_test_properties {
+	char *   colour;
+	uint32_t size;
+} MyTestProperties;
+
 typedef struct my_foo_preferences {
 	uint32_t item0;
 	char *   item1;
 } MyFooPreferences;
+
+typedef struct my_foo_properties {
+	MyFooPreferences *preferences;
+} MyFooProperties;
 
 
 typedef void (*MyTestPokeReply) (void *data, NihDBusMessage *message);
@@ -43,6 +54,8 @@ typedef void (*MyTestGetSizeReply) (void *data, NihDBusMessage *message, uint32_
 
 typedef void (*MyTestSetTouchReply) (void *data, NihDBusMessage *message);
 
+typedef void (*MyTestGetAllReply) (void *data, NihDBusMessage *message, const MyTestProperties *properties);
+
 typedef void (*MyFooBingReply) (void *data, NihDBusMessage *message);
 
 typedef void (*MyFooNewResultHandler) (void *data, NihDBusMessage *message);
@@ -50,6 +63,8 @@ typedef void (*MyFooNewResultHandler) (void *data, NihDBusMessage *message);
 typedef void (*MyFooGetPreferencesReply) (void *data, NihDBusMessage *message, const MyFooPreferences *value);
 
 typedef void (*MyFooSetPreferencesReply) (void *data, NihDBusMessage *message);
+
+typedef void (*MyFooGetAllReply) (void *data, NihDBusMessage *message, const MyFooProperties *properties);
 
 
 NIH_BEGIN_EXTERN
@@ -87,6 +102,10 @@ DBusPendingCall *my_test_set_touch             (NihDBusProxy *proxy, int value, 
 	__attribute__ ((warn_unused_result));
 int              my_test_set_touch_sync        (const void *parent, NihDBusProxy *proxy, int value)
 	__attribute__ ((warn_unused_result));
+DBusPendingCall *my_test_get_all               (NihDBusProxy *proxy, MyTestGetAllReply handler, NihDBusErrorHandler error_handler, void *data, int timeout)
+	__attribute__ ((warn_unused_result));
+int              my_test_get_all_sync          (const void *parent, NihDBusProxy *proxy, MyTestProperties **properties)
+	__attribute__ ((warn_unused_result));
 DBusPendingCall *my_foo_bing                   (NihDBusProxy *proxy, MyFooBingReply handler, NihDBusErrorHandler error_handler, void *data, int timeout)
 	__attribute__ ((warn_unused_result));
 int              my_foo_bing_sync              (const void *parent, NihDBusProxy *proxy)
@@ -98,6 +117,10 @@ int              my_foo_get_preferences_sync   (const void *parent, NihDBusProxy
 DBusPendingCall *my_foo_set_preferences        (NihDBusProxy *proxy, const MyFooPreferences *value, MyFooSetPreferencesReply handler, NihDBusErrorHandler error_handler, void *data, int timeout)
 	__attribute__ ((warn_unused_result));
 int              my_foo_set_preferences_sync   (const void *parent, NihDBusProxy *proxy, const MyFooPreferences *value)
+	__attribute__ ((warn_unused_result));
+DBusPendingCall *my_foo_get_all                (NihDBusProxy *proxy, MyFooGetAllReply handler, NihDBusErrorHandler error_handler, void *data, int timeout)
+	__attribute__ ((warn_unused_result));
+int              my_foo_get_all_sync           (const void *parent, NihDBusProxy *proxy, MyFooProperties **properties)
 	__attribute__ ((warn_unused_result));
 
 NIH_END_EXTERN

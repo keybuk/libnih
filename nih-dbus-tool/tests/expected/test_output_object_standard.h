@@ -11,6 +11,8 @@
 
 #include <dbus/dbus.h>
 
+#include <stdint.h>
+
 #include <nih/macros.h>
 
 #include <nih-dbus/dbus_interface.h>

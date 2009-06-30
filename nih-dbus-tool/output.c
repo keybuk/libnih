@@ -124,6 +124,9 @@ output (const char *source_path,
 			  "\n"
 			  "#include <dbus/dbus.h>\n"
 			  "\n"
+			  "#include <stdint.h>\n"
+			  "#include <string.h>\n"
+			  "\n"
 			  "#include <nih/macros.h>\n"
 			  "#include <nih/alloc.h>\n"
 			  "#include <nih/string.h>\n"
@@ -163,6 +166,8 @@ output (const char *source_path,
 
 	if (! nih_strcat (&header, NULL,
 			  "#include <dbus/dbus.h>\n"
+			  "\n"
+			  "#include <stdint.h>\n"
 			  "\n"
 			  "#include <nih/macros.h>\n"
 			  "\n"

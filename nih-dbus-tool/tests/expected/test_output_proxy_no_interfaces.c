@@ -15,6 +15,9 @@
 
 #include <dbus/dbus.h>
 
+#include <stdint.h>
+#include <string.h>
+
 #include <nih/macros.h>
 #include <nih/alloc.h>
 #include <nih/string.h>

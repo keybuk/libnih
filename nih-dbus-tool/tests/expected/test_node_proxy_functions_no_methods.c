@@ -1152,6 +1152,461 @@ my_test_set_touch_sync (const void *  parent,
 }
 
 
+DBusPendingCall *
+my_test_get_all (NihDBusProxy *      proxy,
+                 MyTestGetAllReply   handler,
+                 NihDBusErrorHandler error_handler,
+                 void *              data,
+                 int                 timeout)
+{
+	DBusMessage *       method_call;
+	DBusMessageIter     iter;
+	DBusPendingCall *   pending_call;
+	NihDBusPendingData *pending_data;
+	const char *        interface;
+
+	nih_assert (proxy != NULL);
+	nih_assert ((handler != NULL) && (error_handler != NULL));
+
+	/* Construct the method call message. */
+	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "org.freedesktop.DBus.Properties", "GetAll");
+	if (! method_call)
+		nih_return_no_memory_error (NULL);
+
+	dbus_message_iter_init_append (method_call, &iter);
+
+	interface = "com.netsplit.Nih.Test";
+	if (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &interface)) {
+		dbus_message_unref (method_call);
+		nih_return_no_memory_error (NULL);
+	}
+
+	/* Send the message and set up the reply notification. */
+	pending_data = nih_dbus_pending_data_new (NULL, proxy->connection,
+	                                          (NihDBusReplyHandler)handler,
+	                                          error_handler, data);
+	if (! pending_data) {
+		dbus_message_unref (method_call);
+		nih_return_no_memory_error (NULL);
+	}
+
+	pending_call = NULL;
+	if (! dbus_connection_send_with_reply (proxy->connection, method_call,
+	                                       &pending_call, timeout)) {
+		dbus_message_unref (method_call);
+		nih_free (pending_data);
+		nih_return_no_memory_error (NULL);
+	}
+
+	dbus_message_unref (method_call);
+
+	NIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Test_get_all_notify,
+	                                        pending_data, (DBusFreeFunction)nih_discard));
+
+	return pending_call;
+}
+
+static void
+my_com_netsplit_Nih_Test_get_all_notify (DBusPendingCall *   pending_call,
+                                         NihDBusPendingData *pending_data)
+{
+	DBusMessage *     reply;
+	DBusMessageIter   iter;
+	DBusMessageIter   arrayiter;
+	DBusMessageIter   dictiter;
+	DBusMessageIter   variter;
+	NihDBusMessage *  message;
+	DBusError         error;
+	const char *      property;
+	MyTestProperties *properties;
+	size_t            property_count;
+	char *            colour;
+	const char *      colour_dbus;
+	uint32_t          size;
+
+	nih_assert (pending_call != NULL);
+	nih_assert (pending_data != NULL);
+
+	nih_assert (dbus_pending_call_get_completed (pending_call));
+
+	/* Steal the reply from the pending call. */
+	reply = dbus_pending_call_steal_reply (pending_call);
+	nih_assert (reply != NULL);
+
+	/* Handle error replies */
+	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR) {
+		message = NIH_MUST (nih_dbus_message_new (pending_data, pending_data->connection, reply));
+
+		dbus_error_init (&error);
+		dbus_set_error_from_message (&error, message->message);
+
+		nih_error_push_context ();
+		nih_dbus_error_raise (error.name, error.message);
+		pending_data->error_handler (pending_data->data, message);
+		nih_error_pop_context ();
+
+		dbus_error_free (&error);
+		nih_free (message);
+		dbus_message_unref (reply);
+		return;
+	}
+
+	nih_assert (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_METHOD_RETURN);
+
+	/* Create a message context for the reply, and iterate
+	 * over and recurse into the arguments.
+	 */
+	message = NIH_MUST (nih_dbus_message_new (pending_data, pending_data->connection, reply));
+
+	/* Iterate the method arguments, recursing into the array */
+	dbus_message_iter_init (reply, &iter);
+
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_ARRAY) {
+		nih_error_push_context ();
+		nih_error_raise (NIH_DBUS_INVALID_ARGS,
+		                 _(NIH_DBUS_INVALID_ARGS_STR));
+		pending_data->error_handler (pending_data->data, message);
+		nih_error_pop_context ();
+
+		nih_free (message);
+		dbus_message_unref (reply);
+		return;
+	}
+
+	properties = NIH_MUST (nih_new (message, MyTestProperties));
+	property_count = 0;
+
+	dbus_message_iter_recurse (&iter, &arrayiter);
+
+	while (dbus_message_iter_get_arg_type (&arrayiter) != DBUS_TYPE_INVALID) {
+		if (dbus_message_iter_get_arg_type (&arrayiter) != DBUS_TYPE_DICT_ENTRY) {
+			nih_error_push_context ();
+			nih_error_raise (NIH_DBUS_INVALID_ARGS,
+			                 _(NIH_DBUS_INVALID_ARGS_STR));
+			pending_data->error_handler (pending_data->data, message);
+			nih_error_pop_context ();
+
+			nih_free (message);
+			dbus_message_unref (reply);
+			return;
+		}
+
+		dbus_message_iter_recurse (&arrayiter, &dictiter);
+
+		if (dbus_message_iter_get_arg_type (&dictiter) != DBUS_TYPE_STRING) {
+			nih_error_push_context ();
+			nih_error_raise (NIH_DBUS_INVALID_ARGS,
+			                 _(NIH_DBUS_INVALID_ARGS_STR));
+			pending_data->error_handler (pending_data->data, message);
+			nih_error_pop_context ();
+
+			nih_free (message);
+			dbus_message_unref (reply);
+			return;
+		}
+
+		dbus_message_iter_get_basic (&dictiter, &property);
+
+		dbus_message_iter_next (&dictiter);
+
+		if (dbus_message_iter_get_arg_type (&dictiter) != DBUS_TYPE_VARIANT) {
+			nih_error_push_context ();
+			nih_error_raise (NIH_DBUS_INVALID_ARGS,
+			                 _(NIH_DBUS_INVALID_ARGS_STR));
+			pending_data->error_handler (pending_data->data, message);
+			nih_error_pop_context ();
+
+			nih_free (message);
+			dbus_message_unref (reply);
+			return;
+		}
+
+		dbus_message_iter_recurse (&dictiter, &variter);
+
+		if (! strcmp (property, "colour")) {
+			/* Demarshal a char * from the message */
+			if (dbus_message_iter_get_arg_type (&variter) != DBUS_TYPE_STRING) {
+				nih_error_push_context ();
+				nih_error_raise (NIH_DBUS_INVALID_ARGS,
+				                 _(NIH_DBUS_INVALID_ARGS_STR));
+				pending_data->error_handler (pending_data->data, message);
+				nih_error_pop_context ();
+
+				nih_free (message);
+				dbus_message_unref (reply);
+				return;
+			}
+
+			dbus_message_iter_get_basic (&variter, &colour_dbus);
+
+			colour = nih_strdup (properties, colour_dbus);
+			if (! colour) {
+				continue;
+			}
+
+			dbus_message_iter_next (&variter);
+
+			properties->colour = colour;
+
+			nih_assert (++property_count);
+		}
+
+		if (! strcmp (property, "size")) {
+			/* Demarshal a uint32_t from the message */
+			if (dbus_message_iter_get_arg_type (&variter) != DBUS_TYPE_UINT32) {
+				nih_error_push_context ();
+				nih_error_raise (NIH_DBUS_INVALID_ARGS,
+				                 _(NIH_DBUS_INVALID_ARGS_STR));
+				pending_data->error_handler (pending_data->data, message);
+				nih_error_pop_context ();
+
+				nih_free (message);
+				dbus_message_unref (reply);
+				return;
+			}
+
+			dbus_message_iter_get_basic (&variter, &size);
+
+			dbus_message_iter_next (&variter);
+
+			properties->size = size;
+
+			nih_assert (++property_count);
+		}
+
+		dbus_message_iter_next (&dictiter);
+
+		if (dbus_message_iter_get_arg_type (&dictiter) != DBUS_TYPE_INVALID) {
+			nih_error_push_context ();
+			nih_error_raise (NIH_DBUS_INVALID_ARGS,
+			                 _(NIH_DBUS_INVALID_ARGS_STR));
+			pending_data->error_handler (pending_data->data, message);
+			nih_error_pop_context ();
+
+			nih_free (message);
+			dbus_message_unref (reply);
+			return;
+		}
+
+		dbus_message_iter_next (&arrayiter);
+	}
+
+	dbus_message_iter_next (&iter);
+
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {
+		nih_error_push_context ();
+		nih_error_raise (NIH_DBUS_INVALID_ARGS,
+		                 _(NIH_DBUS_INVALID_ARGS_STR));
+		pending_data->error_handler (pending_data->data, message);
+		nih_error_pop_context ();
+
+		nih_free (message);
+		dbus_message_unref (reply);
+		return;
+	}
+
+	if (property_count < 2) {
+		nih_error_push_context ();
+		nih_error_raise (NIH_DBUS_INVALID_ARGS,
+		                 _(NIH_DBUS_INVALID_ARGS_STR));
+		pending_data->error_handler (pending_data->data, message);
+		nih_error_pop_context ();
+
+		nih_free (message);
+		dbus_message_unref (reply);
+		return;
+	}
+
+	/* Call the handler function */
+	nih_error_push_context ();
+	((MyTestGetAllReply)pending_data->handler) (pending_data->data, message, properties);
+	nih_error_pop_context ();
+
+	nih_free (message);
+	dbus_message_unref (reply);
+}
+
+int
+my_test_get_all_sync (const void *       parent,
+                      NihDBusProxy *     proxy,
+                      MyTestProperties **properties)
+{
+	DBusMessage *   method_call;
+	DBusMessageIter iter;
+	DBusMessageIter arrayiter;
+	DBusMessageIter dictiter;
+	DBusMessageIter variter;
+	DBusError       error;
+	DBusMessage *   reply;
+	size_t          property_count;
+	const char *    interface;
+	const char *    property;
+	char *          colour;
+	const char *    colour_dbus;
+	uint32_t        size;
+
+	nih_assert (proxy != NULL);
+	nih_assert (properties != NULL);
+
+	/* Construct the method call message. */
+	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "org.freedesktop.DBus.Properties", "GetAll");
+	if (! method_call)
+		nih_return_no_memory_error (-1);
+
+	dbus_message_iter_init_append (method_call, &iter);
+
+	interface = "com.netsplit.Nih.Test";
+	if (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &interface)) {
+		dbus_message_unref (method_call);
+		nih_return_no_memory_error (-1);
+	}
+
+	/* Send the message, and wait for the reply. */
+	dbus_error_init (&error);
+
+	reply = dbus_connection_send_with_reply_and_block (proxy->connection, method_call, -1, &error);
+	if (! reply) {
+		dbus_message_unref (method_call);
+
+		if (dbus_error_has_name (&error, DBUS_ERROR_NO_MEMORY)) {
+			nih_error_raise_no_memory ();
+		} else {
+			nih_dbus_error_raise (error.name, error.message);
+		}
+
+		dbus_error_free (&error);
+		return -1;
+	}
+
+	dbus_message_unref (method_call);
+
+	/* Iterate the method arguments, recursing into the array */
+	dbus_message_iter_init (reply, &iter);
+
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_ARRAY) {
+		dbus_message_unref (reply);
+		nih_return_error (-1, NIH_DBUS_INVALID_ARGS,
+		                  _(NIH_DBUS_INVALID_ARGS_STR));
+	}
+
+	*properties = NIH_MUST (nih_new (parent, MyTestProperties));
+	property_count = 0;
+
+	dbus_message_iter_recurse (&iter, &arrayiter);
+
+	while (dbus_message_iter_get_arg_type (&arrayiter) != DBUS_TYPE_INVALID) {
+		if (dbus_message_iter_get_arg_type (&arrayiter) != DBUS_TYPE_DICT_ENTRY) {
+			nih_free (*properties);
+			*properties = NULL;
+			dbus_message_unref (reply);
+			nih_return_error (-1, NIH_DBUS_INVALID_ARGS,
+			                  _(NIH_DBUS_INVALID_ARGS_STR));
+		}
+
+		dbus_message_iter_recurse (&arrayiter, &dictiter);
+
+		if (dbus_message_iter_get_arg_type (&dictiter) != DBUS_TYPE_STRING) {
+			nih_free (*properties);
+			*properties = NULL;
+			dbus_message_unref (reply);
+			nih_return_error (-1, NIH_DBUS_INVALID_ARGS,
+			                  _(NIH_DBUS_INVALID_ARGS_STR));
+		}
+
+		dbus_message_iter_get_basic (&dictiter, &property);
+
+		dbus_message_iter_next (&dictiter);
+
+		if (dbus_message_iter_get_arg_type (&dictiter) != DBUS_TYPE_VARIANT) {
+			nih_free (*properties);
+			*properties = NULL;
+			dbus_message_unref (reply);
+			nih_return_error (-1, NIH_DBUS_INVALID_ARGS,
+			                  _(NIH_DBUS_INVALID_ARGS_STR));
+		}
+
+		dbus_message_iter_recurse (&dictiter, &variter);
+
+		if (! strcmp (property, "colour")) {
+			/* Demarshal a char * from the message */
+			if (dbus_message_iter_get_arg_type (&variter) != DBUS_TYPE_STRING) {
+				nih_free (*properties);
+				*properties = NULL;
+				dbus_message_unref (reply);
+				nih_return_error (-1, NIH_DBUS_INVALID_ARGS,
+				                  _(NIH_DBUS_INVALID_ARGS_STR));
+			}
+
+			dbus_message_iter_get_basic (&variter, &colour_dbus);
+
+			colour = nih_strdup (*properties, colour_dbus);
+			if (! colour) {
+				continue;
+			}
+
+			dbus_message_iter_next (&variter);
+
+			(*properties)->colour = colour;
+
+			nih_assert (++property_count);
+		}
+
+		if (! strcmp (property, "size")) {
+			/* Demarshal a uint32_t from the message */
+			if (dbus_message_iter_get_arg_type (&variter) != DBUS_TYPE_UINT32) {
+				nih_free (*properties);
+				*properties = NULL;
+				dbus_message_unref (reply);
+				nih_return_error (-1, NIH_DBUS_INVALID_ARGS,
+				                  _(NIH_DBUS_INVALID_ARGS_STR));
+			}
+
+			dbus_message_iter_get_basic (&variter, &size);
+
+			dbus_message_iter_next (&variter);
+
+			(*properties)->size = size;
+
+			nih_assert (++property_count);
+		}
+
+		dbus_message_iter_next (&dictiter);
+
+		if (dbus_message_iter_get_arg_type (&dictiter) != DBUS_TYPE_INVALID) {
+			nih_free (*properties);
+			*properties = NULL;
+			dbus_message_unref (reply);
+			nih_return_error (-1, NIH_DBUS_INVALID_ARGS,
+			                  _(NIH_DBUS_INVALID_ARGS_STR));
+		}
+
+		dbus_message_iter_next (&arrayiter);
+	}
+
+	dbus_message_iter_next (&iter);
+
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INVALID) {
+		nih_free (*properties);
+		*properties = NULL;
+		dbus_message_unref (reply);
+		nih_return_error (-1, NIH_DBUS_INVALID_ARGS,
+		                  _(NIH_DBUS_INVALID_ARGS_STR));
+	}
+
+	if (property_count < 2) {
+		nih_free (*properties);
+		*properties = NULL;
+		dbus_message_unref (reply);
+		nih_return_error (-1, NIH_DBUS_INVALID_ARGS,
+		                  _(NIH_DBUS_INVALID_ARGS_STR));
+	}
+
+	dbus_message_unref (reply);
+
+	return 0;
+}
+
+
 static DBusHandlerResult
 my_com_netsplit_Nih_Foo_NewResult_signal (DBusConnection *    connection,
                                           DBusMessage *       signal,

@@ -1,3 +1,19 @@
+2009-06-30  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/node.c (node_proxy_functions): If there are
+	properties, include the async and sync versions of the get_all
+	function.  These define all the property structs, so the only ones
+	we need are the write-only ones.
+	* nih-dbus-tool/tests/test_node.c (test_proxy_functions): Add
+	the expected externs, prototypes, typedefs and structs for the
+	get_all function.
+	* nih-dbus-tool/tests/expected/test_node_proxy_functions_standard.c,
+	* nih-dbus-tool/tests/expected/test_node_proxy_functions_no_methods.c,
+	* nih-dbus-tool/tests/expected/test_node_proxy_functions_no_signals.c,
+	* nih-dbus-tool/tests/expected/test_node_proxy_functions_only_properties.c,
+	* nih-dbus-tool/tests/expected/test_node_proxy_functions_structure.c:
+	Add the "get_all" function expected output.
+
 2009-06-29  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/test_files.h (TEST_EXPECTED_STR): Display the full original

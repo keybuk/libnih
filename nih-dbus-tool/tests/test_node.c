@@ -15602,40 +15602,6 @@ test_proxy_functions (void)
 		nih_free (func);
 
 
-		TEST_LIST_NOT_EMPTY (&structs);
-
-		structure = (TypeStruct *)structs.next;
-		TEST_ALLOC_SIZE (structure, sizeof (TypeStruct));
-		TEST_ALLOC_PARENT (structure, str);
-		TEST_EQ_STR (structure->name, "MyTestLastSearch");
-		TEST_ALLOC_PARENT (structure->name, structure);
-
-		TEST_LIST_NOT_EMPTY (&structure->members);
-
-		var = (TypeVar *)structure->members.next;
-		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (var, structure);
-		TEST_EQ_STR (var->type, "char *");
-		TEST_ALLOC_PARENT (var->type, var);
-		TEST_EQ_STR (var->name, "item0");
-		TEST_ALLOC_PARENT (var->name, var);
-		nih_free (var);
-
-		TEST_LIST_NOT_EMPTY (&structure->members);
-
-		var = (TypeVar *)structure->members.next;
-		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
-		TEST_ALLOC_PARENT (var, structure);
-		TEST_EQ_STR (var->type, "uint32_t");
-		TEST_ALLOC_PARENT (var->type, var);
-		TEST_EQ_STR (var->name, "item1");
-		TEST_ALLOC_PARENT (var->name, var);
-		nih_free (var);
-
-		TEST_LIST_EMPTY (&structure->members);
-		nih_free (structure);
-
-
 		/* annotation (set) */
 		TEST_LIST_NOT_EMPTY (&externs);
 
@@ -16558,6 +16524,40 @@ test_proxy_functions (void)
 
 		TEST_LIST_EMPTY (&func->attribs);
 		nih_free (func);
+
+
+		TEST_LIST_NOT_EMPTY (&structs);
+
+		structure = (TypeStruct *)structs.next;
+		TEST_ALLOC_SIZE (structure, sizeof (TypeStruct));
+		TEST_ALLOC_PARENT (structure, str);
+		TEST_EQ_STR (structure->name, "MyTestLastSearch");
+		TEST_ALLOC_PARENT (structure->name, structure);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "char *");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item0");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_NOT_EMPTY (&structure->members);
+
+		var = (TypeVar *)structure->members.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, structure);
+		TEST_EQ_STR (var->type, "uint32_t");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "item1");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&structure->members);
+		nih_free (structure);
 
 
 		TEST_LIST_NOT_EMPTY (&structs);

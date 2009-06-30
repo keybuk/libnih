@@ -1,5 +1,8 @@
 2009-06-30  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_node.c (test_proxy_functions): Structures
+	of readable properties come after all writable ones
+
 	* nih-dbus-tool/tests/com.netsplit.Nih.Test.xml: Can't just call the
 	property "double" now it ends up in a structure, apply an annotation
 	to change the symbol.

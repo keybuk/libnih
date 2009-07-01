@@ -1,5 +1,24 @@
 2009-07-01  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c (test_struct_to_str)
+	(test_struct_to_str_sync, test_str_to_struct)
+	(test_str_to_struct_sync, test_struct_array_to_str)
+	(test_struct_array_to_str_sync, test_str_to_struct_array)
+	(test_str_to_struct_array_sync, test_dict_entry_array_to_str)
+	(test_dict_entry_array_to_str_sync)
+	(test_str_to_dict_entry_array)
+	(test_str_to_dict_entry_array_sync, test_new_struct)
+	(test_new_struct_array, test_new_dict_entry_array)
+	(test_get_structure, test_get_structure_sync)
+	(test_set_structure, test_set_structure_sync)
+	(test_get_struct_array, test_get_struct_array_sync)
+	(test_set_struct_array, test_set_struct_array_sync)
+	(test_get_dict_entry_array, test_get_dict_entry_array_sync)
+	(test_set_dict_entry_array, test_set_dict_entry_array_sync): Proxy
+	test functions for structures, arrays of structures, and arrays
+	of dictionary entries in converstion, signal and property get/set
+	form.
+
 	* nih-dbus-tool/tests/com.netsplit.Nih.Test_impl.c (my_test_get_struct_array)
 	(my_test_get_dict_entry_array): Be consistent about what generates
 	a D-Bus error and what generates a generic error.

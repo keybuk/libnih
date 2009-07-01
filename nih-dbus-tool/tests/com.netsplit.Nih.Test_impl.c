@@ -37,6 +37,7 @@
 #include <nih-dbus/dbus_message.h>
 
 #include "tests/com.netsplit.Nih.Test_object.h"
+#include "tests/com.netsplit.Nih.Test_impl.h"
 
 
 int
@@ -782,6 +783,87 @@ my_test_str_to_signature (void *          data,
 
 
 int
+my_test_struct_to_str (void *                        data,
+		       NihDBusMessage *              message,
+		       const MyTestStructToStrInput *input,
+		       char **                       output)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (input, NULL);
+	TEST_ALLOC_PARENT (input, message);
+	TEST_NE_P (input->item0, NULL);
+	TEST_ALLOC_PARENT (input->item0, input);
+
+	TEST_NE_P (output, NULL);
+
+	if (! strlen (input->item0)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StructToStr.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input->item0, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	*output = nih_sprintf (message, "%s %u", input->item0,
+			       (unsigned int)input->item1);
+	if (! *output)
+		nih_return_no_memory_error (-1);
+
+	return 0;
+}
+
+int
+my_test_str_to_struct (void *                    data,
+		       NihDBusMessage *          message,
+		       const char *              input,
+		       MyTestStrToStructOutput **output)
+{
+	char         item0_value[512];
+	unsigned int item1_value;
+
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (input, NULL);
+	TEST_ALLOC_PARENT (input, message);
+
+	TEST_NE_P (output, NULL);
+
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrToStruct.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	sscanf (input, "%s %d", item0_value, &item1_value);
+
+	*output = nih_new (message, MyTestStrToStructOutput);
+	if (! *output)
+		nih_return_no_memory_error (-1);
+
+	(*output)->item0 = nih_strdup (*output, item0_value);
+	if (! (*output)->item0) {
+		nih_error_raise_no_memory ();
+		nih_free (*output);
+		*output = NULL;
+		return -1;
+	}
+
+	(*output)->item1 = item1_value;
+
+	return 0;
+}
+
+
+int
 my_test_int32_array_to_str (void *          data,
 			    NihDBusMessage *message,
 			    int32_t *       input,
@@ -1102,6 +1184,262 @@ error:
 	}
 	return -1;
 }
+
+
+int
+my_test_struct_array_to_str (void *            data,
+			     NihDBusMessage   *message,
+			     MyTestStructArrayToStrInputElement * const *input,
+			     char **           output)
+{
+	char *str;
+
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (input, NULL);
+	TEST_ALLOC_PARENT (input, message);
+
+	TEST_NE_P (output, NULL);
+
+	if (! input[0]) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StructArrayToStr.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! input[1]) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	str = NULL;
+
+	for (MyTestStructArrayToStrInputElement * const *element = input;
+	     element && *element; element++) {
+		if (! nih_strcat_sprintf (&str, message,
+					  str ? "\n%s %u" : "%s %u",
+					  (*element)->item0,
+					  (unsigned int)(*element)->item1)) {
+			nih_error_raise_no_memory ();
+			if (str)
+				nih_free (str);
+			return -1;
+		}
+	}
+
+	*output = str;
+
+	return 0;
+}
+
+int
+my_test_str_to_struct_array (void *          data,
+			     NihDBusMessage *message,
+			     const char *    input,
+			     MyTestStrToStructArrayOutputElement ***output)
+{
+	MyTestStrToStructArrayOutputElement **tmp;
+	MyTestStrToStructArrayOutputElement *element;
+	nih_local char **lines = NULL;
+	size_t           output_size;
+
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (input, NULL);
+	TEST_ALLOC_PARENT (input, message);
+
+	TEST_NE_P (output, NULL);
+
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrToStructArray.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	*output = NULL;
+	output_size = 0;
+
+	lines = nih_str_split (NULL, input, "\n", FALSE);
+	if (! lines)
+		nih_return_no_memory_error (-1);
+
+	for (char **line = lines; line && *line; line++) {
+		char     item0_value[512];
+		uint32_t item1_value;
+
+		tmp = nih_realloc (*output, message,
+				   sizeof (MyTestStrToStructArrayOutputElement *) * (output_size + 1));
+		if (! tmp)
+			goto error;
+
+		*output = tmp;
+
+		sscanf (*line, "%s %d", item0_value, &item1_value);
+
+		element = nih_new (*output, MyTestStrToStructArrayOutputElement);
+		if (! element)
+			goto error;
+
+		element->item0 = nih_strdup (element, item0_value);
+		if (! element->item0)
+			goto error;
+
+		element->item1 = item1_value;
+
+		(*output)[output_size++] = element;
+	}
+
+	tmp = nih_realloc (*output, message,
+			   sizeof (MyTestStrToStructArrayOutputElement *) * (output_size + 1));
+	if (! tmp)
+		goto error;
+
+	*output = tmp;
+	(*output)[output_size++] = NULL;;
+
+	return 0;
+error:
+	nih_error_raise_no_memory ();
+	if (*output) {
+		nih_free (*output);
+		*output = NULL;
+	}
+	return -1;
+}
+
+
+int
+my_test_dict_entry_array_to_str (void *            data,
+				 NihDBusMessage   *message,
+				 MyTestDictEntryArrayToStrInputElement * const *input,
+				 char **           output)
+{
+	char *str;
+
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (input, NULL);
+	TEST_ALLOC_PARENT (input, message);
+
+	TEST_NE_P (output, NULL);
+
+	if (! input[0]) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.DictEntryArrayToStr.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! input[1]) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	str = NULL;
+
+	for (MyTestDictEntryArrayToStrInputElement * const *element = input;
+	     element && *element; element++) {
+		if (! nih_strcat_sprintf (&str, message,
+					  str ? "\n%s %u" : "%s %u",
+					  (*element)->item0,
+					  (unsigned int)(*element)->item1)) {
+			nih_error_raise_no_memory ();
+			if (str)
+				nih_free (str);
+			return -1;
+		}
+	}
+
+	*output = str;
+
+	return 0;
+}
+
+int
+my_test_str_to_dict_entry_array (void *          data,
+				 NihDBusMessage *message,
+				 const char *    input,
+				 MyTestStrToDictEntryArrayOutputElement ***output)
+{
+	MyTestStrToDictEntryArrayOutputElement **tmp;
+	MyTestStrToDictEntryArrayOutputElement *element;
+	nih_local char **lines = NULL;
+	size_t           output_size;
+
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (input, NULL);
+	TEST_ALLOC_PARENT (input, message);
+
+	TEST_NE_P (output, NULL);
+
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrToDictEntryArray.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	*output = NULL;
+	output_size = 0;
+
+	lines = nih_str_split (NULL, input, "\n", FALSE);
+	if (! lines)
+		nih_return_no_memory_error (-1);
+
+	for (char **line = lines; line && *line; line++) {
+		char     item0_value[512];
+		uint32_t item1_value;
+
+		tmp = nih_realloc (*output, message,
+				   sizeof (MyTestStrToDictEntryArrayOutputElement *) * (output_size + 1));
+		if (! tmp)
+			goto error;
+
+		*output = tmp;
+
+		sscanf (*line, "%s %d", item0_value, &item1_value);
+
+		element = nih_new (*output, MyTestStrToDictEntryArrayOutputElement);
+		if (! element)
+			goto error;
+
+		element->item0 = nih_strdup (element, item0_value);
+		if (! element->item0)
+			goto error;
+
+		element->item1 = item1_value;
+
+		(*output)[output_size++] = element;
+	}
+
+	tmp = nih_realloc (*output, message,
+			   sizeof (MyTestStrToDictEntryArrayOutputElement *) * (output_size + 1));
+	if (! tmp)
+		goto error;
+
+	*output = tmp;
+	(*output)[output_size++] = NULL;;
+
+	return 0;
+error:
+	nih_error_raise_no_memory ();
+	if (*output) {
+		nih_free (*output);
+		*output = NULL;
+	}
+	return -1;
+}
+
+
 
 
 uint8_t byte_property;
@@ -1743,6 +2081,85 @@ my_test_set_signature (void *          data,
 }
 
 
+MyStruct *struct_property;
+
+int
+my_test_get_structure (void *            data,
+		       NihDBusMessage *  message,
+		       MyTestStructure **value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	if (! strlen (struct_property->item0)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Structure.Empty",
+				      "The property value was empty");
+		return -1;
+	} else if (! strcmp (struct_property->item0, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	*value = nih_new (message, MyTestStructure);
+	if (! *value)
+		nih_return_no_memory_error (-1);
+
+	(*value)->item0 = nih_strdup (*value, struct_property->item0);
+	if (! (*value)->item0) {
+		nih_error_raise_no_memory ();
+		nih_free (*value);
+		return -1;
+	}
+
+	(*value)->item1 = struct_property->item1;
+
+	return 0;
+}
+
+int
+my_test_set_structure (void *                 data,
+		       NihDBusMessage *       message,
+		       const MyTestStructure *value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	if (! strlen (value->item0)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.Structure.Empty",
+				      "The property value was empty");
+		return -1;
+	} else if (! strcmp (value->item0, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	if (struct_property)
+		nih_free (struct_property);
+
+	struct_property = nih_new (NULL, MyStruct);
+	if (! struct_property)
+		nih_return_no_memory_error (-1);
+
+	struct_property->item0 = nih_strdup (struct_property, value->item0);
+	if (! struct_property->item0) {
+		nih_error_raise_no_memory ();
+		nih_free (struct_property);
+		struct_property = NULL;
+		return -1;
+	}
+
+	struct_property->item1 = value->item1;
+
+	return 0;
+}
+
+
 int32_t *int32_array_property;
 size_t   int32_array_property_len;
 
@@ -2018,4 +2435,286 @@ my_test_set_int32_array_array (void *           data,
 	int32_array_array_property[value_size] = NULL;
 
 	return 0;
+}
+
+
+MyStruct **struct_array_property;
+
+int
+my_test_get_struct_array (void *                      data,
+			  NihDBusMessage *            message,
+			  MyTestStructArrayElement ***value)
+{
+	MyTestStructArrayElement **tmp;
+	size_t                     value_size;
+
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	if (! struct_array_property) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StructArray.Empty",
+				      "The property value was empty");
+		return -1;
+	} else if (! *struct_array_property) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	*value = NULL;
+	value_size = 0;
+
+	for (MyStruct **element = struct_array_property; element && *element;
+	     element++) {
+		tmp = nih_realloc (*value, message,
+				   sizeof (MyTestStructArrayElement *) * (value_size + 1));
+		if (! tmp)
+			goto error;
+
+		*value = tmp;
+
+		(*value)[value_size] = nih_new (*value, MyTestStructArrayElement);
+		if (! (*value)[value_size])
+			goto error;
+
+		(*value)[value_size]->item0 = nih_strdup ((*value)[value_size],
+							  (*element)->item0);
+		if (! (*value)[value_size]->item0)
+			goto error;
+
+		(*value)[value_size]->item1 = (*element)->item1;
+
+		value_size++;
+	}
+
+	tmp = nih_realloc (*value, message,
+			   sizeof (MyTestStructArrayElement *) * (value_size + 1));
+	if (! tmp)
+		goto error;
+
+	*value = tmp;
+	(*value)[value_size] = NULL;
+
+	return 0;
+error:
+	nih_error_raise_no_memory ();
+	if (*value) {
+		nih_free (*value);
+		*value = NULL;
+	}
+	return -1;
+}
+
+int
+my_test_set_struct_array (void *          data,
+			  NihDBusMessage *message,
+			  MyTestStructArrayElement * const *value)
+{
+	MyStruct **tmp;
+	size_t     value_size;
+
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	if (! value[0]) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StructArray.Empty",
+				      "The property value was empty");
+		return -1;
+	} else if (! value[1]) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	if (struct_array_property)
+		nih_free (struct_array_property);
+
+	struct_array_property = NULL;
+	value_size = 0;
+
+	for (MyTestStructArrayElement * const *element = value;
+	     element && *element; element++) {
+		tmp = nih_realloc (struct_array_property, NULL,
+				   sizeof (MyStruct *) * (value_size + 1));
+		if (! tmp)
+			goto error;
+
+		struct_array_property = tmp;
+
+		struct_array_property[value_size] = nih_new (struct_array_property,
+							     MyStruct);
+		if (! struct_array_property[value_size])
+			goto error;
+
+		struct_array_property[value_size]->item0 = nih_strdup (struct_array_property[value_size],
+								       (*element)->item0);
+		if (! struct_array_property[value_size]->item0)
+			goto error;
+
+		struct_array_property[value_size]->item1 = (*element)->item1;
+
+		value_size++;
+	}
+
+	tmp = nih_realloc (struct_array_property, NULL,
+			   sizeof (MyStruct *) * (value_size + 1));
+	if (! tmp)
+		goto error;
+
+	struct_array_property = tmp;
+	struct_array_property[value_size] = NULL;
+
+	return 0;
+error:
+	nih_error_raise_no_memory ();
+	if (struct_array_property) {
+		nih_free (struct_array_property);
+		struct_array_property = NULL;
+	}
+	return -1;
+}
+
+
+MyStruct **dict_entry_array_property;
+
+int
+my_test_get_dict_entry_array (void *                      data,
+			      NihDBusMessage *            message,
+			      MyTestDictEntryArrayElement ***value)
+{
+	MyTestDictEntryArrayElement **tmp;
+	size_t                     value_size;
+
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	if (! dict_entry_array_property) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.DictEntryArray.Empty",
+				      "The property value was empty");
+		return -1;
+	} else if (! *dict_entry_array_property) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	*value = NULL;
+	value_size = 0;
+
+	for (MyStruct **element = dict_entry_array_property; element && *element;
+	     element++) {
+		tmp = nih_realloc (*value, message,
+				   sizeof (MyTestDictEntryArrayElement *) * (value_size + 1));
+		if (! tmp)
+			goto error;
+
+		*value = tmp;
+
+		(*value)[value_size] = nih_new (*value, MyTestDictEntryArrayElement);
+		if (! (*value)[value_size])
+			goto error;
+
+		(*value)[value_size]->item0 = nih_strdup ((*value)[value_size],
+							  (*element)->item0);
+		if (! (*value)[value_size]->item0)
+			goto error;
+
+		(*value)[value_size]->item1 = (*element)->item1;
+
+		value_size++;
+	}
+
+	tmp = nih_realloc (*value, message,
+			   sizeof (MyTestDictEntryArrayElement *) * (value_size + 1));
+	if (! tmp)
+		goto error;
+
+	*value = tmp;
+	(*value)[value_size] = NULL;
+
+	return 0;
+error:
+	nih_error_raise_no_memory ();
+	if (*value) {
+		nih_free (*value);
+		*value = NULL;
+	}
+	return -1;
+}
+
+int
+my_test_set_dict_entry_array (void *          data,
+			      NihDBusMessage *message,
+			      MyTestDictEntryArrayElement * const *value)
+{
+	MyStruct **tmp;
+	size_t     value_size;
+
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	if (! value[0]) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.DictEntryArray.Empty",
+				      "The property value was empty");
+		return -1;
+	} else if (! value[1]) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	if (dict_entry_array_property)
+		nih_free (dict_entry_array_property);
+
+	dict_entry_array_property = NULL;
+	value_size = 0;
+
+	for (MyTestDictEntryArrayElement * const *element = value;
+	     element && *element; element++) {
+		tmp = nih_realloc (dict_entry_array_property, NULL,
+				   sizeof (MyStruct *) * (value_size + 1));
+		if (! tmp)
+			goto error;
+
+		dict_entry_array_property = tmp;
+
+		dict_entry_array_property[value_size] = nih_new (dict_entry_array_property,
+								 MyStruct);
+		if (! dict_entry_array_property[value_size])
+			goto error;
+
+		dict_entry_array_property[value_size]->item0 = nih_strdup (dict_entry_array_property[value_size],
+									   (*element)->item0);
+		if (! dict_entry_array_property[value_size]->item0)
+			goto error;
+
+		dict_entry_array_property[value_size]->item1 = (*element)->item1;
+
+		value_size++;
+	}
+
+	tmp = nih_realloc (dict_entry_array_property, NULL,
+			   sizeof (MyStruct *) * (value_size + 1));
+	if (! tmp)
+		goto error;
+
+	dict_entry_array_property = tmp;
+	dict_entry_array_property[value_size] = NULL;
+
+	return 0;
+error:
+	nih_error_raise_no_memory ();
+	if (dict_entry_array_property) {
+		nih_free (dict_entry_array_property);
+		dict_entry_array_property = NULL;
+	}
+	return -1;
 }

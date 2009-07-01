@@ -1,3 +1,31 @@
+2009-07-01  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/tests/com.netsplit.Nih.Test.xml: Add methods, signals
+	and properties that take a structure, an array of structures and an
+	array of dictionary entries to the tests.
+	* nih-dbus-tool/tests/com.netsplit.Nih.Test_impl.h: Add structure
+	definition for the property we store behind the scenes, add extern
+	variables for the structure and structure/dictionary array properties
+	* nih-dbus-tool/tests/com.netsplit.Nih.Test_impl.c (my_test_struct_to_str)
+	(my_test_str_to_struct, my_test_struct_array_to_str)
+	(my_test_str_to_struct_array, my_test_dict_entry_array_to_str)
+	(my_test_str_to_dict_entry_array, my_test_get_structure)
+	(my_test_set_structure, my_test_get_struct_array)
+	(my_test_set_struct_array, my_test_get_dict_entry_array)
+	(my_test_set_dict_entry_array): Add implementation for the structure
+	and structure/dictionary array conversion functions and property
+	get/set functions.  Signal emission is implemented entirely by the
+	binding tool.
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_object.c (test_struct_to_str)
+	(test_str_to_struct, test_struct_array_to_str)
+	(test_str_to_struct_array, test_dict_entry_array_to_str)
+	(test_str_to_dict_entry_array, test_new_struct)
+	(test_new_struct_array, test_new_dict_entry_array)
+	(test_get_structure, test_set_structure, test_get_struct_array)
+	(test_set_struct_array, test_get_dict_entry_array)
+	(test_set_dict_entry_array): Add new test cases for structures,
+	structure arrays and dictionaries.
+
 2009-06-30  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/tests/test_node.c (test_proxy_functions): Structures

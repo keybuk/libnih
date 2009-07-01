@@ -102,6 +102,14 @@
       <arg name="input" type="s" direction="in" />
       <arg name="output" type="g" direction="out" />
     </method>
+    <method name="StructToStr">
+      <arg name="input" type="(su)" direction="in" />
+      <arg name="output" type="s" direction="out" />
+    </method>
+    <method name="StrToStruct">
+      <arg name="input" type="s" direction="in" />
+      <arg name="output" type="(su)" direction="out" />
+    </method>
     <method name="Int32ArrayToStr">
       <arg name="input" type="ai" direction="in" />
       <arg name="output" type="s" direction="out" />
@@ -126,6 +134,22 @@
       <arg name="input" type="s" direction="in" />
       <arg name="output" type="aai" direction="out" />
     </method> 
+    <method name="StructArrayToStr">
+      <arg name="input" type="a(su)" direction="in" />
+      <arg name="output" type="s" direction="out" />
+    </method>
+    <method name="StrToStructArray">
+      <arg name="input" type="s" direction="in" />
+      <arg name="output" type="a(su)" direction="out" />
+    </method>
+    <method name="DictEntryArrayToStr">
+      <arg name="input" type="a{su}" direction="in" />
+      <arg name="output" type="s" direction="out" />
+    </method>
+    <method name="StrToDictEntryArray">
+      <arg name="input" type="s" direction="in" />
+      <arg name="output" type="a{su}" direction="out" />
+    </method>
 
     <signal name="NewByte">
       <arg name="value" type="y" />
@@ -163,6 +187,9 @@
     <signal name="NewSignature">
       <arg name="value" type="g" />
     </signal>
+    <signal name="NewStruct">
+      <arg name="value" type="(su)" />
+    </signal>
     <signal name="NewInt32Array">
       <arg name="value" type="ai" />
     </signal>
@@ -171,6 +198,12 @@
     </signal>
     <signal name="NewInt32ArrayArray">
       <arg name="value" type="aai" />
+    </signal>
+    <signal name="NewStructArray">
+      <arg name="value" type="a(su)" />
+    </signal>
+    <signal name="NewDictEntryArray">
+      <arg name="value" type="a{su}" />
     </signal>
 
     <property name="byte" type="y" access="readwrite" />
@@ -187,8 +220,11 @@
     <property name="string" type="s" access="readwrite" />
     <property name="object_path" type="o" access="readwrite" />
     <property name="signature" type="g" access="readwrite" />
+    <property name="structure" type="(su)" access="readwrite" />
     <property name="int32_array" type="ai" access="readwrite" />
     <property name="str_array" type="as" access="readwrite" />
     <property name="int32_array_array" type="aai" access="readwrite" />
+    <property name="struct_array" type="a(su)" access="readwrite" />
+    <property name="dict_entry_array" type="a{su}" access="readwrite" />
   </interface>
 </node>

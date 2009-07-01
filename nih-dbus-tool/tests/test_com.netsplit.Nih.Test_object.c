@@ -26338,7 +26338,9 @@ test_get_struct_array (void)
 						      my_interfaces,
 						      NULL);
 
-			struct_array_property = NULL;
+			struct_array_property = nih_alloc (NULL, sizeof (MyStruct *) * 1);
+
+			struct_array_property[0] = NULL;
 		}
 
 		method_call = dbus_message_new_method_call (
@@ -26370,6 +26372,7 @@ test_get_struct_array (void)
 
 		dbus_message_unref (reply);
 
+		nih_free (struct_array_property);
 		nih_free (object);
 	}
 
@@ -26386,9 +26389,13 @@ test_get_struct_array (void)
 						      my_interfaces,
 						      NULL);
 
-			struct_array_property = nih_alloc (NULL, sizeof (MyStruct *) * 1);
+			struct_array_property = nih_alloc (NULL, sizeof (MyStruct *) * 2);
 
-			struct_array_property[0] = NULL;
+			struct_array_property[0] = nih_new (struct_array_property, MyStruct);
+			struct_array_property[0]->item0 = "Joe";
+			struct_array_property[0]->item1 = 34;
+
+			struct_array_property[1] = NULL;
 		}
 
 		method_call = dbus_message_new_method_call (
@@ -27348,7 +27355,9 @@ test_get_dict_entry_array (void)
 						      my_interfaces,
 						      NULL);
 
-			dict_entry_array_property = NULL;
+			dict_entry_array_property = nih_alloc (NULL, sizeof (MyStruct *) * 1);
+
+			dict_entry_array_property[0] = NULL;
 		}
 
 		method_call = dbus_message_new_method_call (
@@ -27380,6 +27389,7 @@ test_get_dict_entry_array (void)
 
 		dbus_message_unref (reply);
 
+		nih_free (dict_entry_array_property);
 		nih_free (object);
 	}
 
@@ -27396,9 +27406,13 @@ test_get_dict_entry_array (void)
 						      my_interfaces,
 						      NULL);
 
-			dict_entry_array_property = nih_alloc (NULL, sizeof (MyStruct *) * 1);
+			dict_entry_array_property = nih_alloc (NULL, sizeof (MyStruct *) * 2);
 
-			dict_entry_array_property[0] = NULL;
+			dict_entry_array_property[0] = nih_new (dict_entry_array_property, MyStruct);
+			dict_entry_array_property[0]->item0 = "Joe";
+			dict_entry_array_property[0]->item1 = 34;
+
+			dict_entry_array_property[1] = NULL;
 		}
 
 		method_call = dbus_message_new_method_call (

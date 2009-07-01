@@ -2454,11 +2454,11 @@ my_test_get_struct_array (void *                      data,
 
 	TEST_NE_P (value, NULL);
 
-	if (! struct_array_property) {
+	if (! struct_array_property[0]) {
 		nih_dbus_error_raise ("com.netsplit.Nih.Test.StructArray.Empty",
 				      "The property value was empty");
 		return -1;
-	} else if (! *struct_array_property) {
+	} else if (! struct_array_property[1]) {
 		nih_error_raise (EINVAL, "Invalid argument");
 		return -1;
 	}
@@ -2595,11 +2595,11 @@ my_test_get_dict_entry_array (void *                      data,
 
 	TEST_NE_P (value, NULL);
 
-	if (! dict_entry_array_property) {
+	if (! dict_entry_array_property[0]) {
 		nih_dbus_error_raise ("com.netsplit.Nih.Test.DictEntryArray.Empty",
 				      "The property value was empty");
 		return -1;
-	} else if (! *dict_entry_array_property) {
+	} else if (! dict_entry_array_property[1]) {
 		nih_error_raise (EINVAL, "Invalid argument");
 		return -1;
 	}
@@ -2702,7 +2702,7 @@ my_test_set_dict_entry_array (void *          data,
 	}
 
 	tmp = nih_realloc (dict_entry_array_property, NULL,
-			   sizeof (MyStruct *) * (value_size + 1));
+ 			   sizeof (MyStruct *) * (value_size + 1));
 	if (! tmp)
 		goto error;
 

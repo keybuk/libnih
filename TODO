@@ -40,13 +40,14 @@ dbus:
 - NihDBusProxy should have an auto_start member, when TRUE any method calls
   will automatically start the remote end if it's not running
 
-- structures are not defined anywhere
-- default structure naming is not exactly ideal
-  - should be possible to customise the names of the structures
-  - should be possible to customise the names of the structure members
+- Should be possible for multiple interface members to use the same structure
+  definition, instead of having the same type with different names.
+  - Structure annotation gives the name, e.g. "ProcessInfo"
+  - Should still be prefixed with prefix and interface prefix, so that
+    might become "MyJobProcessInfo"
 
-- missing tests for dict entry handling
-  - dict entry handling could be better anyway (like in a hash?)
+- Should be possible to customise the names of structure members, these names
+  need to be groupable in cases of multiple structure definitions.
 
 - we're not using the no_reply annotation
   - object implementation probably shouldn't - the client is free to ignore

@@ -33,7 +33,7 @@
 #include "test.h"
 
 
-/* Forward prototypes for static functions */
+/* Prototypes for static functions */
 static void              my_com_netsplit_Nih_Test_Poke_notify           (DBusPendingCall *pending_call, NihDBusPendingData *pending_data);
 static void              my_com_netsplit_Nih_Test_Peek_notify           (DBusPendingCall *pending_call, NihDBusPendingData *pending_data);
 static void              my_com_netsplit_Nih_Test_IsValidAddress_notify (DBusPendingCall *pending_call, NihDBusPendingData *pending_data);

@@ -32,7 +32,7 @@
 #include "test.h"
 
 
-/* Forward prototypes for static functions */
+/* Prototypes for static functions */
 static DBusHandlerResult my_com_netsplit_Nih_Test_Poke_method           (NihDBusObject *object, NihDBusMessage *message);
 static DBusHandlerResult my_com_netsplit_Nih_Test_Peek_method           (NihDBusObject *object, NihDBusMessage *message);
 static DBusHandlerResult my_com_netsplit_Nih_Test_IsValidAddress_method (NihDBusObject *object, NihDBusMessage *message);

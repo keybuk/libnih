@@ -44,7 +44,7 @@
 #include "output.h"
 
 
-/* Forward prototypes for static functions */
+/* Prototypes for static functions */
 static int   output_write    (int fd, const char *str)
 	__attribute__ ((warn_unused_result));
 
@@ -262,7 +262,7 @@ output (const char *source_path,
 		}
 
 		if (! nih_strcat_sprintf (&source, NULL,
-					  "/* Forward prototypes for static functions */\n"
+					  "/* Prototypes for static functions */\n"
 					  "%s"
 					  "\n"
 					  "\n",

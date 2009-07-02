@@ -48708,6 +48708,1505 @@ test_set_dict_entry_array_sync (void)
 }
 
 
+
+
+static int get_all_replied;
+static const ProxyTestProperties *last_properties;
+
+static void
+my_get_all_reply (void *                     data,
+		  NihDBusMessage *           message,
+		  const ProxyTestProperties *properties)
+{
+	get_all_replied++;
+
+	TEST_NE_P (data, NULL);
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	last_data = data;
+	last_properties = properties;
+	nih_ref (last_properties, last_data);
+}
+
+void
+test_get_all (void)
+{
+	pid_t            dbus_pid;
+	DBusConnection * client_conn;
+	DBusConnection * server_conn;
+	DBusConnection * flakey_conn;
+	NihDBusObject *  object = NULL;
+	NihDBusProxy *   proxy = NULL;
+	void *           parent = NULL;
+	DBusPendingCall *pending_call;
+	NihError *       err;
+	NihDBusError *   dbus_err;
+
+	TEST_FUNCTION ("proxy_test_get_all");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that we receive a pending call object after giving a
+	 * valid input, dispatching from the server side should result
+	 * in the call being completed and our handler being called with
+	 * the output arguments.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+
+			byte_property = 97;
+			boolean_property = TRUE;
+			int16_property = -42;
+			uint16_property = 42;
+			int32_property = -1048576;
+			uint32_property = 1048576;
+			int64_property = -4815162342L;
+			uint64_property = 4815162342L;
+			double_property = 3.14;
+
+			str_property = "she needs more of ze punishment";
+			object_path_property = "/com/netsplit/Nih/Test";
+			signature_property = "a(ib)";
+
+			struct_property = nih_new (parent, MyStruct);
+			struct_property->item0 = "Joe";
+			struct_property->item1 = 34;
+
+			int32_array_property = nih_alloc (parent, sizeof (int32_t) * 6);
+			int32_array_property[0] = 4;
+			int32_array_property[1] = 8;
+			int32_array_property[2] = 15;
+			int32_array_property[3] = 16;
+			int32_array_property[4] = 23;
+			int32_array_property[5] = 42;
+
+			int32_array_property_len = 6;
+
+			str_array_property = nih_alloc (parent, sizeof (char *) * 7);
+			str_array_property[0] = "she";
+			str_array_property[1] = "needs";
+			str_array_property[2] = "more";
+			str_array_property[3] = "of";
+			str_array_property[4] = "ze";
+			str_array_property[5] = "punishment";
+			str_array_property[6] = NULL;
+
+			int32_array_array_property = nih_alloc (parent, sizeof (int32_t *) * 3);
+			int32_array_array_property_len = nih_alloc (int32_array_array_property,
+								    sizeof (size_t) * 2);
+
+			int32_array_array_property[0] = nih_alloc (int32_array_array_property,
+								   sizeof (int32_t) * 6);
+			int32_array_array_property[0][0] = 4;
+			int32_array_array_property[0][1] = 8;
+			int32_array_array_property[0][2] = 15;
+			int32_array_array_property[0][3] = 16;
+			int32_array_array_property[0][4] = 23;
+			int32_array_array_property[0][5] = 42;
+
+			int32_array_array_property_len[0] = 6;
+
+			int32_array_array_property[1] = nih_alloc (int32_array_array_property,
+								   sizeof (int32_t) * 6);
+			int32_array_array_property[1][0] = 1;
+			int32_array_array_property[1][1] = 1;
+			int32_array_array_property[1][2] = 2;
+			int32_array_array_property[1][3] = 3;
+			int32_array_array_property[1][4] = 5;
+			int32_array_array_property[1][5] = 8;
+
+			int32_array_array_property_len[1] = 6;
+
+			int32_array_array_property[2] = NULL;
+
+			struct_array_property = nih_alloc (parent, sizeof (MyStruct *) * 3);
+
+			struct_array_property[0] = nih_new (struct_array_property, MyStruct);
+			struct_array_property[0]->item0 = "Joe";
+			struct_array_property[0]->item1 = 34;
+
+			struct_array_property[1] = nih_new (struct_array_property, MyStruct);
+			struct_array_property[1]->item0 = "Paul";
+			struct_array_property[1]->item1 = 27;
+
+			struct_array_property[2] = NULL;
+
+			dict_entry_array_property = nih_alloc (parent, sizeof (MyStruct *) * 3);
+
+			dict_entry_array_property[0] = nih_new (dict_entry_array_property, MyStruct);
+			dict_entry_array_property[0]->item0 = "Joe";
+			dict_entry_array_property[0]->item1 = 34;
+
+			dict_entry_array_property[1] = nih_new (dict_entry_array_property, MyStruct);
+			dict_entry_array_property[1]->item0 = "Paul";
+			dict_entry_array_property[1]->item1 = 27;
+
+			dict_entry_array_property[2] = NULL;
+		}
+
+		error_handler_called = FALSE;
+		get_all_replied = FALSE;
+		last_data = NULL;
+		last_properties = NULL;
+
+		pending_call = proxy_test_get_all (proxy,
+						   my_get_all_reply,
+						   my_error_handler,
+						   parent,
+						   0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_FALSE (error_handler_called);
+		TEST_TRUE (get_all_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_ALLOC_SIZE (last_properties, sizeof (ProxyTestProperties));
+		TEST_ALLOC_PARENT (last_properties, parent);
+
+		TEST_EQ (last_properties->byte, 97);
+		TEST_EQ (last_properties->boolean, TRUE);
+		TEST_EQ (last_properties->int16, -42);
+		TEST_EQ (last_properties->uint16, 42);
+		TEST_EQ (last_properties->int32, -1048576);
+		TEST_EQ (last_properties->uint32, 1048576);
+		TEST_EQ (last_properties->int64, -4815162342L);
+		TEST_EQ (last_properties->uint64, 4815162342L);
+		TEST_EQ (last_properties->dubble, 3.14);
+
+		TEST_EQ_STR (last_properties->string, "she needs more of ze punishment");
+		TEST_ALLOC_PARENT (last_properties->string, last_properties);
+
+		TEST_EQ_STR (last_properties->object_path, "/com/netsplit/Nih/Test");
+		TEST_ALLOC_PARENT (last_properties->string, last_properties);
+
+		TEST_EQ_STR (last_properties->signature, "a(ib)");
+		TEST_ALLOC_PARENT (last_properties->string, last_properties);
+
+		TEST_ALLOC_SIZE (last_properties->structure,
+				 sizeof (MyStruct));
+		TEST_ALLOC_PARENT (last_properties->structure,
+				   last_properties);
+		TEST_EQ_STR (last_properties->structure->item0, "Joe");
+		TEST_ALLOC_PARENT (last_properties->structure->item0,
+				   last_properties->structure);
+		TEST_EQ (last_properties->structure->item1, 34);
+
+		TEST_EQ (last_properties->int32_array_len, 6);
+		TEST_ALLOC_SIZE (last_properties->int32_array,
+				 sizeof (int32_t) * 6);
+		TEST_ALLOC_PARENT (last_properties->int32_array,
+				   last_properties);
+		TEST_EQ (last_properties->int32_array[0], 4);
+		TEST_EQ (last_properties->int32_array[1], 8);
+		TEST_EQ (last_properties->int32_array[2], 15);
+		TEST_EQ (last_properties->int32_array[3], 16);
+		TEST_EQ (last_properties->int32_array[4], 23);
+		TEST_EQ (last_properties->int32_array[5], 42);
+
+		TEST_ALLOC_SIZE (last_properties->str_array,
+				 sizeof (char *) * 7);
+		TEST_ALLOC_PARENT (last_properties->str_array,
+				   last_properties);
+		TEST_EQ_STR (last_properties->str_array[0], "she");
+		TEST_ALLOC_PARENT (last_properties->str_array[0],
+				   last_properties->str_array);
+		TEST_EQ_STR (last_properties->str_array[1], "needs");
+		TEST_ALLOC_PARENT (last_properties->str_array[1],
+				   last_properties->str_array);
+		TEST_EQ_STR (last_properties->str_array[2], "more");
+		TEST_ALLOC_PARENT (last_properties->str_array[2],
+				   last_properties->str_array);
+		TEST_EQ_STR (last_properties->str_array[3], "of");
+		TEST_ALLOC_PARENT (last_properties->str_array[3],
+				   last_properties->str_array);
+		TEST_EQ_STR (last_properties->str_array[4], "ze");
+		TEST_ALLOC_PARENT (last_properties->str_array[4],
+				   last_properties->str_array);
+		TEST_EQ_STR (last_properties->str_array[5], "punishment");
+		TEST_ALLOC_PARENT (last_properties->str_array[5],
+				   last_properties->str_array);
+		TEST_EQ_P (last_properties->str_array[6], NULL);
+
+		TEST_ALLOC_SIZE (last_properties->int32_array_array,
+				 sizeof (int32_t *) * 3);
+		TEST_ALLOC_PARENT (last_properties->int32_array_array,
+				   last_properties);
+		TEST_ALLOC_SIZE (last_properties->int32_array_array_len,
+				 sizeof (size_t) * 2);
+		TEST_ALLOC_PARENT (last_properties->int32_array_array_len,
+				   last_properties->int32_array_array);
+
+		TEST_EQ (last_properties->int32_array_array_len[0], 6);
+		TEST_ALLOC_SIZE (last_properties->int32_array_array[0],
+				 sizeof (int32_t) * 6);
+		TEST_ALLOC_PARENT (last_properties->int32_array_array[0],
+				   last_properties->int32_array_array);
+		TEST_EQ (last_properties->int32_array_array[0][0], 4);
+		TEST_EQ (last_properties->int32_array_array[0][1], 8);
+		TEST_EQ (last_properties->int32_array_array[0][2], 15);
+		TEST_EQ (last_properties->int32_array_array[0][3], 16);
+		TEST_EQ (last_properties->int32_array_array[0][4], 23);
+		TEST_EQ (last_properties->int32_array_array[0][5], 42);
+
+		TEST_EQ (last_properties->int32_array_array_len[1], 6);
+		TEST_ALLOC_SIZE (last_properties->int32_array_array[1],
+				 sizeof (int32_t) * 6);
+		TEST_ALLOC_PARENT (last_properties->int32_array_array[1],
+				   last_properties->int32_array_array);
+		TEST_EQ (last_properties->int32_array_array[1][0], 1);
+		TEST_EQ (last_properties->int32_array_array[1][1], 1);
+		TEST_EQ (last_properties->int32_array_array[1][2], 2);
+		TEST_EQ (last_properties->int32_array_array[1][3], 3);
+		TEST_EQ (last_properties->int32_array_array[1][4], 5);
+		TEST_EQ (last_properties->int32_array_array[1][5], 8);
+
+		TEST_EQ_P (last_properties->int32_array_array[2], NULL);
+
+		TEST_ALLOC_SIZE (last_properties->struct_array,
+				 sizeof (MyStruct *) * 3);
+		TEST_ALLOC_PARENT (last_properties->struct_array,
+				   last_properties);
+
+		TEST_ALLOC_SIZE (last_properties->struct_array[0],
+				 sizeof (MyStruct));
+		TEST_ALLOC_PARENT (last_properties->struct_array[0],
+				   last_properties->struct_array);
+		TEST_EQ_STR (last_properties->struct_array[0]->item0, "Joe");
+		TEST_ALLOC_PARENT (last_properties->struct_array[0]->item0,
+				   last_properties->struct_array[0]);
+		TEST_EQ (last_properties->struct_array[0]->item1, 34);
+
+		TEST_ALLOC_SIZE (last_properties->struct_array[1],
+				 sizeof (MyStruct));
+		TEST_ALLOC_PARENT (last_properties->struct_array[1],
+				   last_properties->struct_array);
+		TEST_EQ_STR (last_properties->struct_array[1]->item0, "Paul");
+		TEST_ALLOC_PARENT (last_properties->struct_array[1]->item0,
+				   last_properties->struct_array[1]);
+		TEST_EQ (last_properties->struct_array[1]->item1, 27);
+
+		TEST_EQ_P (last_properties->struct_array[2], NULL);
+
+		TEST_ALLOC_SIZE (last_properties->dict_entry_array,
+				 sizeof (MyStruct *) * 3);
+		TEST_ALLOC_PARENT (last_properties->dict_entry_array,
+				   last_properties);
+
+		TEST_ALLOC_SIZE (last_properties->dict_entry_array[0],
+				 sizeof (MyStruct));
+		TEST_ALLOC_PARENT (last_properties->dict_entry_array[0],
+				   last_properties->dict_entry_array);
+		TEST_EQ_STR (last_properties->dict_entry_array[0]->item0,
+			     "Joe");
+		TEST_ALLOC_PARENT (last_properties->dict_entry_array[0]->item0,
+				   last_properties->dict_entry_array[0]);
+		TEST_EQ (last_properties->dict_entry_array[0]->item1, 34);
+
+		TEST_ALLOC_SIZE (last_properties->dict_entry_array[1],
+				 sizeof (MyStruct));
+		TEST_ALLOC_PARENT (last_properties->dict_entry_array[1],
+				   last_properties->dict_entry_array);
+		TEST_EQ_STR (last_properties->dict_entry_array[1]->item0,
+			     "Paul");
+		TEST_ALLOC_PARENT (last_properties->dict_entry_array[1]->item0,
+				   last_properties->dict_entry_array[1]);
+		TEST_EQ (last_properties->dict_entry_array[1]->item1, 27);
+
+		TEST_EQ_P (last_properties->dict_entry_array[2], NULL);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
+	/* Check that a D-Bus error returned from any single property's
+	 * handler function results in the error handler being called
+	 * with the error raised.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+
+			byte_property = 97;
+			boolean_property = TRUE;
+			int16_property = -42;
+			uint16_property = 42;
+			int32_property = -1048576;
+			uint32_property = 1048576;
+			int64_property = -4815162342L;
+			uint64_property = 4815162342L;
+			double_property = 3.14;
+
+			str_property = "she needs more of ze punishment";
+			object_path_property = "/com/netsplit/Nih/Test";
+			signature_property = "a(ib)";
+
+			struct_property = nih_new (parent, MyStruct);
+			struct_property->item0 = "Joe";
+			struct_property->item1 = 34;
+
+			int32_array_property = NULL;
+			int32_array_property_len = 0;
+
+			str_array_property = nih_alloc (parent, sizeof (char *) * 7);
+			str_array_property[0] = "she";
+			str_array_property[1] = "needs";
+			str_array_property[2] = "more";
+			str_array_property[3] = "of";
+			str_array_property[4] = "ze";
+			str_array_property[5] = "punishment";
+			str_array_property[6] = NULL;
+
+			int32_array_array_property = nih_alloc (parent, sizeof (int32_t *) * 3);
+			int32_array_array_property_len = nih_alloc (int32_array_array_property,
+								    sizeof (size_t) * 2);
+
+			int32_array_array_property[0] = nih_alloc (int32_array_array_property,
+								   sizeof (int32_t) * 6);
+			int32_array_array_property[0][0] = 4;
+			int32_array_array_property[0][1] = 8;
+			int32_array_array_property[0][2] = 15;
+			int32_array_array_property[0][3] = 16;
+			int32_array_array_property[0][4] = 23;
+			int32_array_array_property[0][5] = 42;
+
+			int32_array_array_property_len[0] = 6;
+
+			int32_array_array_property[1] = nih_alloc (int32_array_array_property,
+								   sizeof (int32_t) * 6);
+			int32_array_array_property[1][0] = 1;
+			int32_array_array_property[1][1] = 1;
+			int32_array_array_property[1][2] = 2;
+			int32_array_array_property[1][3] = 3;
+			int32_array_array_property[1][4] = 5;
+			int32_array_array_property[1][5] = 8;
+
+			int32_array_array_property_len[1] = 6;
+
+			int32_array_array_property[2] = NULL;
+
+			struct_array_property = nih_alloc (parent, sizeof (MyStruct *) * 3);
+
+			struct_array_property[0] = nih_new (struct_array_property, MyStruct);
+			struct_array_property[0]->item0 = "Joe";
+			struct_array_property[0]->item1 = 34;
+
+			struct_array_property[1] = nih_new (struct_array_property, MyStruct);
+			struct_array_property[1]->item0 = "Paul";
+			struct_array_property[1]->item1 = 27;
+
+			struct_array_property[2] = NULL;
+
+			dict_entry_array_property = nih_alloc (parent, sizeof (MyStruct *) * 3);
+
+			dict_entry_array_property[0] = nih_new (dict_entry_array_property, MyStruct);
+			dict_entry_array_property[0]->item0 = "Joe";
+			dict_entry_array_property[0]->item1 = 34;
+
+			dict_entry_array_property[1] = nih_new (dict_entry_array_property, MyStruct);
+			dict_entry_array_property[1]->item0 = "Paul";
+			dict_entry_array_property[1]->item1 = 27;
+
+			dict_entry_array_property[2] = NULL;
+		}
+
+		error_handler_called = FALSE;
+		get_all_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_all (proxy,
+						   my_get_all_reply,
+						   my_error_handler,
+						   parent,
+						   0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_all_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Int32Array.Empty");
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
+	/* Check that a generic error returned from any single property's
+	 * handler function results in the error handler being called
+	 * with the error raised.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+
+			byte_property = 97;
+			boolean_property = TRUE;
+			int16_property = -42;
+			uint16_property = 42;
+			int32_property = -1048576;
+			uint32_property = 1048576;
+			int64_property = -4815162342L;
+			uint64_property = 4815162342L;
+			double_property = 3.14;
+
+			str_property = "she needs more of ze punishment";
+			object_path_property = "/com/netsplit/Nih/Test";
+			signature_property = "inva(x)id";
+
+			struct_property = nih_new (parent, MyStruct);
+			struct_property->item0 = "Joe";
+			struct_property->item1 = 34;
+
+			int32_array_property = nih_alloc (parent, sizeof (int32_t) * 6);
+			int32_array_property[0] = 4;
+			int32_array_property[1] = 8;
+			int32_array_property[2] = 15;
+			int32_array_property[3] = 16;
+			int32_array_property[4] = 23;
+			int32_array_property[5] = 42;
+
+			int32_array_property_len = 6;
+
+			str_array_property = nih_alloc (parent, sizeof (char *) * 7);
+			str_array_property[0] = "she";
+			str_array_property[1] = "needs";
+			str_array_property[2] = "more";
+			str_array_property[3] = "of";
+			str_array_property[4] = "ze";
+			str_array_property[5] = "punishment";
+			str_array_property[6] = NULL;
+
+			int32_array_array_property = nih_alloc (parent, sizeof (int32_t *) * 3);
+			int32_array_array_property_len = nih_alloc (int32_array_array_property,
+								    sizeof (size_t) * 2);
+
+			int32_array_array_property[0] = nih_alloc (int32_array_array_property,
+								   sizeof (int32_t) * 6);
+			int32_array_array_property[0][0] = 4;
+			int32_array_array_property[0][1] = 8;
+			int32_array_array_property[0][2] = 15;
+			int32_array_array_property[0][3] = 16;
+			int32_array_array_property[0][4] = 23;
+			int32_array_array_property[0][5] = 42;
+
+			int32_array_array_property_len[0] = 6;
+
+			int32_array_array_property[1] = nih_alloc (int32_array_array_property,
+								   sizeof (int32_t) * 6);
+			int32_array_array_property[1][0] = 1;
+			int32_array_array_property[1][1] = 1;
+			int32_array_array_property[1][2] = 2;
+			int32_array_array_property[1][3] = 3;
+			int32_array_array_property[1][4] = 5;
+			int32_array_array_property[1][5] = 8;
+
+			int32_array_array_property_len[1] = 6;
+
+			int32_array_array_property[2] = NULL;
+
+			struct_array_property = nih_alloc (parent, sizeof (MyStruct *) * 3);
+
+			struct_array_property[0] = nih_new (struct_array_property, MyStruct);
+			struct_array_property[0]->item0 = "Joe";
+			struct_array_property[0]->item1 = 34;
+
+			struct_array_property[1] = nih_new (struct_array_property, MyStruct);
+			struct_array_property[1]->item0 = "Paul";
+			struct_array_property[1]->item1 = 27;
+
+			struct_array_property[2] = NULL;
+
+			dict_entry_array_property = nih_alloc (parent, sizeof (MyStruct *) * 3);
+
+			dict_entry_array_property[0] = nih_new (dict_entry_array_property, MyStruct);
+			dict_entry_array_property[0]->item0 = "Joe";
+			dict_entry_array_property[0]->item1 = 34;
+
+			dict_entry_array_property[1] = nih_new (dict_entry_array_property, MyStruct);
+			dict_entry_array_property[1]->item0 = "Paul";
+			dict_entry_array_property[1]->item1 = 27;
+
+			dict_entry_array_property[2] = NULL;
+		}
+
+		error_handler_called = FALSE;
+		get_all_replied = FALSE;
+		last_data = NULL;
+
+		pending_call = proxy_test_get_all (proxy,
+						   my_get_all_reply,
+						   my_error_handler,
+						   parent,
+						   0);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_connection_flush (client_conn);
+		TEST_DBUS_DISPATCH (server_conn);
+		dbus_connection_flush (server_conn);
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_all_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
+	/* Check that a timeout (along with other D-Bus generated errors)
+	 * also results in the error handler being called with the D-Bus
+	 * error raised.
+	 */
+	TEST_FEATURE ("with timeout");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_all_replied = FALSE;
+		last_data = NULL;
+		last_error = NULL;
+
+		pending_call = proxy_test_get_all (proxy,
+						   my_get_all_reply,
+						   my_error_handler,
+						   parent,
+						   50);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_block (pending_call);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_all_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_NO_REPLY);
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
+	/* Check that a remote end disconnection (along with other D-Bus
+	 * generated errors) also results in the error handler being
+	 * called with the D-Bus error raised.
+	 */
+	TEST_FEATURE ("with server disconnection");
+	TEST_ALLOC_FAIL {
+		TEST_DBUS_OPEN (flakey_conn);
+
+		TEST_ALLOC_SAFE {
+			object = nih_dbus_object_new (NULL, server_conn,
+						      "/com/netsplit/Nih/Test",
+						      my_interfaces,
+						      NULL);
+
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (flakey_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		error_handler_called = FALSE;
+		get_all_replied = FALSE;
+		last_data = NULL;
+		last_error = NULL;
+
+		pending_call = proxy_test_get_all (proxy,
+						   my_get_all_reply,
+						   my_error_handler,
+						   parent,
+						   50);
+
+		if (test_alloc_failed
+		    && (pending_call == NULL)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			nih_free (object);
+			TEST_DBUS_CLOSE (flakey_conn);
+			continue;
+		}
+
+		TEST_NE_P (pending_call, NULL);
+		TEST_FALSE (dbus_pending_call_get_completed (pending_call));
+
+		TEST_DBUS_CLOSE (flakey_conn);
+		dbus_pending_call_block (pending_call);
+
+		TEST_TRUE (dbus_pending_call_get_completed (pending_call));
+
+		dbus_pending_call_unref (pending_call);
+
+		TEST_TRUE (error_handler_called);
+		TEST_FALSE (get_all_replied);
+
+		TEST_EQ_P (last_data, parent);
+		TEST_NE_P (last_error, NULL);
+
+		TEST_EQ (last_error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (last_error, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)last_error;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_NO_REPLY);
+
+		nih_free (last_error);
+
+		nih_free (parent);
+		nih_free (proxy);
+		nih_free (object);
+	}
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+void
+test_get_all_sync (void)
+{
+	pid_t                dbus_pid;
+	DBusConnection *     client_conn;
+	DBusConnection *     server_conn;
+	pid_t                server_pid;
+	int                  wait_fd;
+	NihDBusObject *      object = NULL;
+	NihDBusProxy *       proxy = NULL;
+	void *               parent = NULL;
+	ProxyTestProperties *properties;
+	int                  ret;
+	NihError *           err;
+	NihDBusError *       dbus_err;
+	int                  status;
+
+	TEST_FUNCTION ("proxy_test_get_all_sync");
+	TEST_DBUS (dbus_pid);
+	TEST_DBUS_OPEN (client_conn);
+	TEST_DBUS_OPEN (server_conn);
+
+
+	/* Check that when we give a valid input, we receive a valid
+	 * output in our pointer, allocated as a child of the parent.
+	 */
+	TEST_FEATURE ("with valid argument");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		parent = nih_alloc (NULL, 0);
+
+		byte_property = 97;
+		boolean_property = TRUE;
+		int16_property = -42;
+		uint16_property = 42;
+		int32_property = -1048576;
+		uint32_property = 1048576;
+		int64_property = -4815162342L;
+		uint64_property = 4815162342L;
+		double_property = 3.14;
+
+		str_property = "she needs more of ze punishment";
+		object_path_property = "/com/netsplit/Nih/Test";
+		signature_property = "a(ib)";
+
+		struct_property = nih_new (parent, MyStruct);
+		struct_property->item0 = "Joe";
+		struct_property->item1 = 34;
+
+		int32_array_property = nih_alloc (parent, sizeof (int32_t) * 6);
+		int32_array_property[0] = 4;
+		int32_array_property[1] = 8;
+		int32_array_property[2] = 15;
+		int32_array_property[3] = 16;
+		int32_array_property[4] = 23;
+		int32_array_property[5] = 42;
+
+		int32_array_property_len = 6;
+
+		str_array_property = nih_alloc (parent, sizeof (char *) * 7);
+		str_array_property[0] = "she";
+		str_array_property[1] = "needs";
+		str_array_property[2] = "more";
+		str_array_property[3] = "of";
+		str_array_property[4] = "ze";
+		str_array_property[5] = "punishment";
+		str_array_property[6] = NULL;
+
+		int32_array_array_property = nih_alloc (parent, sizeof (int32_t *) * 3);
+		int32_array_array_property_len = nih_alloc (int32_array_array_property,
+							    sizeof (size_t) * 2);
+
+		int32_array_array_property[0] = nih_alloc (int32_array_array_property,
+							   sizeof (int32_t) * 6);
+		int32_array_array_property[0][0] = 4;
+		int32_array_array_property[0][1] = 8;
+		int32_array_array_property[0][2] = 15;
+		int32_array_array_property[0][3] = 16;
+		int32_array_array_property[0][4] = 23;
+		int32_array_array_property[0][5] = 42;
+
+		int32_array_array_property_len[0] = 6;
+
+		int32_array_array_property[1] = nih_alloc (int32_array_array_property,
+							   sizeof (int32_t) * 6);
+		int32_array_array_property[1][0] = 1;
+		int32_array_array_property[1][1] = 1;
+		int32_array_array_property[1][2] = 2;
+		int32_array_array_property[1][3] = 3;
+		int32_array_array_property[1][4] = 5;
+		int32_array_array_property[1][5] = 8;
+
+		int32_array_array_property_len[1] = 6;
+
+		int32_array_array_property[2] = NULL;
+
+		struct_array_property = nih_alloc (parent, sizeof (MyStruct *) * 3);
+
+		struct_array_property[0] = nih_new (struct_array_property, MyStruct);
+		struct_array_property[0]->item0 = "Joe";
+		struct_array_property[0]->item1 = 34;
+
+		struct_array_property[1] = nih_new (struct_array_property, MyStruct);
+		struct_array_property[1]->item0 = "Paul";
+		struct_array_property[1]->item1 = 27;
+
+		struct_array_property[2] = NULL;
+
+		dict_entry_array_property = nih_alloc (parent, sizeof (MyStruct *) * 3);
+
+		dict_entry_array_property[0] = nih_new (dict_entry_array_property, MyStruct);
+		dict_entry_array_property[0]->item0 = "Joe";
+		dict_entry_array_property[0]->item1 = 34;
+
+		dict_entry_array_property[1] = nih_new (dict_entry_array_property, MyStruct);
+		dict_entry_array_property[1]->item0 = "Paul";
+		dict_entry_array_property[1]->item1 = 27;
+
+		dict_entry_array_property[2] = NULL;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+		nih_free (parent);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		properties = NULL;
+
+		ret = proxy_test_get_all_sync (parent, proxy,
+					       &properties);
+
+		if (test_alloc_failed
+		    && (ret < 0)) {
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+		TEST_ALLOC_SIZE (properties, sizeof (ProxyTestProperties));
+		TEST_ALLOC_PARENT (properties, parent);
+
+		TEST_EQ (properties->byte, 97);
+		TEST_EQ (properties->boolean, TRUE);
+		TEST_EQ (properties->int16, -42);
+		TEST_EQ (properties->uint16, 42);
+		TEST_EQ (properties->int32, -1048576);
+		TEST_EQ (properties->uint32, 1048576);
+		TEST_EQ (properties->int64, -4815162342L);
+		TEST_EQ (properties->uint64, 4815162342L);
+		TEST_EQ (properties->dubble, 3.14);
+
+		TEST_EQ_STR (properties->string, "she needs more of ze punishment");
+		TEST_ALLOC_PARENT (properties->string, properties);
+
+		TEST_EQ_STR (properties->object_path, "/com/netsplit/Nih/Test");
+		TEST_ALLOC_PARENT (properties->string, properties);
+
+		TEST_EQ_STR (properties->signature, "a(ib)");
+		TEST_ALLOC_PARENT (properties->string, properties);
+
+		TEST_ALLOC_SIZE (properties->structure,
+				 sizeof (MyStruct));
+		TEST_ALLOC_PARENT (properties->structure,
+				   properties);
+		TEST_EQ_STR (properties->structure->item0, "Joe");
+		TEST_ALLOC_PARENT (properties->structure->item0,
+				   properties->structure);
+		TEST_EQ (properties->structure->item1, 34);
+
+		TEST_EQ (properties->int32_array_len, 6);
+		TEST_ALLOC_SIZE (properties->int32_array,
+				 sizeof (int32_t) * 6);
+		TEST_ALLOC_PARENT (properties->int32_array,
+				   properties);
+		TEST_EQ (properties->int32_array[0], 4);
+		TEST_EQ (properties->int32_array[1], 8);
+		TEST_EQ (properties->int32_array[2], 15);
+		TEST_EQ (properties->int32_array[3], 16);
+		TEST_EQ (properties->int32_array[4], 23);
+		TEST_EQ (properties->int32_array[5], 42);
+
+		TEST_ALLOC_SIZE (properties->str_array,
+				 sizeof (char *) * 7);
+		TEST_ALLOC_PARENT (properties->str_array,
+				   properties);
+		TEST_EQ_STR (properties->str_array[0], "she");
+		TEST_ALLOC_PARENT (properties->str_array[0],
+				   properties->str_array);
+		TEST_EQ_STR (properties->str_array[1], "needs");
+		TEST_ALLOC_PARENT (properties->str_array[1],
+				   properties->str_array);
+		TEST_EQ_STR (properties->str_array[2], "more");
+		TEST_ALLOC_PARENT (properties->str_array[2],
+				   properties->str_array);
+		TEST_EQ_STR (properties->str_array[3], "of");
+		TEST_ALLOC_PARENT (properties->str_array[3],
+				   properties->str_array);
+		TEST_EQ_STR (properties->str_array[4], "ze");
+		TEST_ALLOC_PARENT (properties->str_array[4],
+				   properties->str_array);
+		TEST_EQ_STR (properties->str_array[5], "punishment");
+		TEST_ALLOC_PARENT (properties->str_array[5],
+				   properties->str_array);
+		TEST_EQ_P (properties->str_array[6], NULL);
+
+		TEST_ALLOC_SIZE (properties->int32_array_array,
+				 sizeof (int32_t *) * 3);
+		TEST_ALLOC_PARENT (properties->int32_array_array,
+				   properties);
+		TEST_ALLOC_SIZE (properties->int32_array_array_len,
+				 sizeof (size_t) * 2);
+		TEST_ALLOC_PARENT (properties->int32_array_array_len,
+				   properties->int32_array_array);
+
+		TEST_EQ (properties->int32_array_array_len[0], 6);
+		TEST_ALLOC_SIZE (properties->int32_array_array[0],
+				 sizeof (int32_t) * 6);
+		TEST_ALLOC_PARENT (properties->int32_array_array[0],
+				   properties->int32_array_array);
+		TEST_EQ (properties->int32_array_array[0][0], 4);
+		TEST_EQ (properties->int32_array_array[0][1], 8);
+		TEST_EQ (properties->int32_array_array[0][2], 15);
+		TEST_EQ (properties->int32_array_array[0][3], 16);
+		TEST_EQ (properties->int32_array_array[0][4], 23);
+		TEST_EQ (properties->int32_array_array[0][5], 42);
+
+		TEST_EQ (properties->int32_array_array_len[1], 6);
+		TEST_ALLOC_SIZE (properties->int32_array_array[1],
+				 sizeof (int32_t) * 6);
+		TEST_ALLOC_PARENT (properties->int32_array_array[1],
+				   properties->int32_array_array);
+		TEST_EQ (properties->int32_array_array[1][0], 1);
+		TEST_EQ (properties->int32_array_array[1][1], 1);
+		TEST_EQ (properties->int32_array_array[1][2], 2);
+		TEST_EQ (properties->int32_array_array[1][3], 3);
+		TEST_EQ (properties->int32_array_array[1][4], 5);
+		TEST_EQ (properties->int32_array_array[1][5], 8);
+
+		TEST_EQ_P (properties->int32_array_array[2], NULL);
+
+		TEST_ALLOC_SIZE (properties->struct_array,
+				 sizeof (MyStruct *) * 3);
+		TEST_ALLOC_PARENT (properties->struct_array,
+				   properties);
+
+		TEST_ALLOC_SIZE (properties->struct_array[0],
+				 sizeof (MyStruct));
+		TEST_ALLOC_PARENT (properties->struct_array[0],
+				   properties->struct_array);
+		TEST_EQ_STR (properties->struct_array[0]->item0, "Joe");
+		TEST_ALLOC_PARENT (properties->struct_array[0]->item0,
+				   properties->struct_array[0]);
+		TEST_EQ (properties->struct_array[0]->item1, 34);
+
+		TEST_ALLOC_SIZE (properties->struct_array[1],
+				 sizeof (MyStruct));
+		TEST_ALLOC_PARENT (properties->struct_array[1],
+				   properties->struct_array);
+		TEST_EQ_STR (properties->struct_array[1]->item0, "Paul");
+		TEST_ALLOC_PARENT (properties->struct_array[1]->item0,
+				   properties->struct_array[1]);
+		TEST_EQ (properties->struct_array[1]->item1, 27);
+
+		TEST_EQ_P (properties->struct_array[2], NULL);
+
+		TEST_ALLOC_SIZE (properties->dict_entry_array,
+				 sizeof (MyStruct *) * 3);
+		TEST_ALLOC_PARENT (properties->dict_entry_array,
+				   properties);
+
+		TEST_ALLOC_SIZE (properties->dict_entry_array[0],
+				 sizeof (MyStruct));
+		TEST_ALLOC_PARENT (properties->dict_entry_array[0],
+				   properties->dict_entry_array);
+		TEST_EQ_STR (properties->dict_entry_array[0]->item0,
+			     "Joe");
+		TEST_ALLOC_PARENT (properties->dict_entry_array[0]->item0,
+				   properties->dict_entry_array[0]);
+		TEST_EQ (properties->dict_entry_array[0]->item1, 34);
+
+		TEST_ALLOC_SIZE (properties->dict_entry_array[1],
+				 sizeof (MyStruct));
+		TEST_ALLOC_PARENT (properties->dict_entry_array[1],
+				   properties->dict_entry_array);
+		TEST_EQ_STR (properties->dict_entry_array[1]->item0,
+			     "Paul");
+		TEST_ALLOC_PARENT (properties->dict_entry_array[1]->item0,
+				   properties->dict_entry_array[1]);
+		TEST_EQ (properties->dict_entry_array[1]->item1, 27);
+
+		TEST_EQ_P (properties->dict_entry_array[2], NULL);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
+
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a D-Bus error,
+	 * that error is raised on the returning side and the function
+	 * returns -1.
+	 */
+	TEST_FEATURE ("with D-Bus error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		parent = nih_alloc (NULL, 0);
+
+		byte_property = 97;
+		boolean_property = TRUE;
+		int16_property = -42;
+		uint16_property = 42;
+		int32_property = -1048576;
+		uint32_property = 1048576;
+		int64_property = -4815162342L;
+		uint64_property = 4815162342L;
+		double_property = 3.14;
+
+		str_property = "she needs more of ze punishment";
+		object_path_property = "/com/netsplit/Nih/Test";
+		signature_property = "a(ib)";
+
+		struct_property = nih_new (parent, MyStruct);
+		struct_property->item0 = "Joe";
+		struct_property->item1 = 34;
+
+		int32_array_property = NULL;
+		int32_array_property_len = 0;
+
+		str_array_property = nih_alloc (parent, sizeof (char *) * 7);
+		str_array_property[0] = "she";
+		str_array_property[1] = "needs";
+		str_array_property[2] = "more";
+		str_array_property[3] = "of";
+		str_array_property[4] = "ze";
+		str_array_property[5] = "punishment";
+		str_array_property[6] = NULL;
+
+		int32_array_array_property = nih_alloc (parent, sizeof (int32_t *) * 3);
+		int32_array_array_property_len = nih_alloc (int32_array_array_property,
+							    sizeof (size_t) * 2);
+
+		int32_array_array_property[0] = nih_alloc (int32_array_array_property,
+							   sizeof (int32_t) * 6);
+		int32_array_array_property[0][0] = 4;
+		int32_array_array_property[0][1] = 8;
+		int32_array_array_property[0][2] = 15;
+		int32_array_array_property[0][3] = 16;
+		int32_array_array_property[0][4] = 23;
+		int32_array_array_property[0][5] = 42;
+
+		int32_array_array_property_len[0] = 6;
+
+		int32_array_array_property[1] = nih_alloc (int32_array_array_property,
+							   sizeof (int32_t) * 6);
+		int32_array_array_property[1][0] = 1;
+		int32_array_array_property[1][1] = 1;
+		int32_array_array_property[1][2] = 2;
+		int32_array_array_property[1][3] = 3;
+		int32_array_array_property[1][4] = 5;
+		int32_array_array_property[1][5] = 8;
+
+		int32_array_array_property_len[1] = 6;
+
+		int32_array_array_property[2] = NULL;
+
+		struct_array_property = nih_alloc (parent, sizeof (MyStruct *) * 3);
+
+		struct_array_property[0] = nih_new (struct_array_property, MyStruct);
+		struct_array_property[0]->item0 = "Joe";
+		struct_array_property[0]->item1 = 34;
+
+		struct_array_property[1] = nih_new (struct_array_property, MyStruct);
+		struct_array_property[1]->item0 = "Paul";
+		struct_array_property[1]->item1 = 27;
+
+		struct_array_property[2] = NULL;
+
+		dict_entry_array_property = nih_alloc (parent, sizeof (MyStruct *) * 3);
+
+		dict_entry_array_property[0] = nih_new (dict_entry_array_property, MyStruct);
+		dict_entry_array_property[0]->item0 = "Joe";
+		dict_entry_array_property[0]->item1 = 34;
+
+		dict_entry_array_property[1] = nih_new (dict_entry_array_property, MyStruct);
+		dict_entry_array_property[1]->item0 = "Paul";
+		dict_entry_array_property[1]->item1 = 27;
+
+		dict_entry_array_property[2] = NULL;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		properties = NULL;
+
+		ret = proxy_test_get_all_sync (parent, proxy,
+					       &properties);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Test.Int32Array.Empty");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
+
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	/* Check that when the remote end's handler returns a generic error,
+	 * the D-Bus "failed" error is raised on the returning side and the
+	 * function returns -1.
+	 */
+	TEST_FEATURE ("with generic error");
+	TEST_CHILD_WAIT (server_pid, wait_fd) {
+		parent = nih_alloc (NULL, 0);
+
+		byte_property = 97;
+		boolean_property = TRUE;
+		int16_property = -42;
+		uint16_property = 42;
+		int32_property = -1048576;
+		uint32_property = 1048576;
+		int64_property = -4815162342L;
+		uint64_property = 4815162342L;
+		double_property = 3.14;
+
+		str_property = "she needs more of ze punishment";
+		object_path_property = "/com/netsplit/Nih/Test";
+		signature_property = "inva(x)id";
+
+		struct_property = nih_new (parent, MyStruct);
+		struct_property->item0 = "Joe";
+		struct_property->item1 = 34;
+
+		int32_array_property = nih_alloc (parent, sizeof (int32_t) * 6);
+		int32_array_property[0] = 4;
+		int32_array_property[1] = 8;
+		int32_array_property[2] = 15;
+		int32_array_property[3] = 16;
+		int32_array_property[4] = 23;
+		int32_array_property[5] = 42;
+
+		int32_array_property_len = 6;
+
+		str_array_property = nih_alloc (parent, sizeof (char *) * 7);
+		str_array_property[0] = "she";
+		str_array_property[1] = "needs";
+		str_array_property[2] = "more";
+		str_array_property[3] = "of";
+		str_array_property[4] = "ze";
+		str_array_property[5] = "punishment";
+		str_array_property[6] = NULL;
+
+		int32_array_array_property = nih_alloc (parent, sizeof (int32_t *) * 3);
+		int32_array_array_property_len = nih_alloc (int32_array_array_property,
+							    sizeof (size_t) * 2);
+
+		int32_array_array_property[0] = nih_alloc (int32_array_array_property,
+							   sizeof (int32_t) * 6);
+		int32_array_array_property[0][0] = 4;
+		int32_array_array_property[0][1] = 8;
+		int32_array_array_property[0][2] = 15;
+		int32_array_array_property[0][3] = 16;
+		int32_array_array_property[0][4] = 23;
+		int32_array_array_property[0][5] = 42;
+
+		int32_array_array_property_len[0] = 6;
+
+		int32_array_array_property[1] = nih_alloc (int32_array_array_property,
+							   sizeof (int32_t) * 6);
+		int32_array_array_property[1][0] = 1;
+		int32_array_array_property[1][1] = 1;
+		int32_array_array_property[1][2] = 2;
+		int32_array_array_property[1][3] = 3;
+		int32_array_array_property[1][4] = 5;
+		int32_array_array_property[1][5] = 8;
+
+		int32_array_array_property_len[1] = 6;
+
+		int32_array_array_property[2] = NULL;
+
+		struct_array_property = nih_alloc (parent, sizeof (MyStruct *) * 3);
+
+		struct_array_property[0] = nih_new (struct_array_property, MyStruct);
+		struct_array_property[0]->item0 = "Joe";
+		struct_array_property[0]->item1 = 34;
+
+		struct_array_property[1] = nih_new (struct_array_property, MyStruct);
+		struct_array_property[1]->item0 = "Paul";
+		struct_array_property[1]->item1 = 27;
+
+		struct_array_property[2] = NULL;
+
+		dict_entry_array_property = nih_alloc (parent, sizeof (MyStruct *) * 3);
+
+		dict_entry_array_property[0] = nih_new (dict_entry_array_property, MyStruct);
+		dict_entry_array_property[0]->item0 = "Joe";
+		dict_entry_array_property[0]->item1 = 34;
+
+		dict_entry_array_property[1] = nih_new (dict_entry_array_property, MyStruct);
+		dict_entry_array_property[1]->item0 = "Paul";
+		dict_entry_array_property[1]->item1 = 27;
+
+		dict_entry_array_property[2] = NULL;
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (NULL, SIGTERM,
+						nih_main_term_signal, NULL));
+
+		assert0 (nih_dbus_setup (server_conn, NULL));
+
+		object = nih_dbus_object_new (NULL, server_conn,
+					      "/com/netsplit/Nih/Test",
+					      my_interfaces,
+					      NULL);
+
+		TEST_CHILD_RELEASE (wait_fd);
+
+		nih_main_loop ();
+
+		nih_free (object);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
+
+		dbus_shutdown ();
+
+		exit (0);
+	}
+
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih/Test",
+						    NULL, NULL);
+
+			parent = nih_alloc (NULL, 0);
+		}
+
+		properties = NULL;
+
+		ret = proxy_test_get_all_sync (parent, proxy,
+					       &properties);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			nih_free (parent);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_FAILED);
+		TEST_EQ_STR (err->message, "Invalid argument");
+
+		nih_free (err);
+
+		nih_free (parent);
+		nih_free (proxy);
+	}
+
+	kill (server_pid, SIGTERM);
+	waitpid (server_pid, &status, 0);
+	TEST_TRUE (WIFEXITED (status));
+	TEST_EQ (WEXITSTATUS (status), 0);
+
+
+	TEST_DBUS_CLOSE (client_conn);
+	TEST_DBUS_CLOSE (server_conn);
+	TEST_DBUS_END (dbus_pid);
+
+	dbus_shutdown ();
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -48951,6 +50450,9 @@ main (int   argc,
 
 	test_set_dict_entry_array ();
 	test_set_dict_entry_array_sync ();
+
+	test_get_all ();
+	test_get_all_sync ();
 
 	return 0;
 }

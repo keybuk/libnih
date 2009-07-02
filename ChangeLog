@@ -1,5 +1,8 @@
 2009-07-02  Scott James Remnant  <scott@netsplit.com>
-	
+
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c (test_get_all)
+	(test_get_all_sync): End-to-end test of the proxy get_all functions.
+
 	* nih-dbus-tool/interface.c (interface_proxy_get_all_notify_function)
 	(interface_proxy_get_all_sync_function): We can't use continue to
 	repeat the loop, because there might be inner loops.  Use the

@@ -1,5 +1,9 @@
 2009-07-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/tests/test_dbus_object.c (test_object_property_get)
+	(test_object_property_set, test_object_property_get): Add some test
+	cases for property access.
+
 	* TODO: Update.
 
 	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c (test_get_all)

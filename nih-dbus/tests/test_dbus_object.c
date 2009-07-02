@@ -1288,6 +1288,7 @@ test_object_property_get (void)
 	dbus_uint32_t    serial;
 	DBusMessage *    reply;
 	const char *     str_value;
+	uint32_t         uint32_value;
 	DBusError        dbus_error;
 
 	TEST_FUNCTION ("nih_dbus_object_property_get");
@@ -1296,11 +1297,11 @@ test_object_property_get (void)
 	TEST_DBUS_OPEN (client_conn);
 
 
-	/* Check that we can get the value of the property, with the
+	/* Check that we can get the value of a read/write property, with the
 	 * actual reply handled internally but the variant appended to
 	 * the message.
 	 */
-	TEST_FEATURE ("with known property");
+	TEST_FEATURE ("with read/write property");
 	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
 				      prop_interface, &server_conn);
 
@@ -1359,6 +1360,127 @@ test_object_property_get (void)
 		dbus_message_iter_get_basic (&subiter, &str_value);
 
 		TEST_EQ_STR (str_value, "blue");
+
+		dbus_message_unref (reply);
+	}
+
+	nih_free (object);
+
+
+	/* Check that we can get the value of a read-only property, with the
+	 * actual reply handled internally but the variant appended to
+	 * the message.
+	 */
+	TEST_FEATURE ("with read-only property");
+	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
+				      prop_interface, &server_conn);
+
+	TEST_ALLOC_FAIL {
+		size_get_called = FALSE;
+		last_object = NULL;
+		last_message = NULL;
+		last_message_conn = NULL;
+
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+		assert (message != NULL);
+
+		dbus_message_iter_init_append (message, &iter);
+
+		interface_name = "Nih.TestB";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&interface_name));
+
+		property_name = "Size";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&property_name));
+
+		TEST_ALLOC_SAFE {
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
+		}
+
+		dbus_message_unref (message);
+
+		TEST_DBUS_DISPATCH (server_conn);
+
+		TEST_TRUE (size_get_called);
+		TEST_EQ_P (last_object, object);
+		TEST_FREE (last_message);
+		TEST_EQ_P (last_message_conn, server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		TEST_TRUE (dbus_message_has_signature (reply, "v"));
+
+		dbus_message_iter_init (reply, &iter);
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_UINT32);
+
+		dbus_message_iter_get_basic (&subiter, &uint32_value);
+
+		TEST_EQ (uint32_value, 34);
+
+		dbus_message_unref (reply);
+	}
+
+	nih_free (object);
+
+
+	/* Check that we can't get the value of a write-only property, and
+	 * that an "access denied" error message is returned instead.
+	 */
+	TEST_FEATURE ("with write-only property");
+	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
+				      prop_interface, &server_conn);
+
+	TEST_ALLOC_FAIL {
+		last_object = NULL;
+		last_message = NULL;
+		last_message_conn = NULL;
+
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_PROPERTIES,
+			"Get");
+		assert (message != NULL);
+
+		dbus_message_iter_init_append (message, &iter);
+
+		interface_name = "Nih.TestB";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&interface_name));
+
+		property_name = "Poke";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&property_name));
+
+		TEST_ALLOC_SAFE {
+			assert (dbus_connection_send (client_conn, message, &serial));
+			dbus_connection_flush (client_conn);
+		}
+
+		dbus_message_unref (message);
+
+		TEST_DBUS_DISPATCH (server_conn);
+
+		TEST_EQ_P (last_object, NULL);
+		TEST_EQ_P (last_message_conn, NULL);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_UNKNOWN_METHOD));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
 		dbus_message_unref (reply);
 	}
@@ -2710,6 +2832,7 @@ test_object_property_set (void)
 	dbus_uint32_t    serial;
 	DBusMessage *    reply;
 	const char *     str_value;
+	double           double_value;
 	dbus_uint32_t    uint32_value;
 	DBusError        dbus_error;
 
@@ -2719,11 +2842,11 @@ test_object_property_set (void)
 	TEST_DBUS_OPEN (client_conn);
 
 
-	/* Check that we can set the value of the property, with the
+	/* Check that we can set the value of a read/write property, with the
 	 * registered setter function being called to do so with the
 	 * right value.
 	 */
-	TEST_FEATURE ("with known property");
+	TEST_FEATURE ("with read/write property");
 	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
 				      prop_interface, &server_conn);
 
@@ -2784,6 +2907,138 @@ test_object_property_set (void)
 
 		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
 			 DBUS_TYPE_INVALID);
+
+		dbus_message_unref (reply);
+	}
+
+	nih_free (object);
+
+
+	/* Check that we can set the value of a write-only property, with the
+	 * registered setter function being called to do so with the
+	 * right value.
+	 */
+	TEST_FEATURE ("with write-only property");
+	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
+				      prop_interface, &server_conn);
+
+	TEST_ALLOC_FAIL {
+		poke_set_called = FALSE;
+		last_object = NULL;
+		last_message = NULL;
+		last_message_conn = NULL;
+
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+		assert (message != NULL);
+
+		dbus_message_iter_init_append (message, &iter);
+
+		interface_name = "Nih.TestB";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&interface_name));
+
+		property_name = "Poke";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&property_name));
+
+		assert (dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+							  DBUS_TYPE_DOUBLE_AS_STRING,
+							  &subiter));
+
+		double_value = 3.14;
+		assert (dbus_message_iter_append_basic (&subiter, DBUS_TYPE_DOUBLE,
+							&double_value));
+
+		assert (dbus_message_iter_close_container (&iter, &subiter));
+
+		assert (dbus_connection_send (client_conn, message, &serial));
+		dbus_connection_flush (client_conn);
+
+		dbus_message_unref (message);
+
+		TEST_DBUS_DISPATCH (server_conn);
+
+		TEST_TRUE (poke_set_called);
+		TEST_EQ_P (last_object, object);
+		TEST_FREE (last_message);
+		TEST_EQ_P (last_message_conn, server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+
+		TEST_EQ (dbus_message_get_type (reply),
+			 DBUS_MESSAGE_TYPE_METHOD_RETURN);
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
+
+		TEST_TRUE (dbus_message_has_signature (reply, ""));
+
+		dbus_message_iter_init (reply, &iter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_unref (reply);
+	}
+
+	nih_free (object);
+
+
+	/* Check that we cannot set the value of a read-only property, and
+	 * that the access denied error is returned instead.
+	 */
+	TEST_FEATURE ("with read-only property");
+	object = nih_dbus_object_new (NULL, server_conn, "/com/netsplit/Nih",
+				      prop_interface, &server_conn);
+
+	TEST_ALLOC_FAIL {
+		last_object = NULL;
+		last_message = NULL;
+		last_message_conn = NULL;
+
+		message = dbus_message_new_method_call (
+			dbus_bus_get_unique_name (server_conn),
+			"/com/netsplit/Nih",
+			DBUS_INTERFACE_PROPERTIES,
+			"Set");
+		assert (message != NULL);
+
+		dbus_message_iter_init_append (message, &iter);
+
+		interface_name = "Nih.TestB";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&interface_name));
+
+		property_name = "Size";
+		assert (dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+							&property_name));
+
+		assert (dbus_message_iter_open_container (&iter, DBUS_TYPE_VARIANT,
+							  DBUS_TYPE_UINT32_AS_STRING,
+							  &subiter));
+
+		uint32_value = 34;
+		assert (dbus_message_iter_append_basic (&subiter, DBUS_TYPE_UINT32,
+							&uint32_value));
+
+		assert (dbus_message_iter_close_container (&iter, &subiter));
+
+		assert (dbus_connection_send (client_conn, message, &serial));
+		dbus_connection_flush (client_conn);
+
+		dbus_message_unref (message);
+
+		TEST_DBUS_DISPATCH (server_conn);
+
+		TEST_EQ_P (last_object, NULL);
+		TEST_EQ_P (last_message_conn, NULL);
+
+		TEST_DBUS_MESSAGE (client_conn, reply);
+
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_UNKNOWN_METHOD));
+		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
 		dbus_message_unref (reply);
 	}

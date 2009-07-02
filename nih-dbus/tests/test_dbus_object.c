@@ -1479,7 +1479,7 @@ test_object_property_get (void)
 
 		TEST_DBUS_MESSAGE (client_conn, reply);
 
-		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_UNKNOWN_METHOD));
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_ACCESS_DENIED));
 		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
 		dbus_message_unref (reply);
@@ -3037,7 +3037,7 @@ test_object_property_set (void)
 
 		TEST_DBUS_MESSAGE (client_conn, reply);
 
-		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_UNKNOWN_METHOD));
+		TEST_TRUE (dbus_message_is_error (reply, DBUS_ERROR_ACCESS_DENIED));
 		TEST_EQ (dbus_message_get_reply_serial (reply), serial);
 
 		dbus_message_unref (reply);

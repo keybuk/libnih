@@ -573,13 +573,15 @@ nih_dbus_object_property_get (DBusConnection *connection,
 		for (property = (*interface)->properties;
 		     property && property->name;
 		     property++) {
-			if (property->getter
-			    && ((strlen (interface_name) == 0)
-				|| (! strcmp ((*interface)->name, interface_name)))
-			    && (! strcmp (property->name, property_name))) {
-				nih_local NihDBusMessage *msg = NULL;
-				int                       ret;
+			nih_local NihDBusMessage *msg = NULL;
+			int                       ret;
 
+			if (strcmp (property->name, property_name)
+			    || (strlen (interface_name)
+				&& strcmp ((*interface)->name, interface_name)))
+				continue;
+
+			if (property->getter) {
 				msg = nih_dbus_message_new (NULL,
 							    connection, message);
 				if (! msg)
@@ -624,16 +626,23 @@ nih_dbus_object_property_get (DBusConnection *connection,
 				} else {
 					nih_error_pop_context ();
 				}
-
-				if (! dbus_connection_send (connection, reply, NULL)) {
-					dbus_message_unref (reply);
+			} else {
+				reply = dbus_message_new_error_printf (
+					message, DBUS_ERROR_ACCESS_DENIED,
+					_("The %s property is write-only"),
+					property->name);
+				if (! reply)
 					return DBUS_HANDLER_RESULT_NEED_MEMORY;
-				}
-
-				dbus_message_unref (reply);
-
-				return DBUS_HANDLER_RESULT_HANDLED;
 			}
+
+			if (! dbus_connection_send (connection, reply, NULL)) {
+				dbus_message_unref (reply);
+				return DBUS_HANDLER_RESULT_NEED_MEMORY;
+			}
+
+			dbus_message_unref (reply);
+
+			return DBUS_HANDLER_RESULT_HANDLED;
 		}
 	}
 
@@ -906,14 +915,16 @@ nih_dbus_object_property_set (DBusConnection *connection,
 		for (property = (*interface)->properties;
 		     property && property->name;
 		     property++) {
-			if (property->setter
-			    && ((strlen (interface_name) == 0)
-				|| (! strcmp ((*interface)->name, interface_name)))
-			    && (! strcmp (property->name, property_name))) {
-				nih_local NihDBusMessage *msg = NULL;
-				DBusMessage *             reply;
-				int                       ret;
+			nih_local NihDBusMessage *msg = NULL;
+			DBusMessage *             reply;
+			int                       ret;
 
+			if (strcmp (property->name, property_name)
+			    || (strlen (interface_name)
+				&& strcmp ((*interface)->name, interface_name)))
+				continue;
+
+			if (property->setter) {
 				msg = nih_dbus_message_new (NULL,
 							    connection, message);
 				if (! msg)
@@ -952,12 +963,19 @@ nih_dbus_object_property_set (DBusConnection *connection,
 
 					reply = NIH_MUST (dbus_message_new_method_return (message));
 				}
-
-				NIH_MUST (dbus_connection_send (connection, reply, NULL));
-				dbus_message_unref (reply);
-
-				return DBUS_HANDLER_RESULT_HANDLED;
+			} else {
+				reply = dbus_message_new_error_printf (
+					message, DBUS_ERROR_ACCESS_DENIED,
+					_("The %s property is read-only"),
+					property->name);
+				if (! reply)
+					return DBUS_HANDLER_RESULT_NEED_MEMORY;
 			}
+
+			NIH_MUST (dbus_connection_send (connection, reply, NULL));
+			dbus_message_unref (reply);
+
+			return DBUS_HANDLER_RESULT_HANDLED;
 		}
 	}
 

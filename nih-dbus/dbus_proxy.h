@@ -111,9 +111,7 @@ struct nih_dbus_proxy {
 
 /**
  * NihDBusProxySignal:
- * @connection: associated connection,
- * @name: D-Bus name of object owner,
- * @path: path of object,
+ * @proxy: proxy structure,
  * @interface: signal interface definition,
  * @signal: signal definition,
  * @handler: signal handler function,
@@ -121,17 +119,14 @@ struct nih_dbus_proxy {
  *
  * This structure represents a connected signal handler @handler which
  * should be run when a matching signal @signal on interface @interface
- * is emitted by an object @path, from @name on @connection.
+ * is emitted by a proxied object @proxied.
  *
  * @name may be NULL for peer-to-peer D-Bus connections.
  *
- * Proxied signals are generally bounced to the life cycle of @proxy,
- * however this is not compulsory.
+ * Proxied signals are bound to the life cycle of @proxy.
  **/
 struct nih_dbus_proxy_signal {
-	DBusConnection *        connection;
-	char *                  name;
-	char *                  path;
+	NihDBusProxy *          proxy;
 	const NihDBusInterface *interface;
 	const NihDBusSignal *   signal;
 	NihDBusSignalHandler    handler;
@@ -148,8 +143,7 @@ NihDBusProxy *      nih_dbus_proxy_new     (const void *parent,
 					    void *data)
 	__attribute__ ((warn_unused_result, malloc));
 
-NihDBusProxySignal *nih_dbus_proxy_connect (const void *parent,
-					    NihDBusProxy *proxy,
+NihDBusProxySignal *nih_dbus_proxy_connect (NihDBusProxy *proxy,
 					    const NihDBusInterface *interface,
 					    const char *name,
 					    NihDBusSignalHandler handler,

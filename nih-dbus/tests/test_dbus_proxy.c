@@ -680,6 +680,7 @@ test_connect (void)
 	pid_t               dbus_pid;
 	DBusConnection *    client_conn;
 	DBusConnection *    server_conn;
+	DBusConnection *    other_conn;
 	NihDBusProxy *      proxy = NULL;
 	NihDBusProxySignal *proxied;
 	NihError *          err;
@@ -693,12 +694,13 @@ test_connect (void)
 	TEST_DBUS_OPEN (server_conn);
 
 
-	/* Check that we can connect a signal to a bus connection, having
-	 * a proxied signal structure returned to us.  If a matching signal
-	 * is then emitted by the server-side, the filter function is
-	 * called with the expected arguments.
+	/* Check that we can connect a signal to a bus connection, with the
+	 * remote end identified by a unique name and having a proxied signal
+	 * structure returned to us.  If a matching signal is then emitted by
+	 * the server-side, the filter function is called with the expected
+	 * arguments.
 	 */
-	TEST_FEATURE ("with bus connection");
+	TEST_FEATURE ("with bus connection by unique name");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
@@ -707,7 +709,7 @@ test_connect (void)
 						    NULL, NULL);
 		}
 
-		proxied = nih_dbus_proxy_connect (NULL, proxy,
+		proxied = nih_dbus_proxy_connect (proxy,
 						  &my_interface, "MySignal",
 						  my_signal_handler, NULL);
 
@@ -723,13 +725,13 @@ test_connect (void)
 		}
 
 		TEST_ALLOC_SIZE (proxied, sizeof (NihDBusProxySignal));
-		TEST_EQ_P (proxied->connection, proxy->connection);
-		TEST_EQ_P (proxied->name, proxy->name);
-		TEST_EQ_P (proxied->path, proxy->path);
+		TEST_EQ_P (proxied->proxy, proxy);
 		TEST_EQ_P (proxied->interface, &my_interface);
 		TEST_EQ_P (proxied->signal, &my_interface_signals[0]);
 		TEST_EQ_P (proxied->handler, my_signal_handler);
 		TEST_EQ_P (proxied->data, NULL);
+
+		TEST_ALLOC_PARENT (proxied, proxy);
 
 		my_signal_filter_called = FALSE;
 		last_conn = NULL;
@@ -767,6 +769,90 @@ test_connect (void)
 	}
 
 
+	/* Check that we can connect a signal to a bus connection, with the
+	 * remote end identified by a well-known name and having a proxied
+	 * signal structure returned to us.  If a matching signal is then emitted
+	 * by the server-side, the filter function is called with the expected
+	 * arguments.
+	 */
+	TEST_FEATURE ("with bus connection by well known name");
+	TEST_ALLOC_FAIL {
+		TEST_DBUS_OPEN (other_conn);
+
+		assert (dbus_bus_request_name (other_conn, "com.netsplit.Nih",
+					       0, NULL)
+			== DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER);
+
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    "com.netsplit.Nih",
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
+		}
+
+		proxied = nih_dbus_proxy_connect (proxy,
+						  &my_interface, "MySignal",
+						  my_signal_handler, NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (proxied, NULL);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			nih_free (proxy);
+			TEST_DBUS_CLOSE (other_conn);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (proxied, sizeof (NihDBusProxySignal));
+		TEST_EQ_P (proxied->proxy, proxy);
+		TEST_EQ_P (proxied->interface, &my_interface);
+		TEST_EQ_P (proxied->signal, &my_interface_signals[0]);
+		TEST_EQ_P (proxied->handler, my_signal_handler);
+		TEST_EQ_P (proxied->data, NULL);
+
+		TEST_ALLOC_PARENT (proxied, proxy);
+
+		my_signal_filter_called = FALSE;
+		last_conn = NULL;
+		last_message = NULL;
+		last_proxied = NULL;
+
+		signal = dbus_message_new_signal ("/com/netsplit/Nih",
+						  "com.netsplit.Nih",
+						  "MySignal");
+
+		dbus_connection_send (other_conn, signal, &serial);
+		dbus_connection_flush (other_conn);
+
+		dbus_message_unref (signal);
+
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (my_signal_filter_called);
+		TEST_EQ_P (last_conn, client_conn);
+		TEST_NE_P (last_message, NULL);
+		TEST_EQ (dbus_message_get_serial (last_message), serial);
+		TEST_TRUE (dbus_message_is_signal (last_message,
+						   "com.netsplit.Nih",
+						   "MySignal"));
+		TEST_EQ_STR (dbus_message_get_path (last_message),
+			     "/com/netsplit/Nih");
+		TEST_EQ_P (last_proxied, proxied);
+		dbus_message_unref (last_message);
+
+		TEST_ALLOC_SAFE {
+			nih_free (proxied);
+
+			nih_free (proxy);
+		}
+
+		TEST_DBUS_CLOSE (other_conn);
+	}
+
+
 	/* Check that we can also connect a signal to a peer-to-peer
 	 * connection that does not have a name.  If a matching signal
 	 * is then emitted by the other side, the filter function is
@@ -783,7 +869,7 @@ test_connect (void)
 						    NULL, NULL);
 		}
 
-		proxied = nih_dbus_proxy_connect (NULL, proxy,
+		proxied = nih_dbus_proxy_connect (proxy,
 						  &my_interface, "MySignal",
 						  my_signal_handler, NULL);
 
@@ -799,13 +885,13 @@ test_connect (void)
 		}
 
 		TEST_ALLOC_SIZE (proxied, sizeof (NihDBusProxySignal));
-		TEST_EQ_P (proxied->connection, proxy->connection);
-		TEST_EQ_P (proxied->name, proxy->name);
-		TEST_EQ_P (proxied->path, proxy->path);
+		TEST_EQ_P (proxied->proxy, proxy);
 		TEST_EQ_P (proxied->interface, &my_interface);
 		TEST_EQ_P (proxied->signal, &my_interface_signals[0]);
 		TEST_EQ_P (proxied->handler, my_signal_handler);
 		TEST_EQ_P (proxied->data, NULL);
+
+		TEST_ALLOC_PARENT (proxied, proxy);
 
 		my_signal_filter_called = FALSE;
 		last_conn = NULL;
@@ -884,7 +970,7 @@ test_signal_destroy (void)
 						    NULL,
 						    "/com/netsplit/Nih",
 						    NULL, NULL);
-			proxied = nih_dbus_proxy_connect (NULL, proxy,
+			proxied = nih_dbus_proxy_connect (proxy,
 							  &my_interface,
 							  "MySignal",
 							  my_signal_handler,

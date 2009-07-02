@@ -1,5 +1,16 @@
 2009-07-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_proxy.h (NihDBusProxySignal): Go back to just
+	holding a reference to the proxy in the connected signal, we need
+	its name owner tracking.
+	* nih-dbus/dbus_proxy.c (nih_dbus_proxy_connect): Keep a reference
+	to the proxy, don't copy the members in; be allocated as a child
+	of the proxy.
+
+	* nih-dbus/tests/test_dbus_proxy.c (test_connect): Add a test
+	case for connecting to a signal by well-known name, rather than
+	just unique name
+
 	* nih-dbus-tool/output.c (output): Don't know where the word
 	"Forward" came from in this comment, delete it.
 	* nih-dbus-tool/tests/expected/test_output_proxy_standard.c,

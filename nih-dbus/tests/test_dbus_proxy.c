@@ -781,7 +781,6 @@ test_connect (void)
 	pid_t               dbus_pid;
 	DBusConnection *    client_conn;
 	DBusConnection *    server_conn;
-	DBusConnection *    other_conn;
 	NihDBusProxy *      proxy = NULL;
 	NihDBusProxySignal *proxied;
 	NihError *          err;
@@ -791,8 +790,6 @@ test_connect (void)
 
 	TEST_FUNCTION ("nih_dbus_proxy_connect");
 	TEST_DBUS (dbus_pid);
-	TEST_DBUS_OPEN (client_conn);
-	TEST_DBUS_OPEN (server_conn);
 
 
 	/* Check that we can connect a signal to a bus connection, with the
@@ -803,6 +800,9 @@ test_connect (void)
 	 */
 	TEST_FEATURE ("with bus connection by unique name");
 	TEST_ALLOC_FAIL {
+		TEST_DBUS_OPEN (client_conn);
+		TEST_DBUS_OPEN (server_conn);
+
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
 						    dbus_bus_get_unique_name (server_conn),
@@ -822,6 +822,9 @@ test_connect (void)
 			nih_free (err);
 
 			nih_free (proxy);
+
+			TEST_DBUS_CLOSE (client_conn);
+			TEST_DBUS_CLOSE (server_conn);
 			continue;
 		}
 
@@ -867,6 +870,9 @@ test_connect (void)
 
 			nih_free (proxy);
 		}
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
 	}
 
 
@@ -878,9 +884,10 @@ test_connect (void)
 	 */
 	TEST_FEATURE ("with bus connection by well known name");
 	TEST_ALLOC_FAIL {
-		TEST_DBUS_OPEN (other_conn);
+		TEST_DBUS_OPEN (client_conn);
+		TEST_DBUS_OPEN (server_conn);
 
-		assert (dbus_bus_request_name (other_conn, "com.netsplit.Nih",
+		assert (dbus_bus_request_name (server_conn, "com.netsplit.Nih",
 					       0, NULL)
 			== DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER);
 
@@ -903,7 +910,9 @@ test_connect (void)
 			nih_free (err);
 
 			nih_free (proxy);
-			TEST_DBUS_CLOSE (other_conn);
+
+			TEST_DBUS_CLOSE (client_conn);
+			TEST_DBUS_CLOSE (server_conn);
 			continue;
 		}
 
@@ -925,8 +934,8 @@ test_connect (void)
 						  "com.netsplit.Nih",
 						  "MySignal");
 
-		dbus_connection_send (other_conn, signal, &serial);
-		dbus_connection_flush (other_conn);
+		dbus_connection_send (server_conn, signal, &serial);
+		dbus_connection_flush (server_conn);
 
 		dbus_message_unref (signal);
 
@@ -950,7 +959,9 @@ test_connect (void)
 			nih_free (proxy);
 		}
 
-		TEST_DBUS_CLOSE (other_conn);
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
 	}
 
 
@@ -963,6 +974,9 @@ test_connect (void)
 	 */
 	TEST_FEATURE ("with peer-to-peer connection");
 	TEST_ALLOC_FAIL {
+		TEST_DBUS_OPEN (client_conn);
+		TEST_DBUS_OPEN (server_conn);
+
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
 						    NULL,
@@ -982,6 +996,9 @@ test_connect (void)
 			nih_free (err);
 
 			nih_free (proxy);
+
+			TEST_DBUS_CLOSE (client_conn);
+			TEST_DBUS_CLOSE (server_conn);
 			continue;
 		}
 
@@ -1036,11 +1053,12 @@ test_connect (void)
 
 			nih_free (proxy);
 		}
+
+		TEST_DBUS_CLOSE (client_conn);
+		TEST_DBUS_CLOSE (server_conn);
 	}
 
 
-	TEST_DBUS_CLOSE (client_conn);
-	TEST_DBUS_CLOSE (server_conn);
 	TEST_DBUS_END (dbus_pid);
 
 	dbus_shutdown ();

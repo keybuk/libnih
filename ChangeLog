@@ -1,5 +1,9 @@
 2009-07-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/tests/test_dbus_proxy.c (test_connect): We can end up
+	with a lot of stray signals with these tests, so open and close
+	the connections for each one.
+
 	* NEWS: Update.
 	* TODO: Update.
 

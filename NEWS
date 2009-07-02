@@ -3,6 +3,56 @@
 	* The licence for libnih has been changed back to version 2 of the
 	  GNU GPL.
 
+	* TEST_EXPECTED_STR and TEST_EXPECTED_FILE added.  These compare the
+	  contents of a string and file respectively against the contents
+	  of a given filename relative to the "expected" directory alongside
+	  the test binary, e.g.:
+
+		TEST_EXPECTED_STR (code, "foo.c");
+
+	  in tests/test_foo will be TRUE if the contents of the C string
+	  "code" match the contents of the file tests/expected/foo.c
+
+	* NihDBusProxy has gained an auto_start member, TRUE by default.
+	  If you do not want method calls to automatically start a service,
+	  you may set this to FALSE after creating the proxy.  nih-dbus-tool
+	  generated method calls will respect this flag.
+
+	* nih_dbus_proxy_connect() no longer has both a parent and proxy
+	  argument, it now only takes the proxy and is always a child of it.
+
+	* NihDBusProxySignal no longer has connection, name or path members
+	  and instead has a proxy member from which the values can be found.
+
+	* nih_dbus_proxy_new() will now begin tracking any name given, even
+	  if there is no lost_handler passed.  This (and the above changes)
+	  allows signal handlers to compare the sender of a signal (which is
+	  always a unique name) against the owner of the associated proxy.
+
+	* Attempting to read from a D-Bus property that is write-only, or
+	  attempting to write to a D-Bus property that is read-only will now
+	  return the DBUS_ERROR_ACCESS_DENIED error rather than
+	  DBUS_ERROR_UNKNOWN_METHOD.
+
+	* An empty com.netsplit.Nih.Symbol annotation is no longer permitted
+	  for D-Bus interfaces.  Instead use the new --default-interface
+	  option to nih-dbus-tool.
+
+	* nih-dbus-tool now properly supports structures, including arrays of
+	  structures and arrays of dictionary entries.  The default naming
+	  of the structure is derived from the method or signal name and
+	  argument or the property name; the default naming of the members
+	  is "item0".."itemN".  Structure definitions appear in the
+	  generated header file.
+
+	* nih-dbus-tool now generates prefix_interface_get_all() and
+	  prefix_interface_get_all_sync() methods for each interface, these
+	  get the values of all of the properties and store them in a
+	  PrefixInterfaceProperties structure defined in the header file.
+
+	* A side-effect of the above is that it's no longer possible to
+	  name properties after C keywords.
+
 0.3.0  2009-06-17
 
 	* The licence for libnih has been changed to MIT/X11.

@@ -1,5 +1,8 @@
 2009-07-02  Scott James Remnant  <scott@netsplit.com>
 
+	* NEWS: Update.
+	* TODO: Update.
+
 	* nih-dbus-tool/interface.c (interface_proxy_get_all_function)
 	(interface_proxy_get_all_sync_function),
 	* nih-dbus-tool/method.c (method_proxy_function)

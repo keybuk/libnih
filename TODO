@@ -37,9 +37,6 @@ string table:
 
 
 dbus:
-- NihDBusProxy should have an auto_start member, when TRUE any method calls
-  will automatically start the remote end if it's not running
-
 - Should be possible for multiple interface members to use the same structure
   definition, instead of having the same type with different names.
   - Structure annotation gives the name, e.g. "ProcessInfo"

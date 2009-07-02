@@ -1,5 +1,10 @@
 2009-07-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/main.c: Add a --default-interface argument that
+	takes the place of setting the Symbol annotation to "".  This is
+	much cleaner, and allows the user of the code to decide, not the
+	author of the interface.
+
 	* nih-dbus-tool/interface.c (interface_annotation): Don't allow
 	the symbol annotation to be empty again.
 	(interface_end_tag): Which means that the symbol can never be

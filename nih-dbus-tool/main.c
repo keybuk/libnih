@@ -41,6 +41,7 @@
 #include <nih/error.h>
 
 #include "node.h"
+#include "interface.h"
 #include "parse.h"
 #include "output.h"
 
@@ -282,6 +283,14 @@ static int object = FALSE;
 static const char *prefix = NULL;
 
 /**
+ * default_interface:
+ *
+ * Interface which should not have the last component of its name included
+ * in generated symbol names.
+ **/
+static const char *default_interface = NULL;
+
+/**
  * output_path:
  *
  * Path to output C code to, header is automatically placed alongside.
@@ -299,6 +308,8 @@ static NihOption options[] = {
 	  NULL, "MODE", &object, mode_option },
 	{ 0,   "prefix", N_("prefix for C functions [default: dbus]"),
 	  NULL, "PREFIX", &prefix, NULL },
+	{ 0,   "default-interface", N_("interface name not included in symbols"),
+	  NULL, "INTERFACE", &default_interface, NULL },
 	{ 'o', "output", N_("write C source to FILENAME, header alongside"),
 	  NULL, "FILENAME", &output_path, NULL },
 
@@ -383,6 +394,27 @@ main (int   argc,
 		node = parse_xml (NULL, STDIN_FILENO, "(standard input)");
 		if (! node)
 			exit (1);
+	}
+
+	/* Remove the symbol from the default interface */
+	if (default_interface) {
+		int found = FALSE;
+
+		NIH_LIST_FOREACH (&node->interfaces, iter) {
+			Interface *interface = (Interface *)iter;
+
+			if (! strcmp (interface->name, default_interface)) {
+				nih_unref (interface->symbol, interface);
+				interface->symbol = NULL;
+				found = TRUE;
+			}
+		}
+
+		if (! found) {
+			nih_error ("%s: %s", _("No such interface"),
+				   default_interface);
+			exit (1);
+		}
 	}
 
 	/* Write the output files */

@@ -686,16 +686,16 @@ my_com_netsplit_Nih_Test_Bounce_signal (DBusConnection *    connection,
 	nih_assert (connection != NULL);
 	nih_assert (signal != NULL);
 	nih_assert (proxied != NULL);
-	nih_assert (connection == proxied->connection);
+	nih_assert (connection == proxied->proxy->connection);
 
 	if (! dbus_message_is_signal (signal, proxied->interface->name, proxied->signal->name))
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
-	if (! dbus_message_has_path (signal, proxied->path))
+	if (! dbus_message_has_path (signal, proxied->proxy->path))
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
-	if (proxied->name)
-		if (! dbus_message_has_sender (signal, proxied->name))
+	if (proxied->proxy->name)
+		if (! dbus_message_has_sender (signal, proxied->proxy->owner))
 			return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
 	message = nih_dbus_message_new (NULL, connection, signal);
@@ -753,16 +753,16 @@ my_com_netsplit_Nih_Test_Exploded_signal (DBusConnection *    connection,
 	nih_assert (connection != NULL);
 	nih_assert (signal != NULL);
 	nih_assert (proxied != NULL);
-	nih_assert (connection == proxied->connection);
+	nih_assert (connection == proxied->proxy->connection);
 
 	if (! dbus_message_is_signal (signal, proxied->interface->name, proxied->signal->name))
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
-	if (! dbus_message_has_path (signal, proxied->path))
+	if (! dbus_message_has_path (signal, proxied->proxy->path))
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
-	if (proxied->name)
-		if (! dbus_message_has_sender (signal, proxied->name))
+	if (proxied->proxy->name)
+		if (! dbus_message_has_sender (signal, proxied->proxy->owner))
 			return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
 	message = nih_dbus_message_new (NULL, connection, signal);
@@ -2486,16 +2486,16 @@ my_com_netsplit_Nih_Foo_NewResult_signal (DBusConnection *    connection,
 	nih_assert (connection != NULL);
 	nih_assert (signal != NULL);
 	nih_assert (proxied != NULL);
-	nih_assert (connection == proxied->connection);
+	nih_assert (connection == proxied->proxy->connection);
 
 	if (! dbus_message_is_signal (signal, proxied->interface->name, proxied->signal->name))
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
-	if (! dbus_message_has_path (signal, proxied->path))
+	if (! dbus_message_has_path (signal, proxied->proxy->path))
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
-	if (proxied->name)
-		if (! dbus_message_has_sender (signal, proxied->name))
+	if (proxied->proxy->name)
+		if (! dbus_message_has_sender (signal, proxied->proxy->owner))
 			return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 
 	message = nih_dbus_message_new (NULL, connection, signal);

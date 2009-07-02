@@ -1,7 +1,13 @@
 2009-07-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/signal.c (signal_proxy_function): Look up connection
+	and path through the proxy object; if the proxy object has a name,
+	compare the signal sender against the OWNER of that name, not the
+	name.
 	* nih-dbus-tool/tests/test_signal.c (test_proxy_function): Drop
-	parent argument from calls to nih_dbus_proxy_connect
+	parent argument from calls to nih_dbus_proxy_connect.  Add test
+	cases for signal catching on peer-to-peer and well-known name (we
+	were previously just using unique).
 	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c (test_new_byte)
 	(test_new_boolean, test_new_int16, test_new_uint16)
 	(test_new_int32, test_new_uint32, test_new_int64)
@@ -11,6 +17,16 @@
 	(test_new_int32_array_array, test_new_struct_array)
 	(test_new_dict_entry_array): Drop the parent argument from calls
 	to nih_dbus_proxy_connect
+	* nih-dbus-tool/tests/expected/test_signal_proxy_function_standard.c,
+	* nih-dbus-tool/tests/expected/test_signal_proxy_function_no_args.c,
+	* nih-dbus-tool/tests/expected/test_signal_proxy_function_structure.c,
+	* nih-dbus-tool/tests/expected/test_signal_proxy_function_deprecated.c,
+	* nih-dbus-tool/tests/expected/test_node_proxy_functions_standard.c,
+	* nih-dbus-tool/tests/expected/test_node_proxy_functions_no_methods.c,
+	* nih-dbus-tool/tests/expected/test_node_proxy_functions_no_properties.c,
+	* nih-dbus-tool/tests/expected/test_node_proxy_functions_structure.c,
+	* nih-dbus-tool/tests/expected/test_output_proxy_standard.c:
+	Update expected output
 
 	* nih-dbus/dbus_proxy.c (nih_dbus_proxy_new): Track the name whenever
 	one is given, not just when we have a lost handler.

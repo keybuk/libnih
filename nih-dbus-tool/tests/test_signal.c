@@ -1666,6 +1666,7 @@ test_proxy_function (void)
 	pid_t               dbus_pid;
 	DBusConnection *    server_conn;
 	DBusConnection *    client_conn;
+	DBusConnection *    other_conn;
 	NihList             prototypes;
 	NihList             typedefs;
 	NihList             structs;
@@ -1682,6 +1683,7 @@ test_proxy_function (void)
 	NihDBusProxySignal *proxied = NULL;
 	DBusMessage *       sig;
 	DBusMessageIter     iter;
+	DBusError           dbus_error;
 
 	TEST_FUNCTION ("signal_proxy_function");
 	TEST_DBUS (dbus_pid);
@@ -2157,9 +2159,65 @@ test_proxy_function (void)
 
 
 	/* Check that we can use the generated code to catch a signal
-	 * and make a call to the handler with the expected arguments.
+	 * with a peer-to-peer proxy and make a call to the handler with the
+	 * expected arguments.
 	 */
-	TEST_FEATURE ("with signal (generated code)");
+	TEST_FEATURE ("with signal and peer-to-peer (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    NULL,
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
+
+			proxied = nih_dbus_proxy_connect (proxy,
+							  &my_interface,
+							  "Signal",
+							  (NihDBusSignalHandler)my_signal_handler,
+							  &my_signal_handler_called);
+		}
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (client_conn, "type='signal'", &dbus_error);
+		dbus_error_free (&dbus_error);
+
+		sig = dbus_message_new_signal ("/com/netsplit/Nih",
+					       "com.netsplit.Nih",
+					       "Signal");
+
+		dbus_message_iter_init_append (sig, &iter);
+
+		str = "this is a test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str);
+
+		dbus_connection_send (server_conn, sig, NULL);
+		dbus_connection_flush (server_conn);
+		dbus_message_unref (sig);
+
+		my_signal_handler_called = FALSE;
+
+		TEST_DBUS_DISPATCH (client_conn);
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (client_conn, "type='signal'",
+				       &dbus_error);
+		dbus_error_free (&dbus_error);
+
+		TEST_TRUE (my_signal_handler_called);
+
+		TEST_ALLOC_SAFE {
+			nih_free (proxied);
+			nih_free (proxy);
+		}
+	}
+
+
+	/* Check that we can use the generated code to catch a signal
+	 * with a unique name proxy and make a call to the handler with the
+	 * expected arguments.
+	 */
+	TEST_FEATURE ("with signal and unique name (generated code)");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, client_conn,
@@ -2198,6 +2256,60 @@ test_proxy_function (void)
 			nih_free (proxied);
 			nih_free (proxy);
 		}
+	}
+
+
+	/* Check that we can use the generated code to catch a signal
+	 * with a well-known name name proxy and make a call to the handler
+	 * with the expected arguments.
+	 */
+	TEST_FEATURE ("with signal and well-known name (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_DBUS_OPEN (other_conn);
+
+		assert (dbus_bus_request_name (other_conn, "com.netsplit.Nih",
+					       0, NULL)
+			== DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER);
+
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, client_conn,
+						    "com.netsplit.Nih",
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
+
+			proxied = nih_dbus_proxy_connect (proxy,
+							  &my_interface,
+							  "Signal",
+							  (NihDBusSignalHandler)my_signal_handler,
+							  &my_signal_handler_called);
+		}
+
+		sig = dbus_message_new_signal ("/com/netsplit/Nih",
+					       "com.netsplit.Nih",
+					       "Signal");
+
+		dbus_message_iter_init_append (sig, &iter);
+
+		str = "this is a test";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING,
+						&str);
+
+		dbus_connection_send (other_conn, sig, NULL);
+		dbus_connection_flush (other_conn);
+		dbus_message_unref (sig);
+
+		my_signal_handler_called = FALSE;
+
+		TEST_DBUS_DISPATCH (client_conn);
+
+		TEST_TRUE (my_signal_handler_called);
+
+		TEST_ALLOC_SAFE {
+			nih_free (proxied);
+			nih_free (proxy);
+		}
+
+		TEST_DBUS_CLOSE (other_conn);
 	}
 
 

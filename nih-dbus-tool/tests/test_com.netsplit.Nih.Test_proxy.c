@@ -23014,7 +23014,7 @@ test_new_byte (void)
 
 			parent = nih_alloc (NULL, 0);
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewByte",
 							(NihDBusSignalHandler)my_new_byte_handler,
@@ -23092,7 +23092,7 @@ test_new_boolean (void)
 
 			parent = nih_alloc (NULL, 0);
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewBoolean",
 							(NihDBusSignalHandler)my_new_boolean_handler,
@@ -23170,7 +23170,7 @@ test_new_int16 (void)
 
 			parent = nih_alloc (NULL, 0);
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewInt16",
 							(NihDBusSignalHandler)my_new_int16_handler,
@@ -23248,7 +23248,7 @@ test_new_uint16 (void)
 
 			parent = nih_alloc (NULL, 0);
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewUInt16",
 							(NihDBusSignalHandler)my_new_uint16_handler,
@@ -23326,7 +23326,7 @@ test_new_int32 (void)
 
 			parent = nih_alloc (NULL, 0);
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewInt32",
 							(NihDBusSignalHandler)my_new_int32_handler,
@@ -23404,7 +23404,7 @@ test_new_uint32 (void)
 
 			parent = nih_alloc (NULL, 0);
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewUInt32",
 							(NihDBusSignalHandler)my_new_uint32_handler,
@@ -23482,7 +23482,7 @@ test_new_int64 (void)
 
 			parent = nih_alloc (NULL, 0);
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewInt64",
 							(NihDBusSignalHandler)my_new_int64_handler,
@@ -23560,7 +23560,7 @@ test_new_uint64 (void)
 
 			parent = nih_alloc (NULL, 0);
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewUInt64",
 							(NihDBusSignalHandler)my_new_uint64_handler,
@@ -23638,7 +23638,7 @@ test_new_double (void)
 
 			parent = nih_alloc (NULL, 0);
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewDouble",
 							(NihDBusSignalHandler)my_new_double_handler,
@@ -23720,7 +23720,7 @@ test_new_string (void)
 
 			parent = nih_alloc (NULL, 0);
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewString",
 							(NihDBusSignalHandler)my_new_string_handler,
@@ -23803,7 +23803,7 @@ test_new_object_path (void)
 
 			parent = nih_alloc (NULL, 0);
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewObjectPath",
 							(NihDBusSignalHandler)my_new_object_path_handler,
@@ -23886,7 +23886,7 @@ test_new_signature (void)
 
 			parent = nih_alloc (NULL, 0);
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewSignature",
 							(NihDBusSignalHandler)my_new_signature_handler,
@@ -23974,7 +23974,7 @@ test_new_struct (void)
 			struct_value->item0 = "Joe";
 			struct_value->item1 = 34;
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewStruct",
 							(NihDBusSignalHandler)my_new_struct_handler,
@@ -24068,7 +24068,7 @@ test_new_int32_array (void)
 
 			parent = nih_alloc (NULL, 0);
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewInt32Array",
 							(NihDBusSignalHandler)my_new_int32_array_handler,
@@ -24129,7 +24129,7 @@ test_new_int32_array (void)
 
 			parent = nih_alloc (NULL, 0);
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewInt32Array",
 							(NihDBusSignalHandler)my_new_int32_array_handler,
@@ -24221,7 +24221,7 @@ test_new_str_array (void)
 
 			parent = nih_alloc (NULL, 0);
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewStrArray",
 							(NihDBusSignalHandler)my_new_str_array_handler,
@@ -24285,7 +24285,7 @@ test_new_str_array (void)
 
 			parent = nih_alloc (NULL, 0);
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewStrArray",
 							(NihDBusSignalHandler)my_new_str_array_handler,
@@ -24386,7 +24386,7 @@ test_new_int32_array_array (void)
 
 			parent = nih_alloc (NULL, 0);
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewInt32ArrayArray",
 							(NihDBusSignalHandler)my_new_int32_array_array_handler,
@@ -24480,7 +24480,7 @@ test_new_int32_array_array (void)
 
 			parent = nih_alloc (NULL, 0);
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewInt32ArrayArray",
 							(NihDBusSignalHandler)my_new_int32_array_array_handler,
@@ -24589,7 +24589,7 @@ test_new_struct_array (void)
 
 			struct_array[2] = NULL;
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewStructArray",
 							(NihDBusSignalHandler)my_new_struct_array_handler,
@@ -24699,7 +24699,7 @@ test_new_dict_entry_array (void)
 
 			dict_entry_array[2] = NULL;
 
-			assert (nih_dbus_proxy_connect (proxy, proxy,
+			assert (nih_dbus_proxy_connect (proxy,
 							&proxy_com_netsplit_Nih_Test,
 							"NewDictEntryArray",
 							(NihDBusSignalHandler)my_new_dict_entry_array_handler,

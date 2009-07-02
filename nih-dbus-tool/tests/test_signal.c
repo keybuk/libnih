@@ -2167,7 +2167,7 @@ test_proxy_function (void)
 						    "/com/netsplit/Nih",
 						    NULL, NULL);
 
-			proxied = nih_dbus_proxy_connect (NULL, proxy,
+			proxied = nih_dbus_proxy_connect (proxy,
 							  &my_interface,
 							  "Signal",
 							  (NihDBusSignalHandler)my_signal_handler,

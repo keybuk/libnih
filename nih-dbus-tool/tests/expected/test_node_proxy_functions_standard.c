@@ -1954,6 +1954,8 @@ my_com_netsplit_Nih_Test_get_all_notify (DBusPendingCall *   pending_call,
 	dbus_message_iter_recurse (&iter, &arrayiter);
 
 	while (dbus_message_iter_get_arg_type (&arrayiter) != DBUS_TYPE_INVALID) {
+		__label__ enomem;
+
 		if (dbus_message_iter_get_arg_type (&arrayiter) != DBUS_TYPE_DICT_ENTRY) {
 			nih_error_push_context ();
 			nih_error_raise (NIH_DBUS_INVALID_ARGS,
@@ -2016,7 +2018,7 @@ my_com_netsplit_Nih_Test_get_all_notify (DBusPendingCall *   pending_call,
 
 			colour = nih_strdup (properties, colour_dbus);
 			if (! colour) {
-				continue;
+				goto enomem;
 			}
 
 			dbus_message_iter_next (&variter);
@@ -2064,6 +2066,7 @@ my_com_netsplit_Nih_Test_get_all_notify (DBusPendingCall *   pending_call,
 		}
 
 		dbus_message_iter_next (&arrayiter);
+	enomem: __attribute__ ((unused));
 	}
 
 	dbus_message_iter_next (&iter);
@@ -2170,6 +2173,8 @@ my_test_get_all_sync (const void *       parent,
 	dbus_message_iter_recurse (&iter, &arrayiter);
 
 	while (dbus_message_iter_get_arg_type (&arrayiter) != DBUS_TYPE_INVALID) {
+		__label__ enomem;
+
 		if (dbus_message_iter_get_arg_type (&arrayiter) != DBUS_TYPE_DICT_ENTRY) {
 			nih_free (*properties);
 			*properties = NULL;
@@ -2216,7 +2221,7 @@ my_test_get_all_sync (const void *       parent,
 
 			colour = nih_strdup (*properties, colour_dbus);
 			if (! colour) {
-				continue;
+				goto enomem;
 			}
 
 			dbus_message_iter_next (&variter);
@@ -2256,6 +2261,7 @@ my_test_get_all_sync (const void *       parent,
 		}
 
 		dbus_message_iter_next (&arrayiter);
+	enomem: __attribute__ ((unused));
 	}
 
 	dbus_message_iter_next (&iter);

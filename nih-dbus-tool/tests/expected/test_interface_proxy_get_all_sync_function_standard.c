@@ -67,6 +67,8 @@ my_get_all_sync (const void *   parent,
 	dbus_message_iter_recurse (&iter, &arrayiter);
 
 	while (dbus_message_iter_get_arg_type (&arrayiter) != DBUS_TYPE_INVALID) {
+		__label__ enomem;
+
 		if (dbus_message_iter_get_arg_type (&arrayiter) != DBUS_TYPE_DICT_ENTRY) {
 			nih_free (*properties);
 			*properties = NULL;
@@ -113,7 +115,7 @@ my_get_all_sync (const void *   parent,
 
 			name = nih_strdup (*properties, name_dbus);
 			if (! name) {
-				continue;
+				goto enomem;
 			}
 
 			dbus_message_iter_next (&variter);
@@ -153,6 +155,7 @@ my_get_all_sync (const void *   parent,
 		}
 
 		dbus_message_iter_next (&arrayiter);
+	enomem: __attribute__ ((unused));
 	}
 
 	dbus_message_iter_next (&iter);

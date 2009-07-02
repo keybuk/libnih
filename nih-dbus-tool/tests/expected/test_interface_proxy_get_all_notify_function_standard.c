@@ -71,6 +71,8 @@ my_com_netsplit_Nih_Test_get_all_notify (DBusPendingCall *   pending_call,
 	dbus_message_iter_recurse (&iter, &arrayiter);
 
 	while (dbus_message_iter_get_arg_type (&arrayiter) != DBUS_TYPE_INVALID) {
+		__label__ enomem;
+
 		if (dbus_message_iter_get_arg_type (&arrayiter) != DBUS_TYPE_DICT_ENTRY) {
 			nih_error_push_context ();
 			nih_error_raise (NIH_DBUS_INVALID_ARGS,
@@ -133,7 +135,7 @@ my_com_netsplit_Nih_Test_get_all_notify (DBusPendingCall *   pending_call,
 
 			name = nih_strdup (properties, name_dbus);
 			if (! name) {
-				continue;
+				goto enomem;
 			}
 
 			dbus_message_iter_next (&variter);
@@ -181,6 +183,7 @@ my_com_netsplit_Nih_Test_get_all_notify (DBusPendingCall *   pending_call,
 		}
 
 		dbus_message_iter_next (&arrayiter);
+	enomem: __attribute__ ((unused));
 	}
 
 	dbus_message_iter_next (&iter);

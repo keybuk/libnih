@@ -1813,7 +1813,9 @@ interface_proxy_get_all_notify_function (const void *parent,
 				  "\n"
 				  "dbus_message_iter_recurse (&iter, &arrayiter);\n"
 				  "\n"
-				  "while (dbus_message_iter_get_arg_type (&arrayiter) != DBUS_TYPE_INVALID) {\n",
+				  "while (dbus_message_iter_get_arg_type (&arrayiter) != DBUS_TYPE_INVALID) {\n"
+				  "\t__label__ enomem;\n"
+				  "\n",
 				  structure->name))
 		return NULL;
 
@@ -1872,7 +1874,7 @@ interface_proxy_get_all_notify_function (const void *parent,
 	 * But in case of type error in the returned arguments, all we
 	 * can do is return an error.
 	 */
-	oom_error_code = nih_strdup (NULL, "continue;\n");
+	oom_error_code = nih_strdup (NULL, "goto enomem;\n");
 	if (! oom_error_code)
 		return NULL;
 
@@ -2017,6 +2019,7 @@ interface_proxy_get_all_notify_function (const void *parent,
 	 * making sure that there are no further arguments in the reply.
 	 */
 	if (! nih_strcat_sprintf (&demarshal_block, NULL,
+				  "enomem: __attribute__ ((unused));\n"
 				  "}\n"
 				  "\n"
 				  "dbus_message_iter_next (&iter);\n"
@@ -2434,7 +2437,9 @@ interface_proxy_get_all_sync_function (const void *parent,
 				  "\n"
 				  "dbus_message_iter_recurse (&iter, &arrayiter);\n"
 				  "\n"
-				  "while (dbus_message_iter_get_arg_type (&arrayiter) != DBUS_TYPE_INVALID) {\n",
+				  "while (dbus_message_iter_get_arg_type (&arrayiter) != DBUS_TYPE_INVALID) {\n"
+				  "\t__label__ enomem;\n"
+				  "\n",
 				  structure->name))
 		return NULL;
 
@@ -2481,7 +2486,7 @@ interface_proxy_get_all_sync_function (const void *parent,
 	 * But in case of type error in the returned arguments, all we
 	 * can do is return an error.
 	 */
-	oom_error_code = nih_strdup (NULL, "continue;\n");
+	oom_error_code = nih_strdup (NULL, "goto enomem;\n");
 	if (! oom_error_code)
 		return NULL;
 
@@ -2618,6 +2623,7 @@ interface_proxy_get_all_sync_function (const void *parent,
 	 * making sure that there are no further arguments in the reply.
 	 */
 	if (! nih_strcat_sprintf (&demarshal_block, NULL,
+				  "enomem: __attribute__ ((unused));\n"
 				  "}\n"
 				  "\n"
 				  "dbus_message_iter_next (&iter);\n"

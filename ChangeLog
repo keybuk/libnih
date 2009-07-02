@@ -1,3 +1,20 @@
+2009-07-02  Scott James Remnant  <scott@netsplit.com>
+	
+	* nih-dbus-tool/interface.c (interface_proxy_get_all_notify_function)
+	(interface_proxy_get_all_sync_function): We can't use continue to
+	repeat the loop, because there might be inner loops.  Use the
+	local label trick.
+	* nih-dbus-tool/tests/expected/test_interface_proxy_get_all_notify_function_standard.c,
+	* nih-dbus-tool/tests/expected/test_interface_proxy_get_all_notify_function_structure.c,
+	* nih-dbus-tool/tests/expected/test_interface_proxy_get_all_sync_function_standard.c,
+	* nih-dbus-tool/tests/expected/test_interface_proxy_get_all_sync_function_structure.c,
+	* nih-dbus-tool/tests/expected/test_node_proxy_functions_standard.c,
+	* nih-dbus-tool/tests/expected/test_node_proxy_functions_no_methods.c,
+	* nih-dbus-tool/tests/expected/test_node_proxy_functions_no_signals.c,
+	* nih-dbus-tool/tests/expected/test_node_proxy_functions_only_properties.c,
+	* nih-dbus-tool/tests/expected/test_output_proxy_standard.c: Update
+	expected output for test cases
+
 2009-07-01  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c (test_struct_to_str)

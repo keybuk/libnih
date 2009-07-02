@@ -165,6 +165,8 @@ my_test_poke (NihDBusProxy *      proxy,
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	/* Marshal a uint32_t onto the message */
@@ -311,6 +313,8 @@ my_test_poke_sync (const void *  parent,
 	if (! method_call)
 		nih_return_no_memory_error (-1);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	/* Marshal a uint32_t onto the message */
@@ -379,6 +383,8 @@ my_test_peek (NihDBusProxy *      proxy,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "com.netsplit.Nih.Test", "Peek");
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 
@@ -548,6 +554,8 @@ my_test_peek_sync (const void *  parent,
 	if (! method_call)
 		nih_return_no_memory_error (-1);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	/* Marshal a uint32_t onto the message */
@@ -636,6 +644,8 @@ my_test_is_valid_address (NihDBusProxy *            proxy,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "com.netsplit.Nih.Test", "IsValidAddress");
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 
@@ -774,6 +784,8 @@ my_test_is_valid_address_sync (const void *  parent,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "com.netsplit.Nih.Test", "IsValidAddress");
 	if (! method_call)
 		nih_return_no_memory_error (-1);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 
@@ -955,6 +967,8 @@ my_test_get_colour (NihDBusProxy *       proxy,
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	interface = "com.netsplit.Nih.Test";
@@ -1134,6 +1148,8 @@ my_test_get_colour_sync (const void *  parent,
 	if (! method_call)
 		nih_return_no_memory_error (-1);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	interface = "com.netsplit.Nih.Test";
@@ -1239,6 +1255,8 @@ my_test_set_colour (NihDBusProxy *       proxy,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "org.freedesktop.DBus.Properties", "Set");
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 
@@ -1396,6 +1414,8 @@ my_test_set_colour_sync (const void *  parent,
 	if (! method_call)
 		nih_return_no_memory_error (-1);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	interface = "com.netsplit.Nih.Test";
@@ -1481,6 +1501,8 @@ my_test_get_size (NihDBusProxy *      proxy,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "org.freedesktop.DBus.Properties", "Get");
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 
@@ -1652,6 +1674,8 @@ my_test_get_size_sync (const void *  parent,
 	if (! method_call)
 		nih_return_no_memory_error (-1);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	interface = "com.netsplit.Nih.Test";
@@ -1751,6 +1775,8 @@ my_test_set_touch (NihDBusProxy *      proxy,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "org.freedesktop.DBus.Properties", "Set");
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 
@@ -1907,6 +1933,8 @@ my_test_set_touch_sync (const void *  parent,
 	if (! method_call)
 		nih_return_no_memory_error (-1);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	interface = "com.netsplit.Nih.Test";
@@ -1991,6 +2019,8 @@ my_test_get_all (NihDBusProxy *      proxy,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "org.freedesktop.DBus.Properties", "GetAll");
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 
@@ -2275,6 +2305,8 @@ my_test_get_all_sync (const void *       parent,
 	if (! method_call)
 		nih_return_no_memory_error (-1);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	interface = "com.netsplit.Nih.Test";
@@ -2452,6 +2484,8 @@ my_foo_bing (NihDBusProxy *      proxy,
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	/* Handle a fire-and-forget message */
@@ -2583,6 +2617,8 @@ my_foo_bing_sync (const void *  parent,
 	if (! method_call)
 		nih_return_no_memory_error (-1);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	/* Send the message, and wait for the reply. */
@@ -2687,6 +2723,8 @@ my_foo_get_preferences (NihDBusProxy *           proxy,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "org.freedesktop.DBus.Properties", "Get");
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 
@@ -2934,6 +2972,8 @@ my_foo_get_preferences_sync (const void *       parent,
 	if (! method_call)
 		nih_return_no_memory_error (-1);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	interface = "com.netsplit.Nih.Foo";
@@ -3084,6 +3124,8 @@ my_foo_set_preferences (NihDBusProxy *           proxy,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "org.freedesktop.DBus.Properties", "Set");
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 
@@ -3270,6 +3312,8 @@ my_foo_set_preferences_sync (const void *            parent,
 	if (! method_call)
 		nih_return_no_memory_error (-1);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	interface = "com.netsplit.Nih.Foo";
@@ -3380,6 +3424,8 @@ my_foo_get_all (NihDBusProxy *      proxy,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "org.freedesktop.DBus.Properties", "GetAll");
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 
@@ -3703,6 +3749,8 @@ my_foo_get_all_sync (const void *      parent,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "org.freedesktop.DBus.Properties", "GetAll");
 	if (! method_call)
 		nih_return_no_memory_error (-1);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 

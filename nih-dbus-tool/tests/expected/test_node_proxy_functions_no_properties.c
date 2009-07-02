@@ -21,6 +21,8 @@ my_test_poke (NihDBusProxy *      proxy,
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	/* Marshal a uint32_t onto the message */
@@ -167,6 +169,8 @@ my_test_poke_sync (const void *  parent,
 	if (! method_call)
 		nih_return_no_memory_error (-1);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	/* Marshal a uint32_t onto the message */
@@ -235,6 +239,8 @@ my_test_peek (NihDBusProxy *      proxy,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "com.netsplit.Nih.Test", "Peek");
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 
@@ -404,6 +410,8 @@ my_test_peek_sync (const void *  parent,
 	if (! method_call)
 		nih_return_no_memory_error (-1);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	/* Marshal a uint32_t onto the message */
@@ -492,6 +500,8 @@ my_test_is_valid_address (NihDBusProxy *            proxy,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "com.netsplit.Nih.Test", "IsValidAddress");
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 
@@ -630,6 +640,8 @@ my_test_is_valid_address_sync (const void *  parent,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "com.netsplit.Nih.Test", "IsValidAddress");
 	if (! method_call)
 		nih_return_no_memory_error (-1);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 
@@ -809,6 +821,8 @@ my_foo_bing (NihDBusProxy *      proxy,
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	/* Handle a fire-and-forget message */
@@ -939,6 +953,8 @@ my_foo_bing_sync (const void *  parent,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "com.netsplit.Nih.Foo", "Bing");
 	if (! method_call)
 		nih_return_no_memory_error (-1);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 

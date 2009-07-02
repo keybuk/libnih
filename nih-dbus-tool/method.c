@@ -1437,6 +1437,8 @@ method_proxy_function (const void *parent,
 				  "if (! method_call)\n"
 				  "\tnih_return_no_memory_error (NULL);\n"
 				  "\n"
+				  "dbus_message_set_auto_start (method_call, proxy->auto_start);\n"
+				  "\n"
 				  "dbus_message_iter_init_append (method_call, &iter);\n"
 				  "\n",
 				  interface->name, method->name))
@@ -2243,6 +2245,8 @@ method_proxy_sync_function (const void *parent,
 				  "method_call = dbus_message_new_method_call (proxy->name, proxy->path, \"%s\", \"%s\");\n"
 				  "if (! method_call)\n"
 				  "\tnih_return_no_memory_error (-1);\n"
+				  "\n"
+				  "dbus_message_set_auto_start (method_call, proxy->auto_start);\n"
 				  "\n"
 				  "dbus_message_iter_init_append (method_call, &iter);\n"
 				  "\n",

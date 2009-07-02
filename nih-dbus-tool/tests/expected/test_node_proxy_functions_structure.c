@@ -23,6 +23,8 @@ my_test_search (NihDBusProxy *          proxy,
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	/* Marshal a structure onto the message */
@@ -294,6 +296,8 @@ my_test_search_sync (const void *            parent,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "com.netsplit.Nih.Test", "Search");
 	if (! method_call)
 		nih_return_no_memory_error (-1);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 
@@ -586,6 +590,8 @@ my_test_get_last_search (NihDBusProxy *           proxy,
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	interface = "com.netsplit.Nih.Test";
@@ -832,6 +838,8 @@ my_test_get_last_search_sync (const void *       parent,
 	if (! method_call)
 		nih_return_no_memory_error (-1);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	interface = "com.netsplit.Nih.Test";
@@ -983,6 +991,8 @@ my_test_set_annotation (NihDBusProxy *           proxy,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "org.freedesktop.DBus.Properties", "Set");
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 
@@ -1169,6 +1179,8 @@ my_test_set_annotation_sync (const void *            parent,
 	if (! method_call)
 		nih_return_no_memory_error (-1);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	interface = "com.netsplit.Nih.Test";
@@ -1280,6 +1292,8 @@ my_test_get_preferences (NihDBusProxy *            proxy,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "org.freedesktop.DBus.Properties", "Get");
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 
@@ -1527,6 +1541,8 @@ my_test_get_preferences_sync (const void *        parent,
 	if (! method_call)
 		nih_return_no_memory_error (-1);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	interface = "com.netsplit.Nih.Test";
@@ -1677,6 +1693,8 @@ my_test_set_preferences (NihDBusProxy *            proxy,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "org.freedesktop.DBus.Properties", "Set");
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 
@@ -1863,6 +1881,8 @@ my_test_set_preferences_sync (const void *             parent,
 	if (! method_call)
 		nih_return_no_memory_error (-1);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	interface = "com.netsplit.Nih.Test";
@@ -1973,6 +1993,8 @@ my_test_get_all (NihDBusProxy *      proxy,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "org.freedesktop.DBus.Properties", "GetAll");
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 
@@ -2393,6 +2415,8 @@ my_test_get_all_sync (const void *       parent,
 	method_call = dbus_message_new_method_call (proxy->name, proxy->path, "org.freedesktop.DBus.Properties", "GetAll");
 	if (! method_call)
 		nih_return_no_memory_error (-1);
+
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
 
 	dbus_message_iter_init_append (method_call, &iter);
 

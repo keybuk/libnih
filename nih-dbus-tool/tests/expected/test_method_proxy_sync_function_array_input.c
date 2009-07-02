@@ -18,6 +18,8 @@ my_method_sync (const void *   parent,
 	if (! method_call)
 		nih_return_no_memory_error (-1);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	/* Marshal an array onto the message */

@@ -18,6 +18,8 @@ my_test_method (NihDBusProxy *      proxy,
 	if (! method_call)
 		nih_return_no_memory_error (NULL);
 
+	dbus_message_set_auto_start (method_call, proxy->auto_start);
+
 	dbus_message_iter_init_append (method_call, &iter);
 
 	/* Handle a fire-and-forget message */

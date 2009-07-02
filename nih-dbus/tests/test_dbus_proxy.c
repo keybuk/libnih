@@ -73,7 +73,7 @@ test_new (void)
 	 * a peer-to-peer connection, and have a proxy object returned with
 	 * the right detailed filled in.
 	 */
-	TEST_FEATURE ("without name or handler");
+	TEST_FEATURE ("with peer-to-peer object");
 	TEST_ALLOC_FAIL {
 		proxy = nih_dbus_proxy_new (NULL, conn, NULL,
 					    "/com/netsplit/Nih",
@@ -107,11 +107,12 @@ test_new (void)
 	}
 
 
-	/* Check that we can create a simple proxy for a remote object on
-	 * a managed bus connection, and have a proxy object returned with
-	 * the right detailed filled in.
+	/* Check that we can pass a well-known name which looks up
+	 * whether the name is on the bus, and sets up a match for it.
+	 * If the name does not exist on the bus, NULL should be set for
+	 * the owner.
 	 */
-	TEST_FEATURE ("without handler");
+	TEST_FEATURE ("with unconnected well-known name");
 	TEST_ALLOC_FAIL {
 		proxy = nih_dbus_proxy_new (NULL, conn, "com.netsplit.Nih",
 					    "/com/netsplit/Nih",
@@ -142,16 +143,116 @@ test_new (void)
 		TEST_EQ_P (proxy->lost_handler, NULL);
 		TEST_EQ_P (proxy->data, NULL);
 
-		nih_free (proxy);
+		/* Constructs the rule when we free */
+		TEST_ALLOC_SAFE {
+			nih_free (proxy);
+		}
 	}
 
 
-	/* Check that we can pass a lost handler function which looks up
-	 * whether the name is on the bus, and sets up a match for it.
-	 * If the name does not exist on the bus, NULL should be set for
-	 * the owner.
+	/* Check that we can pass a well-known name when the name
+	 * does exist on the bus, and that the unique name of the owner
+	 * is stored in the owner member.
 	 */
-	TEST_FEATURE ("with lost handler and unconnected name");
+	TEST_FEATURE ("with connected well-known name");
+	TEST_ALLOC_FAIL {
+		TEST_DBUS_OPEN (other_conn);
+
+		assert (dbus_bus_request_name (other_conn, "com.netsplit.Nih",
+					       0, NULL)
+			== DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER);
+
+		proxy = nih_dbus_proxy_new (NULL, conn, "com.netsplit.Nih",
+					    "/com/netsplit/Nih",
+					    NULL, NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (proxy, NULL);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+
+			TEST_DBUS_CLOSE (other_conn);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (proxy, sizeof (NihDBusProxy));
+
+		TEST_EQ_P (proxy->connection, conn);
+
+		TEST_ALLOC_PARENT (proxy->name, proxy);
+		TEST_EQ_STR (proxy->name, "com.netsplit.Nih");
+
+		TEST_ALLOC_PARENT (proxy->owner, proxy);
+		TEST_EQ_STR (proxy->owner, dbus_bus_get_unique_name (other_conn));
+
+		TEST_ALLOC_PARENT (proxy->path, proxy);
+		TEST_EQ_STR (proxy->path, "/com/netsplit/Nih");
+
+		TEST_EQ_P (proxy->lost_handler, NULL);
+		TEST_EQ_P (proxy->data, NULL);
+
+		/* Constructs the rule when we free */
+		TEST_ALLOC_SAFE {
+			nih_free (proxy);
+		}
+
+		TEST_DBUS_CLOSE (other_conn);
+	}
+
+
+	/* Check that we can pass a unique name, and that it is copied
+	 * into the owner member.
+	 */
+	TEST_FEATURE ("with unique name");
+	TEST_ALLOC_FAIL {
+		TEST_DBUS_OPEN (other_conn);
+
+		proxy = nih_dbus_proxy_new (NULL, conn,
+					    dbus_bus_get_unique_name (other_conn),
+					    "/com/netsplit/Nih",
+					    NULL, NULL);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (proxy, NULL);
+
+			err = nih_error_get ();
+			TEST_EQ (err->number, ENOMEM);
+			nih_free (err);
+			TEST_DBUS_CLOSE (other_conn);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (proxy, sizeof (NihDBusProxy));
+
+		TEST_EQ_P (proxy->connection, conn);
+
+		TEST_ALLOC_PARENT (proxy->name, proxy);
+		TEST_EQ_STR (proxy->name, dbus_bus_get_unique_name (other_conn));
+
+		TEST_ALLOC_PARENT (proxy->owner, proxy);
+		TEST_EQ_STR (proxy->owner, dbus_bus_get_unique_name (other_conn));
+
+		TEST_ALLOC_PARENT (proxy->path, proxy);
+		TEST_EQ_STR (proxy->path, "/com/netsplit/Nih");
+
+		TEST_EQ_P (proxy->lost_handler, NULL);
+		TEST_EQ_P (proxy->data, NULL);
+
+		/* Constructs the rule when we free */
+		TEST_ALLOC_SAFE {
+			nih_free (proxy);
+		}
+
+		TEST_DBUS_CLOSE (other_conn);
+	}
+
+
+	/* Check that we can pass a lost handler function and data pointer,
+	 * which get stored in the structure for later use.
+	 */
+	TEST_FEATURE ("with lost_handler");
 	TEST_ALLOC_FAIL {
 		proxy = nih_dbus_proxy_new (NULL, conn, "com.netsplit.Nih",
 					    "/com/netsplit/Nih",
@@ -186,58 +287,6 @@ test_new (void)
 		TEST_ALLOC_SAFE {
 			nih_free (proxy);
 		}
-	}
-
-
-	/* Check that we can pass a lost handler function when the name
-	 * does exist on the bus, and that the unique name of the owner
-	 * is stored in the owner member.
-	 */
-	TEST_FEATURE ("with lost handler and connected name");
-	TEST_ALLOC_FAIL {
-		TEST_DBUS_OPEN (other_conn);
-
-		assert (dbus_bus_request_name (other_conn, "com.netsplit.Nih",
-					       0, NULL)
-			== DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER);
-
-		proxy = nih_dbus_proxy_new (NULL, conn, "com.netsplit.Nih",
-					    "/com/netsplit/Nih",
-					    my_lost_handler, conn);
-
-		if (test_alloc_failed) {
-			TEST_EQ_P (proxy, NULL);
-
-			err = nih_error_get ();
-			TEST_EQ (err->number, ENOMEM);
-			nih_free (err);
-
-			TEST_DBUS_CLOSE (other_conn);
-			continue;
-		}
-
-		TEST_ALLOC_SIZE (proxy, sizeof (NihDBusProxy));
-
-		TEST_EQ_P (proxy->connection, conn);
-
-		TEST_ALLOC_PARENT (proxy->name, proxy);
-		TEST_EQ_STR (proxy->name, "com.netsplit.Nih");
-
-		TEST_ALLOC_PARENT (proxy->owner, proxy);
-		TEST_EQ_STR (proxy->owner, dbus_bus_get_unique_name (other_conn));
-
-		TEST_ALLOC_PARENT (proxy->path, proxy);
-		TEST_EQ_STR (proxy->path, "/com/netsplit/Nih");
-
-		TEST_EQ_P (proxy->lost_handler, my_lost_handler);
-		TEST_EQ_P (proxy->data, conn);
-
-		/* Constructs the rule when we free */
-		TEST_ALLOC_SAFE {
-			nih_free (proxy);
-		}
-
-		TEST_DBUS_CLOSE (other_conn);
 	}
 
 
@@ -496,6 +545,48 @@ test_name_owner_changed (void)
 		TEST_ALLOC_SAFE {
 			proxy = nih_dbus_proxy_new (NULL, conn,
 						    "com.netsplit.Nih",
+						    "/com/netsplit/Nih",
+						    my_lost_handler, conn);
+		}
+
+		TEST_ALLOC_PARENT (proxy->owner, proxy);
+		TEST_EQ_STR (proxy->owner, dbus_bus_get_unique_name (first_conn));
+
+		last_owner = proxy->owner;
+		TEST_FREE_TAG (last_owner);
+
+		TEST_DBUS_CLOSE (first_conn);
+
+		TEST_DBUS_DISPATCH (conn);
+
+		TEST_EQ_P (proxy->owner, NULL);
+		TEST_FREE (last_owner);
+
+		TEST_TRUE (my_lost_handler_called);
+
+		/* Constructs the rule when we free */
+		TEST_ALLOC_SAFE {
+			nih_free (proxy);
+		}
+
+		TEST_DBUS_CLOSE (conn);
+	}
+
+
+	/* Check that when a unique name leaves the bus, the lost handler
+	 * is still called and the owner field rest to NULL.
+	 */
+	TEST_FEATURE ("with loss of unique name");
+	TEST_ALLOC_FAIL {
+		TEST_DBUS_OPEN (conn);
+
+		my_lost_handler_called = FALSE;
+
+		TEST_DBUS_OPEN (first_conn);
+
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, conn,
+						    dbus_bus_get_unique_name (first_conn),
 						    "/com/netsplit/Nih",
 						    my_lost_handler, conn);
 		}

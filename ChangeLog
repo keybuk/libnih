@@ -1,5 +1,16 @@
 2009-07-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_proxy.c (nih_dbus_proxy_new): Track the name whenever
+	one is given, not just when we have a lost handler.
+	(nih_dbus_proxy_name_track): lost_handler is not compulsory
+	(nih_dbus_proxy_name_owner_changed): Make the lost handler optional
+	(nih_dbus_proxy_destroy): name tracking must be cleaned up when
+	there's a name, not a lost handler
+	* nih-dbus/tests/test_dbus_proxy.c (test_name_owner_changed): Add
+	tests for both well-known and unique names with both being tracked.
+	(test_name_owner_changed): Add a test case for tracking a unique
+	name.
+
 	* nih-dbus/dbus_proxy.h (NihDBusProxySignal): Go back to just
 	holding a reference to the proxy in the connected signal, we need
 	its name owner tracking.

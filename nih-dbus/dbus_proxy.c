@@ -79,9 +79,10 @@ static DBusHandlerResult nih_dbus_proxy_name_owner_changed (DBusConnection *conn
  * remote object or even cease permanently when the bus connection is
  * disconnected.
  *
- * Passing a @lost_handler function means that @name will be tracked on
- * the bus.  Should the owner of @name change @lost_handler will be called
- * to allow clean-up of the proxy.
+ * @name will be tracked on the bus, with the current owner's unique name
+ * being available in the returned structure's owner member.  Should the
+ * name be lost from the bus, the optional @lost_handler function will be
+ * called to allow clean-up of the proxy.
 
  * If @parent is not NULL, it should be a pointer to another object which
  * will be used as a parent for the returned proxy.  When all parents
@@ -131,7 +132,7 @@ nih_dbus_proxy_new (const void *       parent,
 	proxy->lost_handler = lost_handler;
 	proxy->data = data;
 
-	if (proxy->lost_handler) {
+	if (proxy->name) {
 		if (nih_dbus_proxy_name_track (proxy) < 0) {
 			nih_free (proxy);
 			return NULL;
@@ -162,9 +163,7 @@ nih_dbus_proxy_destroy (NihDBusProxy *proxy)
 
 	nih_assert (proxy != NULL);
 
-	if (proxy->lost_handler) {
-		nih_assert (proxy->name != NULL);
-
+	if (proxy->name) {
 		rule = NIH_MUST (nih_dbus_proxy_name_rule (NULL, proxy));
 
 		dbus_error_init (&dbus_error);
@@ -207,7 +206,6 @@ nih_dbus_proxy_name_track (NihDBusProxy *proxy)
 
 	nih_assert (proxy != NULL);
 	nih_assert (proxy->name != NULL);
-	nih_assert (proxy->lost_handler != NULL);
 
 	/* Add the filter function that handles the NameOwnerChanged
 	 * signal.  We need to do this first so that we can handle anything
@@ -409,7 +407,6 @@ nih_dbus_proxy_name_owner_changed (DBusConnection *connection,
 	nih_assert (message != NULL);
 	nih_assert (proxy->connection == connection);
 	nih_assert (proxy->name != NULL);
-	nih_assert (proxy->lost_handler != NULL);
 
 	if (! dbus_message_is_signal (message, DBUS_INTERFACE_DBUS,
 				      "NameOwnerChanged"))
@@ -454,9 +451,11 @@ nih_dbus_proxy_name_owner_changed (DBusConnection *connection,
 			nih_unref (proxy->owner, proxy);
 		proxy->owner = NULL;
 
-		nih_error_push_context ();
-		proxy->lost_handler (proxy->data, proxy);
-		nih_error_pop_context ();
+		if (proxy->lost_handler) {
+			nih_error_push_context ();
+			proxy->lost_handler (proxy->data, proxy);
+			nih_error_pop_context ();
+		}
 	}
 
 	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;

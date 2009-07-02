@@ -100,6 +100,8 @@ test_new (void)
 		TEST_ALLOC_PARENT (proxy->path, proxy);
 		TEST_EQ_STR (proxy->path, "/com/netsplit/Nih");
 
+		TEST_TRUE (proxy->auto_start);
+
 		TEST_EQ_P (proxy->lost_handler, NULL);
 		TEST_EQ_P (proxy->data, NULL);
 
@@ -139,6 +141,8 @@ test_new (void)
 
 		TEST_ALLOC_PARENT (proxy->path, proxy);
 		TEST_EQ_STR (proxy->path, "/com/netsplit/Nih");
+
+		TEST_TRUE (proxy->auto_start);
 
 		TEST_EQ_P (proxy->lost_handler, NULL);
 		TEST_EQ_P (proxy->data, NULL);
@@ -190,6 +194,8 @@ test_new (void)
 		TEST_ALLOC_PARENT (proxy->path, proxy);
 		TEST_EQ_STR (proxy->path, "/com/netsplit/Nih");
 
+		TEST_TRUE (proxy->auto_start);
+
 		TEST_EQ_P (proxy->lost_handler, NULL);
 		TEST_EQ_P (proxy->data, NULL);
 
@@ -237,6 +243,8 @@ test_new (void)
 		TEST_ALLOC_PARENT (proxy->path, proxy);
 		TEST_EQ_STR (proxy->path, "/com/netsplit/Nih");
 
+		TEST_TRUE (proxy->auto_start);
+
 		TEST_EQ_P (proxy->lost_handler, NULL);
 		TEST_EQ_P (proxy->data, NULL);
 
@@ -279,6 +287,8 @@ test_new (void)
 
 		TEST_ALLOC_PARENT (proxy->path, proxy);
 		TEST_EQ_STR (proxy->path, "/com/netsplit/Nih");
+
+		TEST_TRUE (proxy->auto_start);
 
 		TEST_EQ_P (proxy->lost_handler, my_lost_handler);
 		TEST_EQ_P (proxy->data, conn);

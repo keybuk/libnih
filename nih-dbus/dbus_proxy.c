@@ -129,6 +129,8 @@ nih_dbus_proxy_new (const void *       parent,
 		nih_return_no_memory_error (NULL);
 	}
 
+	proxy->auto_start = TRUE;
+
 	proxy->lost_handler = lost_handler;
 	proxy->data = data;
 

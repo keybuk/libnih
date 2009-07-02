@@ -79,6 +79,7 @@ typedef void (*NihDBusSignalHandler) (void *data, NihDBusMessage *message,
  * @name: D-Bus name of object owner,
  * @owner: actual unique D-Bus owner,
  * @path: path of object,
+ * @auto_start: whether method calls should auto-start the service,
  * @lost_handler: handler to call when the proxied object is lost,
  * @data: data to pass to handler functions.
  *
@@ -88,6 +89,9 @@ typedef void (*NihDBusSignalHandler) (void *data, NihDBusMessage *message,
  * the bus name (either well known or unique) and the path.
  *
  * @name may be NULL for peer-to-peer D-Bus connections.
+ *
+ * @auto_start is an advisory flag for method calls only, it is used by
+ * nih-dbus-tool generated method calls.
  *
  * Proxies are not generally bound to the life-time of the connection or
  * the remote object, thus there may be periods when functions will fail
@@ -104,6 +108,7 @@ struct nih_dbus_proxy {
 	char *             name;
 	char *             owner;
 	char *             path;
+	int                auto_start;
 
 	NihDBusLostHandler lost_handler;
 	void *             data;

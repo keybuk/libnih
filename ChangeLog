@@ -1,5 +1,10 @@
 2009-07-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus/dbus_proxy.h (NihDBusProxy): Add an auto_start member
+	* nih-dbus/dbus_proxy.c (nih_dbus_proxy_new): Initialise auto_start
+	member to TRUE (the D-Bus default).
+	* nih-dbus/tests/test_dbus_proxy.c (test_new): Add checks for
+	auto-start being TRUE.
 	* nih-dbus-tool/signal.c (signal_proxy_function): Look up connection
 	and path through the proxy object; if the proxy object has a name,
 	compare the signal sender against the OWNER of that name, not the

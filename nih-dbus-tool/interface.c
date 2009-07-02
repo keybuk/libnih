@@ -306,9 +306,6 @@ interface_end_tag (XML_Parser  xmlp,
 		interface->symbol = symbol_from_name (interface, trail);
 		if (! interface->symbol)
 			nih_return_no_memory_error (-1);
-	} else if (! strlen (interface->symbol)) {
-		nih_unref (interface->symbol, interface);
-		interface->symbol = NULL;
 	}
 
 	nih_list_remove (&entry->entry);
@@ -376,7 +373,7 @@ interface_annotation (Interface * interface,
 		}
 
 	} else if (! strcmp (name, "com.netsplit.Nih.Symbol")) {
-		if ((strlen (value) == 0) || symbol_valid (value)) {
+		if (symbol_valid (value)) {
 			if (interface->symbol)
 				nih_unref (interface->symbol, interface);
 

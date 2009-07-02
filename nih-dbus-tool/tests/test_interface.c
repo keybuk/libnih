@@ -501,7 +501,6 @@ test_end_tag (void)
 	Interface *  other = NULL;
 	int          ret;
 	NihError *   err;
-	char *       symbol;
 
 	TEST_FUNCTION ("interface_end_tag");
 	context.parent = NULL;
@@ -612,61 +611,6 @@ test_end_tag (void)
 
 		TEST_EQ_STR (interface->symbol, "foo");
 		TEST_ALLOC_PARENT (interface->symbol, interface);
-
-		nih_free (parent);
-	}
-
-
-	/* Check that the symbol may be set to the empty string, in which
-	 * case it's set to NULL after the call to this function.
-	 */
-	TEST_FEATURE ("with empty string for symbol");
-	TEST_ALLOC_FAIL {
-		TEST_ALLOC_SAFE {
-			node = node_new (NULL, "/com/netsplit/Nih/Test");
-			parent = parse_stack_push (NULL, &context.stack,
-						   PARSE_NODE, node);
-
-			interface = interface_new (NULL, "com.netsplit.Nih.Test");
-			interface->symbol = nih_strdup (interface, "");
-
-			entry = parse_stack_push (NULL, &context.stack,
-						  PARSE_INTERFACE, interface);
-		}
-
-		symbol = interface->symbol;
-		TEST_FREE_TAG (symbol);
-
-		TEST_FREE_TAG (entry);
-
-		ret = interface_end_tag (xmlp, "interface");
-
-		if (test_alloc_failed) {
-			TEST_LT (ret, 0);
-
-			TEST_NOT_FREE (symbol);
-			TEST_NOT_FREE (entry);
-			TEST_LIST_EMPTY (&node->interfaces);
-
-			err = nih_error_get ();
-			TEST_EQ (err->number, ENOMEM);
-			nih_free (err);
-
-			nih_free (entry);
-			nih_free (parent);
-			continue;
-		}
-
-		TEST_EQ (ret, 0);
-
-		TEST_FREE (entry);
-		TEST_ALLOC_PARENT (interface, node);
-
-		TEST_LIST_NOT_EMPTY (&node->interfaces);
-		TEST_EQ_P (node->interfaces.next, &interface->entry);
-
-		TEST_FREE (symbol);
-		TEST_EQ_P (interface->symbol, NULL);
 
 		nih_free (parent);
 	}
@@ -861,39 +805,6 @@ test_annotation (void)
 		TEST_FREE (symbol);
 
 		TEST_EQ_STR (interface->symbol, "foo");
-		TEST_ALLOC_PARENT (interface->symbol, interface);
-
-		nih_free (interface);
-	}
-
-
-	/* Check that an annotation to request no symbol for the interface
-	 * is handled.
-	 */
-	TEST_FEATURE ("with empty symbol annotation");
-	TEST_ALLOC_FAIL {
-		TEST_ALLOC_SAFE {
-			interface = interface_new (NULL, "com.netsplit.Nih.Test");
-		}
-
-		ret = interface_annotation (interface,
-					    "com.netsplit.Nih.Symbol",
-					    "");
-
-		if (test_alloc_failed) {
-			TEST_LT (ret, 0);
-
-			err = nih_error_get ();
-			TEST_EQ (err->number, ENOMEM);
-			nih_free (err);
-
-			nih_free (interface);
-			continue;
-		}
-
-		TEST_EQ (ret, 0);
-
-		TEST_EQ_STR (interface->symbol, "");
 		TEST_ALLOC_PARENT (interface->symbol, interface);
 
 		nih_free (interface);

@@ -1,5 +1,13 @@
 2009-07-02  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/interface.c (interface_annotation): Don't allow
+	the symbol annotation to be empty again.
+	(interface_end_tag): Which means that the symbol can never be
+	empty when we get to here.
+	* nih-dbus-tool/tests/test_interface.c (test_annotation): Drop the
+	test case for the empty annotation.
+	(test_end_tag): And drop the empty string test case.
+
 	* nih-dbus/tests/test_dbus_object.c (test_object_property_get)
 	(test_object_property_set): We actually want "Access Denied" returned
 	instead of "No Such Method".

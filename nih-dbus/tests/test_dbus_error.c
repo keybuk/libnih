@@ -33,8 +33,8 @@
 void
 test_error_raise (void)
 {
-	NihError *    error;
-	NihDBusError *err;
+	NihError *    err;
+	NihDBusError *dbus_err;
 
 	/* Make sure that an NIH_DBUS_ERROR is raised with the name and
 	 * message we give.
@@ -42,26 +42,26 @@ test_error_raise (void)
 	TEST_FUNCTION ("nih_dbus_error_raise");
 	TEST_ALLOC_FAIL {
 		nih_dbus_error_raise ("foo", "bar");
-		error = nih_error_get ();
+		err = nih_error_get ();
 
-		TEST_ALLOC_SIZE (error, sizeof (NihDBusError));
-		TEST_EQ (error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
 
-		err = (NihDBusError *)error;
-		TEST_EQ_STR (err->name, "foo");
-		TEST_ALLOC_PARENT (err->name, err);
-		TEST_EQ_STR (err->error.message, "bar");
-		TEST_ALLOC_PARENT (err->error.message, err);
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "foo");
+		TEST_ALLOC_PARENT (dbus_err->name, dbus_err);
+		TEST_EQ_STR (dbus_err->message, "bar");
+		TEST_ALLOC_PARENT (dbus_err->message, dbus_err);
 
-		nih_free (error);
+		nih_free (dbus_err);
 	}
 }
 
 void
 test_error_raise_printf (void)
 {
-	NihError *    error;
-	NihDBusError *err;
+	NihError *    err;
+	NihDBusError *dbus_err;
 
 	/* Make sure that an NIH_DBUS_ERROR is raised with the name and
 	 * formatted message we give.
@@ -70,18 +70,18 @@ test_error_raise_printf (void)
 	TEST_ALLOC_FAIL {
 		nih_dbus_error_raise_printf ("foo", "hello %d this is a %s",
 					     123, "test");
-		error = nih_error_get ();
+		err = nih_error_get ();
 
-		TEST_ALLOC_SIZE (error, sizeof (NihDBusError));
-		TEST_EQ (error->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
 
-		err = (NihDBusError *)error;
-		TEST_EQ_STR (err->name, "foo");
-		TEST_ALLOC_PARENT (err->name, err);
-		TEST_EQ_STR (err->error.message, "hello 123 this is a test");
-		TEST_ALLOC_PARENT (err->error.message, err);
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, "foo");
+		TEST_ALLOC_PARENT (dbus_err->name, dbus_err);
+		TEST_EQ_STR (dbus_err->message, "hello 123 this is a test");
+		TEST_ALLOC_PARENT (dbus_err->message, dbus_err);
 
-		nih_free (error);
+		nih_free (dbus_err);
 	}
 }
 

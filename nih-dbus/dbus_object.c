@@ -612,7 +612,7 @@ nih_dbus_object_property_get (DBusConnection *connection,
 						reply = NIH_MUST (dbus_message_new_error (
 									  message,
 									  dbus_err->name,
-									  err->message));
+									  dbus_err->message));
 						nih_free (err);
 						nih_error_pop_context ();
 					} else {
@@ -803,7 +803,7 @@ nih_dbus_object_property_get_all (DBusConnection *connection,
 						reply = NIH_MUST (dbus_message_new_error (
 									  message,
 									  dbus_err->name,
-									  err->message));
+									  dbus_err->message));
 						nih_free (err);
 						nih_error_pop_context ();
 					} else {
@@ -947,7 +947,7 @@ nih_dbus_object_property_set (DBusConnection *connection,
 						reply = NIH_MUST (dbus_message_new_error (
 									  message,
 									  dbus_err->name,
-									  err->message));
+									  dbus_err->message));
 						nih_free (err);
 						nih_error_pop_context ();
 					} else {

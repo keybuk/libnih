@@ -70,7 +70,6 @@
 
 /**
  * NihDBusError:
- * @error: ordinary NihError,
  * @name: D-Bus name.
  *
  * This structure builds on NihError to include an additional @name field
@@ -80,7 +79,7 @@
  * actually this structure and can be cast to get the additional fields.
  **/
 typedef struct nih_dbus_error {
-	NihError error;
+	NIH_ERROR_MEMBERS
 	char *   name;
 } NihDBusError;
 

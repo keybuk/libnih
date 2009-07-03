@@ -87,15 +87,21 @@
  *
  * You may also use this structure as the header for more complicated error
  * objects, in which case do not worry about setting @filename, @line or
- * @function since these are set when you call nih_error_raise_error().
+ * @function since these are set when you call nih_error_raise_error(); the
+ * correct way to do this is to place the macro NIH_ERROR_MEMBERS at the
+ * front of your structure, rather than an NihError named member - this
+ * makes code that uses your custom error a little easier.
  **/
 typedef struct nih_error {
-	const char *filename;
-	int         line;
-	const char *function;
-
-	int         number;
+#define NIH_ERROR_MEMBERS			\
+	const char *filename;			\
+	int         line;			\
+	const char *function;			\
+						\
+	int         number;			\
 	const char *message;
+
+	NIH_ERROR_MEMBERS
 } NihError;
 
 

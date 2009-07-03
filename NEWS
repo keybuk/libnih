@@ -13,6 +13,13 @@
 	  in tests/test_foo will be TRUE if the contents of the C string
 	  "code" match the contents of the file tests/expected/foo.c
 
+	* NihError may now be directly embedded into other structures with
+	  the NIH_ERROR_MEMBERS macro.
+
+	* NihDBusError now directly embeds the members of NihError, there
+	  is no longer an "error" member, instead you can directly access
+	  "number" and "message" members.
+
 	* NihDBusProxy has gained an auto_start member, TRUE by default.
 	  If you do not want method calls to automatically start a service,
 	  you may set this to FALSE after creating the proxy.  nih-dbus-tool

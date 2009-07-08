@@ -612,7 +612,7 @@ nih_dir_walk_scan (const char    *path,
 		subpath = NIH_MUST (nih_sprintf (NULL, "%s/%s",
 						 path, ent->d_name));
 
-		if (filter && filter (data, subpath, S_ISDIR (ent->d_type)))
+		if (filter && filter (data, subpath, ent->d_type == DT_DIR))
 			continue;
 
 		NIH_MUST (nih_str_array_addp (&paths, NULL, &npaths, subpath));

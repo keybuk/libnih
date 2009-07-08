@@ -31,14 +31,15 @@
 /**
  * NihFileFilter:
  * @data: data pointer,
- * @path: path to file.
+ * @path: path to file,
+ * @is_dir: TRUE if @path is a directory.
  *
  * A file filter is a function that can be called to determine whether
- * a particular path should be ignored because of its filename,
+ * a particular path should be ignored because of its filename.
  *
  * Returns: TRUE if the path should be ignored, FALSE otherwise.
  **/
-typedef int (*NihFileFilter) (void *data, const char *path);
+typedef int (*NihFileFilter) (void *data, const char *path, int is_dir);
 
 /**
  * NihFileVisitor:

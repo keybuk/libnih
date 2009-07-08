@@ -502,7 +502,8 @@ nih_watch_handle (NihWatch       *watch,
 	path = NIH_MUST (nih_sprintf (NULL, "%s/%s", handle->path, name));
 
 	/* Check the filter */
-	if (watch->filter && watch->filter (watch->data, path))
+	if (watch->filter && watch->filter (watch->data, path,
+					    events & IN_ISDIR))
 		return;
 
 	/* Look to see whether we have a delayed create handler for this

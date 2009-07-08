@@ -42,7 +42,8 @@
 
 static int
 my_filter (void       *data,
-	   const char *path)
+	   const char *path,
+	   int         is_dir)
 {
 	char *slash;
 

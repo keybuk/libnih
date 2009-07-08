@@ -13,6 +13,10 @@
 	  in tests/test_foo will be TRUE if the contents of the C string
 	  "code" match the contents of the file tests/expected/foo.c
 
+	* NihFileFilter (the function type passed to nih_dir_walk and
+	  nih_watch_new) now has an extra is_dir argument, this is set
+	  without calling stat()
+
 	* NihError may now be directly embedded into other structures with
 	  the NIH_ERROR_MEMBERS macro.
 

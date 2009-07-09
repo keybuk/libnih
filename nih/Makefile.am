@@ -42,6 +42,8 @@ libnih_la_LDFLAGS += @VERSION_SCRIPT_ARG@=$(srcdir)/libnih.ver
 endif
 endif
 
+libnih_la_LIBADD = -lrt
+
 
 EXTRA_DIST = libnih.ver libnih.supp
 

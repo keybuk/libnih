@@ -17,6 +17,11 @@
 	  nih_watch_new) now has an extra is_dir argument, this is set
 	  without calling stat()
 
+	* NihTimer now uses a monotonic clock, so is unaffected by changes
+	  in the system clock; this means that you'll need to use
+	  clock_gettime (CLOCK_MONOTONIC) when manually adjusting the due
+	  time rather than time ().  (Bug: #389589)
+
 	* NihError may now be directly embedded into other structures with
 	  the NIH_ERROR_MEMBERS macro.
 

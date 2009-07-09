@@ -91,7 +91,8 @@ nih_timer_add_timeout (const void *parent,
 		       NihTimerCb  callback,
 		       void       *data)
 {
-	NihTimer *timer;
+	NihTimer *      timer;
+	struct timespec now;
 
 	nih_assert (callback != NULL);
 
@@ -111,7 +112,8 @@ nih_timer_add_timeout (const void *parent,
 	timer->callback = callback;
 	timer->data = data;
 
-	timer->due = time (NULL) + timeout;
+	nih_assert (clock_gettime (CLOCK_MONOTONIC, &now) == 0);
+	timer->due = now.tv_sec + timeout;
 
 	nih_list_add (nih_timers, &timer->entry);
 
@@ -147,7 +149,8 @@ nih_timer_add_periodic (const void *parent,
 			NihTimerCb  callback,
 			void       *data)
 {
-	NihTimer *timer;
+	NihTimer *      timer;
+	struct timespec now;
 
 	nih_assert (callback != NULL);
 	nih_assert (period > 0);
@@ -168,7 +171,8 @@ nih_timer_add_periodic (const void *parent,
 	timer->callback = callback;
 	timer->data = data;
 
-	timer->due = time (NULL) + period;
+	nih_assert (clock_gettime (CLOCK_MONOTONIC, &now) == 0);
+	timer->due = now.tv_sec + period;
 
 	nih_list_add (nih_timers, &timer->entry);
 
@@ -278,16 +282,17 @@ nih_timer_next_due (void)
 void
 nih_timer_poll (void)
 {
-	time_t now;
+	struct timespec now;
 
 	nih_timer_init ();
 
-	now = time (NULL);
+	nih_assert (clock_gettime (CLOCK_MONOTONIC, &now) == 0);
+
 	NIH_LIST_FOREACH_SAFE (nih_timers, iter) {
 		NihTimer *timer = (NihTimer *)iter;
 		int       free_when_done = FALSE;
 
-		if (timer->due > now)
+		if (timer->due > now.tv_sec)
 			continue;
 
 		switch (timer->type) {
@@ -296,7 +301,7 @@ nih_timer_poll (void)
 			free_when_done = TRUE;
 			break;
 		case NIH_TIMER_PERIODIC:
-			timer->due = now + timer->period;
+			timer->due = now.tv_sec + timer->period;
 			break;
 		case NIH_TIMER_SCHEDULED:
 			/* FIXME Not implemented */

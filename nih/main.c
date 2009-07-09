@@ -28,6 +28,7 @@
 #include <sys/stat.h>
 #include <sys/select.h>
 
+#include <time.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <signal.h>
@@ -539,6 +540,7 @@ nih_main_loop (void)
 
 	while (! exit_loop) {
 		NihTimer       *next_timer;
+		struct timespec now;
 		struct timeval  timeout;
 		fd_set          readfds, writefds, exceptfds;
 		char            buf[1];
@@ -550,7 +552,9 @@ nih_main_loop (void)
 		 */
 		next_timer = nih_timer_next_due ();
 		if (next_timer) {
-			timeout.tv_sec = next_timer->due - time (NULL);
+			nih_assert (clock_gettime (CLOCK_MONOTONIC, &now) == 0);
+
+			timeout.tv_sec = next_timer->due - now.tv_sec;
 			timeout.tv_usec = 0;
 		}
 

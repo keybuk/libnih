@@ -1,5 +1,12 @@
 2009-07-09  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/timer.c (nih_timer_add_timeout, nih_timer_add_periodic)
+	(nih_timer_poll): Use a monotonic clock for timers, not the realtime
+	clock.
+	* nih/main.c (nih_main_loop): Calculate select time based on the
+	monotonic clock.
+	* nih/Makefile.am (libnih_la_LIBADD): Link with librt
+
 	* README: Bump the recommended D-Bus
 
 2009-07-08  Scott James Remnant  <scott@netsplit.com>

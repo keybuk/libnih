@@ -44,8 +44,9 @@ my_callback (void *data, NihTimer *timer)
 void
 test_add_timeout (void)
 {
-	NihTimer *timer;
-	time_t    t1, t2;
+	NihTimer *      timer;
+	struct timespec t1;
+	struct timespec t2;
 
 	/* Check that we can add a timeout function and that the structure
 	 * returned is correctly populated and placed in the timers list.
@@ -53,9 +54,9 @@ test_add_timeout (void)
 	TEST_FUNCTION ("nih_timer_add_timeout");
 	nih_timer_poll ();
 	TEST_ALLOC_FAIL {
-		t1 = time (NULL);
+		assert0 (clock_gettime (CLOCK_MONOTONIC, &t1));
 		timer = nih_timer_add_timeout (NULL, 10, my_callback, &timer);
-		t2 = time (NULL);
+		assert0 (clock_gettime (CLOCK_MONOTONIC, &t2));
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (timer, NULL);
@@ -65,8 +66,8 @@ test_add_timeout (void)
 		TEST_ALLOC_SIZE (timer, sizeof (NihTimer));
 		TEST_LIST_NOT_EMPTY (&timer->entry);
 		TEST_EQ (timer->type, NIH_TIMER_TIMEOUT);
-		TEST_GE (timer->due, t1 + 10);
-		TEST_LE (timer->due, t2 + 10);
+		TEST_GE (timer->due, t1.tv_sec + 10);
+		TEST_LE (timer->due, t2.tv_sec + 10);
 		TEST_EQ (timer->timeout, 10);
 		TEST_EQ_P (timer->callback, my_callback);
 		TEST_EQ_P (timer->data, &timer);
@@ -81,8 +82,9 @@ test_add_timeout (void)
 void
 test_add_periodic (void)
 {
-	NihTimer *timer;
-	time_t    t1, t2;
+	NihTimer *      timer;
+	struct timespec t1;
+	struct timespec t2;
 
 	/* Check that we can add a periodic function and that the structure
 	 * returned is correctly populated and placed in the timers list.
@@ -90,9 +92,9 @@ test_add_periodic (void)
 	TEST_FUNCTION ("nih_timer_add_periodic");
 	nih_timer_poll ();
 	TEST_ALLOC_FAIL {
-		t1 = time (NULL);
+		assert0 (clock_gettime (CLOCK_MONOTONIC, &t1));
 		timer = nih_timer_add_periodic (NULL, 25, my_callback, &timer);
-		t2 = time (NULL);
+		assert0 (clock_gettime (CLOCK_MONOTONIC, &t2));
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (timer, NULL);
@@ -102,8 +104,8 @@ test_add_periodic (void)
 		TEST_ALLOC_SIZE (timer, sizeof (NihTimer));
 		TEST_LIST_NOT_EMPTY (&timer->entry);
 		TEST_EQ (timer->type, NIH_TIMER_PERIODIC);
-		TEST_GE (timer->due, t1 + 25);
-		TEST_LE (timer->due, t2 + 25);
+		TEST_GE (timer->due, t1.tv_sec + 25);
+		TEST_LE (timer->due, t2.tv_sec + 25);
 		TEST_EQ (timer->timeout, 25);
 		TEST_EQ_P (timer->callback, my_callback);
 		TEST_EQ_P (timer->data, &timer);
@@ -118,9 +120,10 @@ test_add_periodic (void)
 void
 test_add_scheduled (void)
 {
-	NihTimer         *timer;
-	NihTimerSchedule  schedule;
-	time_t            t1, t2;
+	NihTimerSchedule schedule;
+	NihTimer *       timer;
+	struct timespec  t1;
+	struct timespec  t2;
 
 	/* Check that we can add a scheduled timer and that the structure
 	 * returned is correctly populated, including copying the schedule
@@ -131,10 +134,10 @@ test_add_scheduled (void)
 	TEST_ALLOC_FAIL {
 		memset (&schedule, 0, sizeof (NihTimerSchedule));
 
-		t1 = time (NULL);
+		assert0 (clock_gettime (CLOCK_MONOTONIC, &t1));
 		timer = nih_timer_add_scheduled (NULL, &schedule,
 						 my_callback, &timer);
-		t2 = time (NULL);
+		assert0 (clock_gettime (CLOCK_MONOTONIC, &t2));
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (timer, NULL);
@@ -190,8 +193,11 @@ test_next_due (void)
 void
 test_poll (void)
 {
-	NihTimer *timer1, *timer2;
-	time_t    t1, t2;
+	NihTimer *      timer1;
+	NihTimer *      timer2;
+	struct timespec now;
+	struct timespec t1;
+	struct timespec t2;
 
 	TEST_FUNCTION ("nih_timer_poll");
 	timer1 = nih_timer_add_timeout (NULL, 10, my_callback, &timer1);
@@ -208,7 +214,8 @@ test_poll (void)
 	last_data = NULL;
 	last_timer = NULL;
 
-	timer1->due = time (NULL) - 5;
+	assert0 (clock_gettime (CLOCK_MONOTONIC, &now));
+	timer1->due = now.tv_sec - 5;
 	nih_timer_poll ();
 
 	TEST_EQ (callback_called, 1);
@@ -226,17 +233,19 @@ test_poll (void)
 	last_data = NULL;
 	last_timer = NULL;
 
-	timer2->due = time (NULL) - 5;
-	t1 = time (NULL);
+	assert0 (clock_gettime (CLOCK_MONOTONIC, &now));
+	timer2->due = now.tv_sec - 5;
+
+	assert0 (clock_gettime (CLOCK_MONOTONIC, &t1));
 	nih_timer_poll ();
-	t2 = time (NULL);
+	assert0 (clock_gettime (CLOCK_MONOTONIC, &t2));
 
 	TEST_EQ (callback_called, 1);
 	TEST_EQ_P (last_timer, timer2);
 	TEST_EQ_P (last_data, &timer2);
 	TEST_NOT_FREE (timer2);
-	TEST_GE (timer2->due, t1 + 20);
-	TEST_LE (timer2->due, t2 + 20);
+	TEST_GE (timer2->due, t1.tv_sec + 20);
+	TEST_LE (timer2->due, t2.tv_sec + 20);
 
 
 	nih_free (timer2);

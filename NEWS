@@ -3,6 +3,9 @@
 	* The licence for libnih has been changed back to version 2 of the
 	  GNU GPL.
 
+	* D-Bus 1.2.15 is now required, this is the current GIT HEAD
+	  pending a 1.2.16 release.
+
 	* TEST_EXPECTED_STR and TEST_EXPECTED_FILE added.  These compare the
 	  contents of a string and file respectively against the contents
 	  of a given filename relative to the "expected" directory alongside

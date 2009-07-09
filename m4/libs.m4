@@ -15,7 +15,7 @@
 # Detect whether we can/should build the optional dbus bindings
 AC_DEFUN([NIH_LIB_DBUS],
 [AC_REQUIRE([PKG_PROG_PKG_CONFIG])dnl
-m4_define([DBUS_MODULES], [dbus-1 >= 1.2.4])
+m4_define([DBUS_MODULES], [dbus-1 >= 1.2.15])
 m4_ifdef([_NIH_Option_dbus],
 	 [nih_with_dbus=yes],
 	 [AC_ARG_WITH(dbus,

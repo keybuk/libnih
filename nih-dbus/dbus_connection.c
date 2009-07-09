@@ -622,8 +622,9 @@ static void
 nih_dbus_timeout_toggled (DBusTimeout *timeout,
 			  void *       data)
 {
-	NihTimer *timer;
-	int       interval;
+	NihTimer *      timer;
+	int             interval;
+	struct timespec now;
 
 	nih_assert (timeout != NULL);
 
@@ -633,8 +634,10 @@ nih_dbus_timeout_toggled (DBusTimeout *timeout,
 	/* D-Bus may toggle the timer in an attempt to change the timeout */
 	interval = dbus_timeout_get_interval (timeout);
 
+	nih_assert (clock_gettime (CLOCK_MONOTONIC, &now) == 0);
+
 	timer->period = (interval - 1) / 1000 + 1;
-	timer->due = time (NULL) + timer->period;
+	timer->due = now.tv_sec + timer->period;
 
 	if (dbus_timeout_get_enabled (timeout)) {
 		nih_list_add (nih_timers, &timer->entry);

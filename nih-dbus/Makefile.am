@@ -24,10 +24,6 @@ libnih_dbus_la_SOURCES = \
 	dbus_proxy.c \
 	dbus_util.c
 
-libnih_dbus_la_LIBS = \
-	../nih/libnih.la \
-	$(DBUS_LIBS)
-
 if INSTALL_NIH
 libnih_dbus_la_LDFLAGS = \
 	-version-info 0:0:0
@@ -35,6 +31,11 @@ if HAVE_VERSION_SCRIPT_ARG
 libnih_dbus_la_LDFLAGS += @VERSION_SCRIPT_ARG@=$(srcdir)/libnih-dbus.ver
 endif
 endif
+
+libnih_dbus_la_LIBADD = \
+	../nih/libnih.la \
+	$(DBUS_LIBS) \
+	-lrt
 
 
 EXTRA_DIST = libnih-dbus.ver libnih-dbus.supp

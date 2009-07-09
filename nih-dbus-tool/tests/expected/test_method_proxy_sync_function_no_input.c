@@ -61,6 +61,7 @@ my_method_sync (const void *  parent,
 		dbus_message_iter_recurse (&iter, &output_local_iter);
 
 		output_local_size = 0;
+		output_local = NULL;
 
 		output_local = nih_alloc (parent, sizeof (char *));
 		if (! output_local) {

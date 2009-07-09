@@ -68,6 +68,7 @@ my_com_netsplit_Nih_Test_Method_notify (DBusPendingCall *   pending_call,
 		dbus_message_iter_recurse (&iter, &output_iter);
 
 		output_size = 0;
+		output = NULL;
 
 		output = nih_alloc (message, sizeof (char *));
 		if (! output) {

@@ -475,6 +475,7 @@ demarshal_array (const void *       parent,
 	NihList            element_locals;
 	NihList            element_structs;
 	nih_local char *   element_block = NULL;
+	nih_local char *   alloc_block = NULL;
 	nih_local char *   block = NULL;
 	nih_local char *   vars_block = NULL;
 
@@ -592,8 +593,7 @@ demarshal_array (const void *       parent,
 
 
 	if (! nih_strcat_sprintf (&code, parent,
-				  "%s = 0;\n"
-				  "\n",
+				  "%s = 0;\n",
 				  size_name)) {
 		nih_free (code);
 		return NULL;
@@ -695,16 +695,15 @@ demarshal_array (const void *       parent,
 		/* Code to allocate and reallocate */
 		var_parent = (*suffix ? name : parent_name);
 
+		if (! nih_strcat_sprintf (&code, parent,
+					  "%s = NULL;\n",
+					  var_name)) {
+			nih_free (code);
+			return NULL;
+		}
+
 		ptr = output_var->type + strlen (output_var->type) - 1;
 		if (*ptr != '*') {
-			if (! nih_strcat_sprintf (&code, parent,
-						  "%s = NULL;\n"
-						  "\n",
-						  var_name)) {
-				nih_free (code);
-				return NULL;
-			}
-
 			if (! nih_strcat_sprintf (&block, NULL,
 						  "if (%s + 1 > SIZE_MAX / sizeof (%s)) {\n"
 						  "%s"
@@ -729,7 +728,7 @@ demarshal_array (const void *       parent,
 				return NULL;
 			}
 		} else {
-			if (! nih_strcat_sprintf (&code, parent,
+			if (! nih_strcat_sprintf (&alloc_block, NULL,
 						  "%s = nih_alloc (%s, sizeof (%s));\n"
 						  "if (! %s) {\n"
 						  "%s"
@@ -773,6 +772,14 @@ demarshal_array (const void *       parent,
 		}
 
 		nih_list_add (&element_locals, &output_var->entry);
+	}
+
+	if (! nih_strcat_sprintf (&code, parent,
+				  "\n"
+				  "%s",
+				  alloc_block ?: "")) {
+		nih_free (code);
+		return NULL;
 	}
 
 	if (! nih_strcat_sprintf (&block, parent,

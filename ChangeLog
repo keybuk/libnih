@@ -1,5 +1,16 @@
 2009-07-09  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/demarshal.c (demarshal_array): Always initialise
+	all arrays to NULL first, and then only allocate the arrays after
+	to avoid gcc's uninitialised warnings.
+	* nih-dbus-tool/tests/test_demarshal.c (test_demarshal): Update
+	expected output to match
+	* nih-dbus-tool/tests/expected/test_method_proxy_notify_function_standard.c,
+	* nih-dbus-tool/tests/expected/test_method_proxy_notify_function_array.c,
+	* nih-dbus-tool/tests/expected/test_method_proxy_sync_function_standard.c,
+	* nih-dbus-tool/tests/expected/test_method_proxy_sync_function_no_input.c:
+	Update the method tests expected output too
+
 	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_object.c (test_new_struct_array)
 	(test_new_dict_entry_array): Initialise alloc-safe variables to
 	NULL to avoid gcc warning

@@ -14049,7 +14049,7 @@ test_new_struct_array (void)
 	DBusMessageIter      iter;
 	DBusMessageIter      arrayiter;
 	DBusMessageIter      subiter;
-	MyTestNewStructArrayValueElement **struct_array;
+	MyTestNewStructArrayValueElement **struct_array = NULL;
 	const char *         str_value;
 	uint32_t             uint32_value;
 
@@ -14245,7 +14245,7 @@ test_new_dict_entry_array (void)
 	DBusMessageIter      iter;
 	DBusMessageIter      arrayiter;
 	DBusMessageIter      subiter;
-	MyTestNewDictEntryArrayValueElement **dict_entry_array;
+	MyTestNewDictEntryArrayValueElement **dict_entry_array = NULL;
 	const char *         str_value;
 	uint32_t             uint32_value;
 

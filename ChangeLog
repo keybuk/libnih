@@ -1,5 +1,7 @@
 2009-07-09  Scott James Remnant  <scott@netsplit.com>
 
+	* NEWS: Release 0.3.1
+
 	* m4/libs.m4 (NIH_LIB_DBUS): Increase D-Bus dependency to current
 	GIT HEAD (1.2.15)
 	* README: Update documentation.

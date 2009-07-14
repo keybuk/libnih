@@ -183,10 +183,14 @@ nih_main_init_full (const char *argv0,
 	nih_assert (package != NULL);
 	nih_assert (version != NULL);
 
-	/* Only take the basename of argv0 */
+	/* Only take the basename of argv0, and allow it to be a login
+	 * shell.
+	 */
 	program_name = strrchr (argv0, '/');
 	if (program_name) {
 		program_name++;
+	} else if (argv0[0] == '-') {
+		program_name = argv0 + 1;
 	} else {
 		program_name = argv0;
 	}

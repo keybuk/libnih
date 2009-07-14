@@ -1,3 +1,9 @@
+2009-07-14  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/tests/test_main.c (test_init): Add a test for being called
+	as a login shell.
+	* nih/main.c (nih_main_init_full): Check for and skip initial dash.
+
 2009-07-11  Scott James Remnant  <scott@netsplit.com>
 
 	* configure.ac: Bump version to 0.3.2

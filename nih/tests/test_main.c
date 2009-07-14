@@ -133,6 +133,22 @@ test_init (void)
 	}
 
 
+	/* Check that the program name contains only the actual name
+	 * of the program when it's supplied as a login shell path
+	 * (prefixed with a dash).
+	 */
+	TEST_FEATURE ("with login shell path");
+	TEST_ALLOC_FAIL {
+		nih_main_init_full ("-argv0", "package", "1.0",
+				    "bugreport", "copyright");
+
+		TEST_EQ_STR (program_name, "argv0");
+		TEST_EQ_STR (package_name, "package");
+
+		TEST_EQ_STR (package_string, "argv0 (package 1.0)");
+	}
+
+
 	/* Check that the nih_main_init macro passes all the arguments for
 	 * us, except the program name, which we pass.
 	 */

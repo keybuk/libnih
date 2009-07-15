@@ -47,7 +47,7 @@ the pkg-config tool:
 To build the optional libnih-dbus bindings library you will need the
 D-Bus development files for the library itself:
 
-	* D-Bus 1.2.15 (GIT HEAD pre 1.2.16)
+	* D-Bus 1.2.16
 
 To build the D-Bus binding tool you will need the dependencies of the
 libnih-dbus library and the development files for the expat XML

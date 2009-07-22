@@ -1,3 +1,9 @@
+2009-07-22  Michael Biebl  <mbiebl@gmail.com>
+
+	* nih-dbus-tool/Makefile.am (dist_man_MANS): Don't install the
+	manpages unless INSTALL_NIH, take care to make sure they're still
+	distributed.
+
 2009-07-15  Scott James Remnant  <scott@netsplit.com>
 
 	* m4/libs.m4 (NIH_LIB_DBUS): Now that D-Bus 1.2.16 proper has been

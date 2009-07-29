@@ -22,9 +22,6 @@
 
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/ptrace.h>
-
-#include <linux/ptrace.h>
 
 #include <nih/macros.h>
 #include <nih/list.h>

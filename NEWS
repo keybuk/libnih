@@ -2,6 +2,8 @@
 
 	* D-Bus 1.2.16 is now required.
 
+	* Fixed compilation on ia64.
+
 	* nih-dbus-tool(1) manpage will not be installed, since the binary
 	  is not.  (Bug: #403103)
 

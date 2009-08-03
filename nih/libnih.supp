@@ -34,6 +34,14 @@
    fun:nih_error_push_context
    fun:nih_error_init
 }
+{
+   nih-error-init
+   Memcheck:Leak
+   fun:malloc
+   fun:nih_alloc
+   fun:nih_error_push_context
+   fun:nih_error_init
+}
 
 {
    nih-file-init

@@ -1,3 +1,10 @@
+2009-08-03  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c (test_set_string_sync)
+	(test_set_object_path_sync, test_set_signature_sync): Fix the incorrect
+	parent tests to actually check for the specific parent rather than
+	just a parent.
+
 2009-08-02  Scott James Remnant  <scott@netsplit.com>
 
 	* configure.ac: Bump version to 0.4.0

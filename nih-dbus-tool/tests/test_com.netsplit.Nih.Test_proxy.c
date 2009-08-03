@@ -37162,7 +37162,7 @@ test_set_string_sync (void)
 		}
 
 		TEST_EQ_STR (str_value, "she needs more of ze punishment");
-		TEST_ALLOC_PARENT (str_value, NULL);
+		TEST_ALLOC_PARENT (str_value, parent);
 
 		nih_free (parent);
 		nih_free (proxy);
@@ -38451,7 +38451,7 @@ test_set_object_path_sync (void)
 		}
 
 		TEST_EQ_STR (str_value, "/com/netsplit/Nih/Test");
-		TEST_ALLOC_PARENT (str_value, NULL);
+		TEST_ALLOC_PARENT (str_value, parent);
 
 		nih_free (parent);
 		nih_free (proxy);
@@ -39741,7 +39741,7 @@ test_set_signature_sync (void)
 		}
 
 		TEST_EQ_STR (str_value, "a(ib)");
-		TEST_ALLOC_PARENT (str_value, NULL);
+		TEST_ALLOC_PARENT (str_value, parent);
 
 		nih_free (parent);
 		nih_free (proxy);

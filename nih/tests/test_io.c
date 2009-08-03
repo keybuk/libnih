@@ -2082,6 +2082,7 @@ test_watcher (void)
 			assert0 (nih_io_buffer_push (msg->data,
 						     "this is a test", 14));
 			nih_io_send_message (io, msg);
+			nih_discard (msg);
 		}
 
 		TEST_FREE_TAG (msg);
@@ -2122,6 +2123,7 @@ test_watcher (void)
 	msg = nih_io_message_new (NULL);
 	assert0 (nih_io_buffer_push (msg->data, "another test", 12));
 	nih_io_send_message (io, msg);
+	nih_discard (msg);
 
 	TEST_FREE_TAG (msg);
 
@@ -2147,12 +2149,14 @@ test_watcher (void)
 	msg = nih_io_message_new (NULL);
 	assert0 (nih_io_buffer_push (msg->data, "this is a test", 14));
 	nih_io_send_message (io, msg);
+	nih_discard (msg);
 
 	TEST_FREE_TAG (msg);
 
 	msg2 = nih_io_message_new (NULL);
 	assert0 (nih_io_buffer_push (msg2->data, "another test", 12));
 	nih_io_send_message (io, msg2);
+	nih_discard (msg2);
 
 	TEST_FREE_TAG (msg2);
 
@@ -2190,6 +2194,7 @@ test_watcher (void)
 	msg = nih_io_message_new (NULL);
 	assert0 (nih_io_buffer_push (msg->data, "one more test", 13));
 	nih_io_send_message (io, msg);
+	nih_discard (msg);
 
 	TEST_FREE_TAG (msg);
 
@@ -2250,7 +2255,7 @@ test_read_message (void)
 	ptr = nih_io_read_message (NULL, io);
 
 	TEST_EQ_P (ptr, msg);
-	TEST_ALLOC_ORPHAN (msg);
+	TEST_ALLOC_PARENT (msg, NULL);
 	TEST_LIST_EMPTY (&msg->entry);
 	TEST_LIST_EMPTY (io->recv_q);
 

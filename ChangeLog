@@ -1,5 +1,14 @@
 2009-08-04  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/io.c (nih_io_read_message): Replace use of nih_unref_only
+	with a simple nih_ref()/nih_unref() pair
+	(nih_io_write): Use nih_local for the message, we either reference
+	it when we send or we throw it away on returning.
+	* nih/tests/test_io.c (test_watcher): After sending the message
+	we need to discard it, it's only referenced not stolen now.
+	(test_read_message): Replace TEST_ALLOC_ORPHAN(msg) with
+	TEST_ALLOC_PARENT(msg, NULL)
+
 	* nih/tests/test_string.c (test_sprintf, test_vsprintf)
 	(test_strdup, test_strndup): Replace TEST_ALLOC_ORPHAN(ptr)
 	checks with TEST_ALLOC_PARENT(ptr, NULL)

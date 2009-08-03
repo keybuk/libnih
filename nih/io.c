@@ -1374,9 +1374,8 @@ nih_io_read_message (const void *parent,
 	if (message) {
 		nih_list_remove (&message->entry);
 
-		nih_unref_only (message, io);
-		if (parent)
-			nih_ref (message, parent);
+		nih_ref (message, parent);
+		nih_unref (message, io);
 	}
 
 	nih_io_shutdown_check (io);
@@ -1508,8 +1507,8 @@ nih_io_write (NihIo      *io,
 	      const char *str,
 	      size_t      len)
 {
-	NihIoMessage *message;
-	NihIoBuffer  *buf;
+	nih_local NihIoMessage *message = NULL;
+	NihIoBuffer *           buf;
 
 	nih_assert (io != NULL);
 	nih_assert (str != NULL);
@@ -1530,12 +1529,8 @@ nih_io_write (NihIo      *io,
 		nih_assert_not_reached ();
 	}
 
-	if (nih_io_buffer_push (buf, str, len) < 0) {
-		if (message)
-			nih_free (message);
-
+	if (nih_io_buffer_push (buf, str, len) < 0)
 		return -1;
-	}
 
 	if (message) {
 		nih_io_send_message (io, message);

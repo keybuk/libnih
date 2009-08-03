@@ -1,5 +1,12 @@
 2009-08-04  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_string.c (test_sprintf, test_vsprintf)
+	(test_strdup, test_strndup): Replace TEST_ALLOC_ORPHAN(ptr)
+	checks with TEST_ALLOC_PARENT(ptr, NULL)
+	(test_array_addp): Fix bad uses of TEST_ALLOC_FAIL on data
+	allocated outside of the loop, necessary now that the pointer
+	won't be "stolen" by the function merely referenced
+
 	* nih/alloc.c (nih_alloc_ref_new): Allow parent to be NULL, when
 	it is we store NULL in ref->parent and leave the children_entry
 	as an empty list node.

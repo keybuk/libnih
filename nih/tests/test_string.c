@@ -55,7 +55,7 @@ test_sprintf (void)
 			continue;
 		}
 
-		TEST_ALLOC_ORPHAN (str1);
+		TEST_ALLOC_PARENT (str1, NULL);
 		TEST_ALLOC_SIZE (str1, strlen (str1) + 1);
 		TEST_EQ_STR (str1, "this is a test 54321");
 
@@ -121,7 +121,7 @@ test_vsprintf (void)
 			continue;
 		}
 
-		TEST_ALLOC_ORPHAN (str1);
+		TEST_ALLOC_PARENT (str1, NULL);
 		TEST_ALLOC_SIZE (str1, strlen (str1) + 1);
 		TEST_EQ_STR (str1, "this is a test 54321");
 
@@ -171,7 +171,7 @@ test_strdup (void)
 			continue;
 		}
 
-		TEST_ALLOC_ORPHAN (str1);
+		TEST_ALLOC_PARENT (str1, NULL);
 		TEST_ALLOC_SIZE (str1, strlen (str1) + 1);
 		TEST_EQ_STR (str1, "this is a test");
 
@@ -221,7 +221,7 @@ test_strndup (void)
 			continue;
 		}
 
-		TEST_ALLOC_ORPHAN (str1);
+		TEST_ALLOC_PARENT (str1, NULL);
 		TEST_ALLOC_SIZE (str1, 8);
 		TEST_EQ_STR (str1, "this is");
 
@@ -775,10 +775,12 @@ test_array_addp (void)
 	 * and get one allocated automatically.
 	 */
 	TEST_FEATURE ("with no array given");
-	ptr1 = nih_alloc (NULL, 1024);
-	memset (ptr1, ' ', 1024);
-
 	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			ptr1 = nih_alloc (NULL, 1024);
+			memset (ptr1, ' ', 1024);
+		}
+
 		array = NULL;
 		len = 0;
 
@@ -786,8 +788,11 @@ test_array_addp (void)
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (ret, NULL);
+			TEST_EQ_P (array, NULL);
 
 			TEST_EQ (len, 0);
+
+			nih_free (ptr1);
 			continue;
 		}
 
@@ -799,6 +804,7 @@ test_array_addp (void)
 		TEST_EQ_P (array[1], NULL);
 
 		nih_free (array);
+		nih_free (ptr1);
 	}
 
 
@@ -807,21 +813,25 @@ test_array_addp (void)
 	 * reparented.
 	 */
 	TEST_FEATURE ("with length given");
-	array = nih_str_array_new (NULL);
-	len = 0;
-
-	ptr1 = nih_alloc (NULL, 1024);
-	memset (ptr1, ' ', 1024);
-
 	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			array = nih_str_array_new (NULL);
+			len = 0;
+
+			ptr1 = nih_alloc (NULL, 1024);
+			memset (ptr1, ' ', 1024);
+		}
+
 		ret = nih_str_array_addp (&array, NULL, &len, ptr1);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (ret, NULL);
 
-			TEST_EQ (len, 1);
-			TEST_EQ_P (array[0], ptr1);
-			TEST_EQ_P (array[1], NULL);
+			TEST_EQ (len, 0);
+			TEST_EQ_P (array[0], NULL);
+
+			nih_free (array);
+			nih_free (ptr1);
 			continue;
 		}
 
@@ -831,23 +841,39 @@ test_array_addp (void)
 		TEST_EQ_P (array[0], ptr1);
 		TEST_ALLOC_PARENT (array[0], array);
 		TEST_EQ_P (array[1], NULL);
+
+		nih_free (array);
+		nih_free (ptr1);
 	}
 
 
 	/* Check that we can omit the length, and have it calculated. */
 	TEST_FEATURE ("with no length given");
-	ptr2 = nih_alloc (NULL, 512);
-	memset (ptr2, ' ', 512);
-
 	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			array = nih_str_array_new (NULL);
+			len = 0;
+
+			ptr1 = nih_alloc (NULL, 1024);
+			memset (ptr1, ' ', 1024);
+
+			assert (nih_str_array_addp (&array, NULL, NULL, ptr1));
+
+			ptr2 = nih_alloc (NULL, 512);
+			memset (ptr2, ' ', 512);
+		}
+
 		ret = nih_str_array_addp (&array, NULL, NULL, ptr2);
 
 		if (test_alloc_failed) {
 			TEST_EQ_P (ret, NULL);
 
 			TEST_EQ_P (array[0], ptr1);
-			TEST_EQ_P (array[1], ptr2);
-			TEST_EQ_P (array[2], NULL);
+			TEST_EQ_P (array[1], NULL);
+
+			nih_free (array);
+			nih_free (ptr1);
+			nih_free (ptr2);
 			continue;
 		}
 
@@ -858,9 +884,11 @@ test_array_addp (void)
 		TEST_EQ_P (array[1], ptr2);
 		TEST_ALLOC_PARENT (array[0], array);
 		TEST_EQ_P (array[2], NULL);
-	}
 
-	nih_free (array);
+		nih_free (array);
+		nih_free (ptr1);
+		nih_free (ptr2);
+	}
 }
 
 void

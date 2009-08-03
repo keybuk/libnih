@@ -28,12 +28,14 @@
  * When you allocate an object using nih_alloc() or nih_new(), you pass
  * an optional parent.  This may be any other object allocated with these
  * functions.  A reference from the parent to the newly allocated object
- * is created.
+ * is created.  If no parent is passed the object is referenced from the
+ * special NULL parent.
  *
  * You may add additional references to the object using nih_ref(), again
- * passing any other object allocated with these functions are the parent.
+ * passing any other object allocated with these functions as the parent
+ * or the special NULL parent.
  *
- * Thus any object may have zero or more parents.
+ * Thus any object may have one or more parents.
  *
  * When an object is freed, the references to its children are discarded
  * and if it held the last reference to one of those children, the child
@@ -80,14 +82,9 @@
  *   obj = nih_new (parent, Object);
  *
  * That way, the caller decides how they want your object linked to
- * other things.  But what if there's an error while populating the
- * structure?  You can't call nih_unref() because that won't accept
- * NULL as the parent, and you can't call nih_discard() because that
- * won't work if there is a parent.
- *
- * You might be tempted to call one or the other depending on whether
- * parent is NULL or not, however it's by far better style to just call
- * nih_free()
+ * other things.  If there's an error while populating the structure,
+ * the standard style is just to call nih_free() rather than
+ * unreferencing
  *
  *   error:
  *     nih_free (obj);
@@ -121,14 +118,10 @@
  * have anything to attach it to.  This also often applies to global
  * variables as well.
  *
- * You simply pass NULL in as the parent; the returned object has no
- * references, and is known as a floating object.
+ * You simply pass NULL in as the parent; the returned object has only
+ * this special reference.
  *
  *   obj = nih_new (NULL, Object);
- *
- * If anything takes a reference to this, it will no longer be floating
- * and will instead be referenced.  Should that reference be dropped,
- * obj will be freed.
  *
  * To discard the floating object you should use nih_discard() instead
  * of nih_free(), which will not free the object if another function
@@ -169,20 +162,15 @@
  * most likely take a parent object to which you want to reparent the
  * member.
  *
- * It's not quite as easy as referencing the parent and dropping your
- * own reference, because the parent could be NULL.  And if you did
- * that, and held the last reference on the member, it would be freed
- * before returning.
+ * This is as easy as referencing the new parent and dropping your own
+ * reference.
  *
- * Instead use nih_unref_only(), which may leave the object floating
- *
- *   nih_unref_only (obj->child, obj);
+ *   nih_ref (child, parent);
  *
  *   child = obj->child;
  *   obj->child = NULL;
  *
- *   if (parent)
- *     nih_ref (child, parent);
+ *   nih_unref (obj->child, obj);
  *
  *   // child may now be returned
  *
@@ -249,9 +237,9 @@ typedef int (*NihDestructor) (void *ptr);
  * and returns a pointer to it.
  *
  * If @parent is not NULL, it should be a pointer to another object which
- * will be used as a parent for the returned object.  When all parents
- * of the returned object are freed, the returned object will also be
- * freed.
+ * will be used as a parent for the returned object otherwise the special
+ * NULL parent will be used instead.  When all parents of the returned
+ * object are freed, the returned object will also be freed.
  *
  * If you have clean-up that you would like to run, you can assign a
  * destructor using the nih_alloc_set_destructor() function.
@@ -332,7 +320,6 @@ void   nih_alloc_real_set_destructor (const void *ptr,
 
 void   nih_ref                       (const void *ptr, const void *parent);
 void   nih_unref                     (void *ptr, const void *parent);
-void   nih_unref_only                (const void *ptr, const void *parent);
 
 int    nih_alloc_parent              (const void *ptr, const void *parent);
 

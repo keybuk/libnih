@@ -80,9 +80,9 @@ typedef struct nih_alloc_ref {
  * Obtain the location of the NihAllocCtx structure given a pointer to the
  * block of memory beyond it.
  *
- * Returns: pointer to NihAllocCtx structure.
+ * Returns: pointer to NihAllocCtx structure or NULL if @ptr is NULL.
  **/
-#define NIH_ALLOC_CTX(ptr) ((NihAllocCtx *)(ptr) - 1)
+#define NIH_ALLOC_CTX(ptr) (ptr ? (NihAllocCtx *)(ptr) - 1 : NULL)
 
 /**
  * NIH_ALLOC_PTR:
@@ -130,9 +130,9 @@ void  (*__nih_free)    (void *ptr)              = free;
  * pointer to it.
  *
  * If @parent is not NULL, it should be a pointer to another object which
- * will be used as a parent for the returned object.  When all parents
- * of the returned object are freed, the returned object will also be
- * freed.
+ * will be used as a parent for the returned object otherwise the special
+ * NULL parent will be used instead.  When all parents of the returned
+ * object are freed, the returned object will also be freed.
  *
  * If you have clean-up that you would like to run, you can assign a
  * destructor using the nih_alloc_set_destructor() function.
@@ -154,8 +154,7 @@ nih_alloc (const void *parent,
 
 	ctx->destructor = NULL;
 
-	if (parent)
-		nih_alloc_ref_new (NIH_ALLOC_CTX (parent), ctx);
+	nih_alloc_ref_new (NIH_ALLOC_CTX (parent), ctx);
 
 	return NIH_ALLOC_PTR (ctx);
 }
@@ -284,9 +283,13 @@ nih_realloc (void *      ptr,
  * the objects themselves are freed.
  *
  * If you call nih_free() on an object with parent references, you should
- * make sure that any pointers to the object are reset.  If you are unsure
- * whether or not there are references you should call nih_discard(), if
- * you only want to discard a particular parent reference you should call
+ * make sure that any pointers to the object are reset.
+ *
+ * If you are unsure whether or not there are references you should call
+ * nih_discard() which will discard the special NULL reference only if it
+ * exists, only freeing the object if no other references remain.
+ *
+ * Otherwise to remove a particular parent reference you should call
  * nih_unref().
  *
  * Returns: return value from @ptr's destructor, or 0.
@@ -320,16 +323,16 @@ nih_free (void *ptr)
  * nih_discard:
  * @ptr: object to discard.
  *
- * If the object @ptr has no parent references, then returns it to the
- * allocator so the memory consumed may be re-used by something else.
- *
- * If @ptr has parent references, this function does nothing and returns.
+ * Discards the special NULL parent reference from @ptr if present; if
+ * no other references have been taken @ptr will be freed and the value
+ * from the destructor returned otherwise this function takes no
+ * further action.
  *
  * You would use nih_discard() when you allocated @ptr without any parent
  * but have passed it to functions that may have taken a reference to it
  * in the meantime.  Compare with nih_free() which acts even if there are
  * parent references, and nih_unref() which only removes a single parent
- * reference.
+ * reference that is known to exist.
  *
  * Returns: return value from @ptr's destructor, or 0.
  **/
@@ -337,11 +340,18 @@ int
 nih_discard (void *ptr)
 {
 	NihAllocCtx *ctx;
+	NihAllocRef *ref;
 
 	nih_assert (ptr != NULL);
 
 	ctx = NIH_ALLOC_CTX (ptr);
 	nih_assert (ctx->destructor != NIH_ALLOC_FINALISED);
+
+	ref = nih_alloc_ref_lookup (NULL, ctx);
+	if (! ref)
+		return 0;
+
+	nih_alloc_ref_free (ref);
 
 	if (NIH_LIST_EMPTY (&ctx->parents))
 		return nih_alloc_context_free (ctx);
@@ -354,8 +364,8 @@ nih_discard (void *ptr)
  * @ptr: address of local object to be discarded.
  *
  * This function should never be called directly, it is used as part of the
- * implementation of nih_local and simply calls nih_discard() with the local
- * variable itself.
+ * implementation of nih_local and simply calls nih_discard() with the
+ * local variable itself if non-NULL.
  **/
 void
 _nih_discard_local (void *ptraddr)
@@ -520,7 +530,9 @@ nih_alloc_real_set_destructor (const void *  ptr,
  * @parent: new parent object.
  *
  * Adds a reference to the object @ptr from @parent, adding to any other
- * objects referencing @ptr.  The reference can be broken using nih_unref().
+ * objects referencing @ptr.  @parent may be the special NULL parent.
+ *
+ * The reference can be broken using nih_unref().
  *
  * @ptr will only be automatically freed when the last parent unreferences
  * it.  It may still be manually freed with nih_free(), though this doesn't
@@ -536,7 +548,6 @@ nih_ref (const void *ptr,
 	 const void *parent)
 {
 	nih_assert (ptr != NULL);
-	nih_assert (parent != NULL);
 
 	nih_alloc_ref_new (NIH_ALLOC_CTX (parent), NIH_ALLOC_CTX (ptr));
 }
@@ -557,8 +568,8 @@ nih_alloc_ref_new (NihAllocCtx *parent,
 {
 	NihAllocRef *ref;
 
-	nih_assert (parent != NULL);
-	nih_assert (parent->destructor != NIH_ALLOC_FINALISED);
+	nih_assert ((parent == NULL)
+		    || (parent->destructor != NIH_ALLOC_FINALISED));
 	nih_assert (child != NULL);
 	nih_assert (child->destructor != NIH_ALLOC_FINALISED);
 
@@ -570,7 +581,8 @@ nih_alloc_ref_new (NihAllocCtx *parent,
 	ref->parent = parent;
 	ref->child = child;
 
-	nih_list_add_after (&parent->children, &ref->children_entry);
+	if (parent)
+		nih_list_add_after (&parent->children, &ref->children_entry);
 	nih_list_add_after (&child->parents, &ref->parents_entry);
 
 	return ref;
@@ -583,7 +595,8 @@ nih_alloc_ref_new (NihAllocCtx *parent,
  * @parent: parent object to remove.
  *
  * Removes the reference to the object @ptr from @parent, if this is the
- * last reference to @ptr then @ptr will be automatically freed.
+ * last reference to @ptr then @ptr will be automatically freed.  @parent
+ * may be the special NULL parent.
  *
  * You never need to call this in your own destructors since children
  * are unreferenced automatically, however this function is useful if you
@@ -598,7 +611,6 @@ nih_unref (void *      ptr,
 	NihAllocRef *ref;
 
 	nih_assert (ptr != NULL);
-	nih_assert (parent != NULL);
 
 	ctx = NIH_ALLOC_CTX (ptr);
 	nih_assert (ctx->destructor != NIH_ALLOC_FINALISED);
@@ -613,37 +625,12 @@ nih_unref (void *      ptr,
 }
 
 /**
- * nih_unref_only:
- * @ptr: object to unreference,
- * @parent: parent object to remove.
- *
- * Removes the reference to the object @ptr from @parent, but will not
- * automatically free @ptr even if this is the last reference.
- **/
-void
-nih_unref_only (const void *ptr,
-		const void *parent)
-{
-	NihAllocRef *ref;
-
-	nih_assert (ptr != NULL);
-	nih_assert (parent != NULL);
-
-	ref = nih_alloc_ref_lookup (NIH_ALLOC_CTX (parent),
-				    NIH_ALLOC_CTX (ptr));
-
-	nih_assert (ref != NULL);
-	nih_alloc_ref_free (ref);
-}
-
-/**
  * nih_alloc_ref_free:
  * @ref: reference to free.
  *
- * This is the internal function used by nih_free(), nih_unref() and
- * nih_unref_only() to remove the reference @ref from its parent and child
- * contexts.  It does not free the child context, even if this is the last
- * reference.
+ * This is the internal function used by nih_free() and nih_unref() to
+ * remove the reference @ref from its parent and child contexts.  It does
+ * not free the child context, even if this is the last reference.
  *
  * This function is notably not called by nih_alloc_context_unref() since
  * that manipulates the references to perform finalisation.
@@ -665,7 +652,7 @@ nih_alloc_ref_free (NihAllocRef *ref)
  * @ptr: object to query,
  * @parent: parent object to look for.
  *
- * If @parent is NULL any parent will match.
+ * @parent may be the special NULL parent.
  *
  * Returns: TRUE if @parent has a reference to @ptr, FALSE otherwise.
  **/
@@ -674,21 +661,16 @@ nih_alloc_parent (const void *ptr,
 		  const void *parent)
 {
 	NihAllocCtx *ctx;
+	NihAllocRef *ref;
 
 	nih_assert (ptr != NULL);
 
 	ctx = NIH_ALLOC_CTX (ptr);
 	nih_assert (ctx->destructor != NIH_ALLOC_FINALISED);
 
-	if (parent) {
-		NihAllocRef *ref;
+	ref = nih_alloc_ref_lookup (NIH_ALLOC_CTX (parent), ctx);
 
-		ref = nih_alloc_ref_lookup (NIH_ALLOC_CTX (parent), ctx);
-
-		return ref ? TRUE : FALSE;
-	} else {
-		return NIH_LIST_EMPTY (&ctx->parents) ? FALSE : TRUE;
-	}
+	return ref ? TRUE : FALSE;
 }
 
 /**
@@ -697,7 +679,8 @@ nih_alloc_parent (const void *ptr,
  * @child: child context.
  *
  * This is the internal function used by nih_unref() and nih_alloc_parent()
- * to lookup a reference between the @parent and @child contexts.
+ * to lookup a reference between the @parent and @child contexts.  @parent
+ * may be the special NULL parent.
  *
  * Returns: NihAllocRef structure or NULL if no reference exists.
  **/
@@ -705,8 +688,8 @@ static inline NihAllocRef *
 nih_alloc_ref_lookup (NihAllocCtx *parent,
 		      NihAllocCtx *child)
 {
-	nih_assert (parent != NULL);
-	nih_assert (parent->destructor != NIH_ALLOC_FINALISED);
+	nih_assert ((parent == NULL)
+		    || (parent->destructor != NIH_ALLOC_FINALISED));
 	nih_assert (child != NULL);
 	nih_assert (child->destructor != NIH_ALLOC_FINALISED);
 

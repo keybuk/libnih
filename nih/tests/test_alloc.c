@@ -51,7 +51,7 @@ test_new (void)
 	ptr1 = nih_new (NULL, int);
 
 	TEST_ALLOC_SIZE (ptr1, sizeof (int));
-	TEST_ALLOC_ORPHAN (ptr1);
+	TEST_ALLOC_PARENT (ptr1, NULL);
 
 
 	/* Check that nih_new works if we do give a parent. */
@@ -89,7 +89,7 @@ test_alloc (void)
 	memset (ptr1, 'x', 8096);
 
 	TEST_ALLOC_SIZE (ptr1, 8096);
-	TEST_ALLOC_ORPHAN (ptr1);
+	TEST_ALLOC_PARENT (ptr1, NULL);
 
 
 	/* Check that allocation with a parent remembers the parent */
@@ -137,7 +137,7 @@ test_realloc (void)
 	memset (ptr1, 'x', 4096);
 
 	TEST_ALLOC_SIZE (ptr1, 4096);
-	TEST_ALLOC_ORPHAN (ptr1);
+	TEST_ALLOC_PARENT (ptr1, NULL);
 
 	nih_free (ptr1);
 
@@ -152,7 +152,7 @@ test_realloc (void)
 	memset (ptr1, 'x', 8096);
 
 	TEST_ALLOC_SIZE (ptr1, 8096);
-	TEST_ALLOC_ORPHAN (ptr1);
+	TEST_ALLOC_PARENT (ptr1, NULL);
 
 
 	/* Check that nih_realloc works if the block has a parent, the size
@@ -471,9 +471,9 @@ test_ref (void)
 
 
 	/* Check that we can add a reference to an object that has no
-	 * parent.
+	 * parent, and this does not remove the NULL reference.
 	 */
-	TEST_FEATURE ("with no existing parent");
+	TEST_FEATURE ("with no parent");
 	ptr1 = nih_alloc (NULL, 100);
 	memset (ptr1, 'x', 100);
 
@@ -483,7 +483,9 @@ test_ref (void)
 	nih_ref (ptr1, ptr2);
 
 	TEST_ALLOC_PARENT (ptr1, ptr2);
+	TEST_ALLOC_PARENT (ptr1, NULL);
 
+	nih_free (ptr1);
 	nih_free (ptr2);
 
 
@@ -507,6 +509,25 @@ test_ref (void)
 
 	nih_free (ptr1);
 	nih_free (ptr3);
+
+
+	/* Check that we can add a new NULL reference to an object that
+	 * already has a parent, and that both shall be parents afterwards.
+	 */
+	TEST_FEATURE ("with existing parent and new NULL");
+	ptr1 = nih_alloc (NULL, 100);
+	memset (ptr1, 'x', 100);
+
+	ptr2 = nih_alloc (ptr1, 100);
+	memset (ptr2, 'y', 100);
+
+	nih_ref (ptr2, NULL);
+
+	TEST_ALLOC_PARENT (ptr2, ptr1);
+	TEST_ALLOC_PARENT (ptr2, NULL);
+
+	nih_free (ptr1);
+	nih_free (ptr2);
 }
 
 void
@@ -564,6 +585,46 @@ test_unref (void)
 	TEST_TRUE (destructor_was_called);
 
 	nih_free (ptr1);
+
+
+	/* Check that we have to remove the NULL reference from an object
+	 * for it to be freed.
+	 */
+	TEST_FEATURE ("with only NULL parent");
+	ptr1 = nih_alloc (NULL, 100);
+	memset (ptr1, 'x', 100);
+
+	nih_alloc_set_destructor (ptr1, destructor_called);
+	destructor_was_called = 0;
+
+	nih_unref (ptr1, NULL);
+
+	TEST_TRUE (destructor_was_called);
+
+
+	/* Check that we can remove the NULL reference leaving a reference
+	 * to a different object.
+	 */
+	TEST_FEATURE ("with no parent and other parent");
+	ptr1 = nih_alloc (NULL, 100);
+	memset (ptr1, 'x', 100);
+
+	ptr2 = nih_alloc (NULL, 100);
+	memset (ptr2, 'y', 100);
+
+	nih_ref (ptr2, ptr1);
+
+	nih_alloc_set_destructor (ptr2, destructor_called);
+	destructor_was_called = 0;
+
+	nih_unref (ptr2, NULL);
+
+	TEST_FALSE (destructor_was_called);
+
+	TEST_ALLOC_PARENT (ptr2, ptr1);
+	TEST_FALSE (nih_alloc_parent (ptr2, NULL));
+
+	nih_free (ptr1);
 }
 
 
@@ -590,13 +651,12 @@ test_parent (void)
 
 
 	/* Check that nih_alloc_parent returns TRUE when the passed object
-	 * has a parent and NULL is passed.
+	 * is a child of the NULL parent.
 	 */
-	TEST_FEATURE ("with child and NULL");
+	TEST_FEATURE ("with child and NULL parent");
 	ptr1 = nih_alloc (NULL, 10);
-	ptr2 = nih_alloc (ptr1, 10);
 
-	TEST_TRUE (nih_alloc_parent (ptr2, ptr1));
+	TEST_TRUE (nih_alloc_parent (ptr1, NULL));
 
 	nih_free (ptr1);
 
@@ -626,17 +686,6 @@ test_parent (void)
 
 	nih_free (ptr1);
 	nih_free (ptr2);
-
-
-	/* Check that nih_alloc_parent returns FALSE when the passed object
-	 * is an orphan and NULL is passed.
-	 */
-	TEST_FEATURE ("with orphan and NULL");
-	ptr1 = nih_alloc (NULL, 10);
-
-	TEST_FALSE (nih_alloc_parent (ptr1, NULL));
-
-	nih_free (ptr1);
 }
 
 

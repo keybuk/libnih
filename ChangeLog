@@ -1,3 +1,32 @@
+2009-08-04  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/alloc.c (nih_alloc_ref_new): Allow parent to be NULL, when
+	it is we store NULL in ref->parent and leave the children_entry
+	as an empty list node.
+	(NIH_ALLOC_CTX): Context for a NULL pointer is NULL
+	(nih_alloc): Always allocate a reference, even when the parent is
+	NULL creating a NULL ref
+	(nih_discard): Lookup a NULL reference and free that before checking
+	for existing references.
+	(nih_ref, nih_unref, nih_alloc_ref_lookup): Allow parent to be NULL
+	(nih_unref_only): We don't need this function anymore so drop
+	(nih_alloc_parent): Since NULL can be a parent, this now looks
+	that up - there's no function for "has a parent"
+	* nih/alloc.h: Remove nih_unref_only prototype, update documentation
+	* nih/test_alloc.h (TEST_ALLOC_PARENT): Update documentation to
+	reflect that NULL is valid again
+	(TEST_ALLOC_ORPHAN): Drop this macro.
+	* nih/tests/test_alloc.c (test_new, test_alloc, test_realloc):
+	Replace TEST_ALLOC_ORPHAN checks with TEST_ALLOC_PARENT (ptr, NULL)
+	(test_ref): Make sure that the NULL reference is not removed by
+	adding another; add new test for adding a new NULL reference.
+	(test_unref): Add tests for removing the NULL reference and
+	freeing or leaving the object.
+	(test_parent): Add test for looking up NULL Parent
+	* nih/libnih.supp: Add suppressions for nih_alloc_ref_new in the
+	appropriate places.
+	* NEWS: Update
+
 2009-08-03  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c (test_set_string_sync)

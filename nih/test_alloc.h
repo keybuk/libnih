@@ -63,8 +63,8 @@ extern void (*__nih_free)(void *ptr);
  * @_parent: expected parent.
  *
  * Check that the pointer @_ptr was allocated with nih_alloc() and has
- * the other block @_parent as a parent.  If @_parent is NULL, tests
- * whether @_ptr has any parents.
+ * the other block @_parent as a parent.  @_parent may be the special
+ * NULL parent.
  **/
 #define TEST_ALLOC_PARENT(_ptr, _parent)				\
 	if ((_ptr) == NULL) {						\
@@ -73,22 +73,6 @@ extern void (*__nih_free)(void *ptr);
 	} else if (! nih_alloc_parent ((_ptr), (_parent)))		\
 		TEST_FAILED ("wrong parent of block %p (%s), expected %p (%s)",	\
 			     (_ptr), #_ptr, (_parent), #_parent)
-
-/**
- * TEST_ALLOC_ORPHAN:
- * @_ptr: allocated pointer.
- *
- * Check that the pointer @_ptr was allocated with nih_alloc() and has
- * no parent references.
- **/
-#define TEST_ALLOC_ORPHAN(_ptr)						\
-	if ((_ptr) == NULL) {						\
-		TEST_FAILED ("wrong value for block %s, got unexpected NULL", \
-			     #_ptr);					\
-	} else if (nih_alloc_parent ((_ptr), NULL))				\
-		TEST_FAILED ("wrong parent of block %p (%s), expected none", \
-			     (_ptr), #_ptr)
-
 
 
 /**

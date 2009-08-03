@@ -1,5 +1,61 @@
 0.4.0  xxxx-xx-xx
 
+	* nih_alloc() no longer permits objects to have zero references,
+	  passing NULL for the parent now creates a special reference from
+	  a NULL parent.
+
+	* nih_discard() removes this special reference before checking
+	  whether remaining references free the object.
+
+	* nih_ref() and nih_unref() may have NULL as the parent reference
+	  and add or remove the special reference respectively.
+
+	* nih_ref() does not remove the NULL reference, you must now use
+	  nih_discard() or nih_local to construct floating objects.
+
+	* Since nih_ref() may be used when parent is NULL, there's no reason
+	  for an nih_unref_only() function so it has been dropped; the
+	  following code is now perfectly safe:
+
+		nih_ref (obj, new_parent);
+		nih_unref (object, old_parent);
+
+	* nih_alloc_parent() has changed again, now when passed NULL it
+	  only returns TRUE if the object has the special NULL parent.
+
+	* TEST_ALLOC_PARENT() has likewise changed, restoring the previous
+	  behaviour that TEST_ALLOC_PARENT(ptr, NULL) tests whether it has
+	  the NULL parent.
+
+	* The TEST_ALLOC_ORPHAN() macro has been dropped, objects may no
+	  longer have no parents.
+
+	* These changes solve the problem where the object "obj" in the
+	  following code would be freed, even though it was intended that
+	  it be a top-level object:
+
+		obj = nih_new (NULL, Obj);
+
+		nih_ref (obj, tmp_obj);
+		nih_unref (obj, tmp_obj);
+
+	  This comes at a cost of breaking the previous behaviour where
+	  a NULL-parented object could be considered floating and
+	  ignored once referenced.  This kind of code was brittle anyway
+	  and nih_local far better solves it, e.g. replace code such as:
+
+		Obj *obj;
+
+		obj = nih_new (NULL, Obj);
+		func_that_will_ref (obj);
+
+	  with:
+
+		nih_local Obj *obj = NULL;
+
+		obj = nih_new (NULL, Obj);
+		func_that_will_ref (obj);
+
 0.3.2  2009-08-02
 
 	* D-Bus 1.2.16 is now required.

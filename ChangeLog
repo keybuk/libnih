@@ -1,5 +1,9 @@
 2009-08-04  Scott James Remnant  <scott@netsplit.com>
 
+	* configure.ac: 0.4.0 is a bit far, and the nih_alloc() changes are
+	largely minor in effect outside the library; let's call this 0.3.5
+	* NEWS: Change version
+
 	* nih-dbus-tool/node.c (node_start_tag): Make node object local.
 	(node_end_tag): Replace use of nih_unref_only with a simple
 	nih_ref()/nih_unref() pair

@@ -1,5 +1,10 @@
 2009-08-04  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/tests/test_alloc.c (test_ref, test_unref): Add tests for
+	multiple identical parents.
+	* nih/alloc.h: Document that we specifically permit multiple
+	references between two objects.
+
 	* configure.ac: 0.4.0 is a bit far, and the nih_alloc() changes are
 	largely minor in effect outside the library; let's call this 0.3.5
 	* NEWS: Change version

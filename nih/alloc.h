@@ -35,7 +35,9 @@
  * passing any other object allocated with these functions as the parent
  * or the special NULL parent.
  *
- * Thus any object may have one or more parents.
+ * Thus any object may have one or more parents.  Indeed, an object
+ * (including the NULL parent) may hold multiple references to another
+ * object.
  *
  * When an object is freed, the references to its children are discarded
  * and if it held the last reference to one of those children, the child

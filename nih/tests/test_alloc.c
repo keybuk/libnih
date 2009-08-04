@@ -528,6 +528,38 @@ test_ref (void)
 
 	nih_free (ptr1);
 	nih_free (ptr2);
+
+
+	/* Check that we can add a second NULL reference to an object that
+	 * already has one.
+	 */
+	TEST_FEATURE ("with additional NULL parent");
+	ptr1 = nih_alloc (NULL, 100);
+	memset (ptr1, 'x', 100);
+
+	nih_ref (ptr1, NULL);
+
+	TEST_ALLOC_PARENT (ptr1, NULL);
+
+	nih_free (ptr1);
+
+
+	/* Check that we can add a second reference to an object that already
+	 * has a reference from the same parent.
+	 */
+	TEST_FEATURE ("with additional existing parent");
+	ptr1 = nih_alloc (NULL, 100);
+	memset (ptr1, 'x', 100);
+
+	ptr2 = nih_alloc (ptr1, 100);
+	memset (ptr2, 'y', 100);
+
+	nih_ref (ptr2, ptr1);
+
+	TEST_ALLOC_PARENT (ptr2, ptr1);
+
+	nih_free (ptr2);
+	nih_free (ptr1);
 }
 
 void
@@ -623,6 +655,53 @@ test_unref (void)
 
 	TEST_ALLOC_PARENT (ptr2, ptr1);
 	TEST_FALSE (nih_alloc_parent (ptr2, NULL));
+
+	nih_free (ptr1);
+
+
+	/* Check that an object with multiple NULL references must have
+	 * them both removed before it will be freed.
+	 */
+	TEST_FEATURE ("with multiple NULL parents");
+	ptr1 = nih_alloc (NULL, 100);
+	memset (ptr1, 'x', 100);
+
+	nih_ref (ptr1, NULL);
+
+	nih_alloc_set_destructor (ptr1, destructor_called);
+	destructor_was_called = 0;
+
+	nih_unref (ptr1, NULL);
+
+	TEST_FALSE (destructor_was_called);
+
+	nih_unref (ptr1, NULL);
+
+	TEST_TRUE (destructor_was_called);
+
+
+	/* Check that an object with multiple identical references must have
+	 * them both removed before it will be freed.
+	 */
+	TEST_FEATURE ("with multiple identical parents");
+	ptr1 = nih_alloc (NULL, 100);
+	memset (ptr1, 'x', 100);
+
+	ptr2 = nih_alloc (ptr1, 100);
+	memset (ptr2, 'y', 100);
+
+	nih_ref (ptr2, ptr1);
+
+	nih_alloc_set_destructor (ptr2, destructor_called);
+	destructor_was_called = 0;
+
+	nih_unref (ptr2, ptr1);
+
+	TEST_FALSE (destructor_was_called);
+
+	nih_unref (ptr2, ptr1);
+
+	TEST_TRUE (destructor_was_called);
 
 	nih_free (ptr1);
 }

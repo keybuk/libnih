@@ -123,7 +123,7 @@ test_of (void)
 			continue;
 		}
 
-		TEST_ALLOC_ORPHAN (str);
+		TEST_ALLOC_PARENT (str, NULL);
 		TEST_EQ_STR (str, "uint8_t");
 
 		nih_free (str);
@@ -144,7 +144,7 @@ test_of (void)
 			continue;
 		}
 
-		TEST_ALLOC_ORPHAN (str);
+		TEST_ALLOC_PARENT (str, NULL);
 		TEST_EQ_STR (str, "int");
 
 		nih_free (str);
@@ -165,7 +165,7 @@ test_of (void)
 			continue;
 		}
 
-		TEST_ALLOC_ORPHAN (str);
+		TEST_ALLOC_PARENT (str, NULL);
 		TEST_EQ_STR (str, "int16_t");
 
 		nih_free (str);
@@ -186,7 +186,7 @@ test_of (void)
 			continue;
 		}
 
-		TEST_ALLOC_ORPHAN (str);
+		TEST_ALLOC_PARENT (str, NULL);
 		TEST_EQ_STR (str, "uint16_t");
 
 		nih_free (str);
@@ -207,7 +207,7 @@ test_of (void)
 			continue;
 		}
 
-		TEST_ALLOC_ORPHAN (str);
+		TEST_ALLOC_PARENT (str, NULL);
 		TEST_EQ_STR (str, "int32_t");
 
 		nih_free (str);
@@ -228,7 +228,7 @@ test_of (void)
 			continue;
 		}
 
-		TEST_ALLOC_ORPHAN (str);
+		TEST_ALLOC_PARENT (str, NULL);
 		TEST_EQ_STR (str, "uint32_t");
 
 		nih_free (str);
@@ -249,7 +249,7 @@ test_of (void)
 			continue;
 		}
 
-		TEST_ALLOC_ORPHAN (str);
+		TEST_ALLOC_PARENT (str, NULL);
 		TEST_EQ_STR (str, "int64_t");
 
 		nih_free (str);
@@ -270,7 +270,7 @@ test_of (void)
 			continue;
 		}
 
-		TEST_ALLOC_ORPHAN (str);
+		TEST_ALLOC_PARENT (str, NULL);
 		TEST_EQ_STR (str, "uint64_t");
 
 		nih_free (str);
@@ -291,7 +291,7 @@ test_of (void)
 			continue;
 		}
 
-		TEST_ALLOC_ORPHAN (str);
+		TEST_ALLOC_PARENT (str, NULL);
 		TEST_EQ_STR (str, "double");
 
 		nih_free (str);
@@ -312,7 +312,7 @@ test_of (void)
 			continue;
 		}
 
-		TEST_ALLOC_ORPHAN (str);
+		TEST_ALLOC_PARENT (str, NULL);
 		TEST_EQ_STR (str, "char *");
 
 		nih_free (str);
@@ -333,7 +333,7 @@ test_of (void)
 			continue;
 		}
 
-		TEST_ALLOC_ORPHAN (str);
+		TEST_ALLOC_PARENT (str, NULL);
 		TEST_EQ_STR (str, "char *");
 
 		nih_free (str);
@@ -354,7 +354,7 @@ test_of (void)
 			continue;
 		}
 
-		TEST_ALLOC_ORPHAN (str);
+		TEST_ALLOC_PARENT (str, NULL);
 		TEST_EQ_STR (str, "char *");
 
 		nih_free (str);

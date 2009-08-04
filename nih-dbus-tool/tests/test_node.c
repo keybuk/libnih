@@ -159,7 +159,8 @@ test_start_tag (void)
 	ParseStack * parent = NULL;
 	ParseStack * entry;
 	XML_Parser   xmlp;
-	Node *       node;
+	Node *       node = NULL;
+	Interface *  interface = NULL;
 	char *       attr[5];
 	int          ret = 0;
 	NihError *   err;
@@ -264,9 +265,10 @@ test_start_tag (void)
 	TEST_FEATURE ("with child node");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
+			node = node_new (NULL, NULL);
 			parent = parse_stack_push (NULL, &context.stack,
-						   PARSE_NODE,
-						   node_new (NULL, NULL));
+						   PARSE_NODE, node);
+			nih_discard (node);
 		}
 
 		attr[0] = "name";
@@ -385,9 +387,10 @@ test_start_tag (void)
 	TEST_FEATURE ("with non-node on stack");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
+			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
-						   PARSE_INTERFACE,
-						   interface_new (NULL, "com.netsplit.Nih.Test"));
+						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			attr[0] = "name";
 			attr[1] = "/com/netsplit/Nih/Test";
@@ -466,7 +469,8 @@ test_end_tag (void)
 		TEST_ALLOC_SAFE {
 			node = node_new (NULL, "/com/netsplit/Nih/Test");
 			entry = parse_stack_push (NULL, &context.stack,
-						   PARSE_NODE, node);
+						  PARSE_NODE, node);
+			nih_discard (node);
 		}
 
 		TEST_FREE_TAG (entry);
@@ -489,7 +493,7 @@ test_end_tag (void)
 		TEST_EQ (ret, 0);
 
 		TEST_FREE (entry);
-		TEST_ALLOC_ORPHAN (node);
+		TEST_ALLOC_PARENT (node, NULL);
 		TEST_EQ_P (context.node, node);
 
 		nih_free (node);
@@ -506,7 +510,8 @@ test_end_tag (void)
 		TEST_ALLOC_SAFE {
 			node = node_new (NULL, "/com/netsplit/Nih/Test");
 			entry = parse_stack_push (NULL, &context.stack,
-						   PARSE_NODE, node);
+						  PARSE_NODE, node);
+			nih_discard (node);
 
 		}
 

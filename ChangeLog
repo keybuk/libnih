@@ -1,5 +1,36 @@
 2009-08-04  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/node.c (node_start_tag): Make node object local.
+	(node_end_tag): Replace use of nih_unref_only with a simple
+	nih_ref()/nih_unref() pair
+	* nih-dbus-tool/interface.c (interface_start_tag): Make interface
+	object local
+	* nih-dbus-tool/method.c (method_start_tag): Make method object
+	local.
+	* nih-dbus-tool/signal.c (signal_start_tag): Make signal object
+	local.
+	* nih-dbus-tool/argument.c (argument_start_tag): Make argument
+	object local.
+	* nih-dbus-tool/property.c (property_start_tag): Make property
+	object local.
+	* nih-dbus-tool/tests/test_type.c (test_of): Replace
+	TEST_ALLOC_ORPHAN(ptr) with TEST_ALLOC_PARENT(ptr, NULL)
+	* nih-dbus-tool/tests/test_demarshal.c (test_demarshal): Replace
+	TEST_ALLOC_ORPHAN(ptr) with TEST_ALLOC_PARENT(ptr, NULL)
+	* nih-dbus-tool/tests/test_node.c (test_end_tag): 
+	Replace TEST_ALLOC_ORPHAN(ptr) with TEST_ALLOC_PARENT(ptr, NULL)
+	(test_start_tag, test_end_tag): Discard stack objects after pushing
+	* nih-dbus-tool/tests/test_interface.c (test_start_tag)
+	(test_end_tag): Discard stack objects after pushing
+	* nih-dbus-tool/tests/test_method.c (test_start_tag)
+	(test_end_tag): Discard stack objects after pushing
+	* nih-dbus-tool/tests/test_signal.c (test_start_tag)
+	(test_end_tag): Discard stack objects after pushing
+	* nih-dbus-tool/tests/test_property.c (test_start_tag)
+	(test_end_tag): Discard stack objects after pushing
+	* nih-dbus-tool/tests/test_argument.c (test_start_tag)
+	(test_end_tag): Discard stack objects after pushing
+
 	* nih/io.c (nih_io_read_message): Replace use of nih_unref_only
 	with a simple nih_ref()/nih_unref() pair
 	(nih_io_write): Use nih_local for the message, we either reference

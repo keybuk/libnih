@@ -171,6 +171,7 @@ test_start_tag (void)
 	ParseStack * parent = NULL;
 	ParseStack * entry;
 	XML_Parser   xmlp;
+	Node *       node = NULL;
 	Interface *  interface = NULL;
 	Property *   property;
 	char *       attr[9];
@@ -201,6 +202,7 @@ test_start_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 		}
 
 		attr[0] = "name";
@@ -264,6 +266,7 @@ test_start_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 		}
 
 		attr[0] = "name";
@@ -328,6 +331,7 @@ test_start_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 		}
 
 		attr[0] = "name";
@@ -389,6 +393,7 @@ test_start_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			attr[0] = "type";
 			attr[1] = "s";
@@ -420,6 +425,7 @@ test_start_tag (void)
 	interface = interface_new (NULL, "com.netsplit.Nih.Test");
 	parent = parse_stack_push (NULL, &context.stack,
 				   PARSE_INTERFACE, interface);
+	nih_discard (interface);
 
 	attr[0] = "name";
 	attr[1] = "Test Property";
@@ -451,6 +457,7 @@ test_start_tag (void)
 	interface = interface_new (NULL, "com.netsplit.Nih.Test");
 	parent = parse_stack_push (NULL, &context.stack,
 				   PARSE_INTERFACE, interface);
+	nih_discard (interface);
 
 	attr[0] = "name";
 	attr[1] = "TestProperty";
@@ -480,6 +487,7 @@ test_start_tag (void)
 	interface = interface_new (NULL, "com.netsplit.Nih.Test");
 	parent = parse_stack_push (NULL, &context.stack,
 				   PARSE_INTERFACE, interface);
+	nih_discard (interface);
 
 	attr[0] = "name";
 	attr[1] = "TestProperty";
@@ -511,6 +519,7 @@ test_start_tag (void)
 	interface = interface_new (NULL, "com.netsplit.Nih.Test");
 	parent = parse_stack_push (NULL, &context.stack,
 				   PARSE_INTERFACE, interface);
+	nih_discard (interface);
 
 	attr[0] = "name";
 	attr[1] = "TestProperty";
@@ -540,6 +549,7 @@ test_start_tag (void)
 	interface = interface_new (NULL, "com.netsplit.Nih.Test");
 	parent = parse_stack_push (NULL, &context.stack,
 				   PARSE_INTERFACE, interface);
+	nih_discard (interface);
 
 	attr[0] = "name";
 	attr[1] = "TestProperty";
@@ -572,6 +582,7 @@ test_start_tag (void)
 	interface = interface_new (NULL, "com.netsplit.Nih.Test");
 	parent = parse_stack_push (NULL, &context.stack,
 				   PARSE_INTERFACE, interface);
+	nih_discard (interface);
 
 	attr[0] = "name";
 	attr[1] = "TestProperty";
@@ -652,8 +663,10 @@ test_start_tag (void)
 	 * stack.
 	 */
 	TEST_FEATURE ("with non-interface on stack");
+	node = node_new (NULL, NULL);
 	parent = parse_stack_push (NULL, &context.stack,
-				   PARSE_NODE, node_new (NULL, NULL));
+				   PARSE_NODE, node);
+	nih_discard (node);
 
 	attr[0] = "name";
 	attr[1] = "TestProperty";
@@ -723,11 +736,13 @@ test_end_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			property = property_new (NULL, "TestProperty", "s",
 						 NIH_DBUS_READ);
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_PROPERTY, property);
+			nih_discard (property);
 		}
 
 		TEST_FREE_TAG (entry);
@@ -773,12 +788,14 @@ test_end_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			property = property_new (NULL, "TestProperty",
 						 "s", NIH_DBUS_READ);
 			property->symbol = nih_strdup (property, "foo");
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_PROPERTY, property);
+			nih_discard (property);
 		}
 
 		TEST_FREE_TAG (entry);
@@ -825,6 +842,7 @@ test_end_tag (void)
 	interface = interface_new (NULL, "com.netsplit.Nih.Test");
 	parent = parse_stack_push (NULL, &context.stack,
 				   PARSE_INTERFACE, interface);
+	nih_discard (interface);
 
 	other = property_new (interface, "Test", "s", NIH_DBUS_READ);
 	other->symbol = nih_strdup (other, "test_property");
@@ -833,6 +851,7 @@ test_end_tag (void)
 	property = property_new (NULL, "TestProperty", "s", NIH_DBUS_READ);
 	entry = parse_stack_push (NULL, &context.stack,
 				  PARSE_PROPERTY, property);
+	nih_discard (property);
 
 	ret = property_end_tag (xmlp, "property");
 

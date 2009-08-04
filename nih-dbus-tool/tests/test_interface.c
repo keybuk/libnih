@@ -187,6 +187,7 @@ test_start_tag (void)
 	XML_Parser   xmlp;
 	Node *       node = NULL;
 	Interface *  interface;
+	Method *     method = NULL;
 	char *       attr[5];
 	int          ret = 0;
 	NihError *   err;
@@ -214,6 +215,7 @@ test_start_tag (void)
 			node = node_new (NULL, "/com/netsplit/Nih/Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_NODE, node);
+			nih_discard (node);
 		}
 
 		attr[0] = "name";
@@ -271,6 +273,7 @@ test_start_tag (void)
 			node = node_new (NULL, "/com/netsplit/Nih/Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_NODE, node);
+			nih_discard (node);
 
 			attr[0] = NULL;
 		}
@@ -300,6 +303,7 @@ test_start_tag (void)
 			node = node_new (NULL, "/com/netsplit/Nih/Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_NODE, node);
+			nih_discard (node);
 
 			attr[0] = "name";
 			attr[1] = "Test Interface";
@@ -332,6 +336,7 @@ test_start_tag (void)
 			node = node_new (NULL, "/com/netsplit/Nih/Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_NODE, node);
+			nih_discard (node);
 
 			attr[0] = "name";
 			attr[1] = "com.netsplit.Nih.Test";
@@ -441,8 +446,10 @@ test_start_tag (void)
 	TEST_FEATURE ("with non-node on stack");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
+			method = method_new (NULL, "Test");
 			parent = parse_stack_push (NULL, &context.stack,
-						   PARSE_METHOD, method_new (NULL, "Test"));
+						   PARSE_METHOD, method);
+			nih_discard (method);
 
 			attr[0] = "name";
 			attr[1] = "com.netsplit.Nih.Test";
@@ -525,10 +532,12 @@ test_end_tag (void)
 			node = node_new (NULL, "/com/netsplit/Nih/Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_NODE, node);
+			nih_discard (node);
 
 			interface = interface_new (NULL, "com.netsplit.Nih.TestInterface");
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_INTERFACE, interface);
+			nih_discard (interface);
 		}
 
 		TEST_FREE_TAG (entry);
@@ -574,12 +583,14 @@ test_end_tag (void)
 			node = node_new (NULL, "/com/netsplit/Nih/Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_NODE, node);
+			nih_discard (node);
 
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			interface->symbol = nih_strdup (interface, "foo");
 
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_INTERFACE, interface);
+			nih_discard (interface);
 		}
 
 		TEST_FREE_TAG (entry);
@@ -628,6 +639,7 @@ test_end_tag (void)
 			node = node_new (NULL, "/com/netsplit/Nih/Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_NODE, node);
+			nih_discard (node);
 
 			other = interface_new (node, "com.netsplit.Foo.Test");
 			other->symbol = nih_strdup (other, "test");
@@ -636,6 +648,7 @@ test_end_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_INTERFACE, interface);
+			nih_discard (interface);
 		}
 
 		ret = interface_end_tag (xmlp, "interface");

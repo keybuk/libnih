@@ -191,12 +191,12 @@ interface_start_tag (XML_Parser    xmlp,
 		     const char *  tag,
 		     char * const *attr)
 {
-	ParseContext *context;
-	ParseStack *  parent;
-	Interface *   interface;
-	char * const *key;
-	char * const *value;
-	const char *  name = NULL;
+	ParseContext *       context;
+	ParseStack *         parent;
+	nih_local Interface *interface = NULL;
+	char * const *       key;
+	char * const *       value;
+	const char *         name = NULL;
 
 	nih_assert (xmlp != NULL);
 	nih_assert (tag != NULL);
@@ -252,7 +252,6 @@ interface_start_tag (XML_Parser    xmlp,
 	if (! parse_stack_push (NULL, &context->stack,
 				PARSE_INTERFACE, interface)) {
 		nih_error_raise_system ();
-		nih_free (interface);
 		return -1;
 	}
 

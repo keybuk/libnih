@@ -172,16 +172,16 @@ argument_start_tag (XML_Parser    xmlp,
 		    const char *  tag,
 		    char * const *attr)
 {
-	ParseContext * context;
-	ParseStack *   parent;
-	Argument *     argument;
-	char * const * key;
-	char * const * value;
-	const char *   name = NULL;
-	const char *   type = NULL;
-	const char *   direction_str = NULL;
-	NihDBusArgDir  direction;
-	DBusError      error;
+	ParseContext *      context;
+	ParseStack *        parent;
+	nih_local Argument *argument = NULL;
+	char * const *      key;
+	char * const *      value;
+	const char *        name = NULL;
+	const char *        type = NULL;
+	const char *        direction_str = NULL;
+	NihDBusArgDir       direction;
+	DBusError           error;
 
 	nih_assert (xmlp != NULL);
 	nih_assert (tag != NULL);
@@ -284,7 +284,6 @@ argument_start_tag (XML_Parser    xmlp,
 	if (! parse_stack_push (NULL, &context->stack,
 				PARSE_ARGUMENT, argument)) {
 		nih_error_raise_system ();
-		nih_free (argument);
 		return -1;
 	}
 

@@ -160,12 +160,12 @@ signal_start_tag (XML_Parser    xmlp,
 		  const char *  tag,
 		  char * const *attr)
 {
-	ParseContext *context;
-	ParseStack *  parent;
-	Signal *      signal;
-	char * const *key;
-	char * const *value;
-	const char *  name = NULL;
+	ParseContext *    context;
+	ParseStack *      parent;
+	nih_local Signal *signal = NULL;
+	char * const *    key;
+	char * const *    value;
+	const char *      name = NULL;
 
 	nih_assert (xmlp != NULL);
 	nih_assert (tag != NULL);
@@ -220,7 +220,6 @@ signal_start_tag (XML_Parser    xmlp,
 
 	if (! parse_stack_push (NULL, &context->stack, PARSE_SIGNAL, signal)) {
 		nih_error_raise_system ();
-		nih_free (signal);
 		return -1;
 	}
 

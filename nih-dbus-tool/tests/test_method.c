@@ -177,6 +177,7 @@ test_start_tag (void)
 	ParseStack * parent = NULL;
 	ParseStack * entry;
 	XML_Parser   xmlp;
+	Node *       node = NULL;
 	Interface *  interface = NULL;
 	Method *     method;
 	char *       attr[5];
@@ -206,6 +207,7 @@ test_start_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 		}
 
 		attr[0] = "name";
@@ -261,6 +263,7 @@ test_start_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			attr[0] = NULL;
 		}
@@ -290,6 +293,7 @@ test_start_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			attr[0] = "name";
 			attr[1] = "Test Method";
@@ -322,6 +326,7 @@ test_start_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			attr[0] = "name";
 			attr[1] = "TestMethod";
@@ -429,8 +434,10 @@ test_start_tag (void)
 	TEST_FEATURE ("with non-interface on stack");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
+			node = node_new (NULL, NULL);
 			parent = parse_stack_push (NULL, &context.stack,
-						   PARSE_NODE, node_new (NULL, NULL));
+						   PARSE_NODE, node);
+			nih_discard (node);
 
 			attr[0] = "name";
 			attr[1] = "TestMethod";
@@ -516,10 +523,12 @@ test_end_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			method = method_new (NULL, "TestMethod");
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_METHOD, method);
+			nih_discard (method);
 		}
 
 		TEST_FREE_TAG (entry);
@@ -565,11 +574,13 @@ test_end_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			method = method_new (NULL, "TestMethod");
 			method->symbol = nih_strdup (method, "foo");
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_METHOD, method);
+			nih_discard (method);
 		}
 
 		TEST_FREE_TAG (entry);
@@ -618,6 +629,7 @@ test_end_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			other = method_new (interface, "Test");
 			other->symbol = nih_strdup (other, "test_method");
@@ -626,6 +638,7 @@ test_end_tag (void)
 			method = method_new (NULL, "TestMethod");
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_METHOD, method);
+			nih_discard (method);
 		}
 
 		ret = method_end_tag (xmlp, "method");
@@ -652,11 +665,13 @@ test_end_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			method = method_new (NULL, "TestMethod");
 			method->no_reply = TRUE;
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_METHOD, method);
+			nih_discard (method);
 
 			argument = argument_new (method, NULL, "i",
 						 NIH_DBUS_ARG_IN);
@@ -719,11 +734,13 @@ test_end_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			method = method_new (NULL, "TestMethod");
 			method->no_reply = TRUE;
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_METHOD, method);
+			nih_discard (method);
 
 			argument = argument_new (method, NULL, "i",
 						 NIH_DBUS_ARG_OUT);
@@ -785,11 +802,13 @@ test_end_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			method = method_new (NULL, "TestMethod");
 			method->async = TRUE;
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_METHOD, method);
+			nih_discard (method);
 		}
 
 		TEST_FREE_TAG (entry);
@@ -844,12 +863,14 @@ test_end_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			method = method_new (NULL, "TestMethod");
 			method->async = TRUE;
 			method->no_reply = TRUE;
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_METHOD, method);
+			nih_discard (method);
 		}
 
 		TEST_FREE_TAG (entry);
@@ -906,12 +927,14 @@ test_end_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			method = method_new (NULL, "TestMethod");
 			method->async = TRUE;
 			method->no_reply = TRUE;
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_METHOD, method);
+			nih_discard (method);
 
 			argument = argument_new (method, NULL, "i",
 						 NIH_DBUS_ARG_OUT);

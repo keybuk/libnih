@@ -159,12 +159,12 @@ node_start_tag (XML_Parser    xmlp,
 		const char *  tag,
 		char * const *attr)
 {
-	ParseContext *context;
-	ParseStack *  parent;
-	Node *        node;
-	char * const *key;
-	char * const *value;
-	const char *  name = NULL;
+	ParseContext *  context;
+	ParseStack *    parent;
+	nih_local Node *node = NULL;
+	char * const *  key;
+	char * const *  value;
+	const char *    name = NULL;
 
 	nih_assert (xmlp != NULL);
 	nih_assert (tag != NULL);
@@ -220,7 +220,6 @@ node_start_tag (XML_Parser    xmlp,
 
 	if (! parse_stack_push (NULL, &context->stack, PARSE_NODE, node)) {
 		nih_error_raise_system ();
-		nih_free (node);
 		return -1;
 	}
 
@@ -261,10 +260,9 @@ node_end_tag (XML_Parser  xmlp,
 	nih_debug ("Set parsed node to %s", entry->node->path ?: "(unknown)");
 	nih_assert (context->node == NULL);
 	context->node = entry->node;
-	if (context->parent)
-		nih_ref (entry->node, context->parent);
+	nih_ref (entry->node, context->parent);
 
-	nih_unref_only (entry->node, entry);
+	nih_unref (entry->node, entry);
 	nih_free (entry);
 
 	return 0;

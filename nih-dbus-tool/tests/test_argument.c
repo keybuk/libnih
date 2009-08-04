@@ -175,6 +175,7 @@ test_start_tag (void)
 	ParseStack * parent = NULL;
 	ParseStack * entry;
 	XML_Parser   xmlp;
+	Node *       node = NULL;
 	Method *     method = NULL;
 	Signal *     signal = NULL;
 	Argument *   argument;
@@ -206,6 +207,7 @@ test_start_tag (void)
 			method = method_new (NULL, "TestMethod");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_METHOD, method);
+			nih_discard (method);
 		}
 
 		attr[0] = "name";
@@ -268,6 +270,7 @@ test_start_tag (void)
 			signal = signal_new (NULL, "TestSignal");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_SIGNAL, signal);
+			nih_discard (signal);
 		}
 
 		attr[0] = "name";
@@ -328,6 +331,7 @@ test_start_tag (void)
 			method = method_new (NULL, "TestMethod");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_METHOD, method);
+			nih_discard (method);
 		}
 
 		attr[0] = "name";
@@ -390,6 +394,7 @@ test_start_tag (void)
 			method = method_new (NULL, "TestMethod");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_METHOD, method);
+			nih_discard (method);
 		}
 
 		attr[0] = "name";
@@ -452,6 +457,7 @@ test_start_tag (void)
 			signal = signal_new (NULL, "TestSignal");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_SIGNAL, signal);
+			nih_discard (signal);
 		}
 
 		attr[0] = "name";
@@ -514,6 +520,7 @@ test_start_tag (void)
 			method = method_new (NULL, "TestMethod");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_METHOD, method);
+			nih_discard (method);
 		}
 
 		attr[0] = "type";
@@ -569,7 +576,9 @@ test_start_tag (void)
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "TestMethod");
-			parent = parse_stack_push (NULL, &context.stack, PARSE_METHOD, method);
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_METHOD, method);
+			nih_discard (method);
 
 			attr[0] = "name";
 			attr[1] = "test arg";
@@ -601,7 +610,9 @@ test_start_tag (void)
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "TestMethod");
-			parent = parse_stack_push (NULL, &context.stack, PARSE_METHOD, method);
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_METHOD, method);
+			nih_discard (method);
 
 			attr[0] = "name";
 			attr[1] = "test_arg";
@@ -631,7 +642,9 @@ test_start_tag (void)
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "TestMethod");
-			parent = parse_stack_push (NULL, &context.stack, PARSE_METHOD, method);
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_METHOD, method);
+			nih_discard (method);
 
 			attr[0] = "name";
 			attr[1] = "test_arg";
@@ -663,7 +676,9 @@ test_start_tag (void)
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "TestMethod");
-			parent = parse_stack_push (NULL, &context.stack, PARSE_METHOD, method);
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_METHOD, method);
+			nih_discard (method);
 
 			attr[0] = "name";
 			attr[1] = "test_arg";
@@ -697,7 +712,9 @@ test_start_tag (void)
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			signal = signal_new (NULL, "TestSignal");
-			parent = parse_stack_push (NULL, &context.stack, PARSE_SIGNAL, signal);
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_SIGNAL, signal);
+			nih_discard (signal);
 
 			attr[0] = "name";
 			attr[1] = "test_arg";
@@ -731,7 +748,9 @@ test_start_tag (void)
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			signal = signal_new (NULL, "TestSignal");
-			parent = parse_stack_push (NULL, &context.stack, PARSE_SIGNAL, signal);
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_SIGNAL, signal);
+			nih_discard (signal);
 
 			attr[0] = "name";
 			attr[1] = "test_arg";
@@ -766,7 +785,9 @@ test_start_tag (void)
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			method = method_new (NULL, "TestMethod");
-			parent = parse_stack_push (NULL, &context.stack, PARSE_METHOD, method);
+			parent = parse_stack_push (NULL, &context.stack,
+						   PARSE_METHOD, method);
+			nih_discard (method);
 
 			attr[0] = "name";
 			attr[1] = "test_arg";
@@ -881,8 +902,10 @@ test_start_tag (void)
 	TEST_FEATURE ("with non-method/signal on stack");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
+			node = node_new (NULL, NULL);
 			parent = parse_stack_push (NULL, &context.stack,
-						   PARSE_NODE, node_new (NULL, NULL));
+						   PARSE_NODE, node);
+			nih_discard (node);
 
 			attr[0] = "name";
 			attr[1] = "test_arg";
@@ -968,11 +991,13 @@ test_end_tag (void)
 			method = method_new (NULL, "TestMethod");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_METHOD, method);
+			nih_discard (method);
 
 			argument = argument_new (NULL, "test_arg", "s",
 						 NIH_DBUS_ARG_IN);
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_ARGUMENT, argument);
+			nih_discard (argument);
 		}
 
 		TEST_FREE_TAG (entry);
@@ -1019,12 +1044,14 @@ test_end_tag (void)
 			method = method_new (NULL, "TestMethod");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_METHOD, method);
+			nih_discard (method);
 
 			argument = argument_new (NULL, "test_arg", "s",
 						 NIH_DBUS_ARG_IN);
 			argument->symbol = nih_strdup (argument, "test");
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_ARGUMENT, argument);
+			nih_discard (argument);
 		}
 
 		TEST_FREE_TAG (entry);
@@ -1070,6 +1097,7 @@ test_end_tag (void)
 			method = method_new (NULL, "TestMethod");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_METHOD, method);
+			nih_discard (method);
 
 			other1 = argument_new (method, NULL,
 					       "s", NIH_DBUS_ARG_IN);
@@ -1083,6 +1111,7 @@ test_end_tag (void)
 						 NIH_DBUS_ARG_IN);
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_ARGUMENT, argument);
+			nih_discard (argument);
 		}
 
 		TEST_FREE_TAG (entry);
@@ -1127,6 +1156,7 @@ test_end_tag (void)
 			method = method_new (NULL, "TestMethod");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_METHOD, method);
+			nih_discard (method);
 
 			other1 = argument_new (method, NULL,
 					       "s", NIH_DBUS_ARG_IN);
@@ -1141,6 +1171,7 @@ test_end_tag (void)
 			argument->symbol = nih_strdup (argument, "test");
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_ARGUMENT, argument);
+			nih_discard (argument);
 		}
 
 		TEST_FREE_TAG (entry);
@@ -1189,11 +1220,13 @@ test_end_tag (void)
 			signal = signal_new (NULL, "TestSignal");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_SIGNAL, signal);
+			nih_discard (signal);
 
 			argument = argument_new (NULL, "test_arg", "s",
 						 NIH_DBUS_ARG_IN);
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_ARGUMENT, argument);
+			nih_discard (argument);
 		}
 
 		TEST_FREE_TAG (entry);
@@ -1240,12 +1273,14 @@ test_end_tag (void)
 			signal = signal_new (NULL, "TestSignal");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_SIGNAL, signal);
+			nih_discard (signal);
 
 			argument = argument_new (NULL, "test_arg", "s",
 						 NIH_DBUS_ARG_IN);
 			argument->symbol = nih_strdup (argument, "test");
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_ARGUMENT, argument);
+			nih_discard (argument);
 		}
 
 		TEST_FREE_TAG (entry);
@@ -1291,6 +1326,7 @@ test_end_tag (void)
 			signal = signal_new (NULL, "TestSignal");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_SIGNAL, signal);
+			nih_discard (signal);
 
 			other1 = argument_new (signal, NULL,
 					       "s", NIH_DBUS_ARG_IN);
@@ -1304,6 +1340,7 @@ test_end_tag (void)
 						 NIH_DBUS_ARG_IN);
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_ARGUMENT, argument);
+			nih_discard (argument);
 		}
 
 		TEST_FREE_TAG (entry);
@@ -1348,6 +1385,7 @@ test_end_tag (void)
 			signal = signal_new (NULL, "TestSignal");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_SIGNAL, signal);
+			nih_discard (signal);
 
 			other1 = argument_new (signal, NULL,
 					       "s", NIH_DBUS_ARG_IN);
@@ -1362,6 +1400,7 @@ test_end_tag (void)
 			argument->symbol = nih_strdup (argument, "test");
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_ARGUMENT, argument);
+			nih_discard (argument);
 		}
 
 		TEST_FREE_TAG (entry);
@@ -1410,6 +1449,7 @@ test_end_tag (void)
 			method = method_new (NULL, "TestMethod");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_METHOD, method);
+			nih_discard (method);
 
 			other1 = argument_new (method, "TestArg",
 					       "i", NIH_DBUS_ARG_IN);
@@ -1420,6 +1460,7 @@ test_end_tag (void)
 						 NIH_DBUS_ARG_IN);
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_ARGUMENT, argument);
+			nih_discard (argument);
 		}
 
 		ret = argument_end_tag (xmlp, "arg");
@@ -1449,6 +1490,7 @@ test_end_tag (void)
 			signal = signal_new (NULL, "TestSignal");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_SIGNAL, signal);
+			nih_discard (signal);
 
 			other1 = argument_new (signal, "TestArg", "i", NIH_DBUS_ARG_IN);
 			other1->symbol = nih_strdup (other1, "test_arg");
@@ -1458,6 +1500,7 @@ test_end_tag (void)
 						 NIH_DBUS_ARG_IN);
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_ARGUMENT, argument);
+			nih_discard (argument);
 		}
 
 		ret = argument_end_tag (xmlp, "arg");

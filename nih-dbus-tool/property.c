@@ -175,16 +175,16 @@ property_start_tag (XML_Parser    xmlp,
 		    const char *  tag,
 		    char * const *attr)
 {
-	ParseContext *context;
-	ParseStack *  parent;
-	Property *    property;
-	char * const *key;
-	char * const *value;
-	const char *  name = NULL;
-	const char *  type = NULL;
-	const char *  access_str = NULL;
-	NihDBusAccess access;
-	DBusError     error;
+	ParseContext *      context;
+	ParseStack *        parent;
+	nih_local Property *property = NULL;
+	char * const *      key;
+	char * const *      value;
+	const char *        name = NULL;
+	const char *        type = NULL;
+	const char *        access_str = NULL;
+	NihDBusAccess       access;
+	DBusError           error;
 
 	nih_assert (xmlp != NULL);
 	nih_assert (tag != NULL);
@@ -272,7 +272,6 @@ property_start_tag (XML_Parser    xmlp,
 	if (! parse_stack_push (NULL, &context->stack,
 				PARSE_PROPERTY, property)) {
 		nih_error_raise_system ();
-		nih_free (property);
 		return -1;
 	}
 

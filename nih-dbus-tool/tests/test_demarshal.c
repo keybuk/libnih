@@ -1367,7 +1367,7 @@ test_demarshal (void)
 
 		TEST_EQ (ret, 0);
 		TEST_EQ_STR (str_value, "hello there");
-		TEST_ALLOC_ORPHAN (str_value);
+		TEST_ALLOC_PARENT (str_value, NULL);
 
 		nih_free (str_value);
 
@@ -1522,7 +1522,7 @@ test_demarshal (void)
 
 		TEST_EQ (ret, 0);
 		TEST_EQ_STR (str_value, "/com/netsplit/Nih/Test");
-		TEST_ALLOC_ORPHAN (str_value);
+		TEST_ALLOC_PARENT (str_value, NULL);
 
 		nih_free (str_value);
 
@@ -1677,7 +1677,7 @@ test_demarshal (void)
 
 		TEST_EQ (ret, 0);
 		TEST_EQ_STR (str_value, "a(ii)");
-		TEST_ALLOC_ORPHAN (str_value);
+		TEST_ALLOC_PARENT (str_value, NULL);
 
 		nih_free (str_value);
 
@@ -1907,7 +1907,7 @@ test_demarshal (void)
 
 		TEST_EQ (ret, 0);
 		TEST_EQ (int16_array_len, 6);
-		TEST_ALLOC_ORPHAN (int16_array);
+		TEST_ALLOC_PARENT (int16_array, NULL);
 		TEST_ALLOC_SIZE (int16_array, sizeof (int16_t) * 6);
 		TEST_EQ (int16_array[0], 4);
 		TEST_EQ (int16_array[1], 8);
@@ -2307,7 +2307,7 @@ test_demarshal (void)
 		}
 
 		TEST_EQ (ret, 0);
-		TEST_ALLOC_ORPHAN (int16_array_array);
+		TEST_ALLOC_PARENT (int16_array_array, NULL);
 		TEST_ALLOC_SIZE (int16_array_array, sizeof (int16_t *) * 3);
 		TEST_ALLOC_PARENT (int16_array_array_len, int16_array_array);
 		TEST_ALLOC_SIZE (int16_array_array_len, sizeof (size_t) * 2);
@@ -2665,7 +2665,7 @@ test_demarshal (void)
 		}
 
 		TEST_EQ (ret, 0);
-		TEST_ALLOC_ORPHAN (str_array);
+		TEST_ALLOC_PARENT (str_array, NULL);
 		TEST_ALLOC_SIZE (str_array, sizeof (char *) * 5);
 		TEST_EQ_STR (str_array[0], "this");
 		TEST_ALLOC_PARENT (str_array[0], str_array);
@@ -3037,7 +3037,7 @@ test_demarshal (void)
 		}
 
 		TEST_EQ (ret, 0);
-		TEST_ALLOC_ORPHAN (str_array_array);
+		TEST_ALLOC_PARENT (str_array_array, NULL);
 		TEST_ALLOC_SIZE (str_array_array, sizeof (char **) * 3);
 
 		TEST_ALLOC_SIZE (str_array_array[0], sizeof (char *) * 5);
@@ -3703,7 +3703,7 @@ test_demarshal (void)
 		}
 
 		TEST_EQ (ret, 0);
-		TEST_ALLOC_ORPHAN (struct_value);
+		TEST_ALLOC_PARENT (struct_value, NULL);
 		TEST_ALLOC_SIZE (struct_value, sizeof (MyStructValue));
 
 		TEST_EQ_STR (struct_value->item0, "hello there");
@@ -4169,7 +4169,7 @@ test_demarshal (void)
 		}
 
 		TEST_EQ (ret, 0);
-		TEST_ALLOC_ORPHAN (struct_array);
+		TEST_ALLOC_PARENT (struct_array, NULL);
 		TEST_ALLOC_SIZE (struct_array, sizeof (MyStructArrayValueElement *) * 3);
 
 		TEST_ALLOC_PARENT (struct_array[0], struct_array);
@@ -4617,7 +4617,7 @@ test_demarshal (void)
 		}
 
 		TEST_EQ (ret, 0);
-		TEST_ALLOC_ORPHAN (dict_entry_array);
+		TEST_ALLOC_PARENT (dict_entry_array, NULL);
 		TEST_ALLOC_SIZE (dict_entry_array, sizeof (MyDictEntryArrayValueElement *) * 3);
 
 		TEST_ALLOC_PARENT (dict_entry_array[0], dict_entry_array);

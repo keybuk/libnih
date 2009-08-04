@@ -162,12 +162,12 @@ method_start_tag (XML_Parser    xmlp,
 		  const char *  tag,
 		  char * const *attr)
 {
-	ParseContext *context;
-	ParseStack *  parent;
-	Method *      method;
-	char * const *key;
-	char * const *value;
-	const char *  name = NULL;
+	ParseContext *    context;
+	ParseStack *      parent;
+	nih_local Method *method = NULL;
+	char * const *    key;
+	char * const *    value;
+	const char *      name = NULL;
 
 	nih_assert (xmlp != NULL);
 	nih_assert (tag != NULL);
@@ -222,7 +222,6 @@ method_start_tag (XML_Parser    xmlp,
 
 	if (! parse_stack_push (NULL, &context->stack, PARSE_METHOD, method)) {
 		nih_error_raise_system ();
-		nih_free (method);
 		return -1;
 	}
 

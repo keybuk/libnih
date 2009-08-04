@@ -1101,7 +1101,7 @@ test_end_tag (void)
 		TEST_EQ (status.parsing, XML_PARSING);
 
 		TEST_FREE (entry);
-		TEST_ALLOC_ORPHAN (node);
+		TEST_ALLOC_PARENT (node, NULL);
 		TEST_EQ_P (context.node, node);
 
 		nih_free (node);

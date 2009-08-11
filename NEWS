@@ -30,6 +30,9 @@
 	* The TEST_ALLOC_ORPHAN() macro has been dropped, objects may no
 	  longer have no parents.
 
+	* A new TEST_ALLOC_NOT_PARENT() macro has been added that is the
+	  exact inverse of TEST_ALLOC_PARENT()
+
 	* These changes solve the problem where the object "obj" in the
 	  following code would be freed, even though it was intended that
 	  it be a top-level object:

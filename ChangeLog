@@ -1,3 +1,8 @@
+2009-08-11  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/test_alloc.h (TEST_ALLOC_NOT_PARENT): Add the opposite test
+	for a known parent, making sure that something is not a parent.
+
 2009-08-04  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/tests/test_alloc.c (test_ref, test_unref): Add tests for

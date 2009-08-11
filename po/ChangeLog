@@ -1,3 +1,7 @@
+2009-08-11  Scott James Remnant  <scott@netsplit.com>
+
+	* libnih.pot: Distribute the pot file
+
 2009-06-17  Scott James Remnant  <scott@netsplit.com>
 
 	* POTFILES.in: Add nih-dbus/dbus_pending_data.c and nih-dbus-tool

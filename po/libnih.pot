@@ -1,0 +1,557 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Scott James Remnant <scott@netsplit.com>
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: libnih-bugs@netsplit.com\n"
+"POT-Creation-Date: 2009-08-11 11:28+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: nih/command.c:61
+msgid "display list of commands"
+msgstr ""
+
+#: nih/command.c:139
+#, c-format
+msgid "For a list of commands, try `%s help'."
+msgstr ""
+
+#: nih/command.c:143
+msgid "COMMAND [OPTION]... [ARG]..."
+msgstr ""
+
+#: nih/command.c:158
+#, c-format
+msgid "%s: missing command\n"
+msgstr ""
+
+#: nih/command.c:166
+#, c-format
+msgid "%s: invalid command: %s\n"
+msgstr ""
+
+#: nih/command.c:177
+#, c-format
+msgid "%s [OPTION]..."
+msgstr ""
+
+#: nih/command.c:403
+#, c-format
+msgid "For more information on a command, try `%s COMMAND --help'.\n"
+msgstr ""
+
+#: nih/command.c:426
+#, c-format
+msgid "%s commands:\n"
+msgstr ""
+
+#: nih/command.c:428
+#, c-format
+msgid "Other commands:\n"
+msgstr ""
+
+#: nih/command.c:430
+#, c-format
+msgid "Commands:\n"
+msgstr ""
+
+#: nih/io.c:1199
+msgid "Error while reading from descriptor"
+msgstr ""
+
+#: nih/main.c:233
+#, c-format
+msgid "Try `%s --help' for more information.\n"
+msgstr ""
+
+#: nih/main.c:255
+msgid ""
+"This is free software; see the source for copying conditions.  There is NO "
+"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+msgstr ""
+
+#: nih/main.c:318
+msgid "Unable to write pid file"
+msgstr ""
+
+#: nih/option.c:95
+msgid "reduce output to errors only"
+msgstr ""
+
+#: nih/option.c:98
+msgid "increase output to include informational messages"
+msgstr ""
+
+#: nih/option.c:102
+msgid "display this help and exit"
+msgstr ""
+
+#: nih/option.c:105
+msgid "output version information and exit"
+msgstr ""
+
+#: nih/option.c:299
+#, c-format
+msgid "%s: invalid option: -%c\n"
+msgstr ""
+
+#: nih/option.c:392
+#, c-format
+msgid "%s: invalid option: --%s\n"
+msgstr ""
+
+#: nih/option.c:408
+#, c-format
+msgid "%s: unexpected argument: --%s\n"
+msgstr ""
+
+#: nih/option.c:464
+#, c-format
+msgid "%s: missing argument: %s\n"
+msgstr ""
+
+#: nih/option.c:664
+#, c-format
+msgid "%s: illegal argument: %s\n"
+msgstr ""
+
+#: nih/option.c:857
+msgid "Usage"
+msgstr ""
+
+#: nih/option.c:861
+msgid "[OPTION]..."
+msgstr ""
+
+#: nih/option.c:909
+#, c-format
+msgid "Report bugs to <%s>\n"
+msgstr ""
+
+#: nih/option.c:911
+#, c-format
+msgid "Report bugs at <%s>\n"
+msgstr ""
+
+#: nih/option.c:936
+#, c-format
+msgid "%s options:\n"
+msgstr ""
+
+#: nih/option.c:938
+#, c-format
+msgid "Other options:\n"
+msgstr ""
+
+#: nih/option.c:940
+#, c-format
+msgid "Options:\n"
+msgstr ""
+
+#: nih/watch.c:550
+msgid "Unable to watch directory"
+msgstr ""
+
+#: nih/errors.h:56
+msgid "Expected token"
+msgstr ""
+
+#: nih/errors.h:57
+msgid "Unexpected token"
+msgstr ""
+
+#: nih/errors.h:58
+msgid "Trailing slash in file"
+msgstr ""
+
+#: nih/errors.h:59
+msgid "Unterminated quoted string"
+msgstr ""
+
+#: nih/errors.h:60
+msgid "Unterminated block"
+msgstr ""
+
+#: nih/errors.h:61
+msgid "Unknown stanza"
+msgstr ""
+
+#: nih/errors.h:63
+msgid "Directory loop detected"
+msgstr ""
+
+#: nih-dbus/dbus_object.c:311
+msgid "Invalid arguments to Introspect method"
+msgstr ""
+
+#: nih-dbus/dbus_object.c:547
+msgid "Invalid arguments to Get method"
+msgstr ""
+
+#: nih-dbus/dbus_object.c:632
+#, c-format
+msgid "The %s property is write-only"
+msgstr ""
+
+#: nih-dbus/dbus_object.c:688
+msgid "Invalid arguments to GetAll method"
+msgstr ""
+
+#: nih-dbus/dbus_object.c:889
+msgid "Invalid arguments to Set method"
+msgstr ""
+
+#: nih-dbus/dbus_object.c:969
+#, c-format
+msgid "The %s property is read-only"
+msgstr ""
+
+#: nih-dbus/errors.h:38
+msgid "Invalid arguments received in reply"
+msgstr ""
+
+#: nih-dbus-tool/annotation.c:94
+msgid "Ignored unexpected <annotation> tag"
+msgstr ""
+
+#: nih-dbus-tool/annotation.c:116
+msgid "Ignored unknown <annotation> attribute"
+msgstr ""
+
+#: nih-dbus-tool/annotation.c:159
+msgid "Ignored unknown interface annotation"
+msgstr ""
+
+#: nih-dbus-tool/annotation.c:166
+msgid "Ignored unknown method annotation"
+msgstr ""
+
+#: nih-dbus-tool/annotation.c:173
+msgid "Ignored unknown signal annotation"
+msgstr ""
+
+#: nih-dbus-tool/annotation.c:180
+msgid "Ignored unknown property annotation"
+msgstr ""
+
+#: nih-dbus-tool/annotation.c:187
+msgid "Ignored unknown argument annotation"
+msgstr ""
+
+#: nih-dbus-tool/argument.c:201
+msgid "Ignored unexpected <arg> tag"
+msgstr ""
+
+#: nih-dbus-tool/argument.c:225
+msgid "Ignored unknown <arg> attribute"
+msgstr ""
+
+#: nih-dbus-tool/interface.c:214
+msgid "Ignored unexpected <interface> tag"
+msgstr ""
+
+#: nih-dbus-tool/interface.c:234
+msgid "Ignored unknown <interface> attribute"
+msgstr ""
+
+#: nih-dbus-tool/main.c:88
+#, c-format
+msgid "%s: illegal output mode: %s\n"
+msgstr ""
+
+#: nih-dbus-tool/main.c:307
+msgid "output mode: object, or proxy [default: proxy]"
+msgstr ""
+
+#: nih-dbus-tool/main.c:309
+msgid "prefix for C functions [default: dbus]"
+msgstr ""
+
+#: nih-dbus-tool/main.c:311
+msgid "interface name not included in symbols"
+msgstr ""
+
+#: nih-dbus-tool/main.c:313
+msgid "write C source to FILENAME, header alongside"
+msgstr ""
+
+#: nih-dbus-tool/main.c:334
+msgid "[XMLFILE]"
+msgstr ""
+
+#: nih-dbus-tool/main.c:335
+msgid "Generate C bindings for D-Bus objects"
+msgstr ""
+
+#: nih-dbus-tool/main.c:336
+msgid "Fill this in later"
+msgstr ""
+
+#: nih-dbus-tool/main.c:351
+#, c-format
+msgid "%s: --output must be specified when using standard input\n"
+msgstr ""
+
+#: nih-dbus-tool/main.c:414
+msgid "No such interface"
+msgstr ""
+
+#: nih-dbus-tool/method.c:185
+msgid "Ignored unexpected <method> tag"
+msgstr ""
+
+#: nih-dbus-tool/method.c:205
+msgid "Ignored unknown <method> attribute"
+msgstr ""
+
+#: nih-dbus-tool/method.c:302
+msgid "Ignored NoReply annotation for method with output arguments"
+msgstr ""
+
+#: nih-dbus-tool/method.c:314
+msgid "Ignored Async annotation for NoReply method"
+msgstr ""
+
+#: nih-dbus-tool/node.c:185
+msgid "Ignored unexpected <node> tag"
+msgstr ""
+
+#: nih-dbus-tool/node.c:206
+msgid "Ignored unknown <node> attribute"
+msgstr ""
+
+#: nih-dbus-tool/parse.c:206
+msgid "Ignored unknown tag"
+msgstr ""
+
+#: nih-dbus-tool/parse.c:335
+msgid "Unable to create XML Parser"
+msgstr ""
+
+#: nih-dbus-tool/parse.c:354
+msgid "Unable to allocate parsing buffer"
+msgstr ""
+
+#: nih-dbus-tool/parse.c:362
+msgid "Read error"
+msgstr ""
+
+#: nih-dbus-tool/parse.c:384
+msgid "XML parse error"
+msgstr ""
+
+#: nih-dbus-tool/parse.c:396
+msgid "No node present"
+msgstr ""
+
+#: nih-dbus-tool/property.c:202
+msgid "Ignored unexpected <property> tag"
+msgstr ""
+
+#: nih-dbus-tool/property.c:226
+msgid "Ignored unknown <property> attribute"
+msgstr ""
+
+#: nih-dbus-tool/signal.c:183
+msgid "Ignored unexpected <signal> tag"
+msgstr ""
+
+#: nih-dbus-tool/signal.c:203
+msgid "Ignored unknown <signal> attribute"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:81
+msgid "Unable to generate unique name for symbol"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:83
+msgid "Invalid object path in <node> name attribute"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:85
+msgid "<interface> missing required name attribute"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:86
+msgid "Invalid interface name in <interface> name attribute"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:87
+msgid ""
+"Illegal value for org.freedesktop.DBus.Deprecated interface annotation, "
+"expected 'true' or 'false'"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:88
+msgid "Invalid C symbol for interface"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:89
+msgid "Unknown annotation for interface"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:90
+#, c-format
+msgid "Symbol '%s' already assigned to %s interface"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:92
+msgid "<method> missing required name attribute"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:93
+msgid "Invalid method name in <method> name attribute"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:94
+msgid ""
+"Illegal value for org.freedesktop.DBus.Deprecated method annotation, "
+"expected 'true' or 'false'"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:95
+msgid ""
+"Illegal value for org.freedesktop.DBus.Method.NoReply method annotation, "
+"expected 'true' or 'false'"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:96
+msgid "Invalid C symbol for method"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:97
+msgid ""
+"Illegal value for com.netsplit.Nih.Method.Async method annotation, expected "
+"'true' or 'false'"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:98
+msgid "Unknown annotation for method"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:99
+#, c-format
+msgid "Symbol '%s' already assigned to %s method"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:101
+msgid "<signal> missing required name attribute"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:102
+msgid "Invalid signal name in <signal> name attribute"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:103
+msgid ""
+"Illegal value for org.freedesktop.DBus.Deprecated signal annotation, "
+"expected 'true' or 'false'"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:104
+msgid "Invalid C symbol for signal"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:105
+msgid "Unknown annotation for signal"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:106
+#, c-format
+msgid "Symbol '%s' already assigned to %s signal"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:108
+msgid "<property> missing required name attribute"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:109
+msgid "Invalid property name in <property> name attribute"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:110
+msgid "<property> missing required type attribute"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:111
+msgid "Invalid D-Bus type in <property> type attribute"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:112
+msgid "<property> missing required access attribute"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:113
+msgid ""
+"Illegal value for <property> access attribute, expected 'read', 'write' or "
+"'readwrite'"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:114
+msgid ""
+"Illegal value for org.freedesktop.DBus.Deprecated property annotation, "
+"expected 'true' or 'false'"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:115
+msgid "Invalid C symbol for property"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:116
+msgid "Unknown annotation for property"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:117
+#, c-format
+msgid "Symbol '%s' already assigned to %s property"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:119
+msgid "Invalid C symbol for argument"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:120
+msgid "Unknown annotation for argument"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:121
+msgid "Invalid argument name in <arg> name attribute"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:122
+msgid "<arg> missing required type attribute"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:123
+msgid "Invalid D-Bus type in <arg> type attribute"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:124
+msgid "Illegal value for <arg> direction attribute, expected 'in' or 'out'"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:125
+msgid "Illegal value for <arg> direction attribute, expected 'out'"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:126
+#, c-format
+msgid "Symbol '%s' already assigned to %s argument"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:128
+msgid "<annotation> missing required name attribute"
+msgstr ""
+
+#: nih-dbus-tool/errors.h:129
+msgid "<annotation> missing required value attribute"
+msgstr ""

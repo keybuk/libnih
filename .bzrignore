@@ -36,7 +36,6 @@ po/*.sin
 po/*.header
 po/Rules-quot
 po/stamp-po
-po/libnih.pot
 nih/libnih.la
 nih/test_*
 nih-dbus/libnih-dbus.la

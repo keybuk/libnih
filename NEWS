@@ -64,6 +64,12 @@
 	  should you call abort() core dump analysers can retrieve the
 	  message; especially useful for nih_assert().  (Bug: #429411)
 
+	* An external pre-built nih-dbus-tool may be used instead of the
+	  built copy by passing NIH_DBUS_TOOL to configure.  If you are
+	  cross-compiling, this will be automatically searched for in the
+	  PATH and a warning output if it doesn't exist and you fail to
+	  specify it.  (Bug: #426740)
+
 0.3.2  2009-08-02
 
 	* D-Bus 1.2.16 is now required.

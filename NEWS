@@ -59,6 +59,11 @@
 		obj = nih_new (NULL, Obj);
 		func_that_will_ref (obj);
 
+	* nih_log_message() will set the glibc __abort_msg variable to any
+	  log message of NIH_LOG_FATAL priority or greater, this means that
+	  should you call abort() core dump analysers can retrieve the
+	  message; especially useful for nih_assert().  (Bug: #429411)
+
 0.3.2  2009-08-02
 
 	* D-Bus 1.2.16 is now required.

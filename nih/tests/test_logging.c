@@ -31,6 +31,8 @@
 #include <nih/main.h>
 
 
+extern char *__abort_msg;
+
 static NihLogLevel last_priority = NIH_LOG_UNKNOWN;
 static char *      last_message = NULL;
 
@@ -99,7 +101,8 @@ test_set_priority (void)
 void
 test_log_message (void)
 {
-	int ret;
+	char *msg;
+	int   ret;
 
 	TEST_FUNCTION ("nih_log_message");
 	nih_log_set_logger (my_logger);
@@ -148,6 +151,64 @@ test_log_message (void)
 		ret = nih_log_message (NIH_LOG_FATAL, "this should error");
 
 		TEST_LT (ret, 0);
+
+		free (last_message);
+	}
+
+
+	/* Check that a fatal message is also stored in the glibc __abort_msg
+	 * variable.
+	 */
+	TEST_FEATURE ("with fatal message");
+	TEST_ALLOC_FAIL {
+		__abort_msg = NULL;
+		last_priority = NIH_LOG_UNKNOWN;
+		last_message = NULL;
+
+		ret = nih_log_message (NIH_LOG_FATAL,
+				       "message with %s %d formatting",
+				       "some", 20);
+
+		TEST_EQ (ret, 0);
+		TEST_EQ (last_priority, NIH_LOG_FATAL);
+		TEST_EQ_STR (last_message, "message with some 20 formatting");
+
+		TEST_NE_P (__abort_msg, NULL);
+		TEST_ALLOC_PARENT (__abort_msg, NULL);
+		TEST_EQ_STR (__abort_msg, "message with some 20 formatting");
+
+		free (last_message);
+	}
+
+
+	/* Check that a fatal message can safely overwrite one already stored
+	 * in the glibc __abort_msg variable.
+	 */
+	TEST_FEATURE ("with second fatal message");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			msg = nih_strdup (NULL, "test");
+		}
+
+		__abort_msg = msg;
+		TEST_FREE_TAG (msg);
+
+		last_priority = NIH_LOG_UNKNOWN;
+		last_message = NULL;
+
+		ret = nih_log_message (NIH_LOG_FATAL,
+				       "message with %s %d formatting",
+				       "some", 20);
+
+		TEST_EQ (ret, 0);
+		TEST_EQ (last_priority, NIH_LOG_FATAL);
+		TEST_EQ_STR (last_message, "message with some 20 formatting");
+
+		TEST_FREE (msg);
+
+		TEST_NE_P (__abort_msg, NULL);
+		TEST_ALLOC_PARENT (__abort_msg, NULL);
+		TEST_EQ_STR (__abort_msg, "message with some 20 formatting");
 
 		free (last_message);
 	}

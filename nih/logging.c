@@ -39,6 +39,13 @@
 
 
 /**
+ * __abort_msg:
+ *
+ * A glibc variable that keeps the assertion message in the core dump.
+ **/
+extern char *__abort_msg;
+
+/**
  * logger:
  *
  * Function used to output log messages.
@@ -136,6 +143,12 @@ nih_log_message (NihLogLevel priority,
 	va_start (args, format);
 	message = NIH_MUST (nih_vsprintf (NULL, format, args));
 	va_end (args);
+
+	if (priority >= NIH_LOG_FATAL) {
+		if (__abort_msg)
+			nih_discard (__abort_msg);
+		__abort_msg = NIH_MUST (nih_strdup (NULL, message));
+	}
 
 	/* Output the message */
 	ret = logger (priority, message);

@@ -259,7 +259,7 @@ $(com_netsplit_Nih_Test_object_OUTPUTS): $(com_netsplit_Nih_Test_object_XML) $(b
 	$(MKDIR_P) `echo "$@" | \
 		    sed '/\//!d;s,/[^/]*$$,,' | \
                     sort -u`
-	$(builddir)/nih-dbus-tool --mode=object --prefix=my --output=$@ $<
+	$(NIH_DBUS_TOOL) --mode=object --prefix=my --output=$@ $<
 
 
 com_netsplit_Nih_Test_proxy_OUTPUTS = \
@@ -273,7 +273,7 @@ $(com_netsplit_Nih_Test_proxy_OUTPUTS): $(com_netsplit_Nih_Test_proxy_XML) $(bui
 	$(MKDIR_P) `echo "$@" | \
 		    sed '/\//!d;s,/[^/]*$$,,' | \
                     sort -u`
-	$(builddir)/nih-dbus-tool --mode=proxy --prefix=proxy --output=$@ $<
+	$(NIH_DBUS_TOOL) --mode=proxy --prefix=proxy --output=$@ $<
 
 
 # These have to be built sources because we can't compile test_*.o without

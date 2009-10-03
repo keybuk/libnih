@@ -1,5 +1,15 @@
 2009-10-03  Scott James Remnant  <scott@netsplit.com>
 
+	* m4/libs.m4 (NIH_LIB_DBUS): Allow an external nih-dbus-tool to
+	be used by setting NIH_DBUS_TOOL when calling configure; when
+	cross-compiling, if this is not set, look for it in the PATH and
+	warn if we fall back to using our built copy.
+	* nih-dbus-tool/Makefile.am ($(com_netsplit_Nih_Test_object_OUTPUTS)): 
+	($(com_netsplit_Nih_Test_proxy_OUTPUTS)): Use an externally built
+	nih-dbus-tool for the tests if given, not strictly right but the
+	best we can do when cross-compiling (when we probably won't run
+	"make check" anyway)
+
 	* nih/file.c (nih_dir_walk_sort): Add static function to replace
 	alphasort() which we can't call anymore.  It would be deeply ironic
 	to bitch about glibc breaking API in the libnih changelog.

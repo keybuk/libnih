@@ -38,4 +38,13 @@ AS_IF([test "x$nih_with_dbus" = "xyes"],
 			   [nih_have_dbus=no])],			
 	     [nih_have_dbus=no])])
 AM_CONDITIONAL([HAVE_DBUS], [test "x$nih_have_dbus" != "xno"])
+
+AS_IF([test "x$nih_have_dbus" != "xno"],
+      [AC_ARG_VAR([NIH_DBUS_TOOL], [Path to external nih-dbus-tool when cross-compiling])
+       AS_IF([test "$cross_compiling" = "yes"],
+             [AC_CHECK_PROGS([NIH_DBUS_TOOL], [nih-dbus-tool])
+	      AS_IF([test -z "$NIH_DBUS_TOOL"],
+	      	    [AC_MSG_WARN([nih-dbus-tool not found, but you are cross-compiling.  Using built copy, which is probably not what you want.  Set NIH_DBUS_TOOL maybe?])
+		     AC_SUBST([NIH_DBUS_TOOL], ["\${top_builddir}/nih-dbus-tool/nih-dbus-tool"])])],
+	     [AC_SUBST([NIH_DBUS_TOOL], ["\${top_builddir}/nih-dbus-tool/nih-dbus-tool"])])])
 ])# NIH_LIB_DBUS

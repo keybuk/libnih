@@ -1,3 +1,10 @@
+2009-10-03  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/file.c (nih_dir_walk_sort): Add static function to replace
+	alphasort() which we can't call anymore.  It would be deeply ironic
+	to bitch about glibc breaking API in the libnih changelog.
+	(nih_dir_walk_scan): Replace alphasort() with nih_dir_walk_sort()
+
 2009-08-11  Johan Kiviniemi  <johan@kiviniemi.name>
 
 	* nih/logging.c: Expose the glibc-internal __abort_msg symbol

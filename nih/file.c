@@ -571,6 +571,34 @@ nih_dir_walk (const char          *path,
 }
 
 /**
+ * nih_dir_walk_sort:
+ * @a: pointer to first path,
+ * @b: pointer to second path.
+ *
+ * This function wraps the strcoll() function allowing it to be called
+ * from qsort().
+ *
+ * Returns: zero if strings are equal, otherwise integer less than zero
+ * if @a is less than @b or integer greater than zero if @a is greater
+ * than @b.
+ **/
+static int
+nih_dir_walk_sort (const void *a,
+		   const void *b)
+{
+	const char * const *path_a;
+	const char * const *path_b;
+
+	nih_assert (a != NULL);
+	nih_assert (b != NULL);
+
+	path_a = a;
+	path_b = b;
+
+	return strcoll (*path_a, *path_b);
+}
+
+/**
  * nih_dir_walk_scan:
  * @path: path to scan,
  * @filter: path filter,
@@ -620,7 +648,7 @@ nih_dir_walk_scan (const char    *path,
 
 	closedir (dir);
 
-	qsort (paths, npaths, sizeof (char *), alphasort);
+	qsort (paths, npaths, sizeof (char *), nih_dir_walk_sort);
 
 	return paths;
 }

@@ -37,8 +37,10 @@ po/*.header
 po/Rules-quot
 po/stamp-po
 nih/libnih.la
+nih/libnih.pc
 nih/test_*
 nih-dbus/libnih-dbus.la
+nih-dbus/libnih-dbus.pc
 nih-dbus/test_*
 nih-dbus-tool/nih-dbus-tool
 nih-dbus-tool/test_*

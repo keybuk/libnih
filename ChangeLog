@@ -1,5 +1,17 @@
 2009-11-21  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/libnih.pc.in, nih-dbus/libnih-dbus.pc.in: Source to pkg-config
+	data files
+	* configure.ac: Generate the actual pkg-config files from the sources
+	* nih/Makefile.am (lib_LTLIBRARIES): Always install libnih.la
+	(include_HEADERS): Always install the header files
+	(pkgconfig_DATA): Install the pkg-config file
+	(EXTRA_DIST): Distribute the source to it
+	* nih-dbus/Makefile.am (lib_LTLIBRARIES): Always install libnih-dbus.la
+	(include_HEADERS): Always install the header files
+	(pkgconfig_DATA): Install the pkg-config file
+	(EXTRA_DIST): Distribute the source to it
+
 	* Makefile.am: Always build libnih-dbus and nih-dbus-tool
 
 	* m4/misc.m4, m4/compiler.m4, m4/linker.m4: Merge together into

@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libnih-dbus
+Description: NIH D-Bus Bindings Library
+Version: @VERSION@
+Libs: -L${libdir} -lnih-dbus
+Cflags: -I${includedir}

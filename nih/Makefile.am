@@ -6,13 +6,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/intl
 
 
-libraries = libnih.la
-
-if INSTALL_NIH
-lib_LTLIBRARIES = $(libraries)
-else
-noinst_LTLIBRARIES = $(libraries)
-endif
+lib_LTLIBRARIES = libnih.la
 
 libnih_la_SOURCES = \
 	alloc.c \
@@ -33,22 +27,15 @@ libnih_la_SOURCES = \
 	logging.c \
 	error.c
 
-
-if INSTALL_NIH
 libnih_la_LDFLAGS = \
 	-version-info 0:0:0
 if HAVE_VERSION_SCRIPT_ARG
 libnih_la_LDFLAGS += @VERSION_SCRIPT_ARG@=$(srcdir)/libnih.ver
 endif
-endif
 
 libnih_la_LIBADD = -lrt
 
 
-EXTRA_DIST = libnih.ver libnih.supp
-
-
-if INSTALL_NIH
 include_HEADERS = \
 	libnih.h
 
@@ -82,7 +69,13 @@ nihinclude_HEADERS = \
 	test_alloc.h \
 	test_list.h \
 	test_hash.h
-endif
+
+
+pkgconfigdir = $(prefix)/lib/pkgconfig
+pkgconfig_DATA = libnih.pc
+
+
+EXTRA_DIST = libnih.ver libnih.supp libnih.pc.in
 
 
 TESTS = \

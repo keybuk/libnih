@@ -57,7 +57,9 @@ AS_IF([test "$cross_compiling" = "yes"],
       [AC_SUBST([NIH_DBUS_TOOL], ["\${top_builddir}/nih-dbus-tool/nih-dbus-tool"])])
 
 AC_CONFIG_FILES([ Makefile m4/Makefile intl/Makefile
-		  nih/Makefile nih-dbus/Makefile nih-dbus-tool/Makefile
+		  nih/Makefile nih/libnih.pc
+		  nih-dbus/Makefile nih-dbus/libnih-dbus.pc
+		  nih-dbus-tool/Makefile
 		  po/Makefile.in ])
 AC_CONFIG_HEADERS([config.h])
 AC_OUTPUT

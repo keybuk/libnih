@@ -9,11 +9,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/intl
 
 
-if INSTALL_NIH
 lib_LTLIBRARIES = libnih-dbus.la
-else
-noinst_LTLIBRARIES = libnih-dbus.la
-endif
 
 libnih_dbus_la_SOURCES = \
 	dbus_error.c \
@@ -24,12 +20,10 @@ libnih_dbus_la_SOURCES = \
 	dbus_proxy.c \
 	dbus_util.c
 
-if INSTALL_NIH
 libnih_dbus_la_LDFLAGS = \
 	-version-info 0:0:0
 if HAVE_VERSION_SCRIPT_ARG
 libnih_dbus_la_LDFLAGS += @VERSION_SCRIPT_ARG@=$(srcdir)/libnih-dbus.ver
-endif
 endif
 
 libnih_dbus_la_LIBADD = \
@@ -38,10 +32,6 @@ libnih_dbus_la_LIBADD = \
 	-lrt
 
 
-EXTRA_DIST = libnih-dbus.ver libnih-dbus.supp
-
-
-if INSTALL_NIH
 include_HEADERS = \
 	libnih-dbus.h
 
@@ -57,7 +47,13 @@ nihdbusinclude_HEADERS = \
 	dbus_util.h \
 	errors.h \
 	test_dbus.h
-endif
+
+
+pkgconfigdir = $(prefix)/lib/pkgconfig
+pkgconfig_DATA = libnih-dbus.pc
+
+
+EXTRA_DIST = libnih-dbus.ver libnih-dbus.supp libnih-dbus.pc.in
 
 
 TESTS = \

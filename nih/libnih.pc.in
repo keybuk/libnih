@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libnih
+Description: NIH Utility Library
+Version: @VERSION@
+Libs: -L${libdir} -lnih
+Cflags: -I${includedir}

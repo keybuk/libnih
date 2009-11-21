@@ -1,5 +1,30 @@
 1.0.0  xxxx-xx-xx
 
+	* libnih is no longer intended to be copied into an application
+	  source tree and linked statically, but is now installed onto the
+	  system and dynamically linked normally.  The nihify script has
+	  been removed accordingly.
+
+	* Future 1.0.x versions will contain bug fixes, but no API or ABI
+	  changes.  Future 1.x.0 versions may introduce new things to the
+	  API or ABI but will be backwards compatible with previous
+	  versions.  Future x.0.0 versions will not be backwards compatible.
+
+	* The NIH_INIT macro has been removed, to check for libnih or
+	  libnih-dbus you should now use pkg-config, e.g.:
+
+		PKG_CHECK_MODULES([NIH], [libnih >= 1.0.0])
+
+	  any other checks should be added as necessary instead of
+	  relying on that macro to do them for you.
+
+	* An external pre-built nih-dbus-tool may be used instead of the
+	  built copy by passing NIH_DBUS_TOOL to configure.  If you are
+	  cross-compiling, this will be automatically searched for in the
+	  PATH and a warning output if it doesn't exist and you fail to
+	  specify it.  (Bug: #426740)
+
+
 	* nih_alloc() no longer permits objects to have zero references,
 	  passing NULL for the parent now creates a special reference from
 	  a NULL parent.
@@ -63,12 +88,6 @@
 	  log message of NIH_LOG_FATAL priority or greater, this means that
 	  should you call abort() core dump analysers can retrieve the
 	  message; especially useful for nih_assert().  (Bug: #429411)
-
-	* An external pre-built nih-dbus-tool may be used instead of the
-	  built copy by passing NIH_DBUS_TOOL to configure.  If you are
-	  cross-compiling, this will be automatically searched for in the
-	  PATH and a warning output if it doesn't exist and you fail to
-	  specify it.  (Bug: #426740)
 
 0.3.2  2009-08-02
 

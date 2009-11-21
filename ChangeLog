@@ -1,5 +1,7 @@
 2009-11-21  Scott James Remnant  <scott@netsplit.com>
 
+	* NEWS: Update
+
 	* nih-dbus-tool/main.c: Add option to supply the package name
 	and store in a global variable for the output code to access.
 	* nih-dbus-tool/output.c (output_preamble): Use the supplied package

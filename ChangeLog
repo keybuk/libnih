@@ -13,6 +13,8 @@
 	* HACKING: Update requirements; document that we support the
 	standard options.
 
+2009-11-21  John Cater  <katre50@gmail.com>
+
 	* nih/macros.h (NIH_ALIGN_SIZE): Add macro to guess at the maximum
 	alignment of a type
 	* nih/alloc.c (NIH_ALLOC_SIZE): Define the size of the context
@@ -21,6 +23,8 @@
 	(NIH_ALLOC_CTX, NIH_ALLOC_PTR): Redefine based on NIH_ALLOC_SIZE
 	(nih_alloc, nih_realloc, nih_alloc_size): Use NIH_ALLOC_SIZE
 	instead of sizeof (NihAllocCtx)
+
+2009-11-21  Scott James Remnant  <scott@netsplit.com>
 
 	* NEWS: Update
 

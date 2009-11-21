@@ -28,7 +28,7 @@ libnih_la_SOURCES = \
 	error.c
 
 libnih_la_LDFLAGS = \
-	-version-info 0:0:0
+	-version-info 1:0:0
 if HAVE_VERSION_SCRIPT_ARG
 libnih_la_LDFLAGS += @VERSION_SCRIPT_ARG@=$(srcdir)/libnih.ver
 endif

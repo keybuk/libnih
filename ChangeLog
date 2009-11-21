@@ -1,5 +1,8 @@
 2009-11-21  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/Makefile.am (libnih_la_LDFLAGS): Bump version
+	* nih-dbus/Makefile.am (libnih_dbus_la_LDFLAGS): Bump version
+
 	* configure.ac (AC_PRERQ): Update to 2.62
 	(AM_INIT_AUTOMAKE): Update to 1.11, add color-tests and silent-rules
 	to the options

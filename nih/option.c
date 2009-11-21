@@ -97,6 +97,9 @@ static const NihOption default_options[] = {
 	{ 'v', "verbose",
 	  N_("increase output to include informational messages"),
 	  NULL, NULL, NULL, nih_option_verbose },
+	/* Deliberately hidden, you get told about this when you file
+	 * a bug ;-)
+	 */
 	{ 0, "debug", NULL, NULL, NULL, NULL, nih_option_debug },
 	{ 0, "help",
 	  N_("display this help and exit"),

@@ -1,5 +1,9 @@
 2009-11-21  Scott James Remnant  <scott@netsplit.com>
 
+	* README: Remove the usage instructions, since this is going to
+	be an ordinary shared library; rewrite the Dependencies section
+	language to be better; add a Cross-compiling section.
+
 	* configure.ac: Since this library is now being used in several
 	places, it's time to start caring about API and stop compiling it
 	statically into things.  Bump version to 1.0.0.  Bug fixes without

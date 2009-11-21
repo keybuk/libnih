@@ -17,40 +17,43 @@ Its goals are:
    adults after all.
 
 
-Usage
------
-
-The libnih API has not yet been declared stable, and it is not yet
-considered suitable for deployment as a shared object shared by many
-parts of the system.
-
-Therefore the correct way to use libnih is to copy the source into
-your own application or library's tree.  A script (nihify) is provided
-to do this for you.
-
-Once you've run this script (from the tree of your own application or
-library) you'll need to edit configure.ac and add the following line
-after any checks for the compiler (the "Checks for libraries" section
-is usually the right place).
-
-	NIH_INIT
-
-
 Dependencies
 ------------
 
-In order to query the availability of external libraries, libnih uses
-the pkg-config tool:
+The D-Bus messaging system is required to build the libnih-dbus library
+and nih-dbus-tool utility.  In order to query the availability of the
+external library, the pkg-config tool is used; and in order to parse
+D-Bus introspection data, the expat XML parsing library will be used.
+
+The recommended versions are:
 
 	* pkg-config 0.22
-
-To build the optional libnih-dbus bindings library you will need the
-D-Bus development files for the library itself:
-
 	* D-Bus 1.2.16
-
-To build the D-Bus binding tool you will need the dependencies of the
-libnih-dbus library and the development files for the expat XML
-parsing library:
-
 	* expat 2.0.0
+
+These should all be available from the current release of any modern
+Linux distribution.
+
+For detailed compilation and installation instructions see the INSTALL
+file.  If you've checked libnih out from revision control, or want to
+hack on libnih, see the HACKING file.
+
+
+Cross-compiling
+---------------
+
+libnih uses the nih-dbus-tool utility it builds during its own build
+process to generate further sources to be built.  When cross-compiling
+this will fail because the built nih-dbus-tool will most likely not be
+able to run on the build architecture.
+
+This can be solved by building and installing nih-dbus-tool for the
+build architecture first, then when performing the cross-compile, the
+installed copy will be used instead.
+
+If installed into a common system directory, this is automatic; if not,
+you can pass the path of the nih-dbus-tool binary to the configure
+script, e.g.:
+
+	./configure --build=i486-linux-gnu --host=gnueabi-linux-arm \
+		NIH_DBUS_TOOL=/cross/bin/nih-dbus-tool

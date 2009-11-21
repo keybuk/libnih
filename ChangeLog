@@ -1,5 +1,16 @@
 2009-11-21  Scott James Remnant  <scott@netsplit.com>
 
+	* m4/misc.m4, m4/compiler.m4, m4/linker.m4: Merge together into
+	a single libnih.m4 file for easier aclocal inclusion.
+	* m4/libnih.m4 (NIH_INIT): Drop this macro, libnih shouldn't need
+	software to call any special macros other than the ones they
+	probably need anyway.
+	* m4/libs.m4: Drop this source and the NIH_LIB_DBUS macro, since
+	we'll always build this
+	* m4/Makefile.am: Unconditionally install the new macro file
+	* configure.ac: Replace NIH_INIT with the bits we actually want to
+	check for here.
+
 	* README: Remove the usage instructions, since this is going to
 	be an ordinary shared library; rewrite the Dependencies section
 	language to be better; add a Cross-compiling section.

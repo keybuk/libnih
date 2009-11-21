@@ -1,6 +1,6 @@
 # libnih
 #
-# compiler.m4 - autoconf macros for compiler settings
+# libnih.m4 - autoconf macros
 #
 # Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
 # Copyright © 2009 Canonical Ltd.
@@ -26,6 +26,7 @@ AC_DEFUN([NIH_COMPILER_WARNINGS],
 ])dnl
 ])# NIH_COMPILER_WARNINGS
 
+
 # NIH_COMPILER_OPTIMISATIONS
 # --------------------------
 # Add configure option to disable optimisations.
@@ -38,6 +39,20 @@ AC_DEFUN([NIH_COMPILER_OPTIMISATIONS],
 	 CXXFLAGS=`echo "$CXXFLAGS" | sed -e "s/ -O[1-9s]*\b/ -O0/g"`]])
 ])dnl
 ])# NIH_COMPILER_OPTIMISATIONS
+
+# NIH_LINKER_OPTIMISATIONS
+# ------------------------
+# Add configure option to disable linker optimisations.
+AC_DEFUN([NIH_LINKER_OPTIMISATIONS],
+[AC_ARG_ENABLE(linker-optimisations,
+	AS_HELP_STRING([--disable-linker-optimisations],
+		       [Disable linker optimisations]),
+[AS_IF([test "x$enable_linker_optimisations" = "xno"],
+       [LDFLAGS=`echo "$LDFLAGS" | sed -e "s/ -Wl,-O[0-9]*\b//g"`],
+       [LDFLAGS="$LDFLAGS -Wl,-O1"])
+])dnl
+])# NIH_LINKER_OPTIMISATIONS
+
 
 # NIH_COMPILER_COVERAGE
 # ---------------------
@@ -53,6 +68,63 @@ AC_DEFUN([NIH_COMPILER_COVERAGE],
 	      [CXXFLAGS="$CXXFLAGS -fprofile-arcs -ftest-coverage"])])
 ])dnl
 ])# NIH_COMPILER_COVERAGE
+
+
+# NIH_LINKER_VERSION_SCRIPT
+# -------------------------
+# Detect whether the linker supports version scripts
+AC_DEFUN([NIH_LINKER_VERSION_SCRIPT],
+[AC_CACHE_CHECK([for linker version script argument], [nih_cv_version_script],
+[nih_cv_version_script=none
+for nih_try_arg in "-Wl,--version-script"; do
+	nih_old_libs="$LIBS"
+	LIBS="$LIBS $nih_try_arg=conftest.ver"
+
+	cat >conftest.ver <<EOF
+TEST {
+	global:
+		*;
+};
+EOF
+
+	AC_TRY_LINK([], [], [
+		rm -f conftest.ver
+		LIBS="$nih_old_libs"
+		nih_cv_version_script="$nih_try_arg"
+		break
+	])
+
+	rm -f conftest.ver
+	LIBS="$nih_old_libs"
+done])
+AS_IF([test "x$nih_cv_version_script" != "xnone"],
+      [AC_SUBST(VERSION_SCRIPT_ARG, [$nih_cv_version_script])])
+AM_CONDITIONAL(HAVE_VERSION_SCRIPT_ARG,
+	       [test "x$nih_cv_version_script" != "xnone"])
+])# NIH_LINKER_VERSION_SCRIPT
+
+# NIH_LINKER_SYMBOLIC_FUNCTIONS
+# -----------------------------
+# Detect whether the linker supports symbolic functions
+AC_DEFUN([NIH_LINKER_SYMBOLIC_FUNCTIONS],
+[AC_CACHE_CHECK([for linker symbolic functions argument],
+[nih_cv_symbolic_functions],
+[nih_cv_symbolic_functions=none
+for nih_try_arg in "-Wl,-Bsymbolic-functions"; do
+	nih_old_ldflags="$LDFLAGS"
+	LDFLAGS="$LDFLAGS $nih_try_arg"
+	AC_TRY_LINK([], [], [
+		LDFLAGS="$nih_old_ldflags"
+		nih_cv_symbolic_functions="$nih_try_arg"
+		break
+	])
+
+	LDFLAGS="$nih_old_ldflags"
+done])
+AS_IF([test "x$nih_cv_symbolic_functions" != "xnone"],
+      [LDFLAGS="$LDFLAGS $nih_cv_symbolic_functions"])dnl
+])# NIH_LINKER_SYMBOLIC_FUNCTIONS
+
 
 # NIH_TRY_C99([ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])
 # -----------------------------------------------------
@@ -112,6 +184,7 @@ AS_IF([test "x$nih_cv_c99" = "xyes"],
 		AC_DEFINE([HAVE_C99], 1)])])[]dnl
 ])# NIH_C_C99
 
+
 # NIH_C_THREAD
 # ------------
 # Check whether compiler supports __thread.
@@ -129,3 +202,20 @@ AS_IF([test "x$nih_cv_c_thread" = "xno"],
                  [Define to empty if `__thread' is not supported.])])],
 [AC_DEFINE([__thread], )])dnl
 ])# NIH_C_THREAD
+
+
+# AC_COPYRIGHT
+# -------------
+# Wraps the Autoconf AC_COPYRIGHT but also defines PACKAGE_COPYRIGHT,
+# required for nih_main_init
+m4_rename([AC_COPYRIGHT], [_NIH_AC_COPYRIGHT])
+AC_DEFUN([AC_COPYRIGHT],
+[_NIH_AC_COPYRIGHT([$1])
+m4_ifndef([NIH_PACKAGE_COPYRIGHT], [m4_bmatch([$1], [
+], [], [
+	m4_define([NIH_PACKAGE_COPYRIGHT],
+		  ["m4_bpatsubst([AS_ESCAPE([$1])], [©], [(C)])"])
+	AC_DEFINE([PACKAGE_COPYRIGHT], [NIH_PACKAGE_COPYRIGHT],
+		  [Define to the copyright message of this package.])])])dnl
+	AC_SUBST([PACKAGE_COPYRIGHT], ["$1"])
+])# AC_COPYRIGHT

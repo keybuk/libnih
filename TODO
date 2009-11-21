@@ -1,50 +1,155 @@
-error:
-- we should always push an error context before calling a handler that
-  cannot return to indicate an error
-- include a raised error in the context for errbacks, so the errback has to
-  free it
+1.0
+---
+alloc:
+- make sure returned pointers are aligned correctly, because right now on
+  SPARC we return something that it can't store certain data types in.
+- use the spare space to put the size_t back so we don't have to rely
+  on malloc having the right numbers
 
-main:
-- there's an argument for making the main loop more generic; having io,
-  watch, signal, child, timer, etc. just add main loop structs that
-  have a select() and handle() function - we'd then just have one per
-  timer, etc.
-- we could do that using signalfd() and timerfd_*()
-- use poll rather than select
-- loop on signalfd read calling wait inside
+dbus:
+- dbus_connection_send_with_reply() can return TRUE but a NULL pending_data
+  to indicate a disconnected socket, we don't handle that case in the
+  generated code
+- look back to why we don't dist_ generated code anymore, it would be handy
+  for cross-compiling
+
+
+1.1/2.0
+-------
+alloc:
+- malloc() returning NULL doesn't usually mean that we're temporarily out
+  of memory these days, but out of address space or some other fault;
+  looping on it is probably not the right thing to do.
+- Maybe have some reserved sump pages that we use for temporary
+  allocations that must succeed, and have an nih_must_alloc() function
+- Some are because we can't easily deal with failure, we should try
+  harder or free memory first
+
+macros:
+- audit uses of NIH_MUST and try and remove them where possible.
+- NIH_ZERO is probably never right, syscalls need their errnos checked
+  and action taken on just about everything except EINTR and EAGAIN
+  - assert on conditions we don't know how to handle
+
+misc:
+- try and make sure each basic object type has an _init() function, this shall
+  take a const void *parent which it uses for any internal allocations.
+  The _new() function calls it with parent and the object set to the same
+  value.
+  - except when we need to separately manage the life cycle of the objects
+    (e.g. current main loop code)
+  - and except when references will be taken (since otherwise we'd have to
+    stash the parent somewhere)
+  - destructors should be mentioned in _init() documentation and chained
+    in _destroy() functions
+- generally start moving to function pointers being Handlers rather than
+  clever names
+
+error:
+- final audit that we always push an error context before calling a
+  handler function
+  - use nih_error_steal() and nih_error_raise_error() to raise it in the
+    parent context
+- final audit that raised error is included in a new context for error
+  handler functions and context popped afterwards without freeing the
+  error (we expect the function to do that to indicate it actually
+  handled it)
+
+poll:
+- new epoll/eventfd based loop that replaces the old main loop code
+  (there's copies of this floating around that I need to merge together)
+
+event:
+- uses new poll code to wrap an eventfd() for the simplest kind of event
+  handling
+
+buffer:
+- separate out buffer code into NihBuffer, it's probably useful for
+  other things too; I can think of a few places where we grow strings
+  and I could just use this
 
 io:
+- separate out the NihIoWatch code, this should largely go away with
+  the new poll code
+- separate out the NihIoMessage code into NihMessage, it behaves
+  sufficiently differently that it should be separate
+- the remaining code is pure buffered stream I/O
 - there's a couple of tricky tests left to do:
-- nih_io_message_recv() with socket types other than PF_UNIX
-- nih_io_message_recv() when recv() fails
-- nih_io_watcher() with write error and free called
+  - nih_io_message_recv() with socket types other than PF_UNIX
+  - nih_io_message_recv() when recv() fails
+  - nih_io_watcher() with write error and free called
 
 timers:
-- sub-second timer resolution (since select can do it)
-- monotonic and realtime (using timerfd?)
+- rewrite based on new poll code and timerfd()
+- clock selection and sub-second resolution
 - calendar scheduled timers
 
+signal:
+- rewrite based on new poll code and signalfd()
+- the API will probably change massively since you'll just add a signal
+  watch, with one or more signals, rather than the set/add handler stuff
+
+child:
+- update to new signal API
+- call wait() for each child signal
+
+file:
+- nih_dir_walk() is buggy and doesn't work in some situations (probably)
+  - should use openat() to save string copying
+  - avoid stat() where possible
+  - depth-first and depth-last modes
+  - parent directory fd
+- add the allocating fgets() code that's floating around, rebased onto
+  NihBuffer
+- probably a bug in nih_file_map/unmap
+
 watch:
+- nih_watch_new() is buggy when subdirs is FALSE
+  - should use openat() to save string copying
 - inotify already has an IN_ISDIR flag to let us know that we got an event
   for a directory, so we don't really need to stat() it or pass a statbuf
   around; except maybe for compatibility with the walk code.
 - handle IN_Q_OVERFLOW in some sane manner, at least log it.
-
-allocator/slab module
-
-string table:
-- as hash, but massively optimised for tables of strings
+- ideally we could rework this based off something like fanotify(), since
+  it's expensive to walk large files with this
+- see the Upstart conf file for the fact that this API doesn't actually
+  work in practice for watching files - easier nih_watch_file() API?
 
 
 dbus:
-- Should be possible for multiple interface members to use the same structure
-  definition, instead of having the same type with different names.
-  - Structure annotation gives the name, e.g. "ProcessInfo"
-  - Should still be prefixed with prefix and interface prefix, so that
-    might become "MyJobProcessInfo"
+- need to ignore standard/built-in D-Bus interfaces such as Peer,
+  Properties and Introspectable when parsing introspection data
+  - ideally have pre-canned code that would work on any proxy, would
+    mean we need to generate code and link with it again
 
-- Should be possible to customise the names of structure members, these names
-  need to be groupable in cases of multiple structure definitions.
+- allow structures to be named and re-used by multiple interface members
+  - structure name hints come from annotations on arguments and properties
+    - this means only marshal() and demarshal() need to the extra name list
+      argument
+    - (de)marshal_array() just passes it on
+    - (de)marshal_struct() uses the first item in the name list, then passes
+      on the next (need returnable pointer so we know where we got to)
+    - never destroy the original list or pointer, we probably use it
+      several times (each property function)
+  - use annotations on annotations for the member names:
+    com.netsplit.Nih.Struct		foo
+    com.netsplit.Nih.StructMember	jazz
+    com.netsplit.Nih.StructMember	ratchett
+    - check whether the struct is already in the list, if not add it
+      using the member names here, if it use the names there and warn/error on
+      names here
+
+- NihDBusProxy always tracks the remote name, which is expensive and
+  annoying since you need one for every object and have to recreate them
+  in every reply function and signal function
+  - passing NULL for the name to the _new() function and setting the name
+    by hand later is one solution
+  - allowing no tracking is another
+    - but required for signals, so maybe only activated if a lost handler
+      is created or a signal attached?
+  - create a proxy from another, could share the same name tracking code
+    (in which case make it an object)
+    - then find a way of getting those to reply and signal functions
 
 - we're not using the no_reply annotation
   - object implementation probably shouldn't - the client is free to ignore

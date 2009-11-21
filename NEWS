@@ -1,4 +1,4 @@
-0.3.5  xxxx-xx-xx
+1.0.0  xxxx-xx-xx
 
 	* nih_alloc() no longer permits objects to have zero references,
 	  passing NULL for the parent now creates a special reference from

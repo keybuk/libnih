@@ -1,3 +1,13 @@
+2009-11-21  Scott James Remnant  <scott@netsplit.com>
+
+	* configure.ac: Since this library is now being used in several
+	places, it's time to start caring about API and stop compiling it
+	statically into things.  Bump version to 1.0.0.  Bug fixes without
+	any API changes will be named 1.0.x; backwards compatible API
+	changes 1.x.0, etc.
+	* NEWS: Bump version to 1.0.0
+	* TODO: Update with missing bits for 1.0 and plans for 1.1/2.0
+
 2009-10-03  Scott James Remnant  <scott@netsplit.com>
 
 	* m4/libs.m4 (NIH_LIB_DBUS): Allow an external nih-dbus-tool to

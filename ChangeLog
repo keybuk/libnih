@@ -1,5 +1,15 @@
 2009-11-21  Scott James Remnant  <scott@netsplit.com>
 
+	* configure.ac (AC_PRERQ): Update to 2.62
+	(AM_INIT_AUTOMAKE): Update to 1.11, add color-tests and silent-rules
+	to the options
+	(AM_SILENT_RULES): Explicitly make silent rules the default
+	(AM_MAINTAINER_MODE): Add, but with "enable" as the default, so
+	distributions may turn it off with --disable-maintainer-mode
+	(AM_GNU_GETTEXT_VERSION): Update to 0.17
+	* HACKING: Update requirements; document that we support the
+	standard options.
+
 	* nih/macros.h (NIH_ALIGN_SIZE): Add macro to guess at the maximum
 	alignment of a type
 	* nih/alloc.c (NIH_ALLOC_SIZE): Define the size of the context

@@ -24,10 +24,10 @@ The source tree for libnih uses the GNU Build System (sometimes known
 as the GNU Autotools).  You will need the following versions
 installed.
 
-	* GNU Autoconf 2.61
-	* GNU Automake 1.10
+	* GNU Autoconf 2.62
+	* GNU Automake 1.11
 	* GNU Libtool 2.2.4
-	* GNU Gettext 0.16.1
+	* GNU Gettext 0.17
 
 After checking out libnih from Bazaar you will need to use these
 tools to generate the build files.  The correct way to do this is to
@@ -52,6 +52,13 @@ hacking on libnih.
 
 	* --enable-compiler-coverage: (GCC only) enables coverage file
 	generation, useful for test suites.
+
+The configure script also supports the Automake
+‘--disable-maintainer-mode’ and ‘--disable-dependency-tracking‘ options
+which may be useful to distribution maintainers.
+
+Compilation output is normally “silent”, verbosity can be restored using
+‘make V=1’ or with the ‘--disable-silent-rules’ configure option.
 
 
 Coding style

@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.61)
+AC_PREREQ(2.62)
 AC_INIT([libnih], [1.0.0], [http://bugs.launchpad.net/libnih/])
 AC_COPYRIGHT([[Copyright © 2009 Scott James Remnant <scott@netsplit.com>.]])
 AC_CONFIG_SRCDIR([nih/libnih.h])
@@ -8,12 +8,15 @@ AC_CONFIG_MACRO_DIR([m4])
 
 AC_GNU_SOURCE
 
-AM_INIT_AUTOMAKE([1.10 gnu nostdinc check-news dist-bzip2])
+AM_INIT_AUTOMAKE([1.11 gnu nostdinc check-news dist-bzip2
+		  color-tests silent-rules])
+AM_SILENT_RULES([yes])
+AM_MAINTAINER_MODE([enable])
 
 LT_PREREQ(2.2.4)
 LT_INIT
 
-AM_GNU_GETTEXT_VERSION([0.16.1])
+AM_GNU_GETTEXT_VERSION([0.17])
 AM_GNU_GETTEXT()
 
 # Checks for programs.

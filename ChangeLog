@@ -1,5 +1,7 @@
 2009-11-21  Scott James Remnant  <scott@netsplit.com>
 
+	* Makefile.am: Always build libnih-dbus and nih-dbus-tool
+
 	* m4/misc.m4, m4/compiler.m4, m4/linker.m4: Merge together into
 	a single libnih.m4 file for easier aclocal inclusion.
 	* m4/libnih.m4 (NIH_INIT): Drop this macro, libnih shouldn't need

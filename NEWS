@@ -25,6 +25,9 @@
 	  specify it.  (Bug: #426740)
 
 
+	* nih_alloc() has been fixed to work on platforms with alignment
+	  greater than 4 bytes.  (Bug: #436758)
+
 	* nih_alloc() no longer permits objects to have zero references,
 	  passing NULL for the parent now creates a special reference from
 	  a NULL parent.

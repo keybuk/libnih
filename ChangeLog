@@ -1,5 +1,7 @@
 2009-11-21  Scott James Remnant  <scott@netsplit.com>
 
+	* nihify: Remove the script to copy into other source directories
+
 	* nih/libnih.ver, nih-dbus/libnih-dbus.ver: Update versions
 
 	* nih-dbus-tool/Makefile.am (bin_PROGRAMS): Always install the tool

@@ -74,6 +74,15 @@ typedef struct nih_alloc_ref {
 
 
 /**
+ * NIH_ALLOC_SIZE:
+ *
+ * Expands to the size of the NihAllocCtx structure plus whetever padding
+ * is needed to ensure the following pointer is generically aligned.
+ **/
+#define NIH_ALLOC_SIZE ((((sizeof (NihAllocCtx) - 1) / NIH_ALIGN_SIZE) + 1) \
+			* NIH_ALIGN_SIZE)
+
+/**
  * NIH_ALLOC_CTX:
  * @ptr: pointer to block of memory.
  *
@@ -82,7 +91,7 @@ typedef struct nih_alloc_ref {
  *
  * Returns: pointer to NihAllocCtx structure or NULL if @ptr is NULL.
  **/
-#define NIH_ALLOC_CTX(ptr) (ptr ? (NihAllocCtx *)(ptr) - 1 : NULL)
+#define NIH_ALLOC_CTX(ptr) (ptr ? (void *)(ptr) - NIH_ALLOC_SIZE : NULL)
 
 /**
  * NIH_ALLOC_PTR:
@@ -93,7 +102,7 @@ typedef struct nih_alloc_ref {
  *
  * Returns: pointer to block of memory.
  **/
-#define NIH_ALLOC_PTR(ctx) ((void *)((NihAllocCtx *)(ctx) + 1))
+#define NIH_ALLOC_PTR(ctx) ((void *)(ctx) + NIH_ALLOC_SIZE)
 
 /**
  * NIH_ALLOC_FINALISED:
@@ -145,7 +154,7 @@ nih_alloc (const void *parent,
 {
 	NihAllocCtx *ctx;
 
-	ctx = __nih_malloc (sizeof (NihAllocCtx) + size);
+	ctx = __nih_malloc (NIH_ALLOC_SIZE + size);
 	if (! ctx)
 		return NULL;
 
@@ -229,7 +238,7 @@ nih_realloc (void *      ptr,
 	/* Now do the actual realloc(), if this fails then we can just
 	 * return NULL since we've not actually changed anything.
 	 */
-	ctx = __nih_realloc (ctx, sizeof (NihAllocCtx) + size);
+	ctx = __nih_realloc (ctx, NIH_ALLOC_SIZE + size);
 	if (! ctx)
 		return NULL;
 
@@ -722,5 +731,5 @@ nih_alloc_size (const void *ptr)
 	ctx = NIH_ALLOC_CTX (ptr);
 	nih_assert (ctx->destructor != NIH_ALLOC_FINALISED);
 
-	return malloc_usable_size (ctx) - sizeof (NihAllocCtx);
+	return malloc_usable_size (ctx) - NIH_ALLOC_SIZE;
 }

@@ -1,5 +1,14 @@
 2009-11-21  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/macros.h (NIH_ALIGN_SIZE): Add macro to guess at the maximum
+	alignment of a type
+	* nih/alloc.c (NIH_ALLOC_SIZE): Define the size of the context
+	based off its size and the maximum alignment macro, thus hopefully
+	ensuring the following pointer is generically aligned
+	(NIH_ALLOC_CTX, NIH_ALLOC_PTR): Redefine based on NIH_ALLOC_SIZE
+	(nih_alloc, nih_realloc, nih_alloc_size): Use NIH_ALLOC_SIZE
+	instead of sizeof (NihAllocCtx)
+
 	* NEWS: Update
 
 	* nih-dbus-tool/main.c: Add option to supply the package name

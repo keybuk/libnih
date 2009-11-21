@@ -100,6 +100,21 @@
 		__a > __b ? __a : __b; })
 
 /**
+ * NIH_ALIGN_SIZE:
+ *
+ * In general, pointer alignment is something that the compiler takes care
+ * of for us; but in some situations (e.g. nih_alloc) we need to return a
+ * pointer that is generically aligned for any data type without actually
+ * knowing the data type.
+ *
+ * This is a good guess as to the largest alignment of the platform, based
+ * on recommendations in the C standard and comments in GNU libc.
+ **/
+#define NIH_ALIGN_SIZE nih_max(2 * __alignof__ (size_t),	\
+			       __alignof__ (long double))
+
+
+/**
  * NIH_STRINGIFY:
  * @_s: macro.
  *

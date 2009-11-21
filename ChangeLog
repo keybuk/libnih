@@ -1,5 +1,15 @@
 2009-11-21  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/main.c: Add option to supply the package name
+	and store in a global variable for the output code to access.
+	* nih-dbus-tool/output.c (output_preamble): Use the supplied package
+	name in preference to "libnih" when generating preamble comments.
+	(output_sentinel): Use the supplied package name in preference to
+	"libnih" when generating header sentinels.
+	* nih-dbus-tool/output.h: Add variable declaration
+	* m4/Makefile.am (nih_dbus_tool_LDADD): Turns out that this doesn't
+	link with libnih-dbus at all
+
 	* nihify: Remove the script to copy into other source directories
 
 	* nih/libnih.ver, nih-dbus/libnih-dbus.ver: Update versions

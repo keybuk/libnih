@@ -50,6 +50,15 @@ static int   output_write    (int fd, const char *str)
 
 
 /**
+ * output_package:
+ *
+ * Package name to use when generating header and source file comments
+ * and header file sentinel macro.  Defaults to libnih when not set.
+ **/
+char *output_package = NULL;
+
+
+/**
  * output:
  * @source_path: path of source file to write,
  * @source_fd: file descriptor open to write to @source_path,
@@ -468,7 +477,7 @@ output_preamble (const void *parent,
 	char *code;
 
 	code = nih_sprintf (parent, "/* %s\n *\n",
-			    package_name);
+			    output_package ?: package_name);
 	if (! code)
 		return NULL;
 
@@ -524,7 +533,8 @@ output_sentinel (const void *parent,
 
 	nih_assert (path != NULL);
 
-	sentinel = nih_sprintf (parent, "%s_%s", package_name, path);
+	sentinel = nih_sprintf (parent, "%s_%s",
+				output_package ?: package_name, path);
 	if (! sentinel)
 		return NULL;
 

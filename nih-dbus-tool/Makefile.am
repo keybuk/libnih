@@ -35,7 +35,6 @@ nih_dbus_tool_SOURCES = \
 	errors.h
 
 nih_dbus_tool_LDADD = \
-	../nih-dbus/libnih-dbus.la \
 	../nih/libnih.la \
 	$(LTLIBINTL) \
 	$(EXPAT_LIBS) \

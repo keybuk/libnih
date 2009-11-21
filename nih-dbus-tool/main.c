@@ -312,6 +312,8 @@ static NihOption options[] = {
 	  NULL, "INTERFACE", &default_interface, NULL },
 	{ 'o', "output", N_("write C source to FILENAME, header alongside"),
 	  NULL, "FILENAME", &output_path, NULL },
+	{ 0,   "package", N_("name of software source being created for"),
+	  NULL, "PACKAGE", &output_package, NULL },
 
 	NIH_OPTION_LAST
 };

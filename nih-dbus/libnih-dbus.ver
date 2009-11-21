@@ -1,4 +1,4 @@
-LIBNIH_DBUS_0 {
+LIBNIH_DBUS_1_0 {
 	global:
 		nih_dbus_*;
 	local:

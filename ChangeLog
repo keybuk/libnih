@@ -1,5 +1,7 @@
 2009-11-21  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/libnih.ver, nih-dbus/libnih-dbus.ver: Update versions
+
 	* nih-dbus-tool/Makefile.am (bin_PROGRAMS): Always install the tool
 	(dist_man_MANS): Always install the manual page
 	(EXTRA_DIST): We don't need to distribute the manual page with this

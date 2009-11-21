@@ -1,4 +1,4 @@
-LIBNIH_0 {
+LIBNIH_1_0 {
 	global:
 		nih_*;
 		_nih_*;

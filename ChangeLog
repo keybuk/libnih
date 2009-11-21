@@ -1,5 +1,10 @@
 2009-11-21  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/Makefile.am (bin_PROGRAMS): Always install the tool
+	(dist_man_MANS): Always install the manual page
+	(EXTRA_DIST): We don't need to distribute the manual page with this
+	now
+
 	* nih/libnih.pc.in, nih-dbus/libnih-dbus.pc.in: Source to pkg-config
 	data files
 	* configure.ac: Generate the actual pkg-config files from the sources

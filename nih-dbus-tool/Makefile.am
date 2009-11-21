@@ -9,21 +9,12 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/intl
 
 
-manpages = \
+dist_man_MANS = \
 	man/nih-dbus-tool.1
 
 
-if INSTALL_NIH
-dist_man_MANS = $(manpages)
-
 bin_PROGRAMS = \
 	nih-dbus-tool
-else
-noinst_PROGRAMS = \
-	nih-dbus-tool
-endif
-
-EXTRA_DIST = $(manpages)
 
 nih_dbus_tool_SOURCES = \
 	main.c \
@@ -282,7 +273,7 @@ BUILT_SOURCES = \
 	$(com_netsplit_Nih_Test_object_OUTPUTS) \
 	$(com_netsplit_Nih_Test_proxy_OUTPUTS)
 
-EXTRA_DIST += \
+EXTRA_DIST = \
 	$(com_netsplit_Nih_Test_object_XML) \
 	$(com_netsplit_Nih_Test_proxy_XML)
 

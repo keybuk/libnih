@@ -1,5 +1,10 @@
 2009-11-21  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/macros.h (NIH_ALIGN_SIZE): Fix rounding to be twice size
+	of size_t, or alignment of long long - which is what we decided
+	in the bug.
+	* nih/alloc.c (NIH_ALLOC_SIZE): Formatting.
+
 	* nih/Makefile.am (libnih_la_LDFLAGS): Bump version
 	* nih-dbus/Makefile.am (libnih_dbus_la_LDFLAGS): Bump version
 

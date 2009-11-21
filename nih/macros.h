@@ -110,8 +110,8 @@
  * This is a good guess as to the largest alignment of the platform, based
  * on recommendations in the C standard and comments in GNU libc.
  **/
-#define NIH_ALIGN_SIZE nih_max(2 * __alignof__ (size_t),	\
-			       __alignof__ (long double))
+#define NIH_ALIGN_SIZE nih_max(2 * sizeof (size_t),	\
+			       __alignof__ (long long))
 
 
 /**

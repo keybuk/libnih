@@ -79,8 +79,8 @@ typedef struct nih_alloc_ref {
  * Expands to the size of the NihAllocCtx structure plus whetever padding
  * is needed to ensure the following pointer is generically aligned.
  **/
-#define NIH_ALLOC_SIZE ((((sizeof (NihAllocCtx) - 1) / NIH_ALIGN_SIZE) + 1) \
-			* NIH_ALIGN_SIZE)
+#define NIH_ALLOC_SIZE (NIH_ALIGN_SIZE * (((sizeof (NihAllocCtx) - 1)	\
+					   / NIH_ALIGN_SIZE) + 1))
 
 /**
  * NIH_ALLOC_CTX:

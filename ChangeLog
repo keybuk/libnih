@@ -1,5 +1,10 @@
 2009-11-24  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c: These
+	tests weren't passing under valgrind, because I got lazy and gave
+	up.  Most of the reason was that the main signal handler wasn't
+	freed; fix that by attaching the signal to the D-Bus object.
+
 	* nih/test_process.h (TEST_CHILD, TEST_CHILD_WAIT): Flush standard
 	output and error before forking, to avoid the typical strange
 	buffering issues when piping to less.

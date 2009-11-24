@@ -513,16 +513,16 @@ test_ordinary_method_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -1119,16 +1119,16 @@ test_nameless_method_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -1745,16 +1745,16 @@ test_async_method_sync (void)
 		async_method_input = NULL;
 		async_method_message = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -2351,16 +2351,16 @@ test_byte_to_str_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -2953,16 +2953,16 @@ test_str_to_byte_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -3482,16 +3482,16 @@ test_boolean_to_str_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -4042,16 +4042,16 @@ test_str_to_boolean_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -4646,16 +4646,16 @@ test_int16_to_str_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -5248,16 +5248,16 @@ test_str_to_int16_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -5852,16 +5852,16 @@ test_uint16_to_str_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -6454,16 +6454,16 @@ test_str_to_uint16_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -7058,16 +7058,16 @@ test_int32_to_str_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -7660,16 +7660,16 @@ test_str_to_int32_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -8264,16 +8264,16 @@ test_uint32_to_str_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -8866,16 +8866,16 @@ test_str_to_uint32_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -9470,16 +9470,16 @@ test_int64_to_str_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -10072,16 +10072,16 @@ test_str_to_int64_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -10676,16 +10676,16 @@ test_uint64_to_str_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -11278,16 +11278,16 @@ test_str_to_uint64_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -11882,16 +11882,16 @@ test_double_to_str_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -12484,16 +12484,16 @@ test_str_to_double_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -13088,16 +13088,16 @@ test_object_path_to_str_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -13694,16 +13694,16 @@ test_str_to_object_path_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -14300,16 +14300,16 @@ test_signature_to_str_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -14906,16 +14906,16 @@ test_str_to_signature_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -15534,16 +15534,16 @@ test_struct_to_str_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -16156,16 +16156,16 @@ test_str_to_struct_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -16802,16 +16802,16 @@ test_int32_array_to_str_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -17435,16 +17435,16 @@ test_str_to_int32_array_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -18101,16 +18101,16 @@ test_str_array_to_str_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -18734,16 +18734,16 @@ test_str_to_str_array_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -19447,16 +19447,16 @@ test_int32_array_array_to_str_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -20137,16 +20137,16 @@ test_str_to_int32_array_array_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -20830,16 +20830,16 @@ test_struct_array_to_str_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -21475,16 +21475,16 @@ test_str_to_struct_array_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -22145,16 +22145,16 @@ test_dict_entry_array_to_str_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -22790,16 +22790,16 @@ test_str_to_dict_entry_array_sync (void)
 	TEST_DBUS_OPEN (server_conn);
 
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -25195,16 +25195,16 @@ test_get_byte_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		byte_property = 97;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -25267,16 +25267,16 @@ test_get_byte_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		byte_property = 0;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -25346,16 +25346,16 @@ test_get_byte_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		byte_property = 4;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -25866,16 +25866,16 @@ test_set_byte_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		byte_property = 0;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -26396,16 +26396,16 @@ test_get_boolean_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		boolean_property = TRUE;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -26468,16 +26468,16 @@ test_get_boolean_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		boolean_property = FALSE;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -26912,16 +26912,16 @@ test_set_boolean_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		boolean_property = 0;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -27478,16 +27478,16 @@ test_get_int16_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		int16_property = -42;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -27550,16 +27550,16 @@ test_get_int16_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		int16_property = 0;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -27629,16 +27629,16 @@ test_get_int16_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		int16_property = 4;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -28149,16 +28149,16 @@ test_set_int16_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		int16_property = 0;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -28755,16 +28755,16 @@ test_get_uint16_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		uint16_property = 42;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -28827,16 +28827,16 @@ test_get_uint16_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		uint16_property = 0;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -28906,16 +28906,16 @@ test_get_uint16_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		uint16_property = 4;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -29426,16 +29426,16 @@ test_set_uint16_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		uint16_property = 0;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -30032,16 +30032,16 @@ test_get_int32_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		int32_property = -1048576;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -30104,16 +30104,16 @@ test_get_int32_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		int32_property = 0;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -30183,16 +30183,16 @@ test_get_int32_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		int32_property = 4;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -30703,16 +30703,16 @@ test_set_int32_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		int32_property = 0;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -31309,16 +31309,16 @@ test_get_uint32_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		uint32_property = 1048576;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -31381,16 +31381,16 @@ test_get_uint32_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		uint32_property = 0;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -31460,16 +31460,16 @@ test_get_uint32_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		uint32_property = 4;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -31980,16 +31980,16 @@ test_set_uint32_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		uint32_property = 0;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -32586,16 +32586,16 @@ test_get_int64_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		int64_property = -4815162342;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -32658,16 +32658,16 @@ test_get_int64_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		int64_property = 0;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -32737,16 +32737,16 @@ test_get_int64_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		int64_property = 4;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -33257,16 +33257,16 @@ test_set_int64_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		int64_property = 0;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -33863,16 +33863,16 @@ test_get_uint64_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		uint64_property = 4815162342;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -33935,16 +33935,16 @@ test_get_uint64_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		uint64_property = 0;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -34014,16 +34014,16 @@ test_get_uint64_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		uint64_property = 4;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -34534,16 +34534,16 @@ test_set_uint64_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		uint64_property = 0;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -35140,16 +35140,16 @@ test_get_double_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		double_property = 3.141597;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -35212,16 +35212,16 @@ test_get_double_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		double_property = 0;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -35291,16 +35291,16 @@ test_get_double_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		double_property = 4;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -35811,16 +35811,16 @@ test_set_double_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		double_property = 0;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -36422,16 +36422,16 @@ test_get_string_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		str_property = "she needs more of ze punishment";
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -36495,16 +36495,16 @@ test_get_string_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		str_property = "";
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -36574,16 +36574,16 @@ test_get_string_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		str_property = "invalid";
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -37095,16 +37095,16 @@ test_set_string_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		str_property = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -37711,16 +37711,16 @@ test_get_object_path_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		object_path_property = "/com/netsplit/Nih/Test";
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -37784,16 +37784,16 @@ test_get_object_path_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		object_path_property = "/";
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -37863,16 +37863,16 @@ test_get_object_path_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		object_path_property = "/invalid";
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -38384,16 +38384,16 @@ test_set_object_path_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		object_path_property = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -39001,16 +39001,16 @@ test_get_signature_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		signature_property = "a(ib)";
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -39074,16 +39074,16 @@ test_get_signature_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		signature_property = "";
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -39153,16 +39153,16 @@ test_get_signature_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		signature_property = "inva(x)id";
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -39674,16 +39674,16 @@ test_set_signature_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		signature_property = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -40302,16 +40302,16 @@ test_get_structure_sync (void)
 		struct_property->item0 = "Joe";
 		struct_property->item1 = 34;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -40382,16 +40382,16 @@ test_get_structure_sync (void)
 		struct_property->item0 = "";
 		struct_property->item1 = 34;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -40464,16 +40464,16 @@ test_get_structure_sync (void)
 		struct_property->item0 = "invalid";
 		struct_property->item1 = 34;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -41010,16 +41010,16 @@ test_set_structure_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		struct_property = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -41690,17 +41690,16 @@ test_get_int32_array_sync (void)
 
 		int32_array_property_len = 6;
 
-
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -41776,16 +41775,16 @@ test_get_int32_array_sync (void)
 		int32_array_property = NULL;
 		int32_array_property_len = 0;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -41863,16 +41862,16 @@ test_get_int32_array_sync (void)
 
 		int32_array_property_len = 4;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -42444,16 +42443,16 @@ test_set_int32_array_sync (void)
 		int32_array_property = NULL;
 		int32_array_property_len = 0;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -43132,17 +43131,16 @@ test_get_str_array_sync (void)
 		str_array_property[5] = "punishment";
 		str_array_property[6] = NULL;
 
-
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -43222,17 +43220,16 @@ test_get_str_array_sync (void)
 		str_array_property = nih_alloc (NULL, sizeof (char *) * 1);
 		str_array_property[0] = NULL;
 
-
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -43309,17 +43306,16 @@ test_get_str_array_sync (void)
 		str_array_property[3] = "test";
 		str_array_property[4] = NULL;
 
-
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -43889,16 +43885,16 @@ test_set_str_array_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		str_array_property = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -44663,16 +44659,16 @@ test_get_int32_array_array_sync (void)
 
 		int32_array_array_property[2] = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -44768,16 +44764,16 @@ test_get_int32_array_array_sync (void)
 
 		int32_array_array_property[0] = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -44866,16 +44862,16 @@ test_get_int32_array_array_sync (void)
 
 		int32_array_array_property[1] = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -45539,16 +45535,16 @@ test_set_int32_array_array_sync (void)
 		int32_array_array_property = NULL;
 		int32_array_array_property_len = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -46279,16 +46275,16 @@ test_get_struct_array_sync (void)
 
 		struct_array_property[2] = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -46370,16 +46366,16 @@ test_get_struct_array_sync (void)
 
 		struct_array_property[0] = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -46456,16 +46452,16 @@ test_get_struct_array_sync (void)
 
 		struct_array_property[1] = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -47040,16 +47036,16 @@ test_set_struct_array_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		struct_array_property = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -47739,16 +47735,16 @@ test_get_dict_entry_array_sync (void)
 
 		dict_entry_array_property[2] = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -47830,16 +47826,16 @@ test_get_dict_entry_array_sync (void)
 
 		dict_entry_array_property[0] = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -47916,16 +47912,16 @@ test_get_dict_entry_array_sync (void)
 
 		dict_entry_array_property[1] = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -48500,16 +48496,16 @@ test_set_dict_entry_array_sync (void)
 	TEST_CHILD_WAIT (server_pid, wait_fd) {
 		dict_entry_array_property = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -49652,16 +49648,16 @@ test_get_all_sync (void)
 
 		dict_entry_array_property[2] = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -49959,16 +49955,16 @@ test_get_all_sync (void)
 
 		dict_entry_array_property[2] = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -49980,6 +49976,8 @@ test_get_all_sync (void)
 		TEST_DBUS_CLOSE (server_conn);
 
 		dbus_shutdown ();
+
+		nih_free (parent);
 
 		exit (0);
 	}
@@ -50127,16 +50125,16 @@ test_get_all_sync (void)
 
 		dict_entry_array_property[2] = NULL;
 
-		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
-
 		assert0 (nih_dbus_setup (server_conn, NULL));
 
 		object = nih_dbus_object_new (NULL, server_conn,
 					      "/com/netsplit/Nih/Test",
 					      my_interfaces,
 					      NULL);
+
+		nih_signal_set_handler (SIGTERM, nih_signal_handler);
+		assert (nih_signal_add_handler (object, SIGTERM,
+						nih_main_term_signal, NULL));
 
 		TEST_CHILD_RELEASE (wait_fd);
 
@@ -50148,6 +50146,8 @@ test_get_all_sync (void)
 		TEST_DBUS_CLOSE (server_conn);
 
 		dbus_shutdown ();
+
+		nih_free (parent);
 
 		exit (0);
 	}
@@ -50324,6 +50324,7 @@ main (int   argc,
 	test_str_to_dict_entry_array ();
 	test_str_to_dict_entry_array_sync ();
 
+
 	test_new_byte ();
 	test_new_boolean ();
 	test_new_int16 ();
@@ -50342,6 +50343,7 @@ main (int   argc,
 	test_new_int32_array_array ();
 	test_new_struct_array ();
 	test_new_dict_entry_array ();
+
 
 	test_get_byte ();
 	test_get_byte_sync ();
@@ -50450,6 +50452,7 @@ main (int   argc,
 
 	test_set_dict_entry_array ();
 	test_set_dict_entry_array_sync ();
+
 
 	test_get_all ();
 	test_get_all_sync ();

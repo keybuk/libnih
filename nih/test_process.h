@@ -45,6 +45,8 @@
 #define TEST_CHILD(_pid) \
 	do { \
 		int _test_fds[2]; \
+		fflush (stdout);	    \
+		fflush (stderr);	    \
 		assert0 (pipe (_test_fds)); \
 		_pid = fork (); \
 		if (_pid > 0) { \
@@ -82,6 +84,8 @@
 #define TEST_CHILD_WAIT(_pid, _fd) \
 	do { \
 		int _test_fds[2]; \
+		fflush (stdout);	    \
+		fflush (stderr);	    \
 		assert0 (pipe (_test_fds)); \
 		_pid = fork (); \
 		if (_pid > 0) { \

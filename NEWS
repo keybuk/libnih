@@ -92,6 +92,12 @@
 	  should you call abort() core dump analysers can retrieve the
 	  message; especially useful for nih_assert().  (Bug: #429411)
 
+
+	* nih-dbus-tool generated code has been fixed so that when a
+	  method call function is called on a disconnected connection
+	  it returns a raised DBUS_ERROR_DISCONNECTED rather than causing
+	  an assertion error.  (Bug: #477116)
+
 0.3.2  2009-08-02
 
 	* D-Bus 1.2.16 is now required.

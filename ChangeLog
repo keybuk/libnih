@@ -1,5 +1,13 @@
 2009-11-24  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/alloc.c (NihAllocCtx): The recent alignment changes mean
+	there's always 4 bytes of spare space in this structure, use those
+	to remember the allocation size rather than relying on malloc()
+	to do it.  This makes us more portable to alternative (and debugging)
+	malloc implementations.
+	(nih_alloc, nih_realloc): Update the size field
+	(nih_alloc_size): Just return the size field.
+
 	* TODO: Update.
 
 2009-11-21  Scott James Remnant  <scott@netsplit.com>

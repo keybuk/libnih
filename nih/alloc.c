@@ -38,7 +38,8 @@
  * NihAllocCtx:
  * @parents: parents of this context,
  * @children: children of this context,
- * @destructor: function to be called when freed.
+ * @destructor: function to be called when freed,
+ * @size: allocation size.
  *
  * This structure is placed before all allocations in memory and is used
  * to build up an n-ary tree of them.  Allocations may have multiple
@@ -52,6 +53,7 @@ typedef struct nih_alloc_ctx {
 	NihList       parents;
 	NihList       children;
 	NihDestructor destructor;
+	size_t        size;
 } NihAllocCtx;
 
 /**
@@ -162,6 +164,7 @@ nih_alloc (const void *parent,
 	nih_list_init (&ctx->children);
 
 	ctx->destructor = NULL;
+	ctx->size = size;
 
 	nih_alloc_ref_new (NIH_ALLOC_CTX (parent), ctx);
 
@@ -241,6 +244,8 @@ nih_realloc (void *      ptr,
 	ctx = __nih_realloc (ctx, NIH_ALLOC_SIZE + size);
 	if (! ctx)
 		return NULL;
+
+	ctx->size = size;
 
 	/* Now update our parents and children lists, or reinitialise,
 	 * as noted above this ensures that all the pointers are correct
@@ -731,5 +736,5 @@ nih_alloc_size (const void *ptr)
 	ctx = NIH_ALLOC_CTX (ptr);
 	nih_assert (ctx->destructor != NIH_ALLOC_FINALISED);
 
-	return malloc_usable_size (ctx) - NIH_ALLOC_SIZE;
+	return ctx->size;
 }

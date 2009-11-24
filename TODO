@@ -1,9 +1,5 @@
 1.0
 ---
-alloc:
-- use the spare space to put the size_t back so we don't have to rely
-  on malloc having the right numbers
-
 dbus:
 - dbus_connection_send_with_reply() can return TRUE but a NULL pending_data
   to indicate a disconnected socket, we don't handle that case in the

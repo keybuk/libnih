@@ -171,6 +171,13 @@ my_test_get_colour (NihDBusProxy *       proxy,
 
 	dbus_message_unref (method_call);
 
+	if (! pending_call) {
+		nih_dbus_error_raise (DBUS_ERROR_DISCONNECTED,
+		                      "Connection is closed");
+		nih_free (pending_data);
+		return NULL;
+	}
+
 	NIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Test_colour_get_notify,
 	                                        pending_data, (DBusFreeFunction)nih_discard));
 
@@ -489,6 +496,13 @@ my_test_set_colour (NihDBusProxy *       proxy,
 
 	dbus_message_unref (method_call);
 
+	if (! pending_call) {
+		nih_dbus_error_raise (DBUS_ERROR_DISCONNECTED,
+		                      "Connection is closed");
+		nih_free (pending_data);
+		return NULL;
+	}
+
 	NIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Test_colour_set_notify,
 	                                        pending_data, (DBusFreeFunction)nih_discard));
 
@@ -705,6 +719,13 @@ my_test_get_size (NihDBusProxy *      proxy,
 	}
 
 	dbus_message_unref (method_call);
+
+	if (! pending_call) {
+		nih_dbus_error_raise (DBUS_ERROR_DISCONNECTED,
+		                      "Connection is closed");
+		nih_free (pending_data);
+		return NULL;
+	}
 
 	NIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Test_size_get_notify,
 	                                        pending_data, (DBusFreeFunction)nih_discard));
@@ -1009,6 +1030,13 @@ my_test_set_touch (NihDBusProxy *      proxy,
 
 	dbus_message_unref (method_call);
 
+	if (! pending_call) {
+		nih_dbus_error_raise (DBUS_ERROR_DISCONNECTED,
+		                      "Connection is closed");
+		nih_free (pending_data);
+		return NULL;
+	}
+
 	NIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Test_touch_set_notify,
 	                                        pending_data, (DBusFreeFunction)nih_discard));
 
@@ -1217,6 +1245,13 @@ my_test_get_all (NihDBusProxy *      proxy,
 	}
 
 	dbus_message_unref (method_call);
+
+	if (! pending_call) {
+		nih_dbus_error_raise (DBUS_ERROR_DISCONNECTED,
+		                      "Connection is closed");
+		nih_free (pending_data);
+		return NULL;
+	}
 
 	NIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)my_com_netsplit_Nih_Test_get_all_notify,
 	                                        pending_data, (DBusFreeFunction)nih_discard));

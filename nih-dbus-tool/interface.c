@@ -1498,6 +1498,13 @@ interface_proxy_get_all_function (const void *parent,
 				  "\n"
 				  "dbus_message_unref (method_call);\n"
 				  "\n"
+				  "if (! pending_call) {\n"
+				  "\tnih_dbus_error_raise (DBUS_ERROR_DISCONNECTED,\n"
+				  "\t                      \"Connection is closed\");\n"
+				  "\tnih_free (pending_data);\n"
+				  "\treturn NULL;\n"
+				  "}\n"
+				  "\n"
 				  "NIH_MUST (dbus_pending_call_set_notify (pending_call, (DBusPendingCallNotifyFunction)%s,\n"
 				  "                                        pending_data, (DBusFreeFunction)nih_discard));\n",
 				  notify_name))

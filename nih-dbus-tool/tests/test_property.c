@@ -3248,6 +3248,7 @@ test_proxy_get_function (void)
 	DBusMessageIter   subiter;
 	char *            str_value;
 	NihError *        err;
+	NihDBusError *    dbus_err;
 
 	TEST_FUNCTION ("property_proxy_get_function");
 	TEST_DBUS (dbus_pid);
@@ -3900,6 +3901,55 @@ test_proxy_get_function (void)
 		TEST_DBUS_DISPATCH (client_conn);
 
 		/* Check the notify function was not called. */
+		TEST_FALSE (my_com_netsplit_Nih_Test_test_property_get_notify_called);
+
+		nih_free (proxy);
+	}
+
+
+	/* Check that when the remote end is not connected, the function
+	 * returns NULL and raises the disconnected D-Bus error.
+	 */
+	TEST_FEATURE ("with unconnected connection (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_DBUS_OPEN (flakey_conn);
+
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, flakey_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
+		}
+
+		TEST_DBUS_CLOSE (flakey_conn);
+
+		my_com_netsplit_Nih_Test_test_property_get_notify_called = FALSE;
+		last_pending_call = NULL;
+		last_pending_data = NULL;
+
+		pending_call = my_get_test_property (proxy,
+						     my_blank_get_handler,
+						     my_blank_error_handler,
+						     &proxy, -1);
+
+		TEST_EQ_P (pending_call, NULL);
+
+		err = nih_error_get ();
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_DISCONNECTED);
+
+		nih_free (err);
+
 		TEST_FALSE (my_com_netsplit_Nih_Test_test_property_get_notify_called);
 
 		nih_free (proxy);
@@ -5295,6 +5345,7 @@ test_proxy_set_function (void)
 	DBusMessageIter   subiter;
 	char *            str_value;
 	NihError *        err;
+	NihDBusError *    dbus_err;
 
 	TEST_FUNCTION ("property_proxy_set_function");
 	TEST_DBUS (dbus_pid);
@@ -6543,6 +6594,55 @@ test_proxy_set_function (void)
 	}
 
 
+	/* Check that when the remote end is not connected, the function
+	 * returns NULL and raises the disconnected D-Bus error.
+	 */
+	TEST_FEATURE ("with unconnected connection (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_DBUS_OPEN (flakey_conn);
+
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, flakey_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
+		}
+
+		TEST_DBUS_CLOSE (flakey_conn);
+
+		my_com_netsplit_Nih_Test_test_property_set_notify_called = FALSE;
+		last_pending_call = NULL;
+		last_pending_data = NULL;
+
+		pending_call = my_set_test_property (proxy, "wibble",
+						     my_blank_set_handler,
+						     my_blank_error_handler,
+						     &proxy, -1);
+
+		TEST_EQ_P (pending_call, NULL);
+
+		err = nih_error_get ();
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_DISCONNECTED);
+
+		nih_free (err);
+
+		TEST_FALSE (my_com_netsplit_Nih_Test_test_property_set_notify_called);
+
+		nih_free (proxy);
+	}
+
+
 	/* Check that a deprecated property has its get function annotated
 	 * with the deprecated attribute so that the client gets a gcc
 	 * warning if they use it.
@@ -7546,6 +7646,7 @@ test_proxy_get_sync_function (void)
 	pid_t           dbus_pid;
 	DBusConnection *server_conn;
 	DBusConnection *client_conn;
+	DBusConnection *flakey_conn;
 	NihList         prototypes;
 	NihList         structs;
 	Interface *     interface = NULL;
@@ -8018,6 +8119,53 @@ test_proxy_get_sync_function (void)
 		dbus_err = (NihDBusError *)err;
 		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Failed");
 		TEST_EQ_STR (err->message, "Didn't work out");
+		nih_free (err);
+
+		TEST_EQ_P (str_value, NULL);
+
+		nih_free (proxy);
+	}
+
+
+	/* Check that the generated code returns a raised disconnected
+	 * error when called on a disconnected connection.
+	 */
+	TEST_FEATURE ("with disconnected connection (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_DBUS_OPEN (flakey_conn);
+
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, flakey_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
+			parent = nih_alloc (proxy, 0);
+		}
+
+		TEST_DBUS_CLOSE (flakey_conn);
+
+		str_value = NULL;
+
+		ret = my_get_property_sync (parent, proxy, &str_value);
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+
+			TEST_EQ_P (str_value, NULL);
+
+			nih_free (proxy);
+			continue;
+		}
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_DISCONNECTED);
 		nih_free (err);
 
 		TEST_EQ_P (str_value, NULL);
@@ -8573,6 +8721,7 @@ test_proxy_set_sync_function (void)
 	pid_t           dbus_pid;
 	DBusConnection *server_conn;
 	DBusConnection *client_conn;
+	DBusConnection *flakey_conn;
 	NihList         prototypes;
 	NihList         structs;
 	Interface *     interface = NULL;
@@ -8585,7 +8734,7 @@ test_proxy_set_sync_function (void)
 	NihListEntry *  attrib;
 	NihDBusProxy *  proxy = NULL;
 	void *          parent = NULL;
-	pid_t           pid;
+	pid_t           pid = -1;
 	int             status;
 	DBusMessage *   method_call;
 	DBusMessage *   reply;
@@ -9173,6 +9322,50 @@ test_proxy_set_sync_function (void)
 		dbus_err = (NihDBusError *)err;
 		TEST_EQ_STR (dbus_err->name, "com.netsplit.Nih.Failed");
 		TEST_EQ_STR (err->message, "Didn't work out");
+		nih_free (err);
+
+		nih_free (proxy);
+	}
+
+
+	/* Check that the generated code returns a raised disconnected
+	 * error when called on a disconnected connection.
+	 */
+	TEST_FEATURE ("with disconnected connection (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_DBUS_OPEN (flakey_conn);
+
+		TEST_ALLOC_SAFE {
+			proxy = nih_dbus_proxy_new (NULL, flakey_conn,
+						    dbus_bus_get_unique_name (server_conn),
+						    "/com/netsplit/Nih",
+						    NULL, NULL);
+			parent = nih_alloc (proxy, 0);
+		}
+
+		TEST_DBUS_CLOSE (flakey_conn);
+
+		ret = my_set_property_sync (NULL, proxy, "wibble");
+
+		TEST_LT (ret, 0);
+
+		err = nih_error_get ();
+
+		if (test_alloc_failed
+		    && (err->number == ENOMEM)) {
+			nih_free (err);
+			nih_free (proxy);
+			continue;
+		}
+
+		waitpid (pid, &status, 0);
+		TEST_TRUE (WIFEXITED (status));
+		TEST_EQ (WEXITSTATUS (status), 0);
+
+		TEST_EQ (err->number, NIH_DBUS_ERROR);
+		TEST_ALLOC_SIZE (err, sizeof (NihDBusError));
+		dbus_err = (NihDBusError *)err;
+		TEST_EQ_STR (dbus_err->name, DBUS_ERROR_DISCONNECTED);
 		nih_free (err);
 
 		nih_free (proxy);

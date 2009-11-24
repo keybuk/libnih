@@ -1,5 +1,111 @@
 2009-11-24  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/interface.c (interface_proxy_get_all_function),
+	* nih-dbus-tool/method.c (method_proxy_function),
+	* nih-dbus-tool/property.c (property_proxy_get_function)
+	(property_proxy_set_function): The dbus_connection_send_with_reply()
+	function can return TRUE without setting a pending_call in the case
+	of a non-connected connection.  Convert this into the
+	DBUS_ERROR_DISCONNECTED error to match send_with_reply_and_block
+	* nih-dbus-tool/tests/test_interface.c (test_proxy_get_all_function),
+	* nih-dbus-tool/tests/test_method.c (test_proxy_function),
+	* nih-dbus-tool/tests/test_property.c (test_proxy_get_function)
+	(test_proxy_set_function),
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c (test_ordinary_method)
+	(test_nameless_method, test_async_method, test_byte_to_str)
+	(test_str_to_byte, test_boolean_to_str, test_str_to_boolean)
+	(test_int16_to_str, test_str_to_int16, test_uint16_to_str)
+	(test_str_to_uint16, test_int32_to_str, test_str_to_int32)
+	(test_uint32_to_str, test_str_to_uint32, test_int64_to_str)
+	(test_str_to_int64, test_uint64_to_str, test_str_to_uint64)
+	(test_double_to_str, test_str_to_double)
+	(test_object_path_to_str, test_str_to_object_path)
+	(test_signature_to_str, test_str_to_signature)
+	(test_struct_to_str, test_str_to_struct)
+	(test_int32_array_to_str, test_str_to_int32_array)
+	(test_str_array_to_str, test_str_to_str_array)
+	(test_int32_array_array_to_str, test_str_to_int32_array_array)
+	(test_struct_array_to_str, test_str_to_struct_array)
+	(test_dict_entry_array_to_str, test_str_to_dict_entry_array)
+	(test_get_byte, test_set_byte, test_get_boolean)
+	(test_set_boolean, test_get_int16, test_set_int16)
+	(test_get_uint16, test_set_uint16, test_get_int32)
+	(test_set_int32, test_get_uint32, test_set_uint32)
+	(test_get_int64, test_set_int64, test_get_uint64)
+	(test_set_uint64, test_get_double, test_set_double)
+	(test_get_string, test_set_string, test_get_object_path)
+	(test_set_object_path, test_get_signature, test_set_signature)
+	(test_get_structure, test_set_structure, test_get_int32_array)
+	(test_set_int32_array, test_get_str_array, test_set_str_array)
+	(test_get_int32_array_array, test_set_int32_array_array)
+	(test_get_struct_array, test_set_struct_array)
+	(test_get_dict_entry_array, test_set_dict_entry_array)
+	(test_get_all): Add test cases for sending to a disconnected
+	connection and getting the error reply back straight away.
+	* nih-dbus-tool/tests/expected/test_interface_proxy_get_all_function_standard.c,
+	* nih-dbus-tool/tests/expected/test_method_proxy_function_standard.c,
+	* nih-dbus-tool/tests/expected/test_method_proxy_function_structure.c,
+	* nih-dbus-tool/tests/expected/test_method_proxy_function_array.c,
+	* nih-dbus-tool/tests/expected/test_method_proxy_function_no_args.c,
+	* nih-dbus-tool/tests/expected/test_method_proxy_function_deprecated.c,
+	* nih-dbus-tool/tests/expected/test_property_proxy_get_function_standard.c,
+	* nih-dbus-tool/tests/expected/test_property_proxy_get_function_deprecated.c,
+	* nih-dbus-tool/tests/expected/test_property_proxy_set_function_standard.c,
+	* nih-dbus-tool/tests/expected/test_property_proxy_set_function_structure.c,
+	* nih-dbus-tool/tests/expected/test_property_proxy_set_function_array.c,
+	* nih-dbus-tool/tests/expected/test_property_proxy_set_function_deprecated.c,
+	* nih-dbus-tool/tests/expected/test_node_proxy_functions_standard.c,
+	* nih-dbus-tool/tests/expected/test_node_proxy_functions_structure.c,
+	* nih-dbus-tool/tests/expected/test_node_proxy_functions_no_methods.c,
+	* nih-dbus-tool/tests/expected/test_node_proxy_functions_no_signals.c,
+	* nih-dbus-tool/tests/expected/test_node_proxy_functions_no_properties.c,
+	* nih-dbus-tool/tests/expected/test_node_proxy_functions_only_properties.c:
+	Update expected function output to match.
+	* nih-dbus-tool/tests/test_interface.c (test_proxy_get_all_sync_function),
+	* nih-dbus-tool/tests/test_method.c (test_proxy_sync_function),
+	* nih-dbus-tool/tests/test_property.c (test_proxy_get_sync_function)
+	(test_proxy_set_sync_function),
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c (test_ordinary_method_sync)
+	(test_nameless_method_sync, test_async_method_sync)
+	(test_byte_to_str_sync, test_str_to_byte_sync)
+	(test_boolean_to_str_sync, test_str_to_boolean_sync)
+	(test_int16_to_str_sync, test_str_to_int16_sync)
+	(test_uint16_to_str_sync, test_str_to_uint16_sync)
+	(test_int32_to_str_sync, test_str_to_int32_sync)
+	(test_uint32_to_str_sync, test_str_to_uint32_sync)
+	(test_int64_to_str_sync, test_str_to_int64_sync)
+	(test_uint64_to_str_sync, test_str_to_uint64_sync)
+	(test_double_to_str_sync, test_str_to_double_sync)
+	(test_object_path_to_str_sync, test_str_to_object_path_sync)
+	(test_signature_to_str_sync, test_str_to_signature_sync)
+	(test_struct_to_str_sync, test_str_to_struct_sync)
+	(test_int32_array_to_str_sync, test_str_to_int32_array_sync)
+	(test_str_array_to_str_sync, test_str_to_str_array_sync)
+	(test_int32_array_array_to_str_sync)
+	(test_str_to_int32_array_array_sync)
+	(test_struct_array_to_str_sync, test_str_to_struct_array_sync)
+	(test_dict_entry_array_to_str_sync)
+	(test_str_to_dict_entry_array_sync, test_get_byte_sync)
+	(test_set_byte_sync, test_get_boolean_sync)
+	(test_set_boolean_sync, test_get_int16_sync)
+	(test_set_int16_sync, test_get_uint16_sync)
+	(test_set_uint16_sync, test_get_int32_sync, test_set_int32_sync)
+	(test_get_uint32_sync, test_set_uint32_sync)
+	(test_get_int64_sync, test_set_int64_sync, test_get_uint64_sync)
+	(test_set_uint64_sync, test_get_double_sync)
+	(test_set_double_sync, test_get_string_sync)
+	(test_set_string_sync, test_get_object_path_sync)
+	(test_set_object_path_sync, test_get_signature_sync)
+	(test_set_signature_sync, test_get_structure_sync)
+	(test_set_structure_sync, test_get_int32_array_sync)
+	(test_set_int32_array_sync, test_get_str_array_sync)
+	(test_set_str_array_sync, test_get_int32_array_array_sync)
+	(test_set_int32_array_array_sync, test_get_struct_array_sync)
+	(test_set_struct_array_sync, test_get_dict_entry_array_sync)
+	(test_set_dict_entry_array_sync, test_get_all_sync):
+	Add test cases for a sync() function on a disconnected connection,
+	which should return the same error internally inside D-Bus.
+
 	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c: These
 	tests weren't passing under valgrind, because I got lazy and gave
 	up.  Most of the reason was that the main signal handler wasn't

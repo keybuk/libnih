@@ -152,6 +152,38 @@
    fun:nih_main_loop_init
 }
 
+{
+   nih-log-abort-message
+   Memcheck:Leak
+   fun:malloc
+   fun:nih_alloc
+   fun:nih_strndup
+   fun:nih_strdup
+   fun:nih_log_abort_message
+}
+{
+   nih-log-abort-message
+   Memcheck:Leak
+   fun:malloc
+   fun:realloc
+   fun:_test_realloc
+   fun:_test_malloc
+   fun:nih_alloc
+   fun:nih_strndup
+   fun:nih_strdup
+   fun:nih_log_abort_message
+}
+{
+   nih-log-abort-message
+   Memcheck:Leak
+   fun:malloc
+   fun:nih_alloc_ref_new
+   fun:nih_alloc
+   fun:nih_strndup
+   fun:nih_strdup
+   fun:nih_log_abort_message
+}
+
 
 # nih_main_init_full stores the pacakge_string string in a
 # heap-allocated pointer.  It survives the life of the process and

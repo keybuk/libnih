@@ -1,5 +1,10 @@
 2009-11-24  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/logging.c (nih_log_message): Split the abort message saving
+	out into its own function.
+	(nih_log_abort_message): This makes it easier to suppress.
+	* nih/libnih.supp: Add suppressions.
+
 	* NEWS: Update.
 
 	* nih/libnih.supp: Add new tmpfile suppression

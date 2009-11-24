@@ -111,6 +111,22 @@ nih_log_set_priority (NihLogLevel new_priority)
 
 
 /**
+ * nih_log_abort_message:
+ * @message: message to be logged.
+ *
+ * Save @message in the glibc __abort_msg variable so it can be retrieved
+ * by debuggers if we should crash at this point.
+ **/
+static void
+nih_log_abort_message (const char *message)
+{
+	if (__abort_msg)
+		nih_discard (__abort_msg);
+
+	__abort_msg = NIH_MUST (nih_strdup (NULL, message));
+}
+
+/**
  * nih_log_message:
  * @priority: priority of message,
  * @format: printf-style format string.
@@ -144,11 +160,8 @@ nih_log_message (NihLogLevel priority,
 	message = NIH_MUST (nih_vsprintf (NULL, format, args));
 	va_end (args);
 
-	if (priority >= NIH_LOG_FATAL) {
-		if (__abort_msg)
-			nih_discard (__abort_msg);
-		__abort_msg = NIH_MUST (nih_strdup (NULL, message));
-	}
+	if (priority >= NIH_LOG_FATAL)
+		nih_log_abort_message (message);
 
 	/* Output the message */
 	ret = logger (priority, message);

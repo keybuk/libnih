@@ -198,6 +198,14 @@
    fun:fdopen
    fun:tmpfile
 }
+{
+   glibc-tmpfile
+   Memcheck:Leak
+   fun:malloc
+   fun:fdopen@@GLIBC_2.1
+   fun:tmpfile@@GLIBC_2.1
+}
+
 
 # nih_command_parser inherently leaks the internal state when --help or
 # other immediate-exit is used

@@ -1,5 +1,7 @@
 2009-11-24  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/libnih.supp: Add new tmpfile suppression
+
 	* nih-dbus-tool/interface.c (interface_proxy_get_all_function),
 	* nih-dbus-tool/method.c (method_proxy_function),
 	* nih-dbus-tool/property.c (property_proxy_get_function)

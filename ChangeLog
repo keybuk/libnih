@@ -1,5 +1,12 @@
 2009-11-28  Scott James Remnant  <scott@netsplit.com>
 
+	* nih-dbus-tool/main.c (source_file_path, header_file_path): Use a
+	not reached assertion rather than an initial one, to avoid gcc
+	warnings.
+	* nih/tests/test_string.c (test_array_addp),
+	* nih/tests/test_logging.c (test_log_message): Add a couple more
+	initialisations for gcc, found with -O2
+
 	* TODO: Update.
 
 	* nih/tests/test_error.c (test_raise_error, test_pop_context): Also

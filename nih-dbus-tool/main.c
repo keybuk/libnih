@@ -119,8 +119,6 @@ source_file_path (const void *parent,
 {
 	char *path;
 
-	nih_assert ((output_path != NULL) || (filename != NULL));
-
 	if (output_path) {
 		char *ptr;
 
@@ -170,6 +168,8 @@ source_file_path (const void *parent,
 			nih_free (path);
 			return NULL;
 		}
+	} else {
+		nih_assert_not_reached ();
 	}
 
 	return path;
@@ -198,8 +198,6 @@ header_file_path (const void *parent,
 		  const char *filename)
 {
 	char *path;
-
-	nih_assert ((output_path != NULL) || (filename != NULL));
 
 	if (output_path) {
 		char *ptr;
@@ -260,6 +258,8 @@ header_file_path (const void *parent,
 			nih_free (path);
 			return NULL;
 		}
+	} else {
+		nih_assert_not_reached ();
 	}
 
 	return path;

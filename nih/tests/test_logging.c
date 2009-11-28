@@ -101,7 +101,7 @@ test_set_priority (void)
 void
 test_log_message (void)
 {
-	char *msg;
+	char *msg = NULL;
 	int   ret;
 
 	TEST_FUNCTION ("nih_log_message");

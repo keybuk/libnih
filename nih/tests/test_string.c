@@ -765,7 +765,8 @@ void
 test_array_addp (void)
 {
 	char   **array, **ret;
-	char    *ptr1, *ptr2;
+	char    *ptr1 = NULL;
+	char    *ptr2 = NULL;
 	size_t   len;
 
 	TEST_FUNCTION ("nih_str_array_addn");

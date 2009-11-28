@@ -1,5 +1,7 @@
 2009-11-28  Scott James Remnant  <scott@netsplit.com>
 
+	* NEWS: Release 1.0.0
+
 	* nih-dbus-tool/main.c (source_file_path, header_file_path): Use a
 	not reached assertion rather than an initial one, to avoid gcc
 	warnings.

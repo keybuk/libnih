@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: libnih 1.0.0\n"
 "Report-Msgid-Bugs-To: libnih-bugs@netsplit.com\n"
-"POT-Creation-Date: 2009-08-11 11:28+0100\n"
+"POT-Creation-Date: 2009-11-28 20:40+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -91,68 +91,68 @@ msgstr ""
 msgid "increase output to include informational messages"
 msgstr ""
 
-#: nih/option.c:102
+#: nih/option.c:105
 msgid "display this help and exit"
 msgstr ""
 
-#: nih/option.c:105
+#: nih/option.c:108
 msgid "output version information and exit"
 msgstr ""
 
-#: nih/option.c:299
+#: nih/option.c:302
 #, c-format
 msgid "%s: invalid option: -%c\n"
 msgstr ""
 
-#: nih/option.c:392
+#: nih/option.c:395
 #, c-format
 msgid "%s: invalid option: --%s\n"
 msgstr ""
 
-#: nih/option.c:408
+#: nih/option.c:411
 #, c-format
 msgid "%s: unexpected argument: --%s\n"
 msgstr ""
 
-#: nih/option.c:464
+#: nih/option.c:467
 #, c-format
 msgid "%s: missing argument: %s\n"
 msgstr ""
 
-#: nih/option.c:664
+#: nih/option.c:667
 #, c-format
 msgid "%s: illegal argument: %s\n"
 msgstr ""
 
-#: nih/option.c:857
+#: nih/option.c:860
 msgid "Usage"
 msgstr ""
 
-#: nih/option.c:861
+#: nih/option.c:864
 msgid "[OPTION]..."
 msgstr ""
 
-#: nih/option.c:909
+#: nih/option.c:912
 #, c-format
 msgid "Report bugs to <%s>\n"
 msgstr ""
 
-#: nih/option.c:911
+#: nih/option.c:914
 #, c-format
 msgid "Report bugs at <%s>\n"
 msgstr ""
 
-#: nih/option.c:936
+#: nih/option.c:939
 #, c-format
 msgid "%s options:\n"
 msgstr ""
 
-#: nih/option.c:938
+#: nih/option.c:941
 #, c-format
 msgid "Other options:\n"
 msgstr ""
 
-#: nih/option.c:940
+#: nih/option.c:943
 #, c-format
 msgid "Options:\n"
 msgstr ""
@@ -284,24 +284,28 @@ msgstr ""
 msgid "write C source to FILENAME, header alongside"
 msgstr ""
 
-#: nih-dbus-tool/main.c:334
-msgid "[XMLFILE]"
-msgstr ""
-
-#: nih-dbus-tool/main.c:335
-msgid "Generate C bindings for D-Bus objects"
+#: nih-dbus-tool/main.c:315
+msgid "name of software source being created for"
 msgstr ""
 
 #: nih-dbus-tool/main.c:336
+msgid "[XMLFILE]"
+msgstr ""
+
+#: nih-dbus-tool/main.c:337
+msgid "Generate C bindings for D-Bus objects"
+msgstr ""
+
+#: nih-dbus-tool/main.c:338
 msgid "Fill this in later"
 msgstr ""
 
-#: nih-dbus-tool/main.c:351
+#: nih-dbus-tool/main.c:353
 #, c-format
 msgid "%s: --output must be specified when using standard input\n"
 msgstr ""
 
-#: nih-dbus-tool/main.c:414
+#: nih-dbus-tool/main.c:416
 msgid "No such interface"
 msgstr ""
 

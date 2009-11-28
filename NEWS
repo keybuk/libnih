@@ -1,4 +1,4 @@
-1.0.0  xxxx-xx-xx
+1.0.0  2009-11-28
 
 	* libnih is no longer intended to be copied into an application
 	  source tree and linked statically, but is now installed onto the

@@ -1,13 +1,3 @@
-1.0
----
-dbus:
-- dbus_connection_send_with_reply() can return TRUE but a NULL pending_data
-  to indicate a disconnected socket, we don't handle that case in the
-  generated code
-- look back to why we don't dist_ generated code anymore, it would be handy
-  for cross-compiling
-
-
 1.1/2.0
 -------
 alloc:

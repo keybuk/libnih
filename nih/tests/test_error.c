@@ -25,6 +25,7 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <limits.h>
 #include <signal.h>
 #include <string.h>
 
@@ -133,9 +134,10 @@ test_raise_error (void)
 {
 	NihError *error1 = NULL;
 	NihError *error2 = NULL;
-	pid_t     pid = 0; 
+	pid_t     pid = 0;
 	int       status;
 	FILE *    output;
+	char      corefile[PATH_MAX + 1];
 
 	TEST_FUNCTION ("nih_error_raise_error");
 	output = tmpfile ();
@@ -205,6 +207,12 @@ test_raise_error (void)
 		TEST_FILE_RESET (output);
 
 		unlink ("core");
+
+		sprintf (corefile, "core.%d", pid);
+		unlink (corefile);
+
+		sprintf (corefile, "vgcore.%d", pid);
+		unlink (corefile);
 
 		nih_free (error1);
 		nih_free (error2);
@@ -422,6 +430,7 @@ test_pop_context (void)
 	FILE *    output;
 	pid_t     pid = 0;
 	int       status;
+	char      corefile[PATH_MAX + 1];
 
 	TEST_FUNCTION ("nih_error_pop_context");
 	output = tmpfile ();
@@ -458,6 +467,12 @@ test_pop_context (void)
 		TEST_FILE_RESET (output);
 
 		unlink ("core");
+
+		sprintf (corefile, "core.%d", pid);
+		unlink (corefile);
+
+		sprintf (corefile, "vgcore.%d", pid);
+		unlink (corefile);
 	}
 
 

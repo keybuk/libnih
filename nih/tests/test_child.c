@@ -28,6 +28,7 @@
 #include <sys/ptrace.h>
 
 #include <fcntl.h>
+#include <limits.h>
 #include <signal.h>
 #include <unistd.h>
 
@@ -122,6 +123,7 @@ test_poll (void)
 	siginfo_t      siginfo;
 	pid_t          pid, child;
 	unsigned long  data;
+	char           corefile[PATH_MAX + 1];
 
 	TEST_FUNCTION ("nih_child_poll");
 
@@ -255,12 +257,19 @@ test_poll (void)
 	 * the limit doesn't help, since we might be under gdb and that
 	 * never lets us dump core.
 	 */
-	if (last_event != NIH_CHILD_KILLED) {
+	if (last_event != NIH_CHILD_KILLED)
 		TEST_EQ (last_event, NIH_CHILD_DUMPED);
-		unlink ("core");
-	}
+
 	TEST_EQ (last_status, SIGABRT);
 	TEST_FREE (watch);
+
+	unlink ("core");
+
+	sprintf (corefile, "core.%d", pid);
+	unlink (corefile);
+
+	sprintf (corefile, "vgcore.%d", pid);
+	unlink (corefile);
 
 
 	/* Check that when a child emits the stopped signal, the reaper

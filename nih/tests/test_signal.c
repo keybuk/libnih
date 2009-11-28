@@ -289,6 +289,10 @@ test_poll (void)
 	nih_signal_poll ();
 
 	TEST_EQ (handler_called, 0);
+
+
+	nih_free (signal1);
+	nih_free (signal2);
 }
 
 

@@ -1,3 +1,30 @@
+2009-11-28  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/libnih.supp, nih-dbus/libnih-dbus.supp: Valgrind got a whole
+	bunch more strict in the 3.5 release.  That's a good thing because
+	we catch more errors, but it means it's somewhat picker about things
+	like our reference allocations.  Redo the suppressions against 3.5,
+	taking an opportunity to clean up the files and insert documentation
+	as to why they are there.
+	* nih/tests/test_signal.c (test_poll): The two signal structures
+	allocated in this function were not being freed at the end.
+	* nih/tests/test_watch.c (test_reader): On termination of this test
+	we were not freeing the last path copied.
+	* nih-dbus/tests/test_dbus_connection.c (test_connect, test_bus)
+	(test_setup): Free signal handlers before exiting the child,
+	unlike other test cases we can't make these children of any other
+	object since we don't actually have one!
+	* nih-dbus-tool/tests/test_annotation.c (test_start_tag)
+	(test_end_tag): Missing call to discard the NULL reference from the
+	various objects after pushing onto the stack.
+	* nih-dbus-tool/tests/test_parse.c (test_stack_push): Thanks to
+	the updated valgrind, I can now see that this test case wasn't updated
+	for the new nih_alloc() behaviour.  We now need to free the object
+	even after it's been referenced, because it still has our NULL
+	reference.
+	(test_start_tag, test_end_tag): Also need to discard the NULL
+	reference in each of these cases.
+
 2009-11-24  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/logging.c (nih_log_message): Split the abort message saving

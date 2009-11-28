@@ -52,6 +52,7 @@ test_start_tag (void)
 	ParseStack * parent = NULL;
 	ParseStack * entry;
 	XML_Parser   xmlp;
+	Node *       node = NULL;
 	Interface *  interface = NULL;
 	Method *     method = NULL;
 	Signal *     signal = NULL;
@@ -85,6 +86,7 @@ test_start_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 		}
 
 		attr[0] = "name";
@@ -135,6 +137,7 @@ test_start_tag (void)
 			method = method_new (NULL, "TestMethod");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_METHOD, method);
+			nih_discard (method);
 		}
 
 		attr[0] = "name";
@@ -185,6 +188,7 @@ test_start_tag (void)
 			signal = signal_new (NULL, "TestSignal");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_SIGNAL, signal);
+			nih_discard (signal);
 		}
 
 		attr[0] = "name";
@@ -236,6 +240,7 @@ test_start_tag (void)
 						 "s", NIH_DBUS_READ);
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_PROPERTY, property);
+			nih_discard (property);
 		}
 
 		attr[0] = "name";
@@ -287,6 +292,7 @@ test_start_tag (void)
 						 "s", NIH_DBUS_ARG_IN);
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_ARGUMENT, argument);
+			nih_discard (argument);
 		}
 
 		attr[0] = "name";
@@ -336,6 +342,7 @@ test_start_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			attr[0] = "value";
 			attr[1] = "true";
@@ -367,6 +374,7 @@ test_start_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			attr[0] = "name";
 			attr[1] = "org.freedesktop.DBus.Deprecated";
@@ -399,6 +407,7 @@ test_start_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			attr[0] = "name";
 			attr[1] = "org.freedesktop.DBus.Deprecated";
@@ -503,8 +512,10 @@ test_start_tag (void)
 	TEST_FEATURE ("with non-annotated element on stack");
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
+			node = node_new (NULL, NULL);
 			parent = parse_stack_push (NULL, &context.stack,
-						   PARSE_NODE, node_new (NULL, NULL));
+						   PARSE_NODE, node);
+			nih_discard (node);
 
 			attr[0] = "name";
 			attr[1] = "org.freedesktop.DBus.Deprecated";
@@ -559,6 +570,7 @@ test_start_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			attr[0] = "name";
 			attr[1] = "com.netsplit.Nih.Unknown";
@@ -614,6 +626,7 @@ test_start_tag (void)
 			method = method_new (NULL, "TestMethod");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_METHOD, method);
+			nih_discard (method);
 
 			attr[0] = "name";
 			attr[1] = "com.netsplit.Nih.Unknown";
@@ -669,6 +682,7 @@ test_start_tag (void)
 			signal = signal_new (NULL, "TestSignal");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_SIGNAL, signal);
+			nih_discard (signal);
 
 			attr[0] = "name";
 			attr[1] = "com.netsplit.Nih.Unknown";
@@ -724,6 +738,7 @@ test_start_tag (void)
 			property = property_new (NULL, "TestProperty", "s", NIH_DBUS_READ);
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_PROPERTY, property);
+			nih_discard (property);
 
 			attr[0] = "name";
 			attr[1] = "com.netsplit.Nih.Unknown";
@@ -779,6 +794,7 @@ test_start_tag (void)
 			argument = argument_new (NULL, "test_arg", "s", NIH_DBUS_ARG_IN);
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_ARGUMENT, argument);
+			nih_discard (argument);
 
 			attr[0] = "name";
 			attr[1] = "com.netsplit.Nih.Unknown";
@@ -856,6 +872,7 @@ test_end_tag (void)
 			method = method_new (NULL, "TestMethod");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_METHOD, method);
+			nih_discard (method);
 
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_ANNOTATION, NULL);

@@ -1,5 +1,17 @@
 # This is a valgrind suppressions file.
 
+# Common patterns are for every allocation to be followed by one with
+# nih_alloc_ref_new() inserted between the call to nih_alloc() and malloc()
+# this is the reference object for that object.
+#
+# Also if the call is ever made within a TEST_ALLOC_FAIL loop, you'll also
+# need a test with:
+#   fun:realloc
+#   fun:_test_realloc
+#   fun:_test_malloc
+# in between the nih_alloc() and malloc() calls.
+
+
 # There is a slight overhead to using some parts of libnih in the form
 # of a heap-allocated list head used to link all allocated structures
 # by that component.
@@ -9,293 +21,567 @@
 # freed before exit, as there's little point to doing so.
 
 {
-   nih-child-init
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc
-   fun:nih_list_new
-   fun:nih_child_init
+  nih-timer-init
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc
+  fun:nih_list_new
+  fun:nih_timer_init
 }
 {
-   nih-child-init
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc_ref_new
-   fun:nih_alloc
-   fun:nih_list_new
-   fun:nih_child_init
-}
-
-{
-   nih-error-init
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc
-   fun:nih_list_new
-   fun:nih_error_init
-}
-{
-   nih-error-init
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc_ref_new
-   fun:nih_alloc
-   fun:nih_list_new
-   fun:nih_error_init
+  nih-timer-init
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:nih_list_new
+  fun:nih_timer_init
 }
 
 {
-   nih-error-init
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc
-   fun:nih_error_push_context
-   fun:nih_error_init
+  nih-signal-init
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc
+  fun:nih_list_new
+  fun:nih_signal_init
 }
 {
-   nih-error-init
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc_ref_new
-   fun:nih_alloc
-   fun:nih_error_push_context
-   fun:nih_error_init
-}
-
-{
-   nih-file-init
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc
-   fun:nih_list_new
-   fun:nih_file_init
-}
-{
-   nih-file-init
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc_ref_new
-   fun:nih_alloc
-   fun:nih_list_new
-   fun:nih_file_init
+  nih-signal-init
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:nih_list_new
+  fun:nih_signal_init
 }
 
 {
-   nih-io-init
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc
-   fun:nih_list_new
-   fun:nih_io_init
+  nih-child-init
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc
+  fun:nih_list_new
+  fun:nih_child_init
 }
 {
-   nih-io-init
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc_ref_new
-   fun:nih_alloc
-   fun:nih_list_new
-   fun:nih_io_init
-}
-
-{
-   nih-signal-init
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc
-   fun:nih_list_new
-   fun:nih_signal_init
-}
-{
-   nih-signal-init
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc_ref_new
-   fun:nih_alloc
-   fun:nih_list_new
-   fun:nih_signal_init
+  nih-child-init
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:nih_list_new
+  fun:nih_child_init
 }
 
 {
-   nih-timer-init
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc
-   fun:nih_list_new
-   fun:nih_timer_init
+  nih-io-init
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc
+  fun:nih_list_new
+  fun:nih_io_init
 }
 {
-   nih-timer-init
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc_ref_new
-   fun:nih_alloc
-   fun:nih_list_new
-   fun:nih_timer_init
-}
-
-{
-   nih-main-loop-init
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc
-   fun:nih_list_new
-   fun:nih_main_loop_init
-}
-{
-   nih-main-loop-init
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc_ref_new
-   fun:nih_alloc
-   fun:nih_list_new
-   fun:nih_main_loop_init
+  nih-io-init
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:nih_list_new
+  fun:nih_io_init
 }
 
 {
-   nih-log-abort-message
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc
-   fun:nih_strndup
-   fun:nih_strdup
-   fun:nih_log_abort_message
+  nih-file-init
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc
+  fun:nih_list_new
+  fun:nih_file_init
 }
 {
-   nih-log-abort-message
-   Memcheck:Leak
-   fun:malloc
-   fun:realloc
-   fun:_test_realloc
-   fun:_test_malloc
-   fun:nih_alloc
-   fun:nih_strndup
-   fun:nih_strdup
-   fun:nih_log_abort_message
+  nih-file-init
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:nih_list_new
+  fun:nih_file_init
+}
+
+{
+  nih-main-loop-init
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc
+  fun:nih_list_new
+  fun:nih_main_loop_init
 }
 {
-   nih-log-abort-message
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc_ref_new
-   fun:nih_alloc
-   fun:nih_strndup
-   fun:nih_strdup
-   fun:nih_log_abort_message
+  nih-main-loop-init
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:nih_list_new
+  fun:nih_main_loop_init
+}
+
+# NihError has both a list and a default context in that list
+
+{
+  nih-error-init
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc
+  fun:nih_list_new
+  fun:nih_error_init
+}
+{
+  nih-error-init
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:nih_list_new
+  fun:nih_error_init
+}
+
+{
+  nih-error-init
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc
+  fun:nih_error_push_context
+  fun:nih_error_init
+}
+{
+  nih-error-init
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:nih_error_push_context
+  fun:nih_error_init
 }
 
 
 # nih_main_init_full stores the pacakge_string string in a
 # heap-allocated pointer.  It survives the life of the process and
 # is only not freed because there's little point in doing so.
-{
-   nih-package-string
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc
-   fun:nih_vsprintf
-   fun:nih_sprintf
-   fun:nih_main_init_full
-}
-{
-   nih-package-string
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc_ref_new
-   fun:nih_alloc
-   fun:nih_vsprintf
-   fun:nih_sprintf
-   fun:nih_main_init_full
-}
 
 {
-   nih-package-string-test
-   Memcheck:Leak
-   fun:malloc
-   fun:realloc
-   fun:_test_realloc
-   fun:_test_malloc
-   fun:nih_alloc
-   fun:nih_vsprintf
-   fun:nih_sprintf
-   fun:nih_main_init_full
+  nih-package-string
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc
+  fun:nih_vsprintf
+  fun:nih_sprintf
+  fun:nih_main_init_full
 }
+{
+  nih-package-string
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:nih_vsprintf
+  fun:nih_sprintf
+  fun:nih_main_init_full
+}
+
+
+# A copy of any log message of fatal or above is stored in case a crash
+# follows; valgrind picks this up as a leak, even though we hang on to
+# the pointer and only ever allocate one of them.
+#
+# nih_fatal() may be called both in and out of TEST_ALLOC_FAIL
+
+{
+  nih-log-abort-message
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc
+  fun:nih_strndup
+  fun:nih_strdup
+  fun:nih_log_abort_message
+}
+{
+  nih-log-abort-message
+  Memcheck:Leak
+  fun:malloc
+  fun:realloc
+  fun:_test_realloc
+  fun:_test_malloc
+  fun:nih_alloc
+  fun:nih_strndup
+  fun:nih_strdup
+  fun:nih_log_abort_message
+}
+{
+  nih-log-abort-message
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:nih_strndup
+  fun:nih_strdup
+  fun:nih_log_abort_message
+}
+
 
 # tmpfile is used by some test cases ... valgrind doesn't have a built-in
 # suppression for it.
+
 {
-   glibc-tmpfile
-   Memcheck:Leak
-   fun:malloc
-   fun:fdopen
-   fun:tmpfile
+  glibc-tmpfile
+  Memcheck:Leak
+  fun:malloc
+  fun:fdopen
+  fun:tmpfile
 }
 {
-   glibc-tmpfile
-   Memcheck:Leak
-   fun:malloc
-   fun:fdopen@@GLIBC_2.1
-   fun:tmpfile@@GLIBC_2.1
+  glibc-tmpfile
+  Memcheck:Leak
+  fun:malloc
+  fun:fdopen@@GLIBC_2.1
+  fun:tmpfile@@GLIBC_2.1
 }
-
-
-# nih_command_parser inherently leaks the internal state when --help or
-# other immediate-exit is used
 {
-   nih-command-parser
-   Memcheck:Leak
-   fun:malloc
-   fun:realloc
-   fun:_test_realloc
-   fun:_test_malloc
-   fun:nih_alloc
-   fun:nih_command_join
-   fun:nih_command_parser
+  glibc-tmpfile
+  Memcheck:Leak
+  fun:malloc
+  fun:fdopen@@GLIBC_2.2.5
+  fun:tmpfile@@GLIBC_2.2.5
 }
 
 
-# nih_option_parser also inherently leaks its internal state in the same
-# situations
+# test_main.c:test_damonise() allocates a pid file string which makes
+# valgrind think that it's leaked when we exit
+
 {
-   nih-option-parser
-   Memcheck:Leak
-   fun:realloc
-   fun:_test_realloc
-   fun:nih_realloc
-   fun:nih_str_array_addp
-   fun:nih_str_array_add
-   fun:nih_option_parser
+  test-main-daemonise
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc
+  fun:nih_vsprintf
+  fun:nih_sprintf
+  fun:nih_main_get_pidfile
+  fun:nih_main_write_pidfile
+  fun:nih_main_daemonise
+  fun:test_daemonise
 }
 {
-   nih-option-parser
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc_ref_new
-   fun:nih_ref
-   fun:nih_str_array_addp
-   fun:nih_str_array_add
-   fun:nih_option_parser
+  test-main-daemonise
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:nih_vsprintf
+  fun:nih_sprintf
+  fun:nih_main_get_pidfile
+  fun:nih_main_write_pidfile
+  fun:nih_main_daemonise
+  fun:test_daemonise
 }
 
 
-# this error test is expected to leak the context, because it aborts
-# in a child
+# test_command.c:test_help() exits inside --help which makes valgrind
+# think that the command parser state has been leaked
+
 {
-   nih-error-context-test
-   Memcheck:Leak
-   fun:malloc
-   fun:nih_alloc
-   fun:nih_error_push_context
-   fun:test_pop_context
+  test-command-help
+  Memcheck:Leak
+  fun:malloc
+  fun:realloc
+  fun:_test_realloc
+  fun:_test_malloc
+  fun:nih_alloc
+  fun:nih_command_join
+  fun:nih_command_parser
+  fun:test_help
 }
 {
-   nih-error-context-test
-   Memcheck:Leak
-   fun:malloc
-   fun:realloc
-   fun:_test_realloc
-   fun:_test_malloc
-   fun:nih_alloc
-   fun:nih_error_push_context
-   fun:test_pop_context
+  test-command-help
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:nih_command_join
+  fun:nih_command_parser
+  fun:test_help
+}
+
+{
+  test-command-help
+  Memcheck:Leak
+  fun:malloc
+  fun:realloc
+  fun:_test_realloc
+  fun:_test_malloc
+  fun:nih_alloc
+  fun:nih_vsprintf
+  fun:nih_sprintf
+  fun:nih_command_parser
+  fun:test_help
+}
+{
+  test-command-help
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:nih_vsprintf
+  fun:nih_sprintf
+  fun:nih_command_parser
+  fun:test_help
+}
+
+{
+  test-command-help
+  Memcheck:Leak
+  fun:malloc
+  fun:realloc
+  fun:_test_realloc
+  fun:_test_malloc
+  fun:nih_alloc
+  fun:nih_str_array_new
+  fun:nih_option_parser
+  fun:nih_command_parser
+  fun:test_help
+}
+{
+  test-command-help
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:nih_str_array_new
+  fun:nih_option_parser
+  fun:nih_command_parser
+  fun:test_help
+}
+{
+  test-command-help
+  Memcheck:Leak
+  fun:malloc
+  fun:realloc
+  fun:_test_realloc
+  fun:_test_malloc
+  fun:nih_alloc
+  fun:nih_strndup
+  fun:nih_strdup
+  fun:nih_str_array_add
+  fun:nih_option_parser
+  fun:nih_command_parser
+  fun:test_help
+}
+{
+  test-command-help
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:nih_strndup
+  fun:nih_strdup
+  fun:nih_str_array_add
+  fun:nih_option_parser
+  fun:nih_command_parser
+  fun:test_help
+}
+{
+  test-command-help
+  Memcheck:Leak
+  fun:realloc
+  fun:_test_realloc
+  fun:nih_realloc
+  fun:nih_str_array_addp
+  fun:nih_str_array_add
+  fun:nih_option_parser
+  fun:nih_command_parser
+  fun:test_help
+}
+{
+  test-command-help
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_ref
+  fun:nih_str_array_addp
+  fun:nih_str_array_add
+  fun:nih_option_parser
+  fun:nih_command_parser
+  fun:test_help
+}
+
+{
+  test-command-help
+  Memcheck:Leak
+  fun:malloc
+  fun:realloc
+  fun:_test_realloc
+  fun:_test_malloc
+  fun:nih_alloc
+  fun:nih_option_join
+  fun:nih_command_handle
+  fun:nih_command_parser
+  fun:test_help
+}
+{
+  test-command-help
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:nih_option_join
+  fun:nih_command_handle
+  fun:nih_command_parser
+  fun:test_help
+}
+{
+  test-command-help
+  Memcheck:Leak
+  fun:malloc
+  fun:realloc
+  fun:_test_realloc
+  fun:_test_malloc
+  fun:nih_alloc
+  fun:nih_str_array_new
+  fun:nih_option_parser
+  fun:nih_command_handle
+  fun:nih_command_parser
+  fun:test_help
+}
+{
+  test-command-help
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:nih_str_array_new
+  fun:nih_option_parser
+  fun:nih_command_handle
+  fun:nih_command_parser
+  fun:test_help
+}
+{
+  test-command-help
+  Memcheck:Leak
+  fun:malloc
+  fun:realloc
+  fun:_test_realloc
+  fun:_test_malloc
+  fun:nih_alloc
+  fun:nih_option_join
+  fun:nih_command_handle
+  fun:nih_commmand_parser
+  fun:test_command_parser
+  fun:test_help
+}
+{
+  test-command-help
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:nih_option_join
+  fun:nih_command_handle
+  fun:nih_commmand_parser
+  fun:test_command_parser
+  fun:test_help
+}
+
+
+# test_error.c:test_raise_error() is expected to leak an error context
+# and the error inside it, because it's testing whether a double-raise
+# is caught inside a child process which it expects to abort
+
+{
+  test-error-raise-error
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc
+  fun:nih_error_push_context
+  fun:test_raise_error
+}
+{
+  test-error-raise-error
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:nih_error_push_context
+  fun:test_raise_error
+}
+
+{
+  test-error-raise-error
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc
+  fun:test_raise_error
+}
+{
+  test-error-raise-error
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:test_raise_error
+}
+
+
+# test_error.c:test_pop_context() is expected to leak an error context
+# and the error inside it, because it's testing whether this is caught
+# on child exit
+
+{
+  test-error-pop-context
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc
+  fun:nih_error_push_context
+  fun:test_pop_context
+}
+{
+  test-error-pop-context
+  Memcheck:Leak
+  fun:malloc
+  fun:realloc
+  fun:_test_realloc
+  fun:_test_malloc
+  fun:nih_alloc
+  fun:nih_error_push_context
+  fun:test_pop_context
+}
+{
+  test-error-pop-context
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:nih_error_push_context
+  fun:test_pop_context
+}
+
+{
+  test-error-pop-context
+  Memcheck:Leak
+  fun:malloc
+  fun:realloc
+  fun:_test_realloc
+  fun:_test_malloc
+  fun:nih_alloc
+  fun:_nih_error_raise
+  fun:test_pop_context
+}
+{
+  test-error-pop-context
+  Memcheck:Leak
+  fun:malloc
+  fun:nih_alloc_ref_new
+  fun:nih_alloc
+  fun:_nih_error_raise
+  fun:test_pop_context
 }

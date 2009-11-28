@@ -1496,6 +1496,9 @@ test_reader (void)
 	TEST_EQ_P (last_data, &watch);
 
 	TEST_FREE (watch);
+
+
+	nih_free (last_path);
 }
 
 

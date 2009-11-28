@@ -191,9 +191,11 @@ test_connect (void)
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			TEST_CHILD_WAIT (dbus_pid, wait_fd) {
+				NihSignal *sh;
+
 				nih_signal_set_handler (SIGTERM, nih_signal_handler);
-				assert (nih_signal_add_handler (NULL, SIGTERM,
-								nih_main_term_signal, NULL));
+				assert (sh = nih_signal_add_handler (NULL, SIGTERM,
+								     nih_main_term_signal, NULL));
 
 				server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
 							  NULL, NULL);
@@ -217,6 +219,7 @@ test_connect (void)
 				dbus_server_unref (server);
 
 				dbus_shutdown ();
+				nih_free (sh);
 				exit (0);
 			}
 		}
@@ -279,9 +282,11 @@ test_connect (void)
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			TEST_CHILD_WAIT (dbus_pid, wait_fd) {
+				NihSignal *sh;
+
 				nih_signal_set_handler (SIGTERM, nih_signal_handler);
-				assert (nih_signal_add_handler (NULL, SIGTERM,
-								nih_main_term_signal, NULL));
+				assert (sh = nih_signal_add_handler (NULL, SIGTERM,
+								     nih_main_term_signal, NULL));
 
 				server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
 							  NULL, NULL);
@@ -305,6 +310,7 @@ test_connect (void)
 				dbus_server_unref (server);
 
 				dbus_shutdown ();
+				nih_free (sh);
 				exit (0);
 			}
 
@@ -362,9 +368,11 @@ test_connect (void)
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			TEST_CHILD_WAIT (dbus_pid, wait_fd) {
+				NihSignal *sh;
+
 				nih_signal_set_handler (SIGTERM, nih_signal_handler);
-				assert (nih_signal_add_handler (NULL, SIGTERM,
-								nih_main_term_signal, NULL));
+				assert (sh = nih_signal_add_handler (NULL, SIGTERM,
+								     nih_main_term_signal, NULL));
 
 				server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
 							  NULL, NULL);
@@ -388,6 +396,7 @@ test_connect (void)
 				dbus_server_unref (server);
 
 				dbus_shutdown ();
+				nih_free (sh);
 				exit (0);
 			}
 
@@ -445,9 +454,11 @@ test_connect (void)
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			TEST_CHILD_WAIT (dbus_pid, wait_fd) {
+				NihSignal *sh;
+
 				nih_signal_set_handler (SIGTERM, nih_signal_handler);
-				assert (nih_signal_add_handler (NULL, SIGTERM,
-								nih_main_term_signal, NULL));
+				assert (sh = nih_signal_add_handler (NULL, SIGTERM,
+								     nih_main_term_signal, NULL));
 
 				server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
 							  NULL, NULL);
@@ -471,6 +482,7 @@ test_connect (void)
 				dbus_server_unref (server);
 
 				dbus_shutdown ();
+				nih_free (sh);
 				exit (0);
 			}
 
@@ -551,9 +563,11 @@ test_connect (void)
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			TEST_CHILD_WAIT (dbus_pid, wait_fd) {
+				NihSignal *sh;
+
 				nih_signal_set_handler (SIGTERM, nih_signal_handler);
-				assert (nih_signal_add_handler (NULL, SIGTERM,
-								nih_main_term_signal, NULL));
+				assert (sh = nih_signal_add_handler (NULL, SIGTERM,
+								     nih_main_term_signal, NULL));
 
 				server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
 							  NULL, NULL);
@@ -570,6 +584,7 @@ test_connect (void)
 				dbus_server_unref (server);
 
 				dbus_shutdown ();
+				nih_free (sh);
 				exit (0);
 			}
 
@@ -641,9 +656,11 @@ test_connect (void)
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			TEST_CHILD_WAIT (dbus_pid, wait_fd) {
+				NihSignal *sh;
+
 				nih_signal_set_handler (SIGTERM, nih_signal_handler);
-				assert (nih_signal_add_handler (NULL, SIGTERM,
-								nih_main_term_signal, NULL));
+				assert (sh = nih_signal_add_handler (NULL, SIGTERM,
+								     nih_main_term_signal, NULL));
 
 				server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
 							  my_method_connect_handler, NULL);
@@ -664,6 +681,7 @@ test_connect (void)
 				dbus_server_unref (server);
 
 				dbus_shutdown ();
+				nih_free (sh);
 				exit (0);
 			}
 		}
@@ -758,9 +776,11 @@ test_connect (void)
 	TEST_ALLOC_FAIL {
 		TEST_ALLOC_SAFE {
 			TEST_CHILD_WAIT (dbus_pid, wait_fd) {
+				NihSignal *sh;
+
 				nih_signal_set_handler (SIGTERM, nih_signal_handler);
-				assert (nih_signal_add_handler (NULL, SIGTERM,
-								nih_main_term_signal, NULL));
+				assert (sh  = nih_signal_add_handler (NULL, SIGTERM,
+								      nih_main_term_signal, NULL));
 
 				server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
 							  NULL, NULL);
@@ -784,6 +804,7 @@ test_connect (void)
 				dbus_server_unref (server);
 
 				dbus_shutdown ();
+				nih_free (sh);
 				exit (0);
 			}
 		}
@@ -1054,9 +1075,11 @@ system_bus:
 	TEST_FEATURE ("with disconnection before registration");
 	TEST_CHILD (pid1) {
 		TEST_CHILD_WAIT (pid2, wait_fd) {
+			NihSignal *sh;
+
 			nih_signal_set_handler (SIGTERM, nih_signal_handler);
-			assert (nih_signal_add_handler (NULL, SIGTERM,
-							nih_main_term_signal, NULL));
+			assert (sh = nih_signal_add_handler (NULL, SIGTERM,
+							     nih_main_term_signal, NULL));
 
 			server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
 						  NULL, NULL);
@@ -1073,6 +1096,7 @@ system_bus:
 			dbus_server_unref (server);
 
 			dbus_shutdown ();
+			nih_free (sh);
 			exit (0);
 		}
 
@@ -1145,9 +1169,11 @@ test_setup (void)
 
 	TEST_FUNCTION ("nih_dbus_setup");
 	TEST_CHILD_WAIT (dbus_pid, wait_fd) {
+		NihSignal *sh;
+
 		nih_signal_set_handler (SIGTERM, nih_signal_handler);
-		assert (nih_signal_add_handler (NULL, SIGTERM,
-						nih_main_term_signal, NULL));
+		assert (sh = nih_signal_add_handler (NULL, SIGTERM,
+						     nih_main_term_signal, NULL));
 
 		server = nih_dbus_server ("unix:abstract=/com/netsplit/nih/test_dbus",
 					  NULL, NULL);
@@ -1171,6 +1197,7 @@ test_setup (void)
 		dbus_server_unref (server);
 
 		dbus_shutdown ();
+		nih_free (sh);
 		exit (0);
 	}
 

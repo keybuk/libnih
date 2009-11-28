@@ -97,6 +97,7 @@ test_stack_push (void)
 		TEST_EQ_P (stack.next, &entry->entry);
 
 		nih_free (entry);
+		nih_free (node);
 	}
 
 
@@ -135,6 +136,7 @@ test_stack_push (void)
 		TEST_EQ_P (stack.next, &entry->entry);
 
 		nih_free (entry);
+		nih_free (interface);
 	}
 
 
@@ -172,6 +174,7 @@ test_stack_push (void)
 		TEST_EQ_P (stack.next, &entry->entry);
 
 		nih_free (entry);
+		nih_free (method);
 	}
 
 
@@ -209,6 +212,7 @@ test_stack_push (void)
 		TEST_EQ_P (stack.next, &entry->entry);
 
 		nih_free (entry);
+		nih_free (signal);
 	}
 
 
@@ -248,6 +252,7 @@ test_stack_push (void)
 		TEST_EQ_P (stack.next, &entry->entry);
 
 		nih_free (entry);
+		nih_free (property);
 	}
 
 
@@ -287,6 +292,7 @@ test_stack_push (void)
 		TEST_EQ_P (stack.next, &entry->entry);
 
 		nih_free (entry);
+		nih_free (argument);
 	}
 
 
@@ -497,6 +503,7 @@ test_start_tag (void)
 			node = node_new (NULL, NULL);
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_NODE, node);
+			nih_discard (node);
 		}
 
 		assert (XML_ParserReset (xmlp, "UTF-8"));
@@ -556,6 +563,7 @@ test_start_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 		}
 
 		assert (XML_ParserReset (xmlp, "UTF-8"));
@@ -613,6 +621,7 @@ test_start_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 		}
 
 		assert (XML_ParserReset (xmlp, "UTF-8"));
@@ -670,6 +679,7 @@ test_start_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 		}
 
 		assert (XML_ParserReset (xmlp, "UTF-8"));
@@ -733,6 +743,7 @@ test_start_tag (void)
 			method = method_new (NULL, "TestMethod");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_METHOD, method);
+			nih_discard (method);
 		}
 
 		assert (XML_ParserReset (xmlp, "UTF-8"));
@@ -795,6 +806,7 @@ test_start_tag (void)
 			method = method_new (NULL, "TestMethod");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_METHOD, method);
+			nih_discard (method);
 		}
 
 		assert (XML_ParserReset (xmlp, "UTF-8"));
@@ -899,6 +911,7 @@ test_start_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 		}
 
 		assert (XML_ParserReset (xmlp, "UTF-8"));
@@ -945,6 +958,7 @@ test_start_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 		}
 
 		assert (XML_ParserReset (xmlp, "UTF-8"));
@@ -981,6 +995,7 @@ test_start_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			assert (XML_ParserReset (xmlp, "UTF-8"));
 			XML_SetUserData (xmlp, &context);
@@ -1072,6 +1087,7 @@ test_end_tag (void)
 			node = node_new (NULL, "/com/netsplit/Nih/Test");
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_NODE, node);
+			nih_discard (node);
 		}
 
 		assert (XML_ParserReset (xmlp, "UTF-8"));
@@ -1120,10 +1136,12 @@ test_end_tag (void)
 			node = node_new (NULL, "/com/netsplit/Nih/Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_NODE, node);
+			nih_discard (node);
 
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_INTERFACE, interface);
+			nih_discard (interface);
 		}
 
 		assert (XML_ParserReset (xmlp, "UTF-8"));
@@ -1175,10 +1193,12 @@ test_end_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			method = method_new (NULL, "TestMethod");
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_METHOD, method);
+			nih_discard (method);
 		}
 
 		assert (XML_ParserReset (xmlp, "UTF-8"));
@@ -1230,10 +1250,12 @@ test_end_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			signal = signal_new (NULL, "TestSignal");
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_SIGNAL, signal);
+			nih_discard (signal);
 		}
 
 		assert (XML_ParserReset (xmlp, "UTF-8"));
@@ -1285,11 +1307,13 @@ test_end_tag (void)
 			interface = interface_new (NULL, "com.netsplit.Nih.Test");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_INTERFACE, interface);
+			nih_discard (interface);
 
 			property = property_new (NULL, "TestProperty",
 						 "s", NIH_DBUS_READ);
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_PROPERTY, property);
+			nih_discard (property);
 		}
 
 		assert (XML_ParserReset (xmlp, "UTF-8"));
@@ -1341,11 +1365,13 @@ test_end_tag (void)
 			method = method_new (NULL, "TestMethod");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_METHOD, method);
+			nih_discard (method);
 
 			argument = argument_new (NULL, "test_arg", "s",
 						 NIH_DBUS_ARG_IN);
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_ARGUMENT, argument);
+			nih_discard (argument);
 		}
 
 		assert (XML_ParserReset (xmlp, "UTF-8"));
@@ -1397,6 +1423,7 @@ test_end_tag (void)
 			method = method_new (NULL, "TestMethod");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_METHOD, method);
+			nih_discard (method);
 
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_ANNOTATION, NULL);
@@ -1444,6 +1471,7 @@ test_end_tag (void)
 			method = method_new (NULL, "TestMethod");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_METHOD, method);
+			nih_discard (method);
 
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_IGNORED, NULL);
@@ -1494,11 +1522,13 @@ test_end_tag (void)
 			method = method_new (NULL, "TestMethod");
 			parent = parse_stack_push (NULL, &context.stack,
 						   PARSE_METHOD, method);
+			nih_discard (method);
 
 			argument = argument_new (NULL, "test_arg", "s",
 						 NIH_DBUS_ARG_IN);
 			entry = parse_stack_push (NULL, &context.stack,
 						  PARSE_ARGUMENT, argument);
+			nih_discard (argument);
 		}
 
 		assert (XML_ParserReset (xmlp, "UTF-8"));

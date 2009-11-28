@@ -1,78 +1,79 @@
 # This is a valgrind suppressions file.
 
-# dbus connection slots stay around forever
+# See nih/libnih.supp for common patterns.
+# These suppressions all assume that your libdbus is compiled with the
+# --enable-verbose-mode --enable-tests --enable-asserts options, without
+# compiler optimisation, and installed unstripped.
+
+
+# D-Bus keeps its connection slots around forever, even after a
+# dbus_shutdown()
+
 {
-   dbus-connection-slot
-   Memcheck:Leak
-   fun:realloc
-   fun:_dbus_data_slot_allocator_alloc
+  dbus-data-slot-allocator-alloc
+  Memcheck:Leak
+  fun:realloc
+  fun:_dbus_data_slot_allocator_alloc
 }
 {
-   dbus-connection-slot
-   Memcheck:Leak
-   fun:malloc
-   fun:realloc
-   fun:dbus_realloc
-   fun:_dbus_data_slot_allocator_alloc
+  dbus-data-slot-allocator-alloc
+  Memcheck:Leak
+  fun:malloc
+  fun:realloc
+  fun:dbus_realloc
+  fun:_dbus_data_slot_allocator_alloc
 }
 {
-   dbus-connection-slot
-   Memcheck:Leak
-   fun:realloc
-   fun:dbus_realloc
-   fun:_dbus_data_slot_allocator_alloc
+  dbus-data-slot-allocator-alloc
+  Memcheck:Leak
+  fun:realloc
+  fun:dbus_realloc
+  fun:_dbus_data_slot_allocator_alloc
 }
 {
-   dbus-connection-slot
-   Memcheck:Leak
-   fun:realloc
-   obj:/lib/libdbus-1.so.*
-   fun:nih_dbus_server
+  dbus-data-slot-allocator-alloc
+  Memcheck:Leak
+  fun:realloc
+  obj:/lib/libdbus-1.so.*
+  fun:nih_dbus_server
 }
 
 
-# Deep inside nss lookup, we read freed memory ... encouraging
+# It looks like glibc caches NSS lookup information, so it always looks
+# like we leak it.  Missing valgrind default suppression perhaps?
+
 {
-   idiotic-leak
-   Memcheck:Addr4
-   obj:/lib/ld-*.so
+  nss-lookup-function
+  Memcheck:Leak
+  fun:malloc
+  fun:__nss_lookup_function
 }
 {
-   idiotic-leak
-   Memcheck:Addr8
-   obj:/lib/ld-*.so
+  nss-lookup-function
+  Memcheck:Leak
+  fun:malloc
+  fun:tsearch
+  fun:__nss_lookup_function
 }
 
-# NSS-related leak
 {
-   nss-database-lookup
-   Memcheck:Leak
-   fun:malloc
-   obj:/lib/libc-*.so
-   fun:__nss_database_lookup
+  nss-database-lookup
+  Memcheck:Leak
+  fun:malloc
+  fun:nss_parse_service_list
+  fun:__nss_database_lookup
 }
 {
-   nss-database-lookup
-   Memcheck:Leak
-   fun:malloc
-   obj:/lib/tls/i686/cmov/libc-*.so
-   fun:__nss_database_lookup
+  nss-database-lookup
+  Memcheck:Leak
+  fun:malloc
+  obj:/lib/libc-*.so
+  fun:__nss_database_lookup
 }
-
-
-# Another NSS-related leak
 {
-   nss-lookup-function
-   Memcheck:Leak
-   fun:malloc
-   fun:__nss_lookup_function
-}
-
-# Yet Another NSS_releated leak
-{
-   nss-lookup-function-tsearch
-   Memcheck:Leak
-   fun:malloc
-   fun:tsearch
-   fun:__nss_lookup_function
+  nss-database-lookup
+  Memcheck:Leak
+  fun:malloc
+  obj:/lib/tls/i686/cmov/libc-*.so
+  fun:__nss_database_lookup
 }

@@ -1,3 +1,7 @@
+2009-11-29  Scott James Remnant  <scott@netsplit.com>
+
+	* configure.ac: Bump version to 1.0.1
+
 2009-11-28  Scott James Remnant  <scott@netsplit.com>
 
 	* NEWS: Release 1.0.0

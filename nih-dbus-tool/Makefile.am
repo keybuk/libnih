@@ -246,9 +246,9 @@ com_netsplit_Nih_Test_object_XML = \
 	tests/com.netsplit.Nih.Test.xml
 
 $(com_netsplit_Nih_Test_object_OUTPUTS): $(com_netsplit_Nih_Test_object_XML) $(builddir)/nih-dbus-tool
-	$(MKDIR_P) `echo "$@" | \
+	$(AM_V_GEN)$(MKDIR_P) `echo "$@" | \
 		    sed '/\//!d;s,/[^/]*$$,,' | \
-                    sort -u`
+                    sort -u` && \
 	$(NIH_DBUS_TOOL) --mode=object --prefix=my --output=$@ $<
 
 
@@ -260,9 +260,9 @@ com_netsplit_Nih_Test_proxy_XML = \
 	tests/com.netsplit.Nih.Test.xml
 
 $(com_netsplit_Nih_Test_proxy_OUTPUTS): $(com_netsplit_Nih_Test_proxy_XML) $(builddir)/nih-dbus-tool
-	$(MKDIR_P) `echo "$@" | \
+	$(AM_V_GEN)$(MKDIR_P) `echo "$@" | \
 		    sed '/\//!d;s,/[^/]*$$,,' | \
-                    sort -u`
+                    sort -u` && \
 	$(NIH_DBUS_TOOL) --mode=proxy --prefix=proxy --output=$@ $<
 
 

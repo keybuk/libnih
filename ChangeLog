@@ -1,3 +1,8 @@
+2010-02-03  Scott James Remnant  <scott@netsplit.com>
+
+	* configure.ac: Bump copyright year to 2010.
+	* NEWS: Begin new release.
+
 2009-11-29  Scott James Remnant  <scott@netsplit.com>
 
 	* configure.ac (AM_INIT_AUTOMAKE): Drop dist-bzip2, since we don't

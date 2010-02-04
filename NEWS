@@ -4,6 +4,10 @@
 	  otherwise software using TEST_ALLOC_FAIL cannot be compiled (like
 	  Upstart).
 
+	* The glibc __abort_msg symbol is now only linked as a weak
+	  reference, if your C library does not have the symbol, libnih
+	  will still work.
+
 1.0.0  2009-11-28
 
 	* libnih is no longer intended to be copied into an application

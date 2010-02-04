@@ -1,5 +1,8 @@
 2010-02-04  Scott James Remnant  <scott@netsplit.com>
 
+	* configure.ac: Bump version to 1.0.2
+	* NEWS: Begin new release
+
 	* NEWS: Release 1.0.1
 
 	* nih/logging.c (__abort_msg): Make a weak symbol reference.

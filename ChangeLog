@@ -1,3 +1,12 @@
+2010-02-04  Scott James Remnant  <scott@netsplit.com>
+
+	* nih/logging.c (__abort_msg): Make a weak symbol reference.
+	(nih_log_abort_message): Check whether __abort_msg has an address
+	before saving.
+	* nih/tests/test_logging.c (__abort_msg): Make a weak symbol reference.
+	(test_log_message): Skip __abort_msg tests if there is no address
+	for it.
+
 2010-02-03  Scott James Remnant  <scott@netsplit.com>
 
 	* nih/libnih.ver: Add missing export for __nih_* so you can build

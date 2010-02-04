@@ -2,8 +2,8 @@
  *
  * logging.c - message logging
  *
- * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
- * Copyright © 2009 Canonical Ltd.
+ * Copyright © 2010 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2010 Canonical Ltd.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2, as
@@ -43,7 +43,7 @@
  *
  * A glibc variable that keeps the assertion message in the core dump.
  **/
-extern char *__abort_msg;
+extern char *__abort_msg __attribute__ ((weak));
 
 /**
  * logger:
@@ -120,6 +120,9 @@ nih_log_set_priority (NihLogLevel new_priority)
 static void
 nih_log_abort_message (const char *message)
 {
+	if (! &__abort_msg)
+		return;
+
 	if (__abort_msg)
 		nih_discard (__abort_msg);
 

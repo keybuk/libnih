@@ -2,8 +2,8 @@
  *
  * test_logging.c - test suite for nih/logging.c
  *
- * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
- * Copyright © 2009 Canonical Ltd.
+ * Copyright © 2010 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2010 Canonical Ltd.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2, as
@@ -31,7 +31,7 @@
 #include <nih/main.h>
 
 
-extern char *__abort_msg;
+extern char *__abort_msg __attribute__ ((weak));
 
 static NihLogLevel last_priority = NIH_LOG_UNKNOWN;
 static char *      last_message = NULL;
@@ -159,58 +159,62 @@ test_log_message (void)
 	/* Check that a fatal message is also stored in the glibc __abort_msg
 	 * variable.
 	 */
-	TEST_FEATURE ("with fatal message");
-	TEST_ALLOC_FAIL {
-		__abort_msg = NULL;
-		last_priority = NIH_LOG_UNKNOWN;
-		last_message = NULL;
+	if (&__abort_msg) {
+		TEST_FEATURE ("with fatal message");
+		TEST_ALLOC_FAIL {
+			__abort_msg = NULL;
+			last_priority = NIH_LOG_UNKNOWN;
+			last_message = NULL;
 
-		ret = nih_log_message (NIH_LOG_FATAL,
-				       "message with %s %d formatting",
-				       "some", 20);
+			ret = nih_log_message (NIH_LOG_FATAL,
+					       "message with %s %d formatting",
+					       "some", 20);
 
-		TEST_EQ (ret, 0);
-		TEST_EQ (last_priority, NIH_LOG_FATAL);
-		TEST_EQ_STR (last_message, "message with some 20 formatting");
+			TEST_EQ (ret, 0);
+			TEST_EQ (last_priority, NIH_LOG_FATAL);
+			TEST_EQ_STR (last_message, "message with some 20 formatting");
 
-		TEST_NE_P (__abort_msg, NULL);
-		TEST_ALLOC_PARENT (__abort_msg, NULL);
-		TEST_EQ_STR (__abort_msg, "message with some 20 formatting");
+			TEST_NE_P (__abort_msg, NULL);
+			TEST_ALLOC_PARENT (__abort_msg, NULL);
+			TEST_EQ_STR (__abort_msg, "message with some 20 formatting");
 
-		free (last_message);
-	}
-
-
-	/* Check that a fatal message can safely overwrite one already stored
-	 * in the glibc __abort_msg variable.
-	 */
-	TEST_FEATURE ("with second fatal message");
-	TEST_ALLOC_FAIL {
-		TEST_ALLOC_SAFE {
-			msg = nih_strdup (NULL, "test");
+			free (last_message);
 		}
 
-		__abort_msg = msg;
-		TEST_FREE_TAG (msg);
 
-		last_priority = NIH_LOG_UNKNOWN;
-		last_message = NULL;
+		/* Check that a fatal message can safely overwrite one already stored
+		 * in the glibc __abort_msg variable.
+		 */
+		TEST_FEATURE ("with second fatal message");
+		TEST_ALLOC_FAIL {
+			TEST_ALLOC_SAFE {
+				msg = nih_strdup (NULL, "test");
+			}
 
-		ret = nih_log_message (NIH_LOG_FATAL,
-				       "message with %s %d formatting",
-				       "some", 20);
+			__abort_msg = msg;
+			TEST_FREE_TAG (msg);
 
-		TEST_EQ (ret, 0);
-		TEST_EQ (last_priority, NIH_LOG_FATAL);
-		TEST_EQ_STR (last_message, "message with some 20 formatting");
+			last_priority = NIH_LOG_UNKNOWN;
+			last_message = NULL;
 
-		TEST_FREE (msg);
+			ret = nih_log_message (NIH_LOG_FATAL,
+					       "message with %s %d formatting",
+					       "some", 20);
 
-		TEST_NE_P (__abort_msg, NULL);
-		TEST_ALLOC_PARENT (__abort_msg, NULL);
-		TEST_EQ_STR (__abort_msg, "message with some 20 formatting");
+			TEST_EQ (ret, 0);
+			TEST_EQ (last_priority, NIH_LOG_FATAL);
+			TEST_EQ_STR (last_message, "message with some 20 formatting");
 
-		free (last_message);
+			TEST_FREE (msg);
+
+			TEST_NE_P (__abort_msg, NULL);
+			TEST_ALLOC_PARENT (__abort_msg, NULL);
+			TEST_EQ_STR (__abort_msg, "message with some 20 formatting");
+
+			free (last_message);
+		}
+	} else {
+		printf ("SKIP: __abort_msg not available\n");
 	}
 
 

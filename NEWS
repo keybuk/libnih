@@ -1,4 +1,4 @@
-1.0.1  ????-??-??
+1.0.1  2010-02-04
 
 	* Add missing __nih_* symbols to the linker version script,
 	  otherwise software using TEST_ALLOC_FAIL cannot be compiled (like

@@ -11,3 +11,7 @@ LIBNIH_1_0 {
 	local:
 		*;
 };
+
+LIBNIH_1.0.1 {
+		__nih_*;	    
+} LIBNIH_1_0;

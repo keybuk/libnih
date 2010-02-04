@@ -1,5 +1,9 @@
 1.0.1  ????-??-??
 
+	* Add missing __nih_* symbols to the linker version script,
+	  otherwise software using TEST_ALLOC_FAIL cannot be compiled (like
+	  Upstart).
+
 1.0.0  2009-11-28
 
 	* libnih is no longer intended to be copied into an application

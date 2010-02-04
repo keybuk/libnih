@@ -1,5 +1,9 @@
 2010-02-03  Scott James Remnant  <scott@netsplit.com>
 
+	* nih/libnih.ver: Add missing export for __nih_* so you can build
+	test cases; not bumping the library age here since this isn't an API
+	change but a bug.
+
 	* nih-dbus-tool/Makefile.am ($(com_netsplit_Nih_Test_object_OUTPUTS)):
 	($(com_netsplit_Nih_Test_proxy_OUTPUTS)): Make compatible with
 	am-silent-rules by using $(AM_V_GEN) and combining the mkdir and

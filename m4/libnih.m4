@@ -204,13 +204,12 @@ AS_IF([test "x$nih_cv_c_thread" = "xno"],
 ])# NIH_C_THREAD
 
 
-# AC_COPYRIGHT
-# -------------
+# NIH_COPYRIGHT
+# --------------
 # Wraps the Autoconf AC_COPYRIGHT but also defines PACKAGE_COPYRIGHT,
 # required for nih_main_init
-m4_rename([AC_COPYRIGHT], [_NIH_AC_COPYRIGHT])
-AC_DEFUN([AC_COPYRIGHT],
-[_NIH_AC_COPYRIGHT([$1])
+AC_DEFUN([NIH_COPYRIGHT],
+[AC_COPYRIGHT([$1])
 m4_ifndef([NIH_PACKAGE_COPYRIGHT], [m4_bmatch([$1], [
 ], [], [
 	m4_define([NIH_PACKAGE_COPYRIGHT],

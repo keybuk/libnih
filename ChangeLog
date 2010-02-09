@@ -1,3 +1,9 @@
+2010-02-09  Scott James Remnant  <scott@netsplit.com>
+
+	* m4/libnih.m4 (AC_COPYRIGHT): Rename to NIH_COPYRIGHT, since this
+	macro file is installed globally we don't want to muck around like
+	we were when it was copied in.
+
 2010-02-04  Scott James Remnant  <scott@netsplit.com>
 
 	* configure.ac: Bump version to 1.0.2

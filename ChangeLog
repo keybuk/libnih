@@ -1,3 +1,9 @@
+2010-02-26  Scott James Remnant  <scott@netsplit.com>
+
+	* m4/libnih.m4: Add a serial header and a comment reminding us to
+	increment it each time, otherwise aclocal can overwrite the copy
+	in the source tree with an older installed copy.
+
 2010-02-09  Scott James Remnant  <scott@netsplit.com>
 
 	* m4/libnih.m4 (AC_COPYRIGHT): Rename to NIH_COPYRIGHT, since this

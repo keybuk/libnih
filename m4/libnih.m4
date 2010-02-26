@@ -2,12 +2,19 @@
 #
 # libnih.m4 - autoconf macros
 #
-# Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
-# Copyright © 2009 Canonical Ltd.
+# Copyright © 2010 Scott James Remnant <scott@netsplit.com>.
+# Copyright © 2010 Canonical Ltd.
 #
 # This file is free software; the author gives unlimited permission to
 # copy and/or distribute it, with or without modifications, as long as
 # this notice is preserved.
+
+
+# This MUST be incremented for any changes to this file, otherwise aclocal
+# may overwrite the local copy in the libnih source tree with any installed
+# version.
+
+# serial 1 libnih.m4
 
 
 # NIH_COMPILER_WARNINGS

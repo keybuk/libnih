@@ -285,7 +285,7 @@ marshal_factory_LDADD = \
 	$(DBUS_LIBS)
 
 tests/marshal_code.c: $(builddir)/marshal_factory
-	$(builddir)/marshal_factory > $@
+	$(AM_V_GEN)$(builddir)/marshal_factory > $@
 
 
 demarshal_factory_SOURCES = tests/demarshal_factory.c
@@ -296,7 +296,7 @@ demarshal_factory_LDADD = \
 	$(DBUS_LIBS)
 
 tests/demarshal_code.c: $(builddir)/demarshal_factory
-	$(builddir)/demarshal_factory > $@
+	$(AM_V_GEN)$(builddir)/demarshal_factory > $@
 
 
 interface_factory_SOURCES = tests/interface_factory.c
@@ -310,7 +310,7 @@ interface_factory_LDADD = \
 	$(DBUS_LIBS)
 
 tests/interface_code.c: $(builddir)/interface_factory
-	$(builddir)/interface_factory > $@
+	$(AM_V_GEN)$(builddir)/interface_factory > $@
 
 
 method_factory_SOURCES = tests/method_factory.c
@@ -324,7 +324,7 @@ method_factory_LDADD = \
 	$(DBUS_LIBS)
 
 tests/method_code.c: $(builddir)/method_factory
-	$(builddir)/method_factory > $@
+	$(AM_V_GEN)$(builddir)/method_factory > $@
 
 
 signal_factory_SOURCES = tests/signal_factory.c
@@ -338,7 +338,7 @@ signal_factory_LDADD = \
 	$(DBUS_LIBS)
 
 tests/signal_code.c: $(builddir)/signal_factory
-	$(builddir)/signal_factory > $@
+	$(AM_V_GEN)$(builddir)/signal_factory > $@
 
 
 property_factory_SOURCES = tests/property_factory.c
@@ -352,7 +352,7 @@ property_factory_LDADD = \
 	$(DBUS_LIBS)
 
 tests/property_code.c: $(builddir)/property_factory
-	$(builddir)/property_factory > $@
+	$(AM_V_GEN)$(builddir)/property_factory > $@
 
 
 CLEANFILES = \

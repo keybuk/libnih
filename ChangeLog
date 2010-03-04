@@ -1,3 +1,10 @@
+2010-03-04  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/Makefile.am (tests/marshal_code.c)
+	(tests/demarshal_code.c, tests/interface_code.c)
+	(tests/method_code.c, tests/signal_code.c)
+	(tests/property_code.c): Support silent rules by using $(AM_V_GEN)
+
 2010-02-26  Scott James Remnant  <scott@netsplit.com>
 
 	* configure.ac: Use NIH_COPYRIGHT instead of AC_COPYRIGHT

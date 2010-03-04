@@ -2,6 +2,9 @@
 
 	* AC_COPYRIGHT wrapper renamed to NIH_COPYRIGHT.  (Bug: #519278)
 
+	* Serial added to libnih.m4 to stop aclocal overwriting a local
+	  copy with an older installed copy.
+
 1.0.1  2010-02-04
 
 	* Add missing __nih_* symbols to the linker version script,

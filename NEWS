@@ -5,6 +5,9 @@
 	* Serial added to libnih.m4 to stop aclocal overwriting a local
 	  copy with an older installed copy.
 
+	* NIH_WITH_LOCAL_LIBNIH macro added that can be used by external
+	  sources to add a --with-local-libnih configure argument.
+
 1.0.1  2010-02-04
 
 	* Add missing __nih_* symbols to the linker version script,

@@ -1,3 +1,8 @@
+2010-04-24  Scott James Remnant  <scott@netsplit.com>
+
+	* m4/libnih.m4 (NIH_WITH_LOCAL_LIBNIH): Add macro cribbed from the
+	Upstart configure.ac
+
 2010-03-04  Scott James Remnant  <scott@netsplit.com>
 
 	* nih-dbus-tool/Makefile.am (tests/marshal_code.c)

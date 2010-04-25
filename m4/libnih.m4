@@ -14,7 +14,7 @@
 # may overwrite the local copy in the libnih source tree with any installed
 # version.
 
-# serial 1 libnih.m4
+# serial 2 libnih.m4
 
 
 # NIH_COMPILER_WARNINGS
@@ -225,3 +225,24 @@ m4_ifndef([NIH_PACKAGE_COPYRIGHT], [m4_bmatch([$1], [
 		  [Define to the copyright message of this package.])])])dnl
 	AC_SUBST([PACKAGE_COPYRIGHT], ["$1"])
 ])# AC_COPYRIGHT
+
+
+# NIH_WITH_LOCAL_LIBNIH
+# ---------------------
+# Adds a configure option to build with a local libnih.
+AC_DEFUN([NIH_WITH_LOCAL_LIBNIH],
+[AC_ARG_WITH(local-libnih,
+	AS_HELP_STRING([[[--with-local-libnih[=DIR]]]],
+		       [Use libnih from source tree DIR]),
+[AS_IF([test "x$with_local_libnih" != "xno"],
+       [AS_IF([! test -f "$withval/nih/alloc.c"],
+       	      [AC_MSG_ERROR([$withval doesn't look like a libnih source tree])])
+
+	nih_dir="`cd $withval && pwd`"
+
+        NIH_CFLAGS="-I\"$nih_dir\""
+        NIH_LIBS="\"$nih_dir/nih/libnih.la\""
+        NIH_DBUS_CFLAGS="-I\"$nih_dir\""
+	NIH_DBUS_LIBS="\"$nih_dir/nih-dbus/libnih-dbus.la\""
+	NIH_DBUS_TOOL="\"$nih_dir/nih-dbus-tool/nih-dbus-tool\""])])
+])# NIH_WITH_LOCAL_LIBNIH

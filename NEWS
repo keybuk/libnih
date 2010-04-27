@@ -1,4 +1,4 @@
-1.0.2  xxxx-xx-xx
+1.0.2  2010-04-27
 
 	* AC_COPYRIGHT wrapper renamed to NIH_COPYRIGHT.  (Bug: #519278)
 

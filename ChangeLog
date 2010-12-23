@@ -1,5 +1,7 @@
 2010-12-23  Scott James Remnant  <scott@netsplit.com>
 
+	* NEWS: Release 1.0.3
+
 	* nih-dbus-tool/type.c (type_const, type_of): Add support for the
 	DBUS_TYPE_UNIX_FD type, with a C type of "int".
 	* nih-dbus-tool/tests/test_type.c (test_const, test_of): Check the types

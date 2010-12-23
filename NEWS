@@ -1,4 +1,4 @@
-1.0.3  xxxx-xx-xx
+1.0.3  2010-12-23
 
 	* Support for passing file descriptors over D-Bus added to
 	  nih-dbus-tool.  Due to code limitations, to avoid leaking the

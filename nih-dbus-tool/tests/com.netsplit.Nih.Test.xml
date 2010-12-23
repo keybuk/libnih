@@ -150,6 +150,14 @@
       <arg name="input" type="s" direction="in" />
       <arg name="output" type="a{su}" direction="out" />
     </method>
+    <method name="UnixFdToStr">
+      <arg name="input" type="h" direction="in" />
+      <arg name="output" type="s" direction="out" />
+    </method> 
+    <method name="StrToUnixFd">
+      <arg name="input" type="s" direction="in" />
+      <arg name="output" type="h" direction="out" />
+    </method>
 
     <signal name="NewByte">
       <arg name="value" type="y" />
@@ -205,6 +213,9 @@
     <signal name="NewDictEntryArray">
       <arg name="value" type="a{su}" />
     </signal>
+    <signal name="NewUnixFd">
+      <arg name="value" type="h" />
+    </signal>
 
     <property name="byte" type="y" access="readwrite" />
     <property name="boolean" type="b" access="readwrite" />
@@ -226,5 +237,6 @@
     <property name="int32_array_array" type="aai" access="readwrite" />
     <property name="struct_array" type="a(su)" access="readwrite" />
     <property name="dict_entry_array" type="a{su}" access="readwrite" />
+    <property name="unix_fd" type="h" access="readwrite" />
   </interface>
 </node>

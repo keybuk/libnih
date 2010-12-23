@@ -2,8 +2,8 @@
  *
  * tests/demarshal_factory.c - generate tests/demarshal_code.c
  *
- * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
- * Copyright © 2009 Canonical Ltd.
+ * Copyright © 2010 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2010 Canonical Ltd.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2, as
@@ -174,6 +174,7 @@ main (int   argc,
 						 DBUS_TYPE_STRING_AS_STRING
 						 DBUS_TYPE_UINT32_AS_STRING
 						 DBUS_DICT_ENTRY_END_CHAR_AS_STRING));
+	demarshal_function ("unix_fd", DBUS_TYPE_UNIX_FD_AS_STRING);
 
 	return 0;
 }

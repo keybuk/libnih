@@ -1,5 +1,11 @@
 1.0.3  xxxx-xx-xx
 
+	* Support for passing file descriptors over D-Bus added to
+	  nih-dbus-tool.  Due to code limitations, to avoid leaking the
+	  file descriptor in case of error it must be the last input
+	  argument to any method being implemented and within your
+	  function you are responsible for closing it on error.
+
 1.0.2  2010-04-27
 
 	* AC_COPYRIGHT wrapper renamed to NIH_COPYRIGHT.  (Bug: #519278)

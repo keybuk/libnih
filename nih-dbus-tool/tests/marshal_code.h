@@ -1,7 +1,7 @@
 /* nih-dbus-tool
  *
- * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
- * Copyright © 2009 Canonical Ltd.
+ * Copyright © 2010 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2010 Canonical Ltd.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2, as
@@ -74,6 +74,7 @@ int my_struct_array_marshal       (DBusMessage *message,
 				   MyStructArrayValueElement * const * value);
 int my_dict_entry_array_marshal   (DBusMessage *message,
 				   MyDictEntryArrayValueElement * const * value);
+int my_unix_fd_marshal            (DBusMessage *message, int value);
 
 NIH_END_EXTERN
 

@@ -2,8 +2,8 @@
  *
  * test_demarshal.c - test suite for nih-dbus-tool/demarshal.c
  *
- * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
- * Copyright © 2009 Canonical Ltd.
+ * Copyright © 2010 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2010 Canonical Ltd.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2, as
@@ -67,6 +67,7 @@ test_demarshal (void)
 	MyStructValue *   struct_value;
 	MyStructArrayValueElement **struct_array;
 	MyDictEntryArrayValueElement **dict_entry_array;
+	int               unix_fd_value;
 
 	TEST_FUNCTION ("demarshal");
 
@@ -4773,6 +4774,139 @@ test_demarshal (void)
 
 		TEST_GT (ret, 0);
 		TEST_EQ_P (dict_entry_array, NULL);
+
+		dbus_message_unref (message);
+
+		dbus_shutdown ();
+	}
+
+
+	/* Check that the code to demarshal a D-Bus file descriptor into an
+	 * int is correctly generated and returned as an allocated string.
+	 */
+	TEST_FEATURE ("with file descriptor");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&outputs);
+		nih_list_init (&locals);
+		nih_list_init (&structs);
+
+		dbus_signature_iter_init (&signature,
+					  DBUS_TYPE_UNIX_FD_AS_STRING);
+
+		str = demarshal (NULL, &signature,
+				 "parent", "iter", "value",
+				 "return -1;\n",
+				 "return 1;\n",
+				 &outputs, &locals,
+				 "my", NULL, "unix_fd", "value",
+				 &structs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&outputs);
+			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("/* Demarshal a int from the message */\n"
+				   "if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_UNIX_FD) {\n"
+				   "\treturn 1;\n"
+				   "}\n"
+				   "\n"
+				   "dbus_message_iter_get_basic (&iter, &value);\n"
+				   "\n"
+				   "dbus_message_iter_next (&iter);\n"));
+
+		TEST_LIST_NOT_EMPTY (&outputs);
+
+		var = (TypeVar *)outputs.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "int");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "value");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&outputs);
+
+		TEST_LIST_EMPTY (&locals);
+
+		TEST_LIST_EMPTY (&structs);
+
+		nih_free (str);
+	}
+
+
+	/* Check that the generated code takes the value from the D-Bus
+	 * file descriptor in the message we pass and stores it in the int
+	 * pointer, which should have the right value.
+	 */
+	TEST_FEATURE ("with file descriptor (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			message = dbus_message_new (DBUS_MESSAGE_TYPE_METHOD_CALL);
+
+			dbus_message_iter_init_append (message, &iter);
+
+			unix_fd_value = 1;
+			dbus_message_iter_append_basic (&iter, DBUS_TYPE_UNIX_FD,
+							&unix_fd_value);
+		}
+
+		unix_fd_value = -1;
+
+		ret = my_unix_fd_demarshal (NULL, message, &unix_fd_value);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_message_unref (message);
+			dbus_shutdown ();
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+		TEST_GT (unix_fd_value, 2); // duplicated by dbus
+
+		dbus_message_unref (message);
+		close (unix_fd_value);
+
+		dbus_shutdown ();
+	}
+
+
+	/* Check that when a file descriptor is expected, but a different
+	 * type is found, the type error code is run and the function returns
+	 * without modifying the pointer.
+	 */
+	TEST_FEATURE ("with wrong type for file descriptor (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			message = dbus_message_new (DBUS_MESSAGE_TYPE_METHOD_CALL);
+
+			dbus_message_iter_init_append (message, &iter);
+
+			double_value = 3.14;
+			dbus_message_iter_append_basic (&iter, DBUS_TYPE_DOUBLE,
+							&double_value);
+		}
+
+		unix_fd_value = -1;
+
+		ret = my_unix_fd_demarshal (NULL, message, &unix_fd_value);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_message_unref (message);
+			dbus_shutdown ();
+			continue;
+		}
+
+		TEST_GT (ret, 0);
+		TEST_EQ (unix_fd_value, -1);
 
 		dbus_message_unref (message);
 

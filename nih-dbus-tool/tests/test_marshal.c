@@ -67,6 +67,7 @@ test_marshal (void)
 	MyStructValue *   struct_value = NULL;
 	MyStructArrayValueElement **struct_array = NULL;
 	MyDictEntryArrayValueElement **dict_entry_array = NULL;
+	int               unix_fd_value;
 
 	TEST_FUNCTION ("marshal");
 
@@ -3140,6 +3141,104 @@ test_marshal (void)
 		dbus_shutdown ();
 
 		nih_free (dict_entry_array);
+	}
+
+
+	/* Check that the code to marshal an int into a D-Bus file descriptor
+	 * is correctly generated and returned as an allocated string.
+	 */
+	TEST_FEATURE ("with file descriptor");
+	TEST_ALLOC_FAIL {
+		nih_list_init (&inputs);
+		nih_list_init (&locals);
+		nih_list_init (&structs);
+
+		dbus_signature_iter_init (&signature,
+					  DBUS_TYPE_UNIX_FD_AS_STRING);
+
+		str = marshal (NULL, &signature,
+			       "iter", "value",
+			       "return -1;\n",
+			       &inputs, &locals,
+			       "my", NULL, "unix_fd", "value",
+			       &structs);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			TEST_LIST_EMPTY (&inputs);
+			TEST_LIST_EMPTY (&locals);
+			TEST_LIST_EMPTY (&structs);
+			continue;
+		}
+
+		TEST_EQ_STR (str, ("/* Marshal a int onto the message */\n"
+				   "if (! dbus_message_iter_append_basic (&iter, DBUS_TYPE_UNIX_FD, &value)) {\n"
+				   "\treturn -1;\n"
+				   "}\n"));
+
+		TEST_LIST_NOT_EMPTY (&inputs);
+
+		var = (TypeVar *)inputs.next;
+		TEST_ALLOC_SIZE (var, sizeof (TypeVar));
+		TEST_ALLOC_PARENT (var, str);
+		TEST_EQ_STR (var->type, "int");
+		TEST_ALLOC_PARENT (var->type, var);
+		TEST_EQ_STR (var->name, "value");
+		TEST_ALLOC_PARENT (var->name, var);
+		nih_free (var);
+
+		TEST_LIST_EMPTY (&inputs);
+
+		TEST_LIST_EMPTY (&locals);
+
+		TEST_LIST_EMPTY (&structs);
+
+		nih_free (str);
+	}
+
+
+	/* Check that the generated code takes the value from the int and
+	 * appends it as a D-Bus file descriptor to the message we pass.  We
+	 * check the message signature is correct, then iterate the message to
+	 * check the types are correct, and extract the values to check that they
+	 * are correct too.
+	 */
+	TEST_FEATURE ("with file descriptor (generated code)");
+	TEST_ALLOC_FAIL {
+		TEST_ALLOC_SAFE {
+			message = dbus_message_new (DBUS_MESSAGE_TYPE_METHOD_CALL);
+		}
+
+		unix_fd_value = 1;
+
+		ret = my_unix_fd_marshal (message, unix_fd_value);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_message_unref (message);
+			dbus_shutdown ();
+			continue;
+		}
+
+		TEST_EQ (ret, 0);
+
+		TEST_EQ_STR (dbus_message_get_signature (message),
+			     DBUS_TYPE_UNIX_FD_AS_STRING);
+
+		assert (dbus_message_iter_init (message, &iter));
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&iter),
+			 DBUS_TYPE_UNIX_FD);
+
+		unix_fd_value = -1;
+		dbus_message_iter_get_basic (&iter, &unix_fd_value);
+		TEST_GT (unix_fd_value, 2); // file descriptor is duplicated
+
+		dbus_message_unref (message);
+		close (unix_fd_value);
+
+		dbus_shutdown ();
 	}
 }
 

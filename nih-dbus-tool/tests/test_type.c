@@ -1,9 +1,9 @@
 /* nih-dbus-tool
  *
- * test_test.c - test suite for nih-dbus-tool/type.c
+ * test_type.c - test suite for nih-dbus-tool/type.c
  *
- * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
- * Copyright © 2009 Canonical Ltd.
+ * Copyright © 2010 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2010 Canonical Ltd.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2, as
@@ -97,6 +97,11 @@ test_const (void)
 	TEST_FEATURE ("with dict entry");
 	TEST_EQ_STR (type_const (DBUS_TYPE_DICT_ENTRY),
 		     "DBUS_TYPE_DICT_ENTRY");
+
+	/* Check that the correct value is returned for a file descriptor */
+	TEST_FEATURE ("with file descriptor");
+	TEST_EQ_STR (type_const (DBUS_TYPE_UNIX_FD),
+		     "DBUS_TYPE_UNIX_FD");
 }
 
 
@@ -356,6 +361,27 @@ test_of (void)
 
 		TEST_ALLOC_PARENT (str, NULL);
 		TEST_EQ_STR (str, "char *");
+
+		nih_free (str);
+	}
+
+
+	/* Check that the expected C type is returned for a D-Bus file
+	 * descriptor.
+	 */
+	TEST_FEATURE ("with file descriptor");
+	TEST_ALLOC_FAIL {
+		dbus_signature_iter_init (&iter, DBUS_TYPE_UNIX_FD_AS_STRING);
+
+		str = type_of (NULL, &iter);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (str, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_PARENT (str, NULL);
+		TEST_EQ_STR (str, "int");
 
 		nih_free (str);
 	}

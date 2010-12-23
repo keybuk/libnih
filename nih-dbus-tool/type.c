@@ -2,8 +2,8 @@
  *
  * type.c - type handling
  *
- * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
- * Copyright © 2009 Canonical Ltd.
+ * Copyright © 2010 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2010 Canonical Ltd.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2, as
@@ -82,6 +82,8 @@ type_const (int dbus_type)
 		return "DBUS_TYPE_STRUCT";
 	case DBUS_TYPE_DICT_ENTRY:
 		return "DBUS_TYPE_DICT_ENTRY";
+	case DBUS_TYPE_UNIX_FD:
+		return "DBUS_TYPE_UNIX_FD";
 	default:
 		nih_assert_not_reached ();
 	}
@@ -138,6 +140,8 @@ type_of (const void *       parent,
 		return nih_strdup (parent, "char *");
 	case DBUS_TYPE_SIGNATURE:
 		return nih_strdup (parent, "char *");
+	case DBUS_TYPE_UNIX_FD:
+		return nih_strdup (parent, "int");
 	default:
 		nih_assert_not_reached ();
 	}

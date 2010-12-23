@@ -1,3 +1,37 @@
+2010-12-23  Scott James Remnant  <scott@netsplit.com>
+
+	* nih-dbus-tool/type.c (type_const, type_of): Add support for the
+	DBUS_TYPE_UNIX_FD type, with a C type of "int".
+	* nih-dbus-tool/tests/test_type.c (test_const, test_of): Check the types
+	are correct.
+	* nih-dbus-tool/tests/marshal_factory.c: Generate function for
+	unix_fd testing
+	* nih-dbus-tool/tests/marshal_code.h: Add header for generated function
+	* nih-dbus-tool/tests/test_marshal.c (test_marshal): Test the generator
+	and the generated function
+	* nih-dbus-tool/tests/demarshal_factory.c: Generate function for
+	unix_fd testing
+	* nih-dbus-tool/tests/demarshal_code.h: Add header for generated function
+	* nih-dbus-tool/tests/test_demarshal.c (test_demarshal): Test the
+	generator and the generated code
+	* nih-dbus-tool/tests/com.netsplit.Nih.Test.xml: Add methods, signal and
+	properties for testing.
+	* nih-dbus-tool/tests/com.netsplit.Nih.Test_impl.h: Add property
+	definition
+	* nih-dbus-tool/tests/com.netsplit.Nih.Test_impl.c (my_test_unix_fd_to_str)
+	(my_test_str_to_unix_fd, my_test_get_unix_fd)
+	(my_test_set_unix_fd): Test implementation.
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_object.c (test_unix_fd_to_str)
+	(test_str_to_unix_fd, test_new_unix_fd, test_get_unix_fd)
+	(test_set_unix_fd): Add methods to test the object implementation.
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c (test_unix_fd_to_str)
+	(test_unix_fd_to_str_sync, test_str_to_unix_fd)
+	(test_str_to_unix_fd_sync, test_new_unix_fd, test_get_unix_fd)
+	(test_get_unix_fd_sync, test_set_unix_fd, test_set_unix_fd_sync): Add tests
+	for unix fds.
+	(test_get_all, test_get_all_sync): Add unix fd to tests.
+	* NEWS: Update
+
 2010-04-27  Scott James Remnant  <scott@netsplit.com>
 
 	* configure.ac: Bump version to 1.0.3

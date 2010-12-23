@@ -1,7 +1,7 @@
 /* nih-dbus-tool
  *
- * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
- * Copyright © 2009 Canonical Ltd.
+ * Copyright © 2010 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2010 Canonical Ltd.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2, as
@@ -87,6 +87,8 @@ int my_struct_array_demarshal       (const void *parent, DBusMessage *message,
 				     MyStructArrayValueElement ***value);
 int my_dict_entry_array_demarshal   (const void *parent, DBusMessage *message,
 				     MyDictEntryArrayValueElement ***value);
+int my_unix_fd_demarshal            (const void *parent, DBusMessage *message,
+				     int *value);
 
 NIH_END_EXTERN
 

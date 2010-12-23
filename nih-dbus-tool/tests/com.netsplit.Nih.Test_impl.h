@@ -1,7 +1,7 @@
 /* libnih
  *
- * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
- * Copyright © 2009 Canonical Ltd.
+ * Copyright © 2010 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2010 Canonical Ltd.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2, as
@@ -59,6 +59,7 @@ extern int32_t ** int32_array_array_property;
 extern size_t *   int32_array_array_property_len;
 extern MyStruct **struct_array_property;
 extern MyStruct **dict_entry_array_property;
+extern int        unix_fd_property;
 
 NIH_END_EXTERN
 

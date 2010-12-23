@@ -2,8 +2,8 @@
  *
  * com.netsplit.Nih.Test_impl.c - implementation of test object interfaces
  *
- * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
- * Copyright © 2009 Canonical Ltd.
+ * Copyright © 2010 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2010 Canonical Ltd.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2, as
@@ -1440,6 +1440,56 @@ error:
 }
 
 
+int
+my_test_unix_fd_to_str (void *          data,
+			NihDBusMessage *message,
+			int             input,
+			char **         output)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (output, NULL);
+
+	/* We don't care, we just don't want to leak */
+	close (input);
+
+	*output = nih_sprintf (message, "%d", input);
+	if (! *output)
+		nih_return_no_memory_error (-1);
+
+	return 0;
+}
+
+int
+my_test_str_to_unix_fd (void *          data,
+			NihDBusMessage *message,
+			const char *    input,
+			int *           output)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (input, NULL);
+	TEST_NE_P (output, NULL);
+
+	if (! strlen (input)) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.StrToUnixFd.EmptyInput",
+				      "The input argument was empty");
+		return -1;
+	} else if (! strcmp (input, "invalid")) {
+		nih_error_raise (EINVAL, "Invalid argument");
+		return -1;
+	}
+
+	*output = atoi (input);
+
+	return 0;
+}
+
+
 
 
 uint8_t byte_property;
@@ -2717,4 +2767,43 @@ error:
 		dict_entry_array_property = NULL;
 	}
 	return -1;
+}
+
+
+int unix_fd_property;
+
+int
+my_test_get_unix_fd (void *          data,
+		     NihDBusMessage *message,
+		     int *           value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	TEST_NE_P (value, NULL);
+
+	if (unix_fd_property < 0) {
+		nih_dbus_error_raise ("com.netsplit.Nih.Test.UnixFd.Invalid",
+				      "The property value was invalid");
+		return -1;
+	}
+
+	*value = unix_fd_property;
+
+	return 0;
+}
+
+int
+my_test_set_unix_fd (void *          data,
+		     NihDBusMessage *message,
+		     int             value)
+{
+	TEST_ALLOC_SIZE (message, sizeof (NihDBusMessage));
+	TEST_NE_P (message->connection, NULL);
+	TEST_NE_P (message->message, NULL);
+
+	unix_fd_property = value;
+
+	return 0;
 }

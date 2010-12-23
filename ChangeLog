@@ -1,5 +1,8 @@
 2010-12-23  Scott James Remnant  <scott@netsplit.com>
 
+	* configure.ac: Bump version to 1.0.4
+	* NEWS: Begin new release
+
 	* NEWS: Release 1.0.3
 
 	* nih-dbus-tool/type.c (type_const, type_of): Add support for the

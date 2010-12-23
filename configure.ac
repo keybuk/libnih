@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.62)
-AC_INIT([libnih], [1.0.3], [http://bugs.launchpad.net/libnih/])
+AC_INIT([libnih], [1.0.4], [http://bugs.launchpad.net/libnih/])
 NIH_COPYRIGHT([[Copyright © 2010 Scott James Remnant <scott@netsplit.com>.]])
 AC_CONFIG_SRCDIR([nih/libnih.h])
 AC_CONFIG_MACRO_DIR([m4])

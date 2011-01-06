@@ -91,7 +91,7 @@ static void            nih_watch_handle      (NihWatch *watch,
  * sub-directories will be automatically watched.
  *
  * Additionally, the set of files and directories within @path can be
- * limited by passing a @filter function which will recieve the paths and
+ * limited by passing a @filter function which will receive the paths and
  * may return TRUE to indicate that the path received should not be watched.
  *
  * When a file is created within @path, or moved from outside this location
@@ -104,7 +104,7 @@ static void            nih_watch_handle      (NihWatch *watch,
  * files that exist under @path when the watch is first added.  This only
  * occurs if the watch can be added.
  *
- * This is a very high level wrapped around the inotify API; lower levels
+ * This is a very high level wrapper around the inotify API; lower levels
  * can be obtained using the inotify API itself and some of the helper
  * functions used by this one.
  *

@@ -36,7 +36,7 @@
  * Spawn a child in which a test can be performed without affecting the
  * main flow of the process.  The pid of the child is stored in @_pid.
  *
- * This macro ensures that the child has begun exectution before the
+ * This macro ensures that the child has begun execution before the
  * parent is allowed to continue through the usual use of a pipe.
  *
  * A block of code should follow this macro, which is the code that will

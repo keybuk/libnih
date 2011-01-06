@@ -299,7 +299,7 @@ typedef int (*NihDestructor) (void *ptr);
  * It is permissible to take references to foo within its scope, or by
  * functions called, in which case it will not be freed.  Also it is
  * generally nonsensical to allocate with a parent, since this too will
- * prevent it from beign freed.
+ * prevent it from being freed.
  **/
 #define nih_local __attribute__ ((cleanup(_nih_discard_local)))
 

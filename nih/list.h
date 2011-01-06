@@ -37,7 +37,7 @@
  * after a known entry, and remove an entry from the list.
  *
  * List entries may be created in one of two ways.  The most common is to
- * embed the NihList structure as the frist member of your own structure,
+ * embed the NihList structure as the first member of your own structure,
  * and initialise it with nih_list_init() after allocating the structure.
  * Alternatively you may create NihListEntry structures with
  * nih_list_entry_new() and point at your own data from them.

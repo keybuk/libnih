@@ -61,10 +61,10 @@
 
 /**
  * TEST_FEATURE:
- * @_feat: name of function feature being tested.
+ * @_feat: name of function or group feature being tested.
  *
- * Output a message indicating that a sub-test of a function is being
- * performed, specifically the feature named _feat.
+ * Output a message indicating that a sub-test of a function or
+ * group is being performed, specifically the feature named _feat.
  **/
 #define TEST_FEATURE(_feat) \
 	printf ("...%s\n", _feat);

@@ -141,7 +141,7 @@ typedef struct nih_hash {
  * @hash: hash table to iterate,
  * @iter: name of iterator variable.
  *
- * Expans to nested for statements that iterate over each entry in each
+ * Expands to nested for statements that iterate over each entry in each
  * bin of @hash, except for the bin head pointer, setting @iter to each
  * entry for the block within the loop.  A variable named _@iter_i is used
  * to iterate the hash bins.

@@ -657,7 +657,7 @@ finish:
  * of the returned string are freed, the returned string will also be
  * freed.
  *
- * Returns: the command found or NULL on raised error.
+ * Returns: the newly allocated command found or NULL on raised error.
  **/
 char *
 nih_config_parse_command (const void *parent,

@@ -494,12 +494,21 @@ nih_watch_handle (NihWatch       *watch,
 		return;
 	}
 
+	/* Every other event must come with a name */
+	if (name && *name) {
 
-	/* Every other event must come with a name. */
-	if ((! name) || strchr (name, '/'))
-		return;
+		/* If name refers to a directory, there should be no associated
+		 * path - just the name of the path element.
+		 */
+		if (strchr (name, '/'))
+			return;
 
-	path = NIH_MUST (nih_sprintf (NULL, "%s/%s", handle->path, name));
+		/* Event occured for file within a watched directory */
+		path = NIH_MUST (nih_sprintf (NULL, "%s/%s", handle->path, name));
+	} else {
+		/* File event occured */
+		path = NIH_MUST (nih_strdup (NULL, handle->path));
+	}
 
 	/* Check the filter */
 	if (watch->filter && watch->filter (watch->data, path,

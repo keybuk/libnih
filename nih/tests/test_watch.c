@@ -946,13 +946,82 @@ test_reader (void)
 	nih_error_init ();
 
 	TEST_FILENAME (dirname);
-	mkdir (dirname, 0755);
+	TEST_EQ (mkdir (dirname, 0755), 0);
+
+	TEST_FEATURE ("with watched file");
+	strcpy (filename, dirname);
+	strcat (filename, "/foo");
+
+	/* Create file first since we don't set a create handler on the
+	 * watch.
+	 */
+	fd = fopen (filename, "w");
+	fprintf (fd, "bar\n");
+	fclose (fd);
+
+	create_called = 0;
+	modify_called = 0;
+	delete_called = 0;
+	logger_called = 0;
+	last_path  = NULL;
+	last_watch = NULL;
+	last_data  = NULL;
+
+	watch = nih_watch_new (NULL, filename, FALSE, FALSE, NULL,
+			       NULL, my_modify_handler,
+			       my_delete_handler, &watch);
+	TEST_NE_P (watch, NULL);
+
+	/* Now, modify the existing file to trigger the modify handler. */
+	fd = fopen (filename, "a+");
+	fprintf (fd, "baz\n");
+	fclose (fd);
+
+	nfds = 0;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+	select (nfds, &readfds, &writefds, &exceptfds, NULL);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_EQ_STR (watch->path, filename);
+
+	/* Ensure no regression to old behaviour (LP:#777097) */
+	TEST_NE (last_path[ strlen(last_path) - 1 ], '/');
+
+	TEST_EQ_STR (last_path, filename);
+	TEST_EQ (modify_called, 1);
+
+	unlink (filename);
+
+	nfds = 0;
+	FD_ZERO (&readfds);
+	FD_ZERO (&writefds);
+	FD_ZERO (&exceptfds);
+
+	nih_io_select_fds (&nfds, &readfds, &writefds, &exceptfds);
+	select (nfds, &readfds, &writefds, &exceptfds, NULL);
+	nih_io_handle_fds (&readfds, &writefds, &exceptfds);
+
+	TEST_EQ (delete_called, 1);
+
+	rmdir (filename);
+	nih_free (last_path);
+
+	create_called = 0;
+	modify_called = 0;
+	delete_called = 0;
+	logger_called = 0;
+	last_path  = NULL;
+	last_watch = NULL;
+	last_data  = NULL;
+
 
 	watch = nih_watch_new (NULL, dirname, TRUE, TRUE, my_filter,
 			       my_create_handler, my_modify_handler,
 			       my_delete_handler, &watch);
-
-
 	/* Check that creating a file within the directory being watched
 	 * results in the create handler being called, and passed the full
 	 * path of the created file to it.

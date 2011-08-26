@@ -1,5 +1,8 @@
 2011-08-26  James Hunt  <james.hunt@ubuntu.com>
 
+	* nih/io.c (nih_io_select_fds): Ensure number of fds being managed
+	is within limits.
+
 	* nih/config.c, nih/error.h, nih/io.c, nih/test_files.h: Correct
 	typos in comments.
 

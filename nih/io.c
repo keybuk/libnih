@@ -165,6 +165,7 @@ nih_io_select_fds (int    *nfds,
 	nih_assert (readfds != NULL);
 	nih_assert (writefds != NULL);
 	nih_assert (exceptfds != NULL);
+	nih_assert (*nfds <= FD_SETSIZE);
 
 	nih_io_init ();
 
@@ -186,6 +187,9 @@ nih_io_select_fds (int    *nfds,
 			*nfds = nih_max (*nfds, watch->fd + 1);
 		}
 	}
+
+	/* Re-check in case we exceeded the limit in the loop */
+	nih_assert (*nfds <= FD_SETSIZE);
 }
 
 /**

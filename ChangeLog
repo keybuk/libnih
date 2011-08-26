@@ -1,3 +1,8 @@
+2011-08-26  James Hunt  <james.hunt@ubuntu.com>
+
+	* nih/io.c (nih_io_select_fds): Ensure number of fds being managed
+	  is within limits.
+
 2011-06-20  James Hunt  <james.hunt@ubuntu.com>
 
 	* nih/watch.c (nih_watch_handle): Handle non-directory watches;

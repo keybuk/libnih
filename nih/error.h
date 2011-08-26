@@ -1,7 +1,7 @@
 /* libnih
  *
- * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
- * Copyright © 2009 Canonical Ltd.
+ * Copyright © 2011 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2011 Canonical Ltd.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2, as
@@ -111,7 +111,7 @@ typedef struct nih_error {
  * @message: human-readable message.
  *
  * Raises an error with the given details in the current error context,
- * if an unhandled error already exists then an error message is emmitted
+ * if an unhandled error already exists then an error message is emitted
  * through the logging system; you should try to avoid this.
  *
  * @message should be a static string, as it will not be freed when the
@@ -126,7 +126,7 @@ typedef struct nih_error {
  * @format: format string for human-readable message.
  *
  * Raises an error with the given details in the current error context,
- * if an unhandled error already exists then an error message is emmitted
+ * if an unhandled error already exists then an error message is emitted
  * through the logging system; you should try to avoid this.
  *
  * The human-readable message for the error is parsed according to @format,
@@ -140,7 +140,7 @@ typedef struct nih_error {
  * nih_error_raise_system:
  *
  * Raises an error with details taken from the current value of errno,
- * if an unhandled error already exists then an error message is emmitted
+ * if an unhandled error already exists then an error message is emitted
  * through the logging system; you should try to avoid this.
  **/
 #define nih_error_raise_system() \
@@ -162,7 +162,7 @@ typedef struct nih_error {
  * @error: existing object to raise.
  *
  * Raises the existing error object in the current error context,
- * if an unhandled error already exists then an error message is emmitted
+ * if an unhandled error already exists then an error message is emitted
  * through the logging system; you should try to avoid this.
  *
  * This is normally used to raise a taken error that has not been handled,
@@ -182,7 +182,7 @@ typedef struct nih_error {
  * @message: human-readable message.
  *
  * Raises an error with the given details in the current error context,
- * if an unhandled error already exists then an error message is emmitted
+ * if an unhandled error already exists then an error message is emitted
  * through the logging system; you should try to avoid this.
  *
  * Will return from the current function with @retval, which may be left
@@ -199,7 +199,7 @@ typedef struct nih_error {
  * @retval: return value for function.
  *
  * Raises an error with details taken from the current value of errno,
- * if an unhandled error already exists then an error message is emmitted
+ * if an unhandled error already exists then an error message is emitted
  * through the logging system; you should try to avoid this.
  *
  * Will return from the current function with @retval, which may be left

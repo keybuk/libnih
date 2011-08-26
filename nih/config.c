@@ -2,8 +2,8 @@
  *
  * config.c - configuration file parsing
  *
- * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
- * Copyright © 2009 Canonical Ltd.
+ * Copyright © 2011 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2011 Canonical Ltd.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2, as
@@ -714,7 +714,7 @@ finish:
  * @lineno: line number,
  * @type: block identifier.
  *
- * Extracts a block of text from @line, stopping when the pharse "end @type"
+ * Extracts a block of text from @line, stopping when the phrase "end @type"
  * is encountered without any quotes or blackslash escaping within it.
  *
  * @file may be a memory mapped file, in which case @pos should be given

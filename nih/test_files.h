@@ -39,7 +39,7 @@
  * TEST_FILENAME:
  * @_var: variable to store filename in.
  *
- * Generate a filename that may be used for testing, it's unlinked it if
+ * Generate a filename that may be used for testing, it's unlinked if it
  * exists and it's up to you to unlink it when done.  @_var should be at
  * least PATH_MAX long.
  **/

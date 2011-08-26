@@ -714,7 +714,7 @@ finish:
  * @lineno: line number,
  * @type: block identifier.
  *
- * Extracts a block of text from @line, stopping when the pharse "end @type"
+ * Extracts a block of text from @line, stopping when the phrase "end @type"
  * is encountered without any quotes or blackslash escaping within it.
  *
  * @file may be a memory mapped file, in which case @pos should be given

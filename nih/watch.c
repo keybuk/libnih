@@ -2,8 +2,8 @@
  *
  * watch.c - watching of files and directories with inotify
  *
- * Copyright © 2009 Scott James Remnant <scott@netsplit.com>.
- * Copyright © 2009 Canonical Ltd.
+ * Copyright © 2011 Scott James Remnant <scott@netsplit.com>.
+ * Copyright © 2011 Canonical Ltd.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2, as

@@ -27359,6 +27359,7 @@ test_unix_fd_to_str (void)
 		TEST_TRUE (unix_fd_to_str_replied);
 
 		TEST_EQ_P (last_data, parent);
+		TEST_NE (last_str_value[0], '\0');
 		TEST_TRUE (strchr ("0123456789", last_str_value[0]));
 		TEST_ALLOC_PARENT (last_str_value, parent);
 
@@ -27673,6 +27674,7 @@ test_unix_fd_to_str_sync (void)
 
 		TEST_EQ (ret, 0);
 
+		TEST_NE (str_value[0], '\0');
 		TEST_TRUE (strchr ("0123456789", str_value[0]));
 		TEST_ALLOC_PARENT (str_value, parent);
 

@@ -405,13 +405,20 @@ nih_str_split (const void *parent,
 		const char  *ptr;
 
 		/* Skip initial delimiters */
-		while (repeat && strchr (delim, *str))
+		while (repeat && *str && strchr (delim, *str))
 			str++;
 
 		/* Find the end of the token */
 		ptr = str;
 		while (*str && (! strchr (delim, *str)))
 			str++;
+
+		/* Don't create an empty string array element in repeat
+		 * mode if there is no token (as a result of a
+		 * duplicated delimiter character).
+		 */
+		if (repeat && (str == ptr))
+			continue;
 
 		if (! nih_str_array_addn (&array, parent, &len,
 					  ptr, str - ptr)) {

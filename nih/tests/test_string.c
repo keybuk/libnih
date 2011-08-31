@@ -619,6 +619,215 @@ test_str_split (void)
 		nih_free (array);
 	}
 
+	TEST_FEATURE ("with no repeat and multiple identical delimiter "
+			"characters at string start");
+	TEST_ALLOC_FAIL {
+		array = nih_str_split (NULL, "\t\tthis is a test", " \t", FALSE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (array, sizeof (char *) * 7);
+		for (i = 0; i < 6; i++)
+			TEST_ALLOC_PARENT (array[i], array);
+
+		TEST_EQ_STR (array[0], "");
+		TEST_EQ_STR (array[1], "");
+		TEST_EQ_STR (array[2], "this");
+		TEST_EQ_STR (array[3], "is");
+		TEST_EQ_STR (array[4], "a");
+		TEST_EQ_STR (array[5], "test");
+		TEST_EQ_P (array[6], NULL);
+
+		nih_free (array);
+	}
+
+	TEST_FEATURE ("with no repeat and multiple different delimiter "
+			"characters at string start");
+	TEST_ALLOC_FAIL {
+		array = nih_str_split (NULL, " \tthis is a test", " \t", FALSE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (array, sizeof (char *) * 7);
+		for (i = 0; i < 6; i++)
+			TEST_ALLOC_PARENT (array[i], array);
+
+		TEST_EQ_STR (array[0], "");
+		TEST_EQ_STR (array[1], "");
+		TEST_EQ_STR (array[2], "this");
+		TEST_EQ_STR (array[3], "is");
+		TEST_EQ_STR (array[4], "a");
+		TEST_EQ_STR (array[5], "test");
+		TEST_EQ_P (array[6], NULL);
+
+		nih_free (array);
+	}
+
+	TEST_FEATURE ("with no repeat and multiple identical delimiter "
+			"characters within string");
+	TEST_ALLOC_FAIL {
+		array = nih_str_split (NULL, "this is   a\t\ttest", " \t", FALSE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (array, sizeof (char *) * 8);
+		for (i = 0; i < 7; i++)
+			TEST_ALLOC_PARENT (array[i], array);
+
+		TEST_EQ_STR (array[0], "this");
+		TEST_EQ_STR (array[1], "is");
+		TEST_EQ_STR (array[2], "");
+		TEST_EQ_STR (array[3], "");
+		TEST_EQ_STR (array[4], "a");
+		TEST_EQ_STR (array[5], "");
+		TEST_EQ_STR (array[6], "test");
+		TEST_EQ_P (array[7], NULL);
+
+		nih_free (array);
+	}
+
+	TEST_FEATURE ("with no repeat and multiple different delimiter "
+			"characters within string");
+	TEST_ALLOC_FAIL {
+		array = nih_str_split (NULL, "this is \n\ta\ttest", " \t\n", FALSE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (array, sizeof (char *) * 7);
+		for (i = 0; i < 6; i++)
+			TEST_ALLOC_PARENT (array[i], array);
+
+		TEST_EQ_STR (array[0], "this");
+		TEST_EQ_STR (array[1], "is");
+		TEST_EQ_STR (array[2], "");
+		TEST_EQ_STR (array[3], "");
+		TEST_EQ_STR (array[4], "a");
+		TEST_EQ_STR (array[5], "test");
+		TEST_EQ_P (array[6], NULL);
+
+		nih_free (array);
+	}
+
+	TEST_FEATURE ("with no repeat and multiple identical delimiter "
+			"characters at string end");
+	TEST_ALLOC_FAIL {
+		array = nih_str_split (NULL, "this is a test  ", " \t", FALSE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (array, sizeof (char *) * 6);
+		for (i = 0; i < 5; i++)
+			TEST_ALLOC_PARENT (array[i], array);
+
+		TEST_EQ_STR (array[0], "this");
+		TEST_EQ_STR (array[1], "is");
+		TEST_EQ_STR (array[2], "a");
+		TEST_EQ_STR (array[3], "test");
+		TEST_EQ_STR (array[4], "");
+		TEST_EQ_P (array[5], NULL);
+
+		nih_free (array);
+	}
+
+	TEST_FEATURE ("with no repeat and multiple different delimiter "
+			"characters at string end");
+	TEST_ALLOC_FAIL {
+		array = nih_str_split (NULL, "this is a test \t", " \t", FALSE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (array, sizeof (char *) * 6);
+		for (i = 0; i < 5; i++)
+			TEST_ALLOC_PARENT (array[i], array);
+
+		TEST_EQ_STR (array[0], "this");
+		TEST_EQ_STR (array[1], "is");
+		TEST_EQ_STR (array[2], "a");
+		TEST_EQ_STR (array[3], "test");
+		TEST_EQ_STR (array[4], "");
+		TEST_EQ_P (array[5], NULL);
+
+		nih_free (array);
+	}
+
+	TEST_FEATURE ("with no repeat and multiple identical delimiter "
+			"characters at beginning, middle and end of string");
+	TEST_ALLOC_FAIL {
+		array = nih_str_split (NULL, "   this is\n\n\na test\t\t\t", " \t\n", FALSE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (array, sizeof (char *) * 12);
+		for (i = 0; i < 11; i++)
+			TEST_ALLOC_PARENT (array[i], array);
+
+		TEST_EQ_STR (array[0], "");
+		TEST_EQ_STR (array[1], "");
+		TEST_EQ_STR (array[2], "");
+		TEST_EQ_STR (array[3], "this");
+		TEST_EQ_STR (array[4], "is");
+		TEST_EQ_STR (array[5], "");
+		TEST_EQ_STR (array[6], "");
+		TEST_EQ_STR (array[7], "a");
+		TEST_EQ_STR (array[8], "test");
+		TEST_EQ_STR (array[9], "");
+		TEST_EQ_STR (array[10], "");
+		TEST_EQ_P (array[11], NULL);
+
+		nih_free (array);
+	}
+
+	TEST_FEATURE ("with no repeat and multiple different delimiter "
+			"characters at beginning, middle and end of string");
+	TEST_ALLOC_FAIL {
+		array = nih_str_split (NULL, ": \nthis is\t \n:a test:\n ", "\n :\t", FALSE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (array, sizeof (char *) * 13);
+		for (i = 0; i < 12; i++)
+			TEST_ALLOC_PARENT (array[i], array);
+
+		TEST_EQ_STR (array[0], "");
+		TEST_EQ_STR (array[1], "");
+		TEST_EQ_STR (array[2], "");
+		TEST_EQ_STR (array[3], "this");
+		TEST_EQ_STR (array[4], "is");
+		TEST_EQ_STR (array[5], "");
+		TEST_EQ_STR (array[6], "");
+		TEST_EQ_STR (array[7], "");
+		TEST_EQ_STR (array[8], "a");
+		TEST_EQ_STR (array[9], "test");
+		TEST_EQ_STR (array[10], "");
+		TEST_EQ_STR (array[11], "");
+		TEST_EQ_P (array[12], NULL);
+
+		nih_free (array);
+	}
 
 	/* Check that we can split a string treating multiple consecutive
 	 * matching characters as a single separator to be skipped.
@@ -645,6 +854,177 @@ test_str_split (void)
 		nih_free (array);
 	}
 
+	/* Check that we can split a string containing multiple
+	 * occurences of one of the delimiter characters at the
+	 * beginning of the string.
+	 */
+	TEST_FEATURE ("with repeat and multiple identical adjacent delimiter characters at string start");
+	TEST_ALLOC_FAIL {
+		array = nih_str_split (NULL, "\n\nhello", " \t\r\n", TRUE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (array, sizeof (char *) * 2);
+		for (i = 0; i < 1; i++)
+			TEST_ALLOC_PARENT (array[i], array);
+
+		TEST_EQ_STR (array[0], "hello");
+		TEST_EQ_P (array[1], NULL);
+
+		nih_free (array);
+	}
+
+	TEST_FEATURE ("with repeat and multiple different adjacent delimiter characters at string start");
+	TEST_ALLOC_FAIL {
+		array = nih_str_split (NULL, "\n\r hello", " \t\r\n", TRUE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (array, sizeof (char *) * 2);
+		for (i = 0; i < 1; i++)
+			TEST_ALLOC_PARENT (array[i], array);
+
+		TEST_EQ_STR (array[0], "hello");
+		TEST_EQ_P (array[1], NULL);
+
+		nih_free (array);
+	}
+
+	TEST_FEATURE ("with repeat and multiple identical adjacent delimiter "
+			"characters within string");
+	TEST_ALLOC_FAIL {
+		array = nih_str_split (NULL, "hello\n\rworld", " \t\n\r", TRUE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (array, sizeof (char *) * 3);
+		for (i = 0; i < 2; i++)
+			TEST_ALLOC_PARENT (array[i], array);
+
+		TEST_EQ_STR (array[0], "hello");
+		TEST_EQ_STR (array[1], "world");
+		TEST_EQ_P (array[2], NULL);
+
+		nih_free (array);
+	}
+
+	TEST_FEATURE ("with repeat and multiple different adjacent delimiter "
+			"characters within string");
+	TEST_ALLOC_FAIL {
+		array = nih_str_split (NULL, "hello\n\r\tworld", " \t\n\r", TRUE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (array, sizeof (char *) * 3);
+		for (i = 0; i < 2; i++)
+			TEST_ALLOC_PARENT (array[i], array);
+
+		TEST_EQ_STR (array[0], "hello");
+		TEST_EQ_STR (array[1], "world");
+		TEST_EQ_P (array[2], NULL);
+
+		nih_free (array);
+	}
+
+	TEST_FEATURE ("with repeat and multiple identical adjacent delimiter "
+			"characters at string end");
+	TEST_ALLOC_FAIL {
+		array = nih_str_split (NULL, "hello\n\n\n\n\n\n\n", " \t\r\n", TRUE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (array, sizeof (char *) * 2);
+		for (i = 0; i < 1; i++)
+			TEST_ALLOC_PARENT (array[i], array);
+
+		TEST_EQ_STR (array[0], "hello");
+		TEST_EQ_P (array[1], NULL);
+
+		nih_free (array);
+	}
+
+	TEST_FEATURE ("with repeat and multiple different adjacent delimiter "
+			"characters at string end");
+	TEST_ALLOC_FAIL {
+		array = nih_str_split (NULL, "hello \r\t\r\t\n ", " \t\r\n", TRUE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (array, sizeof (char *) * 2);
+		for (i = 0; i < 1; i++)
+			TEST_ALLOC_PARENT (array[i], array);
+
+		TEST_EQ_STR (array[0], "hello");
+		TEST_EQ_P (array[1], NULL);
+
+		nih_free (array);
+	}
+
+	TEST_FEATURE ("with repeat and multiple identical adjacent delimiter "
+			"characters at beginning, middle and end of string");
+	TEST_ALLOC_FAIL {
+		array = nih_str_split (NULL,
+				"        hello\n\n\n,  world\n\n\n",
+				"\r\t\n ", TRUE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (array, sizeof (char *) * 4);
+		for (i = 0; i < 3; i++)
+			TEST_ALLOC_PARENT (array[i], array);
+
+		TEST_EQ_STR (array[0], "hello");
+		TEST_EQ_STR (array[1], ",");
+		TEST_EQ_STR (array[2], "world");
+		TEST_EQ_P (array[3], NULL);
+
+		nih_free (array);
+	}
+
+	TEST_FEATURE ("with repeat and multiple different adjacent delimiter "
+			"characters at beginning, middle and end of string");
+	TEST_ALLOC_FAIL {
+		array = nih_str_split (NULL,
+				"\n    \r\thello\n\n\r , \n\t\rworld\t \r\n \n",
+				" \t\n\r", TRUE);
+
+		if (test_alloc_failed) {
+			TEST_EQ_P (array, NULL);
+			continue;
+		}
+
+		TEST_ALLOC_SIZE (array, sizeof (char *) * 4);
+		for (i = 0; i < 3; i++)
+			TEST_ALLOC_PARENT (array[i], array);
+
+		TEST_EQ_STR (array[0], "hello");
+		TEST_EQ_STR (array[1], ",");
+		TEST_EQ_STR (array[2], "world");
+		TEST_EQ_P (array[3], NULL);
+
+		nih_free (array);
+	}
 
 	/* Check that we can give an empty string, and end up with a
 	 * one-element array that only contains a NULL pointer.

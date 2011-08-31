@@ -1,3 +1,11 @@
+2011-08-31  James Hunt  <james.hunt@ubuntu.com>
+
+	* nih/string.c (nih_str_split): Fixes to avoid over-running
+	input string and also returning an empty string array entry
+	when repeat is true (LP: #834813).
+	* nih/tests/test_string.c (test_str_split): Added a lot of new
+	tests for nih_str_split().
+
 2011-08-26  James Hunt  <james.hunt@ubuntu.com>
 
 	* nih/io.c (nih_io_select_fds): Ensure number of fds being managed

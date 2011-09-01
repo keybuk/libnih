@@ -950,7 +950,7 @@ nih_config_block_end (const char *file,
 		return FALSE;
 
 	/* Must be whitespace after */
-	if (! strchr (NIH_CONFIG_WS, file[p + 3]))
+	if (file[p + 3] && ! strchr (NIH_CONFIG_WS, file[p + 3]))
 		return FALSE;
 
 	/* Find the second word */

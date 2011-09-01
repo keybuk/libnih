@@ -1,5 +1,17 @@
 2011-08-31  James Hunt  <james.hunt@ubuntu.com>
 
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_object.c
+	(test_unix_fd_to_str): Sanity check value before invoking strchr in
+	case it returns address of null (which would give a misleading test
+	pass).
+	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_proxy.c
+	(test_unix_fd_to_str, test_unix_fd_to_str_sync): Sanity check value
+	before invoking strchr in case it returns address of null (which would
+	give a misleading test pass).
+	* nih/config.c (): nih_config_block_end: Add check to ensure strchr()
+	doesn't return address of null since this would result in a misleading
+	return value of TRUE.
+
 	* nih/string.c (nih_str_split): Fixes to avoid over-running
 	input string and also returning an empty string array entry
 	when repeat is true (LP: #834813).

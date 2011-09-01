@@ -12524,6 +12524,7 @@ test_unix_fd_to_str (void)
 		dbus_message_iter_init (reply, &iter);
 
 		dbus_message_iter_get_basic (&iter, &str_value);
+		TEST_NE (str_value[0], '\0');
 		TEST_TRUE (strchr ("0123456789", str_value[0]));
 
 		dbus_message_unref (reply);

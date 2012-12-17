@@ -1101,7 +1101,7 @@ type_strcat_assert (char **     block,
 	nih_assert (block != NULL);
 	nih_assert (var != NULL);
 
-	if (! strchr (var->type, '*'))
+	if (! strchr (var->type, '*') || ! strcmp (var->type, "char * const *"))
 		return *block;
 
 	if (next && (! strcmp (next->type, "size_t"))) {

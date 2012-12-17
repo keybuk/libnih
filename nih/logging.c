@@ -39,11 +39,11 @@
 
 
 /**
- * __abort_msg:
+ * __nih_abort_msg:
  *
- * A glibc variable that keeps the assertion message in the core dump.
+ * A variable that keeps the assertion message in the core dump.
  **/
-extern char *__abort_msg __attribute__ ((weak));
+char *__nih_abort_msg;
 
 /**
  * logger:
@@ -114,19 +114,19 @@ nih_log_set_priority (NihLogLevel new_priority)
  * nih_log_abort_message:
  * @message: message to be logged.
  *
- * Save @message in the glibc __abort_msg variable so it can be retrieved
+ * Save @message in the __nih_abort_msg variable so it can be retrieved
  * by debuggers if we should crash at this point.
  **/
 static void
 nih_log_abort_message (const char *message)
 {
-	if (! &__abort_msg)
+	if (! &__nih_abort_msg)
 		return;
 
-	if (__abort_msg)
-		nih_discard (__abort_msg);
+	if (__nih_abort_msg)
+		nih_discard (__nih_abort_msg);
 
-	__abort_msg = NIH_MUST (nih_strdup (NULL, message));
+	__nih_abort_msg = NIH_MUST (nih_strdup (NULL, message));
 }
 
 /**

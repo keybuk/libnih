@@ -31,7 +31,7 @@
 #include <nih/main.h>
 
 
-extern char *__abort_msg __attribute__ ((weak));
+extern char *__nih_abort_msg;
 
 static NihLogLevel last_priority = NIH_LOG_UNKNOWN;
 static char *      last_message = NULL;
@@ -156,13 +156,13 @@ test_log_message (void)
 	}
 
 
-	/* Check that a fatal message is also stored in the glibc __abort_msg
+	/* Check that a fatal message is also stored in the __nih_abort_msg
 	 * variable.
 	 */
-	if (&__abort_msg) {
+	if (&__nih_abort_msg) {
 		TEST_FEATURE ("with fatal message");
 		TEST_ALLOC_FAIL {
-			__abort_msg = NULL;
+			__nih_abort_msg = NULL;
 			last_priority = NIH_LOG_UNKNOWN;
 			last_message = NULL;
 
@@ -174,16 +174,16 @@ test_log_message (void)
 			TEST_EQ (last_priority, NIH_LOG_FATAL);
 			TEST_EQ_STR (last_message, "message with some 20 formatting");
 
-			TEST_NE_P (__abort_msg, NULL);
-			TEST_ALLOC_PARENT (__abort_msg, NULL);
-			TEST_EQ_STR (__abort_msg, "message with some 20 formatting");
+			TEST_NE_P (__nih_abort_msg, NULL);
+			TEST_ALLOC_PARENT (__nih_abort_msg, NULL);
+			TEST_EQ_STR (__nih_abort_msg, "message with some 20 formatting");
 
 			free (last_message);
 		}
 
 
 		/* Check that a fatal message can safely overwrite one already stored
-		 * in the glibc __abort_msg variable.
+		 * in the __nih_abort_msg variable.
 		 */
 		TEST_FEATURE ("with second fatal message");
 		TEST_ALLOC_FAIL {
@@ -191,7 +191,7 @@ test_log_message (void)
 				msg = nih_strdup (NULL, "test");
 			}
 
-			__abort_msg = msg;
+			__nih_abort_msg = msg;
 			TEST_FREE_TAG (msg);
 
 			last_priority = NIH_LOG_UNKNOWN;
@@ -207,14 +207,14 @@ test_log_message (void)
 
 			TEST_FREE (msg);
 
-			TEST_NE_P (__abort_msg, NULL);
-			TEST_ALLOC_PARENT (__abort_msg, NULL);
-			TEST_EQ_STR (__abort_msg, "message with some 20 formatting");
+			TEST_NE_P (__nih_abort_msg, NULL);
+			TEST_ALLOC_PARENT (__nih_abort_msg, NULL);
+			TEST_EQ_STR (__nih_abort_msg, "message with some 20 formatting");
 
 			free (last_message);
 		}
 	} else {
-		printf ("SKIP: __abort_msg not available\n");
+		printf ("SKIP: __nih_abort_msg not available\n");
 	}
 
 

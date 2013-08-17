@@ -724,6 +724,25 @@ my_filter (void       *data,
 	return FALSE;
 }
 
+/* find only frodo files */
+static int
+my_filter_frodo_file (void       *data,
+	   const char *path,
+	   int         is_dir)
+{
+	char *slash;
+
+	if (is_dir)
+		return FALSE;
+
+	slash = strrchr (path, '/');
+	if (strcmp (slash, "/frodo"))
+		return TRUE;
+
+	return FALSE;
+}
+
+
 static int logger_called = 0;
 
 static int
@@ -902,6 +921,48 @@ test_dir_walk (void)
 		TEST_EQ_STR (v->dirname, dirname);
 		strcpy (filename, dirname);
 		strcat (filename, "/foo");
+		TEST_EQ_STR (v->path, filename);
+
+		nih_free (visited);
+
+				/* Try also inverse filter */
+		TEST_ALLOC_SAFE {
+			visitor_called = 0;
+			visited = nih_list_new (NULL);
+		}
+
+		ret = nih_dir_walk (dirname, my_filter_frodo_file,
+				    my_visitor, NULL, &ret);
+
+		TEST_EQ (ret, 0);
+		TEST_EQ (visitor_called, 4);
+
+		v = (Visited *)visited->next;
+		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/bar");
+		TEST_EQ_STR (v->path, filename);
+
+		v = (Visited *)v->entry.next;
+		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/bar/frodo");
+		TEST_EQ_STR (v->path, filename);
+
+		v = (Visited *)v->entry.next;
+		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/baz");
+		TEST_EQ_STR (v->path, filename);
+
+		v = (Visited *)v->entry.next;
+		TEST_EQ (v->data, &ret);
+		TEST_EQ_STR (v->dirname, dirname);
+		strcpy (filename, dirname);
+		strcat (filename, "/frodo");
 		TEST_EQ_STR (v->path, filename);
 
 		nih_free (visited);

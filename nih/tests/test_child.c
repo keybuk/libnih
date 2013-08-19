@@ -345,7 +345,7 @@ test_poll (void)
 	TEST_FEATURE ("with signal from traced child");
 
 	TEST_CHILD (pid) {
-		assert0 (ptrace (PTRACE_TRACEME, 0, NULL, NULL));
+		assert0 (ptrace (PT_TRACE_ME, 0, NULL, NULL));
 
 		raise (SIGSTOP);
 		raise (SIGCHLD);
@@ -356,7 +356,7 @@ test_poll (void)
 	waitid (P_PID, pid, &siginfo, WSTOPPED);
 
 	assert0 (ptrace (PTRACE_SETOPTIONS, pid, NULL, PTRACE_O_TRACESYSGOOD));
-	assert0 (ptrace (PTRACE_CONT, pid, NULL, SIGCONT));
+	assert0 (ptrace (PT_CONTINUE, pid, NULL, SIGCONT));
 
 	waitid (P_PID, pid, &siginfo, WSTOPPED | WNOWAIT);
 
@@ -379,7 +379,7 @@ test_poll (void)
 	TEST_EQ (last_status, SIGCHLD);
 	TEST_NOT_FREE (watch);
 
-	assert0 (ptrace (PTRACE_DETACH, pid, NULL, 0));
+	assert0 (ptrace (PT_DETACH, pid, NULL, 0));
 
 	kill (pid, SIGTERM);
 	waitid (P_PID, pid, &siginfo, WEXITED);
@@ -399,7 +399,7 @@ test_poll (void)
 	TEST_FEATURE ("with fork by traced child");
 
 	TEST_CHILD (pid) {
-		assert0 (ptrace (PTRACE_TRACEME, 0, NULL, NULL));
+		assert0 (ptrace (PT_TRACE_ME, 0, NULL, NULL));
 
 		raise (SIGSTOP);
 
@@ -415,7 +415,7 @@ test_poll (void)
 
 	assert0 (ptrace (PTRACE_SETOPTIONS, pid, NULL,
 			 PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEFORK));
-	assert0 (ptrace (PTRACE_CONT, pid, NULL, SIGCONT));
+	assert0 (ptrace (PT_CONTINUE, pid, NULL, SIGCONT));
 
 	/* Wait for ptrace to stop the parent (signalling the fork) */
 	waitid (P_PID, pid, &siginfo, WSTOPPED | WNOWAIT);
@@ -456,10 +456,10 @@ test_poll (void)
 	TEST_EQ (last_status, PTRACE_EVENT_FORK);
 	TEST_NOT_FREE (watch);
 
-	assert0 (ptrace (PTRACE_DETACH, child, NULL, SIGCONT));
+	assert0 (ptrace (PT_DETACH, child, NULL, SIGCONT));
 	kill (child, SIGTERM);
 
-	assert0 (ptrace (PTRACE_DETACH, pid, NULL, SIGCONT));
+	assert0 (ptrace (PT_DETACH, pid, NULL, SIGCONT));
 	kill (pid, SIGTERM);
 	waitid (P_PID, pid, &siginfo, WEXITED);
 	nih_free (watch);
@@ -473,7 +473,7 @@ test_poll (void)
 	TEST_FEATURE ("with exec by traced child");
 
 	TEST_CHILD (pid) {
-		assert0 (ptrace (PTRACE_TRACEME, 0, NULL, NULL));
+		assert0 (ptrace (PT_TRACE_ME, 0, NULL, NULL));
 
 		raise (SIGSTOP);
 
@@ -485,7 +485,7 @@ test_poll (void)
 
 	assert0 (ptrace (PTRACE_SETOPTIONS, pid, NULL,
 			 PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEEXEC));
-	assert0 (ptrace (PTRACE_CONT, pid, NULL, SIGCONT));
+	assert0 (ptrace (PT_CONTINUE, pid, NULL, SIGCONT));
 
 	waitid (P_PID, pid, &siginfo, WSTOPPED | WNOWAIT);
 
@@ -508,7 +508,7 @@ test_poll (void)
 	TEST_EQ (last_status, PTRACE_EVENT_EXEC);
 	TEST_NOT_FREE (watch);
 
-	assert0 (ptrace (PTRACE_DETACH, pid, NULL, SIGCONT));
+	assert0 (ptrace (PT_DETACH, pid, NULL, SIGCONT));
 
 	waitid (P_PID, pid, &siginfo, WEXITED);
 	nih_free (watch);

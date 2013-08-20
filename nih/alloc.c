@@ -24,7 +24,6 @@
 #endif /* HAVE_CONFIG_H */
 
 
-#include <malloc.h>
 #include <stdlib.h>
 
 #include <nih/macros.h>

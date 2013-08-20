@@ -72,25 +72,25 @@ check_PROGRAMS = \
 test_main_SOURCES = tests/test_main.c main.c
 test_main_CFLAGS = $(AM_CFLAGS) -DTEST
 test_main_LDFLAGS = -static
-test_main_LDADD = ../nih/libnih.la
+test_main_LDADD = ../nih/libnih.la @LIBINTL@
 
 test_symbol_SOURCES = tests/test_symbol.c
 test_symbol_LDFLAGS = -static
 test_symbol_LDADD = \
 	symbol.o \
-	../nih/libnih.la
+	../nih/libnih.la @LIBINTL@
 
 test_indent_SOURCES = tests/test_indent.c
 test_indent_LDFLAGS = -static
 test_indent_LDADD = \
 	indent.o \
-	../nih/libnih.la
+	../nih/libnih.la @LIBINTL@
 
 test_type_SOURCES = tests/test_type.c
 test_type_LDFLAGS = -static
 test_type_LDADD = \
 	type.o indent.o symbol.o \
-	../nih/libnih.la \
+	../nih/libnih.la @LIBINTL@ \
 	$(DBUS_LIBS)
 
 test_marshal_SOURCES = \
@@ -100,7 +100,7 @@ nodist_test_marshal_SOURCES = \
 test_marshal_LDFLAGS = -static
 test_marshal_LDADD = \
 	marshal.o type.o indent.o symbol.o \
-	../nih/libnih.la \
+	../nih/libnih.la @LIBINTL@ \
 	$(DBUS_LIBS)
 
 test_demarshal_SOURCES = \
@@ -110,7 +110,7 @@ nodist_test_demarshal_SOURCES = \
 test_demarshal_LDFLAGS = -static
 test_demarshal_LDADD = \
 	demarshal.o type.o indent.o symbol.o \
-	../nih/libnih.la \
+	../nih/libnih.la @LIBINTL@ \
 	$(DBUS_LIBS)
 
 test_node_SOURCES = tests/test_node.c
@@ -119,7 +119,7 @@ test_node_LDADD = \
 	demarshal.o marshal.o type.o indent.o \
 	parse.o annotation.o argument.o property.o signal.o method.o \
 	interface.o node.o symbol.o \
-	../nih/libnih.la \
+	../nih/libnih.la @LIBINTL@ \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
 
@@ -133,7 +133,7 @@ test_interface_LDADD = \
 	parse.o annotation.o argument.o property.o signal.o method.o \
 	interface.o node.o symbol.o \
 	../nih-dbus/libnih-dbus.la \
-	../nih/libnih.la \
+	../nih/libnih.la @LIBINTL@ \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
 
@@ -147,7 +147,7 @@ test_method_LDADD = \
 	parse.o annotation.o argument.o property.o signal.o method.o \
 	interface.o node.o symbol.o \
 	../nih-dbus/libnih-dbus.la \
-	../nih/libnih.la \
+	../nih/libnih.la @LIBINTL@ \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
 
@@ -161,7 +161,7 @@ test_signal_LDADD = \
 	parse.o annotation.o argument.o property.o signal.o method.o \
 	interface.o node.o symbol.o \
 	../nih-dbus/libnih-dbus.la \
-	../nih/libnih.la \
+	../nih/libnih.la @LIBINTL@ \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
 
@@ -175,7 +175,7 @@ test_property_LDADD = \
 	parse.o annotation.o argument.o property.o signal.o method.o \
 	interface.o node.o symbol.o \
 	../nih-dbus/libnih-dbus.la \
-	../nih/libnih.la \
+	../nih/libnih.la @LIBINTL@ \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
 
@@ -185,7 +185,7 @@ test_argument_LDADD = \
 	demarshal.o marshal.o type.o indent.o \
 	parse.o annotation.o argument.o property.o signal.o method.o \
 	interface.o node.o symbol.o \
-	../nih/libnih.la \
+	../nih/libnih.la @LIBINTL@ \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
 
@@ -195,7 +195,7 @@ test_annotation_LDADD = \
 	demarshal.o marshal.o type.o indent.o \
 	parse.o annotation.o argument.o property.o signal.o method.o \
 	interface.o node.o symbol.o \
-	../nih/libnih.la \
+	../nih/libnih.la @LIBINTL@ \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
 
@@ -205,7 +205,7 @@ test_parse_LDADD = \
 	demarshal.o marshal.o type.o indent.o \
 	parse.o annotation.o argument.o property.o signal.o method.o \
 	interface.o node.o symbol.o \
-	../nih/libnih.la \
+	../nih/libnih.la @LIBINTL@ \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
 
@@ -215,7 +215,7 @@ test_output_LDADD = \
 	demarshal.o marshal.o type.o indent.o \
 	output.o parse.o annotation.o argument.o property.o signal.o method.o \
 	interface.o node.o symbol.o \
-	../nih/libnih.la \
+	../nih/libnih.la @LIBINTL@ \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
 
@@ -226,7 +226,7 @@ test_com_netsplit_Nih_Test_object_SOURCES = \
 nodist_test_com_netsplit_Nih_Test_object_SOURCES = \
 	$(com_netsplit_Nih_Test_object_OUTPUTS)
 test_com_netsplit_Nih_Test_object_LDFLAGS = -static
-test_com_netsplit_Nih_Test_object_LDADD = ../nih-dbus/libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS)
+test_com_netsplit_Nih_Test_object_LDADD = ../nih-dbus/libnih-dbus.la ../nih/libnih.la @LIBINTL@ $(DBUS_LIBS)
 
 test_com_netsplit_Nih_Test_proxy_SOURCES = \
 	tests/test_com.netsplit.Nih.Test_proxy.c \
@@ -235,7 +235,7 @@ nodist_test_com_netsplit_Nih_Test_proxy_SOURCES = \
 	$(com_netsplit_Nih_Test_object_OUTPUTS) \
 	$(com_netsplit_Nih_Test_proxy_OUTPUTS)
 test_com_netsplit_Nih_Test_proxy_LDFLAGS = -static
-test_com_netsplit_Nih_Test_proxy_LDADD = ../nih-dbus/libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS)
+test_com_netsplit_Nih_Test_proxy_LDADD = ../nih-dbus/libnih-dbus.la ../nih/libnih.la @LIBINTL@ $(DBUS_LIBS)
 
 
 com_netsplit_Nih_Test_object_OUTPUTS = \
@@ -281,7 +281,7 @@ marshal_factory_SOURCES = tests/marshal_factory.c
 marshal_factory_LDFLAGS = -static
 marshal_factory_LDADD = \
 	marshal.o type.o indent.o symbol.o \
-	../nih/libnih.la \
+	../nih/libnih.la @LIBINTL@ \
 	$(DBUS_LIBS)
 
 tests/marshal_code.c: $(builddir)/marshal_factory
@@ -292,7 +292,7 @@ demarshal_factory_SOURCES = tests/demarshal_factory.c
 demarshal_factory_LDFLAGS = -static
 demarshal_factory_LDADD = \
 	demarshal.o type.o indent.o symbol.o \
-	../nih/libnih.la \
+	../nih/libnih.la @LIBINTL@ \
 	$(DBUS_LIBS)
 
 tests/demarshal_code.c: $(builddir)/demarshal_factory
@@ -305,7 +305,7 @@ interface_factory_LDADD = \
 	demarshal.o marshal.o type.o indent.o \
 	parse.o annotation.o argument.o property.o signal.o method.o \
 	interface.o node.o symbol.o \
-	../nih/libnih.la \
+	../nih/libnih.la @LIBINTL@ \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
 
@@ -319,7 +319,7 @@ method_factory_LDADD = \
 	demarshal.o marshal.o type.o indent.o \
 	parse.o annotation.o argument.o property.o signal.o method.o \
 	interface.o node.o symbol.o \
-	../nih/libnih.la \
+	../nih/libnih.la @LIBINTL@ \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
 
@@ -333,7 +333,7 @@ signal_factory_LDADD = \
 	demarshal.o marshal.o type.o indent.o \
 	parse.o annotation.o argument.o property.o signal.o method.o \
 	interface.o node.o symbol.o \
-	../nih/libnih.la \
+	../nih/libnih.la @LIBINTL@ \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
 
@@ -347,7 +347,7 @@ property_factory_LDADD = \
 	demarshal.o marshal.o type.o indent.o \
 	parse.o annotation.o argument.o property.o signal.o method.o \
 	interface.o node.o symbol.o \
-	../nih/libnih.la \
+	../nih/libnih.la @LIBINTL@ \
 	$(EXPAT_LIBS) \
 	$(DBUS_LIBS)
 

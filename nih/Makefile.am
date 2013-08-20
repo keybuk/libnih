@@ -33,7 +33,7 @@ if HAVE_VERSION_SCRIPT_ARG
 libnih_la_LDFLAGS += @VERSION_SCRIPT_ARG@=$(srcdir)/libnih.ver
 endif
 
-libnih_la_LIBADD = -lrt
+libnih_la_LIBADD = -lrt @LIBINTL@
 
 
 include_HEADERS = \
@@ -101,71 +101,71 @@ check_PROGRAMS = $(TESTS)
 
 test_alloc_SOURCES = tests/test_alloc.c
 test_alloc_LDFLAGS = -static
-test_alloc_LDADD = libnih.la
+test_alloc_LDADD = libnih.la @LIBINTL@
 
 test_string_SOURCES = tests/test_string.c
 test_string_LDFLAGS = -static
-test_string_LDADD = libnih.la -lutil
+test_string_LDADD = libnih.la @LIBINTL@ -lutil
 
 test_list_SOURCES = tests/test_list.c
 test_list_LDFLAGS = -static
-test_list_LDADD = libnih.la
+test_list_LDADD = libnih.la @LIBINTL@
 
 test_hash_SOURCES = tests/test_hash.c
 test_hash_LDFLAGS = -static
-test_hash_LDADD = libnih.la
+test_hash_LDADD = libnih.la @LIBINTL@
 
 test_tree_SOURCES = tests/test_tree.c
 test_tree_LDFLAGS = -static
-test_tree_LDADD = libnih.la
+test_tree_LDADD = libnih.la @LIBINTL@
 
 test_timer_SOURCES = tests/test_timer.c
 test_timer_LDFLAGS = -static
-test_timer_LDADD = libnih.la
+test_timer_LDADD = libnih.la @LIBINTL@
 
 test_signal_SOURCES = tests/test_signal.c
 test_signal_LDFLAGS = -static
-test_signal_LDADD = libnih.la
+test_signal_LDADD = libnih.la @LIBINTL@
 
 test_child_SOURCES = tests/test_child.c
 test_child_LDFLAGS = -static
-test_child_LDADD = libnih.la
+test_child_LDADD = libnih.la @LIBINTL@
 
 test_io_SOURCES = tests/test_io.c
 test_io_LDFLAGS = -static
-test_io_LDADD = libnih.la
+test_io_LDADD = libnih.la @LIBINTL@
 
 test_file_SOURCES = tests/test_file.c
 test_file_LDFLAGS = -static
-test_file_LDADD = libnih.la
+test_file_LDADD = libnih.la @LIBINTL@
 
 test_watch_SOURCES = tests/test_watch.c
 test_watch_LDFLAGS = -static
-test_watch_LDADD = libnih.la
+test_watch_LDADD = libnih.la @LIBINTL@
 
 test_main_SOURCES = tests/test_main.c
 test_main_LDFLAGS = -static
-test_main_LDADD = libnih.la
+test_main_LDADD = libnih.la @LIBINTL@
 
 test_option_SOURCES = tests/test_option.c
 test_option_LDFLAGS = -static
-test_option_LDADD = libnih.la
+test_option_LDADD = libnih.la @LIBINTL@
 
 test_command_SOURCES = tests/test_command.c
 test_command_LDFLAGS = -static
-test_command_LDADD = libnih.la
+test_command_LDADD = libnih.la @LIBINTL@
 
 test_config_SOURCES = tests/test_config.c
 test_config_LDFLAGS = -static
-test_config_LDADD = libnih.la
+test_config_LDADD = libnih.la @LIBINTL@
 
 test_logging_SOURCES = tests/test_logging.c
 test_logging_LDFLAGS = -static
-test_logging_LDADD = libnih.la
+test_logging_LDADD = libnih.la @LIBINTL@
 
 test_error_SOURCES = tests/test_error.c
 test_error_LDFLAGS = -static
-test_error_LDADD = libnih.la
+test_error_LDADD = libnih.la @LIBINTL@
 
 
 .PHONY: tests

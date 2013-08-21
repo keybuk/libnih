@@ -33,7 +33,7 @@ if HAVE_VERSION_SCRIPT_ARG
 libnih_la_LDFLAGS += @VERSION_SCRIPT_ARG@=$(srcdir)/libnih.ver
 endif
 
-libnih_la_LIBADD = -lrt
+libnih_la_LIBADD = -lrt $(LTLIBINTL)
 
 
 include_HEADERS = \

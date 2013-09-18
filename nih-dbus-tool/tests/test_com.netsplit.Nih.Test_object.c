@@ -14185,6 +14185,57 @@ test_new_str_array (void)
 	}
 
 
+	/* Check that we can pass a NULL pointer for the array.
+	 */
+	TEST_FEATURE ("with NULL array pointer");
+	TEST_ALLOC_FAIL {
+		dbus_error_init (&dbus_error);
+		dbus_bus_add_match (client_conn, "type='signal'", &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+
+		ret = my_test_emit_new_str_array (server_conn,
+						  "/com/netsplit/Nih/Test",
+						  NULL);
+
+		if (test_alloc_failed) {
+			TEST_LT (ret, 0);
+
+			dbus_error_init (&dbus_error);
+			dbus_bus_remove_match (client_conn, "type='signal'",
+					       &dbus_error);
+			assert (! dbus_error_is_set (&dbus_error));
+			dbus_error_free (&dbus_error);
+
+			continue;
+		}
+
+		dbus_connection_flush (server_conn);
+
+		TEST_DBUS_MESSAGE (client_conn, signal);
+		TEST_TRUE (dbus_message_is_signal (
+				   signal, "com.netsplit.Nih.Test", "NewStrArray"));
+		TEST_EQ_STR (dbus_message_get_signature (signal),
+			     (DBUS_TYPE_ARRAY_AS_STRING
+			      DBUS_TYPE_STRING_AS_STRING));
+
+		dbus_message_iter_init (signal, &iter);
+
+		dbus_message_iter_recurse (&iter, &subiter);
+
+		TEST_EQ (dbus_message_iter_get_arg_type (&subiter),
+			 DBUS_TYPE_INVALID);
+
+		dbus_message_unref (signal);
+
+		dbus_error_init (&dbus_error);
+		dbus_bus_remove_match (client_conn, "type='signal'",
+				       &dbus_error);
+		assert (! dbus_error_is_set (&dbus_error));
+		dbus_error_free (&dbus_error);
+	}
+
+
 	/* Check that we can give an empty array consisting of just the
 	 * NULL pointer.
 	 */

@@ -1,3 +1,10 @@
+2012-12-13  Stéphane Graber  <stgraber@ubuntu.com>
+
+	* nih-dbus-tool/type.c, nih-dbus-tool/marshal.c: Update dbus code
+	generator to allow for empty lists for type 'as'.  This drops the
+	!= NULL check for NULL terminated arrays and moves the iteration
+	loop inside an 'if' statement.
+
 2011-08-31  James Hunt  <james.hunt@ubuntu.com>
 
 	* nih-dbus-tool/tests/test_com.netsplit.Nih.Test_object.c

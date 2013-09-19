@@ -88,17 +88,19 @@ my_com_netsplit_Nih_Test_Method_method (NihDBusObject * object,
 			goto enomem;
 		}
 
-		for (size_t output_i = 0; output[output_i]; output_i++) {
-			const char *output_element;
+		if (output) {
+			for (size_t output_i = 0; output[output_i]; output_i++) {
+				const char *output_element;
 
-			output_element = output[output_i];
+				output_element = output[output_i];
 
-			/* Marshal a char * onto the message */
-			if (! dbus_message_iter_append_basic (&output_iter, DBUS_TYPE_STRING, &output_element)) {
-				dbus_message_iter_abandon_container (&iter, &output_iter);
-				dbus_message_unref (reply);
-				reply = NULL;
-				goto enomem;
+				/* Marshal a char * onto the message */
+				if (! dbus_message_iter_append_basic (&output_iter, DBUS_TYPE_STRING, &output_element)) {
+					dbus_message_iter_abandon_container (&iter, &output_iter);
+					dbus_message_unref (reply);
+					reply = NULL;
+					goto enomem;
+				}
 			}
 		}
 

@@ -364,6 +364,7 @@ marshal_array (const void *       parent,
 	nih_local TypeVar *element_len_var = NULL;
 	nih_local char *   block = NULL;
 	nih_local char *   vars_block = NULL;
+	nih_local char *   loop_block = NULL;
 
 	nih_assert (iter != NULL);
 	nih_assert (iter_name != NULL);
@@ -448,7 +449,7 @@ marshal_array (const void *       parent,
 	nih_list_add (locals, &array_iter_var->entry);
 
 	if (dbus_type_is_fixed (element_type)) {
-		if (! nih_strcat_sprintf (&code, parent,
+		if (! nih_strcat_sprintf (&loop_block, parent,
 					  "for (size_t %s = 0; %s < %s; %s++) {\n",
 					  loop_name, loop_name, len_name, loop_name)) {
 			nih_free (code);
@@ -456,6 +457,12 @@ marshal_array (const void *       parent,
 		}
 	} else {
 		if (! nih_strcat_sprintf (&code, parent,
+					  "if (%s) {\n",
+					  name)) {
+			nih_free (code);
+			return NULL;
+		}
+		if (! nih_strcat_sprintf (&loop_block, parent,
 					  "for (size_t %s = 0; %s[%s]; %s++) {\n",
 					  loop_name, name, loop_name, loop_name)) {
 			nih_free (code);
@@ -576,7 +583,7 @@ marshal_array (const void *       parent,
 	}
 
 
-	if (! nih_strcat_sprintf (&code, parent,
+	if (! nih_strcat_sprintf (&loop_block, parent,
 			   "%s"
 			   "\n"
 			   "%s"
@@ -590,9 +597,34 @@ marshal_array (const void *       parent,
 	}
 
 	/* Close the container again */
+	if (! nih_strcat_sprintf (&loop_block, parent,
+				  "}\n")) {
+		nih_free (code);
+		return NULL;
+	}
+
+	if (dbus_type_is_fixed (element_type)) {
+		if (! nih_strcat_sprintf (&code, parent,
+				 "%s\n", loop_block)) {
+			nih_free (code);
+			return NULL;
+		}
+	}
+	else {
+		if (! indent (&loop_block, NULL, 1)) {
+			nih_free (code);
+			return NULL;
+		}
+
+		if (! nih_strcat_sprintf (&code, parent,
+				 "%s"
+				 "}\n\n", loop_block)) {
+			nih_free (code);
+			return NULL;
+		}
+	}
+
 	if (! nih_strcat_sprintf (&code, parent,
-				  "}\n"
-				  "\n"
 				  "if (! dbus_message_iter_close_container (&%s, &%s)) {\n"
 				  "%s"
 				  "}\n",

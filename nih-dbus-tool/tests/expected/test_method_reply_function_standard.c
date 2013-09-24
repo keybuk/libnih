@@ -7,7 +7,6 @@ my_async_method_reply (NihDBusMessage *message,
 	DBusMessageIter output_iter;
 
 	nih_assert (message != NULL);
-	nih_assert (output != NULL);
 
 	/* If the sender doesn't care about a reply, don't bother wasting
 	 * effort constructing and sending one.
@@ -28,16 +27,18 @@ my_async_method_reply (NihDBusMessage *message,
 		return -1;
 	}
 
-	for (size_t output_i = 0; output[output_i]; output_i++) {
-		const char *output_element;
+	if (output) {
+		for (size_t output_i = 0; output[output_i]; output_i++) {
+			const char *output_element;
 
-		output_element = output[output_i];
+			output_element = output[output_i];
 
-		/* Marshal a char * onto the message */
-		if (! dbus_message_iter_append_basic (&output_iter, DBUS_TYPE_STRING, &output_element)) {
-			dbus_message_iter_abandon_container (&iter, &output_iter);
-			dbus_message_unref (reply);
-			return -1;
+			/* Marshal a char * onto the message */
+			if (! dbus_message_iter_append_basic (&output_iter, DBUS_TYPE_STRING, &output_element)) {
+				dbus_message_iter_abandon_container (&iter, &output_iter);
+				dbus_message_unref (reply);
+				return -1;
+			}
 		}
 	}
 

@@ -643,12 +643,13 @@ nih_dir_walk_scan (const char    *path,
 						 path, ent->d_name));
 
 		if (ent->d_type == DT_UNKNOWN) {
-			if ( lstat (subpath, &statbuf))
-				isdir = 0;
+			if (lstat (subpath, &statbuf))
+				isdir = FALSE;
 			else
 				isdir = S_ISDIR(statbuf.st_mode);
-		} else
+		} else {
 			isdir = ent->d_type == DT_DIR;
+		}
 
 		if (filter && filter (data, subpath, isdir))
 			continue;

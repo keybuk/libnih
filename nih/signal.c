@@ -87,7 +87,9 @@ static const SignalName signal_names[] = {
 	{ SIGSTKFLT, "STKFLT" },
 #endif
 	{ SIGCHLD,   "CHLD"   },
+#ifdef SIGCLD
 	{ SIGCLD,    "CLD"    },
+#endif
 	{ SIGCONT,   "CONT"   },
 	{ SIGSTOP,   "STOP"   },
 	{ SIGTSTP,   "TSTP"   },
@@ -100,11 +102,15 @@ static const SignalName signal_names[] = {
 	{ SIGPROF,   "PROF"   },
 	{ SIGWINCH,  "WINCH"  },
 	{ SIGIO,     "IO"     },
+#ifdef SIGPOLL
 	{ SIGPOLL,   "POLL"   },
+#endif
 #ifdef SIGLOST
 	{ SIGLOST,   "LOST"   },
 #endif
+#ifdef SIGPWR
 	{ SIGPWR,    "PWR"    },
+#endif
 	{ SIGSYS,    "SYS"    },
 #ifdef SIGUNUSED
 	{ SIGUNUSED, "UNUSED" },

@@ -28,7 +28,7 @@ endif
 
 libnih_dbus_la_LIBADD = \
 	../nih/libnih.la \
-	$(DBUS_LIBS) \
+	$(DBUS_LIBS) @LIBINTL@ \
 	-lrt
 
 
@@ -69,31 +69,31 @@ check_PROGRAMS = $(TESTS)
 
 test_dbus_error_SOURCES = tests/test_dbus_error.c
 test_dbus_error_LDFLAGS = -static
-test_dbus_error_LDADD = libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS)
+test_dbus_error_LDADD = libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS) @LIBINTL@
 
 test_dbus_connection_SOURCES = tests/test_dbus_connection.c
 test_dbus_connection_LDFLAGS = -static
-test_dbus_connection_LDADD = libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS)
+test_dbus_connection_LDADD = libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS) @LIBINTL@
 
 test_dbus_message_SOURCES = tests/test_dbus_message.c
 test_dbus_message_LDFLAGS = -static
-test_dbus_message_LDADD = libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS)
+test_dbus_message_LDADD = libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS) @LIBINTL@
 
 test_dbus_object_SOURCES = tests/test_dbus_object.c
 test_dbus_object_LDFLAGS = -static
-test_dbus_object_LDADD = libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS)
+test_dbus_object_LDADD = libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS) @LIBINTL@
 
 test_dbus_pending_data_SOURCES = tests/test_dbus_pending_data.c
 test_dbus_pending_data_LDFLAGS = -static
-test_dbus_pending_data_LDADD = libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS)
+test_dbus_pending_data_LDADD = libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS) @LIBINTL@
 
 test_dbus_proxy_SOURCES = tests/test_dbus_proxy.c
 test_dbus_proxy_LDFLAGS = -static
-test_dbus_proxy_LDADD = libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS)
+test_dbus_proxy_LDADD = libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS) @LIBINTL@
 
 test_dbus_util_SOURCES = tests/test_dbus_util.c
 test_dbus_util_LDFLAGS = -static
-test_dbus_util_LDADD = libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS)
+test_dbus_util_LDADD = libnih-dbus.la ../nih/libnih.la $(DBUS_LIBS) @LIBINTL@
 
 
 .PHONY: tests

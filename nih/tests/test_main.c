@@ -300,7 +300,7 @@ test_set_pidfile (void)
 	nih_main_set_pidfile (NULL);
 
 	ptr = nih_main_get_pidfile ();
-	TEST_EQ_STR (ptr, "/var/run/test.pid");
+	TEST_EQ_STR (ptr, "/run/test.pid");
 
 
 	nih_main_set_pidfile (NULL);

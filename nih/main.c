@@ -54,7 +54,7 @@
  *
  * Directory to write pid files into.
  **/
-#define VAR_RUN "/var/run"
+#define VAR_RUN "/run"
 
 /**
  * DEV_NULL:
@@ -265,7 +265,7 @@ nih_main_version (void)
  *
  * Perform the necessary steps to become a daemon process, this will only
  * return in the child process if successful.  A file will be written to
- * /var/run/<program_name>.pid containing the pid of the child process.
+ * /run/<program_name>.pid containing the pid of the child process.
  *
  * This is preferable to the libc daemon() function because it ensures
  * that the new process is not a session leader, so can open ttys without
@@ -352,7 +352,7 @@ nih_main_daemonise (void)
  * @filename: filename to be set.
  *
  * Set the location of the process's pid file or NULL to return it to the
- * default location under /var/run.  @filename must be an absolute path.
+ * default location under /run.  @filename must be an absolute path.
  **/
 void
 nih_main_set_pidfile (const char *filename)

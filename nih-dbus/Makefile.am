@@ -56,6 +56,7 @@ pkgconfig_DATA = libnih-dbus.pc
 EXTRA_DIST = libnih-dbus.ver libnih-dbus.supp libnih-dbus.pc.in
 
 
+LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/tap-driver.sh
 TESTS = \
 	test_dbus_error \
 	test_dbus_connection \

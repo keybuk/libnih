@@ -78,6 +78,7 @@ pkgconfig_DATA = libnih.pc
 EXTRA_DIST = libnih.ver libnih.supp libnih.pc.in
 
 
+LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/tap-driver.sh
 TESTS = \
 	test_alloc \
 	test_string \

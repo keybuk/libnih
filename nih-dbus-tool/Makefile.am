@@ -41,6 +41,7 @@ nih_dbus_tool_LDADD = \
 	$(DBUS_LIBS)
 
 
+LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/tap-driver.sh
 TESTS = \
 	test_main \
 	test_symbol \

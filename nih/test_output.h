@@ -33,11 +33,10 @@
 
 #include <nih/macros.h>
 
-static char TEST_BLOCK_NAME[PATH_MAX] = "" ;
-static char TEST_FEATURE_NAME[PATH_MAX] = "" ;
-static int TEST_COUNT = 0;
+static char *TEST_BLOCK_NAME;
+static char *TEST_FEATURE_NAME;
+static size_t TEST_COUNT = 0;
 static int TEST_PLAN_CALLED = FALSE;
-static char TEST_EXIT_LOCK[PATH_MAX] = "";
 static inline void print_last ( void );
 
 /**
@@ -59,7 +58,7 @@ static inline void print_last ( void );
  * Output the number of tests that got executed.
  **/
 #define TEST_PLAN_END() \
-	if (! TEST_PLAN_CALLED) printf ("1..%d\n", TEST_COUNT)
+	if (! TEST_PLAN_CALLED) printf ("1..%zu\n", TEST_COUNT)
 
 /**
  * TEST_PRINT_RESULT(_ok)
@@ -67,13 +66,15 @@ static inline void print_last ( void );
  *
  * Output result of last run function if any.
  **/
-#define TEST_PRINT_RESULT(_ok)						\
-	if (TEST_COUNT == 0) {						\
+#define TEST_PRINT_RESULT()						\
+	if (TEST_COUNT)							\
+		printf ("%s %zu - %s %s\n", "ok", TEST_COUNT, TEST_BLOCK_NAME, TEST_FEATURE_NAME); \
+	else {								\
+		static char TEST_EXIT_LOCK[30] = "";			\
 		sprintf (TEST_EXIT_LOCK, "%d", getpid() );		\
 		setenv ("TEST_EXIT_LOCK", TEST_EXIT_LOCK, 1);		\
 		atexit (print_last);					\
 	}								\
-        if (TEST_COUNT > 0) printf ("%s %d - %s %s\n", _ok ? "ok" : "not ok", TEST_COUNT, TEST_BLOCK_NAME, TEST_FEATURE_NAME)
 
 /**
  * print_last:
@@ -84,7 +85,7 @@ static inline void
 print_last ( void )
 {
 	if ( atoi (getenv ("TEST_EXIT_LOCK")) == getpid ()) {
-		TEST_PRINT_RESULT (TRUE);
+		TEST_PRINT_RESULT ();
 		TEST_PLAN_END();
 	}
 }
@@ -97,16 +98,12 @@ print_last ( void )
  * Output a message indicating that a group of tests testing @_name are
  * being performed.
  **/
-#define TEST_GROUP(_name) TEST_PRINT_RESULT (TRUE); TEST_COUNT++; strcpy(TEST_BLOCK_NAME, _name); strcpy(TEST_FEATURE_NAME, "")
+#define TEST_GROUP(_name) TEST_PRINT_RESULT (); TEST_COUNT++; TEST_BLOCK_NAME=_name; TEST_FEATURE_NAME=""
 
-/**
- * TEST_FUNCTION:
- * @_func: name of function being tested.
- *
- * Output a message indicating that tests of the function named @_func are
- * being performed.
- **/
-#define TEST_FUNCTION(_func) TEST_PRINT_RESULT (TRUE); TEST_COUNT++; strcpy(TEST_BLOCK_NAME, _func); strcat(TEST_BLOCK_NAME, "()"); strcpy(TEST_FEATURE_NAME, "")
+
+#define BRACE ()
+#define STR(s) #s
+#define XSTR(s) STR(s)
 
 /**
  * TEST_FUNCTION_FEATURE:
@@ -116,7 +113,16 @@ print_last ( void )
  * Output a message indicating that tests of the function named @_func are
  * being performed, specifically of the @_feat feature.
  **/
-#define TEST_FUNCTION_FEATURE(_func, _feat) TEST_GROUP(_func##_feat)
+#define TEST_FUNCTION_FEATURE(_func, _feat) TEST_GROUP(_func XSTR(BRACE)); TEST_FEATURE_NAME=_feat
+
+/**
+ * TEST_FUNCTION:
+ * @_func: name of function being tested.
+ *
+ * Output a message indicating that tests of the function named @_func are
+ * being performed.
+ **/
+#define TEST_FUNCTION(_func) TEST_GROUP(_func XSTR(BRACE))
 
 /**
  * TEST_FEATURE:
@@ -125,7 +131,7 @@ print_last ( void )
  * Output a message indicating that a sub-test of a function or
  * group is being performed, specifically the feature named _feat.
  **/
-#define TEST_FEATURE(_feat) TEST_PRINT_RESULT (TRUE); TEST_COUNT++; strcpy(TEST_FEATURE_NAME, _feat)
+#define TEST_FEATURE(_feat) TEST_PRINT_RESULT (); TEST_COUNT++; TEST_FEATURE_NAME=_feat
 
 /**
  * TEST_FAILED:
@@ -134,19 +140,11 @@ print_last ( void )
  * Output a formatted message indicating that a test has failed, including
  * the file, line number and function where the failure happened.
  **/
-#ifdef TEST_TAP_BAIL_ON_FAIL
-#define TEST_BAIL() printf ("Bail out!\n"); abort ()
-#else
-#define TEST_BAIL() {}
-#endif
-
 #define TEST_FAILED(_fmt, ...)					       \
-	do {							       \
-		if (++TEST_COUNT)				       \
-			TEST_PRINT_RESULT(FALSE);		       \
-		printf (" BAD: " _fmt "\n\tat %s:%d (%s).\n",		\
+	{								\
+		printf ("Bail out! " _fmt "\tat %s:%d (%s).\n",		\
 			##__VA_ARGS__, __FILE__, __LINE__, __FUNCTION__); \
-		TEST_BAIL();						\
-	} while (0)
+		abort();						\
+	}
 
 #endif /* NIH_TEST_OUTPUT_H */

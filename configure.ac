@@ -11,6 +11,7 @@ AC_GNU_SOURCE
 AM_INIT_AUTOMAKE([1.11 gnu nostdinc check-news color-tests silent-rules])
 AC_REQUIRE_AUX_FILE([tap-driver.sh])
 AC_PROG_AWK
+AC_DEFINE([NIH_TAP_OUTPUT], [1], [Do not abort on test failure])
 AM_SILENT_RULES([yes])
 AM_MAINTAINER_MODE([enable])
 

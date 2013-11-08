@@ -121,6 +121,12 @@ print_last ( void )
  **/
 #define TEST_START(_name) TEST_PRINT_OK(); TEST_NAME=_name; TEST_COUNT++;
 
+#ifdef NIH_TAP_OUTPUT
+#define TEST_FAILED_ABORT() {}
+#else
+#define TEST_FAILED_ABORT() abort ()
+#endif
+
 /**
  * TEST_FAILED:
  * @_fmt: format string.
@@ -132,6 +138,7 @@ print_last ( void )
 	do {								\
 		TEST_PRINT_BAD(); TEST_NAME=NULL;			\
 		printf ("\t" _fmt "\n\tat %s:%d (%s).\n", ##__VA_ARGS__, __FILE__, __LINE__, __FUNCTION__); \
+		TEST_FAILED_ABORT ();					\
 	} while (0)
 
 #define TEST_GROUP TEST_START

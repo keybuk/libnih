@@ -26,18 +26,31 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <limits.h>
-#include <sys/file.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 #include <nih/macros.h>
 
-static char *TEST_BLOCK_NAME;
-static char *TEST_FEATURE_NAME;
+static char *TEST_NAME=NULL;
 static size_t TEST_COUNT = 0;
 static int TEST_PLAN_CALLED = FALSE;
-static inline void print_last ( void );
+
+
+/* Forward weak declarations of functions. This header is protected
+   from multiple inclusions, but that protection is only for a single
+   translation unit. With weak symbols, however, we can link multiple
+   objects that included this header without causing multiple
+   declarations error.
+*/
+void TEST_PRINT_RESULT(const char *)
+	__attribute__((weak));
+
+void print_last ( void )
+	__attribute__((weak));
+
+#define OK "ok"
+#define BAD "not ok"
+#define TEST_PRINT_OK() TEST_PRINT_RESULT (OK)
+#define TEST_PRINT_BAD() TEST_PRINT_RESULT (BAD)
 
 /**
  * TEST_PLAN:
@@ -61,77 +74,52 @@ static inline void print_last ( void );
 	if (! TEST_PLAN_CALLED) printf ("1..%zu\n", TEST_COUNT)
 
 /**
- * TEST_PRINT_RESULT(_ok)
- * @_ok: test result
+ * TEST_PRINT_RESULT(ok)
+ * @ok: test result
  *
  * Output result of last run function if any.
  **/
-#define TEST_PRINT_RESULT()						\
-	if (TEST_COUNT)							\
-		printf ("%s %zu - %s %s\n", "ok", TEST_COUNT, TEST_BLOCK_NAME, TEST_FEATURE_NAME); \
-	else {								\
-		static char TEST_EXIT_LOCK[30] = "";			\
-		sprintf (TEST_EXIT_LOCK, "%d", getpid() );		\
-		setenv ("TEST_EXIT_LOCK", TEST_EXIT_LOCK, 1);		\
-		atexit (print_last);					\
-	}								\
+void
+TEST_PRINT_RESULT(const char * ok)
+{		
+	if (TEST_NAME) {
+		printf ("%s %zu - %s\n", ok, TEST_COUNT, TEST_NAME);
+		return;
+	}
+
+	static int initialised = 0;
+
+	if (! initialised) {
+		char TEST_EXIT_LOCK[30] = "";
+		sprintf (TEST_EXIT_LOCK, "%d", getpid() );		
+		setenv ("TEST_EXIT_LOCK", TEST_EXIT_LOCK, 1);		
+		atexit (print_last);
+		initialised = 1;
+	}
+}
 
 /**
  * print_last:
  *
  * atexit handler to print the last test result, and exit plan if needed.
  **/
-static inline void
+void
 print_last ( void )
 {
 	if ( atoi (getenv ("TEST_EXIT_LOCK")) == getpid ()) {
-		TEST_PRINT_RESULT ();
+		TEST_PRINT_RESULT ("ok");
 		TEST_PLAN_END();
 	}
 }
 
-
 /**
- * TEST_GROUP:
+ * TEST_NAME:
  * @_name: name of group being tested.
  *
  * Output a message indicating that a group of tests testing @_name are
  * being performed.
  **/
-#define TEST_GROUP(_name) TEST_PRINT_RESULT (); TEST_COUNT++; TEST_BLOCK_NAME=_name; TEST_FEATURE_NAME=""
-
-
-#define BRACE ()
-#define STR(s) #s
-#define XSTR(s) STR(s)
-
-/**
- * TEST_FUNCTION_FEATURE:
- * @_func: name of function being tested,
- * @_feat: feature being tested.
- *
- * Output a message indicating that tests of the function named @_func are
- * being performed, specifically of the @_feat feature.
- **/
-#define TEST_FUNCTION_FEATURE(_func, _feat) TEST_GROUP(_func XSTR(BRACE)); TEST_FEATURE_NAME=_feat
-
-/**
- * TEST_FUNCTION:
- * @_func: name of function being tested.
- *
- * Output a message indicating that tests of the function named @_func are
- * being performed.
- **/
-#define TEST_FUNCTION(_func) TEST_GROUP(_func XSTR(BRACE))
-
-/**
- * TEST_FEATURE:
- * @_feat: name of function or group feature being tested.
- *
- * Output a message indicating that a sub-test of a function or
- * group is being performed, specifically the feature named _feat.
- **/
-#define TEST_FEATURE(_feat) TEST_PRINT_RESULT (); TEST_COUNT++; TEST_FEATURE_NAME=_feat
+#define TEST_START(_name) TEST_PRINT_OK(); TEST_NAME=_name; TEST_COUNT++;
 
 /**
  * TEST_FAILED:
@@ -140,11 +128,15 @@ print_last ( void )
  * Output a formatted message indicating that a test has failed, including
  * the file, line number and function where the failure happened.
  **/
-#define TEST_FAILED(_fmt, ...)					       \
-	{								\
-		printf ("Bail out! " _fmt "\tat %s:%d (%s).\n",		\
-			##__VA_ARGS__, __FILE__, __LINE__, __FUNCTION__); \
-		abort();						\
-	}
+#define TEST_FAILED(_fmt, ...)						\
+	do {								\
+		TEST_PRINT_BAD(); TEST_NAME=NULL;			\
+		printf ("\t" _fmt "\n\tat %s:%d (%s).\n", ##__VA_ARGS__, __FILE__, __LINE__, __FUNCTION__); \
+	} while (0)
+
+#define TEST_GROUP TEST_START
+#define TEST_FUNCTION TEST_START
+#define TEST_FEATURE TEST_START
+#define TEST_FUNCTION_FEATURE(_func, _feat) TEST_START(_func); TEST_START(_feat)
 
 #endif /* NIH_TEST_OUTPUT_H */

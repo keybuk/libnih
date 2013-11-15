@@ -26,11 +26,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
+#include <linux/limits.h>
 
 #include <nih/macros.h>
 
-static char *TEST_NAME=NULL;
+static char TEST_NAME[PATH_MAX]="";
 static size_t TEST_COUNT = 0;
 static int TEST_PLAN_CALLED = FALSE;
 
@@ -82,7 +84,7 @@ void print_last ( void )
 void
 TEST_PRINT_RESULT(const char * ok)
 {		
-	if (TEST_NAME) {
+	if (strlen(TEST_NAME) > 0) {
 		printf ("%s %zu - %s\n", ok, TEST_COUNT, TEST_NAME);
 		return;
 	}
@@ -119,7 +121,7 @@ print_last ( void )
  * Output a message indicating that a group of tests testing @_name are
  * being performed.
  **/
-#define TEST_START(_name) TEST_PRINT_OK(); TEST_NAME=_name; TEST_COUNT++;
+#define TEST_START(_name) TEST_PRINT_OK(); strncpy(TEST_NAME, _name, PATH_MAX-1); TEST_COUNT++;
 
 #ifdef NIH_TAP_OUTPUT
 #define TEST_FAILED_ABORT() {}
@@ -136,7 +138,7 @@ print_last ( void )
  **/
 #define TEST_FAILED(_fmt, ...)						\
 	do {								\
-		TEST_PRINT_BAD(); TEST_NAME=NULL;			\
+		TEST_PRINT_BAD(); strcpy(TEST_NAME, "");		\
 		printf ("\t" _fmt "\n\tat %s:%d (%s).\n", ##__VA_ARGS__, __FILE__, __LINE__, __FUNCTION__); \
 		TEST_FAILED_ABORT ();					\
 	} while (0)

@@ -43,7 +43,7 @@
 
 /**
  * TEST_HASH_NOT_EMPTY:
- * @_list: entry in list.
+ * @_hash: entry in list.
  *
  * Check that the hash table @_hash is not empty.
  **/

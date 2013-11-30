@@ -21,6 +21,10 @@
 #define NIH_STRING_H
 
 /**
+ * SECTION:string
+ * @Short_description: Strings and string arrays
+ * @Title: String
+ *
  * These functions provide string utilities that use the nih_alloc()
  * functions for memory management.  This allows you to create and modify
  * strings, and arrays of strings, which may be referenced by other objects

@@ -21,6 +21,10 @@
 #define NIH_OPTION_H
 
 /**
+ * SECTION:option
+ * @short_description: Option and arguments parser
+ * @Title: Option
+ * 
  * Provides a flexible command-line option and arguments parser that
  * automatically provides built-in options for adjusting output verbosity
  * and provides --help output.
@@ -42,7 +46,7 @@
 
 
 /**
- * NihOptionSetter;
+ * NihOptionSetter:
  * @option: NihOption invoked,
  * @arg: argument to parse.
  *

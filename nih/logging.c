@@ -132,7 +132,8 @@ nih_log_abort_message (const char *message)
 /**
  * nih_log_message:
  * @priority: priority of message,
- * @format: printf-style format string.
+ * @format: printf-style format string,
+ * @...: format string arguments.
  *
  * Outputs a message constructed from @format and the rest of the arguments
  * by passing it to the logger function if @priority is not lower than

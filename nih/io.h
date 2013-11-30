@@ -29,6 +29,8 @@
 
 /**
  * NihIoType:
+ * @NIH_IO_STREAM: stream
+ * @NIH_IO_MESSAGE: message
  *
  * Whether an NihIo structure is used for a buffered stream of data, or
  * a queue of discreet messages.
@@ -40,6 +42,10 @@ typedef enum {
 
 /**
  * NihIoEvents:
+ * @NIH_IO_NONE: no events,
+ * @NIH_IO_READ: read,
+ * @NIH_IO_WRITE: write,
+ * @NIH_IO_EXCEPT: exception.
  *
  * Events that we can watch for, generally used as a bit mask of the events
  * that have occurred.
@@ -90,10 +96,10 @@ typedef void (*NihIoWatcher) (void *data, NihIoWatch *watch,
  * this message from the queue, otherwise when a new message arrives, the
  * function will still be called with the same oldest message.
  *
- * It is safe to call nih_io_close() from within the reader function, this
+ * It is safe to call nih_io_shutdown() from within the reader function, this
  * results in the structure being flagged to be closed when the watcher
  * that invokes it has finished.  You must not nih_free() @io or cause it
- * to be freed from within this function, except by nih_io_close().
+ * to be freed from within this function, except by nih_io_closed().
  **/
 typedef void (*NihIoReader) (void *data, NihIo *io,
 			     const char *buf, size_t len);
@@ -108,8 +114,8 @@ typedef void (*NihIoReader) (void *data, NihIo *io,
  * read from it.
  *
  * It should take appropriate action, which may include closing the
- * file descriptor with nih_io_close().  You must not nih_free() @io or
- * cause it to be freed from within this function, except by nih_io_close().
+ * file descriptor with nih_io_closed().  You must not nih_free() @io or
+ * cause it to be freed from within this function, except by nih_io_closed().
  **/
 typedef void (*NihIoCloseHandler) (void *data, NihIo *io);
 
@@ -123,8 +129,8 @@ typedef void (*NihIoCloseHandler) (void *data, NihIo *io);
  * itself can be obtained using nih_error_get().
  *
  * It should take appropriate action, which may include closing the
- * file descriptor with nih_io_close().  You must not nih_free() @io or
- * cause it to be freed from within this function, except by nih_io_close().
+ * file descriptor with nih_io_closed().  You must not nih_free() @io or
+ * cause it to be freed from within this function, except by nih_io_closed().
  **/
 typedef void (*NihIoErrorHandler) (void *data, NihIo *io);
 
@@ -273,7 +279,7 @@ NihIoWatch *  nih_io_add_watch           (const void *parent, int fd,
 
 void          nih_io_select_fds          (int *nfds, fd_set *readfds,
 					  fd_set *writefds, fd_set *exceptfds);
-void          nih_io_handle_fds          (fd_set *readfds, fd_set *writewfds,
+void          nih_io_handle_fds          (fd_set *readfds, fd_set *writefds,
 					  fd_set *exceptfds);
 
 

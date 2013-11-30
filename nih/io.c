@@ -65,7 +65,7 @@ static NihIoMessage * nih_io_first_message  (NihIo *io);
 
 
 /**
- * nih_io_watches;
+ * nih_io_watches:
  *
  * This is the list of current watches on file descriptors and sockets,
  * not sorted into any particular order.  Each item is an NihIoWatch
@@ -1242,7 +1242,7 @@ nih_io_closed (NihIo *io)
  *
  * Marks the NihIo structure to be closed once the buffers or queue have
  * been emptied, rather than immediately.  Closure is performed by calling
- * the close handler if given or nih_io_close().
+ * the close handler if given or nih_io_closed().
  *
  * This is most useful to send a burst of data and discard the structure
  * once the data has been sent, without worrying about keeping track of
@@ -1630,7 +1630,8 @@ finish:
 /**
  * nih_io_printf:
  * @io: structure to write to,
- * @format: printf format string.
+ * @format: printf format string,
+ * @...: format string arguments.
  *
  * Writes data formatted according to the printf-style @format string to
  * the send buffer of @io, or into a new message placed in the send queue.

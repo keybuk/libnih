@@ -21,6 +21,10 @@
 #define NIH_ERROR_H
 
 /**
+ * SECTION:error
+ * @Short_description: System and application error handling
+ * @Title: Error
+ *
  * Many functions in libnih use these functions to report information about
  * errors, those that don't use the ordinary errno mechnism which can
  * also be reported within this framework.
@@ -92,6 +96,10 @@
  * front of your structure, rather than an NihError named member - this
  * makes code that uses your custom error a little easier.
  **/
+#ifndef __GTK_DOC_IGNORE__
+/* gtk-doc can't parse below, keep nih-overrides.txt in sync with
+ * changes below
+ */
 typedef struct nih_error {
 #define NIH_ERROR_MEMBERS			\
 	const char *filename;			\
@@ -103,6 +111,7 @@ typedef struct nih_error {
 
 	NIH_ERROR_MEMBERS
 } NihError;
+#endif
 
 
 /**
@@ -123,7 +132,8 @@ typedef struct nih_error {
 /**
  * nih_error_raise_printf:
  * @number: numeric identifier,
- * @format: format string for human-readable message.
+ * @format: format string for human-readable message,
+ * @...: format string arguments.
  *
  * Raises an error with the given details in the current error context,
  * if an unhandled error already exists then an error message is emitted

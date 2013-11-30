@@ -21,6 +21,10 @@
 #define NIH_CONFIG_H
 
 /**
+ * SECTION:config
+ * @Short_description: Configuration parser
+ * @Title: Config
+ * 
  * Implements a flexible configuration parser based on keyword stanzas and zero
  * or more arguments, handling such matters as quotation, whitespace and
  * commands for you.
@@ -46,7 +50,6 @@
  * NihConfigHandler:
  * @data: data passed to parser,
  * @stanza: stanza found,
- * @filename: name of file being parsed,
  * @lineno: line number,
  * @file: file or string to parse,
  * @len: length of @file,
@@ -69,7 +72,7 @@
  * functions).
  *
  * If you encounter errors, you should use the usual logging functions to
- * output warnings using both @filename and @lineno, but only if @filename
+ * output warnings using both @file and @lineno, but only if @file
  * is not NULL.
  *
  * Returns: zero on success, negative value on raised error.

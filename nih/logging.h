@@ -21,6 +21,10 @@
 #define NIH_LOGGING_H
 
 /**
+ * SECTION:logging
+ * @Short_description: Logging interface
+ * @Title: Logging
+ * 
  * These functions provide a logging interface for outputting messages
  * at different priorities, and filtering based on them.
  *
@@ -38,6 +42,13 @@
 
 /**
  * NihLogLevel:
+ * @NIH_LOG_UNKNOWN: not set,
+ * @NIH_LOG_DEBUG: debug,
+ * @NIH_LOG_INFO: informative,
+ * @NIH_LOG_MESSAGE: message,
+ * @NIH_LOG_WARN: warning,
+ * @NIH_LOG_ERROR: error,
+ * @NIH_LOG_FATAL: fatal.
  *
  * Severity of log messages, used both to influence formatting of the
  * message and to filter messages below a particular severity.
@@ -71,7 +82,8 @@ typedef int (*NihLogger) (NihLogLevel priority, const char *message);
 
 /**
  * nih_debug:
- * @format: printf-style format string.
+ * @format: printf-style format string,
+ * @...: format string arguments.
  *
  * Outputs a debugging message, including the name of the function that
  * generated it.  Almost never shown, except when debugging information is
@@ -83,7 +95,8 @@ typedef int (*NihLogger) (NihLogLevel priority, const char *message);
 
 /**
  * nih_info:
- * @format: printf-style format string.
+ * @format: printf-style format string,
+ * @...: format string arguments.
  *
  * Outputs a message that is purely informational, usually not shown unless
  * the user wants verbose operation.
@@ -93,7 +106,8 @@ typedef int (*NihLogger) (NihLogLevel priority, const char *message);
 
 /**
  * nih_message:
- * @format: printf-style format string.
+ * @format: printf-style format string,
+ * @...: format string arguments.
  *
  * Outputs a message from a non-daemon process that is normally shown unless
  * the user wants quiet operation.  The difference between this and nih_warn()
@@ -105,7 +119,8 @@ typedef int (*NihLogger) (NihLogLevel priority, const char *message);
 
 /**
  * nih_warn:
- * @format: printf-style format string.
+ * @format: printf-style format string,
+ * @...: format string arguments.
  *
  * Outputs a warning message, one that indicates a potential problem that
  * has been ignored; these are shown by default unless the user wants quiet
@@ -116,7 +131,8 @@ typedef int (*NihLogger) (NihLogLevel priority, const char *message);
 
 /**
  * nih_error:
- * @format: printf-style format string.
+ * @format: printf-style format string,
+ * @...: format string arguments.
  *
  * Outputs an error message, one that the software may be able to recover
  * from but that has caused an operation to fail.  These are shown in all
@@ -127,7 +143,8 @@ typedef int (*NihLogger) (NihLogLevel priority, const char *message);
 
 /**
  * nih_fatal:
- * @format: printf-style format string.
+ * @format: printf-style format string,
+ * @...: format string arguments.
  *
  * Outputs a fatal error message that caused the software to cease
  * functioning.  Always shown.

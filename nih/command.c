@@ -247,7 +247,7 @@ nih_command_join (const void       *parent,
  *
  * Find the command structure with the given @command in the @commands list.
  *
- * Returns; pointer to command or NULL if not found.
+ * Returns: pointer to command or NULL if not found.
  **/
 static NihCommand *
 nih_command_get (NihCommand *commands,

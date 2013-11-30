@@ -71,7 +71,8 @@
 
 /**
  * TEST_FAILED:
- * @_fmt: format string.
+ * @_fmt: format string,
+ * @...: format string arguments.
  *
  * Output a formatted message indicating that a test has failed, including
  * the file, line number and function where the failure happened.

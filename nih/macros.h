@@ -21,6 +21,10 @@
 #define NIH_MACROS_H
 
 /**
+ * SECTION:macros
+ * @short_description: Useful macros
+ * @title: Macros
+ *
  * This header tends to be included by every file that uses libnih, it makes
  * sure various sensible macros and types (including standard ones from the
  * C library) are defined.
@@ -183,7 +187,7 @@
 
 /**
  * _:
- * @_str:
+ * @_str: string.
  *
  * Marks the string @str for translation, if gettext is available.
  *
@@ -206,7 +210,7 @@
 
 /**
  * N_:
- * @_str:
+ * @_str: string.
  *
  * Marks the static string @_str for translation by gettext, but does not
  * return the translation.  You must call gettext() on the string before

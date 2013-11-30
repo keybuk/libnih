@@ -21,6 +21,10 @@
 #define NIH_HASH_H
 
 /**
+ * SECTION:hash
+ * @short_description: Generic hash tables
+ * @Title: Hash
+ *
  * Provides a generic hash table implementation using NihList for the bins,
  * which means that entries may be freely moved between lists and hash
  * tables.

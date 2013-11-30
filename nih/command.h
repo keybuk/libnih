@@ -21,6 +21,10 @@
 #define NIH_COMMAND_H
 
 /**
+ * SECTION:command
+ * @Short_description: Sub-commands options and arguments
+ * @Title: Command
+ *
  * Builds on the command-line option and arguments parser to provide an
  * application interface where the first non-option argument is the name
  * of a command.  Both global and command-specific options are permitted,
@@ -40,7 +44,7 @@
 
 
 /**
- * NihCommandAction;
+ * NihCommandAction:
  * @command: NihCommand invoked,
  * @args: command-line arguments.
  *

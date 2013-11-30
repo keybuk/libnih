@@ -21,6 +21,10 @@
 #define NIH_ALLOC_H
 
 /**
+ * SECTION:alloc
+ * @Short_description: Object memory allocation
+ * @Title: Alloc
+ *
  * All functions in libnih use these functions to allocate and destroy
  * objects in memory, they wrap the usual malloc(), realloc() and free()
  * calls to provide a multi-reference hierarchial allocator.

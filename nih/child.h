@@ -26,16 +26,28 @@
 #include <nih/macros.h>
 #include <nih/list.h>
 
+/**
+ * SECTION:child
+ * @Short_description: Monitoring child processes
+ * @Title: Child
+ **/
 
 /**
  * NihChildEvents:
+ * @NIH_CHILD_NONE: none
+ * @NIH_CHILD_EXITED: exit status of the program
+ * @NIH_CHILD_KILLED: killed
+ * @NIH_CHILD_DUMPED: dumped
+ * @NIH_CHILD_STOPPED: stopped
+ * @NIH_CHILD_CONTINUED: continued
+ * @NIH_CHILD_TRAPPED: trapped
+ * @NIH_CHILD_PTRACE: one of the @PTRACE_EVENT_* constants or the
+ * signal that killed, dumped, stopped or continued the process or was
+ * trapped through ptrace.
+ * @NIH_CHILD_ALL: all
  *
  * Events that can occur for child processes, and used to determine the
- * content of the translated status field.  For NIH_CHILD_EXITED this will
- * contain the exit status of the program; for NIH_CHILD_PTRACE this will
- * contain one of the PTRACE_EVENT_* constants; otherwise this will
- * contain the signal that killed, dumped, stopped or continued the process
- * or was trapped through ptrace.
+ * content of the translated status field.
  **/
 typedef enum {
 	NIH_CHILD_NONE      = 0000,

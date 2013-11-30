@@ -21,6 +21,10 @@
 #define NIH_LIST_H
 
 /**
+ * SECTION:list
+ * @short_description: Circular doubly-linked lists
+ * @Title: List
+ *
  * Provides a generic circular doubly-linked list implementation.  Like
  * all doubly-linked lists, each entry carries both a pointer to the
  * previous entry in the list and a pointer to the next entry in the list.
@@ -48,7 +52,7 @@
  * entry which is most commonly the list head.  This adds the entry "before"
  * the given entry, in the list head case this appends the entry to the list.
  * To add "after" the given entry (prepending in the list head case) use
- * nih_list_add_before().
+ * nih_list_add_after().
  *
  * To remove an entry from the list use nih_list_remove().  The entry
  * effectively becomes the list head of an empty list.

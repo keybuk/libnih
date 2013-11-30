@@ -58,10 +58,21 @@ AS_IF([test "$cross_compiling" = "yes"],
 	      AC_SUBST([NIH_DBUS_TOOL], ["\${top_builddir}/nih-dbus-tool/nih-dbus-tool"])])],
       [AC_SUBST([NIH_DBUS_TOOL], ["\${top_builddir}/nih-dbus-tool/nih-dbus-tool"])])
 
+# check for gtk-doc
+m4_ifdef([GTK_DOC_CHECK], [
+_PACKAGE_NAME=$PACKAGE_NAME
+PACKAGE_NAME="glib"
+GTK_DOC_CHECK([1.14],[--flavour no-tmpl])
+PACKAGE_NAME=_PACKAGE_NAME
+],[
+AM_CONDITIONAL([ENABLE_GTK_DOC], false)
+])
+
 AC_CONFIG_FILES([ Makefile m4/Makefile intl/Makefile
 		  nih/Makefile nih/libnih.pc
 		  nih-dbus/Makefile nih-dbus/libnih-dbus.pc
 		  nih-dbus-tool/Makefile
+		  docs/reference/nih/Makefile
 		  po/Makefile.in ])
 AC_CONFIG_HEADERS([config.h])
 AC_OUTPUT

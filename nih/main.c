@@ -265,7 +265,7 @@ nih_main_version (void)
  *
  * Perform the necessary steps to become a daemon process, this will only
  * return in the child process if successful.  A file will be written to
- * /var/run/<program_name>.pid containing the pid of the child process.
+ * /var/run/@program_name.pid containing the pid of the child process.
  *
  * This is preferable to the libc daemon() function because it ensures
  * that the new process is not a session leader, so can open ttys without

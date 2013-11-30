@@ -23,6 +23,10 @@
 #include <nih/macros.h>
 
 /**
+ * SECTION:tree
+ * @short_description: Binary trees
+ * @Title: Tree
+ *
  * Provides a generic binary tree implementation.  No assumption is
  * made about the structure of the tree, or its rules.  Instead when
  * you add a node to a tree, you must specify the parent node and whether
@@ -68,6 +72,8 @@
 
 /**
  * NihTreeWhere:
+ * @NIH_TREE_LEFT: left,
+ * @NIH_TREE_RIGHT: right.
  *
  * These constants define a position for one node, relative to another;
  * usually for when adding a node to an existing tree.

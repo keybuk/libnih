@@ -41,6 +41,9 @@ typedef void (*NihTimerCb) (void *data, NihTimer *timer);
 
 /**
  * NihTimerType:
+ * @NIH_TIMER_TIMEOUT: timeout,
+ * @NIH_TIMER_PERIODIC: periodic,
+ * @NIH_TIMER_SCHEDULED: scheduled.
  *
  * Used to identify the different types of timers that can be registered;
  * note that scheduled timers are not yet implemented.

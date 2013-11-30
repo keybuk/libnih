@@ -24,6 +24,11 @@
 
 #include <errno.h>
 
+/**
+ * SECTION:errors
+ * @Short_description: Well-known errors
+ * @Title: Errors
+ **/
 
 /* Allocated error numbers */
 enum {

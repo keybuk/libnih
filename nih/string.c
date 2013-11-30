@@ -42,7 +42,8 @@
 /**
  * nih_sprintf:
  * @parent: parent object for new string,
- * @format: format string.
+ * @format: format string,
+ * @...: format string arguments.
  *
  * Writes a new string according to @format as sprintf(), except that the
  * string is allocated using nih_alloc().
@@ -268,7 +269,8 @@ nih_strncat (char       **str,
  * nih_strcat_sprintf:
  * @str: pointer to string to modify,
  * @parent: parent object of new string,
- * @format: format string to append to @str.
+ * @format: format string to append to @str,
+ * @...: format string arguments.
  *
  * Modifies @str, concatenating according to @format as sprintf().  The new
  * string is allocated using nih_alloc(), and @str will be updated to point

@@ -35,9 +35,11 @@
  * functions called by nih_alloc().  We can't use libc malloc hooks because
  * valgrind doesn't implement them - and I like valgrind.
  */
+#ifndef __GTK_DOC_IGNORE__
 extern void *(*__nih_malloc)(size_t size);
 extern void *(*__nih_realloc)(void *ptr, size_t size);
 extern void (*__nih_free)(void *ptr);
+#endif
 
 
 /**
@@ -200,7 +202,7 @@ _test_malloc (size_t size)
 
 
 /**
- * struct _test_free_tag:
+ * test_free_tag:
  * @entry: list entry,
  * @ptr: tagged object.
  *

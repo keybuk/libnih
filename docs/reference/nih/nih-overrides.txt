@@ -1,0 +1,11 @@
+<STRUCT>
+<NAME>NihError</NAME>
+typedef struct nih_error {
+	const char *filename;
+	int         line;			
+	const char *function;			
+						
+	int         number;			
+	const char *message;
+} NihError;
+</STRUCT>

@@ -254,7 +254,7 @@ error:
  * exists with the short option '-' this is used instead if no specific
  * option is found.
  *
- * Returns; pointer to option, or NULL if not found.
+ * Returns: pointer to option, or NULL if not found.
  **/
 static NihOption *
 nih_option_get_short (NihOptionCtx *ctx,
@@ -335,7 +335,7 @@ nih_option_short (NihOptionCtx *ctx)
  * the first @len characters will be read.  If an option named "--" exists
  * then it is used if no other option could be found.
  *
- * Returns; pointer to option, or NULL if not found.
+ * Returns: pointer to option, or NULL if not found.
  **/
 static NihOption *
 nih_option_get_long (NihOptionCtx *ctx,

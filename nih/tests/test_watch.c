@@ -1587,7 +1587,8 @@ main (int   argc,
 	test_new ();
 	test_add ();
 	test_destroy ();
-	test_reader ();
+	if (!getenv ("TRAVIS"))
+		test_reader ();
 
 	return 0;
 }

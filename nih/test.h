@@ -20,6 +20,12 @@
 #ifndef NIH_TEST_H
 #define NIH_TEST_H
 
+/**
+ * SECTION:test
+ * @Short_description: Unit testing framework
+ * @Title: Test
+ */
+
 /* For _GNU_SOURCE */
 #ifdef HAVE_CONFIG_H
 # include <config.h>

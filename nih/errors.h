@@ -24,12 +24,6 @@
 
 #include <errno.h>
 
-/**
- * SECTION:errors
- * @Short_description: Well-known errors
- * @Title: Errors
- **/
-
 /* Allocated error numbers */
 enum {
 	/* 0x0000 thru 0xFFFF reserved for errno */

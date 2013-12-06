@@ -20,6 +20,12 @@
 #ifndef NIH_MAIN_H
 #define NIH_MAIN_H
 
+/**
+ * SECTION:main
+ * @Short_description: Application main loop
+ * @Title: Main Loop
+ */
+
 #include <nih/macros.h>
 #include <nih/list.h>
 #include <nih/signal.h>

@@ -20,6 +20,12 @@
 #ifndef NIH_TIMER_H
 #define NIH_TIMER_H
 
+/**
+ * SECTION:timer
+ * @Short_description: Delayed execution
+ * @Title: Timer
+ */
+
 #include <nih/macros.h>
 #include <nih/list.h>
 

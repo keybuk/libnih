@@ -26,6 +26,12 @@
 #include <nih/macros.h>
 #include <nih/list.h>
 
+/**
+ * SECTION:io
+ * @Short_description: Efficient and high-throughput IO
+ * @Title: IO
+ */
+
 
 /**
  * NihIoType:

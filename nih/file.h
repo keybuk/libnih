@@ -20,6 +20,12 @@
 #ifndef NIH_FILE_H
 #define NIH_FILE_H
 
+/**
+ * SECTION:file
+ * @Short_description: Directory traversal and file reading
+ * @Title: File
+ */
+
 #include <sys/types.h>
 #include <sys/stat.h>
 

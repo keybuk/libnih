@@ -6,46 +6,44 @@
 ]>
 <book id="index">
   <bookinfo>
-    <title>nih Reference Manual</title>
+    <title>NIH Utility Library Reference Manual</title>
     <releaseinfo>
-      for nih 1.0.
+      for libnih 1.0.
       The latest version of this documentation can be found on-line at
-      <ulink role="online-location" url="http://[SERVER]/nih/index.html">http://[SERVER]/nih/</ulink>.
+      <ulink role="online-location" url="http://libnih.la/">http://libnih.la/</ulink>.
     </releaseinfo>
   </bookinfo>
 
   <chapter>
-    <title>NIH Utility Library</title>
-        <xi:include href="xml/alloc.xml"/>
-    <xi:include href="xml/child.xml"/>
+    <title>Memory Management and Basic Types</title>
+    <xi:include href="xml/alloc.xml"/>
+    <xi:include href="xml/string.xml"/>
+    <xi:include href="xml/list.xml"/>
+    <xi:include href="xml/tree.xml"/>
+    <xi:include href="xml/hash.xml"/>
+    <xi:include href="xml/macros.xml"/>
+    <xi:include href="xml/test.xml"/>
+  </chapter>
+  <chapter>
+    <title>Main Loop and Application Development Helpers</title>
+    <xi:include href="xml/main.xml"/>
+    <xi:include href="xml/logging.xml"/>
+    <xi:include href="xml/option.xml"/>
     <xi:include href="xml/command.xml"/>
     <xi:include href="xml/config.xml"/>
-    <xi:include href="xml/error.xml"/>
-    <xi:include href="xml/errors.xml"/>
-    <xi:include href="xml/file.xml"/>
-    <xi:include href="xml/hash.xml"/>
-    <xi:include href="xml/io.xml"/>
-    <xi:include href="xml/list.xml"/>
-    <xi:include href="xml/logging.xml"/>
-    <xi:include href="xml/macros.xml"/>
-    <xi:include href="xml/main.xml"/>
-    <xi:include href="xml/option.xml"/>
-    <xi:include href="xml/signal.xml"/>
-    <xi:include href="xml/string.xml"/>
-    <xi:include href="xml/test.xml"/>
-    <xi:include href="xml/test_alloc.xml"/>
-    <xi:include href="xml/test_divert.xml"/>
-    <xi:include href="xml/test_files.xml"/>
-    <xi:include href="xml/test_hash.xml"/>
-    <xi:include href="xml/test_list.xml"/>
-    <xi:include href="xml/test_output.xml"/>
-    <xi:include href="xml/test_process.xml"/>
-    <xi:include href="xml/test_values.xml"/>
-    <xi:include href="xml/timer.xml"/>
-    <xi:include href="xml/tree.xml"/>
-    <xi:include href="xml/watch.xml"/>
-
   </chapter>
+  <chapter>
+    <title>Operating System Facilities</title>
+    <xi:include href="xml/file.xml"/>
+    <xi:include href="xml/watch.xml"/>
+    <xi:include href="xml/timer.xml"/>
+    <xi:include href="xml/io.xml"/>
+    <xi:include href="xml/child.xml"/>
+    <xi:include href="xml/signal.xml"/>
+    <xi:include href="xml/error.xml"/>
+  </chapter>
+
+
   <index id="api-index-full">
     <title>API Index</title>
     <xi:include href="xml/api-index-full.xml"><xi:fallback /></xi:include>

@@ -20,6 +20,12 @@
 #ifndef NIH_WATCH_H
 #define NIH_WATCH_H
 
+/**
+ * SECTION:watch
+ * @Short_description: Inotify watch abstraction
+ * @Title: Watch
+ */
+
 #include <sys/inotify.h>
 #include <sys/types.h>
 #include <sys/stat.h>

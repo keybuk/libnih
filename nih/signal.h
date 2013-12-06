@@ -20,6 +20,12 @@
 #ifndef NIH_SIGNAL_H
 #define NIH_SIGNAL_H
 
+/**
+ * SECTION:signal
+ * @Short_description: Signal Handlers
+ * @Title: Signal
+ */
+
 #include <nih/macros.h>
 #include <nih/list.h>
 

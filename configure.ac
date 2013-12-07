@@ -15,8 +15,8 @@ AM_MAINTAINER_MODE([enable])
 LT_PREREQ(2.2.4)
 LT_INIT
 
-AM_GNU_GETTEXT_VERSION([0.17])
-AM_GNU_GETTEXT()
+AM_GNU_GETTEXT_VERSION([0.18.3])
+AM_GNU_GETTEXT([external])
 
 # Checks for programs.
 AC_PROG_CC
@@ -58,7 +58,7 @@ AS_IF([test "$cross_compiling" = "yes"],
 	      AC_SUBST([NIH_DBUS_TOOL], ["\${top_builddir}/nih-dbus-tool/nih-dbus-tool"])])],
       [AC_SUBST([NIH_DBUS_TOOL], ["\${top_builddir}/nih-dbus-tool/nih-dbus-tool"])])
 
-AC_CONFIG_FILES([ Makefile m4/Makefile intl/Makefile
+AC_CONFIG_FILES([ Makefile m4/Makefile
 		  nih/Makefile nih/libnih.pc
 		  nih-dbus/Makefile nih-dbus/libnih-dbus.pc
 		  nih-dbus-tool/Makefile

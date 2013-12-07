@@ -619,6 +619,8 @@ nih_dir_walk_scan (const char    *path,
 	struct dirent  *ent;
 	char          **paths;
 	size_t          npaths;
+	int             isdir;
+	struct stat     statbuf;
 
 	nih_assert (path != NULL);
 
@@ -640,7 +642,16 @@ nih_dir_walk_scan (const char    *path,
 		subpath = NIH_MUST (nih_sprintf (NULL, "%s/%s",
 						 path, ent->d_name));
 
-		if (filter && filter (data, subpath, ent->d_type == DT_DIR))
+		if (ent->d_type == DT_UNKNOWN) {
+			if (lstat (subpath, &statbuf))
+				isdir = FALSE;
+			else
+				isdir = S_ISDIR(statbuf.st_mode);
+		} else {
+			isdir = ent->d_type == DT_DIR;
+		}
+
+		if (filter && filter (data, subpath, isdir))
 			continue;
 
 		NIH_MUST (nih_str_array_addp (&paths, NULL, &npaths, subpath));

@@ -8,7 +8,7 @@ AC_CONFIG_MACRO_DIR([m4])
 
 AC_GNU_SOURCE
 
-AM_INIT_AUTOMAKE([1.11 gnu nostdinc check-news color-tests silent-rules])
+AM_INIT_AUTOMAKE([1.11 gnu nostdinc check-news color-tests silent-rules subdir-objects])
 AM_SILENT_RULES([yes])
 AM_MAINTAINER_MODE([enable])
 
